@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
-import '../../state/app_state.dart';
+
 import '../../services/database_service.dart';
+import '../../state/app_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -54,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context, listen: false);
+    final appState = Provider.of<AppState>(context);
 
     return Scaffold(
       body: Row(
@@ -65,6 +67,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSectionHeader('Appearance'),
+                  _buildThemeSelector(appState),
+                  const SizedBox(height: 32),
+
                   _buildSectionHeader('Google GenAI REST Settings'),
                   _buildRestConfigGroup(
                     'Free Model', 
@@ -123,6 +129,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: Theme.of(context).colorScheme.primary,
         ),
       ),
+    );
+  }
+
+  Widget _buildThemeSelector(AppState appState) {
+    return SegmentedButton<ThemeMode>(
+      segments: const [
+        ButtonSegment(value: ThemeMode.system, label: Text('Auto'), icon: Icon(Icons.brightness_auto)),
+        ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode)),
+        ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode)),
+      ],
+      selected: {appState.themeMode},
+      onSelectionChanged: (Set<ThemeMode> newSelection) {
+        appState.setThemeMode(newSelection.first);
+      },
     );
   }
 

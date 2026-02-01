@@ -13,7 +13,6 @@ import 'services/llm/providers/openai_api_provider.dart';
 import 'state/app_state.dart';
 
 void main() {
-  // Register LLM Providers
   LLMService().registerProvider('google-genai', GoogleGenAIProvider());
   LLMService().registerProvider('openai-api', OpenAIAPIProvider());
 
@@ -30,12 +29,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
     return MaterialApp(
       title: 'Joycai Image AI Toolkits',
       debugShowCheckedModeBanner: false,
+      themeMode: appState.themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.light),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.dark),
       ),
       home: const MainNavigationScreen(),
     );

@@ -21,6 +21,9 @@ class AppState extends ChangeNotifier {
   int concurrencyLimit = 2;
   String? outputDirectory;
 
+  // Theme configuration
+  ThemeMode themeMode = ThemeMode.system;
+
   // Workbench configurations
   String? lastSelectedModelId;
   String lastAspectRatio = "not_set";
@@ -64,6 +67,12 @@ class AppState extends ChangeNotifier {
     if (savedLimit != null) {
       concurrencyLimit = int.tryParse(savedLimit) ?? 2;
       taskQueue.updateConcurrency(concurrencyLimit);
+    }
+
+    // Load theme mode
+    final savedTheme = await _db.getSetting('theme_mode');
+    if (savedTheme != null) {
+      themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
     }
 
     outputDirectory = await _db.getSetting('output_directory');
@@ -269,6 +278,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setThemeMode(ThemeMode mode) async {
+    themeMode = mode;
+    await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+
   Future<void> updateOutputDirectory(String path) async {
     outputDirectory = path;
     await _db.saveSetting('output_directory', path);
@@ -303,7 +318,6 @@ class AppState extends ChangeNotifier {
   }
 
   void submitTask(String modelId, Map<String, dynamic> params) {
-    // Allow submission if there's a prompt, even if no images are selected
     final prompt = params['prompt'] as String? ?? '';
     if (prompt.isEmpty && selectedImages.isEmpty) return;
     
