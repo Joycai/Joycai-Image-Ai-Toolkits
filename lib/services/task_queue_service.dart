@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -39,6 +40,32 @@ class TaskItem {
   void addLog(String message) {
     logs.add('[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message');
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'image_path': jsonEncode(imagePaths),
+      'model_id': modelId,
+      'status': status.name,
+      'parameters': jsonEncode(parameters),
+      'result_path': jsonEncode(resultPaths),
+      'start_time': startTime?.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
+    };
+  }
+
+  factory TaskItem.fromMap(Map<String, dynamic> map) {
+    return TaskItem(
+      id: map['id'],
+      imagePaths: List<String>.from(jsonDecode(map['image_path'])),
+      modelId: map['model_id'] ?? 'unknown',
+      status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
+      parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
+      resultPaths: List<String>.from(jsonDecode(map['result_path'])),
+      startTime: map['start_time'] != null ? DateTime.parse(map['start_time']) : null,
+      endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
+    );
+  }
 }
 
 class TaskQueueService extends ChangeNotifier {
@@ -54,6 +81,18 @@ class TaskQueueService extends ChangeNotifier {
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
+  TaskQueueService() {
+    _loadRecentTasks();
+  }
+
+  Future<void> _loadRecentTasks() async {
+    final db = DatabaseService();
+    final tasks = await db.getRecentTasks(10);
+    _queue.clear();
+    _queue.addAll(tasks.map((t) => TaskItem.fromMap(t)).toList().reversed);
+    notifyListeners();
+  }
+
   void addTask(List<String> imagePaths, String modelId, Map<String, dynamic> params) {
     final task = TaskItem(
       id: _uuid.v4(),
@@ -63,6 +102,10 @@ class TaskQueueService extends ChangeNotifier {
     );
     task.addLog('Task created for ${imagePaths.length} images using $modelId.');
     _queue.add(task);
+    
+    // Persist task immediately
+    DatabaseService().saveTask(task.toMap());
+    
     notifyListeners();
     _attemptNextExecution();
   }
@@ -74,6 +117,7 @@ class TaskQueueService extends ChangeNotifier {
       if (task.status == TaskStatus.pending) {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
+        DatabaseService().saveTask(task.toMap());
         notifyListeners();
       }
     }
@@ -81,6 +125,7 @@ class TaskQueueService extends ChangeNotifier {
 
   void removeTask(String taskId) {
     _queue.removeWhere((t) => t.id == taskId && (t.status == TaskStatus.completed || t.status == TaskStatus.failed || t.status == TaskStatus.cancelled));
+    DatabaseService().deleteTask(taskId);
     notifyListeners();
   }
 
@@ -117,6 +162,7 @@ class TaskQueueService extends ChangeNotifier {
     task.startTime = DateTime.now();
     task.addLog('Start processing with model: ${task.modelId}');
     onLogAdded?.call('Processing task ${task.id.substring(0,8)}...', level: 'RUNNING');
+    DatabaseService().saveTask(task.toMap());
     notifyListeners();
 
     try {
@@ -190,6 +236,7 @@ class TaskQueueService extends ChangeNotifier {
     } finally {
       task.endTime = DateTime.now();
       _runningCount--;
+      DatabaseService().saveTask(task.toMap());
       notifyListeners();
       _attemptNextExecution();
     }

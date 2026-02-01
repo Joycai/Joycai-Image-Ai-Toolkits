@@ -1,7 +1,7 @@
 import 'dart:io';
+
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class DatabaseService {
@@ -29,7 +29,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 5,
+          version: 6, // Incremented for tasks table migration
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -40,7 +40,7 @@ class DatabaseService {
       
       return await openDatabase(
         dbPath,
-        version: 5,
+        version: 6,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -50,7 +50,7 @@ class DatabaseService {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT)');
+    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT)');
     await _createV2Tables(db);
     await _createV3Tables(db);
     await _createV4Tables(db);
@@ -63,6 +63,14 @@ class DatabaseService {
     if (oldVersion < 5) {
       await db.execute('ALTER TABLE llm_models ADD COLUMN input_fee REAL DEFAULT 0.0');
       await db.execute('ALTER TABLE llm_models ADD COLUMN output_fee REAL DEFAULT 0.0');
+    }
+    if (oldVersion < 6) {
+      // Check if model_id column exists in tasks table
+      var tableInfo = await db.rawQuery('PRAGMA table_info(tasks)');
+      bool hasModelId = tableInfo.any((column) => column['name'] == 'model_id');
+      if (!hasModelId) {
+        await db.execute('ALTER TABLE tasks ADD COLUMN model_id TEXT');
+      }
     }
   }
 
@@ -107,6 +115,22 @@ class DatabaseService {
         output_price REAL DEFAULT 0.0
       )
     ''');
+  }
+
+  // Task History Methods
+  Future<void> saveTask(Map<String, dynamic> task) async {
+    final db = await database;
+    await db.insert('tasks', task, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) async {
+    final db = await database;
+    return await db.query('tasks', orderBy: 'start_time DESC', limit: limit);
+  }
+
+  Future<void> deleteTask(String id) async {
+    final db = await database;
+    await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
   // Token Usage Methods
@@ -230,6 +254,7 @@ class DatabaseService {
     await db.delete('source_directories');
     await db.delete('prompts');
     await db.delete('token_usage');
+    await db.delete('tasks');
   }
 
   // Source Directories Methods

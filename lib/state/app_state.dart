@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/task_queue_service.dart';
@@ -87,13 +89,11 @@ class AppState extends ChangeNotifier {
   }
 
   void _setupSourceWatchers() {
-    // Cancel existing watchers
     for (var sub in _watchers.values) {
       sub.cancel();
     }
     _watchers.clear();
 
-    // Setup new watchers for selected directories
     for (var path in selectedDirectories) {
       try {
         final dir = Directory(path);
@@ -136,7 +136,6 @@ class AppState extends ChangeNotifier {
       await _db.addSourceDirectory(path);
       addLog('Added base directory: $path');
       _scanImages();
-      _setupSourceWatchers();
       notifyListeners();
     }
   }
@@ -148,7 +147,6 @@ class AppState extends ChangeNotifier {
       await _db.removeSourceDirectory(path);
       addLog('Removed base directory: $path');
       _scanImages();
-      _setupSourceWatchers();
       notifyListeners();
     }
   }
@@ -166,7 +164,6 @@ class AppState extends ChangeNotifier {
     }
     await _db.updateDirectorySelection(path, isSelected);
     _scanImages();
-    _setupSourceWatchers();
     notifyListeners();
   }
 
@@ -190,7 +187,7 @@ class AppState extends ChangeNotifier {
           }
         }
       } catch (e) {
-        // Silent fail for background scans
+        // Silent fail
       }
     }
 
@@ -306,8 +303,13 @@ class AppState extends ChangeNotifier {
   }
 
   void submitTask(String modelId, Map<String, dynamic> params) {
-    if (selectedImages.isEmpty) return;
+    // Allow submission if there's a prompt, even if no images are selected
+    final prompt = params['prompt'] as String? ?? '';
+    if (prompt.isEmpty && selectedImages.isEmpty) return;
+    
     final imagePaths = selectedImages.map((f) => f.path).toList();
     taskQueue.addTask(imagePaths, modelId, params);
+    
+    addLog('Task submitted for ${imagePaths.length} images.');
   }
 }

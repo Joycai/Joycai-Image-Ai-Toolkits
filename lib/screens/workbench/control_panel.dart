@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
+import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 
 class ControlPanelWidget extends StatefulWidget {
@@ -164,16 +165,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           ),
           
           const Divider(),
+          _buildQueueStatus(appState, colorScheme),
+          const SizedBox(height: 8),
           Row(
             children: [
               IconButton(
                 icon: const Icon(Icons.settings),
-                onPressed: () => _showQueueSettings(context, appState),
+                onPressed: () => _showQueueSettings(context),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: (appState.selectedImages.isEmpty || _selectedModelId == null) 
+                  onPressed: (_promptController.text.isEmpty || _selectedModelId == null) 
                       ? null 
                       : () {
                           appState.submitTask(_selectedModelId!, {
@@ -181,13 +184,56 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                             'aspectRatio': _aspectRatio,
                             'imageSize': _resolution,
                           });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Task submitted to queue'),
+                              duration: Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                              width: 250,
+                            ),
+                          );
                         },
                   icon: const Icon(Icons.play_arrow),
-                  label: Text('Process ${appState.selectedImages.length} Images'),
+                  label: Text(appState.selectedImages.isEmpty 
+                      ? 'Process Prompt' 
+                      : 'Process ${appState.selectedImages.length} Images'),
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQueueStatus(AppState appState, ColorScheme colorScheme) {
+    final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
+    final runningCount = appState.taskQueue.runningCount;
+
+    if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (runningCount > 0) ...[
+            const SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 8),
+            Text('$runningCount running', style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 12),
+          ],
+          Icon(Icons.layers_outlined, size: 14, color: colorScheme.onSecondaryContainer),
+          const SizedBox(width: 4),
+          Text('$pendingCount planned', style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
         ],
       ),
     );
@@ -388,25 +434,33 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showQueueSettings(BuildContext context, AppState appState) {
+  void _showQueueSettings(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Queue Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Concurrency Limit: ${appState.concurrencyLimit}'),
-            Slider(
-              value: appState.concurrencyLimit.toDouble(),
-              min: 1,
-              max: 8,
-              divisions: 7,
-              onChanged: (v) => appState.setConcurrency(v.toInt()),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final appState = Provider.of<AppState>(context);
+          return AlertDialog(
+            title: const Text('Queue Settings'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Concurrency Limit: ${appState.concurrencyLimit}'),
+                Slider(
+                  value: appState.concurrencyLimit.toDouble(),
+                  min: 1,
+                  max: 8,
+                  divisions: 7,
+                  onChanged: (v) {
+                    appState.setConcurrency(v.toInt());
+                    setDialogState(() {});
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+          );
+        },
       ),
     );
   }
@@ -492,7 +546,6 @@ class _RefinerDialogState extends State<_RefinerDialog> {
         }
       }
 
-      // Record Token Usage for Refiner Task
       if (finalMetadata != null) {
         final inputTokens = finalMetadata['promptTokenCount'] ?? finalMetadata['prompt_tokens'] ?? 0;
         final outputTokens = finalMetadata['candidatesTokenCount'] ?? finalMetadata['completion_tokens'] ?? 0;
