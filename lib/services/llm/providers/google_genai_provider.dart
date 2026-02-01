@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
+
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
 
@@ -76,7 +78,6 @@ class GoogleGenAIProvider implements ILLMProvider {
       try {
         final chunkData = jsonDecode(dataLine);
         
-        // Extract metadata if available in this chunk
         Map<String, dynamic>? metadata;
         if (chunkData.containsKey('usageMetadata')) {
           metadata = chunkData['usageMetadata'];
@@ -95,13 +96,12 @@ class GoogleGenAIProvider implements ILLMProvider {
           }
         }
         
-        // If there are no candidates but there is metadata (sometimes metadata comes in a final empty chunk)
         if ((chunkData['candidates'] == null || chunkData['candidates'].isEmpty) && metadata != null) {
           yield LLMResponseChunk(metadata: metadata);
         }
 
       } catch (e) {
-        // Handle potential JSON parse errors for non-data lines
+        // Ignore parse errors
       }
     }
     
@@ -162,7 +162,10 @@ class GoogleGenAIProvider implements ILLMProvider {
     final generationConfig = <String, dynamic>{};
     if (options != null) {
       final imageConfig = <String, dynamic>{};
-      if (options.containsKey('aspectRatio')) imageConfig['aspectRatio'] = options['aspectRatio'];
+      // Only add aspectRatio if it's not "not_set"
+      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
+        imageConfig['aspectRatio'] = options['aspectRatio'];
+      }
       if (options.containsKey('imageSize')) imageConfig['imageSize'] = options['imageSize'];
       if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
     }

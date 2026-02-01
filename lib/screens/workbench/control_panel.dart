@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/app_state.dart';
+
 import '../../services/database_service.dart';
-import '../../services/llm/llm_service.dart';
 import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_service.dart';
+import '../../state/app_state.dart';
 
 class ControlPanelWidget extends StatefulWidget {
   const ControlPanelWidget({super.key});
@@ -453,6 +455,11 @@ class _RefinerDialogState extends State<_RefinerDialog> {
     });
 
     try {
+      final db = DatabaseService();
+      final modelInfo = widget.models.firstWhere((m) => m['model_id'] == _selectedModelId);
+      final inputPrice = modelInfo['input_fee'] ?? 0.0;
+      final outputPrice = modelInfo['output_fee'] ?? 0.0;
+
       final attachments = widget.selectedImages.map((f) => 
         LLMAttachment.fromFile(f, 'image/jpeg')
       ).toList();
@@ -470,13 +477,37 @@ class _RefinerDialogState extends State<_RefinerDialog> {
         ],
       );
 
+      String accumulatedText = "";
+      Map<String, dynamic>? finalMetadata;
+
       await for (final chunk in stream) {
         if (chunk.textPart != null) {
+          accumulatedText += chunk.textPart!;
           setState(() {
-            _refinedPromptCtrl.text += chunk.textPart!;
+            _refinedPromptCtrl.text = accumulatedText;
           });
         }
+        if (chunk.metadata != null) {
+          finalMetadata = chunk.metadata;
+        }
       }
+
+      // Record Token Usage for Refiner Task
+      if (finalMetadata != null) {
+        final inputTokens = finalMetadata['promptTokenCount'] ?? finalMetadata['prompt_tokens'] ?? 0;
+        final outputTokens = finalMetadata['candidatesTokenCount'] ?? finalMetadata['completion_tokens'] ?? 0;
+        
+        await db.recordTokenUsage({
+          'task_id': 'refine_${DateTime.now().millisecondsSinceEpoch}',
+          'model_id': _selectedModelId!,
+          'timestamp': DateTime.now().toIso8601String(),
+          'input_tokens': inputTokens,
+          'output_tokens': outputTokens,
+          'input_price': inputPrice,
+          'output_price': outputPrice,
+        });
+      }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Refine failed: $e')));

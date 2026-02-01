@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
+
+import '../database_service.dart';
 import 'llm_models.dart';
 import 'llm_provider_interface.dart';
-import '../database_service.dart';
 
 class LLMService {
   static final LLMService _instance = LLMService._internal();
@@ -16,7 +17,6 @@ class LLMService {
     _providers[type] = provider;
   }
 
-  /// Main entry point for high-level usage (Now uses requestStream internally)
   Future<LLMResponse> request({
     required String modelId,
     required List<LLMMessage> messages,
@@ -35,6 +35,7 @@ class LLMService {
     )) {
       if (chunk.textPart != null) accumulatedText += chunk.textPart!;
       if (chunk.imagePart != null) accumulatedImages.add(chunk.imagePart!);
+      if (chunk.metadata != null) metadata = chunk.metadata!;
     }
 
     return LLMResponse(
@@ -44,7 +45,6 @@ class LLMService {
     );
   }
 
-  /// Streaming entry point
   Stream<LLMResponseChunk> requestStream({
     required String modelId,
     required List<LLMMessage> messages,
@@ -62,10 +62,17 @@ class LLMService {
     }
 
     String accumulatedText = "";
+    Map<String, dynamic>? finalMetadata;
     
     await for (final chunk in provider.generateStream(config, fullHistory, options: options)) {
       if (chunk.textPart != null) accumulatedText += chunk.textPart!;
+      if (chunk.metadata != null) finalMetadata = chunk.metadata;
       yield chunk;
+    }
+
+    // Unified Token Usage Recording
+    if (finalMetadata != null) {
+      _recordUsage(modelId, config, finalMetadata);
     }
 
     if (sessionId != null) {
@@ -73,6 +80,26 @@ class LLMService {
         role: LLMRole.assistant,
         content: accumulatedText,
       ));
+    }
+  }
+
+  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata) async {
+    final db = DatabaseService();
+    
+    // Standardize metadata keys (OpenAI vs Google)
+    final inputTokens = metadata['promptTokenCount'] ?? metadata['prompt_tokens'] ?? 0;
+    final outputTokens = metadata['candidatesTokenCount'] ?? metadata['completion_tokens'] ?? 0;
+
+    if (inputTokens > 0 || outputTokens > 0) {
+      await db.recordTokenUsage({
+        'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
+        'model_id': modelId,
+        'timestamp': DateTime.now().toIso8601String(),
+        'input_tokens': inputTokens,
+        'output_tokens': outputTokens,
+        'input_price': config.inputFee,
+        'output_price': config.outputFee,
+      });
     }
   }
 
@@ -98,6 +125,8 @@ class LLMService {
 
     final type = modelData['type'] as String;
     final isPaid = modelData['is_paid'] == 1;
+    final inputFee = (modelData['input_fee'] ?? 0.0) as double;
+    final outputFee = (modelData['output_fee'] ?? 0.0) as double;
 
     String prefix = type == 'google-genai' 
         ? (isPaid ? 'google_paid' : 'google_free') 
@@ -111,6 +140,8 @@ class LLMService {
       type: type,
       endpoint: endpoint,
       apiKey: apiKey,
+      inputFee: inputFee,
+      outputFee: outputFee,
     );
   }
 }

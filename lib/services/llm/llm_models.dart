@@ -29,6 +29,8 @@ class LLMModelConfig {
   final String type; // 'google-genai' or 'openai-api'
   final String endpoint;
   final String apiKey;
+  final double inputFee;
+  final double outputFee;
   final Map<String, dynamic> extraParams;
 
   LLMModelConfig({
@@ -36,6 +38,8 @@ class LLMModelConfig {
     required this.type,
     required this.endpoint,
     required this.apiKey,
+    this.inputFee = 0.0,
+    this.outputFee = 0.0,
     this.extraParams = const {},
   });
 }

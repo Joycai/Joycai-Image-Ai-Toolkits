@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import 'llm/llm_service.dart';
-import 'llm/llm_models.dart';
-import 'database_service.dart';
 import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
+
+import 'database_service.dart';
+import 'llm/llm_models.dart';
+import 'llm/llm_service.dart';
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }
 
@@ -124,11 +126,6 @@ class TaskQueueService extends ChangeNotifier {
         throw Exception('Output directory not set in settings!');
       }
 
-      final models = await db.getModels();
-      final modelInfo = models.firstWhere((m) => m['model_id'] == task.modelId, orElse: () => {});
-      final inputPrice = modelInfo['input_fee'] ?? 0.0;
-      final outputPrice = modelInfo['output_fee'] ?? 0.0;
-
       final attachments = task.imagePaths.map((path) => 
         LLMAttachment.fromFile(File(path), _getMimeType(path))
       ).toList();
@@ -145,15 +142,12 @@ class TaskQueueService extends ChangeNotifier {
         options: task.parameters,
       );
 
-      String accumulatedText = "";
       List<Uint8List> generatedImages = [];
-      Map<String, dynamic>? finalMetadata;
 
       await for (final chunk in stream) {
         if (task.status == TaskStatus.cancelled) break;
 
         if (chunk.textPart != null) {
-          accumulatedText += chunk.textPart!;
           task.addLog('AI: ${chunk.textPart}');
           onLogAdded?.call('[${task.modelId}] ${chunk.textPart}', level: 'INFO');
           notifyListeners();
@@ -164,30 +158,9 @@ class TaskQueueService extends ChangeNotifier {
           task.addLog('Received image chunk.');
           notifyListeners();
         }
-
-        if (chunk.metadata != null) {
-          finalMetadata = chunk.metadata;
-        }
       }
 
       task.addLog('LLM Stream finished.');
-
-      // Record Token Usage using metadata from stream
-      if (finalMetadata != null) {
-        final inputTokens = finalMetadata['promptTokenCount'] ?? finalMetadata['prompt_tokens'] ?? 0;
-        final outputTokens = finalMetadata['candidatesTokenCount'] ?? finalMetadata['completion_tokens'] ?? 0;
-        
-        await db.recordTokenUsage({
-          'task_id': task.id,
-          'model_id': task.modelId,
-          'timestamp': DateTime.now().toIso8601String(),
-          'input_tokens': inputTokens,
-          'output_tokens': outputTokens,
-          'input_price': inputPrice,
-          'output_price': outputPrice,
-        });
-        task.addLog('Token usage recorded: In=$inputTokens, Out=$outputTokens');
-      }
 
       if (task.status == TaskStatus.cancelled) return;
 
