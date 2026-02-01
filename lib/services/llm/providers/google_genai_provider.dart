@@ -12,8 +12,8 @@ class GoogleGenAIProvider implements ILLMProvider {
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
   }) async {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
-    final headers = _getHeaders(config.apiKey);
+    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent?key=${config.apiKey}');
+    final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
 
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
@@ -51,9 +51,8 @@ class GoogleGenAIProvider implements ILLMProvider {
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
   }) async* {
-    // Note: Google GenAI uses a different URL for streaming
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse&key=${config.apiKey}');
-    final headers = _getHeaders(config.apiKey);
+    final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
 
     final request = http.Request('POST', url);
@@ -95,16 +94,28 @@ class GoogleGenAIProvider implements ILLMProvider {
     yield LLMResponseChunk(isDone: true);
   }
 
-  Map<String, String> _getHeaders(String apiKey) {
-    return {
-      "Authorization": "Bearer $apiKey",
-      "x-goog-api-key": apiKey,
-      "Content-Type": "application/json"
-    };
+  Map<String, String> _getHeaders(String endpoint, String apiKey) {
+    final headers = {"Content-Type": "application/json"};
+    if (!endpoint.contains("generativelanguage.googleapis.com")) {
+      headers["Authorization"] = "Bearer $apiKey";
+      headers["x-goog-api-key"] = apiKey;
+    }
+    return headers;
   }
 
   Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options) {
-    final contents = history.map((msg) {
+    // Separate system instructions from conversation contents
+    final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
+    final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
+
+    Map<String, dynamic>? systemInstruction;
+    if (systemMessages.isNotEmpty) {
+      systemInstruction = {
+        "parts": systemMessages.map((m) => {"text": m.content}).toList()
+      };
+    }
+
+    final contents = conversationMessages.map((msg) {
       final parts = <Map<String, dynamic>>[];
       
       if (msg.content.isNotEmpty) {
@@ -144,6 +155,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     return {
+      if (systemInstruction != null) "system_instruction": systemInstruction,
       "contents": contents,
       "generationConfig": generationConfig,
       "safetySettings": [

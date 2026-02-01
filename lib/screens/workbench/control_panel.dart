@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/llm_service.dart';
+import '../../services/llm/llm_models.dart';
 
 class ControlPanelWidget extends StatefulWidget {
   const ControlPanelWidget({super.key});
@@ -117,7 +120,16 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Prompt', style: TextStyle(fontWeight: FontWeight.bold)),
-                      _buildPromptPicker(colorScheme),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _showRefinerDialog(appState),
+                            icon: const Icon(Icons.auto_fix_high, size: 16),
+                            label: const Text('Refiner', style: TextStyle(fontSize: 12)),
+                          ),
+                          _buildPromptPicker(colorScheme),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -175,6 +187,28 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showRefinerDialog(AppState appState) async {
+    final allModels = await _db.getModels();
+    final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
+    final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => _RefinerDialog(
+        initialPrompt: _promptController.text,
+        models: refinerModels,
+        sysPrompts: refinerPrompts,
+        selectedImages: appState.selectedImages,
+        onApply: (refined) {
+          _promptController.text = refined;
+          _updateConfig(prompt: refined);
+        },
       ),
     );
   }
@@ -372,6 +406,178 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         ),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
+    );
+  }
+}
+
+class _RefinerDialog extends StatefulWidget {
+  final String initialPrompt;
+  final List<Map<String, dynamic>> models;
+  final List<Map<String, dynamic>> sysPrompts;
+  final List<File> selectedImages;
+  final Function(String) onApply;
+
+  const _RefinerDialog({
+    required this.initialPrompt,
+    required this.models,
+    required this.sysPrompts,
+    required this.selectedImages,
+    required this.onApply,
+  });
+
+  @override
+  State<_RefinerDialog> createState() => _RefinerDialogState();
+}
+
+class _RefinerDialogState extends State<_RefinerDialog> {
+  late TextEditingController _currentPromptCtrl;
+  final TextEditingController _refinedPromptCtrl = TextEditingController();
+  String? _selectedModelId;
+  String? _selectedSysPrompt;
+  bool _isRefining = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPromptCtrl = TextEditingController(text: widget.initialPrompt);
+    if (widget.models.isNotEmpty) _selectedModelId = widget.models.first['model_id'];
+    if (widget.sysPrompts.isNotEmpty) _selectedSysPrompt = widget.sysPrompts.first['content'];
+  }
+
+  Future<void> _refine() async {
+    if (_selectedModelId == null) return;
+
+    setState(() {
+      _isRefining = true;
+      _refinedPromptCtrl.clear();
+    });
+
+    try {
+      final attachments = widget.selectedImages.map((f) => 
+        LLMAttachment.fromFile(f, 'image/jpeg')
+      ).toList();
+
+      final stream = LLMService().requestStream(
+        modelId: _selectedModelId!,
+        messages: [
+          if (_selectedSysPrompt != null)
+            LLMMessage(role: LLMRole.system, content: _selectedSysPrompt!),
+          LLMMessage(
+            role: LLMRole.user, 
+            content: _currentPromptCtrl.text,
+            attachments: attachments,
+          ),
+        ],
+      );
+
+      await for (final chunk in stream) {
+        if (chunk.textPart != null) {
+          setState(() {
+            _refinedPromptCtrl.text += chunk.textPart!;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Refine failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isRefining = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('AI Prompt Refiner'),
+      content: SizedBox(
+        width: 800,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedModelId,
+                    decoration: const InputDecoration(labelText: 'Refiner Model', border: OutlineInputBorder()),
+                    items: widget.models.map((m) => DropdownMenuItem(value: m['model_id'] as String, child: Text(m['model_name']))).toList(),
+                    onChanged: (v) => setState(() => _selectedModelId = v),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedSysPrompt,
+                    decoration: const InputDecoration(labelText: 'System Prompt', border: OutlineInputBorder()),
+                    items: widget.sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
+                    onChanged: (v) => setState(() => _selectedSysPrompt = v),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Current Prompt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _currentPromptCtrl,
+                        maxLines: 10,
+                        decoration: const InputDecoration(border: OutlineInputBorder()),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Center(child: Icon(Icons.arrow_forward, color: Colors.grey)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Refined Prompt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _refinedPromptCtrl,
+                        maxLines: 10,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          fillColor: Colors.grey.withOpacity(0.05),
+                          filled: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        FilledButton.icon(
+          onPressed: _isRefining ? null : _refine,
+          icon: _isRefining 
+            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.auto_fix_high),
+          label: const Text('Refine'),
+        ),
+        FilledButton(
+          onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
+            widget.onApply(_refinedPromptCtrl.text);
+            Navigator.pop(context);
+          },
+          child: const Text('Apply'),
+        ),
+      ],
     );
   }
 }

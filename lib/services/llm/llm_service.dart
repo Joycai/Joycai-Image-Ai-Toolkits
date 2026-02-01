@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'llm_models.dart';
 import 'llm_provider_interface.dart';
 import '../database_service.dart';
@@ -15,35 +16,32 @@ class LLMService {
     _providers[type] = provider;
   }
 
-  /// Main entry point for high-level usage
+  /// Main entry point for high-level usage (Now uses requestStream internally)
   Future<LLMResponse> request({
     required String modelId,
     required List<LLMMessage> messages,
     String? sessionId,
     Map<String, dynamic>? options,
   }) async {
-    final config = await _getModelConfig(modelId);
-    final provider = _getProvider(config.type);
+    String accumulatedText = "";
+    List<Uint8List> accumulatedImages = [];
+    Map<String, dynamic> metadata = {};
 
-    // Handle session history
-    List<LLMMessage> fullHistory = messages;
-    if (sessionId != null) {
-      _sessions[sessionId] ??= [];
-      _sessions[sessionId]!.addAll(messages);
-      fullHistory = _sessions[sessionId]!;
+    await for (final chunk in requestStream(
+      modelId: modelId,
+      messages: messages,
+      sessionId: sessionId,
+      options: options,
+    )) {
+      if (chunk.textPart != null) accumulatedText += chunk.textPart!;
+      if (chunk.imagePart != null) accumulatedImages.add(chunk.imagePart!);
     }
 
-    final response = await provider.generate(config, fullHistory, options: options);
-
-    // Update session with assistant response
-    if (sessionId != null) {
-      _sessions[sessionId]!.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: response.text,
-      ));
-    }
-
-    return response;
+    return LLMResponse(
+      text: accumulatedText,
+      generatedImages: accumulatedImages,
+      metadata: metadata,
+    );
   }
 
   /// Streaming entry point
@@ -101,7 +99,6 @@ class LLMService {
     final type = modelData['type'] as String;
     final isPaid = modelData['is_paid'] == 1;
 
-    // Fetch endpoint and apikey based on type and paid status
     String prefix = type == 'google-genai' 
         ? (isPaid ? 'google_paid' : 'google_free') 
         : 'openai';

@@ -70,6 +70,7 @@ class _PromptsScreenState extends State<PromptsScreen> {
                       children: [
                         Chip(
                           label: Text(prompt['tag'], style: const TextStyle(fontSize: 10)),
+                          color: prompt['tag'] == 'Refiner' ? MaterialStateProperty.all(Theme.of(context).colorScheme.tertiaryContainer) : null,
                           visualDensity: VisualDensity.compact,
                         ),
                         const SizedBox(width: 8),
@@ -99,7 +100,7 @@ class _PromptsScreenState extends State<PromptsScreen> {
           const SizedBox(height: 16),
           const Text('No prompts saved', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Save your favorite prompts for quick access', style: TextStyle(color: Colors.grey)),
+          const Text('Save your favorite prompts or Refiner system prompts here', style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => _showPromptDialog(),
@@ -150,7 +151,16 @@ class _PromptsScreenState extends State<PromptsScreen> {
               children: [
                 TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Title')),
                 const SizedBox(height: 16),
-                TextField(controller: tagCtrl, decoration: const InputDecoration(labelText: 'Tag (Category)')),
+                Row(
+                  children: [
+                    Expanded(child: TextField(controller: tagCtrl, decoration: const InputDecoration(labelText: 'Tag (Category)'))),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () => tagCtrl.text = 'Refiner',
+                      child: const Text('Set as Refiner'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: contentCtrl,
