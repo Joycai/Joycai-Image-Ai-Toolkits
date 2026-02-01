@@ -122,7 +122,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   Widget _buildFilterBar(ColorScheme colorScheme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: colorScheme.surfaceVariant.withOpacity(0.3),
+      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
       child: Column(
         children: [
           Row(
@@ -275,9 +275,9 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha((255 * 0.1).round()),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withAlpha((255 * 0.3).round())),
       ),
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );

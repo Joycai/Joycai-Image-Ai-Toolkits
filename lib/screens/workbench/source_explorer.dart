@@ -33,7 +33,7 @@ class SourceExplorerWidget extends StatelessWidget {
 
     return Container(
       width: 250,
-      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
       child: Column(
         children: [
           Padding(
@@ -58,8 +58,7 @@ class SourceExplorerWidget extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurfaceVariant,
-                    letterSpacing: 1.2,
+color: colorScheme.onSurface,                    letterSpacing: 1.2,
                   ),
                 ),
                 const Spacer(),
@@ -149,7 +148,7 @@ class SourceExplorerWidget extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               l10n.noFolders,
-              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+              style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),

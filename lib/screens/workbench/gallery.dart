@@ -179,7 +179,7 @@ class GalleryWidget extends StatelessWidget {
           isResult: isResult,
           onTap: () {
             if (isResult) {
-              _showPreviewDialog(context, imageFile);
+              _showPreviewDialog(context, images, index);
             } else {
               appState.toggleImageSelection(imageFile);
             }
@@ -189,58 +189,143 @@ class GalleryWidget extends StatelessWidget {
     );
   }
 
-  void _showPreviewDialog(BuildContext context, File imageFile) {
+  void _showPreviewDialog(BuildContext context, List<File> images, int initialIndex) {
     showDialog(
       context: context,
-      builder: (context) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                panEnabled: true,
-                boundaryMargin: const EdgeInsets.all(100),
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image.file(
-                  imageFile,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    imageFile.path.split(Platform.pathSeparator).last,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+      builder: (context) => _ImagePreviewDialog(
+        images: images,
+        initialIndex: initialIndex,
       ),
     );
   }
 }
 
+class _ImagePreviewDialog extends StatefulWidget {
+  final List<File> images;
+  final int initialIndex;
+
+  const _ImagePreviewDialog({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
+}
+
+class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
+  late int _currentIndex;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageFile = widget.images[_currentIndex];
+
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: _onPageChanged,
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                panEnabled: true,
+                boundaryMargin: const EdgeInsets.all(100),
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.file(
+                  widget.images[index],
+                  fit: BoxFit.contain,
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 32),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          if (_currentIndex > 0)
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 16,
+              child: Center(
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 40),
+                  onPressed: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+              ),
+            ),
+          if (_currentIndex < widget.images.length - 1)
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 16,
+              child: Center(
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
+                  onPressed: () {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+              ),
+            ),
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${imageFile.path.split(Platform.pathSeparator).last} (${_currentIndex + 1} / ${widget.images.length})',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 class _ImageCard extends StatefulWidget {
   final File imageFile;
   final bool isSelected;
@@ -307,14 +392,14 @@ class _ImageCardState extends State<_ImageCard> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: colorScheme.surfaceVariant.withOpacity(0.5),
+color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             border: Border.all(
-              color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withOpacity(0.2),
-              width: widget.isSelected ? 3 : 1,
+              color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
+              width: widget.isSelected ? 2 : 1,
             ),
             boxShadow: widget.isSelected ? [
               BoxShadow(
-                color: colorScheme.primary.withOpacity(0.2),
+                color: colorScheme.primary.withAlpha((255 * 0.2).round()),
                 blurRadius: 8,
                 spreadRadius: 2,
               )
@@ -345,7 +430,7 @@ class _ImageCardState extends State<_ImageCard> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withAlpha((255 * 0.4).round()),
                     child: Text(
                       _dimensions,
                       style: const TextStyle(color: Colors.white, fontSize: 9),
@@ -356,7 +441,7 @@ class _ImageCardState extends State<_ImageCard> {
 
               if (widget.isSelected)
                 Container(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withAlpha((255 * 0.1).round()),
                 ),
               
               // Filename Overlay (Bottom)
@@ -367,7 +452,7 @@ class _ImageCardState extends State<_ImageCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withAlpha((255 * 0.6).round()),
                   ),
                   child: Text(
                     widget.imageFile.path.split(Platform.pathSeparator).last,

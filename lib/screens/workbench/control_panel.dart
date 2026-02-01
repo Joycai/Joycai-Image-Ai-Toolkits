@@ -206,7 +206,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withOpacity(0.5),
+        color: colorScheme.secondaryContainer.withAlpha((255 * 0.5).round()),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -351,7 +351,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         aspectRatio: 16 / 9,
         child: Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: colorScheme.outlineVariant),
           ),
@@ -360,7 +360,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             children: [
               Icon(Icons.collections_outlined, size: 48, color: colorScheme.outline),
               const SizedBox(height: 8),
-              Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
+              Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurface, fontSize: 12)),
             ],
           ),
         ),
@@ -626,7 +626,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                         readOnly: true,
                         decoration: InputDecoration(
                           border: const OutlineInputBorder(),
-                          fillColor: Colors.grey.withOpacity(0.05),
+                          fillColor: Colors.grey.withAlpha((255 * 0.05).round()),
                           filled: true,
                         ),
                       ),

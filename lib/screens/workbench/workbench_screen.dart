@@ -41,14 +41,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
           onTap: () => setState(() => _isConsoleExpanded = !_isConsoleExpanded),
           child: Container(
             height: 32,
-            color: colorScheme.surfaceVariant,
+            color: colorScheme.surfaceContainerHighest,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 Icon(
                   _isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                  size: 18,
-                  color: colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurface,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -56,7 +55,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurfaceVariant,
+                    color: colorScheme.onSurface,
                     letterSpacing: 1.2,
                   ),
                 ),
