@@ -1,0 +1,242 @@
+{
+  "appTitle": "Joycai 图像 AI 工具箱",
+  "workbench": "工作台",
+  "tasks": "任务",
+  "prompts": "提示词",
+  "usage": "用量",
+  "models": "模型",
+  "settings": "设置",
+  "addFolder": "添加文件夹",
+  "directories": "目录列表",
+  "noFolders": "未添加文件夹",
+  "clickAddFolder": "点击“添加文件夹”开始扫描图像。",
+  "sourceGallery": "源图库",
+  "processResults": "处理结果",
+  "noImagesFound": "未找到图像",
+  "noResultsYet": "暂无结果",
+  "selectAll": "全选",
+  "clear": "清除",
+  "selectedCount": "已选择 {count} 项",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyFilename": "复制文件名",
+  "openInFolder": "打开所在文件夹",
+  "copiedToClipboard": "已复制: {text}",
+  "@copiedToClipboard": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "模型选择",
+  "selectAModel": "选择一个模型",
+  "aspectRatio": "宽高比",
+  "resolution": "分辨率",
+  "prompt": "提示词",
+  "library": "提示词库",
+  "refiner": "优化器",
+  "processPrompt": "处理提示词",
+  "processImages": "处理 {count} 张图像",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "promptHint": "在此输入提示词...",
+  "taskSubmitted": "任务已提交至队列",
+  "runningCount": "{count} 个正在运行",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} 个已计划",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectFromLibrary": "从库中选择",
+  "close": "关闭",
+  "queueSettings": "队列设置",
+  "concurrencyLimit": "并发限制: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "aiPromptRefiner": "AI 提示词优化器",
+  "refinerModel": "优化模型",
+  "systemPrompt": "系统提示词",
+  "currentPrompt": "当前提示词",
+  "refinedPrompt": "优化后的提示词",
+  "refine": "优化",
+  "apply": "应用",
+  "refineFailed": "优化失败: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noImagesSelected": "未选择图像",
+  "selectSourceDirectory": "选择源目录",
+  "removeFolderTooltip": "移除文件夹",
+  "removeFolderConfirmTitle": "移除文件夹？",
+  "removeFolderConfirmMessage": "确定要从列表中移除“{folderName}”吗？",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "remove": "移除",
+  "appearance": "外观",
+  "language": "语言",
+  "themeAuto": "跟随系统",
+  "themeLight": "浅色模式",
+  "themeDark": "深色模式",
+  "googleGenAiSettings": "Google GenAI REST 设置",
+  "openAiApiSettings": "OpenAI API REST 设置",
+  "freeModel": "免费模型",
+  "paidModel": "付费模型",
+  "standardConfig": "标准配置",
+  "endpointUrl": "接口地址",
+  "apiKey": "API 密钥",
+  "outputDirectory": "输出目录",
+  "notSet": "未设置",
+  "dataManagement": "数据管理",
+  "exportSettings": "导出设置",
+  "importSettings": "导入设置",
+  "resetAllSettings": "重置所有设置",
+  "confirmReset": "重置所有设置？",
+  "resetWarning": "这将删除所有配置、模型和已添加的文件夹。此操作无法撤销。",
+  "cancel": "取消",
+  "resetEverything": "全部重置",
+  "settingsExported": "设置导出成功",
+  "settingsImported": "设置导入成功",
+  "taskQueueManager": "任务队列管理",
+  "refresh": "刷新",
+  "noTasksInQueue": "队列中没有任务",
+  "submitTaskFromWorkbench": "从工作台提交任务后在此处查看。",
+  "taskId": "任务 ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelTask": "取消任务",
+  "removeFromList": "从列表中移除",
+  "model": "模型",
+  "images": "图像",
+  "filesCount": "{count} 个文件",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "started": "开始时间",
+  "finished": "完成时间",
+  "config": "配置",
+  "latestLog": "最新日志:",
+  "promptLibrary": "提示词库",
+  "newPrompt": "新建提示词",
+  "editPrompt": "编辑提示词",
+  "noPromptsSaved": "未保存提示词",
+  "saveFavoritePrompts": "在此保存您常用的提示词或优化器系统提示词",
+  "createFirstPrompt": "创建第一个提示词",
+  "deletePromptConfirmTitle": "删除提示词？",
+  "deletePromptConfirmMessage": "确定要删除“{title}”吗？",
+  "@deletePromptConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "删除",
+  "deleteModel": "删除模型",
+  "title": "标题",
+  "tagCategory": "标签 (分类)",
+  "setAsRefiner": "设为优化器",
+  "promptContent": "提示词内容",
+  "save": "保存",
+  "update": "更新",
+  "tokenUsageMetrics": "Token 使用统计",
+  "clearAllUsage": "清除所有使用数据？",
+  "clearUsageWarning": "这将永久从数据库中删除所有 Token 使用记录。",
+  "clearAll": "全部清除",
+  "modelsLabel": "模型: ",
+  "rangeLabel": "范围: ",
+  "today": "今天",
+  "lastWeek": "最近一周",
+  "lastMonth": "最近一月",
+  "thisYear": "今年",
+  "inputTokens": "输入 Token",
+  "outputTokens": "输出 Token",
+  "estimatedCost": "预估成本",
+  "clearDataForModel": "清除 {modelId} 的数据？",
+  "@clearDataForModel": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelDataWarning": "这将删除与模型“{modelId}”相关的所有使用记录。",
+  "@clearModelDataWarning": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelData": "清除模型数据",
+  "modelManager": "模型管理",
+  "addModel": "添加模型",
+  "editModel": "编辑模型",
+  "noModelsConfigured": "未配置模型",
+  "addFirstModel": "添加您的第一个 LLM 模型以开始使用",
+  "addNewModel": "添加新模型",
+  "deleteModelConfirmTitle": "删除模型？",
+  "deleteModelConfirmMessage": "确定要删除“{name}”吗？",
+  "@deleteModelConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addLlmModel": "添加 LLM 模型",
+  "editLlmModel": "编辑 LLM 模型",
+  "modelIdLabel": "模型 ID (例如 gemini-pro)",
+  "displayName": "显示名称",
+  "type": "类型",
+  "tag": "标签",
+  "inputFeeLabel": "输入费用 ($/M Tokens)",
+  "outputFeeLabel": "输出费用 ($/M Tokens)",
+  "paidModel": "付费模型",
+  "add": "添加",
+  "executionLogs": "执行日志",
+  "clickToExpand": "点击展开"
+}

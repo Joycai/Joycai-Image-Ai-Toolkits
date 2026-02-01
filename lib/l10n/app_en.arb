@@ -1,0 +1,242 @@
+{
+  "appTitle": "Joycai Image AI Toolkits",
+  "workbench": "Workbench",
+  "tasks": "Tasks",
+  "prompts": "Prompts",
+  "usage": "Usage",
+  "models": "Models",
+  "settings": "Settings",
+  "addFolder": "Add Folder",
+  "directories": "DIRECTORIES",
+  "noFolders": "No folders added",
+  "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
+  "sourceGallery": "Source Gallery",
+  "processResults": "Process Results",
+  "noImagesFound": "No images found",
+  "noResultsYet": "No results yet",
+  "selectAll": "Select All",
+  "clear": "Clear",
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyFilename": "Copy Filename",
+  "openInFolder": "Open in Folder",
+  "copiedToClipboard": "Copied: {text}",
+  "@copiedToClipboard": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "Model Selection",
+  "selectAModel": "Select a model",
+  "aspectRatio": "Aspect Ratio",
+  "resolution": "Resolution",
+  "prompt": "Prompt",
+  "library": "Library",
+  "refiner": "Refiner",
+  "processPrompt": "Process Prompt",
+  "processImages": "Process {count} Images",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "promptHint": "Enter prompt here...",
+  "taskSubmitted": "Task submitted to queue",
+  "runningCount": "{count} running",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} planned",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectFromLibrary": "Select from Library",
+  "close": "Close",
+  "queueSettings": "Queue Settings",
+  "concurrencyLimit": "Concurrency Limit: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "aiPromptRefiner": "AI Prompt Refiner",
+  "refinerModel": "Refiner Model",
+  "systemPrompt": "System Prompt",
+  "currentPrompt": "Current Prompt",
+  "refinedPrompt": "Refined Prompt",
+  "refine": "Refine",
+  "apply": "Apply",
+  "refineFailed": "Refine failed: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noImagesSelected": "No images selected",
+  "selectSourceDirectory": "Select Source Directory",
+  "removeFolderTooltip": "Remove folder",
+  "removeFolderConfirmTitle": "Remove Folder?",
+  "removeFolderConfirmMessage": "Are you sure you want to remove \"{folderName}\" from the list?",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "remove": "Remove",
+  "appearance": "Appearance",
+  "language": "Language",
+  "themeAuto": "Auto",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "googleGenAiSettings": "Google GenAI REST Settings",
+  "openAiApiSettings": "OpenAI API REST Settings",
+  "freeModel": "Free Model",
+  "paidModel": "Paid Model",
+  "standardConfig": "Standard Config",
+  "endpointUrl": "Endpoint URL",
+  "apiKey": "API Key",
+  "outputDirectory": "Output Directory",
+  "notSet": "Not set",
+  "dataManagement": "Data Management",
+  "exportSettings": "Export Settings",
+  "importSettings": "Import Settings",
+  "resetAllSettings": "Reset All Settings",
+  "confirmReset": "Reset All Settings?",
+  "resetWarning": "This will delete all configurations, models, and added folders. This action cannot be undone.",
+  "cancel": "Cancel",
+  "resetEverything": "Reset Everything",
+  "settingsExported": "Settings exported successfully",
+  "settingsImported": "Settings imported successfully",
+  "taskQueueManager": "Task Queue Manager",
+  "refresh": "Refresh",
+  "noTasksInQueue": "No tasks in queue",
+  "submitTaskFromWorkbench": "Submit a task from the Workbench to see it here.",
+  "taskId": "Task ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelTask": "Cancel Task",
+  "removeFromList": "Remove from list",
+  "model": "Model",
+  "images": "Images",
+  "filesCount": "{count} files",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "started": "Started",
+  "finished": "Finished",
+  "config": "Config",
+  "latestLog": "Latest Log:",
+  "promptLibrary": "Prompt Library",
+  "newPrompt": "New Prompt",
+  "editPrompt": "Edit Prompt",
+  "noPromptsSaved": "No prompts saved",
+  "saveFavoritePrompts": "Save your favorite prompts or Refiner system prompts here",
+  "createFirstPrompt": "Create First Prompt",
+  "deletePromptConfirmTitle": "Delete Prompt?",
+  "deletePromptConfirmMessage": "Are you sure you want to delete \"{title}\"?",
+  "@deletePromptConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "Delete",
+  "deleteModel": "Delete Model",
+  "title": "Title",
+  "tagCategory": "Tag (Category)",
+  "setAsRefiner": "Set as Refiner",
+  "promptContent": "Prompt Content",
+  "save": "Save",
+  "update": "Update",
+  "tokenUsageMetrics": "Token Usage Metrics",
+  "clearAllUsage": "Clear All Usage Data?",
+  "clearUsageWarning": "This will permanently delete all token usage records from the database.",
+  "clearAll": "Clear All",
+  "modelsLabel": "Models: ",
+  "rangeLabel": "Range: ",
+  "today": "Today",
+  "lastWeek": "Last Week",
+  "lastMonth": "Last Month",
+  "thisYear": "This Year",
+  "inputTokens": "Input Tokens",
+  "outputTokens": "Output Tokens",
+  "estimatedCost": "Estimated Cost",
+  "clearDataForModel": "Clear Data for {modelId}?",
+  "@clearDataForModel": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelDataWarning": "This will delete all usage records associated with the model \"{modelId}\".",
+  "@clearModelDataWarning": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelData": "Clear Model Data",
+  "modelManager": "Model Manager",
+  "addModel": "Add Model",
+  "editModel": "Edit Model",
+  "noModelsConfigured": "No models configured",
+  "addFirstModel": "Add your first LLM model to get started",
+  "addNewModel": "Add New Model",
+  "deleteModelConfirmTitle": "Delete Model?",
+  "deleteModelConfirmMessage": "Are you sure you want to delete \"{name}\"?",
+  "@deleteModelConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addLlmModel": "Add LLM Model",
+  "editLlmModel": "Edit LLM Model",
+  "modelIdLabel": "Model ID (e.g. gemini-pro)",
+  "displayName": "Display Name",
+  "type": "Type",
+  "tag": "Tag",
+  "inputFeeLabel": "Input Fee ($/M Tokens)",
+  "outputFeeLabel": "Output Fee ($/M Tokens)",
+  "paidModel": "Paid Model",
+  "add": "Add",
+  "executionLogs": "EXECUTION LOGS",
+  "clickToExpand": "Click to expand"
+}
