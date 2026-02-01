@@ -238,5 +238,6 @@
   "paidModel": "付费模型",
   "add": "添加",
   "executionLogs": "执行日志",
-  "clickToExpand": "点击展开"
+  "clickToExpand": "点击展开",
+  "thumbnailSize": "缩略图大小"
 }

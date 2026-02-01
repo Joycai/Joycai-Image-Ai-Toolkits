@@ -27,6 +27,9 @@ class AppState extends ChangeNotifier {
   // Language configuration
   Locale? locale;
 
+  // Gallery configuration
+  double thumbnailSize = 150.0;
+
   // Workbench configurations
   String? lastSelectedModelId;
   String lastAspectRatio = "not_set";
@@ -82,6 +85,12 @@ class AppState extends ChangeNotifier {
     final savedLocale = await _db.getSetting('locale');
     if (savedLocale != null && savedLocale.isNotEmpty) {
       locale = Locale(savedLocale);
+    }
+
+    // Load thumbnail size
+    final savedThumbSize = await _db.getSetting('thumbnail_size');
+    if (savedThumbSize != null) {
+      thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
     }
 
     outputDirectory = await _db.getSetting('output_directory');
@@ -183,6 +192,12 @@ class AppState extends ChangeNotifier {
     await _db.updateDirectorySelection(path, isSelected);
     _scanImages();
     notifyListeners();
+  }
+
+  Future<void> refreshImages() async {
+    addLog('Manually refreshing images...');
+    await _scanImages();
+    await _scanProcessedImages();
   }
 
   Future<void> _scanImages() async {
@@ -296,6 +311,12 @@ class AppState extends ChangeNotifier {
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    notifyListeners();
+  }
+
+  Future<void> setThumbnailSize(double size) async {
+    thumbnailSize = size;
+    await _db.saveSetting('thumbnail_size', size.toString());
     notifyListeners();
   }
 

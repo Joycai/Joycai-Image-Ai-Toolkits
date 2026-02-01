@@ -943,6 +943,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Click to expand'**
   String get clickToExpand;
+
+  /// No description provided for @thumbnailSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail Size'**
+  String get thumbnailSize;
 }
 
 class _AppLocalizationsDelegate

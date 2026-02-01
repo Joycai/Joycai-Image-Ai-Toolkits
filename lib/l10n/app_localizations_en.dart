@@ -464,4 +464,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clickToExpand => 'Click to expand';
+
+  @override
+  String get thumbnailSize => 'Thumbnail Size';
 }

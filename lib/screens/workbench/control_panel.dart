@@ -140,7 +140,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _promptController,
-                    maxLines: 5,
+                    maxLines: 10,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       hintText: l10n.promptHint,
@@ -149,18 +149,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     onChanged: (v) => _updateConfig(prompt: v),
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: ['Cyberpunk', 'Anime', 'Realistic'].map((tag) => ActionChip(
-                      label: Text(tag, style: const TextStyle(fontSize: 12)),
-                      onPressed: () {
-                        final currentText = _promptController.text;
-                        final newText = currentText.isEmpty ? tag : '$currentText, $tag';
-                        _promptController.text = newText;
-                        _updateConfig(prompt: newText);
-                      },
-                    )).toList(),
-                  ),
+
                 ],
               ),
             ),

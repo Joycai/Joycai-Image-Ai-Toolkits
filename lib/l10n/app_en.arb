@@ -238,5 +238,6 @@
   "paidModel": "Paid Model",
   "add": "Add",
   "executionLogs": "EXECUTION LOGS",
-  "clickToExpand": "Click to expand"
+  "clickToExpand": "Click to expand",
+  "thumbnailSize": "Thumbnail Size"
 }

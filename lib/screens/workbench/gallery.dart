@@ -82,10 +82,10 @@ class GalleryWidget extends StatelessWidget {
 
   Widget _buildToolbar(BuildContext context, AppState appState) {
     final l10n = AppLocalizations.of(context)!;
-    if (appState.galleryImages.isEmpty && appState.processedImages.isEmpty) return const SizedBox.shrink();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
@@ -96,17 +96,46 @@ class GalleryWidget extends StatelessWidget {
             l10n.selectedCount(appState.selectedImages.length),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
           TextButton.icon(
             onPressed: appState.selectAllImages,
             icon: const Icon(Icons.select_all, size: 18),
             label: Text(l10n.selectAll),
           ),
-          const SizedBox(width: 8),
           TextButton.icon(
             onPressed: appState.selectedImages.isEmpty ? null : appState.clearImageSelection,
             icon: const Icon(Icons.deselect, size: 18),
             label: Text(l10n.clear),
+          ),
+          const Spacer(),
+          
+          // Thumbnail Size Slider
+          Tooltip(
+            message: l10n.thumbnailSize,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
+                SizedBox(
+                  width: 120,
+                  child: Slider(
+                    value: appState.thumbnailSize,
+                    min: 80,
+                    max: 400,
+                    onChanged: (v) => appState.setThumbnailSize(v),
+                  ),
+                ),
+                Icon(Icons.image, size: 20, color: colorScheme.outline),
+              ],
+            ),
+          ),
+          
+          const VerticalDivider(width: 24, indent: 8, endIndent: 8),
+          
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            onPressed: appState.refreshImages,
+            tooltip: l10n.refresh,
           ),
         ],
       ),
@@ -133,8 +162,8 @@ class GalleryWidget extends StatelessWidget {
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: appState.thumbnailSize,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         childAspectRatio: 1,

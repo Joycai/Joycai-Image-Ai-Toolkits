@@ -459,4 +459,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clickToExpand => '点击展开';
+
+  @override
+  String get thumbnailSize => '缩略图大小';
 }
