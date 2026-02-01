@@ -39,7 +39,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     final data = await _db.getTokenUsage(
       modelIds: _selectedModels.isEmpty ? null : _selectedModels,
       start: _dateRange.start,
-      end: _dateRange.end.add(const Duration(days: 1)), // Include the full end day
+      end: _dateRange.end.add(const Duration(days: 1)),
     );
     setState(() {
       _usageData = data;
@@ -75,7 +75,6 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Calculate Totals
     int totalInput = 0;
     int totalOutput = 0;
     double totalCost = 0.0;
@@ -95,18 +94,18 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       appBar: AppBar(
         title: const Text('Token Usage Metrics'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Clear all usage data',
+            onPressed: () => _confirmClearAll(),
+          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
         ],
       ),
       body: Column(
         children: [
-          // Filters Bar
           _buildFilterBar(colorScheme),
-          
-          // Summary Cards
           _buildSummaryCards(totalInput, totalOutput, totalCost, colorScheme),
-          
-          // Details List
           Expanded(
             child: _usageData.isEmpty
                 ? const Center(child: Text('No usage data found for selected range.'))
@@ -142,6 +141,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
                         });
                         _refreshData();
                       },
+                      onDeleted: () => _confirmClearModel(m),
                     );
                   }).toList(),
                 ),
@@ -277,6 +277,50 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  void _confirmClearAll() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Usage Data?'),
+        content: const Text('This will permanently delete all token usage records from the database.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await _db.clearTokenUsage();
+              Navigator.pop(context);
+              _refreshData();
+            },
+            child: const Text('Clear All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmClearModel(String modelId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Clear Data for $modelId?'),
+        content: Text('This will delete all usage records associated with the model "$modelId".'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await _db.clearTokenUsage(modelId: modelId);
+              Navigator.pop(context);
+              _refreshData();
+            },
+            child: const Text('Clear Model Data', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

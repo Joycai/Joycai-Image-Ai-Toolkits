@@ -29,7 +29,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 5, // Incremented for model fee columns
+          version: 5,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -54,7 +54,6 @@ class DatabaseService {
     await _createV2Tables(db);
     await _createV3Tables(db);
     await _createV4Tables(db);
-    // V5 columns are added in _createV2Tables for new installs
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -114,6 +113,15 @@ class DatabaseService {
   Future<void> recordTokenUsage(Map<String, dynamic> usage) async {
     final db = await database;
     await db.insert('token_usage', usage);
+  }
+
+  Future<void> clearTokenUsage({String? modelId}) async {
+    final db = await database;
+    if (modelId != null) {
+      await db.delete('token_usage', where: 'model_id = ?', whereArgs: [modelId]);
+    } else {
+      await db.delete('token_usage');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTokenUsage({

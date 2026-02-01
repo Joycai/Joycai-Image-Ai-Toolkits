@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'llm/llm_service.dart';
@@ -123,7 +124,6 @@ class TaskQueueService extends ChangeNotifier {
         throw Exception('Output directory not set in settings!');
       }
 
-      // Fetch model fee info
       final models = await db.getModels();
       final modelInfo = models.firstWhere((m) => m['model_id'] == task.modelId, orElse: () => {});
       final inputPrice = modelInfo['input_fee'] ?? 0.0;
@@ -133,7 +133,7 @@ class TaskQueueService extends ChangeNotifier {
         LLMAttachment.fromFile(File(path), _getMimeType(path))
       ).toList();
 
-      final response = await LLMService().request(
+      final stream = LLMService().requestStream(
         modelId: task.modelId,
         messages: [
           LLMMessage(
@@ -145,12 +145,37 @@ class TaskQueueService extends ChangeNotifier {
         options: task.parameters,
       );
 
-      task.addLog('LLM Response received.');
+      String accumulatedText = "";
+      List<Uint8List> generatedImages = [];
+      Map<String, dynamic>? finalMetadata;
 
-      // Record Token Usage with real prices
-      if (response.metadata.isNotEmpty) {
-        final inputTokens = response.metadata['promptTokenCount'] ?? response.metadata['prompt_tokens'] ?? 0;
-        final outputTokens = response.metadata['candidatesTokenCount'] ?? response.metadata['completion_tokens'] ?? 0;
+      await for (final chunk in stream) {
+        if (task.status == TaskStatus.cancelled) break;
+
+        if (chunk.textPart != null) {
+          accumulatedText += chunk.textPart!;
+          task.addLog('AI: ${chunk.textPart}');
+          onLogAdded?.call('[${task.modelId}] ${chunk.textPart}', level: 'INFO');
+          notifyListeners();
+        }
+
+        if (chunk.imagePart != null) {
+          generatedImages.add(chunk.imagePart!);
+          task.addLog('Received image chunk.');
+          notifyListeners();
+        }
+
+        if (chunk.metadata != null) {
+          finalMetadata = chunk.metadata;
+        }
+      }
+
+      task.addLog('LLM Stream finished.');
+
+      // Record Token Usage using metadata from stream
+      if (finalMetadata != null) {
+        final inputTokens = finalMetadata['promptTokenCount'] ?? finalMetadata['prompt_tokens'] ?? 0;
+        final outputTokens = finalMetadata['candidatesTokenCount'] ?? finalMetadata['completion_tokens'] ?? 0;
         
         await db.recordTokenUsage({
           'task_id': task.id,
@@ -166,8 +191,8 @@ class TaskQueueService extends ChangeNotifier {
 
       if (task.status == TaskStatus.cancelled) return;
 
-      for (int i = 0; i < response.generatedImages.length; i++) {
-        final bytes = response.generatedImages[i];
+      for (int i = 0; i < generatedImages.length; i++) {
+        final bytes = generatedImages[i];
         final fileName = 'result_${task.id.substring(0, 8)}_$i.png';
         final filePath = p.join(outputDir, fileName);
         

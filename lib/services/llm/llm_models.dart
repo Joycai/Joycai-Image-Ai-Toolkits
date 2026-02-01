@@ -55,7 +55,8 @@ class LLMResponse {
 class LLMResponseChunk {
   final String? textPart;
   final Uint8List? imagePart;
+  final Map<String, dynamic>? metadata;
   final bool isDone;
 
-  LLMResponseChunk({this.textPart, this.imagePart, this.isDone = false});
+  LLMResponseChunk({this.textPart, this.imagePart, this.metadata, this.isDone = false});
 }

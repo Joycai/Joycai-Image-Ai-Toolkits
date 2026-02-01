@@ -75,6 +75,13 @@ class GoogleGenAIProvider implements ILLMProvider {
 
       try {
         final chunkData = jsonDecode(dataLine);
+        
+        // Extract metadata if available in this chunk
+        Map<String, dynamic>? metadata;
+        if (chunkData.containsKey('usageMetadata')) {
+          metadata = chunkData['usageMetadata'];
+        }
+
         for (var candidate in chunkData['candidates'] ?? []) {
           for (var part in candidate['content']?['parts'] ?? []) {
             final text = part['text'];
@@ -83,9 +90,16 @@ class GoogleGenAIProvider implements ILLMProvider {
             yield LLMResponseChunk(
               textPart: text,
               imagePart: imgData != null ? base64Decode(imgData) : null,
+              metadata: metadata,
             );
           }
         }
+        
+        // If there are no candidates but there is metadata (sometimes metadata comes in a final empty chunk)
+        if ((chunkData['candidates'] == null || chunkData['candidates'].isEmpty) && metadata != null) {
+          yield LLMResponseChunk(metadata: metadata);
+        }
+
       } catch (e) {
         // Handle potential JSON parse errors for non-data lines
       }
@@ -104,7 +118,6 @@ class GoogleGenAIProvider implements ILLMProvider {
   }
 
   Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options) {
-    // Separate system instructions from conversation contents
     final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
     final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
 
