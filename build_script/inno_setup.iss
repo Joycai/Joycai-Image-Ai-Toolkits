@@ -45,12 +45,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\data\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\flutter_windows.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\sqlite3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\sqlite3.x64.windows.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\sqlite3_flutter_libs_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\url_launcher_windows_plugin.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
