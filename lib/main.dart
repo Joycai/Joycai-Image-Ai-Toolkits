@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'screens/batch/batch_screen.dart';
 import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
@@ -35,6 +37,7 @@ class MyApp extends StatelessWidget {
       title: 'Joycai Image AI Toolkits',
       debugShowCheckedModeBanner: false,
       themeMode: appState.themeMode,
+      locale: appState.locale,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.light),
@@ -43,6 +46,16 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.dark),
       ),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('zh'),
+      ],
       home: const MainNavigationScreen(),
     );
   }
@@ -70,6 +83,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Row(
         children: [
@@ -86,36 +101,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
             ),
             labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-            destinations: const [
+            destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.work_outline),
-                selectedIcon: Icon(Icons.work),
-                label: Text('Workbench'),
+                icon: const Icon(Icons.work_outline),
+                selectedIcon: const Icon(Icons.work),
+                label: Text(l10n.workbench),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: Text('Tasks'),
+                icon: const Icon(Icons.assignment_outlined),
+                selectedIcon: const Icon(Icons.assignment),
+                label: Text(l10n.tasks),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.notes_outlined),
-                selectedIcon: Icon(Icons.notes),
-                label: Text('Prompts'),
+                icon: const Icon(Icons.notes_outlined),
+                selectedIcon: const Icon(Icons.notes),
+                label: Text(l10n.prompts),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.analytics_outlined),
-                selectedIcon: Icon(Icons.analytics),
-                label: Text('Usage'),
+                icon: const Icon(Icons.analytics_outlined),
+                selectedIcon: const Icon(Icons.analytics),
+                label: Text(l10n.usage),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.model_training_outlined),
-                selectedIcon: Icon(Icons.model_training),
-                label: Text('Models'),
+                icon: const Icon(Icons.model_training_outlined),
+                selectedIcon: const Icon(Icons.model_training),
+                label: Text(l10n.models),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text('Settings'),
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: Text(l10n.settings),
               ),
             ],
           ),

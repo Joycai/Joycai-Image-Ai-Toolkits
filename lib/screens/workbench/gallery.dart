@@ -1,8 +1,11 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 
 class GalleryWidget extends StatelessWidget {
@@ -11,6 +14,7 @@ class GalleryWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return DefaultTabController(
       length: 2,
@@ -22,7 +26,7 @@ class GalleryWidget extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Source Gallery'),
+                    Text(l10n.sourceGallery),
                     if (appState.galleryImages.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       _buildBadge(context, appState.galleryImages.length),
@@ -34,7 +38,7 @@ class GalleryWidget extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Process Results'),
+                    Text(l10n.processResults),
                     if (appState.processedImages.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       _buildBadge(context, appState.processedImages.length, isResult: true),
@@ -77,6 +81,7 @@ class GalleryWidget extends StatelessWidget {
   }
 
   Widget _buildToolbar(BuildContext context, AppState appState) {
+    final l10n = AppLocalizations.of(context)!;
     if (appState.galleryImages.isEmpty && appState.processedImages.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -88,20 +93,20 @@ class GalleryWidget extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            '${appState.selectedImages.length} selected',
+            l10n.selectedCount(appState.selectedImages.length),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const Spacer(),
           TextButton.icon(
             onPressed: appState.selectAllImages,
             icon: const Icon(Icons.select_all, size: 18),
-            label: const Text('Select All'),
+            label: Text(l10n.selectAll),
           ),
           const SizedBox(width: 8),
           TextButton.icon(
             onPressed: appState.selectedImages.isEmpty ? null : appState.clearImageSelection,
             icon: const Icon(Icons.deselect, size: 18),
-            label: const Text('Clear'),
+            label: Text(l10n.clear),
           ),
         ],
       ),
@@ -109,6 +114,7 @@ class GalleryWidget extends StatelessWidget {
   }
 
   Widget _buildImageGrid(BuildContext context, List<File> images, AppState appState, {required bool isResult}) {
+    final l10n = AppLocalizations.of(context)!;
     if (images.isEmpty) {
       return Center(
         child: Column(
@@ -117,7 +123,7 @@ class GalleryWidget extends StatelessWidget {
             Icon(Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              isResult ? 'No results yet' : 'No images found',
+              isResult ? l10n.noResultsYet : l10n.noImagesFound,
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
           ],
@@ -370,28 +376,29 @@ class _ImageCardState extends State<_ImageCard> {
   }
 
   void _showContextMenu(BuildContext context, Offset position) {
+    final l10n = AppLocalizations.of(context)!;
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
       items: [
         PopupMenuItem(
-          child: const ListTile(
-            leading: Icon(Icons.copy, size: 18),
-            title: Text('Copy Filename'),
+          child: ListTile(
+            leading: const Icon(Icons.copy, size: 18),
+            title: Text(l10n.copyFilename),
             dense: true,
           ),
           onTap: () {
             final filename = widget.imageFile.path.split(Platform.pathSeparator).last;
             Clipboard.setData(ClipboardData(text: filename));
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Copied: $filename'), duration: const Duration(seconds: 1)),
+              SnackBar(content: Text(l10n.copiedToClipboard(filename)), duration: const Duration(seconds: 1)),
             );
           },
         ),
         PopupMenuItem(
-          child: const ListTile(
-            leading: Icon(Icons.folder_open, size: 18),
-            title: Text('Open in Folder'),
+          child: ListTile(
+            leading: const Icon(Icons.folder_open, size: 18),
+            title: Text(l10n.openInFolder),
             dense: true,
           ),
           onTap: () async {

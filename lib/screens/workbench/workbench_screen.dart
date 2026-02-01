@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'source_explorer.dart';
-import 'gallery.dart';
-import 'control_panel.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../widgets/log_console.dart';
+import 'control_panel.dart';
+import 'gallery.dart';
+import 'source_explorer.dart';
 
 class WorkbenchScreen extends StatefulWidget {
   const WorkbenchScreen({super.key});
@@ -17,6 +19,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
@@ -49,7 +52,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'EXECUTION LOGS',
+                  l10n.executionLogs,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -60,7 +63,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
                 const Spacer(),
                 if (!_isConsoleExpanded)
                   Text(
-                    'Click to expand',
+                    l10n.clickToExpand,
                     style: TextStyle(fontSize: 10, color: colorScheme.outline),
                   ),
               ],

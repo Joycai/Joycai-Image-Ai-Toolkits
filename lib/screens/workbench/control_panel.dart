@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
@@ -83,6 +84,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     
     return Container(
       width: 350,
@@ -90,7 +92,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSelectionPreview(appState, colorScheme),
+          _buildSelectionPreview(appState, colorScheme, l10n),
           const Divider(height: 32),
           
           Expanded(
@@ -98,11 +100,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Model Selection', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold)),
                   DropdownButton<String>(
                     isExpanded: true,
                     value: _selectedModelId,
-                    hint: const Text('Select a model'),
+                    hint: Text(l10n.selectAModel),
                     items: _availableModels.map((m) => DropdownMenuItem(
                       value: m['model_id'] as String,
                       child: Text(m['model_name']),
@@ -115,22 +117,22 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   
                   if (_selectedModelId != null) ...[
                     const SizedBox(height: 16),
-                    _buildModelSpecificOptions(_selectedModelId!),
+                    _buildModelSpecificOptions(_selectedModelId!, l10n),
                   ],
 
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Prompt', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
                       Row(
                         children: [
                           TextButton.icon(
-                            onPressed: () => _showRefinerDialog(appState),
+                            onPressed: () => _showRefinerDialog(appState, l10n),
                             icon: const Icon(Icons.auto_fix_high, size: 16),
-                            label: const Text('Refiner', style: TextStyle(fontSize: 12)),
+                            label: Text(l10n.refiner, style: const TextStyle(fontSize: 12)),
                           ),
-                          _buildPromptPicker(colorScheme),
+                          _buildPromptPicker(colorScheme, l10n),
                         ],
                       ),
                     ],
@@ -139,9 +141,9 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   TextField(
                     controller: _promptController,
                     maxLines: 5,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Enter prompt here...',
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      hintText: l10n.promptHint,
                       alignLabelWithHint: true,
                     ),
                     onChanged: (v) => _updateConfig(prompt: v),
@@ -165,13 +167,13 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           ),
           
           const Divider(),
-          _buildQueueStatus(appState, colorScheme),
+          _buildQueueStatus(appState, colorScheme, l10n),
           const SizedBox(height: 8),
           Row(
             children: [
               IconButton(
                 icon: const Icon(Icons.settings),
-                onPressed: () => _showQueueSettings(context),
+                onPressed: () => _showQueueSettings(context, l10n),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -185,9 +187,9 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                             'imageSize': _resolution,
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Task submitted to queue'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text(l10n.taskSubmitted),
+                              duration: const Duration(seconds: 2),
                               behavior: SnackBarBehavior.floating,
                               width: 250,
                             ),
@@ -195,8 +197,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                         },
                   icon: const Icon(Icons.play_arrow),
                   label: Text(appState.selectedImages.isEmpty 
-                      ? 'Process Prompt' 
-                      : 'Process ${appState.selectedImages.length} Images'),
+                      ? l10n.processPrompt 
+                      : l10n.processImages(appState.selectedImages.length)),
                 ),
               ),
             ],
@@ -206,7 +208,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  Widget _buildQueueStatus(AppState appState, ColorScheme colorScheme) {
+  Widget _buildQueueStatus(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
     final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = appState.taskQueue.runningCount;
 
@@ -228,18 +230,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 8),
-            Text('$runningCount running', style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
+            Text(l10n.runningCount(runningCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
             const SizedBox(width: 12),
           ],
           Icon(Icons.layers_outlined, size: 14, color: colorScheme.onSecondaryContainer),
           const SizedBox(width: 4),
-          Text('$pendingCount planned', style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
+          Text(l10n.plannedCount(pendingCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
         ],
       ),
     );
   }
 
-  void _showRefinerDialog(AppState appState) async {
+  void _showRefinerDialog(AppState appState, AppLocalizations l10n) async {
     final allModels = await _db.getModels();
     final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
     final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
@@ -261,20 +263,20 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  Widget _buildPromptPicker(ColorScheme colorScheme) {
+  Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
     return TextButton.icon(
-      onPressed: _groupedPrompts.isEmpty ? null : () => _showPromptPickerMenu(),
+      onPressed: _groupedPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
       icon: const Icon(Icons.library_books_outlined, size: 16),
-      label: const Text('Library', style: TextStyle(fontSize: 12)),
+      label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
     );
   }
 
-  void _showPromptPickerMenu() {
+  void _showPromptPickerMenu(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select from Library'),
+        title: Text(l10n.selectFromLibrary),
         content: SizedBox(
           width: 400,
           child: SingleChildScrollView(
@@ -313,17 +315,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             ),
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.close))],
       ),
     );
   }
 
-  Widget _buildModelSpecificOptions(String modelId) {
+  Widget _buildModelSpecificOptions(String modelId, AppLocalizations l10n) {
     if (modelId.contains('image') || modelId.contains('pro')) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Aspect Ratio', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(l10n.aspectRatio, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           DropdownButton<String>(
             isExpanded: true,
             value: _aspectRatio,
@@ -335,7 +337,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             },
           ),
           const SizedBox(height: 8),
-          const Text('Resolution', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(l10n.resolution, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           SegmentedButton<String>(
             segments: const [
               ButtonSegment(value: '1K', label: Text('1K')),
@@ -354,7 +356,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildSelectionPreview(AppState appState, ColorScheme colorScheme) {
+  Widget _buildSelectionPreview(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
     if (appState.selectedImages.isEmpty) {
       return AspectRatio(
         aspectRatio: 16 / 9,
@@ -369,7 +371,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             children: [
               Icon(Icons.collections_outlined, size: 48, color: colorScheme.outline),
               const SizedBox(height: 8),
-              Text('No images selected', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
+              Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
             ],
           ),
         ),
@@ -383,12 +385,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Selected (${appState.selectedImages.length})',
+              l10n.selectedCount(appState.selectedImages.length),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             TextButton(
               onPressed: appState.clearImageSelection,
-              child: const Text('Clear', style: TextStyle(fontSize: 12)),
+              child: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
             ),
           ],
         ),
@@ -434,18 +436,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showQueueSettings(BuildContext context) {
+  void _showQueueSettings(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           final appState = Provider.of<AppState>(context);
           return AlertDialog(
-            title: const Text('Queue Settings'),
+            title: Text(l10n.queueSettings),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Concurrency Limit: ${appState.concurrencyLimit}'),
+                Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
                 Slider(
                   value: appState.concurrencyLimit.toDouble(),
                   min: 1,
@@ -458,7 +460,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                 ),
               ],
             ),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.close))],
           );
         },
       ),
@@ -502,6 +504,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
 
   Future<void> _refine() async {
     if (_selectedModelId == null) return;
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _isRefining = true;
@@ -563,7 +566,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
 
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Refine failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _isRefining = false);
@@ -572,8 +575,9 @@ class _RefinerDialogState extends State<_RefinerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('AI Prompt Refiner'),
+      title: Text(l10n.aiPromptRefiner),
       content: SizedBox(
         width: 800,
         child: Column(
@@ -584,7 +588,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedModelId,
-                    decoration: const InputDecoration(labelText: 'Refiner Model', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
                     items: widget.models.map((m) => DropdownMenuItem(value: m['model_id'] as String, child: Text(m['model_name']))).toList(),
                     onChanged: (v) => setState(() => _selectedModelId = v),
                   ),
@@ -593,7 +597,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedSysPrompt,
-                    decoration: const InputDecoration(labelText: 'System Prompt', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: l10n.systemPrompt, border: const OutlineInputBorder()),
                     items: widget.sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
                     onChanged: (v) => setState(() => _selectedSysPrompt = v),
                   ),
@@ -608,7 +612,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Current Prompt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(l10n.currentPrompt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _currentPromptCtrl,
@@ -625,7 +629,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Refined Prompt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(l10n.refinedPrompt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _refinedPromptCtrl,
@@ -646,20 +650,20 @@ class _RefinerDialogState extends State<_RefinerDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         FilledButton.icon(
           onPressed: _isRefining ? null : _refine,
           icon: _isRefining 
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.auto_fix_high),
-          label: const Text('Refine'),
+          label: Text(l10n.refine),
         ),
         FilledButton(
           onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
             widget.onApply(_refinedPromptCtrl.text);
             Navigator.pop(context);
           },
-          child: const Text('Apply'),
+          child: Text(l10n.apply),
         ),
       ],
     );

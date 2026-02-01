@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 
 class PromptsScreen extends StatefulWidget {
@@ -27,22 +29,23 @@ class _PromptsScreenState extends State<PromptsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prompt Library'),
+        title: Text(l10n.promptLibrary),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              onPressed: () => _showPromptDialog(),
+              onPressed: () => _showPromptDialog(l10n),
               icon: const Icon(Icons.add),
-              label: const Text('New Prompt'),
+              label: Text(l10n.newPrompt),
             ),
           ),
         ],
       ),
       body: _prompts.isEmpty
-          ? _buildEmptyState()
+          ? _buildEmptyState(l10n)
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Card(
@@ -76,11 +79,11 @@ class _PromptsScreenState extends State<PromptsScreen> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _showPromptDialog(prompt: prompt),
+                          onPressed: () => _showPromptDialog(l10n, prompt: prompt),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _confirmDelete(prompt),
+                          onPressed: () => _confirmDelete(l10n, prompt),
                         ),
                       ],
                     ),
@@ -91,35 +94,35 @@ class _PromptsScreenState extends State<PromptsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.notes, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text('No prompts saved', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(l10n.noPromptsSaved, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Save your favorite prompts or Refiner system prompts here', style: TextStyle(color: Colors.grey)),
+          Text(l10n.saveFavoritePrompts, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => _showPromptDialog(),
+            onPressed: () => _showPromptDialog(l10n),
             icon: const Icon(Icons.add),
-            label: const Text('Create First Prompt'),
+            label: Text(l10n.createFirstPrompt),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(Map<String, dynamic> prompt) {
+  void _confirmDelete(AppLocalizations l10n, Map<String, dynamic> prompt) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Prompt?'),
-        content: Text('Are you sure you want to delete "${prompt['title']}"?'),
+        title: Text(l10n.deletePromptConfirmTitle),
+        content: Text(l10n.deletePromptConfirmMessage(prompt['title'])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -127,14 +130,14 @@ class _PromptsScreenState extends State<PromptsScreen> {
               Navigator.pop(context);
               _loadPrompts();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  void _showPromptDialog({Map<String, dynamic>? prompt}) {
+  void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
     final tagCtrl = TextEditingController(text: prompt?['tag'] ?? 'General');
@@ -142,22 +145,22 @@ class _PromptsScreenState extends State<PromptsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(prompt == null ? 'New Prompt' : 'Edit Prompt'),
+        title: Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
         content: SizedBox(
           width: 500,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Title')),
+                TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title)),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: TextField(controller: tagCtrl, decoration: const InputDecoration(labelText: 'Tag (Category)'))),
+                    Expanded(child: TextField(controller: tagCtrl, decoration: InputDecoration(labelText: l10n.tagCategory))),
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () => tagCtrl.text = 'Refiner',
-                      child: const Text('Set as Refiner'),
+                      child: Text(l10n.setAsRefiner),
                     ),
                   ],
                 ),
@@ -165,9 +168,9 @@ class _PromptsScreenState extends State<PromptsScreen> {
                 TextField(
                   controller: contentCtrl,
                   maxLines: 8,
-                  decoration: const InputDecoration(
-                    labelText: 'Prompt Content',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.promptContent,
+                    border: const OutlineInputBorder(),
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -176,7 +179,7 @@ class _PromptsScreenState extends State<PromptsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             onPressed: () async {
               final Map<String, dynamic> data = {
@@ -193,7 +196,7 @@ class _PromptsScreenState extends State<PromptsScreen> {
               Navigator.pop(context);
               _loadPrompts();
             },
-            child: Text(prompt == null ? 'Save' : 'Update'),
+            child: Text(prompt == null ? l10n.save : l10n.update),
           ),
         ],
       ),

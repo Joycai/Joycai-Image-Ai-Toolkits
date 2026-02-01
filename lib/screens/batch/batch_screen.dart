@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/app_state.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
+import '../../state/app_state.dart';
 
 class BatchScreen extends StatelessWidget {
   const BatchScreen({super.key});
@@ -11,21 +13,22 @@ class BatchScreen extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final tasks = appState.taskQueue.queue;
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task Queue Manager'),
+        title: Text(l10n.taskQueueManager),
         actions: [
           TextButton.icon(
             onPressed: () => appState.taskQueue.notifyListeners(), // Refresh
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
+            label: Text(l10n.refresh),
           ),
           const SizedBox(width: 16),
         ],
       ),
       body: tasks.isEmpty
-          ? _buildEmptyState(colorScheme)
+          ? _buildEmptyState(colorScheme, l10n)
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: tasks.length,
@@ -38,16 +41,16 @@ class BatchScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme) {
+  Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.assignment_outlined, size: 64, color: colorScheme.outlineVariant),
           const SizedBox(height: 16),
-          const Text('No tasks in queue', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(l10n.noTasksInQueue, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Submit a task from the Workbench to see it here.', style: TextStyle(color: Colors.grey)),
+          Text(l10n.submitTaskFromWorkbench, style: const TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -63,6 +66,7 @@ class _TaskTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       elevation: 0,
@@ -81,20 +85,20 @@ class _TaskTile extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Task ID: ${task.id.substring(0, 8)}',
+                    l10n.taskId(task.id.substring(0, 8)),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
                   ),
                 ),
                 if (task.status == TaskStatus.pending)
                   IconButton(
                     icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                    tooltip: 'Cancel Task',
+                    tooltip: l10n.cancelTask,
                     onPressed: () => appState.taskQueue.cancelTask(task.id),
                   ),
                 if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Remove from list',
+                    tooltip: l10n.removeFromList,
                     onPressed: () => appState.taskQueue.removeTask(task.id),
                   ),
               ],
@@ -107,9 +111,9 @@ class _TaskTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow(Icons.model_training, 'Model', task.modelId),
-                      _buildInfoRow(Icons.image, 'Images', '${task.imagePaths.length} files'),
-                      _buildInfoRow(Icons.timer_outlined, 'Started', _formatTime(task.startTime)),
+                      _buildInfoRow(Icons.model_training, l10n.model, task.modelId),
+                      _buildInfoRow(Icons.image, l10n.images, l10n.filesCount(task.imagePaths.length)),
+                      _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
                     ],
                   ),
                 ),
@@ -117,9 +121,9 @@ class _TaskTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow(Icons.description_outlined, 'Prompt', task.parameters['prompt'] ?? 'N/A'),
-                      _buildInfoRow(Icons.aspect_ratio, 'Config', '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}'),
-                      _buildInfoRow(Icons.check_circle_outline, 'Finished', _formatTime(task.endTime)),
+                      _buildInfoRow(Icons.description_outlined, l10n.prompt, task.parameters['prompt'] ?? 'N/A'),
+                      _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}'),
+                      _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
                     ],
                   ),
                 ),
@@ -137,7 +141,7 @@ class _TaskTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Latest Log:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    Text(l10n.latestLog, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                     Text(
                       task.logs.last,
                       style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),

@@ -23,6 +23,9 @@ class AppState extends ChangeNotifier {
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
+  
+  // Language configuration
+  Locale? locale;
 
   // Workbench configurations
   String? lastSelectedModelId;
@@ -73,6 +76,12 @@ class AppState extends ChangeNotifier {
     final savedTheme = await _db.getSetting('theme_mode');
     if (savedTheme != null) {
       themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
+    }
+    
+    // Load locale
+    final savedLocale = await _db.getSetting('locale');
+    if (savedLocale != null && savedLocale.isNotEmpty) {
+      locale = Locale(savedLocale);
     }
 
     outputDirectory = await _db.getSetting('output_directory');
@@ -281,6 +290,12 @@ class AppState extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
     await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+  
+  Future<void> setLocale(Locale? newLocale) async {
+    locale = newLocale;
+    await _db.saveSetting('locale', newLocale?.languageCode ?? '');
     notifyListeners();
   }
 

@@ -1,16 +1,20 @@
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 
 class SourceExplorerWidget extends StatelessWidget {
   const SourceExplorerWidget({super.key});
 
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'Select Source Directory',
+        dialogTitle: l10n.selectSourceDirectory,
       );
 
       if (selectedDirectory != null) {
@@ -25,6 +29,7 @@ class SourceExplorerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: 250,
@@ -36,7 +41,7 @@ class SourceExplorerWidget extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => _pickDirectory(context, appState),
               icon: const Icon(Icons.create_new_folder_outlined),
-              label: const Text('Add Folder'),
+              label: Text(l10n.addFolder),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(45),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -49,7 +54,7 @@ class SourceExplorerWidget extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'DIRECTORIES',
+                  l10n.directories,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -67,7 +72,7 @@ class SourceExplorerWidget extends StatelessWidget {
           ),
           Expanded(
             child: appState.baseDirectories.isEmpty
-                ? _buildEmptyState(colorScheme)
+                ? _buildEmptyState(colorScheme, l10n)
                 : ListView.builder(
                     itemCount: appState.baseDirectories.length,
                     itemBuilder: (context, index) {
@@ -96,7 +101,7 @@ class SourceExplorerWidget extends StatelessWidget {
                         trailing: IconButton(
                           icon: const Icon(Icons.close, size: 16),
                           onPressed: () => _confirmRemove(context, appState, path, folderName),
-                          tooltip: 'Remove folder',
+                          tooltip: l10n.removeFolderTooltip,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -110,29 +115,30 @@ class SourceExplorerWidget extends StatelessWidget {
   }
 
   void _confirmRemove(BuildContext context, AppState appState, String path, String folderName) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Folder?'),
-        content: Text('Are you sure you want to remove "$folderName" from the list?'),
+        title: Text(l10n.removeFolderConfirmTitle),
+        content: Text(l10n.removeFolderConfirmMessage(folderName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               appState.removeBaseDirectory(path);
               Navigator.pop(context);
             },
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.remove, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme) {
+  Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -142,13 +148,13 @@ class SourceExplorerWidget extends StatelessWidget {
             Icon(Icons.folder_off_outlined, size: 48, color: colorScheme.outlineVariant),
             const SizedBox(height: 16),
             Text(
-              'No folders added',
+              l10n.noFolders,
               style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Click "Add Folder" to start scanning for images.',
+              l10n.clickAddFolder,
               style: TextStyle(color: colorScheme.outline, fontSize: 12),
               textAlign: TextAlign.center,
             ),

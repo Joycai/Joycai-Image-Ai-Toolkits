@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 
 class TokenUsageScreen extends StatefulWidget {
@@ -74,6 +76,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     int totalInput = 0;
     int totalOutput = 0;
@@ -92,31 +95,31 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Token Usage Metrics'),
+        title: Text(l10n.tokenUsageMetrics),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Clear all usage data',
-            onPressed: () => _confirmClearAll(),
+            tooltip: l10n.clearAllUsage,
+            onPressed: () => _confirmClearAll(l10n),
           ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
         ],
       ),
       body: Column(
         children: [
-          _buildFilterBar(colorScheme),
-          _buildSummaryCards(totalInput, totalOutput, totalCost, colorScheme),
+          _buildFilterBar(colorScheme, l10n),
+          _buildSummaryCards(totalInput, totalOutput, totalCost, colorScheme, l10n),
           Expanded(
             child: _usageData.isEmpty
                 ? const Center(child: Text('No usage data found for selected range.'))
-                : _buildUsageList(colorScheme),
+                : _buildUsageList(colorScheme, l10n),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterBar(ColorScheme colorScheme) {
+  Widget _buildFilterBar(ColorScheme colorScheme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       color: colorScheme.surfaceVariant.withOpacity(0.3),
@@ -124,7 +127,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
         children: [
           Row(
             children: [
-              const Text('Models: ', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.modelsLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
               Expanded(
                 child: Wrap(
@@ -141,7 +144,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
                         });
                         _refreshData();
                       },
-                      onDeleted: () => _confirmClearModel(m),
+                      onDeleted: () => _confirmClearModel(l10n, m),
                     );
                   }).toList(),
                 ),
@@ -151,7 +154,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Text('Range: ', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.rangeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 icon: const Icon(Icons.date_range, size: 16),
@@ -173,10 +176,10 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               Wrap(
                 spacing: 8,
                 children: [
-                  _quickFilterBtn('Today', 'today'),
-                  _quickFilterBtn('Last Week', 'week'),
-                  _quickFilterBtn('Last Month', 'month'),
-                  _quickFilterBtn('This Year', 'year'),
+                  _quickFilterBtn(l10n.today, 'today'),
+                  _quickFilterBtn(l10n.lastWeek, 'week'),
+                  _quickFilterBtn(l10n.lastMonth, 'month'),
+                  _quickFilterBtn(l10n.thisYear, 'year'),
                 ],
               ),
             ],
@@ -193,16 +196,16 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     );
   }
 
-  Widget _buildSummaryCards(int input, int output, double cost, ColorScheme colorScheme) {
+  Widget _buildSummaryCards(int input, int output, double cost, ColorScheme colorScheme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          _summaryCard('Input Tokens', input.toString(), Icons.login, Colors.blue),
+          _summaryCard(l10n.inputTokens, input.toString(), Icons.login, Colors.blue),
           const SizedBox(width: 16),
-          _summaryCard('Output Tokens', output.toString(), Icons.logout, Colors.green),
+          _summaryCard(l10n.outputTokens, output.toString(), Icons.logout, Colors.green),
           const SizedBox(width: 16),
-          _summaryCard('Estimated Cost', '\$${cost.toStringAsFixed(4)}', Icons.attach_money, Colors.orange),
+          _summaryCard(l10n.estimatedCost, '\$${cost.toStringAsFixed(4)}', Icons.attach_money, Colors.orange),
         ],
       ),
     );
@@ -226,7 +229,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     );
   }
 
-  Widget _buildUsageList(ColorScheme colorScheme) {
+  Widget _buildUsageList(ColorScheme colorScheme, AppLocalizations l10n) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _usageData.length,
@@ -280,14 +283,14 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     );
   }
 
-  void _confirmClearAll() {
+  void _confirmClearAll(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Usage Data?'),
-        content: const Text('This will permanently delete all token usage records from the database.'),
+        title: Text(l10n.clearAllUsage),
+        content: Text(l10n.clearUsageWarning),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -295,21 +298,21 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               Navigator.pop(context);
               _refreshData();
             },
-            child: const Text('Clear All', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.clearAll, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  void _confirmClearModel(String modelId) {
+  void _confirmClearModel(AppLocalizations l10n, String modelId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Clear Data for $modelId?'),
-        content: Text('This will delete all usage records associated with the model "$modelId".'),
+        title: Text(l10n.clearDataForModel(modelId)),
+        content: Text(l10n.clearModelDataWarning(modelId)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -317,7 +320,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               Navigator.pop(context);
               _refreshData();
             },
-            child: const Text('Clear Model Data', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.clearModelData, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

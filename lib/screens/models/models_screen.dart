@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 
 class ModelsScreen extends StatefulWidget {
@@ -27,22 +29,23 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Model Manager'),
+        title: Text(l10n.modelManager),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              onPressed: () => _showModelDialog(),
+              onPressed: () => _showModelDialog(l10n),
               icon: const Icon(Icons.add),
-              label: const Text('Add Model'),
+              label: Text(l10n.addModel),
             ),
           ),
         ],
       ),
       body: _models.isEmpty
-          ? _buildEmptyState()
+          ? _buildEmptyState(l10n)
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Card(
@@ -65,22 +68,22 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (model['is_paid'] == 1)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 8.0),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
                             child: Chip(
-                              label: Text('PAID', style: TextStyle(fontSize: 10)),
+                              label: Text(l10n.paidModel.toUpperCase(), style: const TextStyle(fontSize: 10)),
                               visualDensity: VisualDensity.compact,
                             ),
                           ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _showModelDialog(model: model),
-                          tooltip: 'Edit Model',
+                          onPressed: () => _showModelDialog(l10n, model: model),
+                          tooltip: l10n.editModel,
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _confirmDeleteModel(model),
-                          tooltip: 'Delete Model',
+                          onPressed: () => _confirmDeleteModel(l10n, model),
+                          tooltip: l10n.deleteModel,
                         ),
                       ],
                     ),
@@ -91,35 +94,35 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.model_training_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text('No models configured', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(l10n.noModelsConfigured, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Add your first LLM model to get started', style: TextStyle(color: Colors.grey)),
+          Text(l10n.addFirstModel, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => _showModelDialog(),
+            onPressed: () => _showModelDialog(l10n),
             icon: const Icon(Icons.add),
-            label: const Text('Add New Model'),
+            label: Text(l10n.addNewModel),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDeleteModel(Map<String, dynamic> model) {
+  void _confirmDeleteModel(AppLocalizations l10n, Map<String, dynamic> model) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Model?'),
-        content: Text('Are you sure you want to delete "${model['model_name']}"?'),
+        title: Text(l10n.deleteModelConfirmTitle),
+        content: Text(l10n.deleteModelConfirmMessage(model['model_name'])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -127,14 +130,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
               Navigator.pop(context);
               _loadModels();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  void _showModelDialog({Map<String, dynamic>? model}) {
+  void _showModelDialog(AppLocalizations l10n, {Map<String, dynamic>? model}) {
     final idCtrl = TextEditingController(text: model?['model_id'] ?? '');
     final nameCtrl = TextEditingController(text: model?['model_name'] ?? '');
     final inputFeeCtrl = TextEditingController(text: (model?['input_fee'] ?? 0.0).toString());
@@ -148,13 +151,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(model == null ? 'Add LLM Model' : 'Edit LLM Model'),
+          title: Text(model == null ? l10n.addLlmModel : l10n.editLlmModel),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: idCtrl, decoration: const InputDecoration(labelText: 'Model ID (e.g. gemini-pro)')),
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Display Name')),
+                TextField(controller: idCtrl, decoration: InputDecoration(labelText: l10n.modelIdLabel)),
+                TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.displayName)),
                 DropdownButtonFormField<String>(
                   value: type,
                   items: const [
@@ -162,7 +165,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     DropdownMenuItem(value: 'openai-api', child: Text('OpenAI API')),
                   ],
                   onChanged: (v) => setDialogState(() => type = v!),
-                  decoration: const InputDecoration(labelText: 'Type'),
+                  decoration: InputDecoration(labelText: l10n.type),
                 ),
                 DropdownButtonFormField<String>(
                   value: tag,
@@ -172,7 +175,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     DropdownMenuItem(value: 'multimodal', child: Text('Multimodal')),
                   ],
                   onChanged: (v) => setDialogState(() => tag = v!),
-                  decoration: const InputDecoration(labelText: 'Tag'),
+                  decoration: InputDecoration(labelText: l10n.tag),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -181,7 +184,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       child: TextField(
                         controller: inputFeeCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Input Fee (\$/M Tokens)', border: OutlineInputBorder()),
+                        decoration: InputDecoration(labelText: l10n.inputFeeLabel, border: const OutlineInputBorder()),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -189,13 +192,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       child: TextField(
                         controller: outputFeeCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Output Fee (\$/M Tokens)', border: OutlineInputBorder()),
+                        decoration: InputDecoration(labelText: l10n.outputFeeLabel, border: const OutlineInputBorder()),
                       ),
                     ),
                   ],
                 ),
                 SwitchListTile(
-                  title: const Text('Paid Model'),
+                  title: Text(l10n.paidModel),
                   value: isPaid,
                   onChanged: (v) => setDialogState(() => isPaid = v),
                 ),
@@ -203,7 +206,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () async {
                 final data = {
@@ -226,7 +229,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 Navigator.pop(context);
                 _loadModels();
               },
-              child: Text(model == null ? 'Add' : 'Save'),
+              child: Text(model == null ? l10n.add : l10n.save),
             ),
           ],
         ),

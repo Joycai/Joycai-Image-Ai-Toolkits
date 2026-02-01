@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 
@@ -57,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Row(
@@ -67,47 +69,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader('Appearance'),
-                  _buildThemeSelector(appState),
+                  _buildSectionHeader(l10n.appearance),
+                  _buildThemeSelector(appState, l10n),
+                  const SizedBox(height: 16),
+                  _buildLanguageSelector(appState, l10n),
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader('Google GenAI REST Settings'),
+                  _buildSectionHeader(l10n.googleGenAiSettings),
                   _buildRestConfigGroup(
-                    'Free Model', 
+                    l10n.freeModel, 
                     _googleFreeEndpoint, 
                     _googleFreeApiKey, 
                     'google_free',
                     _showGoogleFreeKey,
                     (v) => setState(() => _showGoogleFreeKey = v),
+                    l10n,
                   ),
                   const SizedBox(height: 16),
                   _buildRestConfigGroup(
-                    'Paid Model', 
+                    l10n.paidModel, 
                     _googlePaidEndpoint, 
                     _googlePaidApiKey, 
                     'google_paid',
                     _showGooglePaidKey,
                     (v) => setState(() => _showGooglePaidKey = v),
+                    l10n,
                   ),
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader('OpenAI API REST Settings'),
+                  _buildSectionHeader(l10n.openAiApiSettings),
                   _buildRestConfigGroup(
-                    'Standard Config', 
+                    l10n.standardConfig, 
                     _openaiEndpoint, 
                     _openaiApiKey, 
                     'openai',
                     _showOpenAIKey,
                     (v) => setState(() => _showOpenAIKey = v),
+                    l10n,
                   ),
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader('Application Settings'),
-                  _buildOutputDirectoryTile(appState),
+                  _buildSectionHeader(l10n.settings),
+                  _buildOutputDirectoryTile(appState, l10n),
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader('Data Management'),
-                  _buildDataActions(colorScheme),
+                  _buildSectionHeader(l10n.dataManagement),
+                  _buildDataActions(colorScheme, l10n),
                   const SizedBox(height: 64),
                 ],
               ),
@@ -132,17 +139,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeSelector(AppState appState) {
-    return SegmentedButton<ThemeMode>(
-      segments: const [
-        ButtonSegment(value: ThemeMode.system, label: Text('Auto'), icon: Icon(Icons.brightness_auto)),
-        ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode)),
-        ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode)),
+  Widget _buildThemeSelector(AppState appState, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.appearance, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+        const SizedBox(height: 8),
+        SegmentedButton<ThemeMode>(
+          segments: [
+            ButtonSegment(value: ThemeMode.system, label: Text(l10n.themeAuto), icon: const Icon(Icons.brightness_auto)),
+            ButtonSegment(value: ThemeMode.light, label: Text(l10n.themeLight), icon: const Icon(Icons.light_mode)),
+            ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark), icon: const Icon(Icons.dark_mode)),
+          ],
+          selected: {appState.themeMode},
+          onSelectionChanged: (Set<ThemeMode> newSelection) {
+            appState.setThemeMode(newSelection.first);
+          },
+        ),
       ],
-      selected: {appState.themeMode},
-      onSelectionChanged: (Set<ThemeMode> newSelection) {
-        appState.setThemeMode(newSelection.first);
-      },
+    );
+  }
+
+  Widget _buildLanguageSelector(AppState appState, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.language, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+        const SizedBox(height: 8),
+        SegmentedButton<String?>(
+          segments: const [
+            ButtonSegment(value: null, label: Text('Default')),
+            ButtonSegment(value: 'en', label: Text('English')),
+            ButtonSegment(value: 'zh', label: Text('中文')),
+          ],
+          selected: {appState.locale?.languageCode},
+          onSelectionChanged: (Set<String?> newSelection) {
+            final code = newSelection.first;
+            appState.setLocale(code == null ? null : Locale(code));
+          },
+        ),
+      ],
     );
   }
 
@@ -153,6 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String prefix,
     bool showKey,
     Function(bool) onToggleVisibility,
+    AppLocalizations l10n,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               flex: 2,
               child: TextField(
                 controller: ep,
-                decoration: const InputDecoration(labelText: 'Endpoint URL', border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: l10n.endpointUrl, border: const OutlineInputBorder()),
                 onChanged: (v) => _saveRestSetting('${prefix}_endpoint', v),
               ),
             ),
@@ -176,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 controller: key,
                 obscureText: !showKey,
                 decoration: InputDecoration(
-                  labelText: 'API Key', 
+                  labelText: l10n.apiKey, 
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(showKey ? Icons.visibility_off : Icons.visibility),
@@ -192,10 +229,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildOutputDirectoryTile(AppState appState) {
+  Widget _buildOutputDirectoryTile(AppState appState, AppLocalizations l10n) {
     return ListTile(
-      title: const Text('Output Directory'),
-      subtitle: Text(_outputDirController.text.isEmpty ? 'Not set' : _outputDirController.text),
+      title: Text(l10n.outputDirectory),
+      subtitle: Text(_outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text),
       trailing: const Icon(Icons.folder_open),
       shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
       onTap: () async {
@@ -208,34 +245,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDataActions(ColorScheme colorScheme) {
+  Widget _buildDataActions(ColorScheme colorScheme, AppLocalizations l10n) {
     return Wrap(
       spacing: 16,
       children: [
         OutlinedButton.icon(
-          onPressed: _exportSettings,
+          onPressed: () => _exportSettings(l10n),
           icon: const Icon(Icons.download),
-          label: const Text('Export Settings'),
+          label: Text(l10n.exportSettings),
         ),
         OutlinedButton.icon(
-          onPressed: _importSettings,
+          onPressed: () => _importSettings(l10n),
           icon: const Icon(Icons.upload),
-          label: const Text('Import Settings'),
+          label: Text(l10n.importSettings),
         ),
         ElevatedButton.icon(
-          onPressed: _resetSettings,
+          onPressed: () => _resetSettings(l10n),
           style: ElevatedButton.styleFrom(
             backgroundColor: colorScheme.errorContainer,
             foregroundColor: colorScheme.error,
           ),
           icon: const Icon(Icons.refresh),
-          label: const Text('Reset All Settings'),
+          label: Text(l10n.resetAllSettings),
         ),
       ],
     );
   }
 
-  Future<void> _exportSettings() async {
+  Future<void> _exportSettings(AppLocalizations l10n) async {
     final settings = await _db.database.then((db) => db.query('settings'));
     final models = await _db.getModels();
     final data = jsonEncode({'settings': settings, 'models': models});
@@ -248,11 +285,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     if (path != null) {
       await File(path).writeAsString(data);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings exported successfully')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
   }
 
-  Future<void> _importSettings() async {
+  Future<void> _importSettings(AppLocalizations l10n) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (result != null) {
       final file = File(result.files.single.path!);
@@ -267,18 +304,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await _db.addModel(model);
       }
       _loadAllSettings();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings imported successfully')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
     }
   }
 
-  void _resetSettings() {
+  void _resetSettings(AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset All Settings?'),
-        content: const Text('This will delete all configurations, models, and added folders. This action cannot be undone.'),
+        title: Text(l10n.confirmReset),
+        content: Text(l10n.resetWarning),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -287,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _loadAllSettings();
               if (mounted) Provider.of<AppState>(context, listen: false).addLog('All settings reset to default.');
             },
-            child: const Text('Reset Everything', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.resetEverything, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
