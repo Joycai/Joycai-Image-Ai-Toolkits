@@ -29,7 +29,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 3, // Incremented for prompts table
+          version: 5, // Incremented for model fee columns
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -40,7 +40,7 @@ class DatabaseService {
       
       return await openDatabase(
         dbPath,
-        version: 3,
+        version: 5,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -53,11 +53,18 @@ class DatabaseService {
     await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT)');
     await _createV2Tables(db);
     await _createV3Tables(db);
+    await _createV4Tables(db);
+    // V5 columns are added in _createV2Tables for new installs
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _createV2Tables(db);
     if (oldVersion < 3) await _createV3Tables(db);
+    if (oldVersion < 4) await _createV4Tables(db);
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE llm_models ADD COLUMN input_fee REAL DEFAULT 0.0');
+      await db.execute('ALTER TABLE llm_models ADD COLUMN output_fee REAL DEFAULT 0.0');
+    }
   }
 
   Future<void> _createV2Tables(Database db) async {
@@ -69,7 +76,9 @@ class DatabaseService {
         type TEXT NOT NULL,
         tag TEXT NOT NULL,
         is_paid INTEGER DEFAULT 0,
-        sort_order INTEGER DEFAULT 0
+        sort_order INTEGER DEFAULT 0,
+        input_fee REAL DEFAULT 0.0,
+        output_fee REAL DEFAULT 0.0
       )
     ''');
   }
@@ -84,6 +93,54 @@ class DatabaseService {
         sort_order INTEGER DEFAULT 0
       )
     ''');
+  }
+
+  Future<void> _createV4Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE token_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id TEXT,
+        model_id TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        input_tokens INTEGER DEFAULT 0,
+        output_tokens INTEGER DEFAULT 0,
+        input_price REAL DEFAULT 0.0,
+        output_price REAL DEFAULT 0.0
+      )
+    ''');
+  }
+
+  // Token Usage Methods
+  Future<void> recordTokenUsage(Map<String, dynamic> usage) async {
+    final db = await database;
+    await db.insert('token_usage', usage);
+  }
+
+  Future<List<Map<String, dynamic>>> getTokenUsage({
+    List<String>? modelIds,
+    DateTime? start,
+    DateTime? end,
+  }) async {
+    final db = await database;
+    String where = "1=1";
+    List<dynamic> args = [];
+
+    if (modelIds != null && modelIds.isNotEmpty) {
+      where += " AND model_id IN (${modelIds.map((_) => '?').join(',')})";
+      args.addAll(modelIds);
+    }
+
+    if (start != null) {
+      where += " AND timestamp >= ?";
+      args.add(start.toIso8601String());
+    }
+
+    if (end != null) {
+      where += " AND timestamp <= ?";
+      args.add(end.toIso8601String());
+    }
+
+    return await db.query('token_usage', where: where, whereArgs: args, orderBy: 'timestamp DESC');
   }
 
   // Prompts Methods
@@ -164,6 +221,7 @@ class DatabaseService {
     await db.delete('llm_models');
     await db.delete('source_directories');
     await db.delete('prompts');
+    await db.delete('token_usage');
   }
 
   // Source Directories Methods

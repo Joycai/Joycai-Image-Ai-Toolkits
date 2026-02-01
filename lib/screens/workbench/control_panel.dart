@@ -27,7 +27,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     _loadModels();
     _loadPrompts();
     
-    // Initialize controllers and state from AppState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final appState = Provider.of<AppState>(context, listen: false);
       setState(() {
@@ -250,7 +249,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                 .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
             onChanged: (v) {
               setState(() => _aspectRatio = v!);
-              _updateConfig(aspectRatio: v);
+              _updateConfig(ar: v);
             },
           ),
           const SizedBox(height: 8),
@@ -264,7 +263,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             selected: {_resolution},
             onSelectionChanged: (v) {
               setState(() => _resolution = v.first);
-              _updateConfig(resolution: v.first);
+              _updateConfig(res: v.first);
             },
           ),
         ],

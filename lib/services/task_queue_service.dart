@@ -47,7 +47,7 @@ class TaskQueueService extends ChangeNotifier {
   Function(File)? onTaskCompleted;
   Function(String, {String level})? onLogAdded;
 
-  List<TaskItem> get queue => _queue; // Removed unmodifiable to allow easy access in UI
+  List<TaskItem> get queue => _queue;
   int get concurrencyLimit => _concurrencyLimit;
   int get runningCount => _runningCount;
 
@@ -123,6 +123,12 @@ class TaskQueueService extends ChangeNotifier {
         throw Exception('Output directory not set in settings!');
       }
 
+      // Fetch model fee info
+      final models = await db.getModels();
+      final modelInfo = models.firstWhere((m) => m['model_id'] == task.modelId, orElse: () => {});
+      final inputPrice = modelInfo['input_fee'] ?? 0.0;
+      final outputPrice = modelInfo['output_fee'] ?? 0.0;
+
       final attachments = task.imagePaths.map((path) => 
         LLMAttachment.fromFile(File(path), _getMimeType(path))
       ).toList();
@@ -141,7 +147,23 @@ class TaskQueueService extends ChangeNotifier {
 
       task.addLog('LLM Response received.');
 
-      // Check if cancelled during request
+      // Record Token Usage with real prices
+      if (response.metadata.isNotEmpty) {
+        final inputTokens = response.metadata['promptTokenCount'] ?? response.metadata['prompt_tokens'] ?? 0;
+        final outputTokens = response.metadata['candidatesTokenCount'] ?? response.metadata['completion_tokens'] ?? 0;
+        
+        await db.recordTokenUsage({
+          'task_id': task.id,
+          'model_id': task.modelId,
+          'timestamp': DateTime.now().toIso8601String(),
+          'input_tokens': inputTokens,
+          'output_tokens': outputTokens,
+          'input_price': inputPrice,
+          'output_price': outputPrice,
+        });
+        task.addLog('Token usage recorded: In=$inputTokens, Out=$outputTokens');
+      }
+
       if (task.status == TaskStatus.cancelled) return;
 
       for (int i = 0; i < response.generatedImages.length; i++) {

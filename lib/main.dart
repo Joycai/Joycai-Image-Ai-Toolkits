@@ -6,6 +6,7 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/models/models_screen.dart';
 import 'screens/batch/batch_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
+import 'screens/metrics/token_usage_screen.dart';
 import 'services/llm/llm_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
 
@@ -52,6 +53,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const WorkbenchScreen(),
     const BatchScreen(),
     const PromptsScreen(),
+    const TokenUsageScreen(),
     const ModelsScreen(),
     const SettingsScreen(),
   ];
@@ -89,6 +91,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 icon: Icon(Icons.notes_outlined),
                 selectedIcon: Icon(Icons.notes),
                 label: Text('Prompts'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.analytics_outlined),
+                selectedIcon: Icon(Icons.analytics),
+                label: Text('Usage'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.model_training_outlined),
