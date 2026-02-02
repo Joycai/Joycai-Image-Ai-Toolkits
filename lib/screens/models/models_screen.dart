@@ -159,7 +159,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 TextField(controller: idCtrl, decoration: InputDecoration(labelText: l10n.modelIdLabel)),
                 TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.displayName)),
                 DropdownButtonFormField<String>(
-                  value: type,
+                  initialValue: type,
                   items: const [
                     DropdownMenuItem(value: 'google-genai', child: Text('Google GenAI')),
                     DropdownMenuItem(value: 'openai-api', child: Text('OpenAI API')),
@@ -168,7 +168,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   decoration: InputDecoration(labelText: l10n.type),
                 ),
                 DropdownButtonFormField<String>(
-                  value: tag,
+                  initialValue: tag,
                   items: const [
                     DropdownMenuItem(value: 'chat', child: Text('Chat')),
                     DropdownMenuItem(value: 'image', child: Text('Image')),

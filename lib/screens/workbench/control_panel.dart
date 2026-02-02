@@ -576,7 +576,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedModelId,
+                    initialValue: _selectedModelId,
                     decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
                     items: widget.models.map((m) => DropdownMenuItem(value: m['model_id'] as String, child: Text(m['model_name']))).toList(),
                     onChanged: (v) => setState(() => _selectedModelId = v),
@@ -585,7 +585,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedSysPrompt,
+                    initialValue: _selectedSysPrompt,
                     decoration: InputDecoration(labelText: l10n.systemPrompt, border: const OutlineInputBorder()),
                     items: widget.sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
                     onChanged: (v) => setState(() => _selectedSysPrompt = v),

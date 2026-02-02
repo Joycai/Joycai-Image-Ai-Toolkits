@@ -16,7 +16,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
   
   List<Map<String, dynamic>> _usageData = [];
   List<String> _availableModels = [];
-  List<String> _selectedModels = [];
+  final List<String> _selectedModels = [];
   
   DateTimeRange _dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
@@ -139,8 +139,11 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
                       selected: isSelected,
                       onSelected: (val) {
                         setState(() {
-                          if (val) _selectedModels.add(m);
-                          else _selectedModels.remove(m);
+                          if (val) {
+                            _selectedModels.add(m);
+                          } else {
+                            _selectedModels.remove(m);
+                          }
                         });
                         _refreshData();
                       },

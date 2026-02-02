@@ -73,7 +73,7 @@ class _PromptsScreenState extends State<PromptsScreen> {
                       children: [
                         Chip(
                           label: Text(prompt['tag'], style: const TextStyle(fontSize: 10)),
-                          color: prompt['tag'] == 'Refiner' ? MaterialStateProperty.all(Theme.of(context).colorScheme.tertiaryContainer) : null,
+                          color: prompt['tag'] == 'Refiner' ? WidgetStateProperty.all(Theme.of(context).colorScheme.tertiaryContainer) : null,
                           visualDensity: VisualDensity.compact,
                         ),
                         const SizedBox(width: 8),
