@@ -127,8 +127,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.deleteModel(model['id']);
-              Navigator.pop(context);
-              _loadModels();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadModels();
+              }
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
           ),
@@ -226,8 +228,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   await _db.updateModel(model['id'], data);
                 }
                 
-                Navigator.pop(context);
-                _loadModels();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadModels();
+                }
               },
               child: Text(model == null ? l10n.add : l10n.save),
             ),

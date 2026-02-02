@@ -556,7 +556,6 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
     final appState = Provider.of<AppState>(context, listen: false);
     final file = widget.imageFile;
     final dir = p.dirname(file.path);
-    final filename = p.basename(file.path);
     final extension = p.extension(file.path);
     final nameStem = p.basenameWithoutExtension(file.path);
 

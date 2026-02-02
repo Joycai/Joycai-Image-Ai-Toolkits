@@ -127,8 +127,10 @@ class _PromptsScreenState extends State<PromptsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.deletePrompt(prompt['id']);
-              Navigator.pop(context);
-              _loadPrompts();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadPrompts();
+              }
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
           ),
@@ -193,8 +195,10 @@ class _PromptsScreenState extends State<PromptsScreen> {
               } else {
                 await _db.updatePrompt(prompt['id'] as int, data);
               }
-              Navigator.pop(context);
-              _loadPrompts();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadPrompts();
+              }
             },
             child: Text(prompt == null ? l10n.save : l10n.update),
           ),

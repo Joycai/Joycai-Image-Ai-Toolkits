@@ -285,7 +285,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     if (path != null) {
       await File(path).writeAsString(data);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
   }
 
@@ -304,7 +305,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await _db.addModel(model);
       }
       _loadAllSettings();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
     }
   }
 
@@ -320,9 +322,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.resetAllSettings();
-              Navigator.pop(context);
-              _loadAllSettings();
-              if (mounted) Provider.of<AppState>(context, listen: false).addLog('All settings reset to default.');
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadAllSettings();
+                Provider.of<AppState>(context, listen: false).addLog('All settings reset to default.');
+              }
             },
             child: Text(l10n.resetEverything, style: const TextStyle(color: Colors.white)),
           ),

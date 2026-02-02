@@ -23,7 +23,7 @@ class TaskQueueScreen extends StatelessWidget {
         title: Text(l10n.taskQueueManager),
         actions: [
           TextButton.icon(
-            onPressed: () => appState.taskQueue.notifyListeners(), // Refresh
+            onPressed: () => appState.taskQueue.refreshQueue(), // Refresh
             icon: const Icon(Icons.refresh),
             label: Text(l10n.refresh),
           ),

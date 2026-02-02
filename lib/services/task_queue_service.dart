@@ -135,6 +135,10 @@ class TaskQueueService extends ChangeNotifier {
     _attemptNextExecution();
   }
 
+  void refreshQueue() {
+    notifyListeners();
+  }
+
   void _attemptNextExecution() {
     if (_runningCount >= _concurrencyLimit) return;
 

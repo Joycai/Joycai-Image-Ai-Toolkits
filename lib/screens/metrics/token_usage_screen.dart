@@ -298,8 +298,10 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.clearTokenUsage();
-              Navigator.pop(context);
-              _refreshData();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _refreshData();
+              }
             },
             child: Text(l10n.clearAll, style: const TextStyle(color: Colors.white)),
           ),
@@ -320,8 +322,10 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.clearTokenUsage(modelId: modelId);
-              Navigator.pop(context);
-              _refreshData();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _refreshData();
+              }
             },
             child: Text(l10n.clearModelData, style: const TextStyle(color: Colors.white)),
           ),
