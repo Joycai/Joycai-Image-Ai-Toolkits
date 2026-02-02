@@ -13,7 +13,7 @@ class LLMService {
   final Map<String, ILLMProvider> _providers = {};
   final Map<String, List<LLMMessage>> _sessions = {};
 
-  Function(String, {String level})? onLogAdded;
+  Function(String, {String level, String? contextId})? onLogAdded;
 
   void registerProvider(String type, ILLMProvider provider) {
     _providers[type] = provider;
@@ -23,6 +23,7 @@ class LLMService {
     required String modelId,
     required List<LLMMessage> messages,
     String? sessionId,
+    String? contextId,
     Map<String, dynamic>? options,
   }) async {
     String accumulatedText = "";
@@ -33,6 +34,7 @@ class LLMService {
       modelId: modelId,
       messages: messages,
       sessionId: sessionId,
+      contextId: contextId,
       options: options,
     )) {
       if (chunk.textPart != null) accumulatedText += chunk.textPart!;
@@ -51,9 +53,10 @@ class LLMService {
     required String modelId,
     required List<LLMMessage> messages,
     String? sessionId,
+    String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    onLogAdded?.call('Preparing request for model: $modelId', level: 'DEBUG');
+    onLogAdded?.call('Preparing request for model: $modelId', level: 'DEBUG', contextId: contextId);
     final config = await _getModelConfig(modelId);
     final provider = _getProvider(config.type);
 
@@ -64,30 +67,30 @@ class LLMService {
       fullHistory = _sessions[sessionId]!;
     }
 
-    onLogAdded?.call('Connecting to ${config.type} provider...', level: 'DEBUG');
+    onLogAdded?.call('Connecting to ${config.type} provider...', level: 'DEBUG', contextId: contextId);
 
     String accumulatedText = "";
     int imageCount = 0;
     Map<String, dynamic>? finalMetadata;
     
-    await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: onLogAdded)) {
+    await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId))) {
       if (chunk.textPart != null) {
         accumulatedText += chunk.textPart!;
-        onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO');
+        onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
       }
       if (chunk.imagePart != null) {
         imageCount++;
-        onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG');
+        onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
       }
       if (chunk.metadata != null) finalMetadata = chunk.metadata;
       yield chunk;
     }
 
-    onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG');
+    onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG', contextId: contextId);
 
     // Unified Token Usage Recording
     if (finalMetadata != null) {
-      onLogAdded?.call('Recording token usage...', level: 'DEBUG');
+      onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
       _recordUsage(modelId, config, finalMetadata);
     }
 

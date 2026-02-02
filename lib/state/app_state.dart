@@ -49,12 +49,12 @@ class AppState extends ChangeNotifier {
       _scanProcessedImages();
     };
     
-    taskQueue.onLogAdded = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
+    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
+      addLog(msg, level: level, taskId: taskId);
     };
 
-    LLMService().onLogAdded = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
+    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
+      addLog(msg, level: level, taskId: contextId);
     };
 
     taskQueue.addListener(() {
@@ -158,19 +158,24 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void addLog(String message, {String level = 'INFO'}) {
-    // If it's a streaming AI response, append to the last log if the last log was also an AI response
+  void addLog(String message, {String level = 'INFO', String? taskId}) {
+    // If it's a streaming AI response, append to the last log if the last log was also an AI response AND task ID matches
     if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
       final lastLog = logs.last;
-      final newText = message.substring(6); // Remove the '[AI]: ' prefix
-      logs[logs.length - 1] = LogEntry(
-        timestamp: lastLog.timestamp,
-        level: lastLog.level,
-        message: lastLog.message + newText,
-      );
-    } else {
-      logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message));
+      if (lastLog.taskId == taskId) {
+        final newText = message.substring(6); // Remove the '[AI]: ' prefix
+        logs[logs.length - 1] = LogEntry(
+          timestamp: lastLog.timestamp,
+          level: lastLog.level,
+          message: lastLog.message + newText,
+          taskId: taskId,
+        );
+        notifyListeners();
+        return;
+      }
     }
+    
+    logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
     notifyListeners();
   }
 

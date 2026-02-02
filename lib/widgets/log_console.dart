@@ -32,6 +32,8 @@ class LogConsoleWidget extends StatelessWidget {
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                 children: [
                   TextSpan(text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ', style: const TextStyle(color: Colors.grey)),
+                  if (log.taskId != null)
+                    TextSpan(text: '[${log.taskId!.substring(0, 8)}] ', style: const TextStyle(color: Colors.cyan)),
                   TextSpan(text: '[${log.level}] ', style: TextStyle(color: _getLevelColor(log.level), fontWeight: FontWeight.bold)),
                   TextSpan(text: log.message, style: const TextStyle(color: Colors.white70)),
                 ],

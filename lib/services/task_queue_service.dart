@@ -75,7 +75,7 @@ class TaskQueueService extends ChangeNotifier {
   final _uuid = const Uuid();
   
   Function(File)? onTaskCompleted;
-  Function(String, {String level})? onLogAdded;
+  Function(String, {String level, String? taskId})? onLogAdded;
 
   List<TaskItem> get queue => _queue;
   int get concurrencyLimit => _concurrencyLimit;
@@ -165,7 +165,7 @@ class TaskQueueService extends ChangeNotifier {
     task.status = TaskStatus.processing;
     task.startTime = DateTime.now();
     task.addLog('Start processing with model: ${task.modelId}');
-    onLogAdded?.call('Processing task ${task.id.substring(0,8)}...', level: 'RUNNING');
+    onLogAdded?.call('Processing task ${task.id.substring(0,8)}...', level: 'RUNNING', taskId: task.id);
     DatabaseService().saveTask(task.toMap());
     notifyListeners();
 
@@ -189,6 +189,7 @@ class TaskQueueService extends ChangeNotifier {
             attachments: attachments,
           )
         ],
+        contextId: task.id,
         options: task.parameters,
       );
 
@@ -228,13 +229,13 @@ class TaskQueueService extends ChangeNotifier {
 
       task.status = TaskStatus.completed;
       task.addLog('Task completed successfully.');
-      onLogAdded?.call('Task ${task.id.substring(0,8)} finished.', level: 'SUCCESS');
+      onLogAdded?.call('Task ${task.id.substring(0,8)} finished.', level: 'SUCCESS', taskId: task.id);
       
     } catch (e) {
       if (task.status != TaskStatus.cancelled) {
         task.status = TaskStatus.failed;
         task.addLog('Error: ${e.toString()}');
-        onLogAdded?.call('Task ${task.id.substring(0,8)} failed: $e', level: 'ERROR');
+        onLogAdded?.call('Task ${task.id.substring(0,8)} failed: $e', level: 'ERROR', taskId: task.id);
       }
     } finally {
       task.endTime = DateTime.now();
