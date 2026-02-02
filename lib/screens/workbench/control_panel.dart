@@ -25,6 +25,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   String? _selectedModelId;
   String _aspectRatio = "not_set";
   String _resolution = "1K";
+  bool _hasSyncedWithState = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
 
@@ -34,15 +35,25 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     _loadModels();
     _loadPrompts();
     
+    // Initial attempt to sync (in case state is already loaded)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final appState = Provider.of<AppState>(context, listen: false);
+      _trySyncState();
+    });
+  }
+
+  void _trySyncState() {
+    if (_hasSyncedWithState) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+    
+    if (appState.settingsLoaded) {
       setState(() {
         _selectedModelId = appState.lastSelectedModelId;
         _aspectRatio = appState.lastAspectRatio;
         _resolution = appState.lastResolution;
         _promptController.text = appState.lastPrompt;
+        _hasSyncedWithState = true;
       });
-    });
+    }
   }
 
   Future<void> _loadModels() async {
@@ -83,6 +94,13 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    
+    // Check if we can sync now
+    if (appState.settingsLoaded && !_hasSyncedWithState) {
+      // Defer state update to next frame to avoid build conflicts
+      WidgetsBinding.instance.addPostFrameCallback((_) => _trySyncState());
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     

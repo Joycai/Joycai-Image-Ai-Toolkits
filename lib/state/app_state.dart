@@ -19,6 +19,7 @@ class AppState extends ChangeNotifier {
   List<File> selectedImages = [];
   List<LogEntry> logs = [];
   bool isProcessing = false;
+  bool settingsLoaded = false;
   int concurrencyLimit = 2;
   String? outputDirectory;
 
@@ -117,6 +118,7 @@ class AppState extends ChangeNotifier {
     _scanProcessedImages();
     _setupSourceWatchers();
     
+    settingsLoaded = true;
     notifyListeners();
   }
 
