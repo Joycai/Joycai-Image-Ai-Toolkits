@@ -949,6 +949,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thumbnail Size'**
   String get thumbnailSize;
+
+  /// No description provided for @deleteFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete File'**
+  String get deleteFile;
+
+  /// No description provided for @deleteFileConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete File?'**
+  String get deleteFileConfirmTitle;
+
+  /// No description provided for @deleteFileConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{filename}\"?'**
+  String deleteFileConfirmMessage(String filename);
+
+  /// No description provided for @moveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
+
+  /// No description provided for @permanentlyDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently Delete'**
+  String get permanentlyDelete;
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted successfully'**
+  String get deleteSuccess;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete: {error}'**
+  String deleteFailed(String error);
 }
 
 class _AppLocalizationsDelegate

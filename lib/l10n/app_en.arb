@@ -239,5 +239,26 @@
   "add": "Add",
   "executionLogs": "EXECUTION LOGS",
   "clickToExpand": "Click to expand",
-  "thumbnailSize": "Thumbnail Size"
+  "thumbnailSize": "Thumbnail Size",
+  "deleteFile": "Delete File",
+  "deleteFileConfirmTitle": "Delete File?",
+  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "Move to Trash",
+  "permanentlyDelete": "Permanently Delete",
+  "deleteSuccess": "Deleted successfully",
+  "deleteFailed": "Failed to delete: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

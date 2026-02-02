@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -461,4 +462,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get thumbnailSize => '缩略图大小';
+
+  @override
+  String get deleteFile => '删除文件';
+
+  @override
+  String get deleteFileConfirmTitle => '删除文件？';
+
+  @override
+  String deleteFileConfirmMessage(String filename) {
+    return '确定要删除“$filename”吗？';
+  }
+
+  @override
+  String get moveToTrash => '移至回收站';
+
+  @override
+  String get permanentlyDelete => '永久删除';
+
+  @override
+  String get deleteSuccess => '删除成功';
+
+  @override
+  String deleteFailed(String error) {
+    return '删除失败: $error';
+  }
 }

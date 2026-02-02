@@ -523,7 +523,88 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             }
           },
         ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+            title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+            dense: true,
+          ),
+          onTap: () {
+            // Close menu first? showMenu handles it usually, but onTap callback might run after close.
+            // We need to wait a bit or let the menu close mechanism handle it. 
+            // Actually onTap usually closes the menu.
+            WidgetsBinding.instance.addPostFrameCallback((_) => _confirmDelete(context));
+          },
+        ),
       ],
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final filename = widget.imageFile.path.split(Platform.pathSeparator).last;
+    final isWindows = Platform.isWindows;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteFileConfirmTitle),
+        content: Text(l10n.deleteFileConfirmMessage(filename)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isWindows ? l10n.moveToTrash : l10n.permanentlyDelete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await _deleteFile(context);
+    }
+  }
+
+  Future<void> _deleteFile(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context, listen: false);
+    
+    try {
+      if (Platform.isWindows) {
+        // Use PowerShell to move to Recycle Bin
+        final path = widget.imageFile.path.replaceAll("'", "''"); // Escape single quotes for PowerShell
+        final result = await Process.run(
+          'powershell', 
+          [
+            '-Command',
+            "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('$path', 'OnlyErrorDialogs', 'SendToRecycleBin')"
+          ],
+        );
+        
+        if (result.exitCode != 0) {
+          throw Exception('PowerShell Error: ${result.stderr}');
+        }
+      } else {
+        // Permanent delete for other platforms (simplified)
+        await widget.imageFile.delete();
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.deleteSuccess), backgroundColor: Colors.green),
+        );
+        appState.refreshImages();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.deleteFailed(e.toString())), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 }

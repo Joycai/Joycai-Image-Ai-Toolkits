@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -466,4 +467,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thumbnailSize => 'Thumbnail Size';
+
+  @override
+  String get deleteFile => 'Delete File';
+
+  @override
+  String get deleteFileConfirmTitle => 'Delete File?';
+
+  @override
+  String deleteFileConfirmMessage(String filename) {
+    return 'Are you sure you want to delete \"$filename\"?';
+  }
+
+  @override
+  String get moveToTrash => 'Move to Trash';
+
+  @override
+  String get permanentlyDelete => 'Permanently Delete';
+
+  @override
+  String get deleteSuccess => 'Deleted successfully';
+
+  @override
+  String deleteFailed(String error) {
+    return 'Failed to delete: $error';
+  }
 }
