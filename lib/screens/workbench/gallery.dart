@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -525,6 +526,16 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
         ),
         PopupMenuItem(
           child: ListTile(
+            leading: const Icon(Icons.edit_outlined, size: 18),
+            title: Text(l10n.rename),
+            dense: true,
+          ),
+          onTap: () {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _showRenameDialog(context));
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
             leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
             title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
             dense: true,
@@ -538,6 +549,93 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
         ),
       ],
     );
+  }
+
+  void _showRenameDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context, listen: false);
+    final file = widget.imageFile;
+    final dir = p.dirname(file.path);
+    final filename = p.basename(file.path);
+    final extension = p.extension(file.path);
+    final nameStem = p.basenameWithoutExtension(file.path);
+
+    final controller = TextEditingController(text: nameStem);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.renameFile),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: l10n.newFilename,
+                suffixText: extension,
+                border: const OutlineInputBorder(),
+              ),
+              autofocus: true,
+              onSubmitted: (_) => _performRename(context, controller, dir, extension, appState, l10n),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => _performRename(context, controller, dir, extension, appState, l10n),
+            child: Text(l10n.rename),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performRename(
+    BuildContext context, 
+    TextEditingController controller, 
+    String dir, 
+    String extension, 
+    AppState appState, 
+    AppLocalizations l10n
+  ) async {
+    final newName = controller.text.trim();
+    if (newName.isEmpty || newName == p.basenameWithoutExtension(widget.imageFile.path)) {
+      Navigator.pop(context);
+      return;
+    }
+    
+    final newFilename = '$newName$extension';
+    final newPath = p.join(dir, newFilename);
+    
+    if (File(newPath).existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.fileAlreadyExists), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    try {
+      await widget.imageFile.rename(newPath);
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
+        );
+        appState.refreshImages();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context) async {

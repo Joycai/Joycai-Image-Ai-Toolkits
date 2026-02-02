@@ -239,6 +239,19 @@
   "add": "添加",
   "executionLogs": "执行日志",
   "clickToExpand": "点击展开",
+  "rename": "重命名",
+  "renameFile": "重命名文件",
+  "newFilename": "新文件名",
+  "renameSuccess": "重命名成功",
+  "renameFailed": "重命名失败: {error}",
+  "@renameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "fileAlreadyExists": "同名文件已存在",
   "thumbnailSize": "缩略图大小",
   "deleteFile": "删除文件",
   "deleteFileConfirmTitle": "删除文件？",

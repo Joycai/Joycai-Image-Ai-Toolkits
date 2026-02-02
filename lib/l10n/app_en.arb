@@ -239,6 +239,19 @@
   "add": "Add",
   "executionLogs": "EXECUTION LOGS",
   "clickToExpand": "Click to expand",
+  "rename": "Rename",
+  "renameFile": "Rename File",
+  "newFilename": "New Filename",
+  "renameSuccess": "Renamed successfully",
+  "renameFailed": "Failed to rename: {error}",
+  "@renameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "fileAlreadyExists": "A file with this name already exists",
   "thumbnailSize": "Thumbnail Size",
   "deleteFile": "Delete File",
   "deleteFileConfirmTitle": "Delete File?",

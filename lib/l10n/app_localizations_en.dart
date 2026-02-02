@@ -466,6 +466,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clickToExpand => 'Click to expand';
 
   @override
+  String get rename => 'Rename';
+
+  @override
+  String get renameFile => 'Rename File';
+
+  @override
+  String get newFilename => 'New Filename';
+
+  @override
+  String get renameSuccess => 'Renamed successfully';
+
+  @override
+  String renameFailed(String error) {
+    return 'Failed to rename: $error';
+  }
+
+  @override
+  String get fileAlreadyExists => 'A file with this name already exists';
+
+  @override
   String get thumbnailSize => 'Thumbnail Size';
 
   @override

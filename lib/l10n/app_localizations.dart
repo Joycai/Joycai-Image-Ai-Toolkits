@@ -944,6 +944,42 @@ abstract class AppLocalizations {
   /// **'Click to expand'**
   String get clickToExpand;
 
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @renameFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename File'**
+  String get renameFile;
+
+  /// No description provided for @newFilename.
+  ///
+  /// In en, this message translates to:
+  /// **'New Filename'**
+  String get newFilename;
+
+  /// No description provided for @renameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Renamed successfully'**
+  String get renameSuccess;
+
+  /// No description provided for @renameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to rename: {error}'**
+  String renameFailed(String error);
+
+  /// No description provided for @fileAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'A file with this name already exists'**
+  String get fileAlreadyExists;
+
   /// No description provided for @thumbnailSize.
   ///
   /// In en, this message translates to:

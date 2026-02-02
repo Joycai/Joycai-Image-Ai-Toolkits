@@ -461,6 +461,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clickToExpand => '点击展开';
 
   @override
+  String get rename => '重命名';
+
+  @override
+  String get renameFile => '重命名文件';
+
+  @override
+  String get newFilename => '新文件名';
+
+  @override
+  String get renameSuccess => '重命名成功';
+
+  @override
+  String renameFailed(String error) {
+    return '重命名失败: $error';
+  }
+
+  @override
+  String get fileAlreadyExists => '同名文件已存在';
+
+  @override
   String get thumbnailSize => '缩略图大小';
 
   @override
