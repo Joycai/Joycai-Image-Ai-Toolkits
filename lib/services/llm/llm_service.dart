@@ -13,6 +13,8 @@ class LLMService {
   final Map<String, ILLMProvider> _providers = {};
   final Map<String, List<LLMMessage>> _sessions = {};
 
+  Function(String, {String level})? onLogAdded;
+
   void registerProvider(String type, ILLMProvider provider) {
     _providers[type] = provider;
   }
@@ -51,6 +53,7 @@ class LLMService {
     String? sessionId,
     Map<String, dynamic>? options,
   }) async* {
+    onLogAdded?.call('Preparing request for model: $modelId', level: 'DEBUG');
     final config = await _getModelConfig(modelId);
     final provider = _getProvider(config.type);
 
@@ -61,17 +64,30 @@ class LLMService {
       fullHistory = _sessions[sessionId]!;
     }
 
+    onLogAdded?.call('Connecting to ${config.type} provider...', level: 'DEBUG');
+
     String accumulatedText = "";
+    int imageCount = 0;
     Map<String, dynamic>? finalMetadata;
     
-    await for (final chunk in provider.generateStream(config, fullHistory, options: options)) {
-      if (chunk.textPart != null) accumulatedText += chunk.textPart!;
+    await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: onLogAdded)) {
+      if (chunk.textPart != null) {
+        accumulatedText += chunk.textPart!;
+        onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO');
+      }
+      if (chunk.imagePart != null) {
+        imageCount++;
+        onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG');
+      }
       if (chunk.metadata != null) finalMetadata = chunk.metadata;
       yield chunk;
     }
 
+    onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG');
+
     // Unified Token Usage Recording
     if (finalMetadata != null) {
+      onLogAdded?.call('Recording token usage...', level: 'DEBUG');
       _recordUsage(modelId, config, finalMetadata);
     }
 

@@ -195,7 +195,6 @@ class TaskQueueService extends ChangeNotifier {
 
         if (chunk.textPart != null) {
           task.addLog('AI: ${chunk.textPart}');
-          onLogAdded?.call('[${task.modelId}] ${chunk.textPart}', level: 'INFO');
           notifyListeners();
         }
 

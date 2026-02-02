@@ -1,30 +1,38 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:joycai_image_ai_toolkits/main.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  setUpAll(() {
+    // Initialize FFI for desktop (windows/linux/macos) unit tests
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
+
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    // Set a large surface size to mimic desktop
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    // We wrap MyApp in a ChangeNotifierProvider<AppState> just like in main.dart
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => AppState(),
+        child: const MyApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Wait for the async initialization in AppState (loadSettings)
+    // We pump a few frames to allow async ops to start, though strictly 
+    // async filesystem/db calls might not complete without proper mocking.
+    // For a smoke test, we just want to ensure the UI renders without crashing.
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the NavigationRail is present (part of MainNavigationScreen)
+    expect(find.byType(NavigationRail), findsOneWidget);
   });
 }

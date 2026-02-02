@@ -13,17 +13,22 @@ class GoogleGenAIProvider implements ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   }) async {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent?key=${config.apiKey}');
+    logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
 
+    logger?.call('Sending POST request...', level: 'DEBUG');
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
 
     if (response.statusCode != 200) {
+      logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('Google GenAI Request failed: ${response.statusCode} - ${response.body}');
     }
 
+    logger?.call('Response received, parsing data...', level: 'DEBUG');
     final data = jsonDecode(response.body);
     String text = "";
     List<Uint8List> images = [];
@@ -39,6 +44,8 @@ class GoogleGenAIProvider implements ILLMProvider {
         }
       }
     }
+    
+    logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
 
     return LLMResponse(
       text: text,
@@ -52,8 +59,10 @@ class GoogleGenAIProvider implements ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   }) async* {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse&key=${config.apiKey}');
+    logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
 
@@ -64,8 +73,11 @@ class GoogleGenAIProvider implements ILLMProvider {
     final response = await http.Client().send(request);
 
     if (response.statusCode != 200) {
+      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('Google GenAI Stream Request failed: ${response.statusCode}');
     }
+
+    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
     await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
       if (line.isEmpty) continue;

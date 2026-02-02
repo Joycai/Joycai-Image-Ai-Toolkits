@@ -13,17 +13,22 @@ class OpenAIAPIProvider implements ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   }) async {
     final url = Uri.parse('${config.endpoint}/chat/completions');
+    logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.apiKey);
     final payload = _preparePayload(config.modelId, history, options, isStreaming: false);
 
+    logger?.call('Sending POST request...', level: 'DEBUG');
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
 
     if (response.statusCode != 200) {
+      logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('OpenAI API Request failed: ${response.statusCode} - ${response.body}');
     }
 
+    logger?.call('Response received, parsing data...', level: 'DEBUG');
     final data = jsonDecode(response.body);
     String text = "";
     List<Uint8List> images = [];
@@ -39,11 +44,14 @@ class OpenAIAPIProvider implements ILLMProvider {
       }
 
       if (text.isNotEmpty) {
+        logger?.call('Extracting images from text response...', level: 'DEBUG');
         final result = await _processTextAndExtractImages(text);
         text = result.text;
         images.addAll(result.images);
       }
     }
+    
+    logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
 
     return LLMResponse(
       text: text,
@@ -57,8 +65,10 @@ class OpenAIAPIProvider implements ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   }) async* {
     final url = Uri.parse('${config.endpoint}/chat/completions');
+    logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.apiKey);
     final payload = _preparePayload(config.modelId, history, options, isStreaming: true);
 
@@ -69,8 +79,11 @@ class OpenAIAPIProvider implements ILLMProvider {
     final response = await http.Client().send(request);
 
     if (response.statusCode != 200) {
+      logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('OpenAI API Stream Request failed: ${response.statusCode}');
     }
+
+    logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
     String accumulatedText = "";
     bool isLikelyBase64Stream = false;

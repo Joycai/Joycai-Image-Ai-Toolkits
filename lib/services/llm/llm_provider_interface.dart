@@ -6,6 +6,7 @@ abstract class ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   });
 
   /// Streaming response
@@ -13,5 +14,6 @@ abstract class ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
   });
 }

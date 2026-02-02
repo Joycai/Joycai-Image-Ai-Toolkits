@@ -125,16 +125,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          TextButton.icon(
-                            onPressed: () => _showRefinerDialog(appState, l10n),
-                            icon: const Icon(Icons.auto_fix_high, size: 16),
-                            label: Text(l10n.refiner, style: const TextStyle(fontSize: 12)),
-                          ),
-                          _buildPromptPicker(colorScheme, l10n),
-                        ],
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _showRefinerDialog(appState, l10n),
+                        icon: const Icon(Icons.auto_fix_high, size: 16),
+                        label: Text(l10n.refiner, style: const TextStyle(fontSize: 12)),
                       ),
+                      _buildPromptPicker(colorScheme, l10n),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -501,11 +502,6 @@ class _RefinerDialogState extends State<_RefinerDialog> {
     });
 
     try {
-      final db = DatabaseService();
-      final modelInfo = widget.models.firstWhere((m) => m['model_id'] == _selectedModelId);
-      final inputPrice = modelInfo['input_fee'] ?? 0.0;
-      final outputPrice = modelInfo['output_fee'] ?? 0.0;
-
       final attachments = widget.selectedImages.map((f) => 
         LLMAttachment.fromFile(f, 'image/jpeg')
       ).toList();
@@ -524,7 +520,6 @@ class _RefinerDialogState extends State<_RefinerDialog> {
       );
 
       String accumulatedText = "";
-      Map<String, dynamic>? finalMetadata;
 
       await for (final chunk in stream) {
         if (chunk.textPart != null) {
@@ -533,24 +528,6 @@ class _RefinerDialogState extends State<_RefinerDialog> {
             _refinedPromptCtrl.text = accumulatedText;
           });
         }
-        if (chunk.metadata != null) {
-          finalMetadata = chunk.metadata;
-        }
-      }
-
-      if (finalMetadata != null) {
-        final inputTokens = finalMetadata['promptTokenCount'] ?? finalMetadata['prompt_tokens'] ?? 0;
-        final outputTokens = finalMetadata['candidatesTokenCount'] ?? finalMetadata['completion_tokens'] ?? 0;
-        
-        await db.recordTokenUsage({
-          'task_id': 'refine_${DateTime.now().millisecondsSinceEpoch}',
-          'model_id': _selectedModelId!,
-          'timestamp': DateTime.now().toIso8601String(),
-          'input_tokens': inputTokens,
-          'output_tokens': outputTokens,
-          'input_price': inputPrice,
-          'output_price': outputPrice,
-        });
       }
 
     } catch (e) {

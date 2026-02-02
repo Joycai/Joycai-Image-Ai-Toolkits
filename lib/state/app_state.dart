@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
+import '../services/llm/llm_service.dart';
 import '../services/task_queue_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -48,6 +49,10 @@ class AppState extends ChangeNotifier {
     };
     
     taskQueue.onLogAdded = (msg, {level = 'INFO'}) {
+      addLog(msg, level: level);
+    };
+
+    LLMService().onLogAdded = (msg, {level = 'INFO'}) {
       addLog(msg, level: level);
     };
 
@@ -152,7 +157,18 @@ class AppState extends ChangeNotifier {
   }
 
   void addLog(String message, {String level = 'INFO'}) {
-    logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message));
+    // If it's a streaming AI response, append to the last log if the last log was also an AI response
+    if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
+      final lastLog = logs.last;
+      final newText = message.substring(6); // Remove the '[AI]: ' prefix
+      logs[logs.length - 1] = LogEntry(
+        timestamp: lastLog.timestamp,
+        level: lastLog.level,
+        message: lastLog.message + newText,
+      );
+    } else {
+      logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message));
+    }
     notifyListeners();
   }
 
