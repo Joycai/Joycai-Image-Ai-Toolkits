@@ -30,27 +30,23 @@ class GoogleGenAIProvider implements ILLMProvider {
 
     logger?.call('Response received, parsing data...', level: 'DEBUG');
     final data = jsonDecode(response.body);
+    
     String text = "";
     List<Uint8List> images = [];
+    Map<String, dynamic> metadata = {};
 
-    for (var candidate in data['candidates'] ?? []) {
-      for (var part in candidate['content']?['parts'] ?? []) {
-        if (part.containsKey('text')) {
-          text += part['text'];
-        }
-        final imgData = part['inlineData']?['data'] ?? part['inline_data']?['data'];
-        if (imgData != null) {
-          images.add(base64Decode(imgData));
-        }
-      }
+    for (final chunk in _parseChunks(data, logger: logger)) {
+      if (chunk.textPart != null) text += chunk.textPart!;
+      if (chunk.imagePart != null) images.add(chunk.imagePart!);
+      if (chunk.metadata != null) metadata = chunk.metadata!;
     }
-    
+
     logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
 
     return LLMResponse(
       text: text,
       generatedImages: images,
-      metadata: data['usageMetadata'] ?? {},
+      metadata: metadata,
     );
   }
 
@@ -81,7 +77,7 @@ class GoogleGenAIProvider implements ILLMProvider {
 
     await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
       if (line.isEmpty) continue;
-      
+
       String dataLine = line;
       if (line.startsWith('data: ')) {
         dataLine = line.substring(6);
@@ -89,35 +85,51 @@ class GoogleGenAIProvider implements ILLMProvider {
 
       try {
         final chunkData = jsonDecode(dataLine);
-        
-        Map<String, dynamic>? metadata;
-        if (chunkData.containsKey('usageMetadata')) {
-          metadata = chunkData['usageMetadata'];
-        }
-
-        for (var candidate in chunkData['candidates'] ?? []) {
-          for (var part in candidate['content']?['parts'] ?? []) {
-            final text = part['text'];
-            final imgData = part['inlineData']?['data'] ?? part['inline_data']?['data'];
-            
-            yield LLMResponseChunk(
-              textPart: text,
-              imagePart: imgData != null ? base64Decode(imgData) : null,
-              metadata: metadata,
-            );
-          }
-        }
-        
-        if ((chunkData['candidates'] == null || chunkData['candidates'].isEmpty) && metadata != null) {
-          yield LLMResponseChunk(metadata: metadata);
-        }
-
+        yield* Stream.fromIterable(_parseChunks(chunkData, logger: logger));
       } catch (e) {
         // Ignore parse errors
       }
     }
-    
+
     yield LLMResponseChunk(isDone: true);
+  }
+
+  Iterable<LLMResponseChunk> _parseChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
+    Map<String, dynamic>? metadata = chunkData['usageMetadata'];
+
+    final candidates = chunkData['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) {
+      if (metadata != null) {
+        yield LLMResponseChunk(metadata: metadata);
+      }
+      return;
+    }
+
+    for (var candidate in candidates) {
+      final finishReason = candidate['finishReason'];
+      final finishMessage = candidate['finishMessage'];
+
+      if (finishReason != null && finishReason != 'STOP') {
+        logger?.call('Finish reason: $finishReason', level: 'WARN');
+      }
+      if (finishMessage != null) {
+        logger?.call('Finish message: $finishMessage', level: 'INFO');
+      }
+
+      final parts = candidate['content']?['parts'] as List?;
+      if (parts != null) {
+        for (var part in parts) {
+          final textPart = part['text'] as String?;
+          final imgData = part['inlineData']?['data'] ?? part['inline_data']?['data'];
+
+          yield LLMResponseChunk(
+            textPart: textPart,
+            imagePart: imgData != null ? base64Decode(imgData as String) : null,
+            metadata: metadata,
+          );
+        }
+      }
+    }
   }
 
   Map<String, String> _getHeaders(String endpoint, String apiKey) {
@@ -142,7 +154,7 @@ class GoogleGenAIProvider implements ILLMProvider {
 
     final contents = conversationMessages.map((msg) {
       final parts = <Map<String, dynamic>>[];
-      
+
       if (msg.content.isNotEmpty) {
         parts.add({"text": msg.content});
       }
