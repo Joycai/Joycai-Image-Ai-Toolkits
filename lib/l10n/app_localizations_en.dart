@@ -456,6 +456,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outputFeeLabel => 'Output Fee (\$/M Tokens)';
 
   @override
+  String get billingMode => 'Billing Mode';
+
+  @override
+  String get perToken => 'Per Million Tokens';
+
+  @override
+  String get perRequest => 'Per Request';
+
+  @override
+  String get requestFeeLabel => 'Request Fee (\$/Request)';
+
+  @override
+  String get requestCount => 'Request Count';
+
+  @override
+  String get requests => 'Requests';
+
+  @override
   String get add => 'Add';
 
   @override

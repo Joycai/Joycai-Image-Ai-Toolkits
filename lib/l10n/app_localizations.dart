@@ -926,6 +926,42 @@ abstract class AppLocalizations {
   /// **'Output Fee (\$/M Tokens)'**
   String get outputFeeLabel;
 
+  /// No description provided for @billingMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing Mode'**
+  String get billingMode;
+
+  /// No description provided for @perToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Per Million Tokens'**
+  String get perToken;
+
+  /// No description provided for @perRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Per Request'**
+  String get perRequest;
+
+  /// No description provided for @requestFeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Fee (\$/Request)'**
+  String get requestFeeLabel;
+
+  /// No description provided for @requestCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Count'**
+  String get requestCount;
+
+  /// No description provided for @requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get requests;
+
   /// No description provided for @add.
   ///
   /// In en, this message translates to:

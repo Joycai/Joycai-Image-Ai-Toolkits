@@ -29,7 +29,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 6, // Incremented for tasks table migration
+          version: 7, // Incremented for billing mode and request fee
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -40,7 +40,7 @@ class DatabaseService {
       
       return await openDatabase(
         dbPath,
-        version: 6,
+        version: 7,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -72,6 +72,13 @@ class DatabaseService {
         await db.execute('ALTER TABLE tasks ADD COLUMN model_id TEXT');
       }
     }
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE llm_models ADD COLUMN billing_mode TEXT DEFAULT \'token\'');
+      await db.execute('ALTER TABLE llm_models ADD COLUMN request_fee REAL DEFAULT 0.0');
+      await db.execute('ALTER TABLE token_usage ADD COLUMN request_count INTEGER DEFAULT 1');
+      await db.execute('ALTER TABLE token_usage ADD COLUMN request_price REAL DEFAULT 0.0');
+      await db.execute('ALTER TABLE token_usage ADD COLUMN billing_mode TEXT DEFAULT \'token\'');
+    }
   }
 
   Future<void> _createV2Tables(Database db) async {
@@ -85,7 +92,9 @@ class DatabaseService {
         is_paid INTEGER DEFAULT 0,
         sort_order INTEGER DEFAULT 0,
         input_fee REAL DEFAULT 0.0,
-        output_fee REAL DEFAULT 0.0
+        output_fee REAL DEFAULT 0.0,
+        billing_mode TEXT DEFAULT 'token',
+        request_fee REAL DEFAULT 0.0
       )
     ''');
   }
@@ -112,7 +121,10 @@ class DatabaseService {
         input_tokens INTEGER DEFAULT 0,
         output_tokens INTEGER DEFAULT 0,
         input_price REAL DEFAULT 0.0,
-        output_price REAL DEFAULT 0.0
+        output_price REAL DEFAULT 0.0,
+        request_count INTEGER DEFAULT 1,
+        request_price REAL DEFAULT 0.0,
+        billing_mode TEXT DEFAULT 'token'
       )
     ''');
   }

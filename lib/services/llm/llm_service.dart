@@ -109,17 +109,18 @@ class LLMService {
     final inputTokens = metadata['promptTokenCount'] ?? metadata['prompt_tokens'] ?? 0;
     final outputTokens = metadata['candidatesTokenCount'] ?? metadata['completion_tokens'] ?? 0;
 
-    if (inputTokens > 0 || outputTokens > 0) {
-      await db.recordTokenUsage({
-        'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
-        'model_id': modelId,
-        'timestamp': DateTime.now().toIso8601String(),
-        'input_tokens': inputTokens,
-        'output_tokens': outputTokens,
-        'input_price': config.inputFee,
-        'output_price': config.outputFee,
-      });
-    }
+    await db.recordTokenUsage({
+      'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
+      'model_id': modelId,
+      'timestamp': DateTime.now().toIso8601String(),
+      'input_tokens': inputTokens,
+      'output_tokens': outputTokens,
+      'input_price': config.inputFee,
+      'output_price': config.outputFee,
+      'request_count': 1,
+      'request_price': config.requestFee,
+      'billing_mode': config.billingMode,
+    });
   }
 
   void clearSession(String sessionId) {
@@ -146,6 +147,8 @@ class LLMService {
     final isPaid = modelData['is_paid'] == 1;
     final inputFee = (modelData['input_fee'] ?? 0.0) as double;
     final outputFee = (modelData['output_fee'] ?? 0.0) as double;
+    final billingMode = (modelData['billing_mode'] ?? 'token') as String;
+    final requestFee = (modelData['request_fee'] ?? 0.0) as double;
 
     String prefix = type == 'google-genai' 
         ? (isPaid ? 'google_paid' : 'google_free') 
@@ -161,6 +164,8 @@ class LLMService {
       apiKey: apiKey,
       inputFee: inputFee,
       outputFee: outputFee,
+      billingMode: billingMode,
+      requestFee: requestFee,
     );
   }
 }

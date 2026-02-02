@@ -80,6 +80,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
 
     int totalInput = 0;
     int totalOutput = 0;
+    int totalRequests = 0;
     double totalCost = 0.0;
 
     for (var row in _usageData) {
@@ -87,10 +88,19 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       final outTokens = row['output_tokens'] as int;
       final inPrice = row['input_price'] as double;
       final outPrice = row['output_price'] as double;
+      final billingMode = row['billing_mode'] as String? ?? 'token';
+      final reqCount = row['request_count'] as int? ?? 1;
+      final reqPrice = row['request_price'] as double? ?? 0.0;
 
       totalInput += inTokens;
       totalOutput += outTokens;
-      totalCost += (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
+      totalRequests += reqCount;
+
+      if (billingMode == 'request') {
+        totalCost += (reqCount * reqPrice);
+      } else {
+        totalCost += (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
+      }
     }
 
     return Scaffold(
@@ -108,7 +118,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       body: Column(
         children: [
           _buildFilterBar(colorScheme, l10n),
-          _buildSummaryCards(totalInput, totalOutput, totalCost, colorScheme, l10n),
+          _buildSummaryCards(totalInput, totalOutput, totalRequests, totalCost, colorScheme, l10n),
           Expanded(
             child: _usageData.isEmpty
                 ? const Center(child: Text('No usage data found for selected range.'))
@@ -199,11 +209,13 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     );
   }
 
-  Widget _buildSummaryCards(int input, int output, double cost, ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildSummaryCards(int input, int output, int requests, double cost, ColorScheme colorScheme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
+          _summaryCard(l10n.requests, requests.toString(), Icons.numbers, Colors.purple),
+          const SizedBox(width: 16),
           _summaryCard(l10n.inputTokens, input.toString(), Icons.login, Colors.blue),
           const SizedBox(width: 16),
           _summaryCard(l10n.outputTokens, output.toString(), Icons.logout, Colors.green),
@@ -218,13 +230,13 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     return Expanded(
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
           child: Column(
             children: [
               Icon(icon, color: color),
               const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
@@ -240,13 +252,22 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       itemBuilder: (context, index) {
         final row = _usageData[index];
         final date = DateTime.parse(row['timestamp']);
-        final cost = (row['input_tokens'] / 1000000 * row['input_price']) + 
-                     (row['output_tokens'] / 1000000 * row['output_price']);
+        final billingMode = row['billing_mode'] as String? ?? 'token';
+        final inTokens = row['input_tokens'] as int;
+        final outTokens = row['output_tokens'] as int;
+        final inPrice = row['input_price'] as double;
+        final outPrice = row['output_price'] as double;
+        final reqCount = row['request_count'] as int? ?? 1;
+        final reqPrice = row['request_price'] as double? ?? 0.0;
+
+        final cost = billingMode == 'request' 
+            ? (reqCount * reqPrice)
+            : (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
 
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: colorScheme.primaryContainer,
-            child: const Icon(Icons.analytics_outlined, size: 20),
+            child: Icon(billingMode == 'request' ? Icons.ads_click : Icons.analytics_outlined, size: 20),
           ),
           title: Row(
             children: [
@@ -262,9 +283,19 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  _tokenBadge('IN: ${row['input_tokens']}', Colors.blue),
-                  const SizedBox(width: 8),
-                  _tokenBadge('OUT: ${row['output_tokens']}', Colors.green),
+                  if (billingMode == 'token') ...[
+                    _tokenBadge('IN: $inTokens', Colors.blue),
+                    const SizedBox(width: 8),
+                    _tokenBadge('OUT: $outTokens', Colors.green),
+                  ] else ...[
+                    _tokenBadge('${l10n.requests.toUpperCase()}: $reqCount', Colors.purple),
+                    if (inTokens > 0 || outTokens > 0) ...[
+                      const SizedBox(width: 8),
+                      _tokenBadge('IN: $inTokens', Colors.blue.withAlpha(128)),
+                      const SizedBox(width: 4),
+                      _tokenBadge('OUT: $outTokens', Colors.green.withAlpha(128)),
+                    ],
+                  ],
                 ],
               ),
             ],

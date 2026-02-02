@@ -31,6 +31,8 @@ class LLMModelConfig {
   final String apiKey;
   final double inputFee;
   final double outputFee;
+  final String billingMode; // 'token' or 'request'
+  final double requestFee;
   final Map<String, dynamic> extraParams;
 
   LLMModelConfig({
@@ -40,6 +42,8 @@ class LLMModelConfig {
     required this.apiKey,
     this.inputFee = 0.0,
     this.outputFee = 0.0,
+    this.billingMode = 'token',
+    this.requestFee = 0.0,
     this.extraParams = const {},
   });
 }

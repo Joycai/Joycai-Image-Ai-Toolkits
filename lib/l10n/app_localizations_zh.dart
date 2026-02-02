@@ -451,6 +451,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get outputFeeLabel => '输出费用 (\$/M Tokens)';
 
   @override
+  String get billingMode => '计费模式';
+
+  @override
+  String get perToken => '按 Token 计费 (每百万)';
+
+  @override
+  String get perRequest => '按次计费';
+
+  @override
+  String get requestFeeLabel => '单次费用 (\$/次)';
+
+  @override
+  String get requestCount => '请求次数';
+
+  @override
+  String get requests => '请求数';
+
+  @override
   String get add => '添加';
 
   @override

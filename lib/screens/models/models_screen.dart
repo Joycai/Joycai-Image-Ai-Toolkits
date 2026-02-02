@@ -63,7 +63,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     key: ValueKey(model['id']),
                     leading: const Icon(Icons.drag_handle),
                     title: Text(model['model_name']),
-                    subtitle: Text('${model['type']} | ${model['tag']} | In: \$${model['input_fee']}/M | Out: \$${model['output_fee']}/M'),
+                    subtitle: Text(model['billing_mode'] == 'request' 
+                      ? '${model['type']} | ${model['tag']} | \$${model['request_fee']}/Req'
+                      : '${model['type']} | ${model['tag']} | In: \$${model['input_fee']}/M | Out: \$${model['output_fee']}/M'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -144,9 +146,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final nameCtrl = TextEditingController(text: model?['model_name'] ?? '');
     final inputFeeCtrl = TextEditingController(text: (model?['input_fee'] ?? 0.0).toString());
     final outputFeeCtrl = TextEditingController(text: (model?['output_fee'] ?? 0.0).toString());
+    final requestFeeCtrl = TextEditingController(text: (model?['request_fee'] ?? 0.0).toString());
     
     String type = model?['type'] ?? 'google-genai';
     String tag = model?['tag'] ?? 'chat';
+    String billingMode = model?['billing_mode'] ?? 'token';
     bool isPaid = (model?['is_paid'] ?? 0) == 1;
 
     showDialog(
@@ -179,26 +183,42 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   onChanged: (v) => setDialogState(() => tag = v!),
                   decoration: InputDecoration(labelText: l10n.tag),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: inputFeeCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: l10n.inputFeeLabel, border: const OutlineInputBorder()),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextField(
-                        controller: outputFeeCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: l10n.outputFeeLabel, border: const OutlineInputBorder()),
-                      ),
-                    ),
+                DropdownButtonFormField<String>(
+                  initialValue: billingMode,
+                  items: [
+                    DropdownMenuItem(value: 'token', child: Text(l10n.perToken)),
+                    DropdownMenuItem(value: 'request', child: Text(l10n.perRequest)),
                   ],
+                  onChanged: (v) => setDialogState(() => billingMode = v!),
+                  decoration: InputDecoration(labelText: l10n.billingMode),
                 ),
+                const SizedBox(height: 16),
+                if (billingMode == 'token')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: inputFeeCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.inputFeeLabel, border: const OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: outputFeeCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.outputFeeLabel, border: const OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  TextField(
+                    controller: requestFeeCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(labelText: l10n.requestFeeLabel, border: const OutlineInputBorder()),
+                  ),
                 SwitchListTile(
                   title: Text(l10n.paidModel),
                   value: isPaid,
@@ -219,6 +239,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   'is_paid': isPaid ? 1 : 0,
                   'input_fee': double.tryParse(inputFeeCtrl.text) ?? 0.0,
                   'output_fee': double.tryParse(outputFeeCtrl.text) ?? 0.0,
+                  'billing_mode': billingMode,
+                  'request_fee': double.tryParse(requestFeeCtrl.text) ?? 0.0,
                 };
                 
                 if (model == null) {
