@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
-import 'screens/batch/batch_screen.dart';
+import 'screens/batch/task_queue_screen.dart';
 import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
@@ -74,7 +74,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const WorkbenchScreen(),
-    const BatchScreen(),
+    const TaskQueueScreen(),
     const PromptsScreen(),
     const TokenUsageScreen(),
     const ModelsScreen(),

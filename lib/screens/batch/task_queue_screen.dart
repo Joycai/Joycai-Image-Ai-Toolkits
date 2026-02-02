@@ -8,8 +8,8 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 
-class BatchScreen extends StatelessWidget {
-  const BatchScreen({super.key});
+class TaskQueueScreen extends StatelessWidget {
+  const TaskQueueScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
