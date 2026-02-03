@@ -23,13 +23,22 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
 
+    final data = jsonDecode(response.body);
+
+    // Check for System-level errors (Section 3.3)
+    if (data['error'] != null) {
+      final err = data['error'];
+      final msg = 'Google GenAI Error: [${err['code']}] ${err['message']} (${err['status']})';
+      logger?.call(msg, level: 'ERROR');
+      throw Exception(msg);
+    }
+
     if (response.statusCode != 200) {
       logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('Google GenAI Request failed: ${response.statusCode} - ${response.body}');
     }
 
     logger?.call('Response received, parsing data...', level: 'DEBUG');
-    final data = jsonDecode(response.body);
     
     String text = "";
     List<Uint8List> images = [];
@@ -69,6 +78,18 @@ class GoogleGenAIProvider implements ILLMProvider {
     final response = await http.Client().send(request);
 
     if (response.statusCode != 200) {
+      // Try to parse error from body if possible
+      final body = await response.stream.bytesToString();
+      try {
+        final data = jsonDecode(body);
+        if (data['error'] != null) {
+          final err = data['error'];
+          final msg = 'Google GenAI Stream Error: [${err['code']}] ${err['message']}';
+          logger?.call(msg, level: 'ERROR');
+          throw Exception(msg);
+        }
+      } catch (_) {}
+      
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       throw Exception('Google GenAI Stream Request failed: ${response.statusCode}');
     }
@@ -85,9 +106,18 @@ class GoogleGenAIProvider implements ILLMProvider {
 
       try {
         final chunkData = jsonDecode(dataLine);
+        
+        // Check for error in chunk
+        if (chunkData['error'] != null) {
+          final err = chunkData['error'];
+          logger?.call('Stream Chunk Error: ${err['message']}', level: 'ERROR');
+          throw Exception(err['message']);
+        }
+
         yield* Stream.fromIterable(_parseChunks(chunkData, logger: logger));
       } catch (e) {
-        // Ignore parse errors
+        if (e is Exception) rethrow;
+        // Ignore parse errors for empty/non-json lines
       }
     }
 
@@ -106,21 +136,38 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     for (var candidate in candidates) {
-      final finishReason = candidate['finishReason'];
-      final finishMessage = candidate['finishMessage'];
-
+      final finishReason = candidate['finishReason'] as String?;
+      
+      // Handle Safety and other non-STOP reasons (Section 3.3)
       if (finishReason != null && finishReason != 'STOP') {
-        logger?.call('Finish reason: $finishReason', level: 'WARN');
-      }
-      if (finishMessage != null) {
-        logger?.call('Finish message: $finishMessage', level: 'INFO');
+        String level = 'INFO';
+        if (finishReason == 'SAFETY') level = 'WARN';
+        if (finishReason == 'RECITATION') level = 'WARN';
+        if (finishReason == 'OTHER') level = 'ERROR';
+        
+        logger?.call('Generation finished with reason: $finishReason', level: level);
+        
+        if (finishReason == 'SAFETY') {
+          logger?.call('Content was flagged by safety filters.', level: 'WARN');
+          if (candidate['safetyRatings'] != null) {
+            final ratings = candidate['safetyRatings'] as List;
+            for (var r in ratings) {
+              if (r['probability'] != 'NEGLIGIBLE') {
+                logger?.call('Safety: ${r['category']} is ${r['probability']}', level: 'DEBUG');
+              }
+            }
+          }
+        }
       }
 
       final parts = candidate['content']?['parts'] as List?;
       if (parts != null) {
         for (var part in parts) {
           final textPart = part['text'] as String?;
-          final imgData = part['inlineData']?['data'] ?? part['inline_data']?['data'];
+          
+          // Spec prioritizes inlineData (Section 2)
+          final inlineData = part['inlineData'] ?? part['inline_data'];
+          final imgData = inlineData?['data'];
 
           yield LLMResponseChunk(
             textPart: textPart,
@@ -187,6 +234,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     if (options != null) {
       final imageConfig = <String, dynamic>{};
       // Only add aspectRatio if it's not "not_set"
+      imageConfig['personGeneration'] = "ALLOW_ALL";
       if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
         imageConfig['aspectRatio'] = options['aspectRatio'];
       }

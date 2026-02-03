@@ -256,26 +256,29 @@ class OpenAIAPIProvider implements ILLMProvider {
     }
 
     if (modelId.contains('gemini-3') || modelId.contains('image')) {
-      final extraBody = {
-        "response_modalities": ["text", "image"],
-        "google": {
-          "generation_config": {
-            "imageConfig": {}
-          }
-        }
-      };
+      payload["modalities"] = ["image", "text"];
+      
+      payload["safety_settings"] = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+      ];
 
       if (options != null) {
         final imageConfig = <String, dynamic>{};
+        imageConfig['person_generation'] = 'allow_all';
         if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
           imageConfig['aspect_ratio'] = options['aspectRatio'];
         }
-        if (options.containsKey('imageSize')) imageConfig['image_size'] = options['imageSize'];
+        if (options.containsKey('imageSize')) {
+          imageConfig['image_size'] = options['imageSize'];
+        }
         if (imageConfig.isNotEmpty) {
-          (extraBody["google"] as Map)["generation_config"]["imageConfig"] = imageConfig;
+          imageConfig['number_of_images'] = 1;
+          payload["image_config"] = imageConfig;
         }
       }
-      payload["extra_body"] = extraBody;
     }
 
     return payload;
