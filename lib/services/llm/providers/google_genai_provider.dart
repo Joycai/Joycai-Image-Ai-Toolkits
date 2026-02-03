@@ -195,7 +195,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     return {
-      "system_instruction": ?systemInstruction,
+      if (systemInstruction != null) "system_instruction": systemInstruction,
       "contents": contents,
       "generationConfig": generationConfig,
       "safetySettings": [
