@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -14,27 +15,32 @@ import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'state/app_state.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   LLMService().registerProvider('google-genai', GoogleGenAIProvider());
   LLMService().registerProvider('openai-api', OpenAIAPIProvider());
+
+  final packageInfo = await PackageInfo.fromPlatform();
 
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
-      child: const MyApp(),
+      child: MyApp(version: packageInfo.version),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String version;
+
+  const MyApp({super.key, required this.version});
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
     return MaterialApp(
-      title: 'Joycai Image AI Toolkits',
+      onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
       debugShowCheckedModeBanner: false,
       themeMode: appState.themeMode,
       locale: appState.locale,

@@ -22,7 +22,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => AppState(),
-        child: const MyApp(),
+        child: const MyApp(version: '1.0.0'),
       ),
     );
 

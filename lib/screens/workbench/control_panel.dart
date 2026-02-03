@@ -41,33 +41,59 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     });
   }
 
-  void _trySyncState() {
-    if (_hasSyncedWithState) return;
-    final appState = Provider.of<AppState>(context, listen: false);
-    
-    if (appState.settingsLoaded) {
-      setState(() {
-        _selectedModelId = appState.lastSelectedModelId;
-        _aspectRatio = appState.lastAspectRatio;
-        _resolution = appState.lastResolution;
-        _promptController.text = appState.lastPrompt;
-        _hasSyncedWithState = true;
-      });
-    }
-  }
-
   Future<void> _loadModels() async {
     final allModels = await _db.getModels();
     final filtered = allModels.where((m) => 
       m['tag'] == 'image' || m['tag'] == 'multimodal'
     ).toList();
     
+    // Deduplicate models based on model_id
+    final uniqueModels = <String, Map<String, dynamic>>{};
+    for (var model in filtered) {
+      final id = model['model_id'] as String;
+      if (!uniqueModels.containsKey(id)) {
+        uniqueModels[id] = model;
+      }
+    }
+    
+    final finalModels = uniqueModels.values.toList();
+
     setState(() {
-      _availableModels = filtered;
-      if (filtered.isNotEmpty && _selectedModelId == null) {
-        _selectedModelId = filtered.first['model_id'];
+      _availableModels = finalModels;
+      
+      // Validate currently selected model
+      if (_selectedModelId != null && !finalModels.any((m) => m['model_id'] == _selectedModelId)) {
+        _selectedModelId = null;
+      }
+
+      if (finalModels.isNotEmpty && _selectedModelId == null) {
+        _selectedModelId = finalModels.first['model_id'];
       }
     });
+  }
+
+  void _trySyncState() {
+    if (_hasSyncedWithState) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+    
+    if (appState.settingsLoaded) {
+      String? modelIdToSync = appState.lastSelectedModelId;
+      
+      // Verify model exists in available models if they are loaded
+      if (_availableModels.isNotEmpty && modelIdToSync != null) {
+        if (!_availableModels.any((m) => m['model_id'] == modelIdToSync)) {
+          modelIdToSync = null;
+        }
+      }
+
+      setState(() {
+        if (modelIdToSync != null) _selectedModelId = modelIdToSync;
+        _aspectRatio = appState.lastAspectRatio;
+        _resolution = appState.lastResolution;
+        _promptController.text = appState.lastPrompt;
+        _hasSyncedWithState = true;
+      });
+    }
   }
 
   Future<void> _loadPrompts() async {
@@ -121,7 +147,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold)),
                   DropdownButton<String>(
                     isExpanded: true,
-                    value: _selectedModelId,
+                    // Ensure value exists in items
+                    value: (_availableModels.any((m) => m['model_id'] == _selectedModelId)) 
+                        ? _selectedModelId 
+                        : null,
                     hint: Text(l10n.selectAModel),
                     items: _availableModels.map((m) => DropdownMenuItem(
                       value: m['model_id'] as String,
