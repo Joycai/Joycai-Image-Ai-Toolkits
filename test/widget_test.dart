@@ -18,11 +18,10 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     // Build our app and trigger a frame.
-    // We wrap MyApp in a ChangeNotifierProvider<AppState> just like in main.dart
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => AppState(),
-        child: const MyApp(version: '1.0.0'),
+        child: const MyApp(version: '1.1.0'),
       ),
     );
 
