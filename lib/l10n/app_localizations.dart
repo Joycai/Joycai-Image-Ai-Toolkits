@@ -518,6 +518,24 @@ abstract class AppLocalizations {
   /// **'Open App Data Directory'**
   String get openAppDataDirectory;
 
+  /// No description provided for @mcpServerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP Server Settings'**
+  String get mcpServerSettings;
+
+  /// No description provided for @enableMcpServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable MCP Server'**
+  String get enableMcpServer;
+
+  /// No description provided for @port.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get port;
+
   /// No description provided for @resetAllSettings.
   ///
   /// In en, this message translates to:

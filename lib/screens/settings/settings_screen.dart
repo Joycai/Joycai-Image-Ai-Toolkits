@@ -28,6 +28,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _openaiEndpoint = TextEditingController();
   final TextEditingController _openaiApiKey = TextEditingController();
   final TextEditingController _outputDirController = TextEditingController();
+  
+  // MCP Settings
+  bool _mcpEnabled = false;
+  final TextEditingController _mcpPortController = TextEditingController();
 
   // Visibility states for API keys
   bool _showGoogleFreeKey = false;
@@ -48,6 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _openaiEndpoint.text = await _db.getSetting('openai_endpoint') ?? '';
     _openaiApiKey.text = await _db.getSetting('openai_apikey') ?? '';
     _outputDirController.text = await _db.getSetting('output_directory') ?? '';
+    
+    _mcpEnabled = (await _db.getSetting('mcp_enabled')) == 'true';
+    _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
+    
     setState(() {});
   }
 
@@ -74,6 +82,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildThemeSelector(appState, l10n),
                   const SizedBox(height: 16),
                   _buildLanguageSelector(appState, l10n),
+                  const SizedBox(height: 32),
+
+                  _buildSectionHeader(l10n.mcpServerSettings),
+                  _buildMcpSettings(l10n),
                   const SizedBox(height: 32),
 
                   _buildSectionHeader(l10n.googleGenAiSettings),
@@ -123,6 +135,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMcpSettings(AppLocalizations l10n) {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: Text(l10n.enableMcpServer),
+          value: _mcpEnabled,
+          onChanged: (v) {
+            setState(() => _mcpEnabled = v);
+            _db.saveSetting('mcp_enabled', v.toString());
+          },
+        ),
+        if (_mcpEnabled)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _mcpPortController,
+              decoration: InputDecoration(
+                labelText: l10n.port,
+                border: const OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (v) => _db.saveSetting('mcp_port', v),
+            ),
+          ),
+      ],
     );
   }
 

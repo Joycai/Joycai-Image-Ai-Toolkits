@@ -235,6 +235,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openAppDataDirectory => '打开应用数据目录';
 
   @override
+  String get mcpServerSettings => 'MCP 服务器设置';
+
+  @override
+  String get enableMcpServer => '启用 MCP 服务器';
+
+  @override
+  String get port => '端口';
+
+  @override
   String get resetAllSettings => '重置所有设置';
 
   @override

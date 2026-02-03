@@ -236,6 +236,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openAppDataDirectory => 'Open App Data Directory';
 
   @override
+  String get mcpServerSettings => 'MCP Server Settings';
+
+  @override
+  String get enableMcpServer => 'Enable MCP Server';
+
+  @override
+  String get port => 'Port';
+
+  @override
   String get resetAllSettings => 'Reset All Settings';
 
   @override
