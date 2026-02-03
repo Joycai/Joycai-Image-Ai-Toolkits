@@ -1105,6 +1105,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Category'**
   String get selectCategory;
+
+  /// No description provided for @feeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee Groups'**
+  String get feeGroups;
+
+  /// No description provided for @feeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee Group'**
+  String get feeGroup;
+
+  /// No description provided for @channels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get channels;
+
+  /// No description provided for @channel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get channel;
+
+  /// No description provided for @noFeeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'No Fee Group'**
+  String get noFeeGroup;
+
+  /// No description provided for @inputPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Price (\$/M Tokens)'**
+  String get inputPrice;
+
+  /// No description provided for @outputPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Price (\$/M Tokens)'**
+  String get outputPrice;
+
+  /// No description provided for @requestPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Price (\$/Req)'**
+  String get requestPrice;
+
+  /// No description provided for @priceConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Price Config'**
+  String get priceConfig;
+
+  /// No description provided for @usageByGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage by Group'**
+  String get usageByGroup;
+
+  /// No description provided for @addFeeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Fee Group'**
+  String get addFeeGroup;
+
+  /// No description provided for @editFeeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Fee Group'**
+  String get editFeeGroup;
+
+  /// No description provided for @deleteFeeGroupConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Fee Group \"{name}\"?'**
+  String deleteFeeGroupConfirm(String name);
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Name'**
+  String get groupName;
+
+  /// No description provided for @googleGenAiFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (Free)'**
+  String get googleGenAiFree;
+
+  /// No description provided for @googleGenAiPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (Paid)'**
+  String get googleGenAiPaid;
+
+  /// No description provided for @openaiApi.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI API'**
+  String get openaiApi;
 }
 
 class _AppLocalizationsDelegate

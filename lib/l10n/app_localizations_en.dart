@@ -551,4 +551,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectCategory => 'Select Category';
+
+  @override
+  String get feeGroups => 'Fee Groups';
+
+  @override
+  String get feeGroup => 'Fee Group';
+
+  @override
+  String get channels => 'Channels';
+
+  @override
+  String get channel => 'Channel';
+
+  @override
+  String get noFeeGroup => 'No Fee Group';
+
+  @override
+  String get inputPrice => 'Input Price (\$/M Tokens)';
+
+  @override
+  String get outputPrice => 'Output Price (\$/M Tokens)';
+
+  @override
+  String get requestPrice => 'Request Price (\$/Req)';
+
+  @override
+  String get priceConfig => 'Price Config';
+
+  @override
+  String get usageByGroup => 'Usage by Group';
+
+  @override
+  String get addFeeGroup => 'Add Fee Group';
+
+  @override
+  String get editFeeGroup => 'Edit Fee Group';
+
+  @override
+  String deleteFeeGroupConfirm(String name) {
+    return 'Delete Fee Group \"$name\"?';
+  }
+
+  @override
+  String get groupName => 'Group Name';
+
+  @override
+  String get googleGenAiFree => 'Google GenAI (Free)';
+
+  @override
+  String get googleGenAiPaid => 'Google GenAI (Paid)';
+
+  @override
+  String get openaiApi => 'OpenAI API';
 }

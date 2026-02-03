@@ -12,11 +12,247 @@ class TokenUsageScreen extends StatefulWidget {
 }
 
 class _TokenUsageScreenState extends State<TokenUsageScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.tokenUsageMetrics),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: l10n.usage),
+              Tab(text: l10n.priceConfig),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            _UsageView(),
+            _FeeGroupsView(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeeGroupsView extends StatefulWidget {
+  const _FeeGroupsView();
+
+  @override
+  State<_FeeGroupsView> createState() => _FeeGroupsViewState();
+}
+
+class _FeeGroupsViewState extends State<_FeeGroupsView> {
   final DatabaseService _db = DatabaseService();
-  
+  List<Map<String, dynamic>> _groups = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final groups = await _db.getFeeGroups();
+    setState(() {
+      _groups = List.from(groups);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    if (_groups.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.monetization_on_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(l10n.noModelsConfigured, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), // Using similar string
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _showGroupDialog(l10n),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.addFeeGroup),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showGroupDialog(l10n),
+        child: const Icon(Icons.add),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _groups.length,
+        itemBuilder: (context, index) {
+          final group = _groups[index];
+          final billingMode = group['billing_mode'] as String;
+          
+          return Card(
+            child: ListTile(
+              leading: Icon(
+                billingMode == 'request' ? Icons.ads_click : Icons.token,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text(group['name']),
+              subtitle: Text(billingMode == 'request'
+                ? '\$${group['request_price']}/Req'
+                : 'In: \$${group['input_price']}/M | Out: \$${group['output_price']}/M'
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _showGroupDialog(l10n, group: group),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(l10n, group),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _confirmDelete(AppLocalizations l10n, Map<String, dynamic> group) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteFeeGroupConfirm(group['name'])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await _db.deleteFeeGroup(group['id']);
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadGroups();
+              }
+            },
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGroupDialog(AppLocalizations l10n, {Map<String, dynamic>? group}) {
+    final nameCtrl = TextEditingController(text: group?['name'] ?? '');
+    final inputPriceCtrl = TextEditingController(text: (group?['input_price'] ?? 0.0).toString());
+    final outputPriceCtrl = TextEditingController(text: (group?['output_price'] ?? 0.0).toString());
+    final requestPriceCtrl = TextEditingController(text: (group?['request_price'] ?? 0.0).toString());
+    String billingMode = group?['billing_mode'] ?? 'token';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.groupName)),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: billingMode,
+                  items: [
+                    DropdownMenuItem(value: 'token', child: Text(l10n.perToken)),
+                    DropdownMenuItem(value: 'request', child: Text(l10n.perRequest)),
+                  ],
+                  onChanged: (v) => setDialogState(() => billingMode = v!),
+                  decoration: InputDecoration(labelText: l10n.billingMode),
+                ),
+                const SizedBox(height: 16),
+                if (billingMode == 'token')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: inputPriceCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.inputPrice, border: const OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: outputPriceCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: l10n.outputPrice, border: const OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  TextField(
+                    controller: requestPriceCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(labelText: l10n.requestPrice, border: const OutlineInputBorder()),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () async {
+                final data = {
+                  'name': nameCtrl.text,
+                  'billing_mode': billingMode,
+                  'input_price': double.tryParse(inputPriceCtrl.text) ?? 0.0,
+                  'output_price': double.tryParse(outputPriceCtrl.text) ?? 0.0,
+                  'request_price': double.tryParse(requestPriceCtrl.text) ?? 0.0,
+                };
+                if (group == null) {
+                  await _db.addFeeGroup(data);
+                } else {
+                  await _db.updateFeeGroup(group['id'], data);
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadGroups();
+                }
+              },
+              child: Text(group == null ? l10n.add : l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UsageView extends StatefulWidget {
+  const _UsageView();
+
+  @override
+  State<_UsageView> createState() => _UsageViewState();
+}
+
+class _UsageViewState extends State<_UsageView> {
+  final DatabaseService _db = DatabaseService();
   List<Map<String, dynamic>> _usageData = [];
-  List<String> _availableModels = [];
-  final List<String> _selectedModels = [];
+  List<Map<String, dynamic>> _models = [];
+  List<Map<String, dynamic>> _feeGroups = [];
+  List<String> _availableModelIds = [];
+  final List<String> _selectedModelIds = [];
   
   DateTimeRange _dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
@@ -31,15 +267,18 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
 
   Future<void> _loadInitialData() async {
     final models = await _db.getModels();
+    final feeGroups = await _db.getFeeGroups();
     setState(() {
-      _availableModels = models.map((m) => m['model_id'] as String).toList();
+      _models = models;
+      _feeGroups = feeGroups;
+      _availableModelIds = models.map((m) => m['model_id'] as String).toSet().toList();
     });
     _refreshData();
   }
 
   Future<void> _refreshData() async {
     final data = await _db.getTokenUsage(
-      modelIds: _selectedModels.isEmpty ? null : _selectedModels,
+      modelIds: _selectedModelIds.isEmpty ? null : _selectedModelIds,
       start: _dateRange.start,
       end: _dateRange.end.add(const Duration(days: 1)),
     );
@@ -83,6 +322,9 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     int totalRequests = 0;
     double totalCost = 0.0;
 
+    // Map to store group-wise totals: groupPk -> cost
+    final Map<int?, double> groupCosts = {};
+
     for (var row in _usageData) {
       final inTokens = row['input_tokens'] as int;
       final outTokens = row['output_tokens'] as int;
@@ -91,38 +333,102 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
       final billingMode = row['billing_mode'] as String? ?? 'token';
       final reqCount = row['request_count'] as int? ?? 1;
       final reqPrice = row['request_price'] as double? ?? 0.0;
+      final modelPk = row['model_pk'] as int?;
 
       totalInput += inTokens;
       totalOutput += outTokens;
       totalRequests += reqCount;
 
+      double cost = 0.0;
       if (billingMode == 'request') {
-        totalCost += (reqCount * reqPrice);
+        cost = (reqCount * reqPrice);
       } else {
-        totalCost += (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
+        cost = (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
       }
+      totalCost += cost;
+
+      // Find Fee Group ID for this usage record
+      int? groupId;
+      if (modelPk != null) {
+        final model = _models.cast<Map<String, dynamic>?>().firstWhere((m) => m?['id'] == modelPk, orElse: () => null);
+        if (model != null) groupId = model['fee_group_id'] as int?;
+      }
+      
+      groupCosts[groupId] = (groupCosts[groupId] ?? 0.0) + cost;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.tokenUsageMetrics),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: l10n.clearAllUsage,
-            onPressed: () => _confirmClearAll(l10n),
+    return Column(
+      children: [
+        _buildFilterBar(colorScheme, l10n),
+        _buildSummaryCards(totalInput, totalOutput, totalRequests, totalCost, colorScheme, l10n),
+        
+        // Fee Group Summary Area
+        if (groupCosts.isNotEmpty) 
+          _buildGroupSummaryArea(groupCosts, colorScheme, l10n),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(l10n.latestLog, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                    tooltip: l10n.clearAllUsage,
+                    onPressed: () => _confirmClearAll(l10n),
+                  ),
+                  IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
+                ],
+              ),
+            ],
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
-        ],
+        ),
+        Expanded(
+          child: _usageData.isEmpty
+              ? const Center(child: Text('No usage data found for selected range.'))
+              : _buildUsageList(colorScheme, l10n),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupSummaryArea(Map<int?, double> groupCosts, ColorScheme colorScheme, AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer.withAlpha(50),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.secondaryContainer),
       ),
-      body: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterBar(colorScheme, l10n),
-          _buildSummaryCards(totalInput, totalOutput, totalRequests, totalCost, colorScheme, l10n),
-          Expanded(
-            child: _usageData.isEmpty
-                ? const Center(child: Text('No usage data found for selected range.'))
-                : _buildUsageList(colorScheme, l10n),
+          Row(
+            children: [
+              Icon(Icons.pie_chart_outline, size: 16, color: colorScheme.secondary),
+              const SizedBox(width: 8),
+              Text(l10n.usageByGroup, style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.secondary)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: groupCosts.entries.map((entry) {
+              final group = _feeGroups.cast<Map<String, dynamic>?>().firstWhere((g) => g?['id'] == entry.key, orElse: () => null);
+              final name = group != null ? group['name'] : l10n.noFeeGroup;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(name, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text('\$${entry.value.toStringAsFixed(4)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -142,17 +448,17 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
               Expanded(
                 child: Wrap(
                   spacing: 8,
-                  children: _availableModels.map((m) {
-                    final isSelected = _selectedModels.contains(m);
+                  children: _availableModelIds.map((m) {
+                    final isSelected = _selectedModelIds.contains(m);
                     return FilterChip(
                       label: Text(m, style: const TextStyle(fontSize: 11)),
                       selected: isSelected,
                       onSelected: (val) {
                         setState(() {
                           if (val) {
-                            _selectedModels.add(m);
+                            _selectedModelIds.add(m);
                           } else {
-                            _selectedModels.remove(m);
+                            _selectedModelIds.remove(m);
                           }
                         });
                         _refreshData();
@@ -365,3 +671,4 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     );
   }
 }
+

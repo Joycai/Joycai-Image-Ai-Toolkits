@@ -17,7 +17,8 @@ class TaskItem {
   final String id;
   final List<String> imagePaths;
   final Map<String, dynamic> parameters;
-  final String modelId;
+  final String modelId; // Legacy string ID
+  final int? modelPk;   // New internal ID
   TaskStatus status;
   List<String> logs;
   List<String> resultPaths;
@@ -28,6 +29,7 @@ class TaskItem {
     required this.id,
     required this.imagePaths,
     required this.modelId,
+    this.modelPk,
     required this.parameters,
     this.status = TaskStatus.pending,
     List<String>? logs,
@@ -46,6 +48,7 @@ class TaskItem {
       'id': id,
       'image_path': jsonEncode(imagePaths),
       'model_id': modelId,
+      'model_pk': modelPk,
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
@@ -59,6 +62,7 @@ class TaskItem {
       id: map['id'],
       imagePaths: List<String>.from(jsonDecode(map['image_path'])),
       modelId: map['model_id'] ?? 'unknown',
+      modelPk: map['model_pk'] as int?,
       status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
       parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
       resultPaths: List<String>.from(jsonDecode(map['result_path'])),
@@ -93,14 +97,22 @@ class TaskQueueService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addTask(List<String> imagePaths, String modelId, Map<String, dynamic> params) {
+  void addTask(List<String> imagePaths, dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) {
+    String modelIdStr = modelIdDisplay ?? modelIdentifier.toString();
+    int? modelPk;
+
+    if (modelIdentifier is int) {
+      modelPk = modelIdentifier;
+    }
+
     final task = TaskItem(
       id: _uuid.v4(),
       imagePaths: imagePaths,
-      modelId: modelId,
+      modelId: modelIdStr,
+      modelPk: modelPk,
       parameters: params,
     );
-    task.addLog('Task created for ${imagePaths.length} images using $modelId.');
+    task.addLog('Task created for ${imagePaths.length} images using $modelIdStr.');
     _queue.add(task);
     
     // Persist task immediately
@@ -164,7 +176,7 @@ class TaskQueueService extends ChangeNotifier {
 
     task.status = TaskStatus.processing;
     task.startTime = DateTime.now();
-    task.addLog('Start processing with model: ${task.modelId}');
+    task.addLog('Start processing with model: ${task.modelPk ?? task.modelId}');
     onLogAdded?.call('Processing task ${task.id.substring(0,8)}...', level: 'RUNNING', taskId: task.id);
     DatabaseService().saveTask(task.toMap());
     notifyListeners();
@@ -181,7 +193,7 @@ class TaskQueueService extends ChangeNotifier {
       ).toList();
 
       final stream = LLMService().requestStream(
-        modelId: task.modelId,
+        modelIdentifier: task.modelPk ?? task.modelId,
         messages: [
           LLMMessage(
             role: LLMRole.user,

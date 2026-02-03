@@ -22,7 +22,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   final DatabaseService _db = DatabaseService();
   
   List<Map<String, dynamic>> _availableModels = [];
-  String? _selectedModelId;
+  String? _selectedChannel;
+  int? _selectedModelPk;
   String _aspectRatio = "not_set";
   String _resolution = "1K";
   bool _hasSyncedWithState = false;
@@ -35,10 +36,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     _loadModels();
     _loadPrompts();
     
-    // Initial attempt to sync (in case state is already loaded)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _trySyncState();
     });
+  }
+
+  String _getChannelId(Map<String, dynamic> model) {
+    final type = model['type'] as String;
+    if (type == 'google-genai') {
+      return model['is_paid'] == 1 ? 'google-genai-paid' : 'google-genai-free';
+    }
+    return 'openai-api';
   }
 
   Future<void> _loadModels() async {
@@ -47,27 +55,26 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       m['tag'] == 'image' || m['tag'] == 'multimodal'
     ).toList();
     
-    // Deduplicate models based on model_id
-    final uniqueModels = <String, Map<String, dynamic>>{};
-    for (var model in filtered) {
-      final id = model['model_id'] as String;
-      if (!uniqueModels.containsKey(id)) {
-        uniqueModels[id] = model;
-      }
-    }
-    
-    final finalModels = uniqueModels.values.toList();
-
     setState(() {
-      _availableModels = finalModels;
+      _availableModels = filtered;
       
-      // Validate currently selected model
-      if (_selectedModelId != null && !finalModels.any((m) => m['model_id'] == _selectedModelId)) {
-        _selectedModelId = null;
+      // Validate currently selected model and channel
+      if (_selectedModelPk != null) {
+        final currentModel = filtered.cast<Map<String, dynamic>?>().firstWhere(
+          (m) => m?['id'] == _selectedModelPk,
+          orElse: () => null,
+        );
+        if (currentModel == null) {
+          _selectedModelPk = null;
+        } else {
+          _selectedChannel = _getChannelId(currentModel);
+        }
       }
 
-      if (finalModels.isNotEmpty && _selectedModelId == null) {
-        _selectedModelId = finalModels.first['model_id'];
+      if (filtered.isNotEmpty && _selectedModelPk == null) {
+        final first = filtered.first;
+        _selectedModelPk = first['id'] as int;
+        _selectedChannel = _getChannelId(first);
       }
     });
   }
@@ -77,17 +84,21 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final appState = Provider.of<AppState>(context, listen: false);
     
     if (appState.settingsLoaded) {
-      String? modelIdToSync = appState.lastSelectedModelId;
+      String? savedModelId = appState.lastSelectedModelId;
       
-      // Verify model exists in available models if they are loaded
-      if (_availableModels.isNotEmpty && modelIdToSync != null) {
-        if (!_availableModels.any((m) => m['model_id'] == modelIdToSync)) {
-          modelIdToSync = null;
+      if (_availableModels.isNotEmpty && savedModelId != null) {
+        final match = _availableModels.firstWhere(
+          (m) => m['model_id'] == savedModelId || m['id'].toString() == savedModelId,
+          orElse: () => {},
+        );
+        
+        if (match.isNotEmpty) {
+          _selectedModelPk = match['id'] as int;
+          _selectedChannel = _getChannelId(match);
         }
       }
 
       setState(() {
-        if (modelIdToSync != null) _selectedModelId = modelIdToSync;
         _aspectRatio = appState.lastAspectRatio;
         _resolution = appState.lastResolution;
         _promptController.text = appState.lastPrompt;
@@ -101,7 +112,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     for (var p in prompts) {
       final tag = p['tag'] as String;
-      // Exclude Refiner prompts from the library
       if (tag == 'Refiner') continue;
       
       grouped[tag] ??= [];
@@ -110,10 +120,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     setState(() => _groupedPrompts = grouped);
   }
 
-  void _updateConfig({String? modelId, String? ar, String? res, String? prompt}) {
+  void _updateConfig({int? modelPk, String? modelIdStr, String? ar, String? res, String? prompt}) {
     final appState = Provider.of<AppState>(context, listen: false);
+    
+    String? idToSave;
+    if (modelPk != null) {
+      final model = _availableModels.firstWhere((m) => m['id'] == modelPk, orElse: () => {});
+      if (model.isNotEmpty) idToSave = model['model_id'] as String;
+    }
+
     appState.updateWorkbenchConfig(
-      modelId: modelId,
+      modelId: idToSave ?? modelIdStr,
       aspectRatio: ar,
       resolution: res,
       prompt: prompt,
@@ -124,14 +141,20 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     
-    // Check if we can sync now
     if (appState.settingsLoaded && !_hasSyncedWithState) {
-      // Defer state update to next frame to avoid build conflicts
       WidgetsBinding.instance.addPostFrameCallback((_) => _trySyncState());
     }
 
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+
+    final List<Map<String, String>> channels = [
+      {'id': 'google-genai-free', 'name': l10n.googleGenAiFree},
+      {'id': 'google-genai-paid', 'name': l10n.googleGenAiPaid},
+      {'id': 'openai-api', 'name': l10n.openaiApi},
+    ];
+
+    final filteredModels = _availableModels.where((m) => _getChannelId(m) == _selectedChannel).toList();
     
     return Container(
       width: 350,
@@ -147,27 +170,57 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold)),
                   DropdownButton<String>(
                     isExpanded: true,
-                    // Ensure value exists in items
-                    value: (_availableModels.any((m) => m['model_id'] == _selectedModelId)) 
-                        ? _selectedModelId 
+                    value: _selectedChannel,
+                    items: channels.map((c) => DropdownMenuItem(
+                      value: c['id'],
+                      child: Text(c['name']!),
+                    )).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedChannel = val;
+                        final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
+                          (m) => m != null && _getChannelId(m) == val,
+                          orElse: () => null,
+                        );
+                        _selectedModelPk = firstInChannel?['id'] as int?;
+                        if (_selectedModelPk != null) {
+                          _updateConfig(modelPk: _selectedModelPk);
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  DropdownButton<int>(
+                    isExpanded: true,
+                    value: (filteredModels.any((m) => m['id'] == _selectedModelPk)) 
+                        ? _selectedModelPk 
                         : null,
                     hint: Text(l10n.selectAModel),
-                    items: _availableModels.map((m) => DropdownMenuItem(
-                      value: m['model_id'] as String,
+                    items: filteredModels.map((m) => DropdownMenuItem(
+                      value: m['id'] as int,
                       child: Text(m['model_name']),
                     )).toList(),
                     onChanged: (val) {
-                      setState(() => _selectedModelId = val);
-                      _updateConfig(modelId: val);
+                      setState(() => _selectedModelPk = val);
+                      _updateConfig(modelPk: val);
                     },
                   ),
                   
-                  if (_selectedModelId != null) ...[
+                  if (_selectedModelPk != null) ...[
                     const SizedBox(height: 16),
-                    _buildModelSpecificOptions(_selectedModelId!, l10n),
+                    Builder(
+                      builder: (context) {
+                        final model = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk, orElse: () => {});
+                        if (model.isNotEmpty) {
+                          return _buildModelSpecificOptions(model['model_id'] as String, l10n);
+                        }
+                        return const SizedBox.shrink();
+                      }
+                    ),
                   ],
 
                   const SizedBox(height: 24),
@@ -218,14 +271,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: (_promptController.text.isEmpty || _selectedModelId == null) 
+                  onPressed: (_promptController.text.isEmpty || _selectedModelPk == null) 
                       ? null 
                       : () {
-                          appState.submitTask(_selectedModelId!, {
+                          final selectedModel = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk);
+                          final modelName = selectedModel['model_name'] as String;
+                          
+                          appState.submitTask(_selectedModelPk!, {
                             'prompt': _promptController.text,
                             'aspectRatio': _aspectRatio,
                             'imageSize': _resolution,
-                          });
+                          }, modelIdDisplay: modelName);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(l10n.taskSubmitted),
@@ -495,7 +551,7 @@ class _RefinerDialog extends StatefulWidget {
 class _RefinerDialogState extends State<_RefinerDialog> {
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
-  String? _selectedModelId;
+  int? _selectedModelPk;
   String? _selectedSysPrompt;
   bool _isRefining = false;
 
@@ -503,12 +559,12 @@ class _RefinerDialogState extends State<_RefinerDialog> {
   void initState() {
     super.initState();
     _currentPromptCtrl = TextEditingController(text: widget.initialPrompt);
-    if (widget.models.isNotEmpty) _selectedModelId = widget.models.first['model_id'];
+    if (widget.models.isNotEmpty) _selectedModelPk = widget.models.first['id'] as int;
     if (widget.sysPrompts.isNotEmpty) _selectedSysPrompt = widget.sysPrompts.first['content'];
   }
 
   Future<void> _refine() async {
-    if (_selectedModelId == null) return;
+    if (_selectedModelPk == null) return;
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -521,8 +577,11 @@ class _RefinerDialogState extends State<_RefinerDialog> {
         LLMAttachment.fromFile(f, 'image/jpeg')
       ).toList();
 
+      // Find the model ID string if needed, or just pass PK
+      // LLMService now accepts dynamic modelIdentifier (String or int)
+      
       final stream = LLMService().requestStream(
-        modelId: _selectedModelId!,
+        modelIdentifier: _selectedModelPk!,
         messages: [
           if (_selectedSysPrompt != null)
             LLMMessage(role: LLMRole.system, content: _selectedSysPrompt!),
@@ -567,11 +626,14 @@ class _RefinerDialogState extends State<_RefinerDialog> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _selectedModelId,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _selectedModelPk,
                     decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
-                    items: widget.models.map((m) => DropdownMenuItem(value: m['model_id'] as String, child: Text(m['model_name']))).toList(),
-                    onChanged: (v) => setState(() => _selectedModelId = v),
+                    items: widget.models.map((m) => DropdownMenuItem(
+                      value: m['id'] as int,
+                      child: Text('${m['model_name']} (${m['model_id']})'),
+                    )).toList(),
+                    onChanged: (v) => setState(() => _selectedModelPk = v),
                   ),
                 ),
                 const SizedBox(width: 16),

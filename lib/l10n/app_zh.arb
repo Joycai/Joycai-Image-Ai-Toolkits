@@ -286,5 +286,29 @@
   },
   "userPrompts": "用户提示词",
   "refinerPrompts": "优化器提示词",
-  "selectCategory": "选择分类"
+  "selectCategory": "选择分类",
+  "feeGroups": "费率组",
+  "feeGroup": "费率组",
+  "channels": "渠道",
+  "channel": "渠道",
+  "noFeeGroup": "无费率组",
+  "inputPrice": "输入价格 ($/M Tokens)",
+  "outputPrice": "输出价格 ($/M Tokens)",
+  "requestPrice": "请求价格 ($/次)",
+  "priceConfig": "价格配置",
+  "usageByGroup": "按费率组统计",
+  "addFeeGroup": "添加费率组",
+  "editFeeGroup": "编辑费率组",
+  "deleteFeeGroupConfirm": "删除费率组“{name}”？",
+  "@deleteFeeGroupConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupName": "组名称",
+  "googleGenAiFree": "Google GenAI (免费)",
+  "googleGenAiPaid": "Google GenAI (付费)",
+  "openaiApi": "OpenAI API"
 }

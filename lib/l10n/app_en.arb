@@ -286,5 +286,29 @@
   },
   "userPrompts": "User Prompts",
   "refinerPrompts": "Refiner Prompts",
-  "selectCategory": "Select Category"
+  "selectCategory": "Select Category",
+  "feeGroups": "Fee Groups",
+  "feeGroup": "Fee Group",
+  "channels": "Channels",
+  "channel": "Channel",
+  "noFeeGroup": "No Fee Group",
+  "inputPrice": "Input Price ($/M Tokens)",
+  "outputPrice": "Output Price ($/M Tokens)",
+  "requestPrice": "Request Price ($/Req)",
+  "priceConfig": "Price Config",
+  "usageByGroup": "Usage by Group",
+  "addFeeGroup": "Add Fee Group",
+  "editFeeGroup": "Edit Fee Group",
+  "deleteFeeGroupConfirm": "Delete Fee Group \"{name}\"?",
+  "@deleteFeeGroupConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupName": "Group Name",
+  "googleGenAiFree": "Google GenAI (Free)",
+  "googleGenAiPaid": "Google GenAI (Paid)",
+  "openaiApi": "OpenAI API"
 }

@@ -374,12 +374,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void submitTask(String modelId, Map<String, dynamic> params) {
+  void submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) {
     final prompt = params['prompt'] as String? ?? '';
     if (prompt.isEmpty && selectedImages.isEmpty) return;
     
     final imagePaths = selectedImages.map((f) => f.path).toList();
-    taskQueue.addTask(imagePaths, modelId, params);
+    taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
     
     addLog('Task submitted for ${imagePaths.length} images.');
   }

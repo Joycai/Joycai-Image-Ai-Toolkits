@@ -546,4 +546,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectCategory => '选择分类';
+
+  @override
+  String get feeGroups => '费率组';
+
+  @override
+  String get feeGroup => '费率组';
+
+  @override
+  String get channels => '渠道';
+
+  @override
+  String get channel => '渠道';
+
+  @override
+  String get noFeeGroup => '无费率组';
+
+  @override
+  String get inputPrice => '输入价格 (\$/M Tokens)';
+
+  @override
+  String get outputPrice => '输出价格 (\$/M Tokens)';
+
+  @override
+  String get requestPrice => '请求价格 (\$/次)';
+
+  @override
+  String get priceConfig => '价格配置';
+
+  @override
+  String get usageByGroup => '按费率组统计';
+
+  @override
+  String get addFeeGroup => '添加费率组';
+
+  @override
+  String get editFeeGroup => '编辑费率组';
+
+  @override
+  String deleteFeeGroupConfirm(String name) {
+    return '删除费率组“$name”？';
+  }
+
+  @override
+  String get groupName => '组名称';
+
+  @override
+  String get googleGenAiFree => 'Google GenAI (免费)';
+
+  @override
+  String get googleGenAiPaid => 'Google GenAI (付费)';
+
+  @override
+  String get openaiApi => 'OpenAI API';
 }

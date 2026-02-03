@@ -48,7 +48,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 7, // Incremented for billing mode and request fee
+          version: 9, // Incremented for usage model_pk
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -56,7 +56,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 7,
+        version: 9,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -75,6 +75,8 @@ class DatabaseService {
     await _createV2Tables(db);
     await _createV3Tables(db);
     await _createV4Tables(db);
+    await _createV8Tables(db);
+    await _createV9Tables(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -100,6 +102,64 @@ class DatabaseService {
       await db.execute('ALTER TABLE token_usage ADD COLUMN request_price REAL DEFAULT 0.0');
       await db.execute('ALTER TABLE token_usage ADD COLUMN billing_mode TEXT DEFAULT \'token\'');
     }
+    if (oldVersion < 8) await _createV8Tables(db);
+    if (oldVersion < 9) await _createV9Tables(db);
+  }
+
+  Future<void> _createV9Tables(Database db) async {
+    // 1. Add model_pk to token_usage
+    await db.execute('ALTER TABLE token_usage ADD COLUMN model_pk INTEGER');
+
+    // 2. Migrate existing usage to link to models
+    final usage = await db.query('token_usage');
+    final models = await db.query('llm_models');
+    
+    for (var row in usage) {
+      final modelId = row['model_id'] as String;
+      // Find first matching model
+      final match = models.cast<Map<String, dynamic>?>().firstWhere(
+        (m) => m?['model_id'] == modelId,
+        orElse: () => null,
+      );
+      if (match != null) {
+        await db.update('token_usage', {'model_pk': match['id']}, where: 'id = ?', whereArgs: [row['id']]);
+      }
+    }
+  }
+
+  Future<void> _createV8Tables(Database db) async {
+    // 1. Create fee_groups table
+    await db.execute('''
+      CREATE TABLE fee_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        billing_mode TEXT DEFAULT 'token',
+        input_price REAL DEFAULT 0.0,
+        output_price REAL DEFAULT 0.0,
+        request_price REAL DEFAULT 0.0
+      )
+    ''');
+
+    // 2. Add fee_group_id to llm_models
+    await db.execute('ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)');
+
+    // 3. Migrate existing fees to new groups
+    final models = await db.query('llm_models');
+    for (var model in models) {
+      final name = '${model['model_name']} Fee';
+      final mode = model['billing_mode'] as String? ?? 'token';
+      final id = await db.insert('fee_groups', {
+        'name': name,
+        'billing_mode': mode,
+        'input_price': model['input_fee'] ?? 0.0,
+        'output_price': model['output_fee'] ?? 0.0,
+        'request_price': model['request_fee'] ?? 0.0,
+      });
+      await db.update('llm_models', {'fee_group_id': id}, where: 'id = ?', whereArgs: [model['id']]);
+    }
+
+    // 4. Add model_pk to tasks
+    await db.execute('ALTER TABLE tasks ADD COLUMN model_pk INTEGER');
   }
 
   Future<void> _createV2Tables(Database db) async {
@@ -309,5 +369,29 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getSourceDirectories() async {
     final db = await database;
     return await db.query('source_directories');
+  }
+
+  // Fee Groups Methods
+  Future<int> addFeeGroup(Map<String, dynamic> group) async {
+    final db = await database;
+    return await db.insert('fee_groups', group);
+  }
+
+  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) async {
+    final db = await database;
+    await db.update('fee_groups', group, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteFeeGroup(int id) async {
+    final db = await database;
+    // Set associated models to NULL or a default group?
+    // For now, let's just set them to NULL (no fee group)
+    await db.update('llm_models', {'fee_group_id': null}, where: 'fee_group_id = ?', whereArgs: [id]);
+    await db.delete('fee_groups', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getFeeGroups() async {
+    final db = await database;
+    return await db.query('fee_groups');
   }
 }

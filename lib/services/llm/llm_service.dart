@@ -20,7 +20,7 @@ class LLMService {
   }
 
   Future<LLMResponse> request({
-    required String modelId,
+    required dynamic modelIdentifier,
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,
@@ -31,7 +31,7 @@ class LLMService {
     Map<String, dynamic> metadata = {};
 
     await for (final chunk in requestStream(
-      modelId: modelId,
+      modelIdentifier: modelIdentifier,
       messages: messages,
       sessionId: sessionId,
       contextId: contextId,
@@ -50,14 +50,14 @@ class LLMService {
   }
 
   Stream<LLMResponseChunk> requestStream({
-    required String modelId,
+    required dynamic modelIdentifier, // Can be String (legacy ID) or int (PK)
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,
     Map<String, dynamic>? options,
   }) async* {
-    onLogAdded?.call('Preparing request for model: $modelId', level: 'DEBUG', contextId: contextId);
-    final config = await _getModelConfig(modelId);
+    onLogAdded?.call('Preparing request for model: $modelIdentifier', level: 'DEBUG', contextId: contextId);
+    final config = await _getModelConfig(modelIdentifier, contextId: contextId);
     final provider = _getProvider(config.type);
 
     List<LLMMessage> fullHistory = messages;
@@ -91,7 +91,7 @@ class LLMService {
     // Unified Token Usage Recording
     if (finalMetadata != null) {
       onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
-      _recordUsage(modelId, config, finalMetadata);
+      _recordUsage(config.modelId, config, finalMetadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
     }
 
     if (sessionId != null) {
@@ -102,7 +102,7 @@ class LLMService {
     }
   }
 
-  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata) async {
+  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelPk}) async {
     final db = DatabaseService();
     
     // Standardize metadata keys (OpenAI vs Google)
@@ -112,6 +112,7 @@ class LLMService {
     await db.recordTokenUsage({
       'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
       'model_id': modelId,
+      'model_pk': modelPk,
       'timestamp': DateTime.now().toIso8601String(),
       'input_tokens': inputTokens,
       'output_tokens': outputTokens,
@@ -135,27 +136,65 @@ class LLMService {
     return provider;
   }
 
-  Future<LLMModelConfig> _getModelConfig(String modelId) async {
+  Future<LLMModelConfig> _getModelConfig(dynamic modelIdentifier, {String? contextId}) async {
     final db = DatabaseService();
     final models = await db.getModels();
-    final modelData = models.firstWhere(
-      (m) => m['model_id'] == modelId,
-      orElse: () => throw Exception("Model $modelId not found in database"),
-    );
+    
+    Map<String, dynamic> modelData;
+    
+    if (modelIdentifier is int) {
+      modelData = models.firstWhere(
+        (m) => m['id'] == modelIdentifier,
+        orElse: () => throw Exception("Model with PK $modelIdentifier not found"),
+      );
+    } else {
+      // Fallback for legacy string IDs (takes the first match)
+      modelData = models.firstWhere(
+        (m) => m['model_id'] == modelIdentifier,
+        orElse: () => throw Exception("Model $modelIdentifier not found in database"),
+      );
+    }
+
+    // Fetch Fee Group
+    final feeGroupId = modelData['fee_group_id'] as int?;
+    double inputFee = 0.0;
+    double outputFee = 0.0;
+    String billingMode = 'token';
+    double requestFee = 0.0;
+
+    if (feeGroupId != null) {
+      final feeGroups = await db.getFeeGroups();
+      final group = feeGroups.firstWhere((g) => g['id'] == feeGroupId, orElse: () => {});
+      if (group.isNotEmpty) {
+        inputFee = (group['input_price'] ?? 0.0) as double;
+        outputFee = (group['output_price'] ?? 0.0) as double;
+        billingMode = (group['billing_mode'] ?? 'token') as String;
+        requestFee = (group['request_price'] ?? 0.0) as double;
+      }
+    } else {
+      // Fallback to legacy columns if no group (shouldn't happen after migration)
+      inputFee = (modelData['input_fee'] ?? 0.0) as double;
+      outputFee = (modelData['output_fee'] ?? 0.0) as double;
+      billingMode = (modelData['billing_mode'] ?? 'token') as String;
+      requestFee = (modelData['request_fee'] ?? 0.0) as double;
+    }
 
     final type = modelData['type'] as String;
     final isPaid = modelData['is_paid'] == 1;
-    final inputFee = (modelData['input_fee'] ?? 0.0) as double;
-    final outputFee = (modelData['output_fee'] ?? 0.0) as double;
-    final billingMode = (modelData['billing_mode'] ?? 'token') as String;
-    final requestFee = (modelData['request_fee'] ?? 0.0) as double;
+    final modelId = modelData['model_id'] as String;
 
-    String prefix = type == 'google-genai' 
-        ? (isPaid ? 'google_paid' : 'google_free') 
-        : 'openai';
+    // Determine the Channel for configuration selection
+    String channel;
+    if (type == 'google-genai') {
+      channel = isPaid ? 'google_paid' : 'google_free';
+    } else {
+      channel = 'openai'; // Standard OpenAI API channel
+    }
 
-    final endpoint = await db.getSetting('${prefix}_endpoint') ?? "";
-    final apiKey = await db.getSetting('${prefix}_apikey') ?? "";
+    onLogAdded?.call('Using channel: $channel', level: 'DEBUG', contextId: contextId);
+
+    final endpoint = await db.getSetting('${channel}_endpoint') ?? "";
+    final apiKey = await db.getSetting('${channel}_apikey') ?? "";
 
     return LLMModelConfig(
       modelId: modelId,
