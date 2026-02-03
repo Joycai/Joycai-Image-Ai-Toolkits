@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -541,4 +542,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteFailed(String error) {
     return 'Failed to delete: $error';
   }
+
+  @override
+  String get userPrompts => 'User Prompts';
+
+  @override
+  String get refinerPrompts => 'Refiner Prompts';
+
+  @override
+  String get selectCategory => 'Select Category';
 }

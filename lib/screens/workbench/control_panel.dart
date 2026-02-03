@@ -101,6 +101,9 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     for (var p in prompts) {
       final tag = p['tag'] as String;
+      // Exclude Refiner prompts from the library
+      if (tag == 'Refiner') continue;
+      
       grouped[tag] ??= [];
       grouped[tag]!.add(p);
     }
@@ -312,47 +315,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   void _showPromptPickerMenu(AppLocalizations l10n) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.selectFromLibrary),
-        content: SizedBox(
-          width: 400,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _groupedPrompts.entries.map((group) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        group.key.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ),
-                    ...group.value.map((p) => ListTile(
-                      title: Text(p['title'], style: const TextStyle(fontSize: 14)),
-                      subtitle: Text(p['content'], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-                      onTap: () {
-                        _promptController.text = p['content'];
-                        _updateConfig(prompt: p['content']);
-                        Navigator.pop(context);
-                      },
-                      dense: true,
-                    )),
-                    const Divider(),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.close))],
+      builder: (context) => _LibraryDialog(
+        groupedPrompts: _groupedPrompts,
+        onSelect: (prompt) {
+          _promptController.text = prompt;
+          _updateConfig(prompt: prompt);
+        },
       ),
     );
   }
@@ -679,6 +647,152 @@ class _RefinerDialogState extends State<_RefinerDialog> {
           child: Text(l10n.apply),
         ),
       ],
+    );
+  }
+}
+
+class _LibraryDialog extends StatefulWidget {
+  final Map<String, List<Map<String, dynamic>>> groupedPrompts;
+  final Function(String) onSelect;
+
+  const _LibraryDialog({
+    required this.groupedPrompts,
+    required this.onSelect,
+  });
+
+  @override
+  State<_LibraryDialog> createState() => _LibraryDialogState();
+}
+
+class _LibraryDialogState extends State<_LibraryDialog> {
+  String? _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.groupedPrompts.isNotEmpty) {
+      _selectedCategory = widget.groupedPrompts.keys.first;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final categories = widget.groupedPrompts.keys.toList();
+    final currentPrompts = _selectedCategory != null 
+        ? (widget.groupedPrompts[_selectedCategory] ?? []) 
+        : <Map<String, dynamic>>[];
+
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 600),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Pane: Categories
+                  Container(
+                    width: 200,
+                    decoration: BoxDecoration(
+                      border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
+                      color: colorScheme.surfaceContainerLow,
+                    ),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: categories.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 4),
+                      itemBuilder: (context, index) {
+                        final cat = categories[index];
+                        final isSelected = cat == _selectedCategory;
+                        return ListTile(
+                          title: Text(cat, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                          selected: isSelected,
+                          selectedTileColor: colorScheme.secondaryContainer,
+                          selectedColor: colorScheme.onSecondaryContainer,
+                          onTap: () => setState(() => _selectedCategory = cat),
+                          dense: true,
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  // Right Pane: Prompts
+                  Expanded(
+                    child: currentPrompts.isEmpty 
+                    ? Center(child: Text(l10n.noPromptsSaved)) 
+                    : GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 300,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.5,
+                      ),
+                      itemCount: currentPrompts.length,
+                      itemBuilder: (context, index) {
+                        final p = currentPrompts[index];
+                        return Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              widget.onSelect(p['content']);
+                              Navigator.pop(context);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p['title'],
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Expanded(
+                                    child: Text(
+                                      p['content'],
+                                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                                      overflow: TextOverflow.fade,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -536,4 +537,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String deleteFailed(String error) {
     return '删除失败: $error';
   }
+
+  @override
+  String get userPrompts => '用户提示词';
+
+  @override
+  String get refinerPrompts => '优化器提示词';
+
+  @override
+  String get selectCategory => '选择分类';
 }

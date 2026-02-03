@@ -1087,6 +1087,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to delete: {error}'**
   String deleteFailed(String error);
+
+  /// No description provided for @userPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'User Prompts'**
+  String get userPrompts;
+
+  /// No description provided for @refinerPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Refiner Prompts'**
+  String get refinerPrompts;
+
+  /// No description provided for @selectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Category'**
+  String get selectCategory;
 }
 
 class _AppLocalizationsDelegate

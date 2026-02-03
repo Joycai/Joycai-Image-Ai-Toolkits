@@ -283,5 +283,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "userPrompts": "User Prompts",
+  "refinerPrompts": "Refiner Prompts",
+  "selectCategory": "Select Category"
 }
