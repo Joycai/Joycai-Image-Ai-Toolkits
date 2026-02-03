@@ -3,7 +3,7 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-APP_NAME="joycai_image_ai_toolkits"
+APP_NAME="Joycai Image AI Toolkits"
 DISPLAY_NAME="Joycai Image AI Toolkits"
 DMG_NAME="Joycai-Image-Ai-Toolkits-Installer"
 BUILD_DIR="build/macos/Build/Products/Release"
