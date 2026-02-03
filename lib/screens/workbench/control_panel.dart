@@ -19,6 +19,7 @@ class ControlPanelWidget extends StatefulWidget {
 
 class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   final TextEditingController _promptController = TextEditingController();
+  final TextEditingController _prefixController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   
   List<Map<String, dynamic>> _availableModels = [];
@@ -27,6 +28,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   String _aspectRatio = "not_set";
   String _resolution = "1K";
   bool _hasSyncedWithState = false;
+  bool _isModelSettingsExpanded = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
 
@@ -102,6 +104,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         _aspectRatio = appState.lastAspectRatio;
         _resolution = appState.lastResolution;
         _promptController.text = appState.lastPrompt;
+        _prefixController.text = appState.imagePrefix;
         _hasSyncedWithState = true;
       });
     }
@@ -170,81 +173,133 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedChannel,
-                    items: channels.map((c) => DropdownMenuItem(
-                      value: c['id'],
-                      child: Text(c['name']!),
-                    )).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedChannel = val;
-                        final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
-                          (m) => m != null && _getChannelId(m) == val,
-                          orElse: () => null,
-                        );
-                        _selectedModelPk = firstInChannel?['id'] as int?;
-                        if (_selectedModelPk != null) {
-                          _updateConfig(modelPk: _selectedModelPk);
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  DropdownButton<int>(
-                    isExpanded: true,
-                    value: (filteredModels.any((m) => m['id'] == _selectedModelPk)) 
-                        ? _selectedModelPk 
-                        : null,
-                    hint: Text(l10n.selectAModel),
-                    items: filteredModels.map((m) => DropdownMenuItem(
-                      value: m['id'] as int,
-                      child: Text(m['model_name']),
-                    )).toList(),
-                    onChanged: (val) {
-                      setState(() => _selectedModelPk = val);
-                      _updateConfig(modelPk: val);
-                    },
-                  ),
-                  
-                  if (_selectedModelPk != null) ...[
-                    const SizedBox(height: 16),
-                    Builder(
-                      builder: (context) {
-                        final model = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk, orElse: () => {});
-                        if (model.isNotEmpty) {
-                          return _buildModelSpecificOptions(model['model_id'] as String, l10n);
-                        }
-                        return const SizedBox.shrink();
-                      }
+                  // Custom Collapsible Header
+                  InkWell(
+                    onTap: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isModelSettingsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                if (!_isModelSettingsExpanded && _selectedModelPk != null)
+                                  Text(
+                                    _availableModels.firstWhere((m) => m['id'] == _selectedModelPk)['model_name'],
+                                    style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+
+                  // Collapsible Content
+                  if (_isModelSettingsExpanded) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                              DropdownButton<String>(
+                                isExpanded: true,
+                                value: _selectedChannel,
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                                underline: Container(height: 1, color: Colors.white24),
+                                items: channels.map((c) => DropdownMenuItem(
+                                  value: c['id'],
+                                  child: Text(c['name']!),
+                                )).toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedChannel = val;
+                                    final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
+                                      (m) => m != null && _getChannelId(m) == val,
+                                      orElse: () => null,
+                                    );
+                                    _selectedModelPk = firstInChannel?['id'] as int?;
+                                    if (_selectedModelPk != null) {
+                                      _updateConfig(modelPk: _selectedModelPk);
+                                    }
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                              DropdownButton<int>(
+                                isExpanded: true,
+                                value: (filteredModels.any((m) => m['id'] == _selectedModelPk)) 
+                                    ? _selectedModelPk 
+                                    : null,
+                                hint: Text(l10n.selectAModel),
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                                underline: Container(height: 1, color: Colors.white24),
+                                items: filteredModels.map((m) => DropdownMenuItem(
+                                  value: m['id'] as int,
+                                  child: Text(m['model_name']),
+                                )).toList(),
+                                onChanged: (val) {
+                                  setState(() => _selectedModelPk = val);
+                                  _updateConfig(modelPk: val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_selectedModelPk != null)
+                      Builder(
+                        builder: (context) {
+                          final model = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk, orElse: () => {});
+                          if (model.isNotEmpty) {
+                            return _buildModelSpecificOptions(model['model_id'] as String, l10n);
+                          }
+                          return const SizedBox.shrink();
+                        }
+                      ),
                   ],
 
-                  const SizedBox(height: 24),
+                  const Divider(height: 24),
+                  
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
+                      const Spacer(),
                       TextButton.icon(
                         onPressed: () => _showRefinerDialog(appState, l10n),
-                        icon: const Icon(Icons.auto_fix_high, size: 16),
-                        label: Text(l10n.refiner, style: const TextStyle(fontSize: 12)),
+                        icon: const Icon(Icons.auto_fix_high, size: 14),
+                        label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                       ),
                       _buildPromptPicker(colorScheme, l10n),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   TextField(
                     controller: _promptController,
-                    maxLines: 10,
+                    maxLines: 15,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
                       hintText: l10n.promptHint,
@@ -383,35 +438,62 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
   Widget _buildModelSpecificOptions(String modelId, AppLocalizations l10n) {
     if (modelId.contains('image') || modelId.contains('pro')) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.aspectRatio, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          DropdownButton<String>(
-            isExpanded: true,
-            value: _aspectRatio,
-            items: ["not_set", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"]
-                .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (v) {
-              setState(() => _aspectRatio = v!);
-              _updateConfig(ar: v);
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.resolution, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: '1K', label: Text('1K')),
-              ButtonSegment(value: '2K', label: Text('2K')),
-              ButtonSegment(value: '4K', label: Text('4K')),
-            ],
-            selected: {_resolution},
-            onSelectionChanged: (v) {
-              setState(() => _resolution = v.first);
-              _updateConfig(res: v.first);
-            },
-          ),
-        ],
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(l10n.aspectRatio, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _aspectRatio,
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                    underline: Container(height: 1, color: Colors.white24),
+                    items: ["not_set", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"]
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    onChanged: (v) {
+                      setState(() => _aspectRatio = v!);
+                      _updateConfig(ar: v);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(l10n.resolution, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: SegmentedButton<String>(
+                    showSelectedIcon: false,
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      textStyle: const TextStyle(fontSize: 10),
+                    ),
+                    segments: const [
+                      ButtonSegment(value: '1K', label: Text('1K')),
+                      ButtonSegment(value: '2K', label: Text('2K')),
+                      ButtonSegment(value: '4K', label: Text('4K')),
+                    ],
+                    selected: {_resolution},
+                    onSelectionChanged: (v) {
+                      setState(() => _resolution = v.first);
+                      _updateConfig(res: v.first);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     }
     return const SizedBox.shrink();
@@ -507,6 +589,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
             title: Text(l10n.queueSettings),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
                 Slider(
@@ -518,6 +601,19 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     appState.setConcurrency(v.toInt());
                     setDialogState(() {});
                   },
+                ),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text(l10n.filenamePrefix, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _prefixController,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g. result',
+                  ),
+                  onChanged: (v) => appState.setImagePrefix(v),
                 ),
               ],
             ),

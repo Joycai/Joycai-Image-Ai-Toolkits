@@ -604,4 +604,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openaiApi => 'OpenAI API';
+
+  @override
+  String get filenamePrefix => 'Filename Prefix';
 }

@@ -228,7 +228,9 @@ class TaskQueueService extends ChangeNotifier {
 
       for (int i = 0; i < generatedImages.length; i++) {
         final bytes = generatedImages[i];
-        final fileName = 'result_${task.id.substring(0, 8)}_$i.png';
+        final prefix = task.parameters['imagePrefix'] ?? 'result';
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = '${prefix}_${timestamp}_$i.png';
         final filePath = p.join(outputDir, fileName);
         
         final file = File(filePath);

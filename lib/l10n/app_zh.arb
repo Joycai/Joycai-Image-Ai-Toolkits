@@ -310,5 +310,6 @@
   "groupName": "组名称",
   "googleGenAiFree": "Google GenAI (免费)",
   "googleGenAiPaid": "Google GenAI (付费)",
-  "openaiApi": "OpenAI API"
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "文件名首缀"
 }

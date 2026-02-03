@@ -310,5 +310,6 @@
   "groupName": "Group Name",
   "googleGenAiFree": "Google GenAI (Free)",
   "googleGenAiPaid": "Google GenAI (Paid)",
-  "openaiApi": "OpenAI API"
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "Filename Prefix"
 }

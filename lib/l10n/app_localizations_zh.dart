@@ -599,4 +599,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openaiApi => 'OpenAI API';
+
+  @override
+  String get filenamePrefix => '文件名首缀';
 }

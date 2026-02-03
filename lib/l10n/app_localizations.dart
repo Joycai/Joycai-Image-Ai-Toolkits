@@ -1207,6 +1207,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OpenAI API'**
   String get openaiApi;
+
+  /// No description provided for @filenamePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Filename Prefix'**
+  String get filenamePrefix;
 }
 
 class _AppLocalizationsDelegate

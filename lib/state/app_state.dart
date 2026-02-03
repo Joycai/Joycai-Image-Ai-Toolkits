@@ -31,6 +31,7 @@ class AppState extends ChangeNotifier {
 
   // Gallery configuration
   double thumbnailSize = 150.0;
+  String imagePrefix = "result";
 
   // Workbench configurations
   String? lastSelectedModelId;
@@ -98,6 +99,9 @@ class AppState extends ChangeNotifier {
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
     }
+
+    // Load image prefix
+    imagePrefix = await _db.getSetting('image_prefix') ?? "result";
 
     outputDirectory = await _db.getSetting('output_directory');
     _setupOutputWatcher();
@@ -341,6 +345,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setImagePrefix(String prefix) async {
+    imagePrefix = prefix;
+    await _db.saveSetting('image_prefix', prefix);
+    notifyListeners();
+  }
+
   Future<void> updateOutputDirectory(String path) async {
     outputDirectory = path;
     await _db.saveSetting('output_directory', path);
@@ -377,6 +387,9 @@ class AppState extends ChangeNotifier {
   void submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) {
     final prompt = params['prompt'] as String? ?? '';
     if (prompt.isEmpty && selectedImages.isEmpty) return;
+    
+    // Add current image prefix to params
+    params['imagePrefix'] = imagePrefix;
     
     final imagePaths = selectedImages.map((f) => f.path).toList();
     taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
