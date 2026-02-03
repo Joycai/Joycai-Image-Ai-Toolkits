@@ -235,8 +235,7 @@ class AppState extends ChangeNotifier {
       try {
         final dir = Directory(path);
         if (await dir.exists()) {
-          final files = dir.listSync(recursive: false);
-          for (var file in files) {
+          await for (var file in dir.list(recursive: false)) {
             if (file is File && _isImageFile(file.path)) {
               newImages.add(file);
             }
@@ -264,9 +263,8 @@ class AppState extends ChangeNotifier {
     try {
       final dir = Directory(outputDirectory!);
       if (await dir.exists()) {
-        final files = dir.listSync(recursive: false);
         List<File> results = [];
-        for (var file in files) {
+        await for (var file in dir.list(recursive: false)) {
           if (file is File && _isImageFile(file.path)) {
             results.add(file);
           }

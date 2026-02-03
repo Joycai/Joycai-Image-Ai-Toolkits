@@ -275,7 +275,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _exportSettings(AppLocalizations l10n) async {
     final settings = await _db.database.then((db) => db.query('settings'));
     final models = await _db.getModels();
-    final data = jsonEncode({'settings': settings, 'models': models});
+    final prompts = await _db.getPrompts();
+    final data = jsonEncode({'settings': settings, 'models': models, 'prompts': prompts});
     
     String? path = await FilePicker.platform.saveFile(
       fileName: 'joycai_settings.json',
@@ -304,6 +305,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         model.remove('id');
         await _db.addModel(model);
       }
+      if (data['prompts'] != null) {
+        for (var p in data['prompts']) {
+          Map<String, dynamic> prompt = Map.from(p);
+          prompt.remove('id');
+          await _db.addPrompt(prompt);
+        }
+      }
+
       _loadAllSettings();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
