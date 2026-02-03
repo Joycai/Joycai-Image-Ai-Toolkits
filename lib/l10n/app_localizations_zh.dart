@@ -232,6 +232,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importSettings => '导入设置';
 
   @override
+  String get openAppDataDirectory => '打开应用数据目录';
+
+  @override
   String get resetAllSettings => '重置所有设置';
 
   @override

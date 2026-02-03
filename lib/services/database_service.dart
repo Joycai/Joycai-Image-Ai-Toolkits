@@ -21,11 +21,30 @@ class DatabaseService {
   Future<Database> _initDatabase() async {
     String dbPath;
     
+    // Migration: Check if DB exists in Documents (old location) and move it to Support (new location)
+    // This applies primarily to macOS and Mobile where the previous implementation used Documents.
+    final supportDir = await getApplicationSupportDirectory();
+    final newPath = join(supportDir.path, 'joycai_workbench.db');
+    
+    final docsDir = await getApplicationDocumentsDirectory();
+    final oldPath = join(docsDir.path, 'joycai_workbench.db');
+
+    if (await File(oldPath).exists() && !await File(newPath).exists()) {
+      try {
+        if (!await supportDir.exists()) {
+          await supportDir.create(recursive: true);
+        }
+        await File(oldPath).rename(newPath);
+      } catch (e) {
+        // Fallback: If migration fails, we might just start fresh or log it.
+        // For now, we proceed.
+      }
+    }
+
+    dbPath = newPath;
+    
     if (Platform.isWindows || Platform.isLinux) {
       sqfliteFfiInit();
-      final supportDir = await getApplicationSupportDirectory();
-      dbPath = join(supportDir.path, 'joycai_workbench.db');
-
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
@@ -35,9 +54,6 @@ class DatabaseService {
         ),
       );
     } else {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      dbPath = join(documentsDirectory.path, 'joycai_workbench.db');
-      
       return await openDatabase(
         dbPath,
         version: 7,
@@ -45,6 +61,11 @@ class DatabaseService {
         onUpgrade: _onUpgrade,
       );
     }
+  }
+
+  Future<String> getDatabasePath() async {
+    final supportDir = await getApplicationSupportDirectory();
+    return supportDir.path;
   }
 
   Future<void> _onCreate(Database db, int version) async {

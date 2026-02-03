@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
@@ -259,6 +260,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.upload),
           label: Text(l10n.importSettings),
         ),
+        OutlinedButton.icon(
+          onPressed: _openAppDataDir,
+          icon: const Icon(Icons.folder_shared),
+          label: Text(l10n.openAppDataDirectory),
+        ),
         ElevatedButton.icon(
           onPressed: () => _resetSettings(l10n),
           style: ElevatedButton.styleFrom(
@@ -270,6 +276,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _openAppDataDir() async {
+    try {
+      final path = await _db.getDatabasePath();
+      final uri = Uri.directory(path);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {

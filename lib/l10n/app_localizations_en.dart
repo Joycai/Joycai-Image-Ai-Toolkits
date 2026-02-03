@@ -233,6 +233,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importSettings => 'Import Settings';
 
   @override
+  String get openAppDataDirectory => 'Open App Data Directory';
+
+  @override
   String get resetAllSettings => 'Reset All Settings';
 
   @override

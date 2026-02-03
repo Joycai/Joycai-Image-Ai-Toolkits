@@ -512,6 +512,12 @@ abstract class AppLocalizations {
   /// **'Import Settings'**
   String get importSettings;
 
+  /// No description provided for @openAppDataDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Open App Data Directory'**
+  String get openAppDataDirectory;
+
   /// No description provided for @resetAllSettings.
   ///
   /// In en, this message translates to:

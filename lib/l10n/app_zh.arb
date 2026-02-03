@@ -124,6 +124,7 @@
   "dataManagement": "数据管理",
   "exportSettings": "导出设置",
   "importSettings": "导入设置",
+  "openAppDataDirectory": "打开应用数据目录",
   "resetAllSettings": "重置所有设置",
   "confirmReset": "重置所有设置？",
   "resetWarning": "这将删除所有配置、模型和已添加的文件夹。此操作无法撤销。",

@@ -124,6 +124,7 @@
   "dataManagement": "Data Management",
   "exportSettings": "Export Settings",
   "importSettings": "Import Settings",
+  "openAppDataDirectory": "Open App Data Directory",
   "resetAllSettings": "Reset All Settings",
   "confirmReset": "Reset All Settings?",
   "resetWarning": "This will delete all configurations, models, and added folders. This action cannot be undone.",
