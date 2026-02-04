@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -640,4 +641,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get skip => '跳过';
+
+  @override
+  String get fetchModels => '获取模型';
+
+  @override
+  String get discoveringModels => '正在发现模型...';
+
+  @override
+  String get selectModelsToAdd => '选择要添加的模型';
+
+  @override
+  String addSelected(Object count) {
+    return '添加所选 ($count)';
+  }
+
+  @override
+  String get alreadyAdded => '已添加';
+
+  @override
+  String get noNewModelsFound => '未发现新模型。';
+
+  @override
+  String fetchFailed(Object error) {
+    return '获取模型失败: $error';
+  }
 }
