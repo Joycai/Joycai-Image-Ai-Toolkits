@@ -10,6 +10,8 @@ class CollapsibleCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggle;
   final Widget? trailing;
+  final IconData? expandedIcon;
+  final IconData? collapsedIcon;
 
   const CollapsibleCard({
     super.key,
@@ -19,6 +21,8 @@ class CollapsibleCard extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     this.trailing,
+    this.expandedIcon,
+    this.collapsedIcon,
   });
 
   @override
@@ -36,7 +40,9 @@ class CollapsibleCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                  isExpanded 
+                    ? (expandedIcon ?? Icons.keyboard_arrow_down) 
+                    : (collapsedIcon ?? Icons.keyboard_arrow_right),
                   size: 20,
                   color: colorScheme.primary,
                 ),
