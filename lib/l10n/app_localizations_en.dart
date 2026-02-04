@@ -418,7 +418,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearModelData => 'Clear Model Data';
 
   @override
+  String get modelManagement => 'Model Management';
+
+  @override
+  String get feeManagement => 'Fee Management';
+
+  @override
   String get modelManager => 'Model Manager';
+
+  @override
+  String get name => 'Name';
 
   @override
   String get addModel => 'Add Model';

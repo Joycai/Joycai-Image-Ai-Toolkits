@@ -413,7 +413,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearModelData => '清除模型数据';
 
   @override
+  String get modelManagement => '模型管理';
+
+  @override
+  String get feeManagement => '费用管理';
+
+  @override
   String get modelManager => '模型管理';
+
+  @override
+  String get name => '名称';
 
   @override
   String get addModel => '添加模型';

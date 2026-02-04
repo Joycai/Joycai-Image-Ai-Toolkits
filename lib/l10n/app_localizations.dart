@@ -854,11 +854,29 @@ abstract class AppLocalizations {
   /// **'Clear Model Data'**
   String get clearModelData;
 
+  /// No description provided for @modelManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Management'**
+  String get modelManagement;
+
+  /// No description provided for @feeManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee Management'**
+  String get feeManagement;
+
   /// No description provided for @modelManager.
   ///
   /// In en, this message translates to:
   /// **'Model Manager'**
   String get modelManager;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
 
   /// No description provided for @addModel.
   ///

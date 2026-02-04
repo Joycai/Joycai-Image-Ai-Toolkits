@@ -216,7 +216,12 @@
     }
   },
   "clearModelData": "Clear Model Data",
+  "modelManagement": "Model Management",
+  "feeManagement": "Fee Management",
   "modelManager": "Model Manager",
+  "modelManagement": "Model Management",
+  "feeManagement": "Fee Management",
+  "name": "Name",
   "addModel": "Add Model",
   "editModel": "Edit Model",
   "noModelsConfigured": "No models configured",

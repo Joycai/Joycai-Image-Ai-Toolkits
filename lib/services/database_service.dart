@@ -111,18 +111,18 @@ class DatabaseService {
     await db.execute('ALTER TABLE token_usage ADD COLUMN model_pk INTEGER');
 
     // 2. Migrate existing usage to link to models
-    final usage = await db.query('token_usage');
-    final models = await db.query('llm_models');
+    final allUsageEntries = await db.query('token_usage');
+    final allModels = await db.query('llm_models');
     
-    for (var row in usage) {
-      final modelId = row['model_id'] as String;
+    for (var usageEntry in allUsageEntries) {
+      final modelId = usageEntry['model_id'] as String;
       // Find first matching model
-      final match = models.cast<Map<String, dynamic>?>().firstWhere(
-        (m) => m?['model_id'] == modelId,
+      final matchingModel = allModels.cast<Map<String, dynamic>?>().firstWhere(
+        (model) => model?['model_id'] == modelId,
         orElse: () => null,
       );
-      if (match != null) {
-        await db.update('token_usage', {'model_pk': match['id']}, where: 'id = ?', whereArgs: [row['id']]);
+      if (matchingModel != null) {
+        await db.update('token_usage', {'model_pk': matchingModel['id']}, where: 'id = ?', whereArgs: [usageEntry['id']]);
       }
     }
   }
@@ -144,18 +144,18 @@ class DatabaseService {
     await db.execute('ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)');
 
     // 3. Migrate existing fees to new groups
-    final models = await db.query('llm_models');
-    for (var model in models) {
-      final name = '${model['model_name']} Fee';
-      final mode = model['billing_mode'] as String? ?? 'token';
-      final id = await db.insert('fee_groups', {
+    final allLlmModels = await db.query('llm_models');
+    for (var llmModel in allLlmModels) {
+      final name = '${llmModel['model_name']} Fee';
+      final mode = llmModel['billing_mode'] as String? ?? 'token';
+      final feeGroupId = await db.insert('fee_groups', {
         'name': name,
         'billing_mode': mode,
-        'input_price': model['input_fee'] ?? 0.0,
-        'output_price': model['output_fee'] ?? 0.0,
-        'request_price': model['request_fee'] ?? 0.0,
+        'input_price': llmModel['input_fee'] ?? 0.0,
+        'output_price': llmModel['output_fee'] ?? 0.0,
+        'request_price': llmModel['request_fee'] ?? 0.0,
       });
-      await db.update('llm_models', {'fee_group_id': id}, where: 'id = ?', whereArgs: [model['id']]);
+      await db.update('llm_models', {'fee_group_id': feeGroupId}, where: 'id = ?', whereArgs: [llmModel['id']]);
     }
 
     // 4. Add model_pk to tasks

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../widgets/app_section.dart';
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
@@ -57,13 +58,30 @@ class _ModelsScreenState extends State<ModelsScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildChannelGroup(l10n.googleGenAiFree, 'google-genai', false, grouped['google-genai-free']!, l10n),
-            const SizedBox(height: 16),
-            _buildChannelGroup(l10n.googleGenAiPaid, 'google-genai', true, grouped['google-genai-paid']!, l10n),
-            const SizedBox(height: 16),
-            _buildChannelGroup(l10n.openaiApi, 'openai-api', true, grouped['openai-api']!, l10n), // OpenAI is always considered paid/api key based
+            AppSection(
+              title: l10n.modelManagement,
+              children: [
+                _buildChannelGroup(l10n.googleGenAiFree, 'google-genai', false, grouped['google-genai-free']!, l10n),
+                const SizedBox(height: 16),
+                _buildChannelGroup(l10n.googleGenAiPaid, 'google-genai', true, grouped['google-genai-paid']!, l10n),
+                const SizedBox(height: 16),
+                _buildChannelGroup(l10n.openaiApi, 'openai-api', true, grouped['openai-api']!, l10n),
+              ],
+            ),
+            AppSection(
+              title: l10n.feeManagement,
+              padding: const EdgeInsets.only(bottom: 64),
+              children: [
+                _buildFeeGroupList(l10n),
+              ],
+            ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showModelDialog(l10n),
+        icon: const Icon(Icons.add),
+        label: Text(l10n.addModel),
       ),
     );
   }
@@ -219,6 +237,104 @@ class _ModelsScreenState extends State<ModelsScreen> {
             child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeeGroupList(AppLocalizations l10n) {
+    return Column(
+      children: [
+        ..._feeGroups.map((group) => Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            title: Text(group['name']),
+            subtitle: Text(
+              '${l10n.billingMode}: ${group['billing_mode']} | In: ${group['input_price']} | Out: ${group['output_price']} | Req: ${group['request_price']}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showFeeGroupDialog(l10n, group: group),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    await _db.deleteFeeGroup(group['id']);
+                    _loadData();
+                  },
+                ),
+              ],
+            ),
+          ),
+        )),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () => _showFeeGroupDialog(l10n),
+          icon: const Icon(Icons.add),
+          label: Text(l10n.addFeeGroup),
+        ),
+      ],
+    );
+  }
+
+  void _showFeeGroupDialog(AppLocalizations l10n, {Map<String, dynamic>? group}) {
+    final nameCtrl = TextEditingController(text: group?['name'] ?? '');
+    final inCtrl = TextEditingController(text: (group?['input_price'] ?? 0.0).toString());
+    final outCtrl = TextEditingController(text: (group?['output_price'] ?? 0.0).toString());
+    final reqCtrl = TextEditingController(text: (group?['request_price'] ?? 0.0).toString());
+    String mode = group?['billing_mode'] ?? 'token';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
+              DropdownButtonFormField<String>(
+                initialValue: mode,
+                items: const [
+                  DropdownMenuItem(value: 'token', child: Text('Token')),
+                  DropdownMenuItem(value: 'request', child: Text('Request')),
+                ],
+                onChanged: (v) => setDialogState(() => mode = v!),
+                decoration: InputDecoration(labelText: l10n.billingMode),
+              ),
+              TextField(controller: inCtrl, decoration: InputDecoration(labelText: l10n.inputPrice), keyboardType: TextInputType.number),
+              TextField(controller: outCtrl, decoration: InputDecoration(labelText: l10n.outputPrice), keyboardType: TextInputType.number),
+              TextField(controller: reqCtrl, decoration: InputDecoration(labelText: l10n.requestPrice), keyboardType: TextInputType.number),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () async {
+                final data = {
+                  'name': nameCtrl.text,
+                  'billing_mode': mode,
+                  'input_price': double.tryParse(inCtrl.text) ?? 0.0,
+                  'output_price': double.tryParse(outCtrl.text) ?? 0.0,
+                  'request_price': double.tryParse(reqCtrl.text) ?? 0.0,
+                };
+                if (group == null) {
+                  await _db.addFeeGroup(data);
+                } else {
+                  await _db.updateFeeGroup(group['id'], data);
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadData();
+                }
+              },
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -12,8 +12,8 @@ class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
 
-  List<String> baseDirectories = [];
-  List<String> selectedDirectories = [];
+  List<String> sourceDirectories = [];
+  List<String> activeSourceDirectories = [];
   List<File> galleryImages = [];
   List<File> processedImages = [];
   List<File> selectedImages = [];
@@ -42,6 +42,8 @@ class AppState extends ChangeNotifier {
   // Directory watchers
   final Map<String, StreamSubscription> _watchers = {};
   StreamSubscription? _outputWatcher;
+  Timer? _sourceScanTimer;
+  Timer? _outputScanTimer;
 
   AppState() {
     _loadSettings();
@@ -70,6 +72,8 @@ class AppState extends ChangeNotifier {
       sub.cancel();
     }
     _outputWatcher?.cancel();
+    _sourceScanTimer?.cancel();
+    _outputScanTimer?.cancel();
     super.dispose();
   }
 
@@ -112,8 +116,8 @@ class AppState extends ChangeNotifier {
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
 
     final dirs = await _db.getSourceDirectories();
-    baseDirectories = dirs.map((d) => d['path'] as String).toList();
-    selectedDirectories = dirs
+    sourceDirectories = dirs.map((d) => d['path'] as String).toList();
+    activeSourceDirectories = dirs
         .where((d) => d['is_selected'] == 1)
         .map((d) => d['path'] as String)
         .toList();
@@ -132,12 +136,12 @@ class AppState extends ChangeNotifier {
     }
     _watchers.clear();
 
-    for (var path in selectedDirectories) {
+    for (var path in activeSourceDirectories) {
       try {
         final dir = Directory(path);
         if (dir.existsSync()) {
           _watchers[path] = dir.watch().listen((event) {
-            _scanImages();
+            _debouncedSourceScan();
           });
         }
       } catch (e) {
@@ -153,13 +157,27 @@ class AppState extends ChangeNotifier {
         final dir = Directory(outputDirectory!);
         if (dir.existsSync()) {
           _outputWatcher = dir.watch().listen((event) {
-            _scanProcessedImages();
+            _debouncedOutputScan();
           });
         }
       } catch (e) {
         addLog('Failed to watch output directory: $e', level: 'ERROR');
       }
     }
+  }
+
+  void _debouncedSourceScan() {
+    _sourceScanTimer?.cancel();
+    _sourceScanTimer = Timer(const Duration(milliseconds: 500), () {
+      _scanImages();
+    });
+  }
+
+  void _debouncedOutputScan() {
+    _outputScanTimer?.cancel();
+    _outputScanTimer = Timer(const Duration(milliseconds: 500), () {
+      _scanProcessedImages();
+    });
   }
 
   void addLog(String message, {String level = 'INFO', String? taskId}) {
@@ -184,9 +202,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> addBaseDirectory(String path) async {
-    if (!baseDirectories.contains(path)) {
-      baseDirectories.add(path);
-      selectedDirectories.add(path);
+    if (!sourceDirectories.contains(path)) {
+      sourceDirectories.add(path);
+      activeSourceDirectories.add(path);
       await _db.addSourceDirectory(path);
       addLog('Added base directory: $path');
       _scanImages();
@@ -195,9 +213,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> removeBaseDirectory(String path) async {
-    if (baseDirectories.contains(path)) {
-      baseDirectories.remove(path);
-      selectedDirectories.remove(path);
+    if (sourceDirectories.contains(path)) {
+      sourceDirectories.remove(path);
+      activeSourceDirectories.remove(path);
       await _db.removeSourceDirectory(path);
       addLog('Removed base directory: $path');
       _scanImages();
@@ -207,12 +225,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> toggleDirectory(String path) async {
     bool isSelected;
-    if (selectedDirectories.contains(path)) {
-      selectedDirectories.remove(path);
+    if (activeSourceDirectories.contains(path)) {
+      activeSourceDirectories.remove(path);
       isSelected = false;
       addLog('Deselected directory: $path');
     } else {
-      selectedDirectories.add(path);
+      activeSourceDirectories.add(path);
       isSelected = true;
       addLog('Selected directory: $path');
     }
@@ -228,14 +246,14 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _scanImages() async {
-    if (selectedDirectories.isEmpty) {
+    if (activeSourceDirectories.isEmpty) {
       galleryImages = [];
       notifyListeners();
       return;
     }
 
     List<File> newImages = [];
-    for (var path in selectedDirectories) {
+    for (var path in activeSourceDirectories) {
       try {
         final dir = Directory(path);
         if (await dir.exists()) {
@@ -315,7 +333,7 @@ class AppState extends ChangeNotifier {
   }
 
   void selectAllImages() {
-    selectedImages = List.from(galleryImages);
+    selectedImages.addAll(galleryImages);
     notifyListeners();
   }
 

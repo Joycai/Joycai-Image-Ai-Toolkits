@@ -63,20 +63,20 @@ color: colorScheme.onSurface,                    letterSpacing: 1.2,
                 ),
                 const Spacer(),
                 Text(
-                  '${appState.baseDirectories.length}',
+                  '${appState.sourceDirectories.length}',
                   style: TextStyle(fontSize: 11, color: colorScheme.primary),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: appState.baseDirectories.isEmpty
+            child: appState.sourceDirectories.isEmpty
                 ? _buildEmptyState(colorScheme, l10n)
                 : ListView.builder(
-                    itemCount: appState.baseDirectories.length,
+                    itemCount: appState.sourceDirectories.length,
                     itemBuilder: (context, index) {
-                      final path = appState.baseDirectories[index];
-                      final isSelected = appState.selectedDirectories.contains(path);
+                      final path = appState.sourceDirectories[index];
+                      final isSelected = appState.activeSourceDirectories.contains(path);
                       final folderName = path.split(Platform.pathSeparator).last;
 
                       return ListTile(
