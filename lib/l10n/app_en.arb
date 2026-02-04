@@ -316,5 +316,15 @@
   "googleGenAiFree": "Google GenAI (Free)",
   "googleGenAiPaid": "Google GenAI (Paid)",
   "openaiApi": "OpenAI API",
-  "filenamePrefix": "Filename Prefix"
+  "filenamePrefix": "Filename Prefix",
+  "setupWizardTitle": "Welcome Setup",
+  "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
+  "getStarted": "Get Started",
+  "stepAppearance": "Appearance",
+  "stepStorage": "Storage",
+  "stepApi": "Intelligence (API)",
+  "finish": "Finish",
+  "setupCompleteMessage": "You are all set! Enjoy creating.",
+  "runSetupWizard": "Run Setup Wizard",
+  "skip": "Skip"
 }

@@ -20,6 +20,7 @@ class AppState extends ChangeNotifier {
   List<LogEntry> logs = [];
   bool isProcessing = false;
   bool settingsLoaded = false;
+  bool setupCompleted = true; // Default to true to prevent flash, check DB later
   int concurrencyLimit = 2;
   String? outputDirectory;
 
@@ -80,6 +81,9 @@ class AppState extends ChangeNotifier {
   Future<void> _loadSettings() async {
     addLog('Loading settings from database...');
     
+    final setupVal = await _db.getSetting('setup_completed');
+    setupCompleted = setupVal == 'true';
+
     final savedLimit = await _db.getSetting('concurrency_limit');
     if (savedLimit != null) {
       concurrencyLimit = int.tryParse(savedLimit) ?? 2;
@@ -127,6 +131,12 @@ class AppState extends ChangeNotifier {
     _setupSourceWatchers();
     
     settingsLoaded = true;
+    notifyListeners();
+  }
+
+  Future<void> completeSetup() async {
+    setupCompleted = true;
+    await _db.saveSetting('setup_completed', 'true');
     notifyListeners();
   }
 
@@ -215,7 +225,8 @@ class AppState extends ChangeNotifier {
   Future<void> removeBaseDirectory(String path) async {
     if (sourceDirectories.contains(path)) {
       sourceDirectories.remove(path);
-      activeSourceDirectories.remove(path);
+      // Remove the root and any sub-directories from active list
+      activeSourceDirectories.removeWhere((p) => p.startsWith(path));
       await _db.removeSourceDirectory(path);
       addLog('Removed base directory: $path');
       _scanImages();

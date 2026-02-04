@@ -597,7 +597,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get groupName => '组名称';
+  String get groupName => '分组名称';
 
   @override
   String get googleGenAiFree => 'Google GenAI (免费)';
@@ -609,5 +609,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openaiApi => 'OpenAI API';
 
   @override
-  String get filenamePrefix => '文件名首缀';
+  String get filenamePrefix => '文件名前缀';
+
+  @override
+  String get setupWizardTitle => '欢迎设置向导';
+
+  @override
+  String get welcomeMessage => '欢迎使用 Joycai 图像 AI 工具箱！让我们开始设置吧。';
+
+  @override
+  String get getStarted => '开始';
+
+  @override
+  String get stepAppearance => '外观';
+
+  @override
+  String get stepStorage => '存储';
+
+  @override
+  String get stepApi => '智能 (API)';
+
+  @override
+  String get finish => '完成';
+
+  @override
+  String get setupCompleteMessage => '设置完成！尽情创作吧。';
+
+  @override
+  String get runSetupWizard => '运行设置向导';
+
+  @override
+  String get skip => '跳过';
 }

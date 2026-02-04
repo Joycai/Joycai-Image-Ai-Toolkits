@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
+import 'directory_tree_item.dart';
 
 class SourceExplorerWidget extends StatelessWidget {
   const SourceExplorerWidget({super.key});
@@ -76,34 +75,11 @@ color: colorScheme.onSurface,                    letterSpacing: 1.2,
                     itemCount: appState.sourceDirectories.length,
                     itemBuilder: (context, index) {
                       final path = appState.sourceDirectories[index];
-                      final isSelected = appState.activeSourceDirectories.contains(path);
-                      final folderName = path.split(Platform.pathSeparator).last;
-
-                      return ListTile(
-                        dense: true,
-                        contentPadding: const EdgeInsets.only(left: 8, right: 4),
-                        leading: Checkbox(
-                          value: isSelected,
-                          onChanged: (_) => appState.toggleDirectory(path),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        title: Text(
-                          folderName,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          path,
-                          style: const TextStyle(fontSize: 10),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close, size: 16),
-                          onPressed: () => _confirmRemove(context, appState, path, folderName),
-                          tooltip: l10n.removeFolderTooltip,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
+                      return DirectoryTreeItem(
+                        key: ValueKey(path),
+                        path: path,
+                        isRoot: true,
+                        onRemove: (p, name) => _confirmRemove(context, appState, p, name),
                       );
                     },
                   ),
