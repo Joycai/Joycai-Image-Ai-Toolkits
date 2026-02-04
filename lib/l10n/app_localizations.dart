@@ -854,11 +854,29 @@ abstract class AppLocalizations {
   /// **'Clear Model Data'**
   String get clearModelData;
 
+  /// No description provided for @modelManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Management'**
+  String get modelManagement;
+
+  /// No description provided for @feeManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee Management'**
+  String get feeManagement;
+
   /// No description provided for @modelManager.
   ///
   /// In en, this message translates to:
   /// **'Model Manager'**
   String get modelManager;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
 
   /// No description provided for @addModel.
   ///
@@ -1213,6 +1231,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filename Prefix'**
   String get filenamePrefix;
+
+  /// No description provided for @setupWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Setup'**
+  String get setupWizardTitle;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.'**
+  String get welcomeMessage;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @stepAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get stepAppearance;
+
+  /// No description provided for @stepStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get stepStorage;
+
+  /// No description provided for @stepApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Intelligence (API)'**
+  String get stepApi;
+
+  /// No description provided for @finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get finish;
+
+  /// No description provided for @setupCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are all set! Enjoy creating.'**
+  String get setupCompleteMessage;
+
+  /// No description provided for @runSetupWizard.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Setup Wizard'**
+  String get runSetupWizard;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
 }
 
 class _AppLocalizationsDelegate

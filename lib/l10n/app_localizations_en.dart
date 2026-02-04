@@ -418,7 +418,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearModelData => 'Clear Model Data';
 
   @override
+  String get modelManagement => 'Model Management';
+
+  @override
+  String get feeManagement => 'Fee Management';
+
+  @override
   String get modelManager => 'Model Manager';
+
+  @override
+  String get name => 'Name';
 
   @override
   String get addModel => 'Add Model';
@@ -606,4 +615,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filenamePrefix => 'Filename Prefix';
+
+  @override
+  String get setupWizardTitle => 'Welcome Setup';
+
+  @override
+  String get welcomeMessage =>
+      'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get stepAppearance => 'Appearance';
+
+  @override
+  String get stepStorage => 'Storage';
+
+  @override
+  String get stepApi => 'Intelligence (API)';
+
+  @override
+  String get finish => 'Finish';
+
+  @override
+  String get setupCompleteMessage => 'You are all set! Enjoy creating.';
+
+  @override
+  String get runSetupWizard => 'Run Setup Wizard';
+
+  @override
+  String get skip => 'Skip';
 }

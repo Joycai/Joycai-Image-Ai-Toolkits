@@ -9,6 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/api_key_field.dart';
+import '../../widgets/app_section.dart';
+import '../../widgets/settings_widgets.dart';
+import '../wizard/setup_wizard.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,11 +36,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // MCP Settings
   bool _mcpEnabled = false;
   final TextEditingController _mcpPortController = TextEditingController();
-
-  // Visibility states for API keys
-  bool _showGoogleFreeKey = false;
-  bool _showGooglePaidKey = false;
-  bool _showOpenAIKey = false;
 
   @override
   void initState() {
@@ -78,57 +77,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader(l10n.appearance),
-                  _buildThemeSelector(appState, l10n),
-                  const SizedBox(height: 16),
-                  _buildLanguageSelector(appState, l10n),
-                  const SizedBox(height: 32),
-
-                  _buildSectionHeader(l10n.mcpServerSettings),
-                  _buildMcpSettings(l10n),
-                  const SizedBox(height: 32),
-
-                  _buildSectionHeader(l10n.googleGenAiSettings),
-                  _buildRestConfigGroup(
-                    l10n.freeModel, 
-                    _googleFreeEndpoint, 
-                    _googleFreeApiKey, 
-                    'google_free',
-                    _showGoogleFreeKey,
-                    (v) => setState(() => _showGoogleFreeKey = v),
-                    l10n,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRestConfigGroup(
-                    l10n.paidModel, 
-                    _googlePaidEndpoint, 
-                    _googlePaidApiKey, 
-                    'google_paid',
-                    _showGooglePaidKey,
-                    (v) => setState(() => _showGooglePaidKey = v),
-                    l10n,
+                  AppSection(
+                    title: l10n.appearance,
+                    children: [
+                      ThemeSelector(appState: appState, l10n: l10n),
+                      const SizedBox(height: 16),
+                      LanguageSelector(appState: appState, l10n: l10n),
+                    ],
                   ),
                   const SizedBox(height: 32),
 
-                  _buildSectionHeader(l10n.openAiApiSettings),
-                  _buildRestConfigGroup(
-                    l10n.standardConfig, 
-                    _openaiEndpoint, 
-                    _openaiApiKey, 
-                    'openai',
-                    _showOpenAIKey,
-                    (v) => setState(() => _showOpenAIKey = v),
-                    l10n,
+                  AppSection(
+                    title: l10n.mcpServerSettings,
+                    children: [
+                      _buildMcpSettings(l10n),
+                    ],
                   ),
-                  const SizedBox(height: 32),
 
-                  _buildSectionHeader(l10n.settings),
-                  _buildOutputDirectoryTile(appState, l10n),
-                  const SizedBox(height: 32),
+                  AppSection(
+                    title: l10n.googleGenAiSettings,
+                    children: [
+                      _buildRestConfigGroup(
+                        l10n.freeModel, 
+                        _googleFreeEndpoint, 
+                        _googleFreeApiKey, 
+                        'google_free',
+                        l10n,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRestConfigGroup(
+                        l10n.paidModel, 
+                        _googlePaidEndpoint, 
+                        _googlePaidApiKey, 
+                        'google_paid',
+                        l10n,
+                      ),
+                    ],
+                  ),
 
-                  _buildSectionHeader(l10n.dataManagement),
-                  _buildDataActions(colorScheme, l10n),
-                  const SizedBox(height: 64),
+                  AppSection(
+                    title: l10n.openAiApiSettings,
+                    children: [
+                      _buildRestConfigGroup(
+                        l10n.standardConfig, 
+                        _openaiEndpoint, 
+                        _openaiApiKey, 
+                        'openai',
+                        l10n,
+                      ),
+                    ],
+                  ),
+
+                  AppSection(
+                    title: l10n.settings,
+                    children: [
+                      _buildOutputDirectoryTile(appState, l10n),
+                    ],
+                  ),
+
+                  AppSection(
+                    title: l10n.dataManagement,
+                    padding: const EdgeInsets.only(bottom: 64),
+                    children: [
+                      _buildDataActions(colorScheme, l10n),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -166,70 +179,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(AppState appState, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.appearance, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        SegmentedButton<ThemeMode>(
-          segments: [
-            ButtonSegment(value: ThemeMode.system, label: Text(l10n.themeAuto), icon: const Icon(Icons.brightness_auto)),
-            ButtonSegment(value: ThemeMode.light, label: Text(l10n.themeLight), icon: const Icon(Icons.light_mode)),
-            ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark), icon: const Icon(Icons.dark_mode)),
-          ],
-          selected: {appState.themeMode},
-          onSelectionChanged: (Set<ThemeMode> newSelection) {
-            appState.setThemeMode(newSelection.first);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLanguageSelector(AppState appState, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.language, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        SegmentedButton<String?>(
-          segments: const [
-            ButtonSegment(value: null, label: Text('Default')),
-            ButtonSegment(value: 'en', label: Text('English')),
-            ButtonSegment(value: 'zh', label: Text('中文')),
-          ],
-          selected: {appState.locale?.languageCode},
-          onSelectionChanged: (Set<String?> newSelection) {
-            final code = newSelection.first;
-            appState.setLocale(code == null ? null : Locale(code));
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildRestConfigGroup(
     String label, 
     TextEditingController ep, 
     TextEditingController key, 
     String prefix,
-    bool showKey,
-    Function(bool) onToggleVisibility,
     AppLocalizations l10n,
   ) {
     return Column(
@@ -250,17 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(width: 16),
             Expanded(
               flex: 1,
-              child: TextField(
+              child: ApiKeyField(
                 controller: key,
-                obscureText: !showKey,
-                decoration: InputDecoration(
-                  labelText: l10n.apiKey, 
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(showKey ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => onToggleVisibility(!showKey),
-                  ),
-                ),
+                label: l10n.apiKey,
                 onChanged: (v) => _saveRestSetting('${prefix}_apikey', v),
               ),
             ),
@@ -304,6 +250,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: _openAppDataDir,
           icon: const Icon(Icons.folder_shared),
           label: Text(l10n.openAppDataDirectory),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
+          icon: const Icon(Icons.auto_fix_high),
+          label: Text(l10n.runSetupWizard),
         ),
         ElevatedButton.icon(
           onPressed: () => _resetSettings(l10n),

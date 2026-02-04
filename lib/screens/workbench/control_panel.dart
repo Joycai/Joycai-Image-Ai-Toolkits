@@ -27,10 +27,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   int? _selectedModelPk;
   String _aspectRatio = "not_set";
   String _resolution = "1K";
-  bool _hasSyncedWithState = false;
   bool _isModelSettingsExpanded = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
+  late AppState _appState;
 
   @override
   void initState() {
@@ -38,9 +38,71 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     _loadModels();
     _loadPrompts();
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _trySyncState();
-    });
+    // Listen to AppState changes for external updates (e.g. import, reset)
+    _appState = Provider.of<AppState>(context, listen: false);
+    _appState.addListener(_onAppStateChanged);
+    
+    // Initial sync
+    _syncWithState();
+  }
+
+  @override
+  void dispose() {
+    _appState.removeListener(_onAppStateChanged);
+    _promptController.dispose();
+    _prefixController.dispose();
+    super.dispose();
+  }
+
+  void _onAppStateChanged() {
+    if (!mounted) return;
+    _syncWithState();
+  }
+
+  void _syncWithState() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    if (!appState.settingsLoaded) return;
+
+    bool changed = false;
+
+    if (_promptController.text != appState.lastPrompt) {
+      _promptController.text = appState.lastPrompt;
+      changed = true;
+    }
+
+    if (_prefixController.text != appState.imagePrefix) {
+      _prefixController.text = appState.imagePrefix;
+      changed = true;
+    }
+
+    if (_aspectRatio != appState.lastAspectRatio) {
+      _aspectRatio = appState.lastAspectRatio;
+      changed = true;
+    }
+
+    if (_resolution != appState.lastResolution) {
+      _resolution = appState.lastResolution;
+      changed = true;
+    }
+
+    // Sync model selection
+    if (_availableModels.isNotEmpty) {
+      final savedModelId = appState.lastSelectedModelId;
+      final match = _availableModels.firstWhere(
+        (m) => m['model_id'] == savedModelId || m['id'].toString() == savedModelId,
+        orElse: () => {},
+      );
+      
+      if (match.isNotEmpty && _selectedModelPk != match['id']) {
+        _selectedModelPk = match['id'] as int;
+        _selectedChannel = _getChannelId(match);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      setState(() {});
+    }
   }
 
   String _getChannelId(Map<String, dynamic> model) {
@@ -81,35 +143,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     });
   }
 
-  void _trySyncState() {
-    if (_hasSyncedWithState) return;
-    final appState = Provider.of<AppState>(context, listen: false);
-    
-    if (appState.settingsLoaded) {
-      String? savedModelId = appState.lastSelectedModelId;
-      
-      if (_availableModels.isNotEmpty && savedModelId != null) {
-        final match = _availableModels.firstWhere(
-          (m) => m['model_id'] == savedModelId || m['id'].toString() == savedModelId,
-          orElse: () => {},
-        );
-        
-        if (match.isNotEmpty) {
-          _selectedModelPk = match['id'] as int;
-          _selectedChannel = _getChannelId(match);
-        }
-      }
-
-      setState(() {
-        _aspectRatio = appState.lastAspectRatio;
-        _resolution = appState.lastResolution;
-        _promptController.text = appState.lastPrompt;
-        _prefixController.text = appState.imagePrefix;
-        _hasSyncedWithState = true;
-      });
-    }
-  }
-
   Future<void> _loadPrompts() async {
     final prompts = await _db.getPrompts();
     final Map<String, List<Map<String, dynamic>>> grouped = {};
@@ -144,10 +177,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     
-    if (appState.settingsLoaded && !_hasSyncedWithState) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _trySyncState());
-    }
-
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
@@ -283,17 +312,25 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
                   const Divider(height: 24),
                   
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () => _showRefinerDialog(appState, l10n),
-                        icon: const Icon(Icons.auto_fix_high, size: 14),
-                        label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
-                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _showRefinerDialog(appState, l10n),
+                            icon: const Icon(Icons.auto_fix_high, size: 14),
+                            label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
+                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          ),
+                          _buildPromptPicker(colorScheme, l10n),
+                        ],
                       ),
-                      _buildPromptPicker(colorScheme, l10n),
                     ],
                   ),
                   const SizedBox(height: 4),

@@ -10,6 +10,7 @@ import 'screens/models/models_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/workbench/workbench_screen.dart';
+import 'screens/wizard/setup_wizard.dart';
 import 'services/llm/llm_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
@@ -77,6 +78,25 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   bool _isRailExtended = false;
+  bool _wizardShown = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkFirstRun();
+  }
+
+  void _checkFirstRun() {
+    final appState = Provider.of<AppState>(context);
+    if (appState.settingsLoaded && !appState.setupCompleted && !_wizardShown) {
+      _wizardShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SetupWizard()),
+        );
+      });
+    }
+  }
 
   final List<Widget> _screens = [
     const WorkbenchScreen(),

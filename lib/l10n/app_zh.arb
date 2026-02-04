@@ -217,6 +217,9 @@
   },
   "clearModelData": "清除模型数据",
   "modelManager": "模型管理",
+  "modelManagement": "模型管理",
+  "feeManagement": "费用管理",
+  "name": "名称",
   "addModel": "添加模型",
   "editModel": "编辑模型",
   "noModelsConfigured": "未配置模型",
@@ -307,9 +310,19 @@
       }
     }
   },
-  "groupName": "组名称",
+  "groupName": "分组名称",
   "googleGenAiFree": "Google GenAI (免费)",
   "googleGenAiPaid": "Google GenAI (付费)",
   "openaiApi": "OpenAI API",
-  "filenamePrefix": "文件名首缀"
+  "filenamePrefix": "文件名前缀",
+  "setupWizardTitle": "欢迎设置向导",
+  "welcomeMessage": "欢迎使用 Joycai 图像 AI 工具箱！让我们开始设置吧。",
+  "getStarted": "开始",
+  "stepAppearance": "外观",
+  "stepStorage": "存储",
+  "stepApi": "智能 (API)",
+  "finish": "完成",
+  "setupCompleteMessage": "设置完成！尽情创作吧。",
+  "runSetupWizard": "运行设置向导",
+  "skip": "跳过"
 }
