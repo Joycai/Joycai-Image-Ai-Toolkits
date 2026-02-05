@@ -94,6 +94,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
       final response = await LLMService().request(
         modelIdentifier: _selectedModelPk!,
+        useStream: false,
         messages: [
           if (_selectedSysPrompt != null)
             LLMMessage(role: LLMRole.system, content: _selectedSysPrompt!),

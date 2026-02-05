@@ -27,28 +27,77 @@ class LLMService {
     String? sessionId,
     String? contextId,
     Map<String, dynamic>? options,
+    bool useStream = true,
   }) async {
-    String accumulatedText = "";
-    List<Uint8List> accumulatedImages = [];
-    Map<String, dynamic> metadata = {};
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    final provider = _getProvider(config.type);
 
-    await for (final chunk in requestStream(
-      modelIdentifier: modelIdentifier,
-      messages: messages,
-      sessionId: sessionId,
-      contextId: contextId,
-      options: options,
-    )) {
-      if (chunk.textPart != null) accumulatedText += chunk.textPart!;
-      if (chunk.imagePart != null) accumulatedImages.add(chunk.imagePart!);
-      if (chunk.metadata != null) metadata = chunk.metadata!;
+    List<LLMMessage> fullHistory = messages;
+    if (sessionId != null) {
+      _sessions[sessionId] ??= [];
+      _sessions[sessionId]!.addAll(messages);
+      fullHistory = _sessions[sessionId]!;
     }
 
-    return LLMResponse(
-      text: accumulatedText,
-      generatedImages: accumulatedImages,
-      metadata: metadata,
-    );
+    LLMResponse response;
+
+    if (useStream) {
+      onLogAdded?.call('Connecting to ${config.type} provider (streaming)...', level: 'DEBUG', contextId: contextId);
+      String accumulatedText = "";
+      List<Uint8List> accumulatedImages = [];
+      Map<String, dynamic>? finalMetadata;
+
+      await for (final chunk in provider.generateStream(
+        config, 
+        fullHistory, 
+        options: options, 
+        logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      )) {
+        if (chunk.textPart != null) {
+          accumulatedText += chunk.textPart!;
+          onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+        }
+        if (chunk.imagePart != null) {
+          accumulatedImages.add(chunk.imagePart!);
+        }
+        if (chunk.metadata != null) finalMetadata = chunk.metadata;
+      }
+      
+      response = LLMResponse(
+        text: accumulatedText,
+        generatedImages: accumulatedImages,
+        metadata: finalMetadata ?? {},
+      );
+    } else {
+      onLogAdded?.call('Connecting to ${config.type} provider (standard)...', level: 'DEBUG', contextId: contextId);
+      response = await provider.generate(
+        config,
+        fullHistory,
+        options: options,
+        logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+      );
+      if (response.text.isNotEmpty) {
+        onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
+      }
+    }
+
+    // Record usage
+    if (response.metadata.isNotEmpty) {
+      _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+    }
+
+    // Update session
+    if (sessionId != null) {
+      _sessions[sessionId]!.add(LLMMessage(
+        role: LLMRole.assistant,
+        content: response.text,
+      ));
+    }
+
+    return response;
   }
 
   Stream<LLMResponseChunk> requestStream({
