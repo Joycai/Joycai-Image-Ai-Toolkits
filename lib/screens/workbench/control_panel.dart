@@ -446,6 +446,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
   void _showRefinerDialog(AppState appState, AppLocalizations l10n) async {
     final allModels = await _db.getModels();
+    final channels = await _db.getChannels();
     final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
     final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
 
@@ -456,6 +457,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       builder: (context) => _RefinerDialog(
         initialPrompt: _promptController.text,
         models: refinerModels,
+        channels: channels,
         sysPrompts: refinerPrompts,
         selectedImages: appState.selectedImages,
         onApply: (refined) {
@@ -680,6 +682,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 class _RefinerDialog extends StatefulWidget {
   final String initialPrompt;
   final List<Map<String, dynamic>> models;
+  final List<Map<String, dynamic>> channels;
   final List<Map<String, dynamic>> sysPrompts;
   final List<File> selectedImages;
   final Function(String) onApply;
@@ -687,6 +690,7 @@ class _RefinerDialog extends StatefulWidget {
   const _RefinerDialog({
     required this.initialPrompt,
     required this.models,
+    required this.channels,
     required this.sysPrompts,
     required this.selectedImages,
     required this.onApply,
@@ -777,10 +781,34 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                   child: DropdownButtonFormField<int>(
                     initialValue: _selectedModelPk,
                     decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
-                    items: widget.models.map((m) => DropdownMenuItem(
-                      value: m['id'] as int,
-                      child: Text('${m['model_name']} (${m['model_id']})'),
-                    )).toList(),
+                    items: widget.models.map((m) {
+                      final channel = widget.channels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
+                      return DropdownMenuItem(
+                        value: m['id'] as int,
+                        child: Row(
+                          children: [
+                            if (channel.isNotEmpty && channel['tag'] != null)
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: Color(channel['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  channel['tag'],
+                                  style: TextStyle(
+                                    fontSize: 9, 
+                                    color: Color(channel['tag_color'] ?? 0xFF607D8B),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            Expanded(child: Text(m['model_name'], overflow: TextOverflow.ellipsis)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                     onChanged: (v) => setState(() => _selectedModelPk = v),
                   ),
                 ),
@@ -828,7 +856,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                         readOnly: true,
                         decoration: InputDecoration(
                           border: const OutlineInputBorder(),
-                          fillColor: Colors.grey.withAlpha((255 * 0.05).round()),
+                          fillColor: Colors.grey.withValues(alpha: 0.05),
                           filled: true,
                         ),
                       ),
