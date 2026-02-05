@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -646,4 +647,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skip => 'Skip';
+
+  @override
+  String get fetchModels => 'Fetch Models';
+
+  @override
+  String get discoveringModels => 'Discovering Models...';
+
+  @override
+  String get selectModelsToAdd => 'Select models to add';
+
+  @override
+  String addSelected(Object count) {
+    return 'Add Selected ($count)';
+  }
+
+  @override
+  String get alreadyAdded => 'Already Added';
+
+  @override
+  String get noNewModelsFound => 'No new models found.';
+
+  @override
+  String fetchFailed(Object error) {
+    return 'Failed to fetch models: $error';
+  }
 }

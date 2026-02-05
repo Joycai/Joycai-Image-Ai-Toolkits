@@ -219,8 +219,6 @@
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
   "modelManager": "Model Manager",
-  "modelManagement": "Model Management",
-  "feeManagement": "Fee Management",
   "name": "Name",
   "addModel": "Add Model",
   "editModel": "Edit Model",
@@ -326,5 +324,12 @@
   "finish": "Finish",
   "setupCompleteMessage": "You are all set! Enjoy creating.",
   "runSetupWizard": "Run Setup Wizard",
-  "skip": "Skip"
+  "skip": "Skip",
+  "fetchModels": "Fetch Models",
+  "discoveringModels": "Discovering Models...",
+  "selectModelsToAdd": "Select models to add",
+  "addSelected": "Add Selected ({count})",
+  "alreadyAdded": "Already Added",
+  "noNewModelsFound": "No new models found.",
+  "fetchFailed": "Failed to fetch models: {error}"
 }

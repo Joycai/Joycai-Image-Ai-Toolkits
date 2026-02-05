@@ -324,5 +324,12 @@
   "finish": "完成",
   "setupCompleteMessage": "设置完成！尽情创作吧。",
   "runSetupWizard": "运行设置向导",
-  "skip": "跳过"
+  "skip": "跳过",
+  "fetchModels": "获取模型",
+  "discoveringModels": "正在发现模型...",
+  "selectModelsToAdd": "选择要添加的模型",
+  "addSelected": "添加所选 ({count})",
+  "alreadyAdded": "已添加",
+  "noNewModelsFound": "未发现新模型。",
+  "fetchFailed": "获取模型失败: {error}"
 }

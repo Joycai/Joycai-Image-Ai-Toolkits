@@ -6,6 +6,47 @@ import 'package:http/http.dart' as http;
 
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
+import '../model_discovery_service.dart';
+
+class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
+  bool _isGoogleOfficial(String endpoint) {
+    return endpoint.contains("generativelanguage.googleapis.com");
+  }
+
+  @override
+  Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
+    final baseUrl = config.endpoint.endsWith('/') 
+        ? config.endpoint.substring(0, config.endpoint.length - 1) 
+        : config.endpoint;
+
+    // Use /models as requested, but ensure auth is sent
+    final url = Uri.parse('$baseUrl/models');
+    
+    final headers = {"Content-Type": "application/json"};
+    if (_isGoogleOfficial(baseUrl)) {
+      headers["x-goog-api-key"] = config.apiKey;
+    } else {
+      headers["Authorization"] = "Bearer ${config.apiKey}";
+      headers["x-goog-api-key"] = config.apiKey;
+    }
+
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch models: ${response.statusCode} - ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    final List<dynamic> modelsJson = data['models'] ?? [];
+
+    return modelsJson.map((m) => DiscoveredModel(
+      modelId: m['name']?.toString().replaceFirst('models/', '') ?? '',
+      displayName: m['displayName'] ?? m['name'] ?? '',
+      description: m['description'] ?? '',
+      rawData: m as Map<String, dynamic>,
+    )).toList();
+  }
+}
 
 class GoogleGenAIProvider implements ILLMProvider {
   @override
@@ -15,7 +56,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent?key=${config.apiKey}');
+    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
@@ -66,7 +107,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async* {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse&key=${config.apiKey}');
+    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.endpoint, config.apiKey);
     final payload = _preparePayload(history, options);
@@ -181,7 +222,9 @@ class GoogleGenAIProvider implements ILLMProvider {
 
   Map<String, String> _getHeaders(String endpoint, String apiKey) {
     final headers = {"Content-Type": "application/json"};
-    if (!endpoint.contains("generativelanguage.googleapis.com")) {
+    if (endpoint.contains("generativelanguage.googleapis.com")) {
+      headers["x-goog-api-key"] = apiKey;
+    } else {
       headers["Authorization"] = "Bearer $apiKey";
       headers["x-goog-api-key"] = apiKey;
     }
@@ -243,7 +286,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     return {
-      "system_instruction": ?systemInstruction,
+      if (systemInstruction != null) "system_instruction": systemInstruction,
       "contents": contents,
       "generationConfig": generationConfig,
       "safetySettings": [

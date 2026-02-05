@@ -6,8 +6,35 @@ import 'package:http/http.dart' as http;
 
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
+import '../model_discovery_service.dart';
 
-class OpenAIAPIProvider implements ILLMProvider {
+class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
+  @override
+  Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
+    final baseUrl = config.endpoint.endsWith('/')
+        ? config.endpoint.substring(0, config.endpoint.length - 1)
+        : config.endpoint;
+
+    final url = Uri.parse('$baseUrl/models');
+    final headers = _getHeaders(config.apiKey);
+
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch OpenAI models: ${response.statusCode} - ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
+    final List<dynamic> modelsJson = data['data'] ?? [];
+
+    return modelsJson.map((m) => DiscoveredModel(
+      modelId: m['id']?.toString() ?? '',
+      displayName: m['id']?.toString() ?? '',
+      description: 'Owned by: ${m['owned_by'] ?? 'unknown'}',
+      rawData: m as Map<String, dynamic>,
+    )).toList();
+  }
+
   @override
   Future<LLMResponse> generate(
     LLMModelConfig config,

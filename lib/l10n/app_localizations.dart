@@ -1291,6 +1291,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip'**
   String get skip;
+
+  /// No description provided for @fetchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch Models'**
+  String get fetchModels;
+
+  /// No description provided for @discoveringModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovering Models...'**
+  String get discoveringModels;
+
+  /// No description provided for @selectModelsToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Select models to add'**
+  String get selectModelsToAdd;
+
+  /// No description provided for @addSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Selected ({count})'**
+  String addSelected(Object count);
+
+  /// No description provided for @alreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Added'**
+  String get alreadyAdded;
+
+  /// No description provided for @noNewModelsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No new models found.'**
+  String get noNewModelsFound;
+
+  /// No description provided for @fetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch models: {error}'**
+  String fetchFailed(Object error);
 }
 
 class _AppLocalizationsDelegate

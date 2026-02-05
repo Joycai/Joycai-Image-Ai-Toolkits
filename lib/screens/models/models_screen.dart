@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/llm_models.dart';
+import '../../services/llm/model_discovery_service.dart';
 import '../../widgets/app_section.dart';
 
 class ModelsScreen extends StatefulWidget {
@@ -106,10 +108,20 @@ class _ModelsScreenState extends State<ModelsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.add, size: 20),
-                  onPressed: () => _showModelDialog(l10n, preType: type, preIsPaid: isPaid),
-                  tooltip: l10n.addModel,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh, size: 20),
+                      onPressed: () => _showDiscoveryDialog(l10n, type, isPaid),
+                      tooltip: l10n.fetchModels,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, size: 20),
+                      onPressed: () => _showModelDialog(l10n, preType: type, preIsPaid: isPaid),
+                      tooltip: l10n.addModel,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -448,5 +460,203 @@ class _ModelsScreenState extends State<ModelsScreen> {
         ),
       ),
     );
+  }
+
+  void _showDiscoveryDialog(AppLocalizations l10n, String type, bool isPaid) async {
+    // 1. Resolve Config for discovery (need endpoint and api key)
+    String prefix;
+    if (type == 'google-genai') {
+      prefix = isPaid ? 'google_paid' : 'google_free';
+    } else {
+      prefix = 'openai';
+    }
+
+    final endpointKey = '${prefix}_endpoint';
+    final apiKeyKey = '${prefix}_apikey';
+
+    final endpoint = await _db.getSetting(endpointKey) ?? (type == 'google-genai' ? 'https://generativelanguage.googleapis.com' : '');
+    final apiKey = await _db.getSetting(apiKeyKey) ?? '';
+
+    if (apiKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${l10n.apiKey} is empty. Please set it in Settings.")));
+      }
+      return;
+    }
+
+    final config = LLMModelConfig(
+      modelId: 'discovery',
+      type: type,
+      endpoint: endpoint,
+      apiKey: apiKey,
+    );
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _DiscoveryDialog(
+        type: type,
+        isPaid: isPaid,
+        config: config,
+        existingModels: _models,
+        l10n: l10n,
+        onModelsAdded: () {
+          _loadData();
+        },
+      ),
+    );
+  }
+}
+
+class _DiscoveryDialog extends StatefulWidget {
+  final String type;
+  final bool isPaid;
+  final LLMModelConfig config;
+  final List<Map<String, dynamic>> existingModels;
+  final AppLocalizations l10n;
+  final VoidCallback onModelsAdded;
+
+  const _DiscoveryDialog({
+    required this.type,
+    required this.isPaid,
+    required this.config,
+    required this.existingModels,
+    required this.l10n,
+    required this.onModelsAdded,
+  });
+
+  @override
+  State<_DiscoveryDialog> createState() => _DiscoveryDialogState();
+}
+
+class _DiscoveryDialogState extends State<_DiscoveryDialog> {
+  bool _isLoading = true;
+  String? _error;
+  List<DiscoveredModel> _discovered = [];
+  final Set<String> _selectedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final models = await ModelDiscoveryService().discoverModels(widget.type, widget.config);
+      if (mounted) {
+        setState(() {
+          _discovered = models;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    Widget content;
+    if (_isLoading) {
+      content = const Center(child: Padding(
+        padding: EdgeInsets.all(32.0),
+        child: CircularProgressIndicator(),
+      ));
+    } else if (_error != null) {
+      content = Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, color: colorScheme.error, size: 48),
+            const SizedBox(height: 16),
+            Text(l10n.fetchFailed(_error!)),
+          ],
+        ),
+      );
+    } else if (_discovered.isEmpty) {
+      content = Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Text(l10n.noNewModelsFound),
+      );
+    } else {
+      content = SizedBox(
+        width: 500,
+        height: 400,
+        child: ListView.builder(
+          itemCount: _discovered.length,
+          itemBuilder: (context, index) {
+            final m = _discovered[index];
+            final bool isAdded = widget.existingModels.any((em) => 
+                em['model_id'] == m.modelId && 
+                em['type'] == widget.type && 
+                (widget.type == 'openai-api' || (em['is_paid'] == 1) == widget.isPaid)
+            );
+            
+            return CheckboxListTile(
+              title: Text(m.displayName),
+              subtitle: Text(m.modelId, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              value: isAdded || _selectedIds.contains(m.modelId),
+              onChanged: isAdded ? null : (val) {
+                setState(() {
+                  if (val == true) {
+                    _selectedIds.add(m.modelId);
+                  } else {
+                    _selectedIds.remove(m.modelId);
+                  }
+                });
+              },
+              secondary: isAdded ? Text(l10n.alreadyAdded, style: TextStyle(color: colorScheme.outline, fontSize: 10)) : null,
+            );
+          },
+        ),
+      );
+    }
+
+    return AlertDialog(
+      title: Text(_isLoading ? l10n.discoveringModels : l10n.selectModelsToAdd),
+      content: content,
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        if (!_isLoading && _error == null && _discovered.isNotEmpty)
+          ElevatedButton(
+            onPressed: _selectedIds.isEmpty ? null : () async {
+              final db = DatabaseService();
+              for (var id in _selectedIds) {
+                final m = _discovered.firstWhere((dm) => dm.modelId == id);
+                await db.addModel({
+                  'model_id': m.modelId,
+                  'model_name': m.displayName,
+                  'type': widget.type,
+                  'tag': _inferTag(m),
+                  'is_paid': widget.isPaid ? 1 : 0,
+                  'sort_order': widget.existingModels.length,
+                });
+              }
+              widget.onModelsAdded();
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: Text(l10n.addSelected(_selectedIds.length)),
+          ),
+      ],
+    );
+  }
+
+  String _inferTag(DiscoveredModel m) {
+    final id = m.modelId.toLowerCase();
+    if (id.contains('vision') || id.contains('image')) return 'multimodal';
+    if (id.contains('gemini')) return 'multimodal'; // Gemini is multimodal by default
+    return 'chat';
   }
 }
