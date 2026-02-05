@@ -1,4 +1,4 @@
-name: '🔨 Flutter Windows Build'
+name: '🔨 Multi-Platform Build'
 
 on:
   push:
@@ -7,11 +7,40 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_windows:
-    runs-on: windows-latest
+  build:
+    name: Build for ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            output: build/windows/x64/runner/Release/
+            artifact_name: windows-release
+            artifact_path: |
+              build/joycai-windows-x64.zip
+              build/windows/x64/runner/Release/*.msix
+          - platform: macos
+            os: macos-latest
+            output: build/dist/
+            artifact_name: macos-dmg
+            artifact_path: build/dist/*.dmg
+          - platform: linux
+            os: ubuntu-latest
+            output: build/linux/x64/release/bundle/
+            artifact_name: linux-release
+            artifact_path: build/joycai-linux-x64.tar.gz
+
     steps:
       - uses: actions/checkout@v4
       
+      - name: 'Install Linux Dependencies'
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
       - name: 'Install Flutter'
         uses: subosito/flutter-action@v2
         with:
@@ -24,14 +53,60 @@ jobs:
       - name: 'Generate Localization'
         run: flutter gen-l10n
 
-      - name: 'Enable Windows Desktop'
-        run: flutter config --enable-windows-desktop
+      - name: 'Enable Platform Support'
+        run: flutter config --enable-${{ matrix.platform }}-desktop
 
-      - name: 'Build Release'
-        run: flutter build windows --release
+      - name: 'Build Release (Windows/Linux)'
+        if: matrix.platform != 'macos'
+        run: flutter build ${{ matrix.platform }} --release
+
+      - name: 'Create MSIX (Windows)'
+        if: matrix.platform == 'windows'
+        run: dart run msix:create
+
+      - name: 'Build & Package (macOS)'
+        if: matrix.platform == 'macos'
+        run: |
+          chmod +x build_script/build_macos.sh
+          ./build_script/build_macos.sh
+
+      - name: 'Package Windows'
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: Compress-Archive -Path ${{ matrix.output }}* -DestinationPath build/joycai-windows-x64.zip
+
+      - name: 'Package Linux'
+        if: matrix.platform == 'linux'
+        run: tar -czf build/joycai-linux-x64.tar.gz -C ${{ matrix.output }} .
 
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release
-          path: build/windows/x64/runner/Release/
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 'Download All Artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: 'Create Release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/*.tar.gz
+            artifacts/*.dmg
+          generate_release_notes: true
+          draft: false
+          prerelease: false
