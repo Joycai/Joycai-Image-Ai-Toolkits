@@ -131,7 +131,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       child: ExpansionTile(
         title: Row(
           children: [
-            if (channel['tag'] != null) ...[
+            if (channel['tag'] != null && channel['tag'].toString().isNotEmpty) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -382,7 +382,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           final channel = _channels[index];
           return Card(
             child: ListTile(
-              leading: channel['tag'] != null 
+              leading: (channel['tag'] != null && channel['tag'].toString().isNotEmpty)
                 ? CircleAvatar(
                     backgroundColor: Color(channel['tag_color'] ?? 0xFF607D8B),
                     radius: 16,

@@ -175,6 +175,22 @@ class GoogleGenAIProvider implements ILLMProvider {
   Iterable<LLMResponseChunk> _parseChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
     Map<String, dynamic>? metadata = chunkData['usageMetadata'];
 
+    // Check for prompt blocking (e.g. prohibited content)
+    if (chunkData['promptFeedback'] != null) {
+      final feedback = chunkData['promptFeedback'] as Map<String, dynamic>;
+      final blockReason = feedback['blockReason'];
+      if (blockReason != null) {
+        final msg = 'Google GenAI Blocked: $blockReason';
+        logger?.call(msg, level: 'ERROR');
+        
+        // If we have metadata, yield it before throwing so tokens can be recorded if needed
+        if (metadata != null) {
+          yield LLMResponseChunk(metadata: metadata);
+        }
+        throw Exception(msg);
+      }
+    }
+
     final candidates = chunkData['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) {
       if (metadata != null) {

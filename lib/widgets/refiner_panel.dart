@@ -92,7 +92,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         LLMAttachment.fromFile(f, 'image/jpeg')
       ).toList();
 
-      final stream = LLMService().requestStream(
+      final response = await LLMService().request(
         modelIdentifier: _selectedModelPk!,
         messages: [
           if (_selectedSysPrompt != null)
@@ -105,16 +105,10 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         ],
       );
 
-      String accumulatedText = "";
-      await for (final chunk in stream) {
-        if (chunk.textPart != null) {
-          accumulatedText += chunk.textPart!;
-          if (mounted) {
-            setState(() {
-              _refinedPromptCtrl.text = accumulatedText;
-            });
-          }
-        }
+      if (mounted) {
+        setState(() {
+          _refinedPromptCtrl.text = response.text;
+        });
       }
     } catch (e) {
       if (mounted) {
