@@ -28,6 +28,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   bool _isModelSettingsExpanded = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
+  List<Map<String, dynamic>> _tags = [];
   late AppState _appState;
 
   @override
@@ -139,15 +140,20 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
   Future<void> _loadPrompts() async {
     final prompts = await _db.getPrompts();
+    final tags = await _db.getPromptTags();
     final Map<String, List<Map<String, dynamic>>> grouped = {};
+    
     for (var p in prompts) {
-      final tag = p['tag'] as String;
-      if (tag == 'Refiner') continue;
+      if (p['tag_is_system'] == 1) continue;
       
-      grouped[tag] ??= [];
-      grouped[tag]!.add(p);
+      final tagName = p['tag_name'] as String? ?? 'General';
+      grouped[tagName] ??= [];
+      grouped[tagName]!.add(p);
     }
-    setState(() => _groupedPrompts = grouped);
+    setState(() {
+      _groupedPrompts = grouped;
+      _tags = tags;
+    });
   }
 
   void _updateConfig({int? modelPk, String? modelIdStr, String? ar, String? res, String? prompt}) {
@@ -469,6 +475,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       context: context,
       builder: (context) => _LibraryDialog(
         groupedPrompts: _groupedPrompts,
+        tags: _tags,
         onSelect: (prompt) {
           _promptController.text = prompt;
           _updateConfig(prompt: prompt);
@@ -668,10 +675,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
 class _LibraryDialog extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>> groupedPrompts;
+  final List<Map<String, dynamic>> tags;
   final Function(String) onSelect;
 
   const _LibraryDialog({
     required this.groupedPrompts,
+    required this.tags,
     required this.onSelect,
   });
 
@@ -701,7 +710,7 @@ class _LibraryDialogState extends State<_LibraryDialog> {
 
     return Dialog(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 600),
+        constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 700),
         child: Column(
           children: [
             Padding(
@@ -709,7 +718,13 @@ class _LibraryDialogState extends State<_LibraryDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge),
+                  Row(
+                    children: [
+                      const Icon(Icons.library_books, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge),
+                    ],
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -724,7 +739,7 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                 children: [
                   // Left Pane: Categories
                   Container(
-                    width: 200,
+                    width: 220,
                     decoration: BoxDecoration(
                       border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
                       color: colorScheme.surfaceContainerLow,
@@ -734,14 +749,20 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                       itemCount: categories.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 4),
                       itemBuilder: (context, index) {
-                        final cat = categories[index];
-                        final isSelected = cat == _selectedCategory;
+                        final catName = categories[index];
+                        final isSelected = catName == _selectedCategory;
+                        final tagData = widget.tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == catName, orElse: () => null);
+                        
                         return ListTile(
-                          title: Text(cat, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                          leading: CircleAvatar(
+                            backgroundColor: Color(tagData?['color'] ?? 0xFF607D8B),
+                            radius: 6,
+                          ),
+                          title: Text(catName, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                           selected: isSelected,
                           selectedTileColor: colorScheme.secondaryContainer,
                           selectedColor: colorScheme.onSecondaryContainer,
-                          onTap: () => setState(() => _selectedCategory = cat),
+                          onTap: () => setState(() => _selectedCategory = catName),
                           dense: true,
                         );
                       },
@@ -753,12 +774,12 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                     child: currentPrompts.isEmpty 
                     ? Center(child: Text(l10n.noPromptsSaved)) 
                     : GridView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(24),
                       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 300,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.5,
+                        maxCrossAxisExtent: 400,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 2.0,
                       ),
                       itemCount: currentPrompts.length,
                       itemBuilder: (context, index) {
@@ -776,13 +797,13 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Padding(
-                              padding: const EdgeInsets.all(12.0),
+                              padding: const EdgeInsets.all(16.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     p['title'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -790,7 +811,11 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                                   Expanded(
                                     child: Text(
                                       p['content'],
-                                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                                      style: TextStyle(
+                                        fontSize: 12, 
+                                        color: colorScheme.onSurfaceVariant,
+                                        height: 1.4,
+                                      ),
                                       overflow: TextOverflow.fade,
                                     ),
                                   ),

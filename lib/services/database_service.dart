@@ -154,7 +154,12 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getPrompts() async {
     final db = await database;
-    return await db.query('prompts', orderBy: 'sort_order ASC');
+    return await db.rawQuery('''
+      SELECT p.*, t.name as tag_name, t.color as tag_color, t.is_system as tag_is_system
+      FROM prompts p
+      LEFT JOIN prompt_tags t ON p.tag_id = t.id
+      ORDER BY p.sort_order ASC
+    ''');
   }
 
   Future<void> updatePromptOrder(List<int> ids) async {
