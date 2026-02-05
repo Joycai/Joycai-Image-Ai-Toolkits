@@ -18,7 +18,9 @@ jobs:
             os: windows-latest
             output: build/windows/x64/runner/Release/
             artifact_name: windows-release
-            artifact_path: build/joycai-windows-x64.zip
+            artifact_path: |
+              build/joycai-windows-x64.zip
+              build/windows/x64/runner/Release/*.msix
           - platform: macos
             os: macos-latest
             output: build/dist/
@@ -57,6 +59,10 @@ jobs:
       - name: 'Build Release (Windows/Linux)'
         if: matrix.platform != 'macos'
         run: flutter build ${{ matrix.platform }} --release
+
+      - name: 'Create MSIX (Windows)'
+        if: matrix.platform == 'windows'
+        run: dart run msix:create
 
       - name: 'Build & Package (macOS)'
         if: matrix.platform == 'macos'
