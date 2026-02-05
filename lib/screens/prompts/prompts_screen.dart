@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
@@ -12,20 +13,26 @@ class PromptsScreen extends StatefulWidget {
 
 class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProviderStateMixin {
   final DatabaseService _db = DatabaseService();
+  final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
   List<Map<String, dynamic>> _userPrompts = [];
   List<Map<String, dynamic>> _refinerPrompts = [];
+  String _searchQuery = "";
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _searchCtrl.addListener(() {
+      setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
+    });
     _loadPrompts();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -40,17 +47,37 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    
+    final filteredUser = _userPrompts.where((p) => 
+      p['title'].toLowerCase().contains(_searchQuery) || 
+      p['content'].toLowerCase().contains(_searchQuery) || 
+      p['tag'].toLowerCase().contains(_searchQuery)
+    ).toList();
+
+    final filteredRefiner = _refinerPrompts.where((p) => 
+      p['title'].toLowerCase().contains(_searchQuery) || 
+      p['content'].toLowerCase().contains(_searchQuery)
+    ).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.promptLibrary),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: l10n.userPrompts),
-            Tab(text: l10n.refinerPrompts),
-          ],
-        ),
         actions: [
+          Container(
+            width: 300,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: l10n.filterModels, // Reusing existing search string or similar
+                prefixIcon: const Icon(Icons.search, size: 20),
+                isDense: true,
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
@@ -60,12 +87,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             ),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: l10n.userPrompts),
+            Tab(text: l10n.refinerPrompts),
+          ],
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildPromptList(_userPrompts, l10n, isRefiner: false),
-          _buildPromptList(_refinerPrompts, l10n, isRefiner: true),
+          _buildPromptList(filteredUser, l10n, isRefiner: false),
+          _buildPromptList(filteredRefiner, l10n, isRefiner: true),
         ],
       ),
     );
@@ -76,52 +110,114 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return _buildEmptyState(l10n, isRefiner);
     }
     
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: ReorderableListView(
-          onReorder: (oldIndex, newIndex) async {
-            setState(() {
-              if (newIndex > oldIndex) newIndex -= 1;
-              final item = prompts.removeAt(oldIndex);
-              prompts.insert(newIndex, item);
-            });
-            // Note: This updates order within the subset. Global order might need more complex handling if needed.
-            // For now, we update the IDs of these specific prompts.
-            await _db.updatePromptOrder(prompts.map((p) => p['id'] as int).toList());
-          },
-          children: prompts.map((prompt) => ListTile(
-            key: ValueKey(prompt['id']),
-            leading: const Icon(Icons.drag_handle),
-            title: Text(prompt['title']),
-            subtitle: Text(
-              prompt['content'],
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isRefiner) ...[
-                  Chip(
-                    label: Text(prompt['tag'], style: const TextStyle(fontSize: 10)),
-                    visualDensity: VisualDensity.compact,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: prompts.length,
+      onReorder: (oldIndex, newIndex) async {
+        setState(() {
+          if (newIndex > oldIndex) newIndex -= 1;
+          final item = prompts.removeAt(oldIndex);
+          prompts.insert(newIndex, item);
+        });
+        await _db.updatePromptOrder(prompts.map((p) => p['id'] as int).toList());
+      },
+      proxyDecorator: (child, index, animation) => Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.transparent,
+        child: child,
+      ),
+      itemBuilder: (context, index) {
+        final prompt = prompts[index];
+        return Card(
+          key: ValueKey(prompt['id']),
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          child: InkWell(
+            onTap: () => _showPromptDialog(l10n, prompt: prompt),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          prompt['title'],
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                      if (!isRefiner) ...[
+                        _buildCategoryTag(prompt['tag']),
+                        const SizedBox(width: 8),
+                      ],
+                      IconButton(
+                        icon: const Icon(Icons.copy_all, size: 18),
+                        tooltip: "Copy Prompt",
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: prompt['content']));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        onPressed: () => _showPromptDialog(l10n, prompt: prompt),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                        onPressed: () => _confirmDelete(l10n, prompt),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32.0),
+                    child: Text(
+                      prompt['content'],
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13, 
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
                 ],
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showPromptDialog(l10n, prompt: prompt),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDelete(l10n, prompt),
-                ),
-              ],
+              ),
             ),
-          )).toList(),
-        ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryTag(String tag) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        tag.toUpperCase(),
+        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey),
       ),
     );
   }
@@ -180,76 +276,97 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt, bool isRefinerTarget = false}) {
     final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
-    
-    // If we are editing, use existing tag. If new, check target.
-    String initialTag = prompt?['tag'] ?? (isRefinerTarget ? 'Refiner' : 'General');
-    
-    // If user is adding from the Refiner tab, force start with Refiner tag.
-    // If they are on User tab, start with General.
-    // However, user can still change it manually. 
-    
-    final tagCtrl = TextEditingController(text: initialTag);
+    String currentTag = prompt?['tag'] ?? (isRefinerTarget ? 'Refiner' : 'General');
+    final tagCtrl = TextEditingController(text: currentTag);
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
-        content: SizedBox(
-          width: 500,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title)),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: TextField(controller: tagCtrl, decoration: InputDecoration(labelText: l10n.tagCategory))),
-                    const SizedBox(width: 8),
-                    // Only show "Set as Refiner" button if we are not forcing it, or just always show it for convenience
-                    TextButton(
-                      onPressed: () => tagCtrl.text = 'Refiner',
-                      child: Text(l10n.setAsRefiner),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(prompt == null ? Icons.add_circle_outline : Icons.edit_note, color: Colors.blue),
+              const SizedBox(width: 12),
+              Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
+            ],
+          ),
+          content: SizedBox(
+            width: 600,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleCtrl, 
+                    decoration: InputDecoration(
+                      labelText: l10n.title,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.title),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: contentCtrl,
-                  maxLines: 8,
-                  decoration: InputDecoration(
-                    labelText: l10n.promptContent,
-                    border: const OutlineInputBorder(),
-                    alignLabelWithHint: true,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: tagCtrl, 
+                          decoration: InputDecoration(
+                            labelText: l10n.tagCategory,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.tag),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => tagCtrl.text = 'Refiner',
+                        icon: const Icon(Icons.auto_fix_high, size: 16),
+                        label: Text(l10n.setAsRefiner),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: contentCtrl,
+                    maxLines: 12,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: l10n.promptContent,
+                      border: const OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                      counterText: '${contentCtrl.text.length} characters',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            FilledButton(
+              onPressed: () async {
+                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
+                
+                final Map<String, dynamic> data = {
+                  'title': titleCtrl.text,
+                  'content': contentCtrl.text,
+                  'tag': tagCtrl.text.isEmpty ? 'General' : tagCtrl.text,
+                };
+                if (prompt == null) {
+                  data['sort_order'] = 0;
+                  await _db.addPrompt(data);
+                } else {
+                  await _db.updatePrompt(prompt['id'] as int, data);
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadPrompts();
+                }
+              },
+              child: Text(prompt == null ? l10n.save : l10n.update),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            onPressed: () async {
-              final Map<String, dynamic> data = {
-                'title': titleCtrl.text,
-                'content': contentCtrl.text,
-                'tag': tagCtrl.text.isEmpty ? 'General' : tagCtrl.text,
-              };
-              if (prompt == null) {
-                data['sort_order'] = 0; // Default to top?
-                await _db.addPrompt(data);
-              } else {
-                await _db.updatePrompt(prompt['id'] as int, data);
-              }
-              if (context.mounted) {
-                Navigator.pop(context);
-                _loadPrompts();
-              }
-            },
-            child: Text(prompt == null ? l10n.save : l10n.update),
-          ),
-        ],
       ),
     );
   }
