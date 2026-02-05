@@ -65,7 +65,7 @@ msix_config:
   display_name: Joycai Image AI Toolkits
   publisher_display_name: Joycai
   publisher: CN=Joycai
-  identity_name: com.joycai.image_ai_toolkits
+  identity_name: com.joycai.image-ai-toolkits
   msix_version: 1.2.0.0
   logo_path: assets/icon/icon.png
   capabilities: internetClient
