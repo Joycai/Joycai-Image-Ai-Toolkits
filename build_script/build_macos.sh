@@ -56,4 +56,4 @@ echo "🧹 Cleaning up..."
 rm -rf "$STAGING_DIR"
 
 echo "🎉 Success! DMG created at: $DMG_PATH"
-open "$OUTPUT_DIR"
+# open "$OUTPUT_DIR"

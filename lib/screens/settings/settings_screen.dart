@@ -312,18 +312,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         
         await _db.restoreBackup(data);
 
-        if (mounted) {
-          _loadAllSettings();
-          // Also need to refresh images and other things managed by appState
-          if (mounted) {
-            Provider.of<AppState>(context, listen: false).refreshImages();
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
-          }
-        }
+        if (!mounted) return;
+        _loadAllSettings();
+        Provider.of<AppState>(context, listen: false).refreshImages();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
       }
     }
   }
