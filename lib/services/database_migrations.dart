@@ -6,8 +6,8 @@ class DatabaseMigration {
     if (oldVersion < 3) await _createV3Tables(db);
     if (oldVersion < 4) await _createV4Tables(db);
     if (oldVersion < 5) {
-      await db.execute('ALTER TABLE llm_models ADD COLUMN input_fee REAL DEFAULT 0.0');
-      await db.execute('ALTER TABLE llm_models ADD COLUMN output_fee REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'llm_models', 'input_fee', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'llm_models', 'output_fee', 'REAL DEFAULT 0.0');
     }
     if (oldVersion < 6) {
       var tableInfo = await db.rawQuery('PRAGMA table_info(tasks)');
@@ -17,11 +17,11 @@ class DatabaseMigration {
       }
     }
     if (oldVersion < 7) {
-      await db.execute("ALTER TABLE llm_models ADD COLUMN billing_mode TEXT DEFAULT 'token'");
-      await db.execute('ALTER TABLE llm_models ADD COLUMN request_fee REAL DEFAULT 0.0');
-      await db.execute('ALTER TABLE token_usage ADD COLUMN request_count INTEGER DEFAULT 1');
-      await db.execute('ALTER TABLE token_usage ADD COLUMN request_price REAL DEFAULT 0.0');
-      await db.execute("ALTER TABLE token_usage ADD COLUMN billing_mode TEXT DEFAULT 'token'");
+      await _addColumnIfNotExists(db, 'llm_models', 'billing_mode', "TEXT DEFAULT 'token'");
+      await _addColumnIfNotExists(db, 'llm_models', 'request_fee', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'token_usage', 'request_count', 'INTEGER DEFAULT 1');
+      await _addColumnIfNotExists(db, 'token_usage', 'request_price', 'REAL DEFAULT 0.0');
+      await _addColumnIfNotExists(db, 'token_usage', 'billing_mode', "TEXT DEFAULT 'token'");
     }
     if (oldVersion < 8) await _createV8Tables(db);
     if (oldVersion < 9) await _createV9Tables(db);
@@ -239,11 +239,19 @@ class DatabaseMigration {
   }
 
   static Future<void> _createV12Tables(Database db) async {
-    await db.execute('ALTER TABLE prompts ADD COLUMN tag_color INTEGER');
+    await _addColumnIfNotExists(db, 'prompts', 'tag_color', 'INTEGER');
   }
 
   static Future<void> _createV11Tables(Database db) async {
-    await db.execute('ALTER TABLE tasks ADD COLUMN channel_tag TEXT');
-    await db.execute('ALTER TABLE tasks ADD COLUMN channel_color INTEGER');
+    await _addColumnIfNotExists(db, 'tasks', 'channel_tag', 'TEXT');
+    await _addColumnIfNotExists(db, 'tasks', 'channel_color', 'INTEGER');
+  }
+
+  static Future<void> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
+    var tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
+    bool columnExists = tableInfo.any((column) => column['name'] == columnName);
+    if (!columnExists) {
+      await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
+    }
   }
 }
