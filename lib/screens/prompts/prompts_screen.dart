@@ -19,6 +19,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<Map<String, dynamic>> _refinerPrompts = [];
   String _searchQuery = "";
 
+  final List<Color> _predefinedColors = [
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.teal,
+    Colors.pink,
+    Colors.indigo,
+    Colors.brown,
+    Colors.blueGrey,
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -161,7 +174,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                         ),
                       ),
                       if (!isRefiner) ...[
-                        _buildCategoryTag(prompt['tag']),
+                        _buildCategoryTag(prompt['tag'], prompt['tag_color']),
                         const SizedBox(width: 8),
                       ],
                       IconButton(
@@ -207,17 +220,18 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildCategoryTag(String tag) {
+  Widget _buildCategoryTag(String tag, int? tagColor) {
+    final color = tagColor != null ? Color(tagColor) : Colors.blueGrey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         tag.toUpperCase(),
-        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
       ),
     );
   }
@@ -278,11 +292,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
     String currentTag = prompt?['tag'] ?? (isRefinerTarget ? 'Refiner' : 'General');
     final tagCtrl = TextEditingController(text: currentTag);
+    int selectedTagColor = prompt?['tag_color'] ?? (isRefinerTarget ? Colors.purple.toARGB32() : _predefinedColors.first.toARGB32());
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setDialogState) => AlertDialog(
           title: Row(
             children: [
               Icon(prompt == null ? Icons.add_circle_outline : Icons.edit_note, color: Colors.blue),
@@ -319,17 +334,42 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
-                        onPressed: () => tagCtrl.text = 'Refiner',
+                        onPressed: () {
+                          tagCtrl.text = 'Refiner';
+                          setDialogState(() => selectedTagColor = Colors.purple.toARGB32());
+                        },
                         icon: const Icon(Icons.auto_fix_high, size: 16),
                         label: Text(l10n.setAsRefiner),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
+                  Align(alignment: Alignment.centerLeft, child: Text(l10n.tagColor, style: const TextStyle(fontSize: 12))),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _predefinedColors.map((color) => InkWell(
+                      onTap: () => setDialogState(() => selectedTagColor = color.toARGB32()),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selectedTagColor == color.toARGB32() ? Colors.black : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: contentCtrl,
                     maxLines: 12,
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setDialogState(() {}),
                     decoration: InputDecoration(
                       labelText: l10n.promptContent,
                       border: const OutlineInputBorder(),
@@ -351,6 +391,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
                   'tag': tagCtrl.text.isEmpty ? 'General' : tagCtrl.text,
+                  'tag_color': selectedTagColor,
                 };
                 if (prompt == null) {
                   data['sort_order'] = 0;

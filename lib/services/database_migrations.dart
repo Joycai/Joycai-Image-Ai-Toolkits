@@ -27,6 +27,7 @@ class DatabaseMigration {
     if (oldVersion < 9) await _createV9Tables(db);
     if (oldVersion < 10) await _createV10Tables(db);
     if (oldVersion < 11) await _createV11Tables(db);
+    if (oldVersion < 12) await _createV12Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -41,6 +42,7 @@ class DatabaseMigration {
     await _createV9Tables(db);
     await _createV10Tables(db);
     await _createV11Tables(db);
+    await _createV12Tables(db);
   }
 
   static Future<void> _createV2Tables(Database db) async {
@@ -189,6 +191,10 @@ class DatabaseMigration {
         await db.update('llm_models', {'channel_id': channelId}, where: 'id = ?', whereArgs: [model['id']]);
       }
     }
+  }
+
+  static Future<void> _createV12Tables(Database db) async {
+    await db.execute('ALTER TABLE prompts ADD COLUMN tag_color INTEGER');
   }
 
   static Future<void> _createV11Tables(Database db) async {

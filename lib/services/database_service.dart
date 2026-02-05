@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 11, // Incremented for Task Channel Metadata
+          version: 12, // Incremented for Prompt Tag Colors
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 11,
+        version: 12,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
