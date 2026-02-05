@@ -47,21 +47,21 @@ class LLMConfigResolver {
     }
 
     final type = modelData['type'] as String;
-    final isPaid = modelData['is_paid'] == 1;
     final modelId = modelData['model_id'] as String;
+    final channelId = modelData['channel_id'] as int?;
 
-    // Determine the Channel for configuration selection
-    String channel;
-    if (type == 'google-genai') {
-      channel = isPaid ? 'google_paid' : 'google_free';
-    } else {
-      channel = 'openai'; // Standard OpenAI API channel
+    if (channelId == null) {
+      throw Exception("Model $modelId has no associated channel.");
     }
 
-    logger?.call('Using channel: $channel', level: 'DEBUG');
+    final channelData = await _db.getChannel(channelId);
+    if (channelData == null) {
+      throw Exception("Channel for model $modelId not found.");
+    }
 
-    final endpoint = await _db.getSetting('${channel}_endpoint') ?? "";
-    final apiKey = await _db.getSetting('${channel}_apikey') ?? "";
+    final endpoint = channelData['endpoint'] as String;
+    final apiKey = channelData['api_key'] as String;
+    final channelType = channelData['type'] as String;
 
     // Global Proxy Settings
     final proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
@@ -69,19 +69,38 @@ class LLMConfigResolver {
     final proxyUsername = await _db.getSetting('proxy_username');
     final proxyPassword = await _db.getSetting('proxy_password');
 
-    return LLMModelConfig(
-      modelId: modelId,
-      type: type,
-      endpoint: endpoint,
-      apiKey: apiKey,
-      inputFee: inputFee,
-      outputFee: outputFee,
-      billingMode: billingMode,
-      requestFee: requestFee,
-      proxyEnabled: proxyEnabled,
-      proxyUrl: proxyUrl,
-      proxyUsername: proxyUsername,
-      proxyPassword: proxyPassword,
-    );
-  }
-}
+        return LLMModelConfig(
+
+          modelId: modelId,
+
+          type: type,
+
+          channelType: channelType,
+
+          endpoint: endpoint,
+
+          apiKey: apiKey,
+
+          inputFee: inputFee,
+
+          outputFee: outputFee,
+
+          billingMode: billingMode,
+
+          requestFee: requestFee,
+
+          proxyEnabled: proxyEnabled,
+
+          proxyUrl: proxyUrl,
+
+          proxyUsername: proxyUsername,
+
+          proxyPassword: proxyPassword,
+
+        );
+
+      }
+
+    }
+
+    

@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -433,6 +432,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feeManagement => '费用管理';
+
+  @override
+  String get modelsTab => '模型管理';
+
+  @override
+  String get channelsTab => '渠道管理';
+
+  @override
+  String get addChannel => '添加渠道';
+
+  @override
+  String get editChannel => '编辑渠道';
+
+  @override
+  String get channelType => '渠道类型';
+
+  @override
+  String get enableDiscovery => '启用模型检索';
+
+  @override
+  String get filterModels => '过滤模型...';
+
+  @override
+  String get tagColor => '标签颜色';
+
+  @override
+  String deleteChannelConfirm(String name) {
+    return '确定要删除渠道“$name”吗？这将断开所有关联模型的连接。';
+  }
 
   @override
   String get modelManager => '模型管理';

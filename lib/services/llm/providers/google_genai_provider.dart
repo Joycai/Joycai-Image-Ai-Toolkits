@@ -9,10 +9,6 @@ import '../llm_provider_interface.dart';
 import '../model_discovery_service.dart';
 
 class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
-  bool _isGoogleOfficial(String endpoint) {
-    return endpoint.contains("generativelanguage.googleapis.com");
-  }
-
   @override
   Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
     final baseUrl = config.endpoint.endsWith('/') 
@@ -23,7 +19,7 @@ class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
     final url = Uri.parse('$baseUrl/models');
     
     final headers = {"Content-Type": "application/json"};
-    if (_isGoogleOfficial(baseUrl)) {
+    if (config.channelType == 'official-google-genai-api') {
       headers["x-goog-api-key"] = config.apiKey;
     } else {
       headers["Authorization"] = "Bearer ${config.apiKey}";
@@ -58,7 +54,7 @@ class GoogleGenAIProvider implements ILLMProvider {
   }) async {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
-    final headers = _getHeaders(config.endpoint, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey);
     final payload = _preparePayload(history, options);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
@@ -114,7 +110,7 @@ class GoogleGenAIProvider implements ILLMProvider {
   }) async* {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
-    final headers = _getHeaders(config.endpoint, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey);
     final payload = _preparePayload(history, options);
 
     final request = http.Request('POST', url);
@@ -231,9 +227,9 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
   }
 
-  Map<String, String> _getHeaders(String endpoint, String apiKey) {
+  Map<String, String> _getHeaders(String channelType, String apiKey) {
     final headers = {"Content-Type": "application/json"};
-    if (endpoint.contains("generativelanguage.googleapis.com")) {
+    if (channelType == 'official-google-genai-api') {
       headers["x-goog-api-key"] = apiKey;
     } else {
       headers["Authorization"] = "Bearer $apiKey";

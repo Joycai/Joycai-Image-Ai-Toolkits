@@ -23,12 +23,12 @@ class _SetupWizardState extends State<SetupWizard> {
   // Controllers
   final TextEditingController _outputDirController = TextEditingController();
   final TextEditingController _prefixController = TextEditingController();
-  final TextEditingController _googleFreeEndpoint = TextEditingController();
-  final TextEditingController _googleFreeApiKey = TextEditingController();
-  final TextEditingController _googlePaidEndpoint = TextEditingController();
-  final TextEditingController _googlePaidApiKey = TextEditingController();
-  final TextEditingController _openaiEndpoint = TextEditingController();
-  final TextEditingController _openaiApiKey = TextEditingController();
+
+  // Channel Step Controllers
+  final TextEditingController _channelNameController = TextEditingController();
+  final TextEditingController _endpointController = TextEditingController();
+  final TextEditingController _apiKeyController = TextEditingController();
+  String _channelType = 'openai-api-rest';
 
   @override
   void initState() {
@@ -37,19 +37,20 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Future<void> _loadInitialValues() async {
-    // Load existing values just in case
     final appState = Provider.of<AppState>(context, listen: false);
     _outputDirController.text = appState.outputDirectory ?? '';
     _prefixController.text = appState.imagePrefix;
-    
-    // API keys might be in DB
-    _googleFreeEndpoint.text = await _db.getSetting('google_free_endpoint') ?? '';
-    _googleFreeApiKey.text = await _db.getSetting('google_free_apikey') ?? '';
-    _googlePaidEndpoint.text = await _db.getSetting('google_paid_endpoint') ?? '';
-    _googlePaidApiKey.text = await _db.getSetting('google_paid_apikey') ?? '';
-    _openaiEndpoint.text = await _db.getSetting('openai_endpoint') ?? '';
-    _openaiApiKey.text = await _db.getSetting('openai_apikey') ?? '';
+    _channelNameController.text = 'My First Channel';
+    _updateDefaultEndpoint();
     setState(() {});
+  }
+
+  void _updateDefaultEndpoint() {
+    if (_channelType == 'openai-api-rest') {
+      _endpointController.text = 'https://api.openai.com/v1';
+    } else if (_channelType == 'official-google-genai-api' || _channelType == 'google-genai-rest') {
+      _endpointController.text = 'https://generativelanguage.googleapis.com';
+    }
   }
 
   void _nextStep() {
@@ -63,6 +64,20 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Future<void> _finishSetup() async {
     final appState = Provider.of<AppState>(context, listen: false);
+
+    // Save Channel if API Key is provided
+    if (_apiKeyController.text.isNotEmpty) {
+      await _db.addChannel({
+        'display_name': _channelNameController.text,
+        'endpoint': _endpointController.text,
+        'api_key': _apiKeyController.text,
+        'type': _channelType,
+        'enable_discovery': 1,
+        'tag': _channelNameController.text.split(' ').first,
+        'tag_color': Colors.blue.toARGB32(),
+      });
+    }
+
     await appState.completeSetup();
     if (mounted) {
       Navigator.of(context).pop();
@@ -195,6 +210,13 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Widget _buildApiStep(BuildContext context, AppLocalizations l10n) {
+    String endpointHint = "";
+    if (_channelType == 'openai-api-rest') {
+      endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
+    } else if (_channelType.contains('google')) {
+      endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
       child: Column(
@@ -202,34 +224,53 @@ class _SetupWizardState extends State<SetupWizard> {
         children: [
           Text(l10n.stepApi, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text("Configure AI models (Optional). You can do this later in Settings."),
+          const Text("Add your first AI provider channel (Optional)."),
           const SizedBox(height: 24),
-          _buildApiGroup(l10n.googleGenAiFree, _googleFreeEndpoint, _googleFreeApiKey, 'google_free', l10n),
+          TextField(
+            controller: _channelNameController,
+            decoration: InputDecoration(
+              labelText: l10n.displayName,
+              border: const OutlineInputBorder(),
+              hintText: "e.g. My OpenAI",
+            ),
+          ),
           const SizedBox(height: 16),
-          _buildApiGroup(l10n.openaiApi, _openaiEndpoint, _openaiApiKey, 'openai', l10n),
+          DropdownButtonFormField<String>(
+            initialValue: _channelType,
+            items: const [
+              DropdownMenuItem(value: 'openai-api-rest', child: Text('OpenAI API REST')),
+              DropdownMenuItem(value: 'google-genai-rest', child: Text('Google GenAI REST')),
+              DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API')),
+            ],
+            onChanged: (v) {
+              setState(() {
+                _channelType = v!;
+                _updateDefaultEndpoint();
+              });
+            },
+            decoration: InputDecoration(
+              labelText: l10n.channelType,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _endpointController,
+            decoration: InputDecoration(
+              labelText: l10n.endpointUrl,
+              border: const OutlineInputBorder(),
+              helperText: endpointHint,
+              helperStyle: const TextStyle(color: Colors.blueGrey),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ApiKeyField(
+            controller: _apiKeyController,
+            label: l10n.apiKey,
+            onChanged: (v) {},
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildApiGroup(String label, TextEditingController ep, TextEditingController key, String prefix, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: ep,
-          decoration: InputDecoration(labelText: l10n.endpointUrl, border: const OutlineInputBorder()),
-          onChanged: (v) => _db.saveSetting('${prefix}_endpoint', v),
-        ),
-        const SizedBox(height: 8),
-        ApiKeyField(
-          controller: key,
-          label: l10n.apiKey,
-          onChanged: (v) => _db.saveSetting('${prefix}_apikey', v),
-        ),
-      ],
     );
   }
 

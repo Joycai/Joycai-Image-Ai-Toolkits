@@ -29,7 +29,8 @@ class LLMMessage {
 
 class LLMModelConfig {
   final String modelId;
-  final String type; // 'google-genai' or 'openai-api'
+  final String type; // Provider type: 'google-genai' or 'openai-api'
+  final String channelType; // 'google-genai-rest', 'openai-api-rest', 'official-google-genai-api'
   final String endpoint;
   final String apiKey;
   final double inputFee;
@@ -47,6 +48,7 @@ class LLMModelConfig {
   LLMModelConfig({
     required this.modelId,
     required this.type,
+    required this.channelType,
     required this.endpoint,
     required this.apiKey,
     this.inputFee = 0.0,

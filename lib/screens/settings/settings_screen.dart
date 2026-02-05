@@ -24,13 +24,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final DatabaseService _db = DatabaseService();
   
-  // Controllers for REST settings
-  final TextEditingController _googleFreeEndpoint = TextEditingController();
-  final TextEditingController _googleFreeApiKey = TextEditingController();
-  final TextEditingController _googlePaidEndpoint = TextEditingController();
-  final TextEditingController _googlePaidApiKey = TextEditingController();
-  final TextEditingController _openaiEndpoint = TextEditingController();
-  final TextEditingController _openaiApiKey = TextEditingController();
+  // Controllers
   final TextEditingController _outputDirController = TextEditingController();
   
   // Proxy Settings
@@ -50,12 +44,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadAllSettings() async {
-    _googleFreeEndpoint.text = await _db.getSetting('google_free_endpoint') ?? '';
-    _googleFreeApiKey.text = await _db.getSetting('google_free_apikey') ?? '';
-    _googlePaidEndpoint.text = await _db.getSetting('google_paid_endpoint') ?? '';
-    _googlePaidApiKey.text = await _db.getSetting('google_paid_apikey') ?? '';
-    _openaiEndpoint.text = await _db.getSetting('openai_endpoint') ?? '';
-    _openaiApiKey.text = await _db.getSetting('openai_apikey') ?? '';
     _outputDirController.text = await _db.getSetting('output_directory') ?? '';
     
     _proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
@@ -67,10 +55,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
     
     setState(() {});
-  }
-
-  Future<void> _saveRestSetting(String key, String value) async {
-    await _db.saveSetting(key, value);
   }
 
   @override
@@ -109,40 +93,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.mcpServerSettings,
                     children: [
                       _buildMcpSettings(l10n),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.googleGenAiSettings,
-                    children: [
-                      _buildRestConfigGroup(
-                        l10n.freeModel, 
-                        _googleFreeEndpoint, 
-                        _googleFreeApiKey, 
-                        'google_free',
-                        l10n,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildRestConfigGroup(
-                        l10n.paidModel, 
-                        _googlePaidEndpoint, 
-                        _googlePaidApiKey, 
-                        'google_paid',
-                        l10n,
-                      ),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.openAiApiSettings,
-                    children: [
-                      _buildRestConfigGroup(
-                        l10n.standardConfig, 
-                        _openaiEndpoint, 
-                        _openaiApiKey, 
-                        'openai',
-                        l10n,
-                      ),
                     ],
                   ),
 
@@ -248,43 +198,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => _db.saveSetting('mcp_port', v),
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildRestConfigGroup(
-    String label, 
-    TextEditingController ep, 
-    TextEditingController key, 
-    String prefix,
-    AppLocalizations l10n,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: TextField(
-                controller: ep,
-                decoration: InputDecoration(labelText: l10n.endpointUrl, border: const OutlineInputBorder()),
-                onChanged: (v) => _saveRestSetting('${prefix}_endpoint', v),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 1,
-              child: ApiKeyField(
-                controller: key,
-                label: l10n.apiKey,
-                onChanged: (v) => _saveRestSetting('${prefix}_apikey', v),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

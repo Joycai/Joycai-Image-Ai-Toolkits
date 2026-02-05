@@ -48,7 +48,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 9, // Incremented for usage model_pk
+          version: 10, // Incremented for Dynamic Channels
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -56,7 +56,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 9,
+        version: 10,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -77,6 +77,7 @@ class DatabaseService {
     await _createV4Tables(db);
     await _createV8Tables(db);
     await _createV9Tables(db);
+    await _createV10Tables(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -104,6 +105,70 @@ class DatabaseService {
     }
     if (oldVersion < 8) await _createV8Tables(db);
     if (oldVersion < 9) await _createV9Tables(db);
+    if (oldVersion < 10) await _createV10Tables(db);
+  }
+
+  Future<void> _createV10Tables(Database db) async {
+    // 1. Create llm_channels table
+    await db.execute('''
+      CREATE TABLE llm_channels (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        display_name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        api_key TEXT NOT NULL,
+        type TEXT NOT NULL,
+        enable_discovery INTEGER DEFAULT 1,
+        tag TEXT,
+        tag_color INTEGER
+      )
+    ''');
+
+    // 2. Add channel_id to llm_models
+    await db.execute('ALTER TABLE llm_models ADD COLUMN channel_id INTEGER REFERENCES llm_channels(id)');
+
+    // 3. Migrate existing settings to channels
+    final settings = await db.query('settings');
+    final Map<String, String> settingsMap = {
+      for (var s in settings) s['key'] as String: s['value'] as String
+    };
+
+    Future<int?> createChannel(String prefix, String defaultName, String type) async {
+      final apiKey = settingsMap['${prefix}_apikey'];
+      final endpoint = settingsMap['${prefix}_endpoint'];
+      if (apiKey == null || apiKey.isEmpty) return null;
+
+      return await db.insert('llm_channels', {
+        'display_name': defaultName,
+        'endpoint': endpoint ?? (type.contains('google') ? 'https://generativelanguage.googleapis.com' : 'https://api.openai.com/v1'),
+        'api_key': apiKey,
+        'type': type,
+        'enable_discovery': 1,
+        'tag': defaultName.split(' ').first,
+        'tag_color': 0xFF607D8B, // BlueGrey
+      });
+    }
+
+    final googleFreeId = await createChannel('google_free', 'Google GenAI (Free)', 'google-genai-rest');
+    final googlePaidId = await createChannel('google_paid', 'Google GenAI (Paid)', 'google-genai-rest');
+    final openaiId = await createChannel('openai', 'OpenAI API', 'openai-api-rest');
+
+    // 4. Update existing models to link to channels
+    final models = await db.query('llm_models');
+    for (var model in models) {
+      int? channelId;
+      final type = model['type'] as String;
+      final isPaid = model['is_paid'] == 1;
+
+      if (type == 'google-genai') {
+        channelId = isPaid ? googlePaidId : googleFreeId;
+      } else if (type == 'openai-api') {
+        channelId = openaiId;
+      }
+
+      if (channelId != null) {
+        await db.update('llm_models', {'channel_id': channelId}, where: 'id = ?', whereArgs: [model['id']]);
+      }
+    }
   }
 
   Future<void> _createV9Tables(Database db) async {
@@ -393,5 +458,35 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getFeeGroups() async {
     final db = await database;
     return await db.query('fee_groups');
+  }
+
+  // LLM Channels Methods
+  Future<int> addChannel(Map<String, dynamic> channel) async {
+    final db = await database;
+    return await db.insert('llm_channels', channel);
+  }
+
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
+    final db = await database;
+    await db.update('llm_channels', channel, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteChannel(int id) async {
+    final db = await database;
+    // Set associated models to NULL? or delete models? 
+    // Requirement says user can delete channel. Usually we should handle orphaned models.
+    await db.update('llm_models', {'channel_id': null}, where: 'channel_id = ?', whereArgs: [id]);
+    await db.delete('llm_channels', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getChannels() async {
+    final db = await database;
+    return await db.query('llm_channels');
+  }
+
+  Future<Map<String, dynamic>?> getChannel(int id) async {
+    final db = await database;
+    final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
+    return maps.isNotEmpty ? maps.first : null;
   }
 }
