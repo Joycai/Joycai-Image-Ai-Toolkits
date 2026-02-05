@@ -28,11 +28,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
         Expanded(
           child: Row(
             children: [
-              const SourceExplorerWidget(),
-              const VerticalDivider(width: 1, thickness: 1),
-              const Expanded(child: GalleryWidget()),
-              const VerticalDivider(width: 1, thickness: 1),
-              const ControlPanelWidget(),
+              SourceExplorerWidget(),
+              VerticalDivider(width: 1, thickness: 1),
+              Expanded(child: GalleryWidget()),
+              VerticalDivider(width: 1, thickness: 1),
+              ControlPanelWidget(),
             ],
           ),
         ),

@@ -444,21 +444,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showRefinerDialog(AppState appState, AppLocalizations l10n) async {
-    final allModels = await _db.getModels();
-    final channels = await _db.getChannels();
-    final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
-    final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
-
-    if (!mounted) return;
-
+  void _showRefinerDialog(AppState appState, AppLocalizations l10n) {
     showDialog(
       context: context,
+      useRootNavigator: true,
       builder: (context) => _RefinerDialog(
         initialPrompt: _promptController.text,
-        models: refinerModels,
-        channels: channels,
-        sysPrompts: refinerPrompts,
         selectedImages: appState.selectedImages,
         onApply: (refined) {
           _promptController.text = refined;
@@ -681,17 +672,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
 class _RefinerDialog extends StatefulWidget {
   final String initialPrompt;
-  final List<Map<String, dynamic>> models;
-  final List<Map<String, dynamic>> channels;
-  final List<Map<String, dynamic>> sysPrompts;
   final List<File> selectedImages;
   final Function(String) onApply;
 
   const _RefinerDialog({
     required this.initialPrompt,
-    required this.models,
-    required this.channels,
-    required this.sysPrompts,
     required this.selectedImages,
     required this.onApply,
   });
@@ -701,18 +686,42 @@ class _RefinerDialog extends StatefulWidget {
 }
 
 class _RefinerDialogState extends State<_RefinerDialog> {
+  final DatabaseService _db = DatabaseService();
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
+  
+  List<Map<String, dynamic>> _models = [];
+  List<Map<String, dynamic>> _channels = [];
+  List<Map<String, dynamic>> _sysPrompts = [];
+  
   int? _selectedModelPk;
   String? _selectedSysPrompt;
   bool _isRefining = false;
+  bool _isLoadingData = true;
 
   @override
   void initState() {
     super.initState();
     _currentPromptCtrl = TextEditingController(text: widget.initialPrompt);
-    if (widget.models.isNotEmpty) _selectedModelPk = widget.models.first['id'] as int;
-    if (widget.sysPrompts.isNotEmpty) _selectedSysPrompt = widget.sysPrompts.first['content'];
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final allModels = await _db.getModels();
+    final channels = await _db.getChannels();
+    final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
+    final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
+
+    if (mounted) {
+      setState(() {
+        _models = refinerModels;
+        _channels = channels;
+        _sysPrompts = refinerPrompts;
+        if (_models.isNotEmpty) _selectedModelPk = _models.first['id'] as int;
+        if (_sysPrompts.isNotEmpty) _selectedSysPrompt = _sysPrompts.first['content'];
+        _isLoadingData = false;
+      });
+    }
   }
 
   Future<void> _refine() async {
@@ -770,9 +779,11 @@ class _RefinerDialogState extends State<_RefinerDialog> {
     final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(l10n.aiPromptRefiner),
-      content: SizedBox(
-        width: 800,
-        child: Column(
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: _isLoadingData 
+          ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
+          : Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
@@ -781,8 +792,8 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                   child: DropdownButtonFormField<int>(
                     initialValue: _selectedModelPk,
                     decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
-                    items: widget.models.map((m) {
-                      final channel = widget.channels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
+                    items: _models.map((m) {
+                      final channel = _channels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
                       return DropdownMenuItem(
                         value: m['id'] as int,
                         child: Row(
@@ -817,7 +828,7 @@ class _RefinerDialogState extends State<_RefinerDialog> {
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedSysPrompt,
                     decoration: InputDecoration(labelText: l10n.systemPrompt, border: const OutlineInputBorder()),
-                    items: widget.sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
+                    items: _sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
                     onChanged: (v) => setState(() => _selectedSysPrompt = v),
                   ),
                 ),
