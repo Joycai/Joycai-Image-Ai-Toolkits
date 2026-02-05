@@ -144,12 +144,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
       onReorder: (oldIndex, newIndex) async {
+        if (_searchQuery.isNotEmpty) return;
+        
         setState(() {
           if (newIndex > oldIndex) newIndex -= 1;
-          final item = prompts.removeAt(oldIndex);
-          prompts.insert(newIndex, item);
+          final item = _userPrompts.removeAt(oldIndex);
+          _userPrompts.insert(newIndex, item);
         });
-        await _db.updatePromptOrder(prompts.map((p) => p['id'] as int).toList());
+        await _db.updatePromptOrder(_userPrompts.map((p) => p['id'] as int).toList());
       },
       proxyDecorator: (child, index, animation) => Material(
         elevation: 8,
@@ -177,11 +179,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 children: [
                   Row(
                     children: [
-                      ReorderableDragStartListener(
-                        index: index,
-                        child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
-                      ),
-                      const SizedBox(width: 12),
+                      if (_searchQuery.isEmpty)
+                        ReorderableDragStartListener(
+                          index: index,
+                          child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
+                        ),
+                      if (_searchQuery.isEmpty) const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           prompt['title'],
