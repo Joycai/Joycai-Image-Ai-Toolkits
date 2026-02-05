@@ -19,4 +19,13 @@ class AppConstants {
   static const double opacityLow = 0.05;
   static const double opacityMedium = 0.3;
   static const double opacityHigh = 0.5;
+
+  static bool isImageFile(String path) {
+    final ext = path.toLowerCase();
+    return ext.endsWith('.jpg') || 
+           ext.endsWith('.jpeg') || 
+           ext.endsWith('.png') || 
+           ext.endsWith('.webp') || 
+           ext.endsWith('.bmp');
+  }
 }

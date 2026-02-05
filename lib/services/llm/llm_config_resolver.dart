@@ -70,7 +70,7 @@ class LLMConfigResolver {
     final proxyPassword = await _db.getSetting('proxy_password');
 
         return LLMModelConfig(
-
+          pk: modelData['id'] as int?,
           modelId: modelId,
 
           type: type,

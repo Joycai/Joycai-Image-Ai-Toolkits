@@ -7,22 +7,18 @@ import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/task_queue_service.dart';
+import 'gallery_state.dart';
 
 class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
+  final GalleryState galleryState = GalleryState();
 
-  List<String> sourceDirectories = [];
-  List<String> activeSourceDirectories = [];
-  List<File> galleryImages = [];
-  List<File> processedImages = [];
-  List<File> selectedImages = [];
   List<LogEntry> logs = [];
   bool isProcessing = false;
   bool settingsLoaded = false;
-  bool setupCompleted = true; // Default to true to prevent flash, check DB later
+  bool setupCompleted = true; 
   int concurrencyLimit = 2;
-  String? outputDirectory;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -30,27 +26,22 @@ class AppState extends ChangeNotifier {
   // Language configuration
   Locale? locale;
 
-  // Gallery configuration
-  double thumbnailSize = 150.0;
-  String imagePrefix = "result";
-
   // Workbench configurations
   String? lastSelectedModelId;
   String lastAspectRatio = "not_set";
   String lastResolution = "1K";
   String lastPrompt = "";
 
-  // Directory watchers
-  final Map<String, StreamSubscription> _watchers = {};
-  StreamSubscription? _outputWatcher;
-  Timer? _sourceScanTimer;
-  Timer? _outputScanTimer;
-
   AppState() {
     _loadSettings();
     
+    // Wire up logs
+    galleryState.onLog = (msg, {level = 'INFO'}) {
+      addLog(msg, level: level);
+    };
+
     taskQueue.onTaskCompleted = (file) {
-      _scanProcessedImages();
+      galleryState.refreshImages();
     };
     
     taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
@@ -65,18 +56,37 @@ class AppState extends ChangeNotifier {
       isProcessing = taskQueue.runningCount > 0;
       notifyListeners();
     });
+    
+    // Propagate gallery changes
+    galleryState.addListener(notifyListeners);
   }
 
   @override
   void dispose() {
-    for (var sub in _watchers.values) {
-      sub.cancel();
-    }
-    _outputWatcher?.cancel();
-    _sourceScanTimer?.cancel();
-    _outputScanTimer?.cancel();
+    galleryState.dispose();
     super.dispose();
   }
+
+  // Proxies for Gallery State (for backward compatibility if needed, or consumers should access galleryState directly)
+  List<File> get galleryImages => galleryState.galleryImages;
+  List<File> get processedImages => galleryState.processedImages;
+  List<File> get selectedImages => galleryState.selectedImages;
+  String? get outputDirectory => galleryState.outputDirectory;
+  String get imagePrefix => galleryState.imagePrefix;
+  double get thumbnailSize => galleryState.thumbnailSize;
+  List<String> get sourceDirectories => galleryState.sourceDirectories;
+  List<String> get activeSourceDirectories => galleryState.activeSourceDirectories;
+
+  Future<void> updateOutputDirectory(String path) => galleryState.updateOutputDirectory(path);
+  Future<void> setImagePrefix(String prefix) => galleryState.setImagePrefix(prefix);
+  void clearImageSelection() => galleryState.clearImageSelection();
+  void toggleImageSelection(File image) => galleryState.toggleImageSelection(image);
+  Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
+  Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
+  Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);
+  Future<void> setThumbnailSize(double size) => galleryState.setThumbnailSize(size);
+  Future<void> refreshImages() => galleryState.refreshImages();
+  void selectAllImages() => galleryState.selectAllImages();
 
   Future<void> _loadSettings() async {
     addLog('Loading settings from database...');
@@ -102,33 +112,10 @@ class AppState extends ChangeNotifier {
       locale = Locale(savedLocale);
     }
 
-    // Load thumbnail size
-    final savedThumbSize = await _db.getSetting('thumbnail_size');
-    if (savedThumbSize != null) {
-      thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;
-    }
-
-    // Load image prefix
-    imagePrefix = await _db.getSetting('image_prefix') ?? "result";
-
-    outputDirectory = await _db.getSetting('output_directory');
-    _setupOutputWatcher();
-
     lastSelectedModelId = await _db.getSetting('last_model_id');
     lastAspectRatio = await _db.getSetting('last_aspect_ratio') ?? "not_set";
     lastResolution = await _db.getSetting('last_resolution') ?? "1K";
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
-
-    final dirs = await _db.getSourceDirectories();
-    sourceDirectories = dirs.map((d) => d['path'] as String).toList();
-    activeSourceDirectories = dirs
-        .where((d) => d['is_selected'] == 1)
-        .map((d) => d['path'] as String)
-        .toList();
-
-    _scanImages();
-    _scanProcessedImages();
-    _setupSourceWatchers();
     
     settingsLoaded = true;
     notifyListeners();
@@ -140,62 +127,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setupSourceWatchers() {
-    for (var sub in _watchers.values) {
-      sub.cancel();
-    }
-    _watchers.clear();
-
-    for (var path in activeSourceDirectories) {
-      try {
-        final dir = Directory(path);
-        if (dir.existsSync()) {
-          _watchers[path] = dir.watch().listen((event) {
-            _debouncedSourceScan();
-          });
-        }
-      } catch (e) {
-        addLog('Failed to watch directory $path: $e', level: 'ERROR');
-      }
-    }
-  }
-
-  void _setupOutputWatcher() {
-    _outputWatcher?.cancel();
-    if (outputDirectory != null && outputDirectory!.isNotEmpty) {
-      try {
-        final dir = Directory(outputDirectory!);
-        if (dir.existsSync()) {
-          _outputWatcher = dir.watch().listen((event) {
-            _debouncedOutputScan();
-          });
-        }
-      } catch (e) {
-        addLog('Failed to watch output directory: $e', level: 'ERROR');
-      }
-    }
-  }
-
-  void _debouncedSourceScan() {
-    _sourceScanTimer?.cancel();
-    _sourceScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanImages();
-    });
-  }
-
-  void _debouncedOutputScan() {
-    _outputScanTimer?.cancel();
-    _outputScanTimer = Timer(const Duration(milliseconds: 500), () {
-      _scanProcessedImages();
-    });
-  }
-
   void addLog(String message, {String level = 'INFO', String? taskId}) {
-    // If it's a streaming AI response, append to the last log if the last log was also an AI response AND task ID matches
     if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
       final lastLog = logs.last;
       if (lastLog.taskId == taskId) {
-        final newText = message.substring(6); // Remove the '[AI]: ' prefix
+        final newText = message.substring(6); 
         logs[logs.length - 1] = LogEntry(
           timestamp: lastLog.timestamp,
           level: lastLog.level,
@@ -206,145 +142,7 @@ class AppState extends ChangeNotifier {
         return;
       }
     }
-    
     logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
-    notifyListeners();
-  }
-
-  Future<void> addBaseDirectory(String path) async {
-    if (!sourceDirectories.contains(path)) {
-      sourceDirectories.add(path);
-      activeSourceDirectories.add(path);
-      await _db.addSourceDirectory(path);
-      addLog('Added base directory: $path');
-      _scanImages();
-      notifyListeners();
-    }
-  }
-
-  Future<void> removeBaseDirectory(String path) async {
-    if (sourceDirectories.contains(path)) {
-      sourceDirectories.remove(path);
-      // Remove the root and any sub-directories from active list
-      activeSourceDirectories.removeWhere((p) => p.startsWith(path));
-      await _db.removeSourceDirectory(path);
-      addLog('Removed base directory: $path');
-      _scanImages();
-      notifyListeners();
-    }
-  }
-
-  Future<void> toggleDirectory(String path) async {
-    bool isSelected;
-    if (activeSourceDirectories.contains(path)) {
-      activeSourceDirectories.remove(path);
-      isSelected = false;
-      addLog('Deselected directory: $path');
-    } else {
-      activeSourceDirectories.add(path);
-      isSelected = true;
-      addLog('Selected directory: $path');
-    }
-    await _db.updateDirectorySelection(path, isSelected);
-    _scanImages();
-    notifyListeners();
-  }
-
-  Future<void> refreshImages() async {
-    addLog('Manually refreshing images...');
-    await _scanImages();
-    await _scanProcessedImages();
-  }
-
-  Future<void> _scanImages() async {
-    if (activeSourceDirectories.isEmpty) {
-      galleryImages = [];
-      notifyListeners();
-      return;
-    }
-
-    List<File> newImages = [];
-    for (var path in activeSourceDirectories) {
-      try {
-        final dir = Directory(path);
-        if (await dir.exists()) {
-          await for (var file in dir.list(recursive: false)) {
-            if (file is File && _isImageFile(file.path)) {
-              newImages.add(file);
-            }
-          }
-        }
-      } catch (e) {
-        // Silent fail
-      }
-    }
-
-    galleryImages = newImages;
-    selectedImages.removeWhere((selected) => 
-      !galleryImages.any((img) => img.path == selected.path)
-    );
-    notifyListeners();
-  }
-
-  Future<void> _scanProcessedImages() async {
-    if (outputDirectory == null || outputDirectory!.isEmpty) {
-      processedImages = [];
-      notifyListeners();
-      return;
-    }
-
-    try {
-      final dir = Directory(outputDirectory!);
-      if (await dir.exists()) {
-        List<File> results = [];
-        await for (var file in dir.list(recursive: false)) {
-          if (file is File && _isImageFile(file.path)) {
-            results.add(file);
-          }
-        }
-        results.sort((a, b) {
-          try {
-            return b.lastModifiedSync().compareTo(a.lastModifiedSync());
-          } catch (e) {
-            return 0;
-          }
-        });
-        processedImages = results;
-      } else {
-        processedImages = [];
-      }
-    } catch (e) {
-      processedImages = [];
-    }
-    notifyListeners();
-  }
-
-  bool _isImageFile(String path) {
-    final ext = path.toLowerCase();
-    return ext.endsWith('.jpg') || 
-           ext.endsWith('.jpeg') || 
-           ext.endsWith('.png') || 
-           ext.endsWith('.webp') || 
-           ext.endsWith('.bmp');
-  }
-
-  void toggleImageSelection(File image) {
-    final index = selectedImages.indexWhere((img) => img.path == image.path);
-    if (index != -1) {
-      selectedImages.removeAt(index);
-    } else {
-      selectedImages.add(image);
-    }
-    notifyListeners();
-  }
-
-  void clearImageSelection() {
-    selectedImages.clear();
-    notifyListeners();
-  }
-
-  void selectAllImages() {
-    selectedImages.addAll(galleryImages);
     notifyListeners();
   }
 
@@ -365,26 +163,6 @@ class AppState extends ChangeNotifier {
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     await _db.saveSetting('locale', newLocale?.languageCode ?? '');
-    notifyListeners();
-  }
-
-  Future<void> setThumbnailSize(double size) async {
-    thumbnailSize = size;
-    await _db.saveSetting('thumbnail_size', size.toString());
-    notifyListeners();
-  }
-
-  Future<void> setImagePrefix(String prefix) async {
-    imagePrefix = prefix;
-    await _db.saveSetting('image_prefix', prefix);
-    notifyListeners();
-  }
-
-  Future<void> updateOutputDirectory(String path) async {
-    outputDirectory = path;
-    await _db.saveSetting('output_directory', path);
-    _setupOutputWatcher();
-    _scanProcessedImages();
     notifyListeners();
   }
 
@@ -413,15 +191,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) {
+  Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     final prompt = params['prompt'] as String? ?? '';
-    if (prompt.isEmpty && selectedImages.isEmpty) return;
+    if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
     
-    // Add current image prefix to params
-    params['imagePrefix'] = imagePrefix;
+    params['imagePrefix'] = galleryState.imagePrefix;
     
-    final imagePaths = selectedImages.map((f) => f.path).toList();
-    taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
+    final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
+    await taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
     
     addLog('Task submitted for ${imagePaths.length} images.');
   }

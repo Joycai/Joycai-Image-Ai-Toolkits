@@ -19,6 +19,8 @@ class TaskItem {
   final Map<String, dynamic> parameters;
   final String modelId; // Legacy string ID
   final int? modelPk;   // New internal ID
+  final String? channelTag;
+  final int? channelColor;
   TaskStatus status;
   List<String> logs;
   List<String> resultPaths;
@@ -30,6 +32,8 @@ class TaskItem {
     required this.imagePaths,
     required this.modelId,
     this.modelPk,
+    this.channelTag,
+    this.channelColor,
     required this.parameters,
     this.status = TaskStatus.pending,
     List<String>? logs,
@@ -49,6 +53,8 @@ class TaskItem {
       'image_path': jsonEncode(imagePaths),
       'model_id': modelId,
       'model_pk': modelPk,
+      'channel_tag': channelTag,
+      'channel_color': channelColor,
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
@@ -63,6 +69,8 @@ class TaskItem {
       imagePaths: List<String>.from(jsonDecode(map['image_path'])),
       modelId: map['model_id'] ?? 'unknown',
       modelPk: map['model_pk'] as int?,
+      channelTag: map['channel_tag'] as String?,
+      channelColor: map['channel_color'] as int?,
       status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
       parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
       resultPaths: List<String>.from(jsonDecode(map['result_path'])),
@@ -97,12 +105,29 @@ class TaskQueueService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addTask(List<String> imagePaths, dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) {
+  Future<void> addTask(List<String> imagePaths, dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     String modelIdStr = modelIdDisplay ?? modelIdentifier.toString();
     int? modelPk;
+    String? channelTag;
+    int? channelColor;
+
+    final db = DatabaseService();
 
     if (modelIdentifier is int) {
       modelPk = modelIdentifier;
+      // Fetch model and channel info for visual continuity in history
+      final models = await db.getModels();
+      final model = models.firstWhere((m) => m['id'] == modelPk, orElse: () => {});
+      if (model.isNotEmpty) {
+        final channelId = model['channel_id'] as int?;
+        if (channelId != null) {
+          final channel = await db.getChannel(channelId);
+          if (channel != null) {
+            channelTag = channel['tag'];
+            channelColor = channel['tag_color'];
+          }
+        }
+      }
     }
 
     final task = TaskItem(
@@ -110,13 +135,15 @@ class TaskQueueService extends ChangeNotifier {
       imagePaths: imagePaths,
       modelId: modelIdStr,
       modelPk: modelPk,
+      channelTag: channelTag,
+      channelColor: channelColor,
       parameters: params,
     );
     task.addLog('Task created for ${imagePaths.length} images using $modelIdStr.');
     _queue.add(task);
     
     // Persist task immediately
-    DatabaseService().saveTask(task.toMap());
+    await db.saveTask(task.toMap());
     
     notifyListeners();
     _attemptNextExecution();

@@ -97,6 +97,25 @@ class _TaskTileState extends State<_TaskTile> {
                 children: [
                   _buildStatusBadge(task.status, colorScheme),
                   const SizedBox(width: 12),
+                  if (task.channelTag != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        task.channelTag!,
+                        style: TextStyle(
+                          fontSize: 10, 
+                          color: Color(task.channelColor ?? 0xFF607D8B),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: Text(
                       l10n.taskId(task.id.substring(0, 8)),

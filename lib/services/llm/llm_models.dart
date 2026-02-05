@@ -28,6 +28,7 @@ class LLMMessage {
 }
 
 class LLMModelConfig {
+  final int? pk; // Database Primary Key
   final String modelId;
   final String type; // Provider type: 'google-genai' or 'openai-api'
   final String channelType; // 'google-genai-rest', 'openai-api-rest', 'official-google-genai-api'
@@ -46,6 +47,7 @@ class LLMModelConfig {
   final String? proxyPassword;
 
   LLMModelConfig({
+    this.pk,
     required this.modelId,
     required this.type,
     required this.channelType,
