@@ -119,6 +119,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: Row(
         children: [
           NavigationRail(
+            key: ValueKey(_isRailExtended),
             extended: _isRailExtended,
             selectedIndex: _selectedIndex,
             onDestinationSelected: (int index) {
