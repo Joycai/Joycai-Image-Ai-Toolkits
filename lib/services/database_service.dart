@@ -358,6 +358,7 @@ class DatabaseService {
       'llm_models': await db.query('llm_models'),
       'prompt_tags': await db.query('prompt_tags'),
       'prompts': await db.query('prompts'),
+      'system_prompts': await db.query('system_prompts'),
       'fee_groups': await db.query('fee_groups'),
       'source_directories': await db.query('source_directories'),
     };
@@ -372,6 +373,7 @@ class DatabaseService {
       await txn.delete('llm_models');
       await txn.delete('prompt_tags');
       await txn.delete('prompts');
+      await txn.delete('system_prompts');
       await txn.delete('fee_groups');
       await txn.delete('source_directories');
 
@@ -450,7 +452,15 @@ class DatabaseService {
         }
       }
 
-      // 8. Import Source Directories
+      // 8. Import System Prompts
+      if (data['system_prompts'] != null) {
+        for (var sp in data['system_prompts']) {
+          final Map<String, dynamic> row = Map.from(sp)..remove('id');
+          await txn.insert('system_prompts', row);
+        }
+      }
+
+      // 9. Import Source Directories
       if (data['source_directories'] != null) {
         for (var d in data['source_directories']) {
           await txn.insert('source_directories', d);
