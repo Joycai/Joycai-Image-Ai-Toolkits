@@ -33,6 +33,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _openaiApiKey = TextEditingController();
   final TextEditingController _outputDirController = TextEditingController();
   
+  // Proxy Settings
+  bool _proxyEnabled = false;
+  final TextEditingController _proxyUrlController = TextEditingController();
+  final TextEditingController _proxyUsernameController = TextEditingController();
+  final TextEditingController _proxyPasswordController = TextEditingController();
+  
   // MCP Settings
   bool _mcpEnabled = false;
   final TextEditingController _mcpPortController = TextEditingController();
@@ -52,6 +58,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _openaiApiKey.text = await _db.getSetting('openai_apikey') ?? '';
     _outputDirController.text = await _db.getSetting('output_directory') ?? '';
     
+    _proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
+    _proxyUrlController.text = await _db.getSetting('proxy_url') ?? '';
+    _proxyUsernameController.text = await _db.getSetting('proxy_username') ?? '';
+    _proxyPasswordController.text = await _db.getSetting('proxy_password') ?? '';
+
     _mcpEnabled = (await _db.getSetting('mcp_enabled')) == 'true';
     _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
     
@@ -86,6 +97,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 32),
+
+                  AppSection(
+                    title: l10n.proxySettings,
+                    children: [
+                      _buildProxySettings(l10n),
+                    ],
+                  ),
 
                   AppSection(
                     title: l10n.mcpServerSettings,
@@ -148,6 +166,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProxySettings(AppLocalizations l10n) {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: Text(l10n.enableProxy),
+          value: _proxyEnabled,
+          onChanged: (v) {
+            setState(() => _proxyEnabled = v);
+            _db.saveSetting('proxy_enabled', v.toString());
+          },
+        ),
+        if (_proxyEnabled)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _proxyUrlController,
+                  decoration: InputDecoration(
+                    labelText: l10n.proxyUrl,
+                    hintText: '127.0.0.1:7890',
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (v) => _db.saveSetting('proxy_url', v),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _proxyUsernameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.proxyUsername,
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (v) => _db.saveSetting('proxy_username', v),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ApiKeyField(
+                        controller: _proxyPasswordController,
+                        label: l10n.proxyPassword,
+                        onChanged: (v) => _db.saveSetting('proxy_password', v),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

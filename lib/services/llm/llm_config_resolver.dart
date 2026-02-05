@@ -63,6 +63,12 @@ class LLMConfigResolver {
     final endpoint = await _db.getSetting('${channel}_endpoint') ?? "";
     final apiKey = await _db.getSetting('${channel}_apikey') ?? "";
 
+    // Global Proxy Settings
+    final proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
+    final proxyUrl = await _db.getSetting('proxy_url');
+    final proxyUsername = await _db.getSetting('proxy_username');
+    final proxyPassword = await _db.getSetting('proxy_password');
+
     return LLMModelConfig(
       modelId: modelId,
       type: type,
@@ -72,6 +78,10 @@ class LLMConfigResolver {
       outputFee: outputFee,
       billingMode: billingMode,
       requestFee: requestFee,
+      proxyEnabled: proxyEnabled,
+      proxyUrl: proxyUrl,
+      proxyUsername: proxyUsername,
+      proxyPassword: proxyPassword,
     );
   }
 }
