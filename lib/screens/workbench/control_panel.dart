@@ -23,7 +23,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   final DatabaseService _db = DatabaseService();
   
   List<Map<String, dynamic>> _availableModels = [];
-  String? _selectedChannel;
+  List<Map<String, dynamic>> _channels = [];
+  int? _selectedChannelId;
   int? _selectedModelPk;
   String _aspectRatio = "not_set";
   String _resolution = "1K";
@@ -88,14 +89,15 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     // Sync model selection
     if (_availableModels.isNotEmpty) {
       final savedModelId = appState.lastSelectedModelId;
+      // Try match by PK first (int string), then by model_id string
       final match = _availableModels.firstWhere(
-        (m) => m['model_id'] == savedModelId || m['id'].toString() == savedModelId,
+        (m) => m['id'].toString() == savedModelId || m['model_id'] == savedModelId,
         orElse: () => {},
       );
       
       if (match.isNotEmpty && _selectedModelPk != match['id']) {
         _selectedModelPk = match['id'] as int;
-        _selectedChannel = _getChannelId(match);
+        _selectedChannelId = match['channel_id'] as int?;
         changed = true;
       }
     }
@@ -105,22 +107,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     }
   }
 
-  String _getChannelId(Map<String, dynamic> model) {
-    final type = model['type'] as String;
-    if (type == 'google-genai') {
-      return model['is_paid'] == 1 ? 'google-genai-paid' : 'google-genai-free';
-    }
-    return 'openai-api';
-  }
-
   Future<void> _loadModels() async {
     final allModels = await _db.getModels();
+    final channels = await _db.getChannels();
+    
     final filtered = allModels.where((m) => 
       m['tag'] == 'image' || m['tag'] == 'multimodal'
     ).toList();
     
     setState(() {
       _availableModels = filtered;
+      _channels = channels;
       
       // Validate currently selected model and channel
       if (_selectedModelPk != null) {
@@ -131,14 +128,14 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         if (currentModel == null) {
           _selectedModelPk = null;
         } else {
-          _selectedChannel = _getChannelId(currentModel);
+          _selectedChannelId = currentModel['channel_id'] as int?;
         }
       }
 
       if (filtered.isNotEmpty && _selectedModelPk == null) {
         final first = filtered.first;
         _selectedModelPk = first['id'] as int;
-        _selectedChannel = _getChannelId(first);
+        _selectedChannelId = first['channel_id'] as int?;
       }
     });
   }
@@ -161,8 +158,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     
     String? idToSave;
     if (modelPk != null) {
-      final model = _availableModels.firstWhere((m) => m['id'] == modelPk, orElse: () => {});
-      if (model.isNotEmpty) idToSave = model['model_id'] as String;
+      idToSave = modelPk.toString(); // Save PK as string
     }
 
     appState.updateWorkbenchConfig(
@@ -180,13 +176,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    final List<Map<String, String>> channels = [
-      {'id': 'google-genai-free', 'name': l10n.googleGenAiFree},
-      {'id': 'google-genai-paid', 'name': l10n.googleGenAiPaid},
-      {'id': 'openai-api', 'name': l10n.openaiApi},
-    ];
-
-    final filteredModels = _availableModels.where((m) => _getChannelId(m) == _selectedChannel).toList();
+    final filteredModels = _availableModels.where((m) => m['channel_id'] == _selectedChannelId).toList();
     
     return Container(
       width: 350,
@@ -244,29 +234,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                              DropdownButton<String>(
-                                isExpanded: true,
-                                value: _selectedChannel,
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                underline: Container(height: 1, color: Colors.white24),
-                                items: channels.map((c) => DropdownMenuItem(
-                                  value: c['id'],
-                                  child: Text(c['name']!),
-                                )).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedChannel = val;
-                                    final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
-                                      (m) => m != null && _getChannelId(m) == val,
-                                      orElse: () => null,
-                                    );
-                                    _selectedModelPk = firstInChannel?['id'] as int?;
-                                    if (_selectedModelPk != null) {
-                                      _updateConfig(modelPk: _selectedModelPk);
-                                    }
-                                  });
-                                },
-                              ),
+                              _buildChannelDropdown(colorScheme, l10n),
                             ],
                           ),
                         ),
@@ -282,8 +250,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                                     ? _selectedModelPk 
                                     : null,
                                 hint: Text(l10n.selectAModel),
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                underline: Container(height: 1, color: Colors.white24),
+                                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                                underline: Container(height: 1, color: colorScheme.outlineVariant),
                                 items: filteredModels.map((m) => DropdownMenuItem(
                                   value: m['id'] as int,
                                   child: Text(m['model_name']),
@@ -429,6 +397,53 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
+  Widget _buildChannelDropdown(ColorScheme colorScheme, AppLocalizations l10n) {
+    return DropdownButton<int>(
+      isExpanded: true,
+      value: _selectedChannelId,
+      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+      underline: Container(height: 1, color: colorScheme.outlineVariant),
+      items: _channels.map((c) => DropdownMenuItem<int>(
+        value: c['id'] as int,
+        child: Row(
+          children: [
+            if (c['tag'] != null)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Color(c['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  c['tag'],
+                  style: TextStyle(
+                    fontSize: 9, 
+                    color: Color(c['tag_color'] ?? 0xFF607D8B),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      )).toList(),
+      onChanged: (val) {
+        setState(() {
+          _selectedChannelId = val;
+          final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
+            (m) => m != null && m['channel_id'] == val,
+            orElse: () => null,
+          );
+          _selectedModelPk = firstInChannel?['id'] as int?;
+          if (_selectedModelPk != null) {
+            _updateConfig(modelPk: _selectedModelPk);
+          }
+        });
+      },
+    );
+  }
+
   void _showRefinerDialog(AppState appState, AppLocalizations l10n) async {
     final allModels = await _db.getModels();
     final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
@@ -489,8 +504,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   child: DropdownButton<String>(
                     isExpanded: true,
                     value: _aspectRatio,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                    underline: Container(height: 1, color: Colors.white24),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                    underline: Container(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
                     items: ["not_set", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"]
                         .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                     onChanged: (v) {
