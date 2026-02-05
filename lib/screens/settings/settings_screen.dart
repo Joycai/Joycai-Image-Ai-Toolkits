@@ -291,6 +291,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final importedMsg = l10n.settingsImported;
 
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    if (!mounted) return;
+    
     if (result != null) {
       final confirmed = await showDialog<bool>(
         context: context,
