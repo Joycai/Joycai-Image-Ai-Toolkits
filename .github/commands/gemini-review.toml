@@ -59,9 +59,20 @@ For each identified issue, formulate a review comment adhering to the following 
 
 #### Review Criteria (in order of priority)
 
-1. **Correctness:** Identify logic errors, unhandled edge cases, race conditions, incorrect API usage, and data validation flaws.
+1. **Flutter Correctness & Context Safety**: 
+    - Check for `context.mounted` checks before using `BuildContext` across async gaps.
+    - Ensure `StatefulWidget` state is managed correctly and `dispose()` is called for controllers.
 
-2. **Security:** Pinpoint vulnerabilities such as injection attacks, insecure data storage, insufficient access controls, or secrets exposure.
+2. **State Management (Provider)**:
+    - Verify that `AppState` is used for shared state rather than prop-drilling or local state where persistence is needed.
+    - Ensure `notifyListeners()` is called only when necessary.
+
+3. **Architecture Adherence (GEMINI.md)**:
+    - Business logic should be in `lib/services/`.
+    - Data persistence must go through `DatabaseService`.
+    - UI should be modularized in `lib/widgets/`.
+
+4. **Security**: Pinpoint vulnerabilities such as injection attacks, insecure data storage, insufficient access controls, or secrets exposure.
 
 3. **Efficiency:** Locate performance bottlenecks, unnecessary computations, memory leaks, and inefficient data structures.
 

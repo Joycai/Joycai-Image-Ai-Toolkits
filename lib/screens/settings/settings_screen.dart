@@ -279,8 +279,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     if (path != null) {
       await File(path).writeAsString(json);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      }
     }
   }
 
