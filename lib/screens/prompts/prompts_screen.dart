@@ -56,9 +56,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final systemPrompts = await _db.getSystemPrompts();
     final tags = await _db.getPromptTags();
     setState(() {
-      _userPrompts = userPrompts;
-      _systemPrompts = systemPrompts;
-      _tags = tags;
+      _userPrompts = List.from(userPrompts);
+      _systemPrompts = List.from(systemPrompts);
+      _tags = List.from(tags);
     });
   }
 
