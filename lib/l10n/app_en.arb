@@ -233,6 +233,7 @@
   "channelType": "Channel Type",
   "enableDiscovery": "Enable Model Discovery",
   "filterModels": "Filter models...",
+  "filterPrompts": "Filter prompts...",
   "tagColor": "Tag Color",
   "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.",
   "@deleteChannelConfirm": {

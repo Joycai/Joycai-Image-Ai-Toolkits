@@ -232,6 +232,7 @@
   "channelType": "渠道类型",
   "enableDiscovery": "启用模型检索",
   "filterModels": "过滤模型...",
+  "filterPrompts": "过滤提示词...",
   "tagColor": "标签颜色",
   "deleteChannelConfirm": "确定要删除渠道“{name}”吗？这将断开所有关联模型的连接。",
   "@deleteChannelConfirm": {

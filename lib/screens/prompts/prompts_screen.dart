@@ -89,7 +89,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: l10n.filterModels,
+                hintText: l10n.filterPrompts,
                 prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 border: const OutlineInputBorder(),
