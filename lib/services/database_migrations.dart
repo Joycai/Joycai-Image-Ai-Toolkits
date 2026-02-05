@@ -29,6 +29,7 @@ class DatabaseMigration {
     if (oldVersion < 11) await _createV11Tables(db);
     if (oldVersion < 12) await _createV12Tables(db);
     if (oldVersion < 13) await _createV13Tables(db);
+    if (oldVersion < 14) await _createV14Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -45,6 +46,7 @@ class DatabaseMigration {
     await _createV11Tables(db);
     await _createV12Tables(db);
     await _createV13Tables(db);
+    await _createV14Tables(db);
   }
 
   static Future<void> _createV2Tables(Database db) async {
@@ -192,6 +194,42 @@ class DatabaseMigration {
       if (channelId != null) {
         await db.update('llm_models', {'channel_id': channelId}, where: 'id = ?', whereArgs: [model['id']]);
       }
+    }
+  }
+
+  static Future<void> _createV14Tables(Database db) async {
+    // 1. Create system_prompts table
+    await db.execute('''
+      CREATE TABLE system_prompts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT NOT NULL
+      )
+    ''');
+
+    // 2. Migrate existing "Refiner" prompts
+    // Find the Refiner tag
+    final refinerTag = await db.query('prompt_tags', where: 'name = ?', whereArgs: ['Refiner'], limit: 1);
+    if (refinerTag.isNotEmpty) {
+      final refinerTagId = refinerTag.first['id'] as int;
+      
+      // Get all prompts with this tag
+      final refinerPrompts = await db.query('prompts', where: 'tag_id = ?', whereArgs: [refinerTagId]);
+      
+      for (var p in refinerPrompts) {
+        await db.insert('system_prompts', {
+          'title': p['title'],
+          'content': p['content'],
+          'type': 'refiner',
+        });
+      }
+
+      // Delete from prompts table
+      await db.delete('prompts', where: 'tag_id = ?', whereArgs: [refinerTagId]);
+      
+      // Delete the system tag
+      await db.delete('prompt_tags', where: 'id = ?', whereArgs: [refinerTagId]);
     }
   }
 

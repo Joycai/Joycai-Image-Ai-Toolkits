@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 13, // Incremented for Prompt Tag CRUD
+          version: 14, // Incremented for Specialized System Prompts
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 13,
+        version: 14,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -323,6 +323,30 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getPromptTags() async {
     final db = await database;
     return await db.query('prompt_tags');
+  }
+
+  // System Prompts Methods
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt) async {
+    final db = await database;
+    return await db.insert('system_prompts', prompt);
+  }
+
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) async {
+    final db = await database;
+    await db.update('system_prompts', prompt, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteSystemPrompt(int id) async {
+    final db = await database;
+    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getSystemPrompts({String? type}) async {
+    final db = await database;
+    if (type != null) {
+      return await db.query('system_prompts', where: 'type = ?', whereArgs: [type]);
+    }
+    return await db.query('system_prompts');
   }
 
   // Backup & Restore

@@ -16,7 +16,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
   
-  List<Map<String, dynamic>> _prompts = [];
+  List<Map<String, dynamic>> _userPrompts = [];
+  List<Map<String, dynamic>> _systemPrompts = [];
   List<Map<String, dynamic>> _tags = [];
   String _searchQuery = "";
 
@@ -51,10 +52,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Future<void> _loadData() async {
-    final prompts = await _db.getPrompts();
+    final userPrompts = await _db.getPrompts();
+    final systemPrompts = await _db.getSystemPrompts();
     final tags = await _db.getPromptTags();
     setState(() {
-      _prompts = prompts;
+      _userPrompts = userPrompts;
+      _systemPrompts = systemPrompts;
       _tags = tags;
     });
   }
@@ -63,18 +66,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     
-    // Filter logic
-    final refinerTagId = _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['is_system'] == 1, orElse: () => null)?['id'];
-
-    final filteredUser = _prompts.where((p) {
-      if (p['tag_id'] == refinerTagId) return false;
-      final matchesSearch = p['title'].toLowerCase().contains(_searchQuery) || 
-                            p['content'].toLowerCase().contains(_searchQuery);
-      return matchesSearch;
+    final filteredUser = _userPrompts.where((p) {
+      return p['title'].toLowerCase().contains(_searchQuery) || 
+             p['content'].toLowerCase().contains(_searchQuery) ||
+             (p['tag_name']?.toLowerCase().contains(_searchQuery) ?? false);
     }).toList();
 
-    final filteredRefiner = _prompts.where((p) {
-      if (p['tag_id'] != refinerTagId) return false;
+    final filteredRefiner = _systemPrompts.where((p) {
       return p['title'].toLowerCase().contains(_searchQuery) || 
              p['content'].toLowerCase().contains(_searchQuery);
     }).toList();
@@ -101,9 +99,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              onPressed: () => _showPromptDialog(l10n),
+              onPressed: () {
+                if (_tabController.index == 1) {
+                  _showSystemPromptDialog(l10n);
+                } else if (_tabController.index == 2) {
+                  _showTagDialog(l10n);
+                } else {
+                  _showPromptDialog(l10n);
+                }
+              },
               icon: const Icon(Icons.add),
-              label: Text(l10n.newPrompt),
+              label: Text(l10n.add),
             ),
           ),
         ],
@@ -119,17 +125,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildPromptList(filteredUser, l10n, isRefiner: false),
-          _buildPromptList(filteredRefiner, l10n, isRefiner: true),
+          _buildUserPromptList(filteredUser, l10n),
+          _buildSystemPromptList(filteredRefiner, l10n),
           _buildTagList(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildPromptList(List<Map<String, dynamic>> prompts, AppLocalizations l10n, {required bool isRefiner}) {
+  Widget _buildUserPromptList(List<Map<String, dynamic>> prompts, AppLocalizations l10n) {
     if (prompts.isEmpty) {
-      return _buildEmptyState(l10n, isRefiner);
+      return _buildEmptyState(l10n, false);
     }
     
     final colorScheme = Theme.of(context).colorScheme;
@@ -153,10 +159,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       itemBuilder: (context, index) {
         final prompt = prompts[index];
-        final tag = _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['id'] == prompt['tag_id'], orElse: () => null);
-
         return Card(
-          key: ValueKey(prompt['id']),
+          key: ValueKey('user_${prompt['id']}'),
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -184,10 +188,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                       ),
-                      if (tag != null && !isRefiner) ...[
-                        _buildCategoryTag(tag['name'], tag['color']),
-                        const SizedBox(width: 8),
-                      ],
+                      _buildCategoryTag(prompt['tag_name'] ?? 'General', prompt['tag_color']),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.copy_all, size: 18),
                         onPressed: () {
@@ -203,7 +205,87 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                        onPressed: () => _confirmDelete(l10n, prompt),
+                        onPressed: () => _confirmDelete(l10n, prompt, isSystem: false),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 32.0),
+                    child: Text(
+                      prompt['content'],
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13, 
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSystemPromptList(List<Map<String, dynamic>> prompts, AppLocalizations l10n) {
+    if (prompts.isEmpty) {
+      return _buildEmptyState(l10n, true);
+    }
+    
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: prompts.length,
+      itemBuilder: (context, index) {
+        final prompt = prompts[index];
+        return Card(
+          key: ValueKey('sys_${prompt['id']}'),
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          child: InkWell(
+            onTap: () => _showSystemPromptDialog(l10n, prompt: prompt),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          prompt['title'],
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy_all, size: 18),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: prompt['content']));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        onPressed: () => _showSystemPromptDialog(l10n, prompt: prompt),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                        onPressed: () => _confirmDelete(l10n, prompt, isSystem: true),
                       ),
                     ],
                   ),
@@ -237,7 +319,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         itemCount: _tags.length,
         itemBuilder: (context, index) {
           final tag = _tags[index];
-          final isSystem = tag['is_system'] == 1;
           return Card(
             child: ListTile(
               leading: CircleAvatar(
@@ -245,7 +326,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 radius: 12,
               ),
               title: Text(tag['name']),
-              trailing: isSystem ? const Chip(label: Text("SYSTEM", style: TextStyle(fontSize: 8))) : Row(
+              trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
@@ -294,7 +375,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Icon(isRefiner ? Icons.auto_fix_high : Icons.notes, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            isRefiner ? l10n.noPromptsSaved : l10n.noPromptsSaved, 
+            l10n.noPromptsSaved, 
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
           ),
           const SizedBox(height: 8),
@@ -304,7 +385,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => _showPromptDialog(l10n, isRefinerTarget: isRefiner),
+            onPressed: () => isRefiner ? _showSystemPromptDialog(l10n) : _showPromptDialog(l10n),
             icon: const Icon(Icons.add),
             label: Text(l10n.newPrompt),
           ),
@@ -313,7 +394,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _confirmDelete(AppLocalizations l10n, Map<String, dynamic> prompt) {
+  void _confirmDelete(AppLocalizations l10n, Map<String, dynamic> prompt, {required bool isSystem}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -324,7 +405,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _db.deletePrompt(prompt['id']);
+              if (isSystem) {
+                await _db.deleteSystemPrompt(prompt['id']);
+              } else {
+                await _db.deletePrompt(prompt['id']);
+              }
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadData();
@@ -419,16 +504,74 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt, bool isRefinerTarget = false}) {
+  void _showSystemPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
+    final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
+    final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.auto_fix_high, color: Colors.purple),
+              const SizedBox(width: 12),
+              Text(prompt == null ? "New Refiner Prompt" : "Edit Refiner Prompt"),
+            ],
+          ),
+          content: SizedBox(
+            width: 600,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: contentCtrl,
+                  maxLines: 12,
+                  onChanged: (_) => setDialogState(() {}),
+                  decoration: InputDecoration(
+                    labelText: l10n.promptContent,
+                    border: const OutlineInputBorder(),
+                    counterText: '${contentCtrl.text.length} characters',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            FilledButton(
+              onPressed: () async {
+                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
+                final data = {'title': titleCtrl.text, 'content': contentCtrl.text, 'type': 'refiner'};
+                if (prompt == null) {
+                  await _db.addSystemPrompt(data);
+                } else {
+                  await _db.updateSystemPrompt(prompt['id'], data);
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _loadData();
+                }
+              },
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
     
-    int? selectedTagId = prompt?['tag_id'];
+        int? selectedTagId = prompt?['tag_id'];
     
-    if (selectedTagId == null) {
-      final defaultTagName = isRefinerTarget ? 'Refiner' : 'General';
-      selectedTagId = _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == defaultTagName, orElse: () => null)?['id'];
-    }
+        selectedTagId ??= _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == 'General', orElse: () => null)?['id'];
+    
+    
 
     showDialog(
       context: context,
