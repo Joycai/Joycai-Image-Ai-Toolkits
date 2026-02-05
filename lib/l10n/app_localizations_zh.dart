@@ -440,6 +440,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelsTab => '渠道管理';
 
   @override
+  String get categoriesTab => '分类管理';
+
+  @override
+  String get addCategory => '添加分类';
+
+  @override
+  String get editCategory => '编辑分类';
+
+  @override
   String get addChannel => '添加渠道';
 
   @override

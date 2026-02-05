@@ -908,6 +908,24 @@ abstract class AppLocalizations {
   /// **'Channels'**
   String get channelsTab;
 
+  /// No description provided for @categoriesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categoriesTab;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Category'**
+  String get addCategory;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Category'**
+  String get editCategory;
+
   /// No description provided for @addChannel.
   ///
   /// In en, this message translates to:

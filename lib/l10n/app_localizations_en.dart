@@ -445,6 +445,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsTab => 'Channels';
 
   @override
+  String get categoriesTab => 'Categories';
+
+  @override
+  String get addCategory => 'Add Category';
+
+  @override
+  String get editCategory => 'Edit Category';
+
+  @override
   String get addChannel => 'Add Channel';
 
   @override

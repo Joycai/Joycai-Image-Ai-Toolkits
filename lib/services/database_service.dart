@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 12, // Incremented for Prompt Tag Colors
+          version: 13, // Incremented for Prompt Tag CRUD
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 12,
+        version: 13,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -291,5 +291,32 @@ class DatabaseService {
     final db = await database;
     final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
     return maps.isNotEmpty ? maps.first : null;
+  }
+
+  // Prompt Tags Methods
+  Future<int> addPromptTag(Map<String, dynamic> tag) async {
+    final db = await database;
+    return await db.insert('prompt_tags', tag);
+  }
+
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
+    final db = await database;
+    await db.update('prompt_tags', tag, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deletePromptTag(int id) async {
+    final db = await database;
+    // Set associated prompts to "General" or null? 
+    // Let's find "General" tag ID first.
+    final general = await db.query('prompt_tags', where: 'name = ?', whereArgs: ['General'], limit: 1);
+    int? generalId = general.isNotEmpty ? general.first['id'] as int : null;
+    
+    await db.update('prompts', {'tag_id': generalId}, where: 'tag_id = ?', whereArgs: [id]);
+    await db.delete('prompt_tags', where: 'id = ? AND is_system = 0', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getPromptTags() async {
+    final db = await database;
+    return await db.query('prompt_tags');
   }
 }

@@ -28,6 +28,7 @@ class DatabaseMigration {
     if (oldVersion < 10) await _createV10Tables(db);
     if (oldVersion < 11) await _createV11Tables(db);
     if (oldVersion < 12) await _createV12Tables(db);
+    if (oldVersion < 13) await _createV13Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -43,6 +44,7 @@ class DatabaseMigration {
     await _createV10Tables(db);
     await _createV11Tables(db);
     await _createV12Tables(db);
+    await _createV13Tables(db);
   }
 
   static Future<void> _createV2Tables(Database db) async {
@@ -189,6 +191,49 @@ class DatabaseMigration {
       }
       if (channelId != null) {
         await db.update('llm_models', {'channel_id': channelId}, where: 'id = ?', whereArgs: [model['id']]);
+      }
+    }
+  }
+
+  static Future<void> _createV13Tables(Database db) async {
+    // 1. Create prompt_tags table
+    await db.execute('''
+      CREATE TABLE prompt_tags (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color INTEGER,
+        is_system INTEGER DEFAULT 0
+      )
+    ''');
+
+    // 2. Add tag_id to prompts
+    await db.execute('ALTER TABLE prompts ADD COLUMN tag_id INTEGER REFERENCES prompt_tags(id)');
+
+    // 3. Migrate existing tags
+    final allPrompts = await db.query('prompts');
+    final Set<String> uniqueTags = allPrompts.map((p) => p['tag'] as String).toSet();
+    
+    // Ensure "General" and "Refiner" exist even if no prompts use them
+    uniqueTags.add('General');
+    uniqueTags.add('Refiner');
+
+    final Map<String, int> tagMap = {};
+    for (var tagName in uniqueTags) {
+      final isRefiner = tagName == 'Refiner';
+      final id = await db.insert('prompt_tags', {
+        'name': tagName,
+        'color': isRefiner ? 0xFF9C27B0 : 0xFF607D8B, // Purple for Refiner, BlueGrey for others
+        'is_system': isRefiner ? 1 : 0,
+      });
+      tagMap[tagName] = id;
+    }
+
+    // 4. Update prompts with tag_id
+    for (var p in allPrompts) {
+      final tagName = p['tag'] as String;
+      final tagId = tagMap[tagName];
+      if (tagId != null) {
+        await db.update('prompts', {'tag_id': tagId}, where: 'id = ?', whereArgs: [p['id']]);
       }
     }
   }

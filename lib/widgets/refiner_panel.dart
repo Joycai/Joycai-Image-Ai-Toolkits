@@ -58,8 +58,13 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
       final refinerModels = allModels.where((m) => 
         m['tag'] == 'chat' || m['tag'] == 'multimodal'
       ).toList();
-      final refinerPrompts = (await _db.getPrompts()).where((p) => 
-        p['tag'] == 'Refiner'
+      
+      final allPrompts = await _db.getPrompts();
+      final allTags = await _db.getPromptTags();
+      final refinerTag = allTags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['is_system'] == 1, orElse: () => null);
+      
+      final refinerPrompts = allPrompts.where((p) => 
+        p['tag_id'] == refinerTag?['id']
       ).toList();
 
       if (mounted) {
