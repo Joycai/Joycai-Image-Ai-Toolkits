@@ -416,6 +416,36 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @proxySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Settings'**
+  String get proxySettings;
+
+  /// No description provided for @enableProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Global Proxy'**
+  String get enableProxy;
+
+  /// No description provided for @proxyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy URL (host:port)'**
+  String get proxyUrl;
+
+  /// No description provided for @proxyUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Username (Optional)'**
+  String get proxyUsername;
+
+  /// No description provided for @proxyPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Password (Optional)'**
+  String get proxyPassword;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:

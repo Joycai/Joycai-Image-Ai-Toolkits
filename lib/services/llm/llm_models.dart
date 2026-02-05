@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+
 enum LLMRole { system, user, assistant }
 
 class LLMAttachment {
@@ -34,6 +37,12 @@ class LLMModelConfig {
   final String billingMode; // 'token' or 'request'
   final double requestFee;
   final Map<String, dynamic> extraParams;
+  
+  // Proxy settings
+  final bool proxyEnabled;
+  final String? proxyUrl;
+  final String? proxyUsername;
+  final String? proxyPassword;
 
   LLMModelConfig({
     required this.modelId,
@@ -45,7 +54,38 @@ class LLMModelConfig {
     this.billingMode = 'token',
     this.requestFee = 0.0,
     this.extraParams = const {},
+    this.proxyEnabled = false,
+    this.proxyUrl,
+    this.proxyUsername,
+    this.proxyPassword,
   });
+
+  http.Client createClient() {
+    if (!proxyEnabled || proxyUrl == null || proxyUrl!.isEmpty) {
+      return http.Client();
+    }
+
+    // Clean proxy URL (remove http:// or https:// if present for HttpClient.findProxy)
+    String hostPort = proxyUrl!;
+    if (hostPort.startsWith('http://')) hostPort = hostPort.substring(7);
+    if (hostPort.startsWith('https://')) hostPort = hostPort.substring(8);
+    // Remove trailing slash
+    if (hostPort.endsWith('/')) hostPort = hostPort.substring(0, hostPort.length - 1);
+
+    final httpClient = HttpClient();
+    httpClient.findProxy = (uri) {
+      return "PROXY $hostPort";
+    };
+
+    if (proxyUsername != null && proxyUsername!.isNotEmpty && proxyPassword != null) {
+      httpClient.authenticateProxy = (host, port, scheme, realm) {
+        httpClient.addProxyCredentials(host, port, realm ?? '', HttpClientBasicCredentials(proxyUsername!, proxyPassword!));
+        return Future.value(true);
+      };
+    }
+
+    return IOClient(httpClient);
+  }
 }
 
 class LLMResponse {

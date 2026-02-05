@@ -48,43 +48,48 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     final payload = _preparePayload(config.modelId, history, options, isStreaming: false);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
-    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+    final client = config.createClient();
+    try {
+      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
 
-    if (response.statusCode != 200) {
-      logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-      throw Exception('OpenAI API Request failed: ${response.statusCode} - ${response.body}');
-    }
+      if (response.statusCode != 200) {
+        logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
+        throw Exception('OpenAI API Request failed: ${response.statusCode} - ${response.body}');
+      }
 
-    logger?.call('Response received, parsing data...', level: 'DEBUG');
-    final data = jsonDecode(response.body);
-    String text = "";
-    List<Uint8List> images = [];
+      logger?.call('Response received, parsing data...', level: 'DEBUG');
+      final data = jsonDecode(response.body);
+      String text = "";
+      List<Uint8List> images = [];
 
-    final message = data['choices']?[0]?['message'];
-    if (message != null) {
-      if (message['content'] != null) {
-        text = message['content'];
+      final message = data['choices']?[0]?['message'];
+      if (message != null) {
+        if (message['content'] != null) {
+          text = message['content'];
+        }
+        
+        if (message['image_data'] != null) {
+          images.add(base64Decode(message['image_data']));
+        }
+
+        if (text.isNotEmpty) {
+          logger?.call('Extracting images from text response...', level: 'DEBUG');
+          final result = await _processTextAndExtractImages(text, config);
+          text = result.text;
+          images.addAll(result.images);
+        }
       }
       
-      if (message['image_data'] != null) {
-        images.add(base64Decode(message['image_data']));
-      }
+      logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
 
-      if (text.isNotEmpty) {
-        logger?.call('Extracting images from text response...', level: 'DEBUG');
-        final result = await _processTextAndExtractImages(text);
-        text = result.text;
-        images.addAll(result.images);
-      }
+      return LLMResponse(
+        text: text,
+        generatedImages: images,
+        metadata: data['usage'] ?? {},
+      );
+    } finally {
+      client.close();
     }
-    
-    logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
-
-    return LLMResponse(
-      text: text,
-      generatedImages: images,
-      metadata: data['usage'] ?? {},
-    );
   }
 
   @override
@@ -103,10 +108,12 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     request.headers.addAll(headers);
     request.body = jsonEncode(payload);
 
-    final response = await http.Client().send(request);
+    final client = config.createClient();
+    final response = await client.send(request);
 
     if (response.statusCode != 200) {
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
+      client.close();
       throw Exception('OpenAI API Stream Request failed: ${response.statusCode}');
     }
 
@@ -115,71 +122,75 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     String accumulatedText = "";
     bool isLikelyBase64Stream = false;
 
-    await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
-      if (line.isEmpty || line == 'data: [DONE]') continue;
-      
-      String dataLine = line;
-      if (line.startsWith('data: ')) {
-        dataLine = line.substring(6);
-      }
-
-      try {
-        final chunkData = jsonDecode(dataLine);
-        final choice = chunkData['choices']?[0];
-        if (choice == null) {
-          if (chunkData['usage'] != null) {
-            yield LLMResponseChunk(metadata: chunkData['usage']);
-          }
-          continue;
-        }
-
-        final delta = choice['delta'];
-        final text = delta?['content'];
-        final reasoning = delta?['reasoning_content'];
-        final imageData = delta?['image_data'];
+    try {
+      await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (line.isEmpty || line == 'data: [DONE]') continue;
         
-        if (reasoning != null && reasoning.isNotEmpty) {
-          yield LLMResponseChunk(textPart: reasoning);
+        String dataLine = line;
+        if (line.startsWith('data: ')) {
+          dataLine = line.substring(6);
         }
 
-        if (text != null && text.isNotEmpty) {
-          accumulatedText += text;
+        try {
+          final chunkData = jsonDecode(dataLine);
+          final choice = chunkData['choices']?[0];
+          if (choice == null) {
+            if (chunkData['usage'] != null) {
+              yield LLMResponseChunk(metadata: chunkData['usage']);
+            }
+            continue;
+          }
+
+          final delta = choice['delta'];
+          final text = delta?['content'];
+          final reasoning = delta?['reasoning_content'];
+          final imageData = delta?['image_data'];
           
-          // Check if we are currently receiving a massive base64 string
-          if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
-            isLikelyBase64Stream = true;
+          if (reasoning != null && reasoning.isNotEmpty) {
+            yield LLMResponseChunk(textPart: reasoning);
           }
 
-          // Only yield text to console if it doesn't look like raw image data
-          if (!isLikelyBase64Stream && !_isBase64Heuristic(text)) {
-            yield LLMResponseChunk(textPart: text);
+          if (text != null && text.isNotEmpty) {
+            accumulatedText += text;
+            
+            // Check if we are currently receiving a massive base64 string
+            if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
+              isLikelyBase64Stream = true;
+            }
+
+            // Only yield text to console if it doesn't look like raw image data
+            if (!isLikelyBase64Stream && !_isBase64Heuristic(text)) {
+              yield LLMResponseChunk(textPart: text);
+            }
           }
+
+          if (imageData != null) {
+            yield LLMResponseChunk(
+              imagePart: base64Decode(imageData),
+              metadata: chunkData['usage'],
+            );
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+
+      if (accumulatedText.isNotEmpty) {
+        final result = await _processTextAndExtractImages(accumulatedText, config);
+        // If the text was mostly images, don't yield the messy leftover text
+        if (result.text.length < accumulatedText.length * 0.1 || _isBase64Heuristic(result.text)) {
+          // Skip yielding textPart
+        } else if (isLikelyBase64Stream) {
+          // If we suppressed it during streaming but it turned out to have valid text, yield it now
+          yield LLMResponseChunk(textPart: result.text);
         }
 
-        if (imageData != null) {
-          yield LLMResponseChunk(
-            imagePart: base64Decode(imageData),
-            metadata: chunkData['usage'],
-          );
+        for (var img in result.images) {
+          yield LLMResponseChunk(imagePart: img);
         }
-      } catch (e) {
-        // Ignore parse errors
       }
-    }
-
-    if (accumulatedText.isNotEmpty) {
-      final result = await _processTextAndExtractImages(accumulatedText);
-      // If the text was mostly images, don't yield the messy leftover text
-      if (result.text.length < accumulatedText.length * 0.1 || _isBase64Heuristic(result.text)) {
-        // Skip yielding textPart
-      } else if (isLikelyBase64Stream) {
-        // If we suppressed it during streaming but it turned out to have valid text, yield it now
-        yield LLMResponseChunk(textPart: result.text);
-      }
-
-      for (var img in result.images) {
-        yield LLMResponseChunk(imagePart: img);
-      }
+    } finally {
+      client.close();
     }
     
     yield LLMResponseChunk(isDone: true);
@@ -193,31 +204,36 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     return text.length > 200 && !text.contains(' ') && RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(text.substring(0, 100));
   }
 
-  Future<_TextProcessResult> _processTextAndExtractImages(String text) async {
+  Future<_TextProcessResult> _processTextAndExtractImages(String text, LLMModelConfig config) async {
     final List<Uint8List> images = [];
     String cleanText = text;
+    final client = config.createClient();
 
-    // 1. Extract and remove Inline Base64
-    final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
-    final b64Matches = base64Regex.allMatches(text);
-    for (var match in b64Matches) {
-      try {
-        images.add(base64Decode(match.group(1)!));
-        cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
-      } catch (e) { /* ignore */ }
-    }
+    try {
+      // 1. Extract and remove Inline Base64
+      final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
+      final b64Matches = base64Regex.allMatches(text);
+      for (var match in b64Matches) {
+        try {
+          images.add(base64Decode(match.group(1)!));
+          cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
+        } catch (e) { /* ignore */ }
+      }
 
-    // 2. Extract Cloud URLs
-    final urlRegex = RegExp(r'(https?://storage\.googleapis\.com/[^\s"\]\)]+)');
-    final urlMatches = urlRegex.allMatches(text);
-    for (var match in urlMatches) {
-      try {
-        final url = match.group(1)!;
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode == 200) {
-          images.add(response.bodyBytes);
-        }
-      } catch (e) { /* ignore */ }
+      // 2. Extract Cloud URLs
+      final urlRegex = RegExp(r'(https?://storage\.googleapis\.com/[^\s"\]\)]+)');
+      final urlMatches = urlRegex.allMatches(text);
+      for (var match in urlMatches) {
+        try {
+          final url = match.group(1)!;
+          final response = await client.get(Uri.parse(url));
+          if (response.statusCode == 200) {
+            images.add(response.bodyBytes);
+          }
+        } catch (e) { /* ignore */ }
+      }
+    } finally {
+      client.close();
     }
 
     return _TextProcessResult(cleanText.trim(), images);

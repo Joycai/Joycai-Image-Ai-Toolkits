@@ -185,6 +185,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appearance => '外观';
 
   @override
+  String get proxySettings => '代理设置';
+
+  @override
+  String get enableProxy => '启用全局代理';
+
+  @override
+  String get proxyUrl => '代理地址 (host:port)';
+
+  @override
+  String get proxyUsername => '代理用户名 (可选)';
+
+  @override
+  String get proxyPassword => '代理密码 (可选)';
+
+  @override
   String get language => '语言';
 
   @override

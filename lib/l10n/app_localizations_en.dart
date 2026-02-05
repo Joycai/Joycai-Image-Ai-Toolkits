@@ -186,6 +186,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get proxySettings => 'Proxy Settings';
+
+  @override
+  String get enableProxy => 'Enable Global Proxy';
+
+  @override
+  String get proxyUrl => 'Proxy URL (host:port)';
+
+  @override
+  String get proxyUsername => 'Proxy Username (Optional)';
+
+  @override
+  String get proxyPassword => 'Proxy Password (Optional)';
+
+  @override
   String get language => 'Language';
 
   @override
