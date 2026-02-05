@@ -286,6 +286,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _importSettings(AppLocalizations l10n) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final appState = Provider.of<AppState>(context, listen: false);
+    final importedMsg = l10n.settingsImported;
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (result != null) {
       final confirmed = await showDialog<bool>(
@@ -313,12 +317,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await _db.restoreBackup(data);
 
         if (!mounted) return;
-        _loadAllSettings();
-        Provider.of<AppState>(context, listen: false).refreshImages();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
+        // ignore: use_build_context_synchronously
+        await _loadAllSettings();
+        appState.refreshImages();
+        messenger.showSnackBar(SnackBar(content: Text(importedMsg)));
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
+        messenger.showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
       }
     }
   }

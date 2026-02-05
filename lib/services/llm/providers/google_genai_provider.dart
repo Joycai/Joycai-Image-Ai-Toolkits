@@ -293,6 +293,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     return {
+      // ignore: use_null_aware_elements
       if (systemInstruction != null) "system_instruction": systemInstruction,
       "contents": contents,
       "generationConfig": generationConfig,
