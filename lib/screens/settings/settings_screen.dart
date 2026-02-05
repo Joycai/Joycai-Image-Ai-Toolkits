@@ -268,19 +268,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final settings = await _db.database.then((db) => db.query('settings'));
-    final models = await _db.getModels();
-    final prompts = await _db.getPrompts();
-    final data = jsonEncode({'settings': settings, 'models': models, 'prompts': prompts});
+    final data = await _db.getAllDataRaw();
+    final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(
-      fileName: 'joycai_settings.json',
+      fileName: 'joycai_backup.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
     
     if (path != null) {
-      await File(path).writeAsString(data);
+      await File(path).writeAsString(json);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
@@ -289,28 +287,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _importSettings(AppLocalizations l10n) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (result != null) {
-      final file = File(result.files.single.path!);
-      final data = jsonDecode(await file.readAsString());
-      
-      for (var s in data['settings']) {
-        await _db.saveSetting(s['key'], s['value']);
-      }
-      for (var m in data['models']) {
-        Map<String, dynamic> model = Map.from(m);
-        model.remove('id');
-        await _db.addModel(model);
-      }
-      if (data['prompts'] != null) {
-        for (var p in data['prompts']) {
-          Map<String, dynamic> prompt = Map.from(p);
-          prompt.remove('id');
-          await _db.addPrompt(prompt);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Import Settings?"),
+          content: const Text("This will replace all your current models, channels, categories, and prompts. This cannot be undone."),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Import & Replace"),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      try {
+        final file = File(result.files.single.path!);
+        final Map<String, dynamic> data = jsonDecode(await file.readAsString());
+        
+        await _db.restoreBackup(data);
+
+        if (mounted) {
+          _loadAllSettings();
+          // Also need to refresh images and other things managed by appState
+          if (mounted) {
+            Provider.of<AppState>(context, listen: false).refreshImages();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
         }
       }
-
-      _loadAllSettings();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
     }
   }
 

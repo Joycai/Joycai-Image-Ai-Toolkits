@@ -324,4 +324,114 @@ class DatabaseService {
     final db = await database;
     return await db.query('prompt_tags');
   }
+
+  // Backup & Restore
+  Future<Map<String, dynamic>> getAllDataRaw() async {
+    final db = await database;
+    return {
+      'settings': await db.query('settings'),
+      'llm_channels': await db.query('llm_channels'),
+      'llm_models': await db.query('llm_models'),
+      'prompt_tags': await db.query('prompt_tags'),
+      'prompts': await db.query('prompts'),
+      'fee_groups': await db.query('fee_groups'),
+      'source_directories': await db.query('source_directories'),
+    };
+  }
+
+  Future<void> restoreBackup(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 1. Clear existing data
+      await txn.delete('settings');
+      await txn.delete('llm_channels');
+      await txn.delete('llm_models');
+      await txn.delete('prompt_tags');
+      await txn.delete('prompts');
+      await txn.delete('fee_groups');
+      await txn.delete('source_directories');
+
+      // 2. Import Settings
+      if (data['settings'] != null) {
+        for (var s in data['settings']) {
+          await txn.insert('settings', s);
+        }
+      }
+
+      // 3. Import Channels and Map IDs
+      final Map<int, int> channelIdMap = {};
+      if (data['llm_channels'] != null) {
+        for (var c in data['llm_channels']) {
+          final oldId = c['id'] as int;
+          final Map<String, dynamic> row = Map.from(c)..remove('id');
+          final newId = await txn.insert('llm_channels', row);
+          channelIdMap[oldId] = newId;
+        }
+      }
+
+      // 4. Import Fee Groups and Map IDs
+      final Map<int, int> feeGroupIdMap = {};
+      if (data['fee_groups'] != null) {
+        for (var g in data['fee_groups']) {
+          final oldId = g['id'] as int;
+          final Map<String, dynamic> row = Map.from(g)..remove('id');
+          final newId = await txn.insert('fee_groups', row);
+          feeGroupIdMap[oldId] = newId;
+        }
+      }
+
+      // 5. Import Models with mapped IDs
+      if (data['llm_models'] != null) {
+        for (var m in data['llm_models']) {
+          final Map<String, dynamic> row = Map.from(m)..remove('id');
+          if (row['channel_id'] != null) {
+            row['channel_id'] = channelIdMap[row['channel_id']];
+          }
+          if (row['fee_group_id'] != null) {
+            row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
+          }
+          await txn.insert('llm_models', row);
+        }
+      }
+
+      // 6. Import Prompt Tags and Map IDs
+      final Map<int, int> tagIdMap = {};
+      if (data['prompt_tags'] != null) {
+        for (var t in data['prompt_tags']) {
+          final oldId = t['id'] as int;
+          final Map<String, dynamic> row = Map.from(t)..remove('id');
+          // Handle potential unique constraint conflicts for Refiner/General
+          try {
+            final newId = await txn.insert('prompt_tags', row);
+            tagIdMap[oldId] = newId;
+          } catch (e) {
+            // If exists, find the ID
+            final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+            if (existing.isNotEmpty) {
+              tagIdMap[oldId] = existing.first['id'] as int;
+            }
+          }
+        }
+      }
+
+      // 7. Import Prompts with mapped IDs
+      if (data['prompts'] != null) {
+        for (var p in data['prompts']) {
+          final Map<String, dynamic> row = Map.from(p)..remove('id');
+          // Important: handle tag_id mapping
+          if (row['tag_id'] != null) {
+            row['tag_id'] = tagIdMap[row['tag_id']];
+          }
+          await txn.insert('prompts', row);
+        }
+      }
+
+      // 8. Import Source Directories
+      if (data['source_directories'] != null) {
+        for (var d in data['source_directories']) {
+          await txn.insert('source_directories', d);
+        }
+      }
+    });
+  }
 }
