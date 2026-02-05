@@ -440,6 +440,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feeManagement => 'Fee Management';
 
   @override
+  String get modelsTab => 'Models';
+
+  @override
+  String get channelsTab => 'Channels';
+
+  @override
+  String get categoriesTab => 'Categories';
+
+  @override
+  String get addCategory => 'Add Category';
+
+  @override
+  String get editCategory => 'Edit Category';
+
+  @override
+  String get addChannel => 'Add Channel';
+
+  @override
+  String get editChannel => 'Edit Channel';
+
+  @override
+  String get channelType => 'Channel Type';
+
+  @override
+  String get enableDiscovery => 'Enable Model Discovery';
+
+  @override
+  String get filterModels => 'Filter models...';
+
+  @override
+  String get filterPrompts => 'Filter prompts...';
+
+  @override
+  String get tagColor => 'Tag Color';
+
+  @override
+  String deleteChannelConfirm(String name) {
+    return 'Are you sure you want to delete channel \"$name\"? This will unlink all associated models.';
+  }
+
+  @override
   String get modelManager => 'Model Manager';
 
   @override

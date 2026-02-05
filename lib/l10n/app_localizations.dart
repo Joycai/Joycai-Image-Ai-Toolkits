@@ -896,6 +896,84 @@ abstract class AppLocalizations {
   /// **'Fee Management'**
   String get feeManagement;
 
+  /// No description provided for @modelsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get modelsTab;
+
+  /// No description provided for @channelsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get channelsTab;
+
+  /// No description provided for @categoriesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categoriesTab;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Category'**
+  String get addCategory;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Category'**
+  String get editCategory;
+
+  /// No description provided for @addChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Channel'**
+  String get addChannel;
+
+  /// No description provided for @editChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Channel'**
+  String get editChannel;
+
+  /// No description provided for @channelType.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel Type'**
+  String get channelType;
+
+  /// No description provided for @enableDiscovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Model Discovery'**
+  String get enableDiscovery;
+
+  /// No description provided for @filterModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter models...'**
+  String get filterModels;
+
+  /// No description provided for @filterPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter prompts...'**
+  String get filterPrompts;
+
+  /// No description provided for @tagColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag Color'**
+  String get tagColor;
+
+  /// No description provided for @deleteChannelConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.'**
+  String deleteChannelConfirm(String name);
+
   /// No description provided for @modelManager.
   ///
   /// In en, this message translates to:

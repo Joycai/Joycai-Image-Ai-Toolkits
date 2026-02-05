@@ -24,13 +24,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final DatabaseService _db = DatabaseService();
   
-  // Controllers for REST settings
-  final TextEditingController _googleFreeEndpoint = TextEditingController();
-  final TextEditingController _googleFreeApiKey = TextEditingController();
-  final TextEditingController _googlePaidEndpoint = TextEditingController();
-  final TextEditingController _googlePaidApiKey = TextEditingController();
-  final TextEditingController _openaiEndpoint = TextEditingController();
-  final TextEditingController _openaiApiKey = TextEditingController();
+  // Controllers
   final TextEditingController _outputDirController = TextEditingController();
   
   // Proxy Settings
@@ -50,12 +44,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadAllSettings() async {
-    _googleFreeEndpoint.text = await _db.getSetting('google_free_endpoint') ?? '';
-    _googleFreeApiKey.text = await _db.getSetting('google_free_apikey') ?? '';
-    _googlePaidEndpoint.text = await _db.getSetting('google_paid_endpoint') ?? '';
-    _googlePaidApiKey.text = await _db.getSetting('google_paid_apikey') ?? '';
-    _openaiEndpoint.text = await _db.getSetting('openai_endpoint') ?? '';
-    _openaiApiKey.text = await _db.getSetting('openai_apikey') ?? '';
     _outputDirController.text = await _db.getSetting('output_directory') ?? '';
     
     _proxyEnabled = (await _db.getSetting('proxy_enabled')) == 'true';
@@ -67,10 +55,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
     
     setState(() {});
-  }
-
-  Future<void> _saveRestSetting(String key, String value) async {
-    await _db.saveSetting(key, value);
   }
 
   @override
@@ -109,40 +93,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.mcpServerSettings,
                     children: [
                       _buildMcpSettings(l10n),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.googleGenAiSettings,
-                    children: [
-                      _buildRestConfigGroup(
-                        l10n.freeModel, 
-                        _googleFreeEndpoint, 
-                        _googleFreeApiKey, 
-                        'google_free',
-                        l10n,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildRestConfigGroup(
-                        l10n.paidModel, 
-                        _googlePaidEndpoint, 
-                        _googlePaidApiKey, 
-                        'google_paid',
-                        l10n,
-                      ),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.openAiApiSettings,
-                    children: [
-                      _buildRestConfigGroup(
-                        l10n.standardConfig, 
-                        _openaiEndpoint, 
-                        _openaiApiKey, 
-                        'openai',
-                        l10n,
-                      ),
                     ],
                   ),
 
@@ -252,43 +202,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildRestConfigGroup(
-    String label, 
-    TextEditingController ep, 
-    TextEditingController key, 
-    String prefix,
-    AppLocalizations l10n,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: TextField(
-                controller: ep,
-                decoration: InputDecoration(labelText: l10n.endpointUrl, border: const OutlineInputBorder()),
-                onChanged: (v) => _saveRestSetting('${prefix}_endpoint', v),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 1,
-              child: ApiKeyField(
-                controller: key,
-                label: l10n.apiKey,
-                onChanged: (v) => _saveRestSetting('${prefix}_apikey', v),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _buildOutputDirectoryTile(AppState appState, AppLocalizations l10n) {
     return ListTile(
       title: Text(l10n.outputDirectory),
@@ -355,49 +268,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final settings = await _db.database.then((db) => db.query('settings'));
-    final models = await _db.getModels();
-    final prompts = await _db.getPrompts();
-    final data = jsonEncode({'settings': settings, 'models': models, 'prompts': prompts});
+    final data = await _db.getAllDataRaw();
+    final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(
-      fileName: 'joycai_settings.json',
+      fileName: 'joycai_backup.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
     
     if (path != null) {
-      await File(path).writeAsString(data);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      await File(path).writeAsString(json);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      }
     }
   }
 
   Future<void> _importSettings(AppLocalizations l10n) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (result != null) {
-      final file = File(result.files.single.path!);
-      final data = jsonDecode(await file.readAsString());
-      
-      for (var s in data['settings']) {
-        await _db.saveSetting(s['key'], s['value']);
-      }
-      for (var m in data['models']) {
-        Map<String, dynamic> model = Map.from(m);
-        model.remove('id');
-        await _db.addModel(model);
-      }
-      if (data['prompts'] != null) {
-        for (var p in data['prompts']) {
-          Map<String, dynamic> prompt = Map.from(p);
-          prompt.remove('id');
-          await _db.addPrompt(prompt);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Import Settings?"),
+          content: const Text("This will replace all your current models, channels, categories, and prompts. This cannot be undone."),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Import & Replace"),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      try {
+        final file = File(result.files.single.path!);
+        final Map<String, dynamic> data = jsonDecode(await file.readAsString());
+        
+        await _db.restoreBackup(data);
+
+        if (mounted) {
+          _loadAllSettings();
+          // Also need to refresh images and other things managed by appState
+          if (mounted) {
+            Provider.of<AppState>(context, listen: false).refreshImages();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
         }
       }
-
-      _loadAllSettings();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
     }
   }
 

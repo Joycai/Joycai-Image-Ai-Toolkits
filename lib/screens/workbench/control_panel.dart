@@ -1,14 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_models.dart';
-import '../../services/llm/llm_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/refiner_panel.dart';
 
 class ControlPanelWidget extends StatefulWidget {
   const ControlPanelWidget({super.key});
@@ -23,13 +20,15 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   final DatabaseService _db = DatabaseService();
   
   List<Map<String, dynamic>> _availableModels = [];
-  String? _selectedChannel;
+  List<Map<String, dynamic>> _channels = [];
+  int? _selectedChannelId;
   int? _selectedModelPk;
   String _aspectRatio = "not_set";
   String _resolution = "1K";
   bool _isModelSettingsExpanded = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
+  List<Map<String, dynamic>> _tags = [];
   late AppState _appState;
 
   @override
@@ -88,14 +87,15 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     // Sync model selection
     if (_availableModels.isNotEmpty) {
       final savedModelId = appState.lastSelectedModelId;
+      // Try match by PK first (int string), then by model_id string
       final match = _availableModels.firstWhere(
-        (m) => m['model_id'] == savedModelId || m['id'].toString() == savedModelId,
+        (m) => m['id'].toString() == savedModelId || m['model_id'] == savedModelId,
         orElse: () => {},
       );
       
       if (match.isNotEmpty && _selectedModelPk != match['id']) {
         _selectedModelPk = match['id'] as int;
-        _selectedChannel = _getChannelId(match);
+        _selectedChannelId = match['channel_id'] as int?;
         changed = true;
       }
     }
@@ -105,22 +105,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     }
   }
 
-  String _getChannelId(Map<String, dynamic> model) {
-    final type = model['type'] as String;
-    if (type == 'google-genai') {
-      return model['is_paid'] == 1 ? 'google-genai-paid' : 'google-genai-free';
-    }
-    return 'openai-api';
-  }
-
   Future<void> _loadModels() async {
     final allModels = await _db.getModels();
+    final channels = await _db.getChannels();
+    
     final filtered = allModels.where((m) => 
       m['tag'] == 'image' || m['tag'] == 'multimodal'
     ).toList();
     
     setState(() {
       _availableModels = filtered;
+      _channels = channels;
       
       // Validate currently selected model and channel
       if (_selectedModelPk != null) {
@@ -131,29 +126,34 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         if (currentModel == null) {
           _selectedModelPk = null;
         } else {
-          _selectedChannel = _getChannelId(currentModel);
+          _selectedChannelId = currentModel['channel_id'] as int?;
         }
       }
 
       if (filtered.isNotEmpty && _selectedModelPk == null) {
         final first = filtered.first;
         _selectedModelPk = first['id'] as int;
-        _selectedChannel = _getChannelId(first);
+        _selectedChannelId = first['channel_id'] as int?;
       }
     });
   }
 
   Future<void> _loadPrompts() async {
     final prompts = await _db.getPrompts();
+    final tags = await _db.getPromptTags();
     final Map<String, List<Map<String, dynamic>>> grouped = {};
+    
     for (var p in prompts) {
-      final tag = p['tag'] as String;
-      if (tag == 'Refiner') continue;
+      if (p['tag_is_system'] == 1) continue;
       
-      grouped[tag] ??= [];
-      grouped[tag]!.add(p);
+      final tagName = p['tag_name'] as String? ?? 'General';
+      grouped[tagName] ??= [];
+      grouped[tagName]!.add(p);
     }
-    setState(() => _groupedPrompts = grouped);
+    setState(() {
+      _groupedPrompts = grouped;
+      _tags = tags;
+    });
   }
 
   void _updateConfig({int? modelPk, String? modelIdStr, String? ar, String? res, String? prompt}) {
@@ -161,8 +161,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     
     String? idToSave;
     if (modelPk != null) {
-      final model = _availableModels.firstWhere((m) => m['id'] == modelPk, orElse: () => {});
-      if (model.isNotEmpty) idToSave = model['model_id'] as String;
+      idToSave = modelPk.toString(); // Save PK as string
     }
 
     appState.updateWorkbenchConfig(
@@ -180,13 +179,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    final List<Map<String, String>> channels = [
-      {'id': 'google-genai-free', 'name': l10n.googleGenAiFree},
-      {'id': 'google-genai-paid', 'name': l10n.googleGenAiPaid},
-      {'id': 'openai-api', 'name': l10n.openaiApi},
-    ];
-
-    final filteredModels = _availableModels.where((m) => _getChannelId(m) == _selectedChannel).toList();
+    final filteredModels = _availableModels.where((m) => m['channel_id'] == _selectedChannelId).toList();
     
     return Container(
       width: 350,
@@ -244,29 +237,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                              DropdownButton<String>(
-                                isExpanded: true,
-                                value: _selectedChannel,
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                underline: Container(height: 1, color: Colors.white24),
-                                items: channels.map((c) => DropdownMenuItem(
-                                  value: c['id'],
-                                  child: Text(c['name']!),
-                                )).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedChannel = val;
-                                    final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
-                                      (m) => m != null && _getChannelId(m) == val,
-                                      orElse: () => null,
-                                    );
-                                    _selectedModelPk = firstInChannel?['id'] as int?;
-                                    if (_selectedModelPk != null) {
-                                      _updateConfig(modelPk: _selectedModelPk);
-                                    }
-                                  });
-                                },
-                              ),
+                              _buildChannelDropdown(colorScheme, l10n),
                             ],
                           ),
                         ),
@@ -282,8 +253,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                                     ? _selectedModelPk 
                                     : null,
                                 hint: Text(l10n.selectAModel),
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                underline: Container(height: 1, color: Colors.white24),
+                                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                                underline: Container(height: 1, color: colorScheme.outlineVariant),
                                 items: filteredModels.map((m) => DropdownMenuItem(
                                   value: m['id'] as int,
                                   child: Text(m['model_name']),
@@ -429,19 +400,58 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showRefinerDialog(AppState appState, AppLocalizations l10n) async {
-    final allModels = await _db.getModels();
-    final refinerModels = allModels.where((m) => m['tag'] == 'chat' || m['tag'] == 'multimodal').toList();
-    final refinerPrompts = (await _db.getPrompts()).where((p) => p['tag'] == 'Refiner').toList();
+  Widget _buildChannelDropdown(ColorScheme colorScheme, AppLocalizations l10n) {
+    return DropdownButton<int>(
+      isExpanded: true,
+      value: _selectedChannelId,
+      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+      underline: Container(height: 1, color: colorScheme.outlineVariant),
+      items: _channels.map((c) => DropdownMenuItem<int>(
+        value: c['id'] as int,
+        child: Row(
+          children: [
+            if (c['tag'] != null)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Color(c['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  c['tag'],
+                  style: TextStyle(
+                    fontSize: 9, 
+                    color: Color(c['tag_color'] ?? 0xFF607D8B),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      )).toList(),
+      onChanged: (val) {
+        setState(() {
+          _selectedChannelId = val;
+          final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
+            (m) => m != null && m['channel_id'] == val,
+            orElse: () => null,
+          );
+          _selectedModelPk = firstInChannel?['id'] as int?;
+          if (_selectedModelPk != null) {
+            _updateConfig(modelPk: _selectedModelPk);
+          }
+        });
+      },
+    );
+  }
 
-    if (!mounted) return;
-
+  void _showRefinerDialog(AppState appState, AppLocalizations l10n) {
     showDialog(
       context: context,
-      builder: (context) => _RefinerDialog(
+      builder: (context) => AIPromptRefiner(
         initialPrompt: _promptController.text,
-        models: refinerModels,
-        sysPrompts: refinerPrompts,
         selectedImages: appState.selectedImages,
         onApply: (refined) {
           _promptController.text = refined;
@@ -465,9 +475,16 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       context: context,
       builder: (context) => _LibraryDialog(
         groupedPrompts: _groupedPrompts,
-        onSelect: (prompt) {
-          _promptController.text = prompt;
-          _updateConfig(prompt: prompt);
+        tags: _tags,
+        initialContent: _promptController.text,
+        onApply: (content, isAppend) {
+          if (isAppend) {
+            final existing = _promptController.text;
+            _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
+          } else {
+            _promptController.text = content;
+          }
+          _updateConfig(prompt: _promptController.text);
         },
       ),
     );
@@ -489,8 +506,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   child: DropdownButton<String>(
                     isExpanded: true,
                     value: _aspectRatio,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                    underline: Container(height: 1, color: Colors.white24),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                    underline: Container(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
                     items: ["not_set", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"]
                         .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                     onChanged: (v) {
@@ -662,197 +679,17 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   }
 }
 
-class _RefinerDialog extends StatefulWidget {
-  final String initialPrompt;
-  final List<Map<String, dynamic>> models;
-  final List<Map<String, dynamic>> sysPrompts;
-  final List<File> selectedImages;
-  final Function(String) onApply;
-
-  const _RefinerDialog({
-    required this.initialPrompt,
-    required this.models,
-    required this.sysPrompts,
-    required this.selectedImages,
-    required this.onApply,
-  });
-
-  @override
-  State<_RefinerDialog> createState() => _RefinerDialogState();
-}
-
-class _RefinerDialogState extends State<_RefinerDialog> {
-  late TextEditingController _currentPromptCtrl;
-  final TextEditingController _refinedPromptCtrl = TextEditingController();
-  int? _selectedModelPk;
-  String? _selectedSysPrompt;
-  bool _isRefining = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentPromptCtrl = TextEditingController(text: widget.initialPrompt);
-    if (widget.models.isNotEmpty) _selectedModelPk = widget.models.first['id'] as int;
-    if (widget.sysPrompts.isNotEmpty) _selectedSysPrompt = widget.sysPrompts.first['content'];
-  }
-
-  Future<void> _refine() async {
-    if (_selectedModelPk == null) return;
-    final l10n = AppLocalizations.of(context)!;
-
-    setState(() {
-      _isRefining = true;
-      _refinedPromptCtrl.clear();
-    });
-
-    try {
-      final attachments = widget.selectedImages.map((f) => 
-        LLMAttachment.fromFile(f, 'image/jpeg')
-      ).toList();
-
-      // Find the model ID string if needed, or just pass PK
-      // LLMService now accepts dynamic modelIdentifier (String or int)
-      
-      final stream = LLMService().requestStream(
-        modelIdentifier: _selectedModelPk!,
-        messages: [
-          if (_selectedSysPrompt != null)
-            LLMMessage(role: LLMRole.system, content: _selectedSysPrompt!),
-          LLMMessage(
-            role: LLMRole.user, 
-            content: _currentPromptCtrl.text,
-            attachments: attachments,
-          ),
-        ],
-      );
-
-      String accumulatedText = "";
-
-      await for (final chunk in stream) {
-        if (chunk.textPart != null) {
-          accumulatedText += chunk.textPart!;
-          setState(() {
-            _refinedPromptCtrl.text = accumulatedText;
-          });
-        }
-      }
-
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
-      }
-    } finally {
-      if (mounted) setState(() => _isRefining = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.aiPromptRefiner),
-      content: SizedBox(
-        width: 800,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: _selectedModelPk,
-                    decoration: InputDecoration(labelText: l10n.refinerModel, border: const OutlineInputBorder()),
-                    items: widget.models.map((m) => DropdownMenuItem(
-                      value: m['id'] as int,
-                      child: Text('${m['model_name']} (${m['model_id']})'),
-                    )).toList(),
-                    onChanged: (v) => setState(() => _selectedModelPk = v),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _selectedSysPrompt,
-                    decoration: InputDecoration(labelText: l10n.systemPrompt, border: const OutlineInputBorder()),
-                    items: widget.sysPrompts.map((p) => DropdownMenuItem(value: p['content'] as String, child: Text(p['title']))).toList(),
-                    onChanged: (v) => setState(() => _selectedSysPrompt = v),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.currentPrompt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _currentPromptCtrl,
-                        maxLines: 10,
-                        decoration: const InputDecoration(border: OutlineInputBorder()),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Center(child: Icon(Icons.arrow_forward, color: Colors.grey)),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.refinedPrompt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _refinedPromptCtrl,
-                        maxLines: 10,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          fillColor: Colors.grey.withAlpha((255 * 0.05).round()),
-                          filled: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        FilledButton.icon(
-          onPressed: _isRefining ? null : _refine,
-          icon: _isRefining 
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : const Icon(Icons.auto_fix_high),
-          label: Text(l10n.refine),
-        ),
-        FilledButton(
-          onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
-            widget.onApply(_refinedPromptCtrl.text);
-            Navigator.pop(context);
-          },
-          child: Text(l10n.apply),
-        ),
-      ],
-    );
-  }
-}
-
 class _LibraryDialog extends StatefulWidget {
   final Map<String, List<Map<String, dynamic>>> groupedPrompts;
-  final Function(String) onSelect;
+  final List<Map<String, dynamic>> tags;
+  final String initialContent;
+  final Function(String, bool isAppend) onApply;
 
   const _LibraryDialog({
     required this.groupedPrompts,
-    required this.onSelect,
+    required this.tags,
+    required this.initialContent,
+    required this.onApply,
   });
 
   @override
@@ -861,12 +698,28 @@ class _LibraryDialog extends StatefulWidget {
 
 class _LibraryDialogState extends State<_LibraryDialog> {
   String? _selectedCategory;
+  late TextEditingController _draftController;
 
   @override
   void initState() {
     super.initState();
+    _draftController = TextEditingController(text: widget.initialContent);
     if (widget.groupedPrompts.isNotEmpty) {
       _selectedCategory = widget.groupedPrompts.keys.first;
+    }
+  }
+
+  @override
+  void dispose() {
+    _draftController.dispose();
+    super.dispose();
+  }
+
+  void _appendToDraft(String text) {
+    if (_draftController.text.isNotEmpty) {
+      _draftController.text += "\n\n$text";
+    } else {
+      _draftController.text = text;
     }
   }
 
@@ -881,7 +734,7 @@ class _LibraryDialogState extends State<_LibraryDialog> {
 
     return Dialog(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 600),
+        constraints: const BoxConstraints(maxWidth: 1200, maxHeight: 800),
         child: Column(
           children: [
             Padding(
@@ -889,7 +742,13 @@ class _LibraryDialogState extends State<_LibraryDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge),
+                  Row(
+                    children: [
+                      const Icon(Icons.library_books, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Text(l10n.promptLibrary, style: Theme.of(context).textTheme.titleLarge),
+                    ],
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -909,77 +768,175 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                       border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
                       color: colorScheme.surfaceContainerLow,
                     ),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: categories.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 4),
-                      itemBuilder: (context, index) {
-                        final cat = categories[index];
-                        final isSelected = cat == _selectedCategory;
-                        return ListTile(
-                          title: Text(cat, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                          selected: isSelected,
-                          selectedTileColor: colorScheme.secondaryContainer,
-                          selectedColor: colorScheme.onSecondaryContainer,
-                          onTap: () => setState(() => _selectedCategory = cat),
-                          dense: true,
-                        );
-                      },
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text("CATEGORIES", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
+                        ),
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: categories.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 4),
+                            itemBuilder: (context, index) {
+                              final catName = categories[index];
+                              final isSelected = catName == _selectedCategory;
+                              final tagData = widget.tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == catName, orElse: () => null);
+                              
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Color(tagData?['color'] ?? 0xFF607D8B),
+                                  radius: 6,
+                                ),
+                                title: Text(catName, style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                                selected: isSelected,
+                                selectedTileColor: colorScheme.secondaryContainer,
+                                selectedColor: colorScheme.onSecondaryContainer,
+                                onTap: () => setState(() => _selectedCategory = catName),
+                                dense: true,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   
-                  // Right Pane: Prompts
+                  // Middle Pane: Prompts
                   Expanded(
-                    child: currentPrompts.isEmpty 
-                    ? Center(child: Text(l10n.noPromptsSaved)) 
-                    : GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 300,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.5,
-                      ),
-                      itemCount: currentPrompts.length,
-                      itemBuilder: (context, index) {
-                        final p = currentPrompts[index];
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InkWell(
-                            onTap: () {
-                              widget.onSelect(p['content']);
-                              Navigator.pop(context);
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text("SELECT PROMPT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
+                        ),
+                        Expanded(
+                          child: currentPrompts.isEmpty 
+                          ? Center(child: Text(l10n.noPromptsSaved)) 
+                          : GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 350,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 1.8,
+                            ),
+                            itemCount: currentPrompts.length,
+                            itemBuilder: (context, index) {
+                              final p = currentPrompts[index];
+                              return Card(
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        p['title'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Expanded(
+                                        child: Text(
+                                          p['content'],
+                                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                          overflow: TextOverflow.fade,
+                                        ),
+                                      ),
+                                      const Divider(height: 16),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          TextButton.icon(
+                                            onPressed: () => setState(() => _draftController.text = p['content']),
+                                            icon: const Icon(Icons.find_replace, size: 14),
+                                            label: const Text("Replace", style: TextStyle(fontSize: 10)),
+                                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          FilledButton.icon(
+                                            onPressed: () => setState(() => _appendToDraft(p['content'])),
+                                            icon: const Icon(Icons.add, size: 14),
+                                            label: const Text("Append", style: TextStyle(fontSize: 10)),
+                                            style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p['title'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Expanded(
-                                    child: Text(
-                                      p['content'],
-                                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                                      overflow: TextOverflow.fade,
-                                    ),
-                                  ),
-                                ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Right Pane: Drafting Area
+                  Container(
+                    width: 350,
+                    decoration: BoxDecoration(
+                      border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
+                      color: colorScheme.surfaceContainerLowest,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("PROMPT DRAFT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _draftController,
+                              maxLines: null,
+                              expands: true,
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: InputDecoration(
+                                hintText: "Compose your prompt here...",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                filled: true,
+                                fillColor: colorScheme.surface,
                               ),
+                              style: const TextStyle(fontSize: 13, height: 1.5),
                             ),
                           ),
-                        );
-                      },
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                widget.onApply(_draftController.text, false);
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.check),
+                              label: const Text("Apply (Overwrite)"),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                widget.onApply(_draftController.text, true);
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.add_task),
+                              label: const Text("Apply (Append)"),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

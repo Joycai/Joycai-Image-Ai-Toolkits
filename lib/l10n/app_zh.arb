@@ -222,6 +222,26 @@
   },
   "clearModelData": "清除模型数据",
   "modelManager": "模型管理",
+  "modelsTab": "模型管理",
+  "channelsTab": "渠道管理",
+  "categoriesTab": "分类管理",
+  "addCategory": "添加分类",
+  "editCategory": "编辑分类",
+  "addChannel": "添加渠道",
+  "editChannel": "编辑渠道",
+  "channelType": "渠道类型",
+  "enableDiscovery": "启用模型检索",
+  "filterModels": "过滤模型...",
+  "filterPrompts": "过滤提示词...",
+  "tagColor": "标签颜色",
+  "deleteChannelConfirm": "确定要删除渠道“{name}”吗？这将断开所有关联模型的连接。",
+  "@deleteChannelConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "modelManagement": "模型管理",
   "feeManagement": "费用管理",
   "name": "名称",

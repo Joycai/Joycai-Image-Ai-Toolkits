@@ -223,6 +223,26 @@
   "clearModelData": "Clear Model Data",
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
+  "modelsTab": "Models",
+  "channelsTab": "Channels",
+  "categoriesTab": "Categories",
+  "addCategory": "Add Category",
+  "editCategory": "Edit Category",
+  "addChannel": "Add Channel",
+  "editChannel": "Edit Channel",
+  "channelType": "Channel Type",
+  "enableDiscovery": "Enable Model Discovery",
+  "filterModels": "Filter models...",
+  "filterPrompts": "Filter prompts...",
+  "tagColor": "Tag Color",
+  "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.",
+  "@deleteChannelConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "modelManager": "Model Manager",
   "name": "Name",
   "addModel": "Add Model",

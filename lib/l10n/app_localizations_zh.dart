@@ -435,6 +435,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feeManagement => '费用管理';
 
   @override
+  String get modelsTab => '模型管理';
+
+  @override
+  String get channelsTab => '渠道管理';
+
+  @override
+  String get categoriesTab => '分类管理';
+
+  @override
+  String get addCategory => '添加分类';
+
+  @override
+  String get editCategory => '编辑分类';
+
+  @override
+  String get addChannel => '添加渠道';
+
+  @override
+  String get editChannel => '编辑渠道';
+
+  @override
+  String get channelType => '渠道类型';
+
+  @override
+  String get enableDiscovery => '启用模型检索';
+
+  @override
+  String get filterModels => '过滤模型...';
+
+  @override
+  String get filterPrompts => '过滤提示词...';
+
+  @override
+  String get tagColor => '标签颜色';
+
+  @override
+  String deleteChannelConfirm(String name) {
+    return '确定要删除渠道“$name”吗？这将断开所有关联模型的连接。';
+  }
+
+  @override
   String get modelManager => '模型管理';
 
   @override

@@ -102,12 +102,12 @@ class GalleryWidget extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             TextButton.icon(
-              onPressed: appState.selectAllImages,
+              onPressed: appState.galleryState.selectAllImages,
               icon: const Icon(Icons.select_all, size: 18),
               label: Text(l10n.selectAll),
             ),
             TextButton.icon(
-              onPressed: appState.selectedImages.isEmpty ? null : appState.clearImageSelection,
+              onPressed: appState.selectedImages.isEmpty ? null : appState.galleryState.clearImageSelection,
               icon: const Icon(Icons.deselect, size: 18),
               label: Text(l10n.clear),
             ),
@@ -126,7 +126,7 @@ class GalleryWidget extends StatelessWidget {
                       value: appState.thumbnailSize,
                       min: 80,
                       max: 400,
-                      onChanged: (v) => appState.setThumbnailSize(v),
+                      onChanged: (v) => appState.galleryState.setThumbnailSize(v),
                     ),
                   ),
                   Icon(Icons.image, size: 20, color: colorScheme.outline),
@@ -138,7 +138,7 @@ class GalleryWidget extends StatelessWidget {
             
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
-              onPressed: appState.refreshImages,
+              onPressed: appState.galleryState.refreshImages,
               tooltip: l10n.refresh,
             ),
           ],
@@ -186,7 +186,7 @@ class GalleryWidget extends StatelessWidget {
             if (isResult) {
               _showPreviewDialog(context, images, index);
             } else {
-              appState.toggleImageSelection(imageFile);
+              appState.galleryState.toggleImageSelection(imageFile);
             }
           },
         );
@@ -630,7 +630,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
         );
-        appState.refreshImages();
+        appState.galleryState.refreshImages();
       }
     } catch (e) {
       if (context.mounted) {
@@ -698,7 +698,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.deleteSuccess), backgroundColor: Colors.green),
         );
-        appState.refreshImages();
+        appState.galleryState.refreshImages();
       }
     } catch (e) {
       if (context.mounted) {

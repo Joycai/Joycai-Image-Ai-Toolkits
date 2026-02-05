@@ -4,6 +4,8 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'database_migrations.dart';
+
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
@@ -48,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 9, // Incremented for usage model_pk
+          version: 13, // Incremented for Prompt Tag CRUD
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -56,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 9,
+        version: 13,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -69,145 +71,11 @@ class DatabaseService {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
-    await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT)');
-    await _createV2Tables(db);
-    await _createV3Tables(db);
-    await _createV4Tables(db);
-    await _createV8Tables(db);
-    await _createV9Tables(db);
+    await DatabaseMigration.onCreate(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) await _createV2Tables(db);
-    if (oldVersion < 3) await _createV3Tables(db);
-    if (oldVersion < 4) await _createV4Tables(db);
-    if (oldVersion < 5) {
-      await db.execute('ALTER TABLE llm_models ADD COLUMN input_fee REAL DEFAULT 0.0');
-      await db.execute('ALTER TABLE llm_models ADD COLUMN output_fee REAL DEFAULT 0.0');
-    }
-    if (oldVersion < 6) {
-      // Check if model_id column exists in tasks table
-      var tableInfo = await db.rawQuery('PRAGMA table_info(tasks)');
-      bool hasModelId = tableInfo.any((column) => column['name'] == 'model_id');
-      if (!hasModelId) {
-        await db.execute('ALTER TABLE tasks ADD COLUMN model_id TEXT');
-      }
-    }
-    if (oldVersion < 7) {
-      await db.execute('ALTER TABLE llm_models ADD COLUMN billing_mode TEXT DEFAULT \'token\'');
-      await db.execute('ALTER TABLE llm_models ADD COLUMN request_fee REAL DEFAULT 0.0');
-      await db.execute('ALTER TABLE token_usage ADD COLUMN request_count INTEGER DEFAULT 1');
-      await db.execute('ALTER TABLE token_usage ADD COLUMN request_price REAL DEFAULT 0.0');
-      await db.execute('ALTER TABLE token_usage ADD COLUMN billing_mode TEXT DEFAULT \'token\'');
-    }
-    if (oldVersion < 8) await _createV8Tables(db);
-    if (oldVersion < 9) await _createV9Tables(db);
-  }
-
-  Future<void> _createV9Tables(Database db) async {
-    // 1. Add model_pk to token_usage
-    await db.execute('ALTER TABLE token_usage ADD COLUMN model_pk INTEGER');
-
-    // 2. Migrate existing usage to link to models
-    final allUsageEntries = await db.query('token_usage');
-    final allModels = await db.query('llm_models');
-    
-    for (var usageEntry in allUsageEntries) {
-      final modelId = usageEntry['model_id'] as String;
-      // Find first matching model
-      final matchingModel = allModels.cast<Map<String, dynamic>?>().firstWhere(
-        (model) => model?['model_id'] == modelId,
-        orElse: () => null,
-      );
-      if (matchingModel != null) {
-        await db.update('token_usage', {'model_pk': matchingModel['id']}, where: 'id = ?', whereArgs: [usageEntry['id']]);
-      }
-    }
-  }
-
-  Future<void> _createV8Tables(Database db) async {
-    // 1. Create fee_groups table
-    await db.execute('''
-      CREATE TABLE fee_groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        billing_mode TEXT DEFAULT 'token',
-        input_price REAL DEFAULT 0.0,
-        output_price REAL DEFAULT 0.0,
-        request_price REAL DEFAULT 0.0
-      )
-    ''');
-
-    // 2. Add fee_group_id to llm_models
-    await db.execute('ALTER TABLE llm_models ADD COLUMN fee_group_id INTEGER REFERENCES fee_groups(id)');
-
-    // 3. Migrate existing fees to new groups
-    final allLlmModels = await db.query('llm_models');
-    for (var llmModel in allLlmModels) {
-      final name = '${llmModel['model_name']} Fee';
-      final mode = llmModel['billing_mode'] as String? ?? 'token';
-      final feeGroupId = await db.insert('fee_groups', {
-        'name': name,
-        'billing_mode': mode,
-        'input_price': llmModel['input_fee'] ?? 0.0,
-        'output_price': llmModel['output_fee'] ?? 0.0,
-        'request_price': llmModel['request_fee'] ?? 0.0,
-      });
-      await db.update('llm_models', {'fee_group_id': feeGroupId}, where: 'id = ?', whereArgs: [llmModel['id']]);
-    }
-
-    // 4. Add model_pk to tasks
-    await db.execute('ALTER TABLE tasks ADD COLUMN model_pk INTEGER');
-  }
-
-  Future<void> _createV2Tables(Database db) async {
-    await db.execute('''
-      CREATE TABLE llm_models (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        model_id TEXT NOT NULL,
-        model_name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        tag TEXT NOT NULL,
-        is_paid INTEGER DEFAULT 0,
-        sort_order INTEGER DEFAULT 0,
-        input_fee REAL DEFAULT 0.0,
-        output_fee REAL DEFAULT 0.0,
-        billing_mode TEXT DEFAULT 'token',
-        request_fee REAL DEFAULT 0.0
-      )
-    ''');
-  }
-
-  Future<void> _createV3Tables(Database db) async {
-    await db.execute('''
-      CREATE TABLE prompts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        tag TEXT NOT NULL DEFAULT 'General',
-        sort_order INTEGER DEFAULT 0
-      )
-    ''');
-  }
-
-  Future<void> _createV4Tables(Database db) async {
-    await db.execute('''
-      CREATE TABLE token_usage (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        task_id TEXT,
-        model_id TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        input_tokens INTEGER DEFAULT 0,
-        output_tokens INTEGER DEFAULT 0,
-        input_price REAL DEFAULT 0.0,
-        output_price REAL DEFAULT 0.0,
-        request_count INTEGER DEFAULT 1,
-        request_price REAL DEFAULT 0.0,
-        billing_mode TEXT DEFAULT 'token'
-      )
-    ''');
+    await DatabaseMigration.migrate(db, oldVersion, newVersion);
   }
 
   // Task History Methods
@@ -286,7 +154,12 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getPrompts() async {
     final db = await database;
-    return await db.query('prompts', orderBy: 'sort_order ASC');
+    return await db.rawQuery('''
+      SELECT p.*, t.name as tag_name, t.color as tag_color, t.is_system as tag_is_system
+      FROM prompts p
+      LEFT JOIN prompt_tags t ON p.tag_id = t.id
+      ORDER BY p.sort_order ASC
+    ''');
   }
 
   Future<void> updatePromptOrder(List<int> ids) async {
@@ -393,5 +266,172 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getFeeGroups() async {
     final db = await database;
     return await db.query('fee_groups');
+  }
+
+  // LLM Channels Methods
+  Future<int> addChannel(Map<String, dynamic> channel) async {
+    final db = await database;
+    return await db.insert('llm_channels', channel);
+  }
+
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
+    final db = await database;
+    await db.update('llm_channels', channel, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteChannel(int id) async {
+    final db = await database;
+    // Set associated models to NULL? or delete models? 
+    // Requirement says user can delete channel. Usually we should handle orphaned models.
+    await db.update('llm_models', {'channel_id': null}, where: 'channel_id = ?', whereArgs: [id]);
+    await db.delete('llm_channels', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getChannels() async {
+    final db = await database;
+    return await db.query('llm_channels');
+  }
+
+  Future<Map<String, dynamic>?> getChannel(int id) async {
+    final db = await database;
+    final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
+    return maps.isNotEmpty ? maps.first : null;
+  }
+
+  // Prompt Tags Methods
+  Future<int> addPromptTag(Map<String, dynamic> tag) async {
+    final db = await database;
+    return await db.insert('prompt_tags', tag);
+  }
+
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
+    final db = await database;
+    await db.update('prompt_tags', tag, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deletePromptTag(int id) async {
+    final db = await database;
+    // Set associated prompts to "General" or null? 
+    // Let's find "General" tag ID first.
+    final general = await db.query('prompt_tags', where: 'name = ?', whereArgs: ['General'], limit: 1);
+    int? generalId = general.isNotEmpty ? general.first['id'] as int : null;
+    
+    await db.update('prompts', {'tag_id': generalId}, where: 'tag_id = ?', whereArgs: [id]);
+    await db.delete('prompt_tags', where: 'id = ? AND is_system = 0', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getPromptTags() async {
+    final db = await database;
+    return await db.query('prompt_tags');
+  }
+
+  // Backup & Restore
+  Future<Map<String, dynamic>> getAllDataRaw() async {
+    final db = await database;
+    return {
+      'settings': await db.query('settings'),
+      'llm_channels': await db.query('llm_channels'),
+      'llm_models': await db.query('llm_models'),
+      'prompt_tags': await db.query('prompt_tags'),
+      'prompts': await db.query('prompts'),
+      'fee_groups': await db.query('fee_groups'),
+      'source_directories': await db.query('source_directories'),
+    };
+  }
+
+  Future<void> restoreBackup(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 1. Clear existing data
+      await txn.delete('settings');
+      await txn.delete('llm_channels');
+      await txn.delete('llm_models');
+      await txn.delete('prompt_tags');
+      await txn.delete('prompts');
+      await txn.delete('fee_groups');
+      await txn.delete('source_directories');
+
+      // 2. Import Settings
+      if (data['settings'] != null) {
+        for (var s in data['settings']) {
+          await txn.insert('settings', s);
+        }
+      }
+
+      // 3. Import Channels and Map IDs
+      final Map<int, int> channelIdMap = {};
+      if (data['llm_channels'] != null) {
+        for (var c in data['llm_channels']) {
+          final oldId = c['id'] as int;
+          final Map<String, dynamic> row = Map.from(c)..remove('id');
+          final newId = await txn.insert('llm_channels', row);
+          channelIdMap[oldId] = newId;
+        }
+      }
+
+      // 4. Import Fee Groups and Map IDs
+      final Map<int, int> feeGroupIdMap = {};
+      if (data['fee_groups'] != null) {
+        for (var g in data['fee_groups']) {
+          final oldId = g['id'] as int;
+          final Map<String, dynamic> row = Map.from(g)..remove('id');
+          final newId = await txn.insert('fee_groups', row);
+          feeGroupIdMap[oldId] = newId;
+        }
+      }
+
+      // 5. Import Models with mapped IDs
+      if (data['llm_models'] != null) {
+        for (var m in data['llm_models']) {
+          final Map<String, dynamic> row = Map.from(m)..remove('id');
+          if (row['channel_id'] != null) {
+            row['channel_id'] = channelIdMap[row['channel_id']];
+          }
+          if (row['fee_group_id'] != null) {
+            row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
+          }
+          await txn.insert('llm_models', row);
+        }
+      }
+
+      // 6. Import Prompt Tags and Map IDs
+      final Map<int, int> tagIdMap = {};
+      if (data['prompt_tags'] != null) {
+        for (var t in data['prompt_tags']) {
+          final oldId = t['id'] as int;
+          final Map<String, dynamic> row = Map.from(t)..remove('id');
+          // Handle potential unique constraint conflicts for Refiner/General
+          try {
+            final newId = await txn.insert('prompt_tags', row);
+            tagIdMap[oldId] = newId;
+          } catch (e) {
+            // If exists, find the ID
+            final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+            if (existing.isNotEmpty) {
+              tagIdMap[oldId] = existing.first['id'] as int;
+            }
+          }
+        }
+      }
+
+      // 7. Import Prompts with mapped IDs
+      if (data['prompts'] != null) {
+        for (var p in data['prompts']) {
+          final Map<String, dynamic> row = Map.from(p)..remove('id');
+          // Important: handle tag_id mapping
+          if (row['tag_id'] != null) {
+            row['tag_id'] = tagIdMap[row['tag_id']];
+          }
+          await txn.insert('prompts', row);
+        }
+      }
+
+      // 8. Import Source Directories
+      if (data['source_directories'] != null) {
+        for (var d in data['source_directories']) {
+          await txn.insert('source_directories', d);
+        }
+      }
+    });
   }
 }
