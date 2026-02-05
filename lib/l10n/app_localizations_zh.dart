@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -462,6 +463,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get filterModels => '过滤模型...';
+
+  @override
+  String get filterPrompts => '过滤提示词...';
 
   @override
   String get tagColor => '标签颜色';

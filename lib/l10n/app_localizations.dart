@@ -956,6 +956,12 @@ abstract class AppLocalizations {
   /// **'Filter models...'**
   String get filterModels;
 
+  /// No description provided for @filterPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter prompts...'**
+  String get filterPrompts;
+
   /// No description provided for @tagColor.
   ///
   /// In en, this message translates to:

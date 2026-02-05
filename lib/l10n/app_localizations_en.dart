@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -467,6 +468,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterModels => 'Filter models...';
+
+  @override
+  String get filterPrompts => 'Filter prompts...';
 
   @override
   String get tagColor => 'Tag Color';
