@@ -21,7 +21,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => AppState(),
-        child: const MyApp(version: '1.2.0'),
+        child: const MyApp(version: '1.2.1'),
       ),
     );
 
