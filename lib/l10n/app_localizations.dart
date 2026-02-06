@@ -1441,6 +1441,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to fetch models: {error}'**
   String fetchFailed(Object error);
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get preview;
 }
 
 class _AppLocalizationsDelegate

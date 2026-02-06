@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -721,4 +722,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String fetchFailed(Object error) {
     return '获取模型失败: $error';
   }
+
+  @override
+  String get edit => '编辑';
+
+  @override
+  String get preview => '预览';
 }

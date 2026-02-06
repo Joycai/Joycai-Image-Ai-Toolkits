@@ -31,6 +31,9 @@ class AppState extends ChangeNotifier {
   String lastAspectRatio = "not_set";
   String lastResolution = "1K";
   String lastPrompt = "";
+  bool isMarkdownWorkbench = true;
+  bool isMarkdownRefinerSource = true;
+  bool isMarkdownRefinerTarget = true;
 
   AppState() {
     _loadSettings();
@@ -117,6 +120,10 @@ class AppState extends ChangeNotifier {
     lastResolution = await _db.getSetting('last_resolution') ?? "1K";
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
     
+    isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
+    isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
+    isMarkdownRefinerTarget = (await _db.getSetting('is_markdown_refiner_target') ?? 'true') == 'true';
+    
     settingsLoaded = true;
     notifyListeners();
   }
@@ -163,6 +170,24 @@ class AppState extends ChangeNotifier {
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    notifyListeners();
+  }
+
+  Future<void> setIsMarkdownWorkbench(bool value) async {
+    isMarkdownWorkbench = value;
+    await _db.saveSetting('is_markdown_workbench', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setIsMarkdownRefinerSource(bool value) async {
+    isMarkdownRefinerSource = value;
+    await _db.saveSetting('is_markdown_refiner_source', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setIsMarkdownRefinerTarget(bool value) async {
+    isMarkdownRefinerTarget = value;
+    await _db.saveSetting('is_markdown_refiner_target', value.toString());
     notifyListeners();
   }
 

@@ -30,6 +30,7 @@ class DatabaseMigration {
     if (oldVersion < 12) await _createV12Tables(db);
     if (oldVersion < 13) await _createV13Tables(db);
     if (oldVersion < 14) await _createV14Tables(db);
+    if (oldVersion < 15) await _createV15Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -47,6 +48,12 @@ class DatabaseMigration {
     await _createV12Tables(db);
     await _createV13Tables(db);
     await _createV14Tables(db);
+    await _createV15Tables(db);
+  }
+
+  static Future<void> _createV15Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'prompts', 'is_markdown', 'INTEGER DEFAULT 0');
+    await _addColumnIfNotExists(db, 'system_prompts', 'is_markdown', 'INTEGER DEFAULT 0');
   }
 
   static Future<void> _createV2Tables(Database db) async {

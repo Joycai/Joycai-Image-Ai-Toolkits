@@ -356,5 +356,7 @@
   "addSelected": "添加所选 ({count})",
   "alreadyAdded": "已添加",
   "noNewModelsFound": "未发现新模型。",
-  "fetchFailed": "获取模型失败: {error}"
+  "fetchFailed": "获取模型失败: {error}",
+  "edit": "编辑",
+  "preview": "预览"
 }

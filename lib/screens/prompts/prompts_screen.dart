@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../widgets/markdown_editor.dart';
 
 class PromptsScreen extends StatefulWidget {
   const PromptsScreen({super.key});
@@ -20,6 +22,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<Map<String, dynamic>> _systemPrompts = [];
   List<Map<String, dynamic>> _tags = [];
   String _searchQuery = "";
+  final Set<int> _expandedPromptIds = {};
+  final Set<int> _expandedSysPromptIds = {};
 
   final List<Color> _predefinedColors = [
     Colors.blue,
@@ -161,23 +165,31 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       itemBuilder: (context, index) {
         final prompt = prompts[index];
+        final id = prompt['id'] as int;
+        final isExpanded = _expandedPromptIds.contains(id);
+
         return Card(
-          key: ValueKey('user_${prompt['id']}'),
+          key: ValueKey('user_$id'),
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: colorScheme.outlineVariant),
           ),
-          child: InkWell(
-            onTap: () => _showPromptDialog(l10n, prompt: prompt),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          child: Column(
+            children: [
+              InkWell(
+                onTap: () => setState(() {
+                  if (isExpanded) {
+                    _expandedPromptIds.remove(id);
+                  } else {
+                    _expandedPromptIds.add(id);
+                  }
+                }),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
                     children: [
                       if (_searchQuery.isEmpty)
                         ReorderableDragStartListener(
@@ -185,6 +197,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                           child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
                         ),
                       if (_searchQuery.isEmpty) const SizedBox(width: 12),
+                      Icon(
+                        isExpanded ? Icons.expand_more : Icons.chevron_right,
+                        size: 20,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           prompt['title'],
@@ -212,23 +230,48 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 32.0),
+                ),
+              ),
+              if (isExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48, 0, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      prompt['is_markdown'] == 1
+                          ? MarkdownBody(data: prompt['content'])
+                          : SelectionArea(
+                              child: Text(
+                                prompt['content'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colorScheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(left: 48.0, bottom: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
-                      prompt['content'],
-                      maxLines: 3,
+                      prompt['content'].toString().replaceAll('\n', ' '),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13, 
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
+                        fontSize: 12,
+                        color: colorScheme.outline,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -247,26 +290,40 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       itemCount: prompts.length,
       itemBuilder: (context, index) {
         final prompt = prompts[index];
+        final id = prompt['id'] as int;
+        final isExpanded = _expandedSysPromptIds.contains(id);
+
         return Card(
-          key: ValueKey('sys_${prompt['id']}'),
+          key: ValueKey('sys_$id'),
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: colorScheme.outlineVariant),
           ),
-          child: InkWell(
-            onTap: () => _showSystemPromptDialog(l10n, prompt: prompt),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          child: Column(
+            children: [
+              InkWell(
+                onTap: () => setState(() {
+                  if (isExpanded) {
+                    _expandedSysPromptIds.remove(id);
+                  } else {
+                    _expandedSysPromptIds.add(id);
+                  }
+                }),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
                     children: [
                       const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
                       const SizedBox(width: 12),
+                      Icon(
+                        isExpanded ? Icons.expand_more : Icons.chevron_right,
+                        size: 20,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           prompt['title'],
@@ -292,23 +349,48 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 32.0),
+                ),
+              ),
+              if (isExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48, 0, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      prompt['is_markdown'] == 1
+                          ? MarkdownBody(data: prompt['content'])
+                          : SelectionArea(
+                              child: Text(
+                                prompt['content'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colorScheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(left: 48.0, bottom: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
-                      prompt['content'],
-                      maxLines: 3,
+                      prompt['content'].toString().replaceAll('\n', ' '),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13, 
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
+                        fontSize: 12,
+                        color: colorScheme.outline,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -510,6 +592,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   void _showSystemPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
+    bool isMarkdown = (prompt?['is_markdown'] ?? 1) == 1;
 
     showDialog(
       context: context,
@@ -529,15 +612,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               children: [
                 TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
                 const SizedBox(height: 16),
-                TextField(
+                MarkdownEditor(
                   controller: contentCtrl,
-                  maxLines: 12,
-                  onChanged: (_) => setDialogState(() {}),
-                  decoration: InputDecoration(
-                    labelText: l10n.promptContent,
-                    border: const OutlineInputBorder(),
-                    counterText: '${contentCtrl.text.length} characters',
-                  ),
+                  label: l10n.promptContent,
+                  isMarkdown: isMarkdown,
+                  onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
+                  initiallyPreview: true,
                 ),
               ],
             ),
@@ -547,7 +627,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             FilledButton(
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
-                final data = {'title': titleCtrl.text, 'content': contentCtrl.text, 'type': 'refiner'};
+                final data = {
+                  'title': titleCtrl.text,
+                  'content': contentCtrl.text,
+                  'type': 'refiner',
+                  'is_markdown': isMarkdown ? 1 : 0,
+                };
                 if (prompt == null) {
                   await _db.addSystemPrompt(data);
                 } else {
@@ -569,12 +654,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
     final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
-    
-        int? selectedTagId = prompt?['tag_id'];
-    
-        selectedTagId ??= _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == 'General', orElse: () => null)?['id'];
-    
-    
+    bool isMarkdown = (prompt?['is_markdown'] ?? 1) == 1;
+
+    int? selectedTagId = prompt?['tag_id'];
+
+    selectedTagId ??= _tags.cast<Map<String, dynamic>?>().firstWhere((t) => t?['name'] == 'General', orElse: () => null)?['id'];
 
     showDialog(
       context: context,
@@ -594,7 +678,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    controller: titleCtrl, 
+                    controller: titleCtrl,
                     decoration: InputDecoration(
                       labelText: l10n.title,
                       border: const OutlineInputBorder(),
@@ -622,16 +706,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     onChanged: (v) => setDialogState(() => selectedTagId = v),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  MarkdownEditor(
                     controller: contentCtrl,
-                    maxLines: 12,
-                    onChanged: (_) => setDialogState(() {}),
-                    decoration: InputDecoration(
-                      labelText: l10n.promptContent,
-                      border: const OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                      counterText: '${contentCtrl.text.length} characters',
-                    ),
+                    label: l10n.promptContent,
+                    isMarkdown: isMarkdown,
+                    onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
+                    initiallyPreview: true,
                   ),
                 ],
               ),
@@ -642,11 +722,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             FilledButton(
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty || selectedTagId == null) return;
-                
+
                 final Map<String, dynamic> data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
                   'tag_id': selectedTagId,
+                  'is_markdown': isMarkdown ? 1 : 0,
                 };
                 if (prompt == null) {
                   data['sort_order'] = 0;

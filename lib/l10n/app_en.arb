@@ -356,5 +356,7 @@
   "addSelected": "Add Selected ({count})",
   "alreadyAdded": "Already Added",
   "noNewModelsFound": "No new models found.",
-  "fetchFailed": "Failed to fetch models: {error}"
+  "fetchFailed": "Failed to fetch models: {error}",
+  "edit": "Edit",
+  "preview": "Preview"
 }

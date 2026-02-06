@@ -27,6 +27,7 @@ dependencies:
   shelf: ^1.4.2
   shelf_router: ^1.1.4
   package_info_plus: ^9.0.0
+  flutter_markdown_plus: ^1.0.1
 
 dev_dependencies:
   flutter_test:

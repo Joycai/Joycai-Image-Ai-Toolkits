@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 14, // Incremented for Specialized System Prompts
+          version: 15, // Incremented for Markdown support
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 14,
+        version: 15,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );

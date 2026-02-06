@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
+import '../../state/app_state.dart';
+import 'markdown_editor.dart';
 
 class AIPromptRefiner extends StatefulWidget {
   final String initialPrompt;
@@ -128,104 +131,114 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 1000,
-        height: 700,
-        padding: const EdgeInsets.all(24),
-        child: _isLoadingData 
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.auto_fix_high, color: Colors.blue),
-                    const SizedBox(width: 12),
-                    Text(l10n.aiPromptRefiner, style: Theme.of(context).textTheme.headlineSmall),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                
-                // Config Section
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildModelSelector(l10n),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSysPromptSelector(l10n),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                
-                // Prompts Section
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Consumer<AppState>(
+        builder: (context, appState, child) => Container(
+          width: 1000,
+          height: 700,
+          padding: const EdgeInsets.all(24),
+          child: _isLoadingData 
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      // Source
-                      Expanded(
-                        child: _buildPromptInput(
-                          title: l10n.currentPrompt,
-                          controller: _currentPromptCtrl,
-                          readOnly: false,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Arrow
-                      const Center(
-                        child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
-                      ),
-                      const SizedBox(width: 16),
-                      // Refined
-                      Expanded(
-                        child: _buildPromptInput(
-                          title: l10n.refinedPrompt,
-                          controller: _refinedPromptCtrl,
-                          readOnly: true,
-                          isRefined: true,
-                        ),
+                      const Icon(Icons.auto_fix_high, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Text(l10n.aiPromptRefiner, style: Theme.of(context).textTheme.headlineSmall),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(l10n.cancel),
+                  const SizedBox(height: 24),
+                  
+                  // Config Section
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModelSelector(l10n),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSysPromptSelector(l10n),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Prompts Section
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Source
+                        Expanded(
+                          child: MarkdownEditor(
+                            controller: _currentPromptCtrl,
+                            label: l10n.currentPrompt,
+                            isMarkdown: appState.isMarkdownRefinerSource,
+                            onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
+                            maxLines: 20,
+                            initiallyPreview: false,
+                            expand: true,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Arrow
+                        const Center(
+                          child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
+                        ),
+                        const SizedBox(width: 16),
+                        // Refined
+                        Expanded(
+                          child: MarkdownEditor(
+                            controller: _refinedPromptCtrl,
+                            label: l10n.refinedPrompt,
+                            isMarkdown: appState.isMarkdownRefinerTarget,
+                            onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
+                            maxLines: 20,
+                            initiallyPreview: true,
+                            isRefined: true,
+                            expand: true,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    FilledButton.icon(
-                      onPressed: _isRefining ? null : _refine,
-                      icon: _isRefining 
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.auto_fix_high),
-                      label: Text(l10n.refine),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
-                        widget.onApply(_refinedPromptCtrl.text);
-                        Navigator.pop(context);
-                      },
-                      child: Text(l10n.apply),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Actions
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(l10n.cancel),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: _isRefining ? null : _refine,
+                        icon: _isRefining 
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.auto_fix_high),
+                        label: Text(l10n.refine),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton(
+                        onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
+                          widget.onApply(_refinedPromptCtrl.text);
+                          Navigator.pop(context);
+                        },
+                        child: Text(l10n.apply),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+        ),
       ),
     );
   }
@@ -284,36 +297,6 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         child: Text(p['title'], overflow: TextOverflow.ellipsis)
       )).toList(),
       onChanged: (v) => setState(() => _selectedSysPrompt = v),
-    );
-  }
-
-  Widget _buildPromptInput({
-    required String title,
-    required TextEditingController controller,
-    required bool readOnly,
-    bool isRefined = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-        const SizedBox(height: 8),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            maxLines: null,
-            expands: true,
-            readOnly: readOnly,
-            textAlignVertical: TextAlignVertical.top,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              fillColor: isRefined ? Colors.grey.withValues(alpha: 0.05) : null,
-              filled: isRefined,
-            ),
-            style: const TextStyle(fontSize: 13, height: 1.5),
-          ),
-        ),
-      ],
     );
   }
 }

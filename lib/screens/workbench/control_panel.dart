@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/markdown_editor.dart';
 import '../../widgets/refiner_panel.dart';
 
 class ControlPanelWidget extends StatefulWidget {
@@ -305,15 +307,20 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  TextField(
-                    controller: _promptController,
-                    maxLines: 15,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: l10n.promptHint,
-                      alignLabelWithHint: true,
-                    ),
-                    onChanged: (v) => _updateConfig(prompt: v),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _promptController,
+                    builder: (context, value, child) {
+                      return MarkdownEditor(
+                        controller: _promptController,
+                        label: l10n.prompt,
+                        isMarkdown: appState.isMarkdownWorkbench,
+                        onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
+                        maxLines: 15,
+                        initiallyPreview: false,
+                        hint: l10n.promptHint,
+                        onChanged: (v) => _updateConfig(prompt: v),
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
 
@@ -699,6 +706,7 @@ class _LibraryDialog extends StatefulWidget {
 class _LibraryDialogState extends State<_LibraryDialog> {
   String? _selectedCategory;
   late TextEditingController _draftController;
+  bool _isMarkdown = true;
 
   @override
   void initState() {
@@ -846,11 +854,18 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                                       ),
                                       const SizedBox(height: 4),
                                       Expanded(
-                                        child: Text(
-                                          p['content'],
-                                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                                          overflow: TextOverflow.fade,
-                                        ),
+                                        child: p['is_markdown'] == 1
+                                          ? MarkdownBody(
+                                              data: p['content'],
+                                              styleSheet: MarkdownStyleSheet(
+                                                p: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                              ),
+                                            )
+                                          : Text(
+                                              p['content'],
+                                              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                              overflow: TextOverflow.fade,
+                                            ),
                                       ),
                                       const Divider(height: 16),
                                       Row(
@@ -897,18 +912,13 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                           Text("PROMPT DRAFT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
                           const SizedBox(height: 12),
                           Expanded(
-                            child: TextField(
+                            child: MarkdownEditor(
                               controller: _draftController,
-                              maxLines: null,
-                              expands: true,
-                              textAlignVertical: TextAlignVertical.top,
-                              decoration: InputDecoration(
-                                hintText: "Compose your prompt here...",
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                filled: true,
-                                fillColor: colorScheme.surface,
-                              ),
-                              style: const TextStyle(fontSize: 13, height: 1.5),
+                              label: "Draft",
+                              isMarkdown: _isMarkdown,
+                              onMarkdownChanged: (v) => setState(() => _isMarkdown = v), 
+                              maxLines: 20,
+                              initiallyPreview: false,
                             ),
                           ),
                           const SizedBox(height: 16),
