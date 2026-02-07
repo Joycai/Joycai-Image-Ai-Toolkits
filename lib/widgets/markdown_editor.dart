@@ -56,22 +56,36 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                if (!widget.isRefined) ...[
-                  Checkbox(
-                    value: widget.isMarkdown,
-                    onChanged: (v) {
-                      widget.onMarkdownChanged(v ?? false);
-                      if (!(v ?? false)) {
-                        setState(() => _isPreview = false);
-                      }
-                    },
-                  ),
-                  const Text("Markdown", style: TextStyle(fontSize: 12)),
-                ] else
-                  Text(widget.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              ],
+            Expanded(
+              child: Row(
+                children: [
+                  if (!widget.isRefined) ...[
+                    Checkbox(
+                      value: widget.isMarkdown,
+                      onChanged: (v) {
+                        widget.onMarkdownChanged(v ?? false);
+                        if (!(v ?? false)) {
+                          setState(() => _isPreview = false);
+                        }
+                      },
+                    ),
+                    const Flexible(
+                      child: Text(
+                        "Markdown",
+                        style: TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ] else
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
             ),
             if (widget.isMarkdown || widget.isRefined)
               SegmentedButton<bool>(
