@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/model_discovery_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_models.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_discovery_service.dart';
 
 class MockDiscoveryProvider implements IModelDiscoveryProvider {
   @override
