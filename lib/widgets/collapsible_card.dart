@@ -1,6 +1,7 @@
 // ignore_for_file: use_null_aware_elements
 // ignore_for_file: use_if_null_to_and_then
 import 'package:flutter/material.dart';
+
 import '../core/constants.dart';
 
 class CollapsibleCard extends StatelessWidget {
