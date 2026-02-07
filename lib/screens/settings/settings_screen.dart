@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
@@ -37,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _mcpEnabled = false;
   final TextEditingController _mcpPortController = TextEditingController();
 
+  bool _isPortable = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +56,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _mcpEnabled = (await _db.getSetting('mcp_enabled')) == 'true';
     _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
+
+    _isPortable = await AppPaths.isPortableMode();
     
     setState(() {});
   }
@@ -99,6 +104,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   AppSection(
                     title: l10n.settings,
                     children: [
+                      _buildPortableModeTile(l10n),
+                      const SizedBox(height: 8),
                       _buildOutputDirectoryTile(appState, l10n),
                     ],
                   ),
@@ -199,6 +206,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildPortableModeTile(AppLocalizations l10n) {
+    return SwitchListTile(
+      title: Text(l10n.portableMode),
+      subtitle: Text(l10n.portableModeDesc),
+      value: _isPortable,
+      onChanged: (v) async {
+        await AppPaths.setPortableMode(v);
+        setState(() => _isPortable = v);
+        if (mounted) {
+          _showRestartDialog(l10n);
+        }
+      },
+    );
+  }
+
+  void _showRestartDialog(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restartRequired),
+        content: Text(l10n.restartMessage),
+        actions: [
+          FilledButton(
+            onPressed: () => exit(0),
+            child: Text(l10n.resetEverything), // Reusing "Restart" feel
+          ),
+        ],
+      ),
     );
   }
 

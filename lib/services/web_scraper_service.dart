@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import '../core/app_paths.dart';
 import 'llm/llm_models.dart';
 import 'llm/llm_service.dart';
 
@@ -72,8 +72,8 @@ class WebScraperService {
   }
 
   Future<Directory> get _cacheDir async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(appDir.path, 'cache', 'downloader'));
+    final dataDir = await AppPaths.getDataDirectory();
+    final dir = Directory(p.join(dataDir, 'cache', 'downloader'));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }

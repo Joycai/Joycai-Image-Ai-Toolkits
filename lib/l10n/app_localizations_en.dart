@@ -654,6 +654,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceConfig => 'Price Config';
 
   @override
+  String get portableMode => 'Portable Mode';
+
+  @override
+  String get portableModeDesc =>
+      'Store database and cache in the application folder (requires restart)';
+
+  @override
+  String get restartRequired => 'Restart Required';
+
+  @override
+  String get restartMessage =>
+      'The application must be restarted to apply changes to the data storage location.';
+
+  @override
   String get usageByGroup => 'Usage by Group';
 
   @override

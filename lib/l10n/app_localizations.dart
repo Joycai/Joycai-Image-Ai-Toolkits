@@ -1304,6 +1304,30 @@ abstract class AppLocalizations {
   /// **'Price Config'**
   String get priceConfig;
 
+  /// No description provided for @portableMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Portable Mode'**
+  String get portableMode;
+
+  /// No description provided for @portableModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Store database and cache in the application folder (requires restart)'**
+  String get portableModeDesc;
+
+  /// No description provided for @restartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Required'**
+  String get restartRequired;
+
+  /// No description provided for @restartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The application must be restarted to apply changes to the data storage location.'**
+  String get restartMessage;
+
   /// No description provided for @usageByGroup.
   ///
   /// In en, this message translates to:

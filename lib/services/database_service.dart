@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../core/app_paths.dart';
 import 'database_migrations.dart';
 
 class DatabaseService {
@@ -23,23 +24,22 @@ class DatabaseService {
   Future<Database> _initDatabase() async {
     String dbPath;
     
-    // Migration: Check if DB exists in Documents (old location) and move it to Support (new location)
-    // This applies primarily to macOS and Mobile where the previous implementation used Documents.
-    final supportDir = await getApplicationSupportDirectory();
-    final newPath = join(supportDir.path, 'joycai_workbench.db');
+    final dataDir = await AppPaths.getDataDirectory();
+    final newPath = join(dataDir, 'joycai_workbench.db');
     
-    final docsDir = await getApplicationDocumentsDirectory();
-    final oldPath = join(docsDir.path, 'joycai_workbench.db');
+    // Legacy migration check (Only for non-portable mode or first transition)
+    if (!await AppPaths.isPortableMode()) {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final oldPath = join(docsDir.path, 'joycai_workbench.db');
 
-    if (await File(oldPath).exists() && !await File(newPath).exists()) {
-      try {
-        if (!await supportDir.exists()) {
-          await supportDir.create(recursive: true);
-        }
-        await File(oldPath).rename(newPath);
-      } catch (e) {
-        // Fallback: If migration fails, we might just start fresh or log it.
-        // For now, we proceed.
+      if (await File(oldPath).exists() && !await File(newPath).exists()) {
+        try {
+          final dir = Directory(dataDir);
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
+          await File(oldPath).rename(newPath);
+        } catch (_) {}
       }
     }
 
@@ -66,8 +66,7 @@ class DatabaseService {
   }
 
   Future<String> getDatabasePath() async {
-    final supportDir = await getApplicationSupportDirectory();
-    return supportDir.path;
+    return await AppPaths.getDataDirectory();
   }
 
   Future<void> _onCreate(Database db, int version) async {

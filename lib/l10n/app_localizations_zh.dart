@@ -649,6 +649,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get priceConfig => '价格配置';
 
   @override
+  String get portableMode => '便携模式';
+
+  @override
+  String get portableModeDesc => '在应用程序文件夹中存储数据库和缓存 (需要重启)';
+
+  @override
+  String get restartRequired => '需要重启';
+
+  @override
+  String get restartMessage => '必须重启应用程序以应用对数据存储位置的更改。';
+
+  @override
   String get usageByGroup => '按费率组统计';
 
   @override
