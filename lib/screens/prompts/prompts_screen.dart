@@ -241,7 +241,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       const Divider(),
                       const SizedBox(height: 8),
                       prompt['is_markdown'] == 1
-                          ? MarkdownBody(data: prompt['content'])
+                          ? SelectionArea(child: MarkdownBody(data: prompt['content']))
                           : SelectionArea(
                               child: Text(
                                 prompt['content'],
@@ -257,7 +257,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.only(left: 48.0, bottom: 12),
+                  padding: const EdgeInsets.only(left: 48.0, bottom: 12, right: 16),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -360,7 +360,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                       const Divider(),
                       const SizedBox(height: 8),
                       prompt['is_markdown'] == 1
-                          ? MarkdownBody(data: prompt['content'])
+                          ? SelectionArea(child: MarkdownBody(data: prompt['content']))
                           : SelectionArea(
                               child: Text(
                                 prompt['content'],
@@ -376,7 +376,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.only(left: 48.0, bottom: 12),
+                  padding: const EdgeInsets.only(left: 48.0, bottom: 12, right: 16),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -607,19 +607,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
           content: SizedBox(
             width: 600,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
-                const SizedBox(height: 16),
-                MarkdownEditor(
-                  controller: contentCtrl,
-                  label: l10n.promptContent,
-                  isMarkdown: isMarkdown,
-                  onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                  initiallyPreview: true,
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                  const SizedBox(height: 16),
+                  MarkdownEditor(
+                    controller: contentCtrl,
+                    label: l10n.promptContent,
+                    isMarkdown: isMarkdown,
+                    onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
+                    initiallyPreview: true,
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [

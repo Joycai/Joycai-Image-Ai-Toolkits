@@ -855,10 +855,18 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                                       const SizedBox(height: 4),
                                       Expanded(
                                         child: p['is_markdown'] == 1
-                                          ? MarkdownBody(
-                                              data: p['content'],
-                                              styleSheet: MarkdownStyleSheet(
-                                                p: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                          ? Container(
+                                              clipBehavior: Clip.antiAlias,
+                                              decoration: const BoxDecoration(),
+                                              child: SelectionArea(
+                                                child: SingleChildScrollView(
+                                                  child: MarkdownBody(
+                                                    data: p['content'],
+                                                    styleSheet: MarkdownStyleSheet(
+                                                      p: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             )
                                           : Text(
@@ -919,6 +927,7 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                               onMarkdownChanged: (v) => setState(() => _isMarkdown = v), 
                               maxLines: 20,
                               initiallyPreview: false,
+                              expand: true,
                             ),
                           ),
                           const SizedBox(height: 16),

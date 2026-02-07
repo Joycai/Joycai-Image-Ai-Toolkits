@@ -36,7 +36,7 @@ class AppState extends ChangeNotifier {
   bool isMarkdownRefinerTarget = true;
 
   AppState() {
-    _loadSettings();
+    loadSettings();
     
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
@@ -91,7 +91,7 @@ class AppState extends ChangeNotifier {
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
 
-  Future<void> _loadSettings() async {
+  Future<void> loadSettings() async {
     addLog('Loading settings from database...');
     
     final setupVal = await _db.getSetting('setup_completed');

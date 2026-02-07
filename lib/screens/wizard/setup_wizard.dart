@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/llm_models.dart';
+import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/settings_widgets.dart';
@@ -19,6 +21,7 @@ class _SetupWizardState extends State<SetupWizard> {
   final PageController _pageController = PageController();
   final DatabaseService _db = DatabaseService();
   int _currentStep = 0;
+  final int _totalSteps = 5;
 
   // Controllers
   final TextEditingController _outputDirController = TextEditingController();
@@ -28,7 +31,14 @@ class _SetupWizardState extends State<SetupWizard> {
   final TextEditingController _channelNameController = TextEditingController();
   final TextEditingController _endpointController = TextEditingController();
   final TextEditingController _apiKeyController = TextEditingController();
-  String _channelType = 'openai-api-rest';
+  String _channelType = 'google-genai-rest';
+  int? _createdChannelId;
+
+  // Model Step Controllers
+  final TextEditingController _modelIdController = TextEditingController();
+  final TextEditingController _modelNameController = TextEditingController();
+  String _modelTag = 'multimodal';
+  bool _isFetchingModels = false;
 
   @override
   void initState() {
@@ -48,13 +58,23 @@ class _SetupWizardState extends State<SetupWizard> {
   void _updateDefaultEndpoint() {
     if (_channelType == 'openai-api-rest') {
       _endpointController.text = 'https://api.openai.com/v1';
-    } else if (_channelType == 'official-google-genai-api' || _channelType == 'google-genai-rest') {
+    } else {
       _endpointController.text = 'https://generativelanguage.googleapis.com';
     }
   }
 
   void _nextStep() {
-    if (_currentStep < 3) {
+    if (_currentStep == 2) {
+      _saveChannelAndContinue();
+      return;
+    }
+    
+    if (_currentStep == 3) {
+      _saveModelAndContinue();
+      return;
+    }
+
+    if (_currentStep < _totalSteps - 1) {
       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       setState(() => _currentStep++);
     } else {
@@ -62,12 +82,9 @@ class _SetupWizardState extends State<SetupWizard> {
     }
   }
 
-  Future<void> _finishSetup() async {
-    final appState = Provider.of<AppState>(context, listen: false);
-
-    // Save Channel if API Key is provided
+  Future<void> _saveChannelAndContinue() async {
     if (_apiKeyController.text.isNotEmpty) {
-      await _db.addChannel({
+      final id = await _db.addChannel({
         'display_name': _channelNameController.text,
         'endpoint': _endpointController.text,
         'api_key': _apiKeyController.text,
@@ -76,8 +93,39 @@ class _SetupWizardState extends State<SetupWizard> {
         'tag': _channelNameController.text.split(' ').first,
         'tag_color': Colors.blue.toARGB32(),
       });
+      setState(() {
+        _createdChannelId = id;
+        _currentStep++;
+      });
+      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    } else {
+      // Skip model step if no channel added
+      setState(() {
+        _currentStep = 4; // Jump to finish
+      });
+      _pageController.animateToPage(4, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
+  }
 
+  Future<void> _saveModelAndContinue() async {
+    if (_modelIdController.text.isNotEmpty && _createdChannelId != null) {
+      await _db.addModel({
+        'model_id': _modelIdController.text,
+        'model_name': _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
+        'type': _channelType.contains('google') ? 'google-genai' : 'openai-api',
+        'tag': _modelTag,
+        'is_paid': 1,
+        'sort_order': 0,
+        'channel_id': _createdChannelId,
+      });
+    }
+    
+    setState(() => _currentStep++);
+    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  Future<void> _finishSetup() async {
+    final appState = Provider.of<AppState>(context, listen: false);
     await appState.completeSetup();
     if (mounted) {
       Navigator.of(context).pop();
@@ -91,22 +139,17 @@ class _SetupWizardState extends State<SetupWizard> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.setupWizardTitle),
-        automaticallyImplyLeading: false, // Prevent back button if mandatory
+        automaticallyImplyLeading: false,
         actions: [
           TextButton(
-            onPressed: () {
-              // Only allow skipping if not mandatory/first run check logic allows it
-              // For now, let's allow closing which just pops. 
-              // Real first-run logic in main.dart handles re-showing if needed.
-              Navigator.of(context).pop();
-            }, 
+            onPressed: () => Navigator.of(context).pop(), 
             child: Text(l10n.skip)
           ),
         ],
       ),
       body: Column(
         children: [
-          LinearProgressIndicator(value: (_currentStep + 1) / 4),
+          LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
           Expanded(
             child: PageView(
               controller: _pageController,
@@ -114,7 +157,8 @@ class _SetupWizardState extends State<SetupWizard> {
               children: [
                 _buildWelcomeStep(context, l10n),
                 _buildStorageStep(context, l10n),
-                _buildApiStep(context, l10n),
+                _buildChannelStep(context, l10n),
+                _buildModelStep(context, l10n),
                 _buildFinishStep(context, l10n),
               ],
             ),
@@ -124,20 +168,24 @@ class _SetupWizardState extends State<SetupWizard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (_currentStep > 0)
+                if (_currentStep > 0 && _currentStep != 4)
                   TextButton(
                     onPressed: () {
-                      _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                      setState(() => _currentStep--);
+                      int prev = _currentStep - 1;
+                      if (_currentStep == 4 && _createdChannelId == null) {
+                        prev = 2; // Go back to channel if model was skipped
+                      }
+                      _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                      setState(() => _currentStep = prev);
                     },
                     child: const Text("Back"),
                   ),
                 const SizedBox(width: 16),
                 FilledButton(
                   onPressed: _currentStep == 1 && _outputDirController.text.isEmpty 
-                      ? null // Storage is mandatory-ish
+                      ? null 
                       : _nextStep,
-                  child: Text(_currentStep == 3 ? l10n.getStarted : "Next"),
+                  child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? "Skip" : "Next")),
                 ),
               ],
             ),
@@ -209,7 +257,7 @@ class _SetupWizardState extends State<SetupWizard> {
     );
   }
 
-  Widget _buildApiStep(BuildContext context, AppLocalizations l10n) {
+  Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
     String endpointHint = "";
     if (_channelType == 'openai-api-rest') {
       endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
@@ -222,7 +270,7 @@ class _SetupWizardState extends State<SetupWizard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.stepApi, style: Theme.of(context).textTheme.titleLarge),
+          Text(l10n.addChannel, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           const Text("Add your first AI provider channel (Optional)."),
           const SizedBox(height: 24),
@@ -238,8 +286,8 @@ class _SetupWizardState extends State<SetupWizard> {
           DropdownButtonFormField<String>(
             initialValue: _channelType,
             items: const [
-              DropdownMenuItem(value: 'openai-api-rest', child: Text('OpenAI API REST')),
               DropdownMenuItem(value: 'google-genai-rest', child: Text('Google GenAI REST')),
+              DropdownMenuItem(value: 'openai-api-rest', child: Text('OpenAI API REST')),
               DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API')),
             ],
             onChanged: (v) {
@@ -267,11 +315,135 @@ class _SetupWizardState extends State<SetupWizard> {
           ApiKeyField(
             controller: _apiKeyController,
             label: l10n.apiKey,
-            onChanged: (v) {},
+            onChanged: (v) => setState(() {}),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildModelStep(BuildContext context, AppLocalizations l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.addModel, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          const Text("Configure a model for your new channel (Optional)."),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _modelIdController,
+                  decoration: InputDecoration(
+                    labelText: l10n.modelIdLabel,
+                    border: const OutlineInputBorder(),
+                    hintText: "e.g. gpt-4o",
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _isFetchingModels ? null : _fetchModels,
+                icon: _isFetchingModels 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.refresh),
+                label: Text(l10n.fetchModels),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _modelNameController,
+            decoration: InputDecoration(
+              labelText: l10n.displayName,
+              border: const OutlineInputBorder(),
+              hintText: "e.g. My Model",
+            ),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _modelTag,
+            items: const [
+              DropdownMenuItem(value: 'chat', child: Text('Chat')),
+              DropdownMenuItem(value: 'multimodal', child: Text('Multimodal')),
+              DropdownMenuItem(value: 'image', child: Text('Image')),
+            ],
+            onChanged: (v) => setState(() => _modelTag = v!),
+            decoration: InputDecoration(
+              labelText: l10n.tag,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _fetchModels() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isFetchingModels = true);
+    
+    try {
+      final type = _channelType.contains('google') ? 'google-genai' : 'openai-api';
+      final config = LLMModelConfig(
+        modelId: 'discovery',
+        type: type,
+        channelType: _channelType,
+        endpoint: _endpointController.text,
+        apiKey: _apiKeyController.text,
+      );
+
+      final models = await ModelDiscoveryService().discoverModels(type, config);
+      
+      if (!mounted) return;
+      
+      final selected = await showDialog<DiscoveredModel>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.selectModelsToAdd),
+          content: SizedBox(
+            width: 400,
+            height: 400,
+            child: ListView.builder(
+              itemCount: models.length,
+              itemBuilder: (context, index) {
+                final m = models[index];
+                return ListTile(
+                  title: Text(m.displayName),
+                  subtitle: Text(m.modelId),
+                  onTap: () => Navigator.pop(context, m),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      if (selected != null) {
+        setState(() {
+          _modelIdController.text = selected.modelId;
+          _modelNameController.text = selected.displayName;
+          // Infer tag
+          final id = selected.modelId.toLowerCase();
+          if (id.contains('vision') || id.contains('image')) {
+            _modelTag = 'multimodal';
+          } else if (id.contains('gemini')) {
+            _modelTag = 'multimodal';
+          } else {
+            _modelTag = 'chat';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingModels = false);
+    }
   }
 
   Widget _buildFinishStep(BuildContext context, AppLocalizations l10n) {

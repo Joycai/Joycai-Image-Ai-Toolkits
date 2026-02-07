@@ -321,6 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (!mounted) return;
         // ignore: use_build_context_synchronously
         await _loadAllSettings();
+        await appState.loadSettings();
         appState.refreshImages();
         messenger.showSnackBar(SnackBar(content: Text(importedMsg)));
       } catch (e) {
