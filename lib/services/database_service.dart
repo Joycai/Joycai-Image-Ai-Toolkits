@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 17, // Incremented for Cookie History
+          version: 18, // Incremented for Task Progress Estimation
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 17,
+        version: 18,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -199,6 +199,38 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getModels() async {
     final db = await database;
     return await db.query('llm_models', orderBy: 'sort_order ASC');
+  }
+
+  Future<List<double>> getTaskDurations(int modelPk, int limit) async {
+    final db = await database;
+    final results = await db.query(
+      'tasks',
+      columns: ['start_time', 'end_time'],
+      where: 'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'.replaceAll('"', "'"),
+      whereArgs: [modelPk],
+      orderBy: 'end_time DESC',
+      limit: limit,
+    );
+
+    return results.map((r) {
+      final start = DateTime.parse(r['start_time'] as String);
+      final end = DateTime.parse(r['end_time'] as String);
+      return end.difference(start).inMilliseconds.toDouble();
+    }).toList();
+  }
+
+  Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) async {
+    final db = await database;
+    await db.update(
+      'llm_models',
+      {
+        'est_mean_ms': mean,
+        'est_sd_ms': sd,
+        'tasks_since_update': tasksSinceUpdate,
+      },
+      where: 'id = ?',
+      whereArgs: [modelPk],
+    );
   }
 
   // Settings Methods

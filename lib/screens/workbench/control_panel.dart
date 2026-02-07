@@ -305,33 +305,66 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   Widget _buildQueueStatus(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
     final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = appState.taskQueue.runningCount;
+    final activeTasks = appState.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
+    
+    // Average progress of running tasks
+    double? totalProgress;
+    int progressCount = 0;
+    for (var t in activeTasks) {
+      if (t.progress != null) {
+        totalProgress = (totalProgress ?? 0) + t.progress!;
+        progressCount++;
+      }
+    }
+    final avgProgress = progressCount > 0 ? totalProgress! / progressCount : null;
 
     if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withAlpha((255 * 0.5).round()),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (runningCount > 0) ...[
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (avgProgress != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: avgProgress,
+              minHeight: 4,
+              backgroundColor: colorScheme.secondaryContainer,
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
             ),
-            const SizedBox(width: 8),
-            Text(l10n.runningCount(runningCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 12),
-          ],
-          Icon(Icons.layers_outlined, size: 14, color: colorScheme.onSecondaryContainer),
-          const SizedBox(width: 4),
-          Text(l10n.plannedCount(pendingCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
+          ),
+          const SizedBox(height: 8),
         ],
-      ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: colorScheme.secondaryContainer.withAlpha((255 * 0.5).round()),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (runningCount > 0) ...[
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    value: avgProgress,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(l10n.runningCount(runningCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 12),
+              ],
+              Icon(Icons.layers_outlined, size: 14, color: colorScheme.onSecondaryContainer),
+              const SizedBox(width: 4),
+              Text(l10n.plannedCount(pendingCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

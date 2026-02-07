@@ -138,6 +138,20 @@ class _TaskTileState extends State<_TaskTile> {
                     ),
                 ],
               ),
+              if (task.status == TaskStatus.processing && task.progress != null) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: task.progress,
+                    minHeight: 4,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      task.type == TaskType.imageDownload ? Colors.teal : colorScheme.primary
+                    ),
+                  ),
+                ),
+              ],
               if (_isExpanded) ...[
                 const Divider(height: 24),
                 Row(

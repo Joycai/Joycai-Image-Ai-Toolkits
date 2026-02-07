@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ class TaskItem {
   List<String> resultPaths;
   DateTime? startTime;
   DateTime? endTime;
+  double? progress; // 0.0 to 1.0 (transient)
 
   TaskItem({
     required this.id,
@@ -44,6 +46,7 @@ class TaskItem {
     List<String>? resultPaths,
     this.startTime,
     this.endTime,
+    this.progress,
   })  : logs = logs ?? [],
         resultPaths = resultPaths ?? [];
 
@@ -91,6 +94,7 @@ class TaskQueueService extends ChangeNotifier {
   int _concurrencyLimit = 2;
   int _runningCount = 0;
   final _uuid = const Uuid();
+  Timer? _progressTimer;
   
   Function(File)? onTaskCompleted;
   Function(String, {String level, String? taskId})? onLogAdded;
@@ -198,6 +202,7 @@ class TaskQueueService extends ChangeNotifier {
       );
 
       _runningCount++;
+      _startProgressTimer();
       _executeTask(nextTask);
       _attemptNextExecution();
     } catch (e) {
@@ -238,10 +243,33 @@ class TaskQueueService extends ChangeNotifier {
       }
     } finally {
       task.endTime = DateTime.now();
+      
+      // Update Estimation Checkpoint
+      if (task.status == TaskStatus.completed && task.modelPk != null) {
+        _handleEstimationCheckpoint(task.modelPk!);
+      }
+
       _runningCount--;
       DatabaseService().saveTask(task.toMap());
       notifyListeners();
       _attemptNextExecution();
+    }
+  }
+
+  Future<void> _handleEstimationCheckpoint(int modelPk) async {
+    final db = DatabaseService();
+    final models = await db.getModels();
+    final model = models.cast<Map<String, dynamic>?>().firstWhere((m) => m?['id'] == modelPk, orElse: () => null);
+    
+    if (model != null) {
+      int count = (model['tasks_since_update'] as int? ?? 0) + 1;
+      final mean = model['est_mean_ms'] as double? ?? 0.0;
+      
+      if (count >= 10 || mean == 0) {
+        await _updateModelCheckpoint(modelPk);
+      } else {
+        await db.updateModelEstimation(modelPk, mean, model['est_sd_ms'] as double? ?? 0.0, count);
+      }
     }
   }
 
@@ -378,5 +406,64 @@ class TaskQueueService extends ChangeNotifier {
     if (ext == '.png') return 'image/png';
     if (ext == '.webp') return 'image/webp';
     return 'image/jpeg';
+  }
+
+  void _startProgressTimer() {
+    _progressTimer?.cancel();
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _updateProgress());
+  }
+
+  void _stopProgressTimer() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+  }
+
+  Future<void> _updateProgress() async {
+    bool hasActive = false;
+    final db = DatabaseService();
+    final models = await db.getModels();
+
+    for (var task in _queue) {
+      if (task.status == TaskStatus.processing && task.startTime != null) {
+        hasActive = true;
+        // Find checkpoint for this model
+        final model = models.cast<Map<String, dynamic>?>().firstWhere(
+          (m) => m?['id'] == task.modelPk, 
+          orElse: () => null
+        );
+
+        if (model != null) {
+          final mean = model['est_mean_ms'] as double? ?? 0.0;
+          final sd = model['est_sd_ms'] as double? ?? 0.0;
+          
+          if (mean > 0) {
+            final targetMs = mean + (2 * sd);
+            final elapsed = DateTime.now().difference(task.startTime!).inMilliseconds;
+            task.progress = math.min(elapsed / targetMs, 0.99);
+          }
+        }
+      }
+    }
+
+    if (hasActive) {
+      notifyListeners();
+    } else {
+      _stopProgressTimer();
+    }
+  }
+
+  Future<void> _updateModelCheckpoint(int modelPk) async {
+    final db = DatabaseService();
+    final durations = await db.getTaskDurations(modelPk, 50);
+    
+    if (durations.length >= 3) {
+      // Calculate Mean
+      final mean = durations.reduce((a, b) => a + b) / durations.length;
+      // Calculate Standard Deviation
+      final variance = durations.map((d) => math.pow(d - mean, 2)).reduce((a, b) => a + b) / durations.length;
+      final sd = math.sqrt(variance);
+      
+      await db.updateModelEstimation(modelPk, mean, sd, 0);
+    }
   }
 }

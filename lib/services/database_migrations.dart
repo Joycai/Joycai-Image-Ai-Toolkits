@@ -33,6 +33,7 @@ class DatabaseMigration {
     if (oldVersion < 15) await _createV15Tables(db);
     if (oldVersion < 16) await _createV16Tables(db);
     if (oldVersion < 17) await _createV17Tables(db);
+    if (oldVersion < 18) await _createV18Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -53,6 +54,13 @@ class DatabaseMigration {
     await _createV15Tables(db);
     await _createV16Tables(db);
     await _createV17Tables(db);
+    await _createV18Tables(db);
+  }
+
+  static Future<void> _createV18Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'est_mean_ms', 'REAL DEFAULT 0.0');
+    await _addColumnIfNotExists(db, 'llm_models', 'est_sd_ms', 'REAL DEFAULT 0.0');
+    await _addColumnIfNotExists(db, 'llm_models', 'tasks_since_update', 'INTEGER DEFAULT 0');
   }
 
   static Future<void> _createV17Tables(Database db) async {
