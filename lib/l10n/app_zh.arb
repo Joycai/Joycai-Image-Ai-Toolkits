@@ -4,6 +4,9 @@
   "tasks": "任务",
   "prompts": "提示词",
   "usage": "用量",
+  "downloader": "下载器",
+  "url": "地址",
+  "prefix": "前缀",
   "models": "模型",
   "settings": "设置",
   "addFolder": "添加文件夹",
@@ -349,6 +352,7 @@
   "finish": "完成",
   "setupCompleteMessage": "设置完成！尽情创作吧。",
   "runSetupWizard": "运行设置向导",
+  "clearDownloaderCache": "清除下载器缓存",
   "skip": "跳过",
   "fetchModels": "获取模型",
   "discoveringModels": "正在发现模型...",
@@ -358,5 +362,20 @@
   "noNewModelsFound": "未发现新模型。",
   "fetchFailed": "获取模型失败: {error}",
   "edit": "编辑",
-  "preview": "预览"
+  "preview": "预览",
+  "openRawImage": "打开原始图像",
+  "pasteFromClipboard": "从剪贴板粘贴",
+  "saveOriginHtml": "保存原始 HTML",
+  "htmlSavedTo": "HTML 已保存至: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHtmlMode": "手动 HTML 模式",
+  "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
+  "cookieHistory": "Cookie 历史",
+  "noCookieHistory": "未保存 Cookie 历史"
 }

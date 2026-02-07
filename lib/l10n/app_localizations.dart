@@ -128,6 +128,24 @@ abstract class AppLocalizations {
   /// **'Usage'**
   String get usage;
 
+  /// No description provided for @downloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader'**
+  String get downloader;
+
+  /// No description provided for @url.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get url;
+
+  /// No description provided for @prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get prefix;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:
@@ -1394,6 +1412,12 @@ abstract class AppLocalizations {
   /// **'Run Setup Wizard'**
   String get runSetupWizard;
 
+  /// No description provided for @clearDownloaderCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Downloader Cache'**
+  String get clearDownloaderCache;
+
   /// No description provided for @skip.
   ///
   /// In en, this message translates to:
@@ -1453,6 +1477,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preview'**
   String get preview;
+
+  /// No description provided for @openRawImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Raw Image'**
+  String get openRawImage;
+
+  /// No description provided for @pasteFromClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from Clipboard'**
+  String get pasteFromClipboard;
+
+  /// No description provided for @saveOriginHtml.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Origin HTML'**
+  String get saveOriginHtml;
+
+  /// No description provided for @htmlSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'HTML saved to: {path}'**
+  String htmlSavedTo(String path);
+
+  /// No description provided for @manualHtmlMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual HTML Mode'**
+  String get manualHtmlMode;
+
+  /// No description provided for @manualHtmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste rendered HTML here (F12 -> Copy Outer HTML)'**
+  String get manualHtmlHint;
+
+  /// No description provided for @cookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookie History'**
+  String get cookieHistory;
+
+  /// No description provided for @noCookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No cookie history saved'**
+  String get noCookieHistory;
 }
 
 class _AppLocalizationsDelegate

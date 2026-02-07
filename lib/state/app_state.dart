@@ -8,12 +8,43 @@ import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/task_queue_service.dart';
+import '../services/web_scraper_service.dart';
+import 'downloader_state.dart';
 import 'gallery_state.dart';
 
 class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
+  final DownloaderState downloaderState = DownloaderState();
+
+  AppState() {
+    taskQueue.addListener(notifyListeners);
+    galleryState.addListener(notifyListeners);
+    downloaderState.addListener(notifyListeners);
+    
+    // Wire up logs
+    galleryState.onLog = (msg, {level = 'INFO'}) {
+      addLog(msg, level: level);
+    };
+
+    taskQueue.onTaskCompleted = (file) {
+      galleryState.refreshImages();
+    };
+    
+    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
+      addLog(msg, level: level, taskId: taskId);
+    };
+
+    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
+      addLog(msg, level: level, taskId: contextId);
+    };
+
+    taskQueue.addListener(() {
+      isProcessing = taskQueue.runningCount > 0;
+      notifyListeners();
+    });
+  }
 
   List<LogEntry> logs = [];
   bool isProcessing = false;
@@ -49,51 +80,34 @@ class AppState extends ChangeNotifier {
     m['tag'] == ModelTag.image.value || m['tag'] == ModelTag.multimodal.value
   ).toList();
 
-  List<Map<String, dynamic>> get chatModels => _models.where((m) => 
-    m['tag'] == ModelTag.chat.value || m['tag'] == ModelTag.multimodal.value
+  List<Map<String, dynamic>> get chatModels => _models.where((m) =>
+      m['tag'] == ModelTag.chat.value || m['tag'] == ModelTag.multimodal.value
   ).toList();
+
+  Future<int> getDownloaderCacheSize() async {
+    return await WebScraperService().getCacheSize();
+  }
+
+  Future<void> clearDownloaderCache() async {
+    await WebScraperService().clearCache();
+    notifyListeners();
+  }
 
   List<Map<String, dynamic>> getModelsForChannel(int? channelId) {
     if (channelId == null) return [];
     return _models.where((m) => m['channel_id'] == channelId).toList();
   }
 
-  AppState() {
-    loadSettings();
-    
-    // Wire up logs
-    galleryState.onLog = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
-    };
-
-    taskQueue.onTaskCompleted = (file) {
-      galleryState.refreshImages();
-    };
-    
-    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
-      addLog(msg, level: level, taskId: taskId);
-    };
-
-    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
-      addLog(msg, level: level, taskId: contextId);
-    };
-
-    taskQueue.addListener(() {
-      isProcessing = taskQueue.runningCount > 0;
-      notifyListeners();
-    });
-    
-    // Propagate gallery changes
-    galleryState.addListener(notifyListeners);
-  }
-
   @override
   void dispose() {
     galleryState.dispose();
+    taskQueue.removeListener(notifyListeners);
+    galleryState.removeListener(notifyListeners);
+    downloaderState.removeListener(notifyListeners);
     super.dispose();
   }
 
-  // Proxies for Gallery State (for backward compatibility if needed, or consumers should access galleryState directly)
+  // Proxies for Gallery State
   List<File> get galleryImages => galleryState.galleryImages;
   List<File> get processedImages => galleryState.processedImages;
   List<File> get selectedImages => galleryState.selectedImages;
@@ -113,6 +127,8 @@ class AppState extends ChangeNotifier {
   Future<void> setThumbnailSize(double size) => galleryState.setThumbnailSize(size);
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
+
+  Future<String?> getSetting(String key) => _db.getSetting(key);
 
   Future<void> loadSettings() async {
     addLog('Loading settings from database...');
@@ -150,6 +166,8 @@ class AppState extends ChangeNotifier {
     _models = await _db.getModels();
     _channels = await _db.getChannels();
     _feeGroups = await _db.getFeeGroups();
+    
+    await downloaderState.loadCookieHistory();
 
     settingsLoaded = true;
     notifyListeners();

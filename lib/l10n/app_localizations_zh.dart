@@ -25,6 +25,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usage => '用量';
 
   @override
+  String get downloader => '下载器';
+
+  @override
+  String get url => '地址';
+
+  @override
+  String get prefix => '前缀';
+
+  @override
   String get models => '模型';
 
   @override
@@ -696,6 +705,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get runSetupWizard => '运行设置向导';
 
   @override
+  String get clearDownloaderCache => '清除下载器缓存';
+
+  @override
   String get skip => '跳过';
 
   @override
@@ -728,4 +740,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get preview => '预览';
+
+  @override
+  String get openRawImage => '打开原始图像';
+
+  @override
+  String get pasteFromClipboard => '从剪贴板粘贴';
+
+  @override
+  String get saveOriginHtml => '保存原始 HTML';
+
+  @override
+  String htmlSavedTo(String path) {
+    return 'HTML 已保存至: $path';
+  }
+
+  @override
+  String get manualHtmlMode => '手动 HTML 模式';
+
+  @override
+  String get manualHtmlHint => '在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)';
+
+  @override
+  String get cookieHistory => 'Cookie 历史';
+
+  @override
+  String get noCookieHistory => '未保存 Cookie 历史';
 }

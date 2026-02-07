@@ -25,6 +25,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usage => 'Usage';
 
   @override
+  String get downloader => 'Downloader';
+
+  @override
+  String get url => 'URL';
+
+  @override
+  String get prefix => 'Prefix';
+
+  @override
   String get models => 'Models';
 
   @override
@@ -702,6 +711,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runSetupWizard => 'Run Setup Wizard';
 
   @override
+  String get clearDownloaderCache => 'Clear Downloader Cache';
+
+  @override
   String get skip => 'Skip';
 
   @override
@@ -734,4 +746,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preview => 'Preview';
+
+  @override
+  String get openRawImage => 'Open Raw Image';
+
+  @override
+  String get pasteFromClipboard => 'Paste from Clipboard';
+
+  @override
+  String get saveOriginHtml => 'Save Origin HTML';
+
+  @override
+  String htmlSavedTo(String path) {
+    return 'HTML saved to: $path';
+  }
+
+  @override
+  String get manualHtmlMode => 'Manual HTML Mode';
+
+  @override
+  String get manualHtmlHint =>
+      'Paste rendered HTML here (F12 -> Copy Outer HTML)';
+
+  @override
+  String get cookieHistory => 'Cookie History';
+
+  @override
+  String get noCookieHistory => 'No cookie history saved';
 }

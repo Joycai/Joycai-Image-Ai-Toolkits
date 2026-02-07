@@ -95,7 +95,7 @@ class _TaskTileState extends State<_TaskTile> {
             children: [
               Row(
                 children: [
-                  _buildStatusBadge(task.status, colorScheme),
+                  _buildStatusBadge(task, colorScheme),
                   const SizedBox(width: 12),
                   if (task.channelTag != null) ...[
                     Container(
@@ -147,8 +147,15 @@ class _TaskTileState extends State<_TaskTile> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildInfoRow(Icons.model_training, l10n.model, task.modelId),
-                          _buildInfoRow(Icons.image, l10n.images, l10n.filesCount(task.imagePaths.length)),
+                          if (task.type == TaskType.imageProcess)
+                            _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
+                          else
+                            _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
+                          _buildInfoRow(
+                            task.type == TaskType.imageProcess ? Icons.image : Icons.link,
+                            task.type == TaskType.imageProcess ? l10n.images : 'URLs',
+                            l10n.filesCount(task.imagePaths.length),
+                          ),
                           _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
                         ],
                       ),
@@ -158,7 +165,10 @@ class _TaskTileState extends State<_TaskTile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
-                          _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}'),
+                          if (task.type == TaskType.imageProcess)
+                            _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
+                          else
+                            _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
                           _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
                         ],
                       ),
@@ -166,29 +176,30 @@ class _TaskTileState extends State<_TaskTile> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _buildInfoRow(
-                  Icons.description_outlined,
-                  l10n.prompt,
-                  task.parameters['prompt'] ?? 'N/A',
-                  trailing: IconButton(
-                    icon: const Icon(Icons.copy, size: 14),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      final prompt = task.parameters['prompt'] ?? '';
-                      Clipboard.setData(ClipboardData(text: prompt));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.copiedToClipboard(
-                            prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
-                          )),
-                        ),
-                      );
-                    },
-                    color: colorScheme.primary,
-                    tooltip: 'Copy Prompt',
+                if (task.type == TaskType.imageProcess)
+                  _buildInfoRow(
+                    Icons.description_outlined,
+                    l10n.prompt,
+                    task.parameters['prompt'] ?? 'N/A',
+                    trailing: IconButton(
+                      icon: const Icon(Icons.copy, size: 14),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        final prompt = task.parameters['prompt'] ?? '';
+                        Clipboard.setData(ClipboardData(text: prompt));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.copiedToClipboard(
+                              prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+                            )),
+                          ),
+                        );
+                      },
+                      color: colorScheme.primary,
+                      tooltip: 'Copy Prompt',
+                    ),
                   ),
-                ),
                 if (task.resultPaths.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   SizedBox(
@@ -248,10 +259,11 @@ class _TaskTileState extends State<_TaskTile> {
     );
   }
 
-  Widget _buildStatusBadge(TaskStatus status, ColorScheme colorScheme) {
+  Widget _buildStatusBadge(TaskItem task, ColorScheme colorScheme) {
     Color color;
     IconData icon;
-    String label = status.name.toUpperCase();
+    String label = task.status.name.toUpperCase();
+    final status = task.status;
 
     switch (status) {
       case TaskStatus.pending:
@@ -276,6 +288,14 @@ class _TaskTileState extends State<_TaskTile> {
         break;
     }
 
+    if (task.type == TaskType.imageDownload) {
+      // Use Teal/Cyan theme for download tasks as per plan
+      color = (status == TaskStatus.completed) ? Colors.teal : (status == TaskStatus.processing ? Colors.cyan : color);
+      if (status == TaskStatus.processing || status == TaskStatus.completed) {
+        icon = (status == TaskStatus.completed) ? Icons.cloud_done : Icons.cloud_download;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -288,7 +308,10 @@ class _TaskTileState extends State<_TaskTile> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            task.type == TaskType.imageDownload ? '[DL] $label' : label,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );

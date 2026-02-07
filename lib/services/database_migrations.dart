@@ -31,12 +31,14 @@ class DatabaseMigration {
     if (oldVersion < 13) await _createV13Tables(db);
     if (oldVersion < 14) await _createV14Tables(db);
     if (oldVersion < 15) await _createV15Tables(db);
+    if (oldVersion < 16) await _createV16Tables(db);
+    if (oldVersion < 17) await _createV17Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT)');
+    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT \'imageProcess\')');
     
     await _createV2Tables(db);
     await _createV3Tables(db);
@@ -49,6 +51,22 @@ class DatabaseMigration {
     await _createV13Tables(db);
     await _createV14Tables(db);
     await _createV15Tables(db);
+    await _createV16Tables(db);
+    await _createV17Tables(db);
+  }
+
+  static Future<void> _createV17Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE downloader_cookies (
+        host TEXT PRIMARY KEY,
+        cookies TEXT NOT NULL,
+        last_used TEXT NOT NULL
+      )
+    ''');
+  }
+
+  static Future<void> _createV16Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'tasks', 'type', "TEXT DEFAULT 'imageProcess'");
   }
 
   static Future<void> _createV15Tables(Database db) async {

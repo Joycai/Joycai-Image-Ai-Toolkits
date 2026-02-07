@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
+import 'screens/downloader/image_downloader_screen.dart';
 import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
 import 'screens/prompts/prompts_screen.dart';
@@ -27,9 +28,12 @@ void main() async {
 
   final packageInfo = await PackageInfo.fromPlatform();
 
+  final appState = AppState();
+  await appState.loadSettings();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppState(),
+    ChangeNotifierProvider.value(
+      value: appState,
       child: MyApp(version: packageInfo.version),
     ),
   );
@@ -105,6 +109,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _screens = [
     const WorkbenchScreen(),
     const TaskQueueScreen(),
+    const ImageDownloaderScreen(),
     const PromptsScreen(),
     const TokenUsageScreen(),
     const ModelsScreen(),
@@ -141,6 +146,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 icon: const Icon(Icons.assignment_outlined),
                 selectedIcon: const Icon(Icons.assignment),
                 label: Text(l10n.tasks),
+              ),
+              NavigationRailDestination(
+                icon: const Icon(Icons.cloud_download_outlined),
+                selectedIcon: const Icon(Icons.cloud_download),
+                label: Text(l10n.downloader),
               ),
               NavigationRailDestination(
                 icon: const Icon(Icons.notes_outlined),

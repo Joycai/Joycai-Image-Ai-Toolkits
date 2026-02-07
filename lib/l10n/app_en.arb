@@ -4,6 +4,9 @@
   "tasks": "Tasks",
   "prompts": "Prompts",
   "usage": "Usage",
+  "downloader": "Downloader",
+  "url": "URL",
+  "prefix": "Prefix",
   "models": "Models",
   "settings": "Settings",
   "addFolder": "Add Folder",
@@ -349,6 +352,7 @@
   "finish": "Finish",
   "setupCompleteMessage": "You are all set! Enjoy creating.",
   "runSetupWizard": "Run Setup Wizard",
+  "clearDownloaderCache": "Clear Downloader Cache",
   "skip": "Skip",
   "fetchModels": "Fetch Models",
   "discoveringModels": "Discovering Models...",
@@ -358,5 +362,20 @@
   "noNewModelsFound": "No new models found.",
   "fetchFailed": "Failed to fetch models: {error}",
   "edit": "Edit",
-  "preview": "Preview"
+  "preview": "Preview",
+  "openRawImage": "Open Raw Image",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "saveOriginHtml": "Save Origin HTML",
+  "htmlSavedTo": "HTML saved to: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHtmlMode": "Manual HTML Mode",
+  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
+  "cookieHistory": "Cookie History",
+  "noCookieHistory": "No cookie history saved"
 }

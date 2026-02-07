@@ -50,7 +50,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 15, // Incremented for Markdown support
+          version: 17, // Incremented for Cookie History
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +58,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 15,
+        version: 17,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -221,6 +221,31 @@ class DatabaseService {
     await db.delete('prompts');
     await db.delete('token_usage');
     await db.delete('tasks');
+    await db.delete('downloader_cookies');
+  }
+
+  // Downloader Cookies History
+  Future<void> saveDownloaderCookie(String host, String cookies) async {
+    final db = await database;
+    await db.insert('downloader_cookies', {
+      'host': host,
+      'cookies': cookies,
+      'last_used': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    
+    // Limit to last 5
+    final all = await db.query('downloader_cookies', orderBy: 'last_used DESC');
+    if (all.length > 5) {
+      final toDelete = all.sublist(5);
+      for (var row in toDelete) {
+        await db.delete('downloader_cookies', where: 'host = ?', whereArgs: [row['host']]);
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getDownloaderCookies() async {
+    final db = await database;
+    return await db.query('downloader_cookies', orderBy: 'last_used DESC');
   }
 
   // Source Directories Methods

@@ -242,6 +242,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.auto_fix_high),
           label: Text(l10n.runSetupWizard),
         ),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final appState = Provider.of<AppState>(context, listen: false);
+            await appState.clearDownloaderCache();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Downloader cache cleared.')),
+              );
+            }
+          },
+          icon: const Icon(Icons.delete_sweep_outlined),
+          label: Text(l10n.clearDownloaderCache),
+        ),
         ElevatedButton.icon(
           onPressed: () => _resetSettings(l10n),
           style: ElevatedButton.styleFrom(
