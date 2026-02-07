@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/model_discovery_service.dart';
+import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_section.dart';
+import '../../widgets/fee_group_manager.dart';
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
@@ -15,11 +18,6 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
-  final DatabaseService _db = DatabaseService();
-  List<Map<String, dynamic>> _models = [];
-  List<Map<String, dynamic>> _channels = [];
-  List<Map<String, dynamic>> _feeGroups = [];
-
   final List<Color> _predefinedColors = [
     Colors.blue,
     Colors.red,
@@ -36,18 +34,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    final models = await _db.getModels();
-    final channels = await _db.getChannels();
-    final feeGroups = await _db.getFeeGroups();
-    setState(() {
-      _models = List.from(models);
-      _channels = List.from(channels);
-      _feeGroups = List.from(feeGroups);
-    });
   }
 
   @override
@@ -66,17 +52,19 @@ class _ModelsScreenState extends State<ModelsScreen> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildModelsTab(l10n),
-            _buildChannelsTab(l10n),
-          ],
+        body: Consumer<AppState>(
+          builder: (context, appState, child) => TabBarView(
+            children: [
+              _buildModelsTab(l10n, appState),
+              _buildChannelsTab(l10n, appState),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildModelsTab(AppLocalizations l10n) {
+  Widget _buildModelsTab(AppLocalizations l10n, AppState appState) {
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -85,16 +73,16 @@ class _ModelsScreenState extends State<ModelsScreen> {
             AppSection(
               title: l10n.modelManagement,
               children: [
-                if (_channels.isEmpty)
+                if (appState.allChannels.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Center(child: Text(l10n.noModelsConfigured)),
                   ),
-                ..._channels.map((channel) {
-                  final channelModels = _models.where((m) => m['channel_id'] == channel['id']).toList();
+                ...appState.allChannels.map((channel) {
+                  final channelModels = appState.getModelsForChannel(channel['id']);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildChannelGroup(channel, channelModels, l10n),
+                    child: _buildChannelGroup(channel, channelModels, l10n, appState),
                   );
                 }),
               ],
@@ -103,21 +91,21 @@ class _ModelsScreenState extends State<ModelsScreen> {
               title: l10n.feeManagement,
               padding: const EdgeInsets.only(bottom: 64),
               children: [
-                _buildFeeGroupList(l10n),
+                FeeGroupManager(appState: appState, mode: FeeGroupManagerMode.section),
               ],
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showModelDialog(l10n),
+        onPressed: () => _showModelDialog(l10n, appState),
         icon: const Icon(Icons.add),
         label: Text(l10n.addModel),
       ),
     );
   }
 
-  Widget _buildChannelGroup(Map<String, dynamic> channel, List<Map<String, dynamic>> models, AppLocalizations l10n) {
+  Widget _buildChannelGroup(Map<String, dynamic> channel, List<Map<String, dynamic>> models, AppLocalizations l10n, AppState appState) {
     final colorScheme = Theme.of(context).colorScheme;
     final bool enableDiscovery = (channel['enable_discovery'] ?? 1) == 1;
 
@@ -162,12 +150,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
             if (enableDiscovery)
               IconButton(
                 icon: const Icon(Icons.refresh, size: 20),
-                onPressed: () => _showDiscoveryDialog(l10n, channel),
+                onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
                 tooltip: l10n.fetchModels,
               ),
             IconButton(
               icon: const Icon(Icons.add, size: 20),
-              onPressed: () => _showModelDialog(l10n, preChannelId: channel['id']),
+              onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel['id']),
               tooltip: l10n.addModel,
             ),
             const Icon(Icons.expand_more),
@@ -186,7 +174,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               itemCount: models.length,
               itemBuilder: (context, index) {
                 final model = models[index];
-                final feeGroup = _feeGroups.firstWhere((g) => g['id'] == model['fee_group_id'], orElse: () => {});
+                final feeGroup = appState.allFeeGroups.firstWhere((g) => g['id'] == model['fee_group_id'], orElse: () => {});
                 return ListTile(
                   title: Text(model['model_name']),
                   subtitle: Row(
@@ -214,11 +202,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => _showModelDialog(l10n, model: model),
+                        onPressed: () => _showModelDialog(l10n, appState, model: model),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _confirmDeleteModel(l10n, model),
+                        onPressed: () => _confirmDeleteModel(l10n, model, appState),
                       ),
                     ],
                   ),
@@ -251,7 +239,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _confirmDeleteModel(AppLocalizations l10n, Map<String, dynamic> model) {
+  void _confirmDeleteModel(AppLocalizations l10n, Map<String, dynamic> model, AppState appState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -262,10 +250,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _db.deleteModel(model['id']);
+              await appState.deleteModel(model['id']);
               if (context.mounted) {
                 Navigator.pop(context);
-                _loadData();
               }
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
@@ -275,111 +262,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildFeeGroupList(AppLocalizations l10n) {
-    return Column(
-      children: [
-        ..._feeGroups.map((group) => Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            title: Text(group['name']),
-            subtitle: Text(
-              '${l10n.billingMode}: ${group['billing_mode']} | In: ${group['input_price']} | Out: ${group['output_price']} | Req: ${group['request_price']}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showFeeGroupDialog(l10n, group: group),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    await _db.deleteFeeGroup(group['id']);
-                    _loadData();
-                  },
-                ),
-              ],
-            ),
-          ),
-        )),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => _showFeeGroupDialog(l10n),
-          icon: const Icon(Icons.add),
-          label: Text(l10n.addFeeGroup),
-        ),
-      ],
-    );
-  }
-
-  void _showFeeGroupDialog(AppLocalizations l10n, {Map<String, dynamic>? group}) {
-    final nameCtrl = TextEditingController(text: group?['name'] ?? '');
-    final inCtrl = TextEditingController(text: (group?['input_price'] ?? 0.0).toString());
-    final outCtrl = TextEditingController(text: (group?['output_price'] ?? 0.0).toString());
-    final reqCtrl = TextEditingController(text: (group?['request_price'] ?? 0.0).toString());
-    String mode = group?['billing_mode'] ?? 'token';
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
-              DropdownButtonFormField<String>(
-                initialValue: mode,
-                items: const [
-                  DropdownMenuItem(value: 'token', child: Text('Token')),
-                  DropdownMenuItem(value: 'request', child: Text('Request')),
-                ],
-                onChanged: (v) => setDialogState(() => mode = v!),
-                decoration: InputDecoration(labelText: l10n.billingMode),
-              ),
-              TextField(controller: inCtrl, decoration: InputDecoration(labelText: l10n.inputPrice), keyboardType: TextInputType.number),
-              TextField(controller: outCtrl, decoration: InputDecoration(labelText: l10n.outputPrice), keyboardType: TextInputType.number),
-              TextField(controller: reqCtrl, decoration: InputDecoration(labelText: l10n.requestPrice), keyboardType: TextInputType.number),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            ElevatedButton(
-              onPressed: () async {
-                final data = {
-                  'name': nameCtrl.text,
-                  'billing_mode': mode,
-                  'input_price': double.tryParse(inCtrl.text) ?? 0.0,
-                  'output_price': double.tryParse(outCtrl.text) ?? 0.0,
-                  'request_price': double.tryParse(reqCtrl.text) ?? 0.0,
-                };
-                if (group == null) {
-                  await _db.addFeeGroup(data);
-                } else {
-                  await _db.updateFeeGroup(group['id'], data);
-                }
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  _loadData();
-                }
-              },
-              child: Text(l10n.save),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChannelsTab(AppLocalizations l10n) {
+  Widget _buildChannelsTab(AppLocalizations l10n, AppState appState) {
     return Scaffold(
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _channels.length,
+        itemCount: appState.allChannels.length,
         itemBuilder: (context, index) {
-          final channel = _channels[index];
+          final channel = appState.allChannels[index];
           return Card(
             child: ListTile(
               leading: (channel['tag'] != null && channel['tag'].toString().isNotEmpty)
@@ -396,11 +285,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => _showChannelDialog(l10n, channel: channel),
+                    onPressed: () => _showChannelDialog(l10n, appState, channel: channel),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _confirmDeleteChannel(l10n, channel),
+                    onPressed: () => _confirmDeleteChannel(l10n, channel, appState),
                   ),
                 ],
               ),
@@ -409,14 +298,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showChannelDialog(l10n),
+        onPressed: () => _showChannelDialog(l10n, appState),
         icon: const Icon(Icons.add),
         label: Text(l10n.addChannel),
       ),
     );
   }
 
-  void _showChannelDialog(AppLocalizations l10n, {Map<String, dynamic>? channel}) {
+  void _showChannelDialog(AppLocalizations l10n, AppState appState, {Map<String, dynamic>? channel}) {
     final nameCtrl = TextEditingController(text: channel?['display_name'] ?? '');
     final epCtrl = TextEditingController(text: channel?['endpoint'] ?? '');
     final keyCtrl = TextEditingController(text: channel?['api_key'] ?? '');
@@ -517,13 +406,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   'tag_color': tagColor,
                 };
                 if (channel == null) {
-                  await _db.addChannel(data);
+                  await appState.addChannel(data);
                 } else {
-                  await _db.updateChannel(channel['id'], data);
+                  await appState.updateChannel(channel['id'], data);
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
-                  _loadData();
                 }
               },
               child: Text(l10n.save),
@@ -535,7 +423,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _confirmDeleteChannel(AppLocalizations l10n, Map<String, dynamic> channel) {
+  void _confirmDeleteChannel(AppLocalizations l10n, Map<String, dynamic> channel, AppState appState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -546,10 +434,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _db.deleteChannel(channel['id']);
+              await appState.deleteChannel(channel['id']);
               if (context.mounted) {
                 Navigator.pop(context);
-                _loadData();
               }
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
@@ -559,11 +446,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _showModelDialog(AppLocalizations l10n, {Map<String, dynamic>? model, int? preChannelId}) {
+  void _showModelDialog(AppLocalizations l10n, AppState appState, {Map<String, dynamic>? model, int? preChannelId}) {
     final idCtrl = TextEditingController(text: model?['model_id'] ?? '');
     final nameCtrl = TextEditingController(text: model?['model_name'] ?? '');
     
-    int? channelId = model?['channel_id'] ?? preChannelId ?? (_channels.isNotEmpty ? _channels.first['id'] : null);
+    int? channelId = model?['channel_id'] ?? preChannelId ?? (appState.allChannels.isNotEmpty ? appState.allChannels.first['id'] : null);
     String tag = model?['tag'] ?? 'chat';
     int? feeGroupId = model?['fee_group_id'];
 
@@ -578,7 +465,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               children: [
                 DropdownButtonFormField<int>(
                   initialValue: channelId,
-                  items: _channels.map((c) => DropdownMenuItem(
+                  items: appState.allChannels.map((c) => DropdownMenuItem(
                     value: c['id'] as int,
                     child: Text(c['display_name']),
                   )).toList(),
@@ -604,7 +491,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   initialValue: feeGroupId,
                   items: [
                      DropdownMenuItem(value: null, child: Text(l10n.noFeeGroup, style: const TextStyle(color: Colors.grey))),
-                    ..._feeGroups.map((g) => DropdownMenuItem(
+                    ...appState.allFeeGroups.map((g) => DropdownMenuItem(
                       value: g['id'] as int, 
                       child: Text(g['name']),
                     )),
@@ -619,7 +506,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: channelId == null ? null : () async {
-                final channel = _channels.firstWhere((c) => c['id'] == channelId);
+                final channel = appState.allChannels.firstWhere((c) => c['id'] == channelId);
                 final data = {
                   'model_id': idCtrl.text,
                   'model_name': nameCtrl.text,
@@ -631,15 +518,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 };
                 
                 if (model == null) {
-                  data['sort_order'] = _models.length;
-                  await _db.addModel(data);
+                  data['sort_order'] = appState.allModels.length;
+                  await appState.addModel(data);
                 } else {
-                  await _db.updateModel(model['id'], data);
+                  await appState.updateModel(model['id'], data);
                 }
                 
                 if (context.mounted) {
                   Navigator.pop(context);
-                  _loadData();
                 }
               },
               child: Text(model == null ? l10n.add : l10n.save),
@@ -650,7 +536,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _showDiscoveryDialog(AppLocalizations l10n, Map<String, dynamic> channel) async {
+  void _showDiscoveryDialog(AppLocalizations l10n, Map<String, dynamic> channel, AppState appState) async {
     final type = channel['type'].contains('google') ? 'google-genai' : 'openai-api';
     
     final config = LLMModelConfig(
@@ -669,11 +555,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
       builder: (context) => _DiscoveryDialog(
         channel: channel,
         config: config,
-        existingModels: _models,
+        appState: appState,
         l10n: l10n,
-        onModelsAdded: () {
-          _loadData();
-        },
       ),
     );
   }
@@ -682,16 +565,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
 class _DiscoveryDialog extends StatefulWidget {
   final Map<String, dynamic> channel;
   final LLMModelConfig config;
-  final List<Map<String, dynamic>> existingModels;
+  final AppState appState;
   final AppLocalizations l10n;
-  final VoidCallback onModelsAdded;
 
   const _DiscoveryDialog({
     required this.channel,
     required this.config,
-    required this.existingModels,
+    required this.appState,
     required this.l10n,
-    required this.onModelsAdded,
   });
 
   @override
@@ -804,7 +685,7 @@ class _DiscoveryDialogState extends State<_DiscoveryDialog> {
                 itemCount: _filtered.length,
                 itemBuilder: (context, index) {
                   final m = _filtered[index];
-                  final bool isAdded = widget.existingModels.any((em) => 
+                  final bool isAdded = widget.appState.allModels.any((em) => 
                       em['model_id'] == m.modelId && 
                       em['channel_id'] == widget.channel['id']
                   );
@@ -840,20 +721,18 @@ class _DiscoveryDialogState extends State<_DiscoveryDialog> {
         if (!_isLoading && _error == null && _discovered.isNotEmpty)
           ElevatedButton(
             onPressed: _selectedIds.isEmpty ? null : () async {
-              final db = DatabaseService();
               for (var id in _selectedIds) {
                 final m = _discovered.firstWhere((dm) => dm.modelId == id);
-                await db.addModel({
+                await widget.appState.addModel({
                   'model_id': m.modelId,
                   'model_name': m.displayName,
                   'type': widget.config.type,
                   'tag': _inferTag(m),
                   'is_paid': 1,
-                  'sort_order': widget.existingModels.length,
+                  'sort_order': widget.appState.allModels.length,
                   'channel_id': widget.channel['id'],
                 });
               }
-              widget.onModelsAdded();
               if (context.mounted) Navigator.pop(context);
             },
             child: Text(l10n.addSelected(_selectedIds.length)),

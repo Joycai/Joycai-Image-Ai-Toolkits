@@ -31,8 +31,6 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
   
-  List<Map<String, dynamic>> _models = [];
-  List<Map<String, dynamic>> _channels = [];
   List<Map<String, dynamic>> _sysPrompts = [];
   
   int? _selectedModelPk;
@@ -56,20 +54,15 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
   Future<void> _loadData() async {
     try {
-      final allModels = await _db.getModels();
-      final channels = await _db.getChannels();
-      final refinerModels = allModels.where((m) => 
-        m['tag'] == 'chat' || m['tag'] == 'multimodal'
-      ).toList();
-      
+      final appState = Provider.of<AppState>(context, listen: false);
       final refinerPrompts = await _db.getSystemPrompts(type: 'refiner');
 
       if (mounted) {
         setState(() {
-          _models = refinerModels;
-          _channels = channels;
           _sysPrompts = refinerPrompts;
-          if (_models.isNotEmpty) _selectedModelPk = _models.first['id'] as int;
+          if (appState.chatModels.isNotEmpty) {
+            _selectedModelPk = appState.chatModels.first['id'] as int;
+          }
           if (_sysPrompts.isNotEmpty) _selectedSysPrompt = _sysPrompts.first['content'];
           _isLoadingData = false;
         });
@@ -155,19 +148,18 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Config Section
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildModelSelector(l10n),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSysPromptSelector(l10n),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                                  // Config Section
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildModelSelector(l10n, appState),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _buildSysPromptSelector(l10n),
+                                      ),
+                                    ],
+                                  ),                  const SizedBox(height: 24),
                   
                   // Prompts Section
                   Expanded(
@@ -243,7 +235,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
     );
   }
 
-  Widget _buildModelSelector(AppLocalizations l10n) {
+  Widget _buildModelSelector(AppLocalizations l10n, AppState appState) {
     return DropdownButtonFormField<int>(
       initialValue: _selectedModelPk,
       decoration: InputDecoration(
@@ -251,8 +243,8 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      items: _models.map((m) {
-        final channel = _channels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
+      items: appState.chatModels.map((m) {
+        final channel = appState.allChannels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
         return DropdownMenuItem(
           value: m['id'] as int,
           child: Row(

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../core/constants.dart';
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
@@ -28,12 +29,34 @@ class AppState extends ChangeNotifier {
 
   // Workbench configurations
   String? lastSelectedModelId;
-  String lastAspectRatio = "not_set";
-  String lastResolution = "1K";
+  AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
+  AppResolution lastResolution = AppResolution.r1K;
   String lastPrompt = "";
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
   bool isMarkdownRefinerTarget = true;
+
+  // Data cache
+  List<Map<String, dynamic>> _models = [];
+  List<Map<String, dynamic>> _channels = [];
+  List<Map<String, dynamic>> _feeGroups = [];
+
+  List<Map<String, dynamic>> get allModels => _models;
+  List<Map<String, dynamic>> get allChannels => _channels;
+  List<Map<String, dynamic>> get allFeeGroups => _feeGroups;
+
+  List<Map<String, dynamic>> get imageModels => _models.where((m) => 
+    m['tag'] == ModelTag.image.value || m['tag'] == ModelTag.multimodal.value
+  ).toList();
+
+  List<Map<String, dynamic>> get chatModels => _models.where((m) => 
+    m['tag'] == ModelTag.chat.value || m['tag'] == ModelTag.multimodal.value
+  ).toList();
+
+  List<Map<String, dynamic>> getModelsForChannel(int? channelId) {
+    if (channelId == null) return [];
+    return _models.where((m) => m['channel_id'] == channelId).toList();
+  }
 
   AppState() {
     loadSettings();
@@ -116,14 +139,18 @@ class AppState extends ChangeNotifier {
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
-    lastAspectRatio = await _db.getSetting('last_aspect_ratio') ?? "not_set";
-    lastResolution = await _db.getSetting('last_resolution') ?? "1K";
+    lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
+    lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
     isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
     isMarkdownRefinerTarget = (await _db.getSetting('is_markdown_refiner_target') ?? 'true') == 'true';
     
+    _models = await _db.getModels();
+    _channels = await _db.getChannels();
+    _feeGroups = await _db.getFeeGroups();
+
     settingsLoaded = true;
     notifyListeners();
   }
@@ -173,6 +200,68 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Model, Channel & Fee Group Management
+  Future<void> refreshDataCache() async {
+    _models = await _db.getModels();
+    _channels = await _db.getChannels();
+    _feeGroups = await _db.getFeeGroups();
+    notifyListeners();
+  }
+
+  Future<int> addChannel(Map<String, dynamic> channel) async {
+    final id = await _db.addChannel(channel);
+    await refreshDataCache();
+    return id;
+  }
+
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
+    await _db.updateChannel(id, channel);
+    await refreshDataCache();
+  }
+
+  Future<void> deleteChannel(int id) async {
+    await _db.deleteChannel(id);
+    await refreshDataCache();
+  }
+
+  Future<int> addModel(Map<String, dynamic> model) async {
+    final id = await _db.addModel(model);
+    await refreshDataCache();
+    return id;
+  }
+
+  Future<void> updateModel(int id, Map<String, dynamic> model) async {
+    await _db.updateModel(id, model);
+    await refreshDataCache();
+  }
+
+  Future<void> deleteModel(int id) async {
+    await _db.deleteModel(id);
+    await refreshDataCache();
+  }
+
+  Future<void> updateModelOrder(List<int> ids) async {
+    await _db.updateModelOrder(ids);
+    await refreshDataCache();
+  }
+
+  // Fee Group Management
+  Future<int> addFeeGroup(Map<String, dynamic> group) async {
+    final id = await _db.addFeeGroup(group);
+    await refreshDataCache();
+    return id;
+  }
+
+  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) async {
+    await _db.updateFeeGroup(id, group);
+    await refreshDataCache();
+  }
+
+  Future<void> deleteFeeGroup(int id) async {
+    await _db.deleteFeeGroup(id);
+    await refreshDataCache();
+  }
+
   Future<void> setIsMarkdownWorkbench(bool value) async {
     isMarkdownWorkbench = value;
     await _db.saveSetting('is_markdown_workbench', value.toString());
@@ -193,8 +282,8 @@ class AppState extends ChangeNotifier {
 
   Future<void> updateWorkbenchConfig({
     String? modelId,
-    String? aspectRatio,
-    String? resolution,
+    AppAspectRatio? aspectRatio,
+    AppResolution? resolution,
     String? prompt,
   }) async {
     if (modelId != null) {
@@ -203,11 +292,11 @@ class AppState extends ChangeNotifier {
     }
     if (aspectRatio != null) {
       lastAspectRatio = aspectRatio;
-      await _db.saveSetting('last_aspect_ratio', aspectRatio);
+      await _db.saveSetting('last_aspect_ratio', aspectRatio.value);
     }
     if (resolution != null) {
       lastResolution = resolution;
-      await _db.saveSetting('last_resolution', resolution);
+      await _db.saveSetting('last_resolution', resolution.value);
     }
     if (prompt != null) {
       lastPrompt = prompt;

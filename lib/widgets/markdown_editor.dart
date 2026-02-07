@@ -138,6 +138,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     }
 
     final content = Container(
+      width: double.infinity,
       height: widget.expand ? null : widget.maxLines * 24.0,
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),

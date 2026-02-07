@@ -14,7 +14,6 @@ class GalleryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     
     return DefaultTabController(
@@ -29,10 +28,14 @@ class GalleryWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(l10n.sourceGallery),
-                    if (appState.galleryImages.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _buildBadge(context, appState.galleryImages.length),
-                    ],
+                    Consumer<AppState>(
+                      builder: (context, state, _) => state.galleryImages.isNotEmpty 
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: _buildBadge(context, state.galleryImages.length),
+                          )
+                        : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),
@@ -41,21 +44,29 @@ class GalleryWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(l10n.processResults),
-                    if (appState.processedImages.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _buildBadge(context, appState.processedImages.length, isResult: true),
-                    ],
+                    Consumer<AppState>(
+                      builder: (context, state, _) => state.processedImages.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: _buildBadge(context, state.processedImages.length, isResult: true),
+                          )
+                        : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-          _buildToolbar(context, appState),
+          _buildToolbar(context),
           Expanded(
             child: TabBarView(
               children: [
-                _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
-                _buildImageGrid(context, appState.processedImages, appState, isResult: true),
+                Consumer<AppState>(
+                  builder: (context, state, _) => _buildImageGrid(context, state.galleryImages, state, isResult: false),
+                ),
+                Consumer<AppState>(
+                  builder: (context, state, _) => _buildImageGrid(context, state.processedImages, state, isResult: true),
+                ),
               ],
             ),
           ),
@@ -82,9 +93,12 @@ class GalleryWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildToolbar(BuildContext context, AppState appState) {
+  Widget _buildToolbar(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    
+    final selectedCount = context.select<AppState, int>((s) => s.selectedImages.length);
+    final thumbnailSize = context.select<AppState, double>((s) => s.thumbnailSize);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -97,17 +111,17 @@ class GalleryWidget extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              l10n.selectedCount(appState.selectedImages.length),
+              l10n.selectedCount(selectedCount),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(width: 16),
             TextButton.icon(
-              onPressed: appState.galleryState.selectAllImages,
+              onPressed: () => Provider.of<AppState>(context, listen: false).galleryState.selectAllImages(),
               icon: const Icon(Icons.select_all, size: 18),
               label: Text(l10n.selectAll),
             ),
             TextButton.icon(
-              onPressed: appState.selectedImages.isEmpty ? null : appState.galleryState.clearImageSelection,
+              onPressed: selectedCount == 0 ? null : () => Provider.of<AppState>(context, listen: false).galleryState.clearImageSelection(),
               icon: const Icon(Icons.deselect, size: 18),
               label: Text(l10n.clear),
             ),
@@ -123,10 +137,10 @@ class GalleryWidget extends StatelessWidget {
                   SizedBox(
                     width: 120,
                     child: Slider(
-                      value: appState.thumbnailSize,
+                      value: thumbnailSize,
                       min: 80,
                       max: 400,
-                      onChanged: (v) => appState.galleryState.setThumbnailSize(v),
+                      onChanged: (v) => Provider.of<AppState>(context, listen: false).galleryState.setThumbnailSize(v),
                     ),
                   ),
                   Icon(Icons.image, size: 20, color: colorScheme.outline),
@@ -138,7 +152,7 @@ class GalleryWidget extends StatelessWidget {
             
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
-              onPressed: appState.galleryState.refreshImages,
+              onPressed: () => Provider.of<AppState>(context, listen: false).galleryState.refreshImages(),
               tooltip: l10n.refresh,
             ),
           ],
@@ -147,7 +161,7 @@ class GalleryWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGrid(BuildContext context, List<File> images, AppState appState, {required bool isResult}) {
+  Widget _buildImageGrid(BuildContext context, List<File> images, AppState state, {required bool isResult}) {
     final l10n = AppLocalizations.of(context)!;
     if (images.isEmpty) {
       return Center(
@@ -168,7 +182,7 @@ class GalleryWidget extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: appState.thumbnailSize,
+        maxCrossAxisExtent: state.thumbnailSize,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         childAspectRatio: 1,
@@ -176,7 +190,7 @@ class GalleryWidget extends StatelessWidget {
       itemCount: images.length,
       itemBuilder: (context, index) {
         final imageFile = images[index];
-        final isSelected = appState.selectedImages.any((img) => img.path == imageFile.path);
+        final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
         
         return _ImageCard(
           imageFile: imageFile,
@@ -186,7 +200,7 @@ class GalleryWidget extends StatelessWidget {
             if (isResult) {
               _showPreviewDialog(context, images, index);
             } else {
-              appState.galleryState.toggleImageSelection(imageFile);
+              state.galleryState.toggleImageSelection(imageFile);
             }
           },
         );

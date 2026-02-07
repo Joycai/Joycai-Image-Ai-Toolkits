@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/markdown_editor.dart';
+import '../../widgets/prompt_card.dart';
 import '../../widgets/refiner_panel.dart';
 
 class ControlPanelWidget extends StatefulWidget {
@@ -21,12 +22,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   final TextEditingController _prefixController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   
-  List<Map<String, dynamic>> _availableModels = [];
-  List<Map<String, dynamic>> _channels = [];
   int? _selectedChannelId;
   int? _selectedModelPk;
-  String _aspectRatio = "not_set";
-  String _resolution = "1K";
+  AppAspectRatio _aspectRatio = AppAspectRatio.notSet;
+  AppResolution _resolution = AppResolution.r1K;
   bool _isModelSettingsExpanded = false;
 
   Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
@@ -36,7 +35,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   @override
   void initState() {
     super.initState();
-    _loadModels();
     _loadPrompts();
     
     // Listen to AppState changes for external updates (e.g. import, reset)
@@ -87,10 +85,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     }
 
     // Sync model selection
-    if (_availableModels.isNotEmpty) {
+    final availableModels = appState.imageModels;
+    if (availableModels.isNotEmpty) {
       final savedModelId = appState.lastSelectedModelId;
       // Try match by PK first (int string), then by model_id string
-      final match = _availableModels.firstWhere(
+      final match = availableModels.firstWhere(
         (m) => m['id'].toString() == savedModelId || m['model_id'] == savedModelId,
         orElse: () => {},
       );
@@ -99,45 +98,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         _selectedModelPk = match['id'] as int;
         _selectedChannelId = match['channel_id'] as int?;
         changed = true;
+      } else if (match.isEmpty && _selectedModelPk == null) {
+        // Default to first if nothing selected/matched
+        final first = availableModels.first;
+        _selectedModelPk = first['id'] as int;
+        _selectedChannelId = first['channel_id'] as int?;
+        changed = true;
       }
     }
 
     if (changed) {
       setState(() {});
     }
-  }
-
-  Future<void> _loadModels() async {
-    final allModels = await _db.getModels();
-    final channels = await _db.getChannels();
-    
-    final filtered = allModels.where((m) => 
-      m['tag'] == 'image' || m['tag'] == 'multimodal'
-    ).toList();
-    
-    setState(() {
-      _availableModels = filtered;
-      _channels = channels;
-      
-      // Validate currently selected model and channel
-      if (_selectedModelPk != null) {
-        final currentModel = filtered.cast<Map<String, dynamic>?>().firstWhere(
-          (m) => m?['id'] == _selectedModelPk,
-          orElse: () => null,
-        );
-        if (currentModel == null) {
-          _selectedModelPk = null;
-        } else {
-          _selectedChannelId = currentModel['channel_id'] as int?;
-        }
-      }
-
-      if (filtered.isNotEmpty && _selectedModelPk == null) {
-        final first = filtered.first;
-        _selectedModelPk = first['id'] as int;
-        _selectedChannelId = first['channel_id'] as int?;
-      }
-    });
   }
 
   Future<void> _loadPrompts() async {
@@ -158,7 +130,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     });
   }
 
-  void _updateConfig({int? modelPk, String? modelIdStr, String? ar, String? res, String? prompt}) {
+  void _updateConfig({int? modelPk, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt}) {
     final appState = Provider.of<AppState>(context, listen: false);
     
     String? idToSave;
@@ -176,20 +148,24 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    // Select only what's needed for the main build
+    final imageModels = context.select<AppState, List<Map<String, dynamic>>>((s) => s.imageModels);
+    final allChannels = context.select<AppState, List<Map<String, dynamic>>>((s) => s.allChannels);
+    final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
     
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    final filteredModels = _availableModels.where((m) => m['channel_id'] == _selectedChannelId).toList();
-    
     return Container(
       width: 350,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSelectionPreview(appState, colorScheme, l10n),
+          // Use a Consumer or Selector for the selection preview to isolate its rebuilds
+          Consumer<AppState>(
+            builder: (context, appState, child) => _buildSelectionPreview(appState, colorScheme, l10n),
+          ),
           const Divider(height: 32),
           
           Expanded(
@@ -197,91 +173,43 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Custom Collapsible Header
-                  InkWell(
-                    onTap: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _isModelSettingsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                            size: 20,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                if (!_isModelSettingsExpanded && _selectedModelPk != null)
-                                  Text(
-                                    _availableModels.firstWhere((m) => m['id'] == _selectedModelPk)['model_name'],
-                                    style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Collapsible Content
-                  if (_isModelSettingsExpanded) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                              _buildChannelDropdown(colorScheme, l10n),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                              DropdownButton<int>(
-                                isExpanded: true,
-                                value: (filteredModels.any((m) => m['id'] == _selectedModelPk)) 
-                                    ? _selectedModelPk 
-                                    : null,
-                                hint: Text(l10n.selectAModel),
-                                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
-                                underline: Container(height: 1, color: colorScheme.outlineVariant),
-                                items: filteredModels.map((m) => DropdownMenuItem(
-                                  value: m['id'] as int,
-                                  child: Text(m['model_name']),
-                                )).toList(),
-                                onChanged: (val) {
-                                  setState(() => _selectedModelPk = val);
-                                  _updateConfig(modelPk: val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_selectedModelPk != null)
-                      Builder(
-                        builder: (context) {
-                          final model = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk, orElse: () => {});
-                          if (model.isNotEmpty) {
-                            return _buildModelSpecificOptions(model['model_id'] as String, l10n);
-                          }
-                          return const SizedBox.shrink();
+                  // Model Selection Section
+                  ModelSelectionSection(
+                    availableModels: imageModels,
+                    channels: allChannels,
+                    selectedChannelId: _selectedChannelId,
+                    selectedModelPk: _selectedModelPk,
+                    aspectRatio: _aspectRatio,
+                    resolution: _resolution,
+                    isExpanded: _isModelSettingsExpanded,
+                    onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
+                    onChannelChanged: (val) {
+                      setState(() {
+                        _selectedChannelId = val;
+                        final appState = Provider.of<AppState>(context, listen: false);
+                        final firstInChannel = appState.getModelsForChannel(val).cast<Map<String, dynamic>?>().firstWhere(
+                          (m) => m != null,
+                          orElse: () => null,
+                        );
+                        _selectedModelPk = firstInChannel?['id'] as int?;
+                        if (_selectedModelPk != null) {
+                          _updateConfig(modelPk: _selectedModelPk);
                         }
-                      ),
-                  ],
+                      });
+                    },
+                    onModelChanged: (val) {
+                      setState(() => _selectedModelPk = val);
+                      _updateConfig(modelPk: val);
+                    },
+                    onAspectRatioChanged: (v) {
+                      setState(() => _aspectRatio = v);
+                      _updateConfig(ar: v);
+                    },
+                    onResolutionChanged: (v) {
+                      setState(() => _resolution = v);
+                      _updateConfig(res: v);
+                    },
+                  ),
 
                   const Divider(height: 24),
                   
@@ -296,7 +224,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextButton.icon(
-                            onPressed: () => _showRefinerDialog(appState, l10n),
+                            onPressed: () => _showRefinerDialog(Provider.of<AppState>(context, listen: false), l10n),
                             icon: const Icon(Icons.auto_fix_high, size: 14),
                             label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
                             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -307,20 +235,15 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _promptController,
-                    builder: (context, value, child) {
-                      return MarkdownEditor(
-                        controller: _promptController,
-                        label: l10n.prompt,
-                        isMarkdown: appState.isMarkdownWorkbench,
-                        onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
-                        maxLines: 15,
-                        initiallyPreview: false,
-                        hint: l10n.promptHint,
-                        onChanged: (v) => _updateConfig(prompt: v),
-                      );
-                    },
+                  MarkdownEditor(
+                    controller: _promptController,
+                    label: l10n.prompt,
+                    isMarkdown: isMarkdownWorkbench,
+                    onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+                    maxLines: 15,
+                    initiallyPreview: false,
+                    hint: l10n.promptHint,
+                    onChanged: (v) => _updateConfig(prompt: v),
                   ),
                   const SizedBox(height: 8),
 
@@ -330,7 +253,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           ),
           
           const Divider(),
-          _buildQueueStatus(appState, colorScheme, l10n),
+          // Isolate Queue Status Rebuilds
+          Consumer<AppState>(
+            builder: (context, appState, child) => _buildQueueStatus(appState, colorScheme, l10n),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -340,31 +266,33 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: (_promptController.text.isEmpty || _selectedModelPk == null) 
-                      ? null 
-                      : () {
-                          final selectedModel = _availableModels.firstWhere((m) => m['id'] == _selectedModelPk);
-                          final modelName = selectedModel['model_name'] as String;
-                          
-                          appState.submitTask(_selectedModelPk!, {
-                            'prompt': _promptController.text,
-                            'aspectRatio': _aspectRatio,
-                            'imageSize': _resolution,
-                          }, modelIdDisplay: modelName);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.taskSubmitted),
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              width: 250,
-                            ),
-                          );
-                        },
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(appState.selectedImages.isEmpty 
-                      ? l10n.processPrompt 
-                      : l10n.processImages(appState.selectedImages.length)),
+                child: Consumer<AppState>(
+                  builder: (context, appState, child) => FilledButton.icon(
+                    onPressed: (_promptController.text.isEmpty || _selectedModelPk == null) 
+                        ? null 
+                        : () {
+                            final selectedModel = appState.imageModels.firstWhere((m) => m['id'] == _selectedModelPk);
+                            final modelName = selectedModel['model_name'] as String;
+                            
+                            appState.submitTask(_selectedModelPk!, {
+                              'prompt': _promptController.text,
+                              'aspectRatio': _aspectRatio.value,
+                              'imageSize': _resolution.value,
+                            }, modelIdDisplay: modelName);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.taskSubmitted),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                width: 250,
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text(appState.selectedImages.isEmpty 
+                        ? l10n.processPrompt 
+                        : l10n.processImages(appState.selectedImages.length)),
+                  ),
                 ),
               ),
             ],
@@ -404,53 +332,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           Text(l10n.plannedCount(pendingCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
         ],
       ),
-    );
-  }
-
-  Widget _buildChannelDropdown(ColorScheme colorScheme, AppLocalizations l10n) {
-    return DropdownButton<int>(
-      isExpanded: true,
-      value: _selectedChannelId,
-      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
-      underline: Container(height: 1, color: colorScheme.outlineVariant),
-      items: _channels.map((c) => DropdownMenuItem<int>(
-        value: c['id'] as int,
-        child: Row(
-          children: [
-            if (c['tag'] != null)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Color(c['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  c['tag'],
-                  style: TextStyle(
-                    fontSize: 9, 
-                    color: Color(c['tag_color'] ?? 0xFF607D8B),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-      )).toList(),
-      onChanged: (val) {
-        setState(() {
-          _selectedChannelId = val;
-          final firstInChannel = _availableModels.cast<Map<String, dynamic>?>().firstWhere(
-            (m) => m != null && m['channel_id'] == val,
-            orElse: () => null,
-          );
-          _selectedModelPk = firstInChannel?['id'] as int?;
-          if (_selectedModelPk != null) {
-            _updateConfig(modelPk: _selectedModelPk);
-          }
-        });
-      },
     );
   }
 
@@ -495,69 +376,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         },
       ),
     );
-  }
-
-  Widget _buildModelSpecificOptions(String modelId, AppLocalizations l10n) {
-    if (modelId.contains('image') || modelId.contains('pro')) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(l10n.aspectRatio, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _aspectRatio,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
-                    underline: Container(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
-                    items: ["not_set", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"]
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                    onChanged: (v) {
-                      setState(() => _aspectRatio = v!);
-                      _updateConfig(ar: v);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(l10n.resolution, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: SegmentedButton<String>(
-                    showSelectedIcon: false,
-                    style: SegmentedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      textStyle: const TextStyle(fontSize: 10),
-                    ),
-                    segments: const [
-                      ButtonSegment(value: '1K', label: Text('1K')),
-                      ButtonSegment(value: '2K', label: Text('2K')),
-                      ButtonSegment(value: '4K', label: Text('4K')),
-                    ],
-                    selected: {_resolution},
-                    onSelectionChanged: (v) {
-                      setState(() => _resolution = v.first);
-                      _updateConfig(res: v.first);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
   }
 
   Widget _buildSelectionPreview(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
@@ -707,6 +525,7 @@ class _LibraryDialogState extends State<_LibraryDialog> {
   String? _selectedCategory;
   late TextEditingController _draftController;
   bool _isMarkdown = true;
+  final Set<int> _expandedPromptIds = {};
 
   @override
   void initState() {
@@ -824,79 +643,41 @@ class _LibraryDialogState extends State<_LibraryDialog> {
                         Expanded(
                           child: currentPrompts.isEmpty 
                           ? Center(child: Text(l10n.noPromptsSaved)) 
-                          : GridView.builder(
+                          : ListView.separated(
                             padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 350,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 1.8,
-                            ),
                             itemCount: currentPrompts.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final p = currentPrompts[index];
-                              return Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p['title'],
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Expanded(
-                                        child: p['is_markdown'] == 1
-                                          ? Container(
-                                              clipBehavior: Clip.antiAlias,
-                                              decoration: const BoxDecoration(),
-                                              child: SelectionArea(
-                                                child: SingleChildScrollView(
-                                                  child: MarkdownBody(
-                                                    data: p['content'],
-                                                    styleSheet: MarkdownStyleSheet(
-                                                      p: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : Text(
-                                              p['content'],
-                                              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                                              overflow: TextOverflow.fade,
-                                            ),
-                                      ),
-                                      const Divider(height: 16),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          TextButton.icon(
-                                            onPressed: () => setState(() => _draftController.text = p['content']),
-                                            icon: const Icon(Icons.find_replace, size: 14),
-                                            label: const Text("Replace", style: TextStyle(fontSize: 10)),
-                                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          FilledButton.icon(
-                                            onPressed: () => setState(() => _appendToDraft(p['content'])),
-                                            icon: const Icon(Icons.add, size: 14),
-                                            label: const Text("Append", style: TextStyle(fontSize: 10)),
-                                            style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                              final id = p['id'] as int;
+                              final isExpanded = _expandedPromptIds.contains(id);
+
+                              return PromptCard(
+                                prompt: p,
+                                isExpanded: isExpanded,
+                                onToggle: () => setState(() {
+                                  if (isExpanded) {
+                                    _expandedPromptIds.remove(id);
+                                  } else {
+                                    _expandedPromptIds.add(id);
+                                  }
+                                }),
+                                showCategory: false,
+                                actions: [
+                                  TextButton.icon(
+                                    onPressed: () => setState(() => _draftController.text = p['content']),
+                                    icon: const Icon(Icons.find_replace, size: 14),
+                                    label: const Text("Replace", style: TextStyle(fontSize: 10)),
+                                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                   ),
-                                ),
+                                  const SizedBox(width: 4),
+                                  FilledButton.icon(
+                                    onPressed: () => setState(() => _appendToDraft(p['content'])),
+                                    icon: const Icon(Icons.add, size: 14),
+                                    label: const Text("Append", style: TextStyle(fontSize: 10)),
+                                    style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                                  ),
+                                ],
                               );
                             },
                           ),
@@ -965,5 +746,221 @@ class _LibraryDialogState extends State<_LibraryDialog> {
         ),
       ),
     );
+  }
+}
+
+class ModelSelectionSection extends StatelessWidget {
+  final List<Map<String, dynamic>> availableModels;
+  final List<Map<String, dynamic>> channels;
+  final int? selectedChannelId;
+  final int? selectedModelPk;
+  final AppAspectRatio aspectRatio;
+  final AppResolution resolution;
+  final bool isExpanded;
+  final VoidCallback onToggleExpansion;
+  final ValueChanged<int?> onChannelChanged;
+  final ValueChanged<int?> onModelChanged;
+  final ValueChanged<AppAspectRatio> onAspectRatioChanged;
+  final ValueChanged<AppResolution> onResolutionChanged;
+
+  const ModelSelectionSection({
+    super.key,
+    required this.availableModels,
+    required this.channels,
+    required this.selectedChannelId,
+    required this.selectedModelPk,
+    required this.aspectRatio,
+    required this.resolution,
+    required this.isExpanded,
+    required this.onToggleExpansion,
+    required this.onChannelChanged,
+    required this.onModelChanged,
+    required this.onAspectRatioChanged,
+    required this.onResolutionChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final filteredModels = availableModels.where((m) => m['channel_id'] == selectedChannelId).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Custom Collapsible Header
+        InkWell(
+          onTap: onToggleExpansion,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      if (!isExpanded && selectedModelPk != null)
+                        Text(
+                          availableModels.firstWhere((m) => m['id'] == selectedModelPk)['model_name'],
+                          style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Collapsible Content
+        if (isExpanded) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    _buildChannelDropdown(colorScheme),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    DropdownButton<int>(
+                      isExpanded: true,
+                      value: (filteredModels.any((m) => m['id'] == selectedModelPk)) 
+                          ? selectedModelPk 
+                          : null,
+                      hint: Text(l10n.selectAModel),
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                      underline: Container(height: 1, color: colorScheme.outlineVariant),
+                      items: filteredModels.map((m) => DropdownMenuItem(
+                        value: m['id'] as int,
+                        child: Text(m['model_name']),
+                      )).toList(),
+                      onChanged: onModelChanged,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (selectedModelPk != null)
+            Builder(
+              builder: (context) {
+                final model = availableModels.firstWhere((m) => m['id'] == selectedModelPk, orElse: () => {});
+                if (model.isNotEmpty) {
+                  return _buildModelSpecificOptions(context, model['model_id'] as String, l10n);
+                }
+                return const SizedBox.shrink();
+              }
+            ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildChannelDropdown(ColorScheme colorScheme) {
+    return DropdownButton<int>(
+      isExpanded: true,
+      value: selectedChannelId,
+      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+      underline: Container(height: 1, color: colorScheme.outlineVariant),
+      items: channels.map((c) => DropdownMenuItem<int>(
+        value: c['id'] as int,
+        child: Row(
+          children: [
+            if (c['tag'] != null)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Color(c['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  c['tag'],
+                  style: TextStyle(
+                    fontSize: 9, 
+                    color: Color(c['tag_color'] ?? 0xFF607D8B),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      )).toList(),
+      onChanged: onChannelChanged,
+    );
+  }
+
+  Widget _buildModelSpecificOptions(BuildContext context, String modelId, AppLocalizations l10n) {
+    if (modelId.contains('image') || modelId.contains('pro')) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(l10n.aspectRatio, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: DropdownButton<AppAspectRatio>(
+                    isExpanded: true,
+                    value: aspectRatio,
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                    underline: Container(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+                    items: AppAspectRatio.values
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e.value))).toList(),
+                    onChanged: (v) => onAspectRatioChanged(v!),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(l10n.resolution, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: SegmentedButton<AppResolution>(
+                    showSelectedIcon: false,
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      textStyle: const TextStyle(fontSize: 10),
+                    ),
+                    segments: AppResolution.values.map((r) => 
+                      ButtonSegment(value: r, label: Text(r.value))
+                    ).toList(),
+                    selected: {resolution},
+                    onSelectionChanged: (v) => onResolutionChanged(v.first),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }

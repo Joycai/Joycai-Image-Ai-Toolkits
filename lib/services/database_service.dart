@@ -364,108 +364,107 @@ class DatabaseService {
     };
   }
 
+  Future<void> clearAllData(DatabaseExecutor txn) async {
+    await txn.delete('settings');
+    await txn.delete('llm_channels');
+    await txn.delete('llm_models');
+    await txn.delete('prompt_tags');
+    await txn.delete('prompts');
+    await txn.delete('system_prompts');
+    await txn.delete('fee_groups');
+    await txn.delete('source_directories');
+  }
+
   Future<void> restoreBackup(Map<String, dynamic> data) async {
     final db = await database;
     await db.transaction((txn) async {
-      // 1. Clear existing data
-      await txn.delete('settings');
-      await txn.delete('llm_channels');
-      await txn.delete('llm_models');
-      await txn.delete('prompt_tags');
-      await txn.delete('prompts');
-      await txn.delete('system_prompts');
-      await txn.delete('fee_groups');
-      await txn.delete('source_directories');
+      await clearAllData(txn);
 
-      // 2. Import Settings
-      if (data['settings'] != null) {
-        for (var s in data['settings']) {
-          await txn.insert('settings', s);
-        }
-      }
-
-      // 3. Import Channels and Map IDs
-      final Map<int, int> channelIdMap = {};
-      if (data['llm_channels'] != null) {
-        for (var c in data['llm_channels']) {
-          final oldId = c['id'] as int;
-          final Map<String, dynamic> row = Map.from(c)..remove('id');
-          final newId = await txn.insert('llm_channels', row);
-          channelIdMap[oldId] = newId;
-        }
-      }
-
-      // 4. Import Fee Groups and Map IDs
-      final Map<int, int> feeGroupIdMap = {};
-      if (data['fee_groups'] != null) {
-        for (var g in data['fee_groups']) {
-          final oldId = g['id'] as int;
-          final Map<String, dynamic> row = Map.from(g)..remove('id');
-          final newId = await txn.insert('fee_groups', row);
-          feeGroupIdMap[oldId] = newId;
-        }
-      }
-
-      // 5. Import Models with mapped IDs
-      if (data['llm_models'] != null) {
-        for (var m in data['llm_models']) {
-          final Map<String, dynamic> row = Map.from(m)..remove('id');
-          if (row['channel_id'] != null) {
-            row['channel_id'] = channelIdMap[row['channel_id']];
-          }
-          if (row['fee_group_id'] != null) {
-            row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
-          }
-          await txn.insert('llm_models', row);
-        }
-      }
-
-      // 6. Import Prompt Tags and Map IDs
-      final Map<int, int> tagIdMap = {};
-      if (data['prompt_tags'] != null) {
-        for (var t in data['prompt_tags']) {
-          final oldId = t['id'] as int;
-          final Map<String, dynamic> row = Map.from(t)..remove('id');
-          // Handle potential unique constraint conflicts for Refiner/General
-          try {
-            final newId = await txn.insert('prompt_tags', row);
-            tagIdMap[oldId] = newId;
-          } catch (e) {
-            // If exists, find the ID
-            final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
-            if (existing.isNotEmpty) {
-              tagIdMap[oldId] = existing.first['id'] as int;
-            }
-          }
-        }
-      }
-
-      // 7. Import Prompts with mapped IDs
-      if (data['prompts'] != null) {
-        for (var p in data['prompts']) {
-          final Map<String, dynamic> row = Map.from(p)..remove('id');
-          // Important: handle tag_id mapping
-          if (row['tag_id'] != null) {
-            row['tag_id'] = tagIdMap[row['tag_id']];
-          }
-          await txn.insert('prompts', row);
-        }
-      }
-
-      // 8. Import System Prompts
-      if (data['system_prompts'] != null) {
-        for (var sp in data['system_prompts']) {
-          final Map<String, dynamic> row = Map.from(sp)..remove('id');
-          await txn.insert('system_prompts', row);
-        }
-      }
-
-      // 9. Import Source Directories
-      if (data['source_directories'] != null) {
-        for (var d in data['source_directories']) {
-          await txn.insert('source_directories', d);
-        }
-      }
+      final channelIdMap = await _importChannels(txn, data['llm_channels']);
+      final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
+      await _importModels(txn, data['llm_models'], channelIdMap, feeGroupIdMap);
+      
+      final tagIdMap = await _importPromptTags(txn, data['prompt_tags']);
+      await _importPrompts(txn, data['prompts'], tagIdMap);
+      
+      await _importSimpleTable(txn, 'settings', data['settings']);
+      await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
+      await _importSimpleTable(txn, 'source_directories', data['source_directories']);
     });
+  }
+
+  Future<void> _importSimpleTable(DatabaseExecutor txn, String table, List<dynamic>? rows) async {
+    if (rows == null || rows.isEmpty) return;
+    final batch = txn.batch();
+    for (var row in rows) {
+      batch.insert(table, row as Map<String, dynamic>);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<Map<int, int>> _importChannels(DatabaseExecutor txn, List<dynamic>? rows) async {
+    final Map<int, int> idMap = {};
+    if (rows == null) return idMap;
+    for (var c in rows) {
+      final oldId = c['id'] as int;
+      final Map<String, dynamic> row = Map.from(c)..remove('id');
+      final newId = await txn.insert('llm_channels', row);
+      idMap[oldId] = newId;
+    }
+    return idMap;
+  }
+
+  Future<Map<int, int>> _importFeeGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
+    final Map<int, int> idMap = {};
+    if (rows == null) return idMap;
+    for (var g in rows) {
+      final oldId = g['id'] as int;
+      final Map<String, dynamic> row = Map.from(g)..remove('id');
+      final newId = await txn.insert('fee_groups', row);
+      idMap[oldId] = newId;
+    }
+    return idMap;
+  }
+
+  Future<void> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> feeGroupIdMap) async {
+    if (rows == null) return;
+    final batch = txn.batch();
+    for (var m in rows) {
+      final Map<String, dynamic> row = Map.from(m)..remove('id');
+      if (row['channel_id'] != null) row['channel_id'] = channelIdMap[row['channel_id']];
+      if (row['fee_group_id'] != null) row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
+      batch.insert('llm_models', row);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<Map<int, int>> _importPromptTags(DatabaseExecutor txn, List<dynamic>? rows) async {
+    final Map<int, int> idMap = {};
+    if (rows == null) return idMap;
+    for (var t in rows) {
+      final oldId = t['id'] as int;
+      final Map<String, dynamic> row = Map.from(t)..remove('id');
+      try {
+        final newId = await txn.insert('prompt_tags', row);
+        idMap[oldId] = newId;
+      } catch (e) {
+        final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+        if (existing.isNotEmpty) {
+          idMap[oldId] = existing.first['id'] as int;
+        }
+      }
+    }
+    return idMap;
+  }
+
+  Future<void> _importPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
+    if (rows == null) return;
+    final batch = txn.batch();
+    for (var p in rows) {
+      final Map<String, dynamic> row = Map.from(p)..remove('id');
+      if (row['tag_id'] != null) row['tag_id'] = tagIdMap[row['tag_id']];
+      batch.insert('prompts', row);
+    }
+    await batch.commit(noResult: true);
   }
 }

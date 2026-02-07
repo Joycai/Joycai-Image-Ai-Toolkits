@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../widgets/markdown_editor.dart';
+import '../../widgets/prompt_card.dart';
 
 class PromptsScreen extends StatefulWidget {
   const PromptsScreen({super.key});
@@ -142,8 +142,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return _buildEmptyState(l10n, false);
     }
     
-    final colorScheme = Theme.of(context).colorScheme;
-
     return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
@@ -168,109 +166,43 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         final id = prompt['id'] as int;
         final isExpanded = _expandedPromptIds.contains(id);
 
-        return Card(
+        return Padding(
           key: ValueKey('user_$id'),
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () => setState(() {
-                  if (isExpanded) {
-                    _expandedPromptIds.remove(id);
-                  } else {
-                    _expandedPromptIds.add(id);
-                  }
-                }),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      if (_searchQuery.isEmpty)
-                        ReorderableDragStartListener(
-                          index: index,
-                          child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
-                        ),
-                      if (_searchQuery.isEmpty) const SizedBox(width: 12),
-                      Icon(
-                        isExpanded ? Icons.expand_more : Icons.chevron_right,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          prompt['title'],
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                      ),
-                      _buildCategoryTag(prompt['tag_name'] ?? 'General', prompt['tag_color']),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.copy_all, size: 18),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: prompt['content']));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        onPressed: () => _showPromptDialog(l10n, prompt: prompt),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                        onPressed: () => _confirmDelete(l10n, prompt, isSystem: false),
-                      ),
-                    ],
-                  ),
-                ),
+          padding: const EdgeInsets.only(bottom: 12),
+          child: PromptCard(
+            prompt: prompt,
+            isExpanded: isExpanded,
+            onToggle: () => setState(() {
+              if (isExpanded) {
+                _expandedPromptIds.remove(id);
+              } else {
+                _expandedPromptIds.add(id);
+              }
+            }),
+            leading: _searchQuery.isEmpty
+                ? ReorderableDragStartListener(
+                    index: index,
+                    child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
+                  )
+                : null,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.copy_all, size: 18),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: prompt['content']));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                  );
+                },
               ),
-              if (isExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(48, 0, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      prompt['is_markdown'] == 1
-                          ? SelectionArea(child: MarkdownBody(data: prompt['content']))
-                          : SelectionArea(
-                              child: Text(
-                                prompt['content'],
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colorScheme.onSurfaceVariant,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                    ],
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(left: 48.0, bottom: 12, right: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      prompt['content'].toString().replaceAll('\n', ' '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.outline,
-                      ),
-                    ),
-                  ),
-                ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => _showPromptDialog(l10n, prompt: prompt),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                onPressed: () => _confirmDelete(l10n, prompt, isSystem: false),
+              ),
             ],
           ),
         );
@@ -283,8 +215,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return _buildEmptyState(l10n, true);
     }
     
-    final colorScheme = Theme.of(context).colorScheme;
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
@@ -293,103 +223,39 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         final id = prompt['id'] as int;
         final isExpanded = _expandedSysPromptIds.contains(id);
 
-        return Card(
+        return Padding(
           key: ValueKey('sys_$id'),
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () => setState(() {
-                  if (isExpanded) {
-                    _expandedSysPromptIds.remove(id);
-                  } else {
-                    _expandedSysPromptIds.add(id);
-                  }
-                }),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
-                      const SizedBox(width: 12),
-                      Icon(
-                        isExpanded ? Icons.expand_more : Icons.chevron_right,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          prompt['title'],
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.copy_all, size: 18),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: prompt['content']));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        onPressed: () => _showSystemPromptDialog(l10n, prompt: prompt),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                        onPressed: () => _confirmDelete(l10n, prompt, isSystem: true),
-                      ),
-                    ],
-                  ),
-                ),
+          padding: const EdgeInsets.only(bottom: 12),
+          child: PromptCard(
+            prompt: prompt,
+            isExpanded: isExpanded,
+            onToggle: () => setState(() {
+              if (isExpanded) {
+                _expandedSysPromptIds.remove(id);
+              } else {
+                _expandedSysPromptIds.add(id);
+              }
+            }),
+            leading: const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
+            showCategory: false,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.copy_all, size: 18),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: prompt['content']));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                  );
+                },
               ),
-              if (isExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(48, 0, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      prompt['is_markdown'] == 1
-                          ? SelectionArea(child: MarkdownBody(data: prompt['content']))
-                          : SelectionArea(
-                              child: Text(
-                                prompt['content'],
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colorScheme.onSurfaceVariant,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                    ],
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(left: 48.0, bottom: 12, right: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      prompt['content'].toString().replaceAll('\n', ' '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.outline,
-                      ),
-                    ),
-                  ),
-                ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: () => _showSystemPromptDialog(l10n, prompt: prompt),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                onPressed: () => _confirmDelete(l10n, prompt, isSystem: true),
+              ),
             ],
           ),
         );
@@ -432,22 +298,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         onPressed: () => _showTagDialog(l10n),
         icon: const Icon(Icons.add_circle_outline),
         label: Text(l10n.addCategory),
-      ),
-    );
-  }
-
-  Widget _buildCategoryTag(String tag, int? tagColor) {
-    final color = tagColor != null ? Color(tagColor) : Colors.blueGrey;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        tag.toUpperCase(),
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
       ),
     );
   }
