@@ -382,6 +382,7 @@
   "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
   "cookieHistory": "Cookie 历史",
   "noCookieHistory": "未保存 Cookie 历史",
+  "openInPreview": "在预览窗口打开",
   "enableNotifications": "启用系统通知",
   "taskCompletedNotification": "任务已完成",
   "taskFailedNotification": "任务失败",

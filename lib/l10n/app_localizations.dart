@@ -1550,6 +1550,12 @@ abstract class AppLocalizations {
   /// **'No cookie history saved'**
   String get noCookieHistory;
 
+  /// No description provided for @openInPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Preview'**
+  String get openInPreview;
+
   /// No description provided for @enableNotifications.
   ///
   /// In en, this message translates to:

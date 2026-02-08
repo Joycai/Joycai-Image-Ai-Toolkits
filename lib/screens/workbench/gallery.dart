@@ -510,10 +510,22 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
 
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context, listen: false);
+
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
       items: [
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.open_in_new, size: 18),
+            title: Text(l10n.openInPreview),
+            dense: true,
+          ),
+          onTap: () {
+            appState.openFloatingPreview(widget.imageFile.path);
+          },
+        ),
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.copy, size: 18),

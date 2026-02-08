@@ -382,6 +382,7 @@
   "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
+  "openInPreview": "Open in Preview",
   "enableNotifications": "Enable System Notifications",
   "taskCompletedNotification": "Task Completed",
   "taskFailedNotification": "Task Failed",

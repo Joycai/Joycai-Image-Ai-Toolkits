@@ -14,11 +14,59 @@ import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
 
+class PreviewWindowState {
+  final String id;
+  final String imagePath;
+  Offset position;
+  Size size;
+
+  PreviewWindowState({
+    required this.id,
+    required this.imagePath,
+    this.position = const Offset(100, 100),
+    this.size = const Size(400, 300),
+  });
+}
+
 class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
+
+  final List<PreviewWindowState> floatingPreviews = [];
+
+  void openFloatingPreview(String path) {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    // Offset each new window slightly
+    final offset = Offset(
+      100.0 + (floatingPreviews.length % 5) * 30,
+      100.0 + (floatingPreviews.length % 5) * 30,
+    );
+    floatingPreviews.add(PreviewWindowState(id: id, imagePath: path, position: offset));
+    notifyListeners();
+  }
+
+  void closeFloatingPreview(String id) {
+    floatingPreviews.removeWhere((p) => p.id == id);
+    notifyListeners();
+  }
+
+  void updateFloatingPreviewPosition(String id, Offset newPosition) {
+    final index = floatingPreviews.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      floatingPreviews[index].position = newPosition;
+      notifyListeners();
+    }
+  }
+
+  void updateFloatingPreviewSize(String id, Size newSize) {
+    final index = floatingPreviews.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      floatingPreviews[index].size = newSize;
+      notifyListeners();
+    }
+  }
 
   AppState() {
     taskQueue.addListener(notifyListeners);

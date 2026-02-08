@@ -18,6 +18,7 @@ import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
+import 'widgets/floating_preview.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -124,66 +125,71 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      body: Row(
-        children: [
-          NavigationRail(
-            extended: _isRailExtended,
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            leading: IconButton(
-              icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
-              onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
-            ),
-            labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-            destinations: [
-              NavigationRailDestination(
-                icon: const Icon(Icons.work_outline),
-                selectedIcon: const Icon(Icons.work),
-                label: Text(l10n.workbench),
+    return Stack(
+      children: [
+        Scaffold(
+          body: Row(
+            children: [
+              NavigationRail(
+                extended: _isRailExtended,
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: (int index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                leading: IconButton(
+                  icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
+                  onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+                ),
+                labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.work_outline),
+                    selectedIcon: const Icon(Icons.work),
+                    label: Text(l10n.workbench),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.assignment_outlined),
+                    selectedIcon: const Icon(Icons.assignment),
+                    label: Text(l10n.tasks),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.cloud_download_outlined),
+                    selectedIcon: const Icon(Icons.cloud_download),
+                    label: Text(l10n.downloader),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.notes_outlined),
+                    selectedIcon: const Icon(Icons.notes),
+                    label: Text(l10n.prompts),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.analytics_outlined),
+                    selectedIcon: const Icon(Icons.analytics),
+                    label: Text(l10n.usage),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.model_training_outlined),
+                    selectedIcon: const Icon(Icons.model_training),
+                    label: Text(l10n.models),
+                  ),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.settings_outlined),
+                    selectedIcon: const Icon(Icons.settings),
+                    label: Text(l10n.settings),
+                  ),
+                ],
               ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.assignment_outlined),
-                selectedIcon: const Icon(Icons.assignment),
-                label: Text(l10n.tasks),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.cloud_download_outlined),
-                selectedIcon: const Icon(Icons.cloud_download),
-                label: Text(l10n.downloader),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.notes_outlined),
-                selectedIcon: const Icon(Icons.notes),
-                label: Text(l10n.prompts),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.analytics_outlined),
-                selectedIcon: const Icon(Icons.analytics),
-                label: Text(l10n.usage),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.model_training_outlined),
-                selectedIcon: const Icon(Icons.model_training),
-                label: Text(l10n.models),
-              ),
-              NavigationRailDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                label: Text(l10n.settings),
+              const VerticalDivider(thickness: 1, width: 1),
+              Expanded(
+                child: _screens[_selectedIndex],
               ),
             ],
           ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(
-            child: _screens[_selectedIndex],
-          ),
-        ],
-      ),
+        ),
+        const FloatingPreviewHost(),
+      ],
     );
   }
 }

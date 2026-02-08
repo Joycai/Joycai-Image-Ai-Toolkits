@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -777,6 +778,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noCookieHistory => '未保存 Cookie 历史';
+
+  @override
+  String get openInPreview => '在预览窗口打开';
 
   @override
   String get enableNotifications => '启用系统通知';
