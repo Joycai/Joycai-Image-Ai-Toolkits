@@ -34,6 +34,7 @@ class DatabaseMigration {
     if (oldVersion < 16) await _createV16Tables(db);
     if (oldVersion < 17) await _createV17Tables(db);
     if (oldVersion < 18) await _createV18Tables(db);
+    if (oldVersion < 19) await _createV19Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -55,6 +56,33 @@ class DatabaseMigration {
     await _createV16Tables(db);
     await _createV17Tables(db);
     await _createV18Tables(db);
+    await _createV19Tables(db);
+  }
+
+  static Future<void> _createV19Tables(Database db) async {
+    // 1. Create junction table
+    await db.execute('''
+      CREATE TABLE prompt_tag_refs (
+        prompt_id INTEGER NOT NULL,
+        tag_id INTEGER NOT NULL,
+        PRIMARY KEY (prompt_id, tag_id),
+        FOREIGN KEY (prompt_id) REFERENCES prompts (id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES prompt_tags (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // 2. Migrate existing single tag data
+    final prompts = await db.query('prompts', columns: ['id', 'tag_id']);
+    for (var p in prompts) {
+      final promptId = p['id'] as int?;
+      final tagId = p['tag_id'] as int?;
+      if (promptId != null && tagId != null) {
+        await db.insert('prompt_tag_refs', {
+          'prompt_id': promptId,
+          'tag_id': tagId,
+        });
+      }
+    }
   }
 
   static Future<void> _createV18Tables(Database db) async {

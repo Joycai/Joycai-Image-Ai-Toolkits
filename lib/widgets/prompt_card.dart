@@ -59,9 +59,14 @@ class PromptCard extends StatelessWidget {
                     ),
                   ),
                   if (showCategory) ...[
-                    _buildCategoryTag(
-                      prompt['tag_name'] ?? 'General',
-                      prompt['tag_color'],
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: ((prompt['tags'] as List?) ?? []).isEmpty
+                          ? [_buildCategoryTag('General', null)]
+                          : (prompt['tags'] as List).map((t) {
+                              return _buildCategoryTag(t['name'], t['color']);
+                            }).toList(),
                     ),
                     const SizedBox(width: 8),
                   ],

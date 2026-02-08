@@ -54,7 +54,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 18, // Incremented for Task Progress Estimation
+          version: 19, // Incremented for Multi-tag support
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -62,7 +62,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 18,
+        version: 19,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -94,8 +94,8 @@ class DatabaseService {
       => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end);
 
   // Prompts Methods
-  Future<int> addPrompt(Map<String, dynamic> prompt) => PromptRepository().addPrompt(prompt);
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt) => PromptRepository().updatePrompt(id, prompt);
+  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(prompt, tagIds: tagIds);
+  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, prompt, tagIds: tagIds);
   Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);
   Future<List<Map<String, dynamic>>> getPrompts() => PromptRepository().getPrompts();
   Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
@@ -202,46 +202,66 @@ class DatabaseService {
   Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
   Future<List<Map<String, dynamic>>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
 
-  // Backup & Restore (Kept here as it spans all tables)
-  Future<Map<String, dynamic>> getAllDataRaw() async {
-    final db = await database;
+  // Standalone Prompt Data
+  Future<Map<String, dynamic>> getPromptDataRaw() async {
     return {
-      'settings': await db.query('settings'),
-      'llm_channels': await db.query('llm_channels'),
-      'llm_models': await db.query('llm_models'),
-      'prompt_tags': await db.query('prompt_tags'),
-      'prompts': await db.query('prompts'),
-      'system_prompts': await db.query('system_prompts'),
-      'fee_groups': await db.query('fee_groups'),
-      'source_directories': await db.query('source_directories'),
+      'tags': await getPromptTags(),
+      'user_prompts': await getPrompts(),
+      'system_prompts': await getSystemPrompts(),
     };
   }
 
-  Future<void> clearAllData(DatabaseExecutor txn) async {
+  // Backup & Restore (Now with optional prompt inclusion)
+  Future<Map<String, dynamic>> getAllDataRaw({bool includePrompts = false}) async {
+    final db = await database;
+    final Map<String, dynamic> data = {
+      'settings': await db.query('settings'),
+      'llm_channels': await db.query('llm_channels'),
+      'llm_models': await db.query('llm_models'),
+      'fee_groups': await db.query('fee_groups'),
+      'source_directories': await db.query('source_directories'),
+    };
+
+    if (includePrompts) {
+      data.addAll(await getPromptDataRaw());
+    }
+
+    return data;
+  }
+
+  Future<void> clearAllData(DatabaseExecutor txn, {bool includePrompts = false}) async {
     await txn.delete('settings');
     await txn.delete('llm_channels');
     await txn.delete('llm_models');
-    await txn.delete('prompt_tags');
-    await txn.delete('prompts');
-    await txn.delete('system_prompts');
     await txn.delete('fee_groups');
     await txn.delete('source_directories');
+
+    if (includePrompts) {
+      await txn.delete('prompt_tags');
+      await txn.delete('prompts');
+      await txn.delete('system_prompts');
+      await txn.delete('prompt_tag_refs');
+    }
   }
 
   Future<void> restoreBackup(Map<String, dynamic> data) async {
     final db = await database;
+    final bool includePrompts = data.containsKey('prompts') || data.containsKey('user_prompts');
+
     await db.transaction((txn) async {
-      await clearAllData(txn);
+      await clearAllData(txn, includePrompts: includePrompts);
 
       final channelIdMap = await _importChannels(txn, data['llm_channels']);
       final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
       await _importModels(txn, data['llm_models'], channelIdMap, feeGroupIdMap);
       
-      final tagIdMap = await _importPromptTags(txn, data['prompt_tags']);
-      await _importPrompts(txn, data['prompts'], tagIdMap);
+      if (includePrompts) {
+        final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
+        await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
+        await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
+      }
       
       await _importSimpleTable(txn, 'settings', data['settings']);
-      await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
       await _importSimpleTable(txn, 'source_directories', data['source_directories']);
     });
   }
@@ -312,12 +332,32 @@ class DatabaseService {
 
   Future<void> _importPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
     if (rows == null) return;
-    final batch = txn.batch();
     for (var p in rows) {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
-      if (row['tag_id'] != null) row['tag_id'] = tagIdMap[row['tag_id']];
-      batch.insert('prompts', row);
+      final originalTagId = row['tag_id'] as int?;
+      
+      final List<dynamic>? tagsFromData = row['tags'];
+      row.remove('tags');
+      row.remove('tag_name'); 
+      row.remove('tag_color');
+      row.remove('tag_is_system');
+
+      final newPromptId = await txn.insert('prompts', row);
+
+      if (tagsFromData != null) {
+        for (var t in tagsFromData) {
+          final oldTagId = t['id'] as int;
+          final newTagId = tagIdMap[oldTagId];
+          if (newTagId != null) {
+            await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+          }
+        }
+      } else if (originalTagId != null) {
+        final newTagId = tagIdMap[originalTagId];
+        if (newTagId != null) {
+          await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+        }
+      }
     }
-    await batch.commit(noResult: true);
   }
 }

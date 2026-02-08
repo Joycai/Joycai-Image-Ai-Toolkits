@@ -25,7 +25,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   
   bool _isModelSettingsExpanded = false;
 
-  Map<String, List<Map<String, dynamic>>> _groupedPrompts = {};
+  List<Map<String, dynamic>> _allUserPrompts = [];
   List<Map<String, dynamic>> _tags = [];
 
   @override
@@ -48,18 +48,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   Future<void> _loadPrompts() async {
     final prompts = await _db.getPrompts();
     final tags = await _db.getPromptTags();
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
     
-    for (var p in prompts) {
-      if (p['tag_is_system'] == 1) continue;
-      
-      final tagName = p['tag_name'] as String? ?? 'General';
-      grouped[tagName] ??= [];
-      grouped[tagName]!.add(p);
-    }
     if (mounted) {
       setState(() {
-        _groupedPrompts = grouped;
+        _allUserPrompts = prompts;
         _tags = tags;
       });
     }
@@ -338,7 +330,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
 
   Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
     return TextButton.icon(
-      onPressed: _groupedPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
+      onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
       icon: const Icon(Icons.library_books_outlined, size: 16),
       label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -349,7 +341,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     showDialog(
       context: context,
       builder: (context) => LibraryDialog(
-        groupedPrompts: _groupedPrompts,
+        allPrompts: _allUserPrompts,
         tags: _tags,
         initialContent: _promptController.text,
         onApply: (content, isAppend) {

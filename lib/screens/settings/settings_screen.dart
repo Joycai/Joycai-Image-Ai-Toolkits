@@ -330,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final data = await _db.getAllDataRaw();
+    final data = await _db.getAllDataRaw(includePrompts: false);
     final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(
@@ -360,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Import Settings?"),
-          content: const Text("This will replace all your current models, channels, categories, and prompts. This cannot be undone."),
+          content: const Text("This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management."),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
             ElevatedButton(
