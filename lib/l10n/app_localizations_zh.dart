@@ -783,6 +783,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openInPreview => '在预览窗口打开';
 
   @override
+  String get sendToComparator => '发送至对比器';
+
+  @override
+  String get sendToComparatorRaw => '发送至对比器 (原图)';
+
+  @override
+  String get sendToComparatorAfter => '发送至对比器 (后图)';
+
+  @override
+  String get compareModeSync => '同步模式';
+
+  @override
+  String get compareModeSwap => '切换模式';
+
+  @override
   String get enableNotifications => '启用系统通知';
 
   @override

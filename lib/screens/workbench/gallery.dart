@@ -526,6 +526,39 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             appState.openFloatingPreview(widget.imageFile.path);
           },
         ),
+        if (!appState.isComparatorOpen)
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18),
+              title: Text(l10n.sendToComparator),
+              dense: true,
+            ),
+            onTap: () {
+              appState.sendToComparator(widget.imageFile.path);
+            },
+          )
+        else ...[
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+              title: Text(l10n.sendToComparatorRaw),
+              dense: true,
+            ),
+            onTap: () {
+              appState.sendToComparator(widget.imageFile.path, isAfter: false);
+            },
+          ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+              title: Text(l10n.sendToComparatorAfter),
+              dense: true,
+            ),
+            onTap: () {
+              appState.sendToComparator(widget.imageFile.path, isAfter: true);
+            },
+          ),
+        ],
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.copy, size: 18),

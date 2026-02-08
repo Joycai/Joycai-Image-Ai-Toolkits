@@ -18,6 +18,7 @@ import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
+import 'widgets/floating_comparator.dart';
 import 'widgets/floating_preview.dart';
 
 void main() async {
@@ -189,6 +190,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ),
         const FloatingPreviewHost(),
+        const FloatingComparatorHost(),
       ],
     );
   }

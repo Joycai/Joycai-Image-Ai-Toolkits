@@ -792,6 +792,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openInPreview => 'Open in Preview';
 
   @override
+  String get sendToComparator => 'Send to Comparator';
+
+  @override
+  String get sendToComparatorRaw => 'Send to Comparator (Raw)';
+
+  @override
+  String get sendToComparatorAfter => 'Send to Comparator (After)';
+
+  @override
+  String get compareModeSync => 'Sync Mode';
+
+  @override
+  String get compareModeSwap => 'Swap Mode';
+
+  @override
   String get enableNotifications => 'Enable System Notifications';
 
   @override

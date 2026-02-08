@@ -68,6 +68,49 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // Comparator State
+  bool isComparatorOpen = false;
+  String? comparatorRawPath;
+  String? comparatorAfterPath;
+  bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
+  Offset comparatorPosition = const Offset(150, 150);
+  Size comparatorSize = const Size(800, 500);
+
+  void sendToComparator(String path, {bool isAfter = false}) {
+    if (!isComparatorOpen) {
+      isComparatorOpen = true;
+      comparatorRawPath = path;
+      comparatorAfterPath = null;
+    } else {
+      if (isAfter) {
+        comparatorAfterPath = path;
+      } else {
+        comparatorRawPath = path;
+      }
+    }
+    notifyListeners();
+  }
+
+  void closeComparator() {
+    isComparatorOpen = false;
+    notifyListeners();
+  }
+
+  void toggleComparatorMode() {
+    isComparatorSyncMode = !isComparatorSyncMode;
+    notifyListeners();
+  }
+
+  void updateComparatorPosition(Offset newPosition) {
+    comparatorPosition = newPosition;
+    notifyListeners();
+  }
+
+  void updateComparatorSize(Size newSize) {
+    comparatorSize = newSize;
+    notifyListeners();
+  }
+
   AppState() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);

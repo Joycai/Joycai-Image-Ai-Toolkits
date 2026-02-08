@@ -1556,6 +1556,36 @@ abstract class AppLocalizations {
   /// **'Open in Preview'**
   String get openInPreview;
 
+  /// No description provided for @sendToComparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator'**
+  String get sendToComparator;
+
+  /// No description provided for @sendToComparatorRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (Raw)'**
+  String get sendToComparatorRaw;
+
+  /// No description provided for @sendToComparatorAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (After)'**
+  String get sendToComparatorAfter;
+
+  /// No description provided for @compareModeSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Mode'**
+  String get compareModeSync;
+
+  /// No description provided for @compareModeSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Mode'**
+  String get compareModeSwap;
+
   /// No description provided for @enableNotifications.
   ///
   /// In en, this message translates to:
