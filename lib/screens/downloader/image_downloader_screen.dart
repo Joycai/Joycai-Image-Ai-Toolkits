@@ -237,7 +237,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
-                    value: state.selectedModelPk,
+                    initialValue: state.selectedModelPk,
                     decoration: const InputDecoration(
                       labelText: 'Analysis Model',
                       border: OutlineInputBorder(),

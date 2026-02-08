@@ -4,13 +4,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../l10n/app_localizations.dart';
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
-import '../l10n/app_localizations.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
 
