@@ -1549,6 +1549,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No cookie history saved'**
   String get noCookieHistory;
+
+  /// No description provided for @enableNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable System Notifications'**
+  String get enableNotifications;
+
+  /// No description provided for @taskCompletedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Completed'**
+  String get taskCompletedNotification;
+
+  /// No description provided for @taskFailedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Failed'**
+  String get taskFailedNotification;
+
+  /// No description provided for @taskCompletedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has finished successfully.'**
+  String taskCompletedBody(String id);
+
+  /// No description provided for @taskFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has failed.'**
+  String taskFailedBody(String id);
 }
 
 class _AppLocalizationsDelegate

@@ -1,0 +1,3 @@
+/* Localized versions of Info.plist keys */
+
+"NSUserNotificationUsageDescription" = "此应用需要发送通知，以便在后台任务完成和 AI 处理结束时及时告知您。";

@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>This app needs to send notifications to inform you about completed background tasks and AI processing results.</string>
 </dict>
 </plist>

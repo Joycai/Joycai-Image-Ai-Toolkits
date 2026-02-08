@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -778,4 +777,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noCookieHistory => '未保存 Cookie 历史';
+
+  @override
+  String get enableNotifications => '启用系统通知';
+
+  @override
+  String get taskCompletedNotification => '任务已完成';
+
+  @override
+  String get taskFailedNotification => '任务失败';
+
+  @override
+  String taskCompletedBody(String id) {
+    return '任务 $id 已成功完成。';
+  }
+
+  @override
+  String taskFailedBody(String id) {
+    return '任务 $id 运行失败。';
+  }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../state/app_state.dart';
 import '../../widgets/collapsible_card.dart';
 import '../../widgets/log_console.dart';
 import 'control_panel.dart';
@@ -16,12 +18,11 @@ class WorkbenchScreen extends StatefulWidget {
 }
 
 class _WorkbenchScreenState extends State<WorkbenchScreen> {
-  bool _isConsoleExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context);
 
     return Column(
       children: [
@@ -44,9 +45,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: CollapsibleCard(
             title: l10n.executionLogs,
-            subtitle: _isConsoleExpanded ? null : l10n.clickToExpand,
-            isExpanded: _isConsoleExpanded,
-            onToggle: () => setState(() => _isConsoleExpanded = !_isConsoleExpanded),
+            subtitle: appState.isConsoleExpanded ? null : l10n.clickToExpand,
+            isExpanded: appState.isConsoleExpanded,
+            onToggle: () => appState.setConsoleExpanded(!appState.isConsoleExpanded),
             collapsedIcon: Icons.keyboard_arrow_up,
             expandedIcon: Icons.keyboard_arrow_down,
             content: const SizedBox(

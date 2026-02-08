@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -787,4 +786,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noCookieHistory => 'No cookie history saved';
+
+  @override
+  String get enableNotifications => 'Enable System Notifications';
+
+  @override
+  String get taskCompletedNotification => 'Task Completed';
+
+  @override
+  String get taskFailedNotification => 'Task Failed';
+
+  @override
+  String taskCompletedBody(String id) {
+    return 'Task $id has finished successfully.';
+  }
+
+  @override
+  String taskFailedBody(String id) {
+    return 'Task $id has failed.';
+  }
 }

@@ -16,10 +16,14 @@ import 'services/llm/llm_service.dart';
 import 'services/llm/model_discovery_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
+import 'services/notification_service.dart';
 import 'state/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await NotificationService().init();
+
   LLMService().registerProvider('google-genai', GoogleGenAIProvider());
   LLMService().registerProvider('openai-api', OpenAIAPIProvider());
   

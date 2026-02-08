@@ -104,6 +104,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   AppSection(
                     title: l10n.settings,
                     children: [
+                      _buildNotificationTile(appState, l10n),
+                      const SizedBox(height: 8),
                       _buildPortableModeTile(l10n),
                       const SizedBox(height: 8),
                       _buildOutputDirectoryTile(appState, l10n),
@@ -206,6 +208,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildNotificationTile(AppState appState, AppLocalizations l10n) {
+    return SwitchListTile(
+      title: Text(l10n.enableNotifications),
+      value: appState.notificationsEnabled,
+      onChanged: (v) => appState.setNotificationsEnabled(v),
     );
   }
 

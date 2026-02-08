@@ -381,5 +381,24 @@
   "manualHtmlMode": "Manual HTML Mode",
   "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
   "cookieHistory": "Cookie History",
-  "noCookieHistory": "No cookie history saved"
+  "noCookieHistory": "No cookie history saved",
+  "enableNotifications": "Enable System Notifications",
+  "taskCompletedNotification": "Task Completed",
+  "taskFailedNotification": "Task Failed",
+  "taskCompletedBody": "Task {id} has finished successfully.",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "Task {id} has failed.",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  }
 }

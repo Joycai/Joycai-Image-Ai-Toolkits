@@ -53,6 +53,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
   Future<void> _pasteHtml() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
     if (data?.text != null) {
       final state = Provider.of<AppState>(context, listen: false).downloaderState;
       final fullText = data!.text!;
@@ -129,6 +130,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
     final outputDir = await appState.getSetting('output_directory');
+    if (!mounted) return;
     if (outputDir == null || outputDir.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please set output directory in settings first.')),
@@ -144,7 +146,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       );
       
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'origin_${timestamp}.html';
+      final fileName = 'origin_$timestamp.html';
       final filePath = p.join(outputDir, fileName);
       
       await File(filePath).writeAsString(html);

@@ -7,8 +7,10 @@ import '../core/constants.dart';
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
+import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
+import '../l10n/app_localizations.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
 
@@ -31,6 +33,24 @@ class AppState extends ChangeNotifier {
     taskQueue.onTaskCompleted = (file) {
       galleryState.refreshImages();
     };
+
+    taskQueue.onTaskFinished = (task) {
+      if (!notificationsEnabled) return;
+      
+      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
+      
+      if (task.status == TaskStatus.completed) {
+        NotificationService().showNotification(
+          title: l10n.taskCompletedNotification,
+          body: l10n.taskCompletedBody(task.id.substring(0, 8)),
+        );
+      } else if (task.status == TaskStatus.failed) {
+        NotificationService().showNotification(
+          title: l10n.taskFailedNotification,
+          body: l10n.taskFailedBody(task.id.substring(0, 8)),
+        );
+      }
+    };
     
     taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
       addLog(msg, level: level, taskId: taskId);
@@ -51,6 +71,8 @@ class AppState extends ChangeNotifier {
   bool settingsLoaded = false;
   bool setupCompleted = true; 
   int concurrencyLimit = 2;
+  bool notificationsEnabled = true;
+  bool isConsoleExpanded = false;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -142,6 +164,9 @@ class AppState extends ChangeNotifier {
       taskQueue.updateConcurrency(concurrencyLimit);
     }
 
+    notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
+    isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
+
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
     if (savedTheme != null) {
@@ -209,6 +234,18 @@ class AppState extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
     await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+
+  Future<void> setNotificationsEnabled(bool value) async {
+    notificationsEnabled = value;
+    await _db.saveSetting('notifications_enabled', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setConsoleExpanded(bool value) async {
+    isConsoleExpanded = value;
+    await _db.saveSetting('is_console_expanded', value.toString());
     notifyListeners();
   }
   

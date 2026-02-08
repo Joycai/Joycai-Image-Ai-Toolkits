@@ -381,5 +381,24 @@
   "manualHtmlMode": "手动 HTML 模式",
   "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
   "cookieHistory": "Cookie 历史",
-  "noCookieHistory": "未保存 Cookie 历史"
+  "noCookieHistory": "未保存 Cookie 历史",
+  "enableNotifications": "启用系统通知",
+  "taskCompletedNotification": "任务已完成",
+  "taskFailedNotification": "任务失败",
+  "taskCompletedBody": "任务 {id} 已成功完成。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "任务 {id} 运行失败。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  }
 }

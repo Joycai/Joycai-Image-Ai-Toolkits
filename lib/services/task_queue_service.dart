@@ -97,6 +97,7 @@ class TaskQueueService extends ChangeNotifier {
   Timer? _progressTimer;
   
   Function(File)? onTaskCompleted;
+  Function(TaskItem)? onTaskFinished;
   Function(String, {String level, String? taskId})? onLogAdded;
 
   List<TaskItem> get queue => _queue;
@@ -251,6 +252,7 @@ class TaskQueueService extends ChangeNotifier {
 
       _runningCount--;
       DatabaseService().saveTask(task.toMap());
+      onTaskFinished?.call(task);
       notifyListeners();
       _attemptNextExecution();
     }
