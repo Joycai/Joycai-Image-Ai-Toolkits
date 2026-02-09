@@ -1556,6 +1556,12 @@ abstract class AppLocalizations {
   /// **'Open in Preview'**
   String get openInPreview;
 
+  /// No description provided for @sendToSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Selection'**
+  String get sendToSelection;
+
   /// No description provided for @sendToComparator.
   ///
   /// In en, this message translates to:

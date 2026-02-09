@@ -792,6 +792,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openInPreview => 'Open in Preview';
 
   @override
+  String get sendToSelection => 'Send to Selection';
+
+  @override
   String get sendToComparator => 'Send to Comparator';
 
   @override

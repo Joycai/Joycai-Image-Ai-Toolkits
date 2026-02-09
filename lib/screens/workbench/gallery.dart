@@ -601,6 +601,7 @@ class _ImageCardState extends State<_ImageCard> {
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
     final windowState = Provider.of<WindowState>(context, listen: false);
+    final appState = Provider.of<AppState>(context, listen: false);
 
     showMenu(
       context: context,
@@ -614,6 +615,16 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.openFloatingPreview(widget.imageFile.path);
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: Icon(widget.isSelected ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
+            title: Text(l10n.sendToSelection),
+            dense: true,
+          ),
+          onTap: () {
+            appState.galleryState.toggleImageSelection(widget.imageFile);
           },
         ),
         if (!windowState.isComparatorOpen)

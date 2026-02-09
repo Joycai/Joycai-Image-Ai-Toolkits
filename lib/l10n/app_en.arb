@@ -383,6 +383,7 @@
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
   "openInPreview": "Open in Preview",
+  "sendToSelection": "Send to Selection",
   "sendToComparator": "Send to Comparator",
   "sendToComparatorRaw": "Send to Comparator (Raw)",
   "sendToComparatorAfter": "Send to Comparator (After)",

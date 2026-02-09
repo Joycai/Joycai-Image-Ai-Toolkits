@@ -383,6 +383,7 @@
   "cookieHistory": "Cookie 历史",
   "noCookieHistory": "未保存 Cookie 历史",
   "openInPreview": "在预览窗口打开",
+  "sendToSelection": "发送到选中列表",
   "sendToComparator": "发送至对比器",
   "sendToComparatorRaw": "发送至对比器 (原图)",
   "sendToComparatorAfter": "发送至对比器 (后图)",

@@ -783,6 +783,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openInPreview => '在预览窗口打开';
 
   @override
+  String get sendToSelection => '发送到选中列表';
+
+  @override
   String get sendToComparator => '发送至对比器';
 
   @override

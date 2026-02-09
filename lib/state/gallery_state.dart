@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../models/app_file.dart';
@@ -189,6 +190,12 @@ class GalleryState extends ChangeNotifier {
     await _scanProcessedImages();
   }
 
+  void _evictImages(List<String> paths) {
+    for (var path in paths) {
+      PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
+    }
+  }
+
   Future<void> _scanImages() async {
     if (activeSourceDirectories.isEmpty) {
       galleryImages = [];
@@ -197,10 +204,12 @@ class GalleryState extends ChangeNotifier {
     }
 
     final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
+    _evictImages(paths);
     galleryImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
     
     selectedImages.removeWhere((selected) => 
       !galleryImages.any((img) => img.path == selected.path) &&
+      !processedImages.any((img) => img.path == selected.path) &&
       !droppedImages.any((img) => img.path == selected.path)
     );
     notifyListeners();
@@ -215,6 +224,7 @@ class GalleryState extends ChangeNotifier {
 
     try {
       final List<String> paths = await compute(_scanImagesIsolate, [outputDirectory!]);
+      _evictImages(paths);
       List<File> files = paths.map((p) => File(p)).toList();
       
       files.sort((a, b) {
@@ -225,6 +235,13 @@ class GalleryState extends ChangeNotifier {
         }
       });
       processedImages = files.map((f) => AppFile.fromFile(f)).toList();
+      
+      // Also clean up selection if images were deleted from disk
+      selectedImages.removeWhere((selected) => 
+        !galleryImages.any((img) => img.path == selected.path) &&
+        !processedImages.any((img) => img.path == selected.path) &&
+        !droppedImages.any((img) => img.path == selected.path)
+      );
     } catch (e) {
       processedImages = [];
     }
@@ -242,8 +259,11 @@ class GalleryState extends ChangeNotifier {
 
   void clearDroppedImages() {
     droppedImages.clear();
-    // Also remove from selection if they were selected
-    selectedImages.removeWhere((s) => !galleryImages.any((g) => g.path == s.path));
+    // Also remove from selection if they were selected and are not in other collections
+    selectedImages.removeWhere((s) => 
+      !galleryImages.any((g) => g.path == s.path) &&
+      !processedImages.any((p) => p.path == s.path)
+    );
     notifyListeners();
   }
 
