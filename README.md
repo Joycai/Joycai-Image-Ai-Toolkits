@@ -1,38 +1,46 @@
 # Joycai Image AI Toolkits
 
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=flat&logo=dart&logoColor=white)](https://dart.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions)
+
 Joycai Image AI Toolkits is a powerful, cross-platform desktop application built with Flutter, designed to streamline AI-powered image processing workflows. It provides a unified interface to interact with various Large Language Models (LLMs) and Multimodal models for image generation, analysis, and prompt optimization.
 
 ![App Icon](assets/icon/icon.png)
 
 ## 🚀 Key Features
 
-### 🛠️ AI Workbench
-*   **Source Explorer**: Easily manage local image directories with built-in directory watching.
+### 🛠️ AI Workbench & Dynamic Channels
+*   **Dynamic AI Channels**: Add any number of AI provider channels (OpenAI, Google GenAI, or 3rd-party REST proxies) with custom endpoints and visual tags.
+*   **Source Explorer**: Easily manage local image directories with built-in directory watching and **Background Isolate Scanning** for zero-stutter performance.
 *   **Unified Gallery**: Seamlessly switch between source images and processed results.
 *   **Control Panel**: Fine-tune your AI requests with model selection, aspect ratio, and resolution settings.
 *   **AI Prompt Refiner**: Leverage specialized models to optimize and "polish" your prompts before submission.
 
+### 📝 Staging Prompt Workbench
+*   **Drafting Pane**: Build complex prompts by iteratively adding or replacing snippets from your library in a professional three-pane layout.
+*   **Manual Staging**: Edit your combined prompt in a dedicated area before committing it to your work.
+*   **Append/Overwrite**: Choose exactly how to apply your drafted prompt to the workbench.
+
+### 🔌 Ecosystem & Interoperability
+*   **MCP Server**: Built-in **Model Context Protocol (MCP)** server allows external clients (like Claude Desktop) to interact with your image gallery and tasks.
+*   **Multi-Platform**: Professional installers and portable bundles for **Windows (MSIX/ZIP)**, **macOS (DMG)**, and **Linux (TAR.GZ)**.
+
 ### 📋 Task Queue Manager
 *   **Batch Processing**: Submit multiple images for processing in a single click.
 *   **Concurrency Control**: Manage system resources by limiting the number of simultaneous AI tasks.
-*   **Persistence**: All tasks are saved to a local database, ensuring progress is kept even after an app restart.
-*   **Real-time Monitoring**: Track task status, view live execution logs, and manage pending/completed tasks.
-
-### 📚 Prompt Library
-*   **Save & Organize**: Build your own library of high-performing prompts.
-*   **Categorization**: Tag prompts for different use cases (e.g., "Refiner", "Anime", "Realistic").
-*   **Quick Access**: Directly pick prompts from your library within the Workbench.
+*   **Persistence**: All tasks are saved to a local database (SQLite), ensuring progress is kept even after an app restart.
 
 ### 📊 Token Usage & Cost Tracking
-*   **Detailed Metrics**: Monitor input and output token consumption.
-*   **Cost Estimation**: Automatically calculate estimated costs based on configurable model pricing.
-*   **Filtering**: Analyze usage by model or date range (Today, Last Week, etc.).
+*   **Detailed Metrics**: Monitor input and output token consumption with **Model-Based Billing** support.
+*   **Cost Estimation**: Automatically calculate estimated costs based on configurable model pricing (Token-based vs. Request-based).
+*   **Filtering**: Analyze usage by model or date range.
 
 ### ⚙️ Advanced Configuration
-*   **Model Manager**: Add and configure custom models for OpenAI and Google GenAI providers.
-*   **Multi-Provider Support**: Configure separate endpoints and API keys for free and paid tiers.
+*   **Model Manager**: Redesigned tabbed interface for managing models and channels.
+*   **Global Proxy Support**: Full support for authenticated HTTP proxies with a quick-toggle switch.
 *   **Localization**: Full support for English and Chinese (简体中文).
-*   **Theme Support**: Material 3 design with Light, Dark, and Auto (System) modes.
 *   **Data Portability**: Export and import your entire configuration and history as JSON.
 
 ## 🛠️ Technical Stack
