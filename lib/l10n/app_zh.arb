@@ -409,5 +409,42 @@
         "type": "String"
       }
     }
-  }
+  },
+  "imageDownloader": "图像下载器",
+  "websiteUrl": "网站地址",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "寻找什么？",
+  "whatToFindHint": "例如：所有商品详情图",
+  "analysisModel": "分析模型",
+  "advancedOptions": "高级选项",
+  "analyzing": "正在分析...",
+  "findImages": "寻找图像",
+  "noImagesDiscovered": "尚未发现图像。",
+  "enterUrlToStart": "输入网址和需求以开始。",
+  "addToQueue": "添加到下载队列",
+  "imagesSelected": "已选 {count} 张",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToQueue": "已将 {count} 张图像添加到下载队列。",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setOutputDirFirst": "请先在设置中设置输出目录。",
+  "cookiesHint": "Cookie (原始或 Netscape 格式)",
+  "logs": "日志",
+  "selectImagesToDownload": "选择要下载的图像",
+  "openaiEndpointHint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
+  "googleEndpointHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾（内部已处理）",
+  "importCookieFile": "导入 Cookie 文件",
+  "cookieFileInvalid": "不支持的 Cookie 文件格式。请使用 Netscape 格式或原始文本。",
+  "cookieImportSuccess": "成功导入 {count} 条 Cookie。"
 }

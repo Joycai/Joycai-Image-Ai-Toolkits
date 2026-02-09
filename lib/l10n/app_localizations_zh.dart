@@ -824,4 +824,80 @@ class AppLocalizationsZh extends AppLocalizations {
   String taskFailedBody(String id) {
     return '任务 $id 运行失败。';
   }
+
+  @override
+  String get imageDownloader => '图像下载器';
+
+  @override
+  String get websiteUrl => '网站地址';
+
+  @override
+  String get websiteUrlHint => 'https://example.com';
+
+  @override
+  String get whatToFind => '寻找什么？';
+
+  @override
+  String get whatToFindHint => '例如：所有商品详情图';
+
+  @override
+  String get analysisModel => '分析模型';
+
+  @override
+  String get advancedOptions => '高级选项';
+
+  @override
+  String get analyzing => '正在分析...';
+
+  @override
+  String get findImages => '寻找图像';
+
+  @override
+  String get noImagesDiscovered => '尚未发现图像。';
+
+  @override
+  String get enterUrlToStart => '输入网址和需求以开始。';
+
+  @override
+  String get addToQueue => '添加到下载队列';
+
+  @override
+  String imagesSelected(int count) {
+    return '已选 $count 张';
+  }
+
+  @override
+  String addedToQueue(int count) {
+    return '已将 $count 张图像添加到下载队列。';
+  }
+
+  @override
+  String get setOutputDirFirst => '请先在设置中设置输出目录。';
+
+  @override
+  String get cookiesHint => 'Cookie (原始或 Netscape 格式)';
+
+  @override
+  String get logs => '日志';
+
+  @override
+  String get selectImagesToDownload => '选择要下载的图像';
+
+  @override
+  String get openaiEndpointHint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
+
+  @override
+  String get googleEndpointHint =>
+      '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
+
+  @override
+  String get importCookieFile => '导入 Cookie 文件';
+
+  @override
+  String get cookieFileInvalid => '不支持的 Cookie 文件格式。请使用 Netscape 格式或原始文本。';
+
+  @override
+  String cookieImportSuccess(Object count) {
+    return '成功导入 $count 条 Cookie。';
+  }
 }

@@ -121,7 +121,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      width: 350,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

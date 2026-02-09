@@ -409,5 +409,42 @@
         "type": "String"
       }
     }
-  }
+  },
+  "imageDownloader": "Image Downloader",
+  "websiteUrl": "Website URL",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "What to find?",
+  "whatToFindHint": "e.g. all product gallery images",
+  "analysisModel": "Analysis Model",
+  "advancedOptions": "Advanced Options",
+  "analyzing": "Analyzing...",
+  "findImages": "Find Images",
+  "noImagesDiscovered": "No images discovered yet.",
+  "enterUrlToStart": "Enter a URL and requirement to start.",
+  "addToQueue": "Add to Queue",
+  "imagesSelected": "{count} selected",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToQueue": "Added {count} images to download queue.",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setOutputDirFirst": "Please set output directory in settings first.",
+  "cookiesHint": "Cookies (Raw or Netscape format)",
+  "logs": "Logs",
+  "selectImagesToDownload": "Select images to download",
+  "openaiEndpointHint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
+  "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
+  "importCookieFile": "Import Cookie File",
+  "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
+  "cookieImportSuccess": "Successfully imported {count} cookies."
 }

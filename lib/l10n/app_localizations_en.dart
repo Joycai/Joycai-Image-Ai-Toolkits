@@ -834,4 +834,83 @@ class AppLocalizationsEn extends AppLocalizations {
   String taskFailedBody(String id) {
     return 'Task $id has failed.';
   }
+
+  @override
+  String get imageDownloader => 'Image Downloader';
+
+  @override
+  String get websiteUrl => 'Website URL';
+
+  @override
+  String get websiteUrlHint => 'https://example.com';
+
+  @override
+  String get whatToFind => 'What to find?';
+
+  @override
+  String get whatToFindHint => 'e.g. all product gallery images';
+
+  @override
+  String get analysisModel => 'Analysis Model';
+
+  @override
+  String get advancedOptions => 'Advanced Options';
+
+  @override
+  String get analyzing => 'Analyzing...';
+
+  @override
+  String get findImages => 'Find Images';
+
+  @override
+  String get noImagesDiscovered => 'No images discovered yet.';
+
+  @override
+  String get enterUrlToStart => 'Enter a URL and requirement to start.';
+
+  @override
+  String get addToQueue => 'Add to Queue';
+
+  @override
+  String imagesSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String addedToQueue(int count) {
+    return 'Added $count images to download queue.';
+  }
+
+  @override
+  String get setOutputDirFirst =>
+      'Please set output directory in settings first.';
+
+  @override
+  String get cookiesHint => 'Cookies (Raw or Netscape format)';
+
+  @override
+  String get logs => 'Logs';
+
+  @override
+  String get selectImagesToDownload => 'Select images to download';
+
+  @override
+  String get openaiEndpointHint =>
+      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+
+  @override
+  String get googleEndpointHint =>
+      'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)';
+
+  @override
+  String get importCookieFile => 'Import Cookie File';
+
+  @override
+  String get cookieFileInvalid =>
+      'Unsupported cookie file format. Please use Netscape format or raw text.';
+
+  @override
+  String cookieImportSuccess(Object count) {
+    return 'Successfully imported $count cookies.';
+  }
 }

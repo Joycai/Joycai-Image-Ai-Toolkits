@@ -63,4 +63,8 @@ class DownloaderState extends ChangeNotifier {
     logs.clear();
     notifyListeners();
   }
+
+  void notify() {
+    notifyListeners();
+  }
 }

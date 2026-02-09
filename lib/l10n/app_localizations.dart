@@ -1633,6 +1633,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Task {id} has failed.'**
   String taskFailedBody(String id);
+
+  /// No description provided for @imageDownloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Downloader'**
+  String get imageDownloader;
+
+  /// No description provided for @websiteUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Website URL'**
+  String get websiteUrl;
+
+  /// No description provided for @websiteUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get websiteUrlHint;
+
+  /// No description provided for @whatToFind.
+  ///
+  /// In en, this message translates to:
+  /// **'What to find?'**
+  String get whatToFind;
+
+  /// No description provided for @whatToFindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. all product gallery images'**
+  String get whatToFindHint;
+
+  /// No description provided for @analysisModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis Model'**
+  String get analysisModel;
+
+  /// No description provided for @advancedOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Options'**
+  String get advancedOptions;
+
+  /// No description provided for @analyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get analyzing;
+
+  /// No description provided for @findImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Images'**
+  String get findImages;
+
+  /// No description provided for @noImagesDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'No images discovered yet.'**
+  String get noImagesDiscovered;
+
+  /// No description provided for @enterUrlToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a URL and requirement to start.'**
+  String get enterUrlToStart;
+
+  /// No description provided for @addToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Queue'**
+  String get addToQueue;
+
+  /// No description provided for @imagesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String imagesSelected(int count);
+
+  /// No description provided for @addedToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} images to download queue.'**
+  String addedToQueue(int count);
+
+  /// No description provided for @setOutputDirFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set output directory in settings first.'**
+  String get setOutputDirFirst;
+
+  /// No description provided for @cookiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies (Raw or Netscape format)'**
+  String get cookiesHint;
+
+  /// No description provided for @logs.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get logs;
+
+  /// No description provided for @selectImagesToDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Select images to download'**
+  String get selectImagesToDownload;
+
+  /// No description provided for @openaiEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
+  String get openaiEndpointHint;
+
+  /// No description provided for @googleEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)'**
+  String get googleEndpointHint;
+
+  /// No description provided for @importCookieFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Cookie File'**
+  String get importCookieFile;
+
+  /// No description provided for @cookieFileInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported cookie file format. Please use Netscape format or raw text.'**
+  String get cookieFileInvalid;
+
+  /// No description provided for @cookieImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported {count} cookies.'**
+  String cookieImportSuccess(Object count);
 }
 
 class _AppLocalizationsDelegate

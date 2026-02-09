@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
+    final isNarrow = size.width < 800;
     
     final filteredUser = _userPrompts.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
@@ -86,57 +89,103 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.promptLibrary),
-        actions: [
-          Container(
-            width: 250,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.filterPrompts,
-                prefixIcon: const Icon(Icons.search, size: 20),
-                isDense: true,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        actions: isNarrow 
+          ? [
+              PopupMenuButton<String>(
+                onSelected: (val) {
+                  if (val == 'import') _importPrompts(l10n);
+                  if (val == 'export') _exportPrompts(l10n);
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
+                  PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
+                ],
               ),
-            ),
+              IconButton(
+                onPressed: () {
+                  if (_tabController.index == 1) {
+                    _showSystemPromptDialog(l10n);
+                  } else if (_tabController.index == 2) {
+                    _showTagDialog(l10n);
+                  } else {
+                    _showPromptDialog(l10n);
+                  }
+                },
+                icon: const Icon(Icons.add),
+              ),
+            ]
+          : [
+              Container(
+                width: 250,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: l10n.filterPrompts,
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.upload_file_outlined),
+                tooltip: l10n.importSettings,
+                onPressed: () => _importPrompts(l10n),
+              ),
+              IconButton(
+                icon: const Icon(Icons.download_for_offline_outlined),
+                tooltip: l10n.exportSettings,
+                onPressed: () => _exportPrompts(l10n),
+              ),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: FilledButton.icon(
+                  onPressed: () {
+                    if (_tabController.index == 1) {
+                      _showSystemPromptDialog(l10n);
+                    } else if (_tabController.index == 2) {
+                      _showTagDialog(l10n);
+                    } else {
+                      _showPromptDialog(l10n);
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.add),
+                ),
+              ),
+            ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(isNarrow ? 100 : 50),
+          child: Column(
+            children: [
+              if (isNarrow)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: l10n.filterPrompts,
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                ),
+              TabBar(
+                controller: _tabController,
+                tabs: [
+                  Tab(text: l10n.userPrompts),
+                  Tab(text: l10n.refinerPrompts),
+                  Tab(text: l10n.categoriesTab),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.upload_file_outlined),
-            tooltip: l10n.importSettings,
-            onPressed: () => _importPrompts(l10n),
-          ),
-          IconButton(
-            icon: const Icon(Icons.download_for_offline_outlined),
-            tooltip: l10n.exportSettings,
-            onPressed: () => _exportPrompts(l10n),
-          ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: FilledButton.icon(
-              onPressed: () {
-                if (_tabController.index == 1) {
-                  _showSystemPromptDialog(l10n);
-                } else if (_tabController.index == 2) {
-                  _showTagDialog(l10n);
-                } else {
-                  _showPromptDialog(l10n);
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: Text(l10n.add),
-            ),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: l10n.userPrompts),
-            Tab(text: l10n.refinerPrompts),
-            Tab(text: l10n.categoriesTab),
-          ],
         ),
       ),
       body: Column(
@@ -473,71 +522,96 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: hexCtrl, 
-                decoration: const InputDecoration(labelText: 'HEX Color (e.g. #FFAABB)', prefixIcon: Icon(Icons.colorize)),
-                onChanged: (v) {
-                  if (v.startsWith('#') && v.length == 7) {
-                    try {
-                      final color = int.parse('FF${v.substring(1)}', radix: 16);
-                      setDialogState(() => selectedColor = color);
-                    } catch (_) {}
+        builder: (context, setDialogState) {
+          void updateColor(int color) {
+            setDialogState(() {
+              selectedColor = color;
+              hexCtrl.text = '#${color.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+            });
+          }
+
+          return AlertDialog(
+            title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
+                  const SizedBox(height: 24),
+                  
+                  // Color Picker Section
+                  _ColorHuePicker(
+                    initialColor: Color(selectedColor),
+                    onColorChanged: updateColor,
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: hexCtrl, 
+                    decoration: const InputDecoration(
+                      labelText: 'HEX Color', 
+                      prefixIcon: Icon(Icons.colorize),
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) {
+                      if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
+                        try {
+                          final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
+                          final color = int.parse(colorStr, radix: 16);
+                          setDialogState(() => selectedColor = color);
+                        } catch (_) {}
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: AppConstants.tagColors.map((color) => InkWell(
+                      onTap: () => updateColor(color.toARGB32()),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+              ElevatedButton(
+                onPressed: () async {
+                  final data = {'name': nameCtrl.text, 'color': selectedColor};
+                  if (tag == null) {
+                    await _db.addPromptTag(data);
+                  } else {
+                    await _db.updatePromptTag(tag.id!, data);
+                  }
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    _loadData();
                   }
                 },
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: AppConstants.tagColors.map((color) => InkWell(
-                  onTap: () {
-                    setDialogState(() {
-                      selectedColor = color.toARGB32();
-                      hexCtrl.text = '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-                    });
-                  },
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                )).toList(),
+                child: Text(l10n.save),
               ),
             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            ElevatedButton(
-              onPressed: () async {
-                final data = {'name': nameCtrl.text, 'color': selectedColor};
-                if (tag == null) {
-                  await _db.addPromptTag(data);
-                } else {
-                  await _db.updatePromptTag(tag.id!, data);
-                }
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  _loadData();
-                }
-              },
-              child: Text(l10n.save),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -850,3 +924,128 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     }
   }
 }
+
+/// A simple Hue color picker wheel implementation
+class _ColorHuePicker extends StatefulWidget {
+  final Color initialColor;
+  final ValueChanged<int> onColorChanged;
+
+  const _ColorHuePicker({
+    required this.initialColor,
+    required this.onColorChanged,
+  });
+
+  @override
+  State<_ColorHuePicker> createState() => _ColorHuePickerState();
+}
+
+class _ColorHuePickerState extends State<_ColorHuePicker> {
+  late double _hue;
+
+  @override
+  void initState() {
+    super.initState();
+    _hue = HSVColor.fromColor(widget.initialColor).hue;
+  }
+
+  @override
+  void didUpdateWidget(_ColorHuePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newHue = HSVColor.fromColor(widget.initialColor).hue;
+    if ((newHue - _hue).abs() > 1.0) {
+      setState(() => _hue = newHue);
+    }
+  }
+
+  void _handleGesture(Offset localPosition, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    
+    double rad = (localPosition - center).direction; // -pi to pi
+    double deg = (rad * 180 / 3.1415926535) + 90;
+    if (deg < 0) deg += 360;
+
+    setState(() {
+      _hue = deg % 360;
+    });
+    
+    final color = HSVColor.fromAHSV(1.0, _hue, 0.8, 0.9).toColor();
+    widget.onColorChanged(color.toARGB32());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const size = Size(160, 160);
+    return GestureDetector(
+      onPanUpdate: (details) => _handleGesture(details.localPosition, size),
+      onPanDown: (details) => _handleGesture(details.localPosition, size),
+      child: CustomPaint(
+        size: size,
+        painter: _ColorWheelPainter(hue: _hue),
+      ),
+    );
+  }
+}
+
+class _ColorWheelPainter extends CustomPainter {
+  final double hue;
+  _ColorWheelPainter({required this.hue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    const strokeWidth = 20.0;
+
+    for (double i = 0; i < 360; i += 1) {
+      final paint = Paint()
+        ..color = HSVColor.fromAHSV(1.0, i, 1.0, 1.0).toColor()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth + 1;
+      
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
+        (i - 90) * 3.1415926535 / 180,
+        1.5 * 3.1415926535 / 180,
+        false,
+        paint,
+      );
+    }
+
+    final indicatorAngle = (hue - 90) * 3.1415926535 / 180;
+    final indicatorOffset = Offset(
+      center.dx + (radius - (strokeWidth / 2)) * math.cos(indicatorAngle),
+      center.dy + (radius - (strokeWidth / 2)) * math.sin(indicatorAngle),
+    );
+
+    canvas.drawCircle(
+      indicatorOffset, 
+      12, 
+      Paint()..color = Colors.black26..style = PaintingStyle.fill..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
+    );
+    canvas.drawCircle(
+      indicatorOffset, 
+      10, 
+      Paint()..color = Colors.white..style = PaintingStyle.fill
+    );
+    canvas.drawCircle(
+      indicatorOffset, 
+      7, 
+      Paint()..color = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor()..style = PaintingStyle.fill
+    );
+
+    canvas.drawCircle(
+      center, 
+      radius - strokeWidth - 12, 
+      Paint()..color = HSVColor.fromAHSV(1.0, hue, 0.8, 0.9).toColor()..style = PaintingStyle.fill
+    );
+    canvas.drawCircle(
+      center, 
+      radius - strokeWidth - 12, 
+      Paint()..color = Colors.white24..style = PaintingStyle.stroke..strokeWidth = 2
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ColorWheelPainter oldDelegate) => oldDelegate.hue != hue;
+}
+

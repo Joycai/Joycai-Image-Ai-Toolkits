@@ -124,14 +124,16 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final size = MediaQuery.of(context).size;
+    final isNarrow = size.width < 900;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Consumer<AppState>(
         builder: (context, appState, child) => Container(
-          width: 1000,
-          height: 700,
-          padding: const EdgeInsets.all(24),
+          width: isNarrow ? size.width * 0.95 : 1000,
+          height: isNarrow ? size.height * 0.9 : 700,
+          padding: EdgeInsets.all(isNarrow ? 12 : 24),
           child: _isLoadingData 
             ? const Center(child: CircularProgressIndicator())
             : Column(
@@ -141,79 +143,116 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
                     children: [
                       const Icon(Icons.auto_fix_high, color: Colors.blue),
                       const SizedBox(width: 12),
-                      Text(l10n.aiPromptRefiner, style: Theme.of(context).textTheme.headlineSmall),
-                      const Spacer(),
+                      Expanded(
+                        child: Text(
+                          l10n.aiPromptRefiner, 
+                          style: isNarrow ? Theme.of(context).textTheme.titleLarge : Theme.of(context).textTheme.headlineSmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildModelSelector(l10n, appState),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildSysPromptSelector(l10n),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Prompts Section
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  if (isNarrow) ...[
+                    _buildModelSelector(l10n, appState),
+                    const SizedBox(height: 8),
+                    _buildSysPromptSelector(l10n),
+                  ] else
+                    Row(
                       children: [
-                        // Source
                         Expanded(
-                          child: MarkdownEditor(
-                            controller: _currentPromptCtrl,
-                            label: l10n.currentPrompt,
-                            isMarkdown: appState.isMarkdownRefinerSource,
-                            onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
-                            maxLines: 20,
-                            initiallyPreview: false,
-                            expand: true,
-                          ),
+                          child: _buildModelSelector(l10n, appState),
                         ),
                         const SizedBox(width: 16),
-                        // Arrow
-                        const Center(
-                          child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
-                        ),
-                        const SizedBox(width: 16),
-                        // Refined
                         Expanded(
-                          child: MarkdownEditor(
-                            controller: _refinedPromptCtrl,
-                            label: l10n.refinedPrompt,
-                            isMarkdown: appState.isMarkdownRefinerTarget,
-                            onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
-                            maxLines: 20,
-                            initiallyPreview: true,
-                            isRefined: true,
-                            expand: true,
-                          ),
+                          child: _buildSysPromptSelector(l10n),
                         ),
                       ],
                     ),
+                  const SizedBox(height: 16),
+                  
+                  // Prompts Section
+                  Expanded(
+                    child: isNarrow 
+                      ? SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              MarkdownEditor(
+                                controller: _currentPromptCtrl,
+                                label: l10n.currentPrompt,
+                                isMarkdown: appState.isMarkdownRefinerSource,
+                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
+                                maxLines: 8,
+                                initiallyPreview: false,
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8.0),
+                                child: Center(child: Icon(Icons.arrow_downward_rounded, color: Colors.grey)),
+                              ),
+                              MarkdownEditor(
+                                controller: _refinedPromptCtrl,
+                                label: l10n.refinedPrompt,
+                                isMarkdown: appState.isMarkdownRefinerTarget,
+                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
+                                maxLines: 12,
+                                initiallyPreview: true,
+                                isRefined: true,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: MarkdownEditor(
+                                controller: _currentPromptCtrl,
+                                label: l10n.currentPrompt,
+                                isMarkdown: appState.isMarkdownRefinerSource,
+                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
+                                maxLines: 20,
+                                initiallyPreview: false,
+                                expand: true,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Center(
+                              child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: MarkdownEditor(
+                                controller: _refinedPromptCtrl,
+                                label: l10n.refinedPrompt,
+                                isMarkdown: appState.isMarkdownRefinerTarget,
+                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
+                                maxLines: 20,
+                                initiallyPreview: true,
+                                isRefined: true,
+                                expand: true,
+                              ),
+                            ),
+                          ],
+                        ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   
                   // Actions
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         child: Text(l10n.cancel),
                       ),
-                      const SizedBox(width: 12),
                       FilledButton.icon(
                         onPressed: _isRefining ? null : _refine,
                         icon: _isRefining 
@@ -221,7 +260,6 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
                           : const Icon(Icons.auto_fix_high),
                         label: Text(l10n.refine),
                       ),
-                      const SizedBox(width: 12),
                       FilledButton(
                         onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
                           widget.onApply(_refinedPromptCtrl.text);
