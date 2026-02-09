@@ -18,10 +18,14 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     // Build our app and trigger a frame.
+    final appState = AppState();
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AppState(),
-        child: const MyApp(version: '1.2.1'),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: appState),
+          ChangeNotifierProvider.value(value: appState.windowState),
+        ],
+        child: const MyApp(version: '1.3.0'),
       ),
     );
 

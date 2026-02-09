@@ -4,6 +4,9 @@
   "tasks": "Tasks",
   "prompts": "Prompts",
   "usage": "Usage",
+  "downloader": "Downloader",
+  "url": "URL",
+  "prefix": "Prefix",
   "models": "Models",
   "settings": "Settings",
   "addFolder": "Add Folder",
@@ -324,6 +327,10 @@
   "outputPrice": "Output Price ($/M Tokens)",
   "requestPrice": "Request Price ($/Req)",
   "priceConfig": "Price Config",
+  "portableMode": "Portable Mode",
+  "portableModeDesc": "Store database and cache in the application folder (requires restart)",
+  "restartRequired": "Restart Required",
+  "restartMessage": "The application must be restarted to apply changes to the data storage location.",
   "usageByGroup": "Usage by Group",
   "addFeeGroup": "Add Fee Group",
   "editFeeGroup": "Edit Fee Group",
@@ -349,6 +356,7 @@
   "finish": "Finish",
   "setupCompleteMessage": "You are all set! Enjoy creating.",
   "runSetupWizard": "Run Setup Wizard",
+  "clearDownloaderCache": "Clear Downloader Cache",
   "skip": "Skip",
   "fetchModels": "Fetch Models",
   "discoveringModels": "Discovering Models...",
@@ -358,5 +366,85 @@
   "noNewModelsFound": "No new models found.",
   "fetchFailed": "Failed to fetch models: {error}",
   "edit": "Edit",
-  "preview": "Preview"
+  "preview": "Preview",
+  "openRawImage": "Open Raw Image",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "saveOriginHtml": "Save Origin HTML",
+  "htmlSavedTo": "HTML saved to: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHtmlMode": "Manual HTML Mode",
+  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
+  "cookieHistory": "Cookie History",
+  "noCookieHistory": "No cookie history saved",
+  "openInPreview": "Open in Preview",
+  "sendToComparator": "Send to Comparator",
+  "sendToComparatorRaw": "Send to Comparator (Raw)",
+  "sendToComparatorAfter": "Send to Comparator (After)",
+  "compareModeSync": "Sync Mode",
+  "compareModeSwap": "Swap Mode",
+  "tempWorkspace": "Temp Workspace",
+  "clearTempWorkspace": "Clear Workspace",
+  "dropFilesHere": "Drop images here to add them to temporary workspace",
+  "enableNotifications": "Enable System Notifications",
+  "taskCompletedNotification": "Task Completed",
+  "taskFailedNotification": "Task Failed",
+  "taskCompletedBody": "Task {id} has finished successfully.",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "Task {id} has failed.",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "imageDownloader": "Image Downloader",
+  "websiteUrl": "Website URL",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "What to find?",
+  "whatToFindHint": "e.g. all product gallery images",
+  "analysisModel": "Analysis Model",
+  "advancedOptions": "Advanced Options",
+  "analyzing": "Analyzing...",
+  "findImages": "Find Images",
+  "noImagesDiscovered": "No images discovered yet.",
+  "enterUrlToStart": "Enter a URL and requirement to start.",
+  "addToQueue": "Add to Queue",
+  "imagesSelected": "{count} selected",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToQueue": "Added {count} images to download queue.",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setOutputDirFirst": "Please set output directory in settings first.",
+  "cookiesHint": "Cookies (Raw or Netscape format)",
+  "logs": "Logs",
+  "selectImagesToDownload": "Select images to download",
+  "openaiEndpointHint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
+  "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
+  "importCookieFile": "Import Cookie File",
+  "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
+  "cookieImportSuccess": "Successfully imported {count} cookies."
 }

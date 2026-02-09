@@ -128,6 +128,24 @@ abstract class AppLocalizations {
   /// **'Usage'**
   String get usage;
 
+  /// No description provided for @downloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader'**
+  String get downloader;
+
+  /// No description provided for @url.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get url;
+
+  /// No description provided for @prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get prefix;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:
@@ -1286,6 +1304,30 @@ abstract class AppLocalizations {
   /// **'Price Config'**
   String get priceConfig;
 
+  /// No description provided for @portableMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Portable Mode'**
+  String get portableMode;
+
+  /// No description provided for @portableModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Store database and cache in the application folder (requires restart)'**
+  String get portableModeDesc;
+
+  /// No description provided for @restartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Required'**
+  String get restartRequired;
+
+  /// No description provided for @restartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The application must be restarted to apply changes to the data storage location.'**
+  String get restartMessage;
+
   /// No description provided for @usageByGroup.
   ///
   /// In en, this message translates to:
@@ -1394,6 +1436,12 @@ abstract class AppLocalizations {
   /// **'Run Setup Wizard'**
   String get runSetupWizard;
 
+  /// No description provided for @clearDownloaderCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Downloader Cache'**
+  String get clearDownloaderCache;
+
   /// No description provided for @skip.
   ///
   /// In en, this message translates to:
@@ -1453,6 +1501,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preview'**
   String get preview;
+
+  /// No description provided for @openRawImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Raw Image'**
+  String get openRawImage;
+
+  /// No description provided for @pasteFromClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from Clipboard'**
+  String get pasteFromClipboard;
+
+  /// No description provided for @saveOriginHtml.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Origin HTML'**
+  String get saveOriginHtml;
+
+  /// No description provided for @htmlSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'HTML saved to: {path}'**
+  String htmlSavedTo(String path);
+
+  /// No description provided for @manualHtmlMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual HTML Mode'**
+  String get manualHtmlMode;
+
+  /// No description provided for @manualHtmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste rendered HTML here (F12 -> Copy Outer HTML)'**
+  String get manualHtmlHint;
+
+  /// No description provided for @cookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookie History'**
+  String get cookieHistory;
+
+  /// No description provided for @noCookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No cookie history saved'**
+  String get noCookieHistory;
+
+  /// No description provided for @openInPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Preview'**
+  String get openInPreview;
+
+  /// No description provided for @sendToComparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator'**
+  String get sendToComparator;
+
+  /// No description provided for @sendToComparatorRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (Raw)'**
+  String get sendToComparatorRaw;
+
+  /// No description provided for @sendToComparatorAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (After)'**
+  String get sendToComparatorAfter;
+
+  /// No description provided for @compareModeSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Mode'**
+  String get compareModeSync;
+
+  /// No description provided for @compareModeSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Mode'**
+  String get compareModeSwap;
+
+  /// No description provided for @tempWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Temp Workspace'**
+  String get tempWorkspace;
+
+  /// No description provided for @clearTempWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Workspace'**
+  String get clearTempWorkspace;
+
+  /// No description provided for @dropFilesHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here to add them to temporary workspace'**
+  String get dropFilesHere;
+
+  /// No description provided for @enableNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable System Notifications'**
+  String get enableNotifications;
+
+  /// No description provided for @taskCompletedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Completed'**
+  String get taskCompletedNotification;
+
+  /// No description provided for @taskFailedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Failed'**
+  String get taskFailedNotification;
+
+  /// No description provided for @taskCompletedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has finished successfully.'**
+  String taskCompletedBody(String id);
+
+  /// No description provided for @taskFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has failed.'**
+  String taskFailedBody(String id);
+
+  /// No description provided for @imageDownloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Downloader'**
+  String get imageDownloader;
+
+  /// No description provided for @websiteUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Website URL'**
+  String get websiteUrl;
+
+  /// No description provided for @websiteUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get websiteUrlHint;
+
+  /// No description provided for @whatToFind.
+  ///
+  /// In en, this message translates to:
+  /// **'What to find?'**
+  String get whatToFind;
+
+  /// No description provided for @whatToFindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. all product gallery images'**
+  String get whatToFindHint;
+
+  /// No description provided for @analysisModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis Model'**
+  String get analysisModel;
+
+  /// No description provided for @advancedOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Options'**
+  String get advancedOptions;
+
+  /// No description provided for @analyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get analyzing;
+
+  /// No description provided for @findImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Images'**
+  String get findImages;
+
+  /// No description provided for @noImagesDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'No images discovered yet.'**
+  String get noImagesDiscovered;
+
+  /// No description provided for @enterUrlToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a URL and requirement to start.'**
+  String get enterUrlToStart;
+
+  /// No description provided for @addToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Queue'**
+  String get addToQueue;
+
+  /// No description provided for @imagesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String imagesSelected(int count);
+
+  /// No description provided for @addedToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} images to download queue.'**
+  String addedToQueue(int count);
+
+  /// No description provided for @setOutputDirFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set output directory in settings first.'**
+  String get setOutputDirFirst;
+
+  /// No description provided for @cookiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies (Raw or Netscape format)'**
+  String get cookiesHint;
+
+  /// No description provided for @logs.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get logs;
+
+  /// No description provided for @selectImagesToDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Select images to download'**
+  String get selectImagesToDownload;
+
+  /// No description provided for @openaiEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
+  String get openaiEndpointHint;
+
+  /// No description provided for @googleEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)'**
+  String get googleEndpointHint;
+
+  /// No description provided for @importCookieFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Cookie File'**
+  String get importCookieFile;
+
+  /// No description provided for @cookieFileInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported cookie file format. Please use Netscape format or raw text.'**
+  String get cookieFileInvalid;
+
+  /// No description provided for @cookieImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported {count} cookies.'**
+  String cookieImportSuccess(Object count);
 }
 
 class _AppLocalizationsDelegate

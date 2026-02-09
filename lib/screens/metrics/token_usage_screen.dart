@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/fee_group_manager.dart';
@@ -27,17 +28,15 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
           bottom: TabBar(
             tabs: [
               Tab(text: l10n.usage),
-              Tab(text: l10n.priceConfig),
+              Tab(text: l10n.feeGroups),
             ],
           ),
         ),
-        body: Consumer<AppState>(
-          builder: (context, appState, child) => TabBarView(
-            children: [
-              const _UsageView(),
-              FeeGroupManager(appState: appState, mode: FeeGroupManagerMode.fullPage),
-            ],
-          ),
+        body: const TabBarView(
+          children: [
+            _UsageView(),
+            FeeGroupManager(mode: FeeGroupManagerMode.section),
+          ],
         ),
       ),
     );
@@ -54,9 +53,9 @@ class _UsageView extends StatefulWidget {
 class _UsageViewState extends State<_UsageView> {
   final DatabaseService _db = DatabaseService();
   List<Map<String, dynamic>> _usageData = [];
-  List<String> _availableModelIds = [];
-  final List<String> _selectedModelIds = [];
-  
+  bool _isLoading = true;
+
+  final Set<String> _selectedModelIds = {};
   DateTimeRange _dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
     end: DateTime.now(),
@@ -65,32 +64,28 @@ class _UsageViewState extends State<_UsageView> {
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _loadData();
   }
 
-  Future<void> _loadInitialData() async {
-    final appState = Provider.of<AppState>(context, listen: false);
-    setState(() {
-      _availableModelIds = appState.allModels.map((m) => m['model_id'] as String).toSet().toList();
-    });
-    _refreshData();
-  }
-
-  Future<void> _refreshData() async {
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     final data = await _db.getTokenUsage(
-      modelIds: _selectedModelIds.isEmpty ? null : _selectedModelIds,
+      modelIds: _selectedModelIds.toList(),
       start: _dateRange.start,
-      end: _dateRange.end.add(const Duration(days: 1)),
+      end: _dateRange.end,
     );
-    setState(() {
-      _usageData = data;
-    });
+    if (mounted) {
+      setState(() {
+        _usageData = data;
+        _isLoading = false;
+      });
+    }
   }
 
-  void _setQuickFilter(String type) {
+  void _updateRange(String preset) {
     final now = DateTime.now();
     DateTime start;
-    switch (type) {
+    switch (preset) {
       case 'today':
         start = DateTime(now.year, now.month, now.day);
         break;
@@ -101,7 +96,7 @@ class _UsageViewState extends State<_UsageView> {
         start = DateTime(now.year, now.month - 1, now.day);
         break;
       case 'year':
-        start = DateTime(now.year, 1, 1);
+        start = DateTime(now.year - 1, now.month, now.day);
         break;
       default:
         start = now.subtract(const Duration(days: 7));
@@ -109,244 +104,176 @@ class _UsageViewState extends State<_UsageView> {
     setState(() {
       _dateRange = DateTimeRange(start: start, end: now);
     });
-    _refreshData();
+    _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final appState = Provider.of<AppState>(context);
 
-    return Consumer<AppState>(
-      builder: (context, appState, child) {
-        int totalInput = 0;
-        int totalOutput = 0;
-        int totalRequests = 0;
-        double totalCost = 0.0;
+    // Calculate aggregated stats
+    final Map<int, double> groupCosts = {};
+    int totalInput = 0;
+    int totalOutput = 0;
+    double totalCost = 0.0;
 
-        // Map to store group-wise totals: groupPk -> cost
-        final Map<int?, double> groupCosts = {};
+    for (var row in _usageData) {
+      final input = row['input_tokens'] as int? ?? 0;
+      final output = row['output_tokens'] as int? ?? 0;
+      final billingMode = row['billing_mode'] as String? ?? 'token';
+      final reqCount = row['request_count'] as int? ?? 1;
+      
+      double cost = 0.0;
+      if (billingMode == 'token') {
+        final inPrice = (row['input_price'] ?? 0.0) as num;
+        final outPrice = (row['output_price'] ?? 0.0) as num;
+        cost = (input * inPrice.toDouble() / 1000000) +
+               (output * outPrice.toDouble() / 1000000);
+      } else {
+        final reqPrice = (row['request_price'] ?? 0.0) as num;
+        cost = reqCount * reqPrice.toDouble();
+      }
 
-        for (var row in _usageData) {
-          final inTokens = row['input_tokens'] as int;
-          final outTokens = row['output_tokens'] as int;
-          final inPrice = row['input_price'] as double;
-          final outPrice = row['output_price'] as double;
-          final billingMode = row['billing_mode'] as String? ?? 'token';
-          final reqCount = row['request_count'] as int? ?? 1;
-          final reqPrice = row['request_price'] as double? ?? 0.0;
-          final modelPk = row['model_pk'] as int?;
+      totalInput += input;
+      totalOutput += output;
+      totalCost += cost;
 
-          totalInput += inTokens;
-          totalOutput += outTokens;
-          totalRequests += reqCount;
+      // Find Fee Group ID for this usage record
+      final modelPk = row['model_pk'] as int?;
+      int? groupId;
+      if (modelPk != null) {
+        final model = appState.allModels.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
+        if (model != null) groupId = model.feeGroupId;
+      }
 
-          double cost = 0.0;
-          if (billingMode == 'request') {
-            cost = (reqCount * reqPrice);
-          } else {
-            cost = (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
-          }
-          totalCost += cost;
+      if (groupId != null) {
+        groupCosts[groupId] = (groupCosts[groupId] ?? 0) + cost;
+      }
+    }
 
-          // Find Fee Group ID for this usage record
-          int? groupId;
-          if (modelPk != null) {
-            final model = appState.allModels.cast<Map<String, dynamic>?>().firstWhere((m) => m?['id'] == modelPk, orElse: () => null);
-            if (model != null) groupId = model['fee_group_id'] as int?;
-          }
-          
-          groupCosts[groupId] = (groupCosts[groupId] ?? 0.0) + cost;
-        }
-
-        return Column(
-          children: [
-            _buildFilterBar(colorScheme, l10n),
-            _buildSummaryCards(totalInput, totalOutput, totalRequests, totalCost, colorScheme, l10n),
-            
-            // Fee Group Summary Area
-            if (groupCosts.isNotEmpty) 
-              _buildGroupSummaryArea(groupCosts, colorScheme, l10n, appState),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.latestLog, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.delete_sweep_outlined),
-                        tooltip: l10n.clearAllUsage,
-                        onPressed: () => _confirmClearAll(l10n),
-                      ),
-                      IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshData),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _usageData.isEmpty
-                  ? const Center(child: Text('No usage data found for selected range.'))
-                  : _buildUsageList(colorScheme, l10n),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildGroupSummaryArea(Map<int?, double> groupCosts, ColorScheme colorScheme, AppLocalizations l10n, AppState appState) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withAlpha(50),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.secondaryContainer),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.pie_chart_outline, size: 16, color: colorScheme.secondary),
-              const SizedBox(width: 8),
-              Text(l10n.usageByGroup, style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.secondary)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: groupCosts.entries.map((entry) {
-              final group = appState.allFeeGroups.cast<Map<String, dynamic>?>().firstWhere((g) => g?['id'] == entry.key, orElse: () => null);
-              final name = group != null ? group['name'] : l10n.noFeeGroup;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(name, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                  Text('\$${entry.value.toStringAsFixed(4)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ],
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterBar(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(l10n.modelsLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Wrap(
-                  spacing: 8,
-                  children: _availableModelIds.map((m) {
-                    final isSelected = _selectedModelIds.contains(m);
-                    return FilterChip(
-                      label: Text(m, style: const TextStyle(fontSize: 11)),
-                      selected: isSelected,
-                      onSelected: (val) {
-                        setState(() {
-                          if (val) {
-                            _selectedModelIds.add(m);
-                          } else {
-                            _selectedModelIds.remove(m);
-                          }
-                        });
-                        _refreshData();
-                      },
-                      onDeleted: () => _confirmClearModel(l10n, m),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
+    return Column(
+      children: [
+        // Filter Bar
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
             children: [
               Text(l10n.rangeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.date_range, size: 16),
-                label: Text('${DateFormat('yyyy-MM-dd').format(_dateRange.start)} - ${DateFormat('yyyy-MM-dd').format(_dateRange.end)}'),
-                onPressed: () async {
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    initialDateRange: _dateRange,
-                    firstDate: DateTime(2023),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) {
-                    setState(() => _dateRange = picked);
-                    _refreshData();
-                  }
-                },
+              _buildPresetChip('today', l10n.today),
+              const SizedBox(width: 4),
+              _buildPresetChip('week', l10n.lastWeek),
+              const SizedBox(width: 4),
+              _buildPresetChip('month', l10n.lastMonth),
+              const SizedBox(width: 4),
+              _buildPresetChip('year', l10n.thisYear),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined),
+                onPressed: _confirmClearAll,
+                tooltip: l10n.clearAllUsage,
               ),
-              const SizedBox(width: 16),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _quickFilterBtn(l10n.today, 'today'),
-                  _quickFilterBtn(l10n.lastWeek, 'week'),
-                  _quickFilterBtn(l10n.lastMonth, 'month'),
-                  _quickFilterBtn(l10n.thisYear, 'year'),
-                ],
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadData,
               ),
             ],
           ),
-        ],
-      ),
+        ),
+
+        // Summary Cards
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              _buildStatCard(l10n.inputTokens, totalInput.toString(), Colors.blue),
+              const SizedBox(width: 16),
+              _buildStatCard(l10n.outputTokens, totalOutput.toString(), Colors.green),
+              const SizedBox(width: 16),
+              _buildStatCard(l10n.estimatedCost, '\$${totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+        if (groupCosts.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(l10n.usageByGroup, style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.secondary)),
+            ),
+          ),
+        
+        if (groupCosts.isNotEmpty)
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: groupCosts.entries.map((e) {
+                final group = appState.allFeeGroups.firstWhere((g) => g.id == e.key);
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(group.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      Text('\$${e.value.toStringAsFixed(4)}', style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+        const Divider(height: 32),
+
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _usageData.isEmpty
+                  ? const Center(child: Text('No usage data found for selected range.'))
+                  : _buildUsageList(colorScheme, l10n),
+        ),
+      ],
     );
   }
 
-  Widget _quickFilterBtn(String label, String type) {
-    return ActionChip(
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      onPressed: () => _setQuickFilter(type),
+  Widget _buildPresetChip(String id, String label) {
+    final isSelected = false; // Simplified
+    return ChoiceChip(
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      selected: isSelected,
+      onSelected: (_) => _updateRange(id),
     );
   }
 
-  Widget _buildSummaryCards(int input, int output, int requests, double cost, ColorScheme colorScheme, AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          _summaryCard(l10n.requests, requests.toString(), Icons.numbers, Colors.purple),
-          const SizedBox(width: 16),
-          _summaryCard(l10n.inputTokens, input.toString(), Icons.login, Colors.blue),
-          const SizedBox(width: 16),
-          _summaryCard(l10n.outputTokens, output.toString(), Icons.logout, Colors.green),
-          const SizedBox(width: 16),
-          _summaryCard(l10n.estimatedCost, '\$${cost.toStringAsFixed(4)}', Icons.attach_money, Colors.orange),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String label, String value, Color color, {bool isBold = false}) {
     return Expanded(
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color),
-              const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-              Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
+              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                  color: color,
+                ),
+              ),
             ],
           ),
         ),
@@ -355,79 +282,88 @@ class _UsageViewState extends State<_UsageView> {
   }
 
   Widget _buildUsageList(ColorScheme colorScheme, AppLocalizations l10n) {
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _usageData.length,
-      separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         final row = _usageData[index];
-        final date = DateTime.parse(row['timestamp']);
+        final time = DateTime.parse(row['timestamp']);
         final billingMode = row['billing_mode'] as String? ?? 'token';
-        final inTokens = row['input_tokens'] as int;
-        final outTokens = row['output_tokens'] as int;
-        final inPrice = row['input_price'] as double;
-        final outPrice = row['output_price'] as double;
-        final reqCount = row['request_count'] as int? ?? 1;
-        final reqPrice = row['request_price'] as double? ?? 0.0;
-
-        final cost = billingMode == 'request' 
-            ? (reqCount * reqPrice)
-            : (inTokens / 1000000 * inPrice) + (outTokens / 1000000 * outPrice);
-
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            child: Icon(billingMode == 'request' ? Icons.ads_click : Icons.analytics_outlined, size: 20),
-          ),
-          title: Row(
-            children: [
-              Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              Text('\$${cost.toStringAsFixed(6)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(DateFormat('yyyy-MM-dd HH:mm:ss').format(date), style: const TextStyle(fontSize: 11)),
-              const SizedBox(height: 4),
-              Row(
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            dense: true,
+            title: Row(
+              children: [
+                Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                const Spacer(),
+                Text(
+                  DateFormat('MM-dd HH:mm').format(time),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
                 children: [
                   if (billingMode == 'token') ...[
-                    _tokenBadge('IN: $inTokens', Colors.blue),
-                    const SizedBox(width: 8),
-                    _tokenBadge('OUT: $outTokens', Colors.green),
+                    const Icon(Icons.input, size: 12, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text('${row['input_tokens']}'),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.output, size: 12, color: Colors.green),
+                    const SizedBox(width: 4),
+                    Text('${row['output_tokens']}'),
                   ] else ...[
-                    _tokenBadge('${l10n.requests.toUpperCase()}: $reqCount', Colors.purple),
-                    if (inTokens > 0 || outTokens > 0) ...[
-                      const SizedBox(width: 8),
-                      _tokenBadge('IN: $inTokens', Colors.blue.withAlpha(128)),
-                      const SizedBox(width: 4),
-                      _tokenBadge('OUT: $outTokens', Colors.green.withAlpha(128)),
-                    ],
+                    const Icon(Icons.repeat, size: 12, color: Colors.purple),
+                    const SizedBox(width: 4),
+                    Text('${row['request_count']} ${l10n.requests}'),
                   ],
+                  const Spacer(),
+                  _buildCostBadge(row),
                 ],
               ),
-            ],
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 16),
+              onPressed: () => _confirmDeleteModelData(row['model_id']),
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _tokenBadge(String label, Color color) {
+  Widget _buildCostBadge(Map<String, dynamic> row) {
+    final billingMode = row['billing_mode'] as String? ?? 'token';
+    double cost = 0.0;
+    if (billingMode == 'token') {
+      final inPrice = (row['input_price'] ?? 0.0) as num;
+      final outPrice = (row['output_price'] ?? 0.0) as num;
+      cost = ((row['input_tokens'] ?? 0) * inPrice.toDouble() / 1000000) +
+             ((row['output_tokens'] ?? 0) * outPrice.toDouble() / 1000000);
+    } else {
+      final reqPrice = (row['request_price'] ?? 0.0) as num;
+      cost = (row['request_count'] ?? 1) * reqPrice.toDouble();
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha((255 * 0.1).round()),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withAlpha((255 * 0.3).round())),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Text(
+        '\$${cost.toStringAsFixed(5)}',
+        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
+      ),
     );
   }
 
-  void _confirmClearAll(AppLocalizations l10n) {
+  void _confirmClearAll() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -435,23 +371,24 @@ class _UsageViewState extends State<_UsageView> {
         content: Text(l10n.clearUsageWarning),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.clearTokenUsage();
               if (context.mounted) {
                 Navigator.pop(context);
-                _refreshData();
+                _loadData();
               }
             },
-            child: Text(l10n.clearAll, style: const TextStyle(color: Colors.white)),
+            child: Text(l10n.clearAll),
           ),
         ],
       ),
     );
   }
 
-  void _confirmClearModel(AppLocalizations l10n, String modelId) {
+  void _confirmDeleteModelData(String modelId) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -459,20 +396,19 @@ class _UsageViewState extends State<_UsageView> {
         content: Text(l10n.clearModelDataWarning(modelId)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await _db.clearTokenUsage(modelId: modelId);
               if (context.mounted) {
                 Navigator.pop(context);
-                _refreshData();
+                _loadData();
               }
             },
-            child: Text(l10n.clearModelData, style: const TextStyle(color: Colors.white)),
+            child: Text(l10n.clearModelData),
           ),
         ],
       ),
     );
   }
 }
-

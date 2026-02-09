@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
@@ -39,6 +42,7 @@ class _SetupWizardState extends State<SetupWizard> {
   final TextEditingController _modelNameController = TextEditingController();
   String _modelTag = 'multimodal';
   bool _isFetchingModels = false;
+  bool _isPortable = false;
 
   @override
   void initState() {
@@ -51,6 +55,7 @@ class _SetupWizardState extends State<SetupWizard> {
     _outputDirController.text = appState.outputDirectory ?? '';
     _prefixController.text = appState.imagePrefix;
     _channelNameController.text = 'My First Channel';
+    _isPortable = await AppPaths.isPortableMode();
     _updateDefaultEndpoint();
     setState(() {});
   }
@@ -226,6 +231,20 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 8),
           const Text("Select where generated images will be saved."),
           const SizedBox(height: 24),
+          SwitchListTile(
+            title: Text(l10n.portableMode),
+            subtitle: Text(l10n.portableModeDesc),
+            value: _isPortable,
+            onChanged: (v) async {
+              await AppPaths.setPortableMode(v);
+              setState(() => _isPortable = v);
+              if (mounted) {
+                _showRestartDialog(l10n);
+              }
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _outputDirController,
             readOnly: true,
@@ -444,6 +463,23 @@ class _SetupWizardState extends State<SetupWizard> {
     } finally {
       if (mounted) setState(() => _isFetchingModels = false);
     }
+  }
+
+  void _showRestartDialog(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restartRequired),
+        content: Text(l10n.restartMessage),
+        actions: [
+          FilledButton(
+            onPressed: () => exit(0),
+            child: const Text("Exit"),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFinishStep(BuildContext context, AppLocalizations l10n) {

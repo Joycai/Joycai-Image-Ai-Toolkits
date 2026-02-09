@@ -4,6 +4,9 @@
   "tasks": "任务",
   "prompts": "提示词",
   "usage": "用量",
+  "downloader": "下载器",
+  "url": "地址",
+  "prefix": "前缀",
   "models": "模型",
   "settings": "设置",
   "addFolder": "添加文件夹",
@@ -324,6 +327,10 @@
   "outputPrice": "输出价格 ($/M Tokens)",
   "requestPrice": "请求价格 ($/次)",
   "priceConfig": "价格配置",
+  "portableMode": "便携模式",
+  "portableModeDesc": "在应用程序文件夹中存储数据库和缓存 (需要重启)",
+  "restartRequired": "需要重启",
+  "restartMessage": "必须重启应用程序以应用对数据存储位置的更改。",
   "usageByGroup": "按费率组统计",
   "addFeeGroup": "添加费率组",
   "editFeeGroup": "编辑费率组",
@@ -349,6 +356,7 @@
   "finish": "完成",
   "setupCompleteMessage": "设置完成！尽情创作吧。",
   "runSetupWizard": "运行设置向导",
+  "clearDownloaderCache": "清除下载器缓存",
   "skip": "跳过",
   "fetchModels": "获取模型",
   "discoveringModels": "正在发现模型...",
@@ -358,5 +366,85 @@
   "noNewModelsFound": "未发现新模型。",
   "fetchFailed": "获取模型失败: {error}",
   "edit": "编辑",
-  "preview": "预览"
+  "preview": "预览",
+  "openRawImage": "打开原始图像",
+  "pasteFromClipboard": "从剪贴板粘贴",
+  "saveOriginHtml": "保存原始 HTML",
+  "htmlSavedTo": "HTML 已保存至: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHtmlMode": "手动 HTML 模式",
+  "manualHtmlHint": "在此粘贴已渲染的 HTML (F12 -> 复制外部 HTML)",
+  "cookieHistory": "Cookie 历史",
+  "noCookieHistory": "未保存 Cookie 历史",
+  "openInPreview": "在预览窗口打开",
+  "sendToComparator": "发送至对比器",
+  "sendToComparatorRaw": "发送至对比器 (原图)",
+  "sendToComparatorAfter": "发送至对比器 (后图)",
+  "compareModeSync": "同步模式",
+  "compareModeSwap": "切换模式",
+  "tempWorkspace": "临时工作区",
+  "clearTempWorkspace": "清空工作区",
+  "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
+  "enableNotifications": "启用系统通知",
+  "taskCompletedNotification": "任务已完成",
+  "taskFailedNotification": "任务失败",
+  "taskCompletedBody": "任务 {id} 已成功完成。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "任务 {id} 运行失败。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "imageDownloader": "图像下载器",
+  "websiteUrl": "网站地址",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "寻找什么？",
+  "whatToFindHint": "例如：所有商品详情图",
+  "analysisModel": "分析模型",
+  "advancedOptions": "高级选项",
+  "analyzing": "正在分析...",
+  "findImages": "寻找图像",
+  "noImagesDiscovered": "尚未发现图像。",
+  "enterUrlToStart": "输入网址和需求以开始。",
+  "addToQueue": "添加到下载队列",
+  "imagesSelected": "已选 {count} 张",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToQueue": "已将 {count} 张图像添加到下载队列。",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setOutputDirFirst": "请先在设置中设置输出目录。",
+  "cookiesHint": "Cookie (原始或 Netscape 格式)",
+  "logs": "日志",
+  "selectImagesToDownload": "选择要下载的图像",
+  "openaiEndpointHint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
+  "googleEndpointHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾（内部已处理）",
+  "importCookieFile": "导入 Cookie 文件",
+  "cookieFileInvalid": "不支持的 Cookie 文件格式。请使用 Netscape 格式或原始文本。",
+  "cookieImportSuccess": "成功导入 {count} 条 Cookie。"
 }

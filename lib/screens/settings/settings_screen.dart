@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
@@ -37,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _mcpEnabled = false;
   final TextEditingController _mcpPortController = TextEditingController();
 
+  bool _isPortable = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +56,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _mcpEnabled = (await _db.getSetting('mcp_enabled')) == 'true';
     _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
+
+    _isPortable = await AppPaths.isPortableMode();
     
     setState(() {});
   }
@@ -99,6 +104,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   AppSection(
                     title: l10n.settings,
                     children: [
+                      _buildNotificationTile(appState, l10n),
+                      const SizedBox(height: 8),
+                      _buildPortableModeTile(l10n),
+                      const SizedBox(height: 8),
                       _buildOutputDirectoryTile(appState, l10n),
                     ],
                   ),
@@ -202,6 +211,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildNotificationTile(AppState appState, AppLocalizations l10n) {
+    return SwitchListTile(
+      title: Text(l10n.enableNotifications),
+      value: appState.notificationsEnabled,
+      onChanged: (v) => appState.setNotificationsEnabled(v),
+    );
+  }
+
+  Widget _buildPortableModeTile(AppLocalizations l10n) {
+    return SwitchListTile(
+      title: Text(l10n.portableMode),
+      subtitle: Text(l10n.portableModeDesc),
+      value: _isPortable,
+      onChanged: (v) async {
+        await AppPaths.setPortableMode(v);
+        setState(() => _isPortable = v);
+        if (mounted) {
+          _showRestartDialog(l10n);
+        }
+      },
+    );
+  }
+
+  void _showRestartDialog(AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.restartRequired),
+        content: Text(l10n.restartMessage),
+        actions: [
+          FilledButton(
+            onPressed: () => exit(0),
+            child: Text(l10n.resetEverything), // Reusing "Restart" feel
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOutputDirectoryTile(AppState appState, AppLocalizations l10n) {
     return ListTile(
       title: Text(l10n.outputDirectory),
@@ -242,6 +291,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.auto_fix_high),
           label: Text(l10n.runSetupWizard),
         ),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final appState = Provider.of<AppState>(context, listen: false);
+            await appState.clearDownloaderCache();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Downloader cache cleared.')),
+              );
+            }
+          },
+          icon: const Icon(Icons.delete_sweep_outlined),
+          label: Text(l10n.clearDownloaderCache),
+        ),
         ElevatedButton.icon(
           onPressed: () => _resetSettings(l10n),
           style: ElevatedButton.styleFrom(
@@ -268,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final data = await _db.getAllDataRaw();
+    final data = await _db.getAllDataRaw(includePrompts: false);
     final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(
@@ -298,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Import Settings?"),
-          content: const Text("This will replace all your current models, channels, categories, and prompts. This cannot be undone."),
+          content: const Text("This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management."),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
             ElevatedButton(

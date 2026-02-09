@@ -3,9 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-// import 'package:flutter/material.dart'; // Unnecessary
-
 import '../core/constants.dart';
+import '../models/app_file.dart';
 import '../services/database_service.dart';
 
 /// Top-level function for background disk scanning to keep UI smooth.
@@ -31,9 +30,12 @@ class GalleryState extends ChangeNotifier {
   
   List<String> sourceDirectories = [];
   List<String> activeSourceDirectories = [];
-  List<File> galleryImages = [];
-  List<File> processedImages = [];
-  List<File> selectedImages = [];
+  
+  // Model-based image lists
+  List<AppFile> galleryImages = [];
+  List<AppFile> processedImages = [];
+  List<AppFile> selectedImages = [];
+  List<AppFile> droppedImages = []; // Transient workspace
   
   String? outputDirectory;
   double thumbnailSize = 150.0;
@@ -147,7 +149,7 @@ class GalleryState extends ChangeNotifier {
       await _db.addSourceDirectory(path);
       _log('Added base directory: $path');
       _scanImages();
-      _setupSourceWatchers(); // Re-setup watchers to include new dir
+      _setupSourceWatchers(); 
       notifyListeners();
     }
   }
@@ -177,7 +179,6 @@ class GalleryState extends ChangeNotifier {
     }
     await _db.updateDirectorySelection(path, isSelected);
     _scanImages();
-    // Watchers are based on activeSourceDirectories, so refresh them
     _setupSourceWatchers();
     notifyListeners();
   }
@@ -196,10 +197,11 @@ class GalleryState extends ChangeNotifier {
     }
 
     final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
-    galleryImages = paths.map((p) => File(p)).toList();
+    galleryImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
     
     selectedImages.removeWhere((selected) => 
-      !galleryImages.any((img) => img.path == selected.path)
+      !galleryImages.any((img) => img.path == selected.path) &&
+      !droppedImages.any((img) => img.path == selected.path)
     );
     notifyListeners();
   }
@@ -213,23 +215,39 @@ class GalleryState extends ChangeNotifier {
 
     try {
       final List<String> paths = await compute(_scanImagesIsolate, [outputDirectory!]);
-      List<File> results = paths.map((p) => File(p)).toList();
+      List<File> files = paths.map((p) => File(p)).toList();
       
-      results.sort((a, b) {
+      files.sort((a, b) {
         try {
           return b.lastModifiedSync().compareTo(a.lastModifiedSync());
         } catch (e) {
           return 0;
         }
       });
-      processedImages = results;
+      processedImages = files.map((f) => AppFile.fromFile(f)).toList();
     } catch (e) {
       processedImages = [];
     }
     notifyListeners();
   }
 
-  void toggleImageSelection(File image) {
+  void addDroppedFiles(List<AppFile> files) {
+    for (var file in files) {
+      if (!droppedImages.any((img) => img.path == file.path)) {
+        droppedImages.add(file);
+      }
+    }
+    notifyListeners();
+  }
+
+  void clearDroppedImages() {
+    droppedImages.clear();
+    // Also remove from selection if they were selected
+    selectedImages.removeWhere((s) => !galleryImages.any((g) => g.path == s.path));
+    notifyListeners();
+  }
+
+  void toggleImageSelection(AppFile image) {
     final index = selectedImages.indexWhere((img) => img.path == image.path);
     if (index != -1) {
       selectedImages.removeAt(index);
@@ -245,6 +263,10 @@ class GalleryState extends ChangeNotifier {
   }
 
   void selectAllImages() {
+    // Select all from current active collections? 
+    // Usually it's better to select from the currently visible list, 
+    // but the state doesn't know what's visible (Tab index).
+    // For now, let's select from galleryImages.
     selectedImages.addAll(galleryImages);
     notifyListeners();
   }

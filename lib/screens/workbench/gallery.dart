@@ -1,94 +1,174 @@
 import 'dart:io';
 
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
 import '../../state/app_state.dart';
+import '../../state/window_state.dart';
 
-class GalleryWidget extends StatelessWidget {
+class GalleryWidget extends StatefulWidget {
   const GalleryWidget({super.key});
+
+  @override
+  State<GalleryWidget> createState() => _GalleryWidgetState();
+}
+
+class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProviderStateMixin {
+  bool _isDragging = false;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context);
     
-    return DefaultTabController(
-      length: 2,
-      child: Column(
+    return DropTarget(
+      onDragDone: (details) {
+        final List<AppFile> newFiles = [];
+        for (var file in details.files) {
+          if (AppConstants.isImageFile(file.path)) {
+            newFiles.add(AppFile(path: file.path, name: file.name));
+          }
+        }
+        if (newFiles.isNotEmpty) {
+          appState.galleryState.addDroppedFiles(newFiles);
+          // Switch to the 3rd tab (Temporary Workspace) automatically
+          _tabController.animateTo(2);
+        }
+      },
+      onDragEntered: (details) => setState(() => _isDragging = true),
+      onDragExited: (details) => setState(() => _isDragging = false),
+      child: Stack(
         children: [
-          TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.sourceGallery),
-                    Consumer<AppState>(
-                      builder: (context, state, _) => state.galleryImages.isNotEmpty 
-                        ? Padding(
+          Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabs: [
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.sourceGallery),
+                        if (appState.galleryImages.isNotEmpty)
+                          Padding(
                             padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, state.galleryImages.length),
-                          )
-                        : const SizedBox.shrink(),
+                            child: _buildBadge(context, appState.galleryImages.length),
+                          ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.processResults),
+                        if (appState.processedImages.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: _buildBadge(context, appState.processedImages.length, isResult: true),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_awesome_motion_outlined, size: 16),
+                        const SizedBox(width: 8),
+                        Text(l10n.tempWorkspace),
+                        if (appState.droppedImages.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: _buildBadge(context, appState.droppedImages.length, isTemp: true),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              _buildToolbar(context),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
                   children: [
-                    Text(l10n.processResults),
-                    Consumer<AppState>(
-                      builder: (context, state, _) => state.processedImages.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, state.processedImages.length, isResult: true),
-                          )
-                        : const SizedBox.shrink(),
-                    ),
+                    _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
+                    _buildImageGrid(context, appState.processedImages, appState, isResult: true),
+                    _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
                   ],
                 ),
               ),
             ],
           ),
-          _buildToolbar(context),
-          Expanded(
-            child: TabBarView(
-              children: [
-                Consumer<AppState>(
-                  builder: (context, state, _) => _buildImageGrid(context, state.galleryImages, state, isResult: false),
+          if (_isDragging)
+            Container(
+              color: Theme.of(context).colorScheme.primary.withAlpha(40),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.file_upload_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.dropFilesHere,
+                      style: TextStyle(
+                        fontSize: 20, 
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary
+                      ),
+                    ),
+                  ],
                 ),
-                Consumer<AppState>(
-                  builder: (context, state, _) => _buildImageGrid(context, state.processedImages, state, isResult: true),
-                ),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildBadge(BuildContext context, int count, {bool isResult = false}) {
+  Widget _buildBadge(BuildContext context, int count, {bool isResult = false, bool isTemp = false}) {
     final colorScheme = Theme.of(context).colorScheme;
+    Color bgColor = colorScheme.primaryContainer;
+    Color textColor = colorScheme.onPrimaryContainer;
+
+    if (isResult) {
+      bgColor = colorScheme.secondaryContainer;
+      textColor = colorScheme.onSecondaryContainer;
+    } else if (isTemp) {
+      bgColor = Colors.teal.withAlpha(40);
+      textColor = Colors.teal;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: isResult ? colorScheme.secondaryContainer : colorScheme.primaryContainer,
+        color: bgColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         '$count',
-        style: TextStyle(
-          fontSize: 10,
-          color: isResult ? colorScheme.onSecondaryContainer : colorScheme.onPrimaryContainer,
-        ),
+        style: TextStyle(fontSize: 10, color: textColor, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -96,9 +176,10 @@ class GalleryWidget extends StatelessWidget {
   Widget _buildToolbar(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final appState = Provider.of<AppState>(context);
     
-    final selectedCount = context.select<AppState, int>((s) => s.selectedImages.length);
-    final thumbnailSize = context.select<AppState, double>((s) => s.thumbnailSize);
+    final selectedCount = appState.selectedImages.length;
+    final thumbnailSize = appState.thumbnailSize;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -116,16 +197,26 @@ class GalleryWidget extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             TextButton.icon(
-              onPressed: () => Provider.of<AppState>(context, listen: false).galleryState.selectAllImages(),
+              onPressed: () => appState.galleryState.selectAllImages(),
               icon: const Icon(Icons.select_all, size: 18),
               label: Text(l10n.selectAll),
             ),
             TextButton.icon(
-              onPressed: selectedCount == 0 ? null : () => Provider.of<AppState>(context, listen: false).galleryState.clearImageSelection(),
+              onPressed: selectedCount == 0 ? null : () => appState.galleryState.clearImageSelection(),
               icon: const Icon(Icons.deselect, size: 18),
               label: Text(l10n.clear),
             ),
             const SizedBox(width: 16),
+            
+            if (appState.droppedImages.isNotEmpty)
+              TextButton.icon(
+                onPressed: () => appState.galleryState.clearDroppedImages(),
+                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                label: Text(l10n.clearTempWorkspace),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+              ),
+
+            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
             
             // Thumbnail Size Slider
             Tooltip(
@@ -140,7 +231,7 @@ class GalleryWidget extends StatelessWidget {
                       value: thumbnailSize,
                       min: 80,
                       max: 400,
-                      onChanged: (v) => Provider.of<AppState>(context, listen: false).galleryState.setThumbnailSize(v),
+                      onChanged: (v) => appState.galleryState.setThumbnailSize(v),
                     ),
                   ),
                   Icon(Icons.image, size: 20, color: colorScheme.outline),
@@ -152,7 +243,7 @@ class GalleryWidget extends StatelessWidget {
             
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
-              onPressed: () => Provider.of<AppState>(context, listen: false).galleryState.refreshImages(),
+              onPressed: () => appState.galleryState.refreshImages(),
               tooltip: l10n.refresh,
             ),
           ],
@@ -161,17 +252,17 @@ class GalleryWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGrid(BuildContext context, List<File> images, AppState state, {required bool isResult}) {
+  Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
     if (images.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
+            Icon(isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              isResult ? l10n.noResultsYet : l10n.noImagesFound,
+              isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound),
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
           ],
@@ -197,6 +288,7 @@ class GalleryWidget extends StatelessWidget {
           isSelected: isSelected,
           isResult: isResult,
           onTap: () {
+            // Results open preview on tap, others toggle selection
             if (isResult) {
               _showPreviewDialog(context, images, index);
             } else {
@@ -208,7 +300,7 @@ class GalleryWidget extends StatelessWidget {
     );
   }
 
-  void _showPreviewDialog(BuildContext context, List<File> images, int initialIndex) {
+  void _showPreviewDialog(BuildContext context, List<AppFile> images, int initialIndex) {
     showDialog(
       context: context,
       builder: (context) => _ImagePreviewDialog(
@@ -220,7 +312,7 @@ class GalleryWidget extends StatelessWidget {
 }
 
 class _ImagePreviewDialog extends StatefulWidget {
-  final List<File> images;
+  final List<AppFile> images;
   final int initialIndex;
 
   const _ImagePreviewDialog({
@@ -273,8 +365,8 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                 boundaryMargin: const EdgeInsets.all(100),
                 minScale: 0.5,
                 maxScale: 4.0,
-                child: Image.file(
-                  widget.images[index],
+                child: Image(
+                  image: widget.images[index].imageProvider,
                   fit: BoxFit.contain,
                 ),
               );
@@ -334,7 +426,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${imageFile.path.split(Platform.pathSeparator).last} (${_currentIndex + 1} / ${widget.images.length})',
+                  '${imageFile.name} (${_currentIndex + 1} / ${widget.images.length})',
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
@@ -345,8 +437,9 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
     );
   }
 }
+
 class _ImageCard extends StatefulWidget {
-  final File imageFile;
+  final AppFile imageFile;
   final bool isSelected;
   final bool isResult;
   final VoidCallback onTap;
@@ -382,7 +475,7 @@ class _ImageCardState extends State<_ImageCard> {
 
   Future<void> _getImageDimensions() async {
     try {
-      final bytes = await widget.imageFile.readAsBytes();
+      final bytes = await File(widget.imageFile.path).readAsBytes();
       final image = await decodeImageFromList(bytes);
       if (mounted) {
         setState(() {
@@ -393,7 +486,7 @@ class _ImageCardState extends State<_ImageCard> {
         });
       }
     } catch (e) {
-      // Ignore errors for non-image files or corrupted images
+      // Ignore errors
     }
   }
 
@@ -411,7 +504,7 @@ class _ImageCardState extends State<_ImageCard> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
+            color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             border: Border.all(
               color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
               width: widget.isSelected ? 2 : 1,
@@ -430,10 +523,9 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             children: [
               Padding(
                 padding: const EdgeInsets.all(4.0),
-                child: Image.file(
-                  widget.imageFile,
+                child: Image(
+                  image: widget.imageFile.imageProvider,
                   fit: BoxFit.contain,
-                  cacheWidth: 400,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey[200],
                     child: const Icon(Icons.broken_image, color: Colors.grey),
@@ -441,7 +533,6 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
                 ),
               ),
               
-              // Metadata Overlay (Top)
               if (_dimensions.isNotEmpty)
                 Positioned(
                   top: 0,
@@ -463,7 +554,6 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
                   color: colorScheme.primary.withAlpha((255 * 0.1).round()),
                 ),
               
-              // Filename Overlay (Bottom)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -474,7 +564,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
                     color: Colors.black.withAlpha((255 * 0.6).round()),
                   ),
                   child: Text(
-                    widget.imageFile.path.split(Platform.pathSeparator).last,
+                    widget.imageFile.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -510,10 +600,55 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
 
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
+    final windowState = Provider.of<WindowState>(context, listen: false);
+
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
       items: [
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.open_in_new, size: 18),
+            title: Text(l10n.openInPreview),
+            dense: true,
+          ),
+          onTap: () {
+            windowState.openFloatingPreview(widget.imageFile.path);
+          },
+        ),
+        if (!windowState.isComparatorOpen)
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18),
+              title: Text(l10n.sendToComparator),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(widget.imageFile.path);
+            },
+          )
+        else ...[
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+              title: Text(l10n.sendToComparatorRaw),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(widget.imageFile.path, isAfter: false);
+            },
+          ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+              title: Text(l10n.sendToComparatorAfter),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(widget.imageFile.path, isAfter: true);
+            },
+          ),
+        ],
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.copy, size: 18),
@@ -521,7 +656,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             dense: true,
           ),
           onTap: () {
-            final filename = widget.imageFile.path.split(Platform.pathSeparator).last;
+            final filename = widget.imageFile.name;
             Clipboard.setData(ClipboardData(text: filename));
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.copiedToClipboard(filename)), duration: const Duration(seconds: 1)),
@@ -535,7 +670,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             dense: true,
           ),
           onTap: () async {
-            final folderPath = widget.imageFile.parent.path;
+            final folderPath = File(widget.imageFile.path).parent.path;
             final uri = Uri.directory(folderPath);
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri);
@@ -559,9 +694,6 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             dense: true,
           ),
           onTap: () {
-            // Close menu first? showMenu handles it usually, but onTap callback might run after close.
-            // We need to wait a bit or let the menu close mechanism handle it. 
-            // Actually onTap usually closes the menu.
             WidgetsBinding.instance.addPostFrameCallback((_) => _confirmDelete(context));
           },
         ),
@@ -572,7 +704,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
   void _showRenameDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context, listen: false);
-    final file = widget.imageFile;
+    final file = File(widget.imageFile.path);
     final dir = p.dirname(file.path);
     final extension = p.extension(file.path);
     final nameStem = p.basenameWithoutExtension(file.path);
@@ -638,7 +770,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
     }
 
     try {
-      await widget.imageFile.rename(newPath);
+      await File(widget.imageFile.path).rename(newPath);
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -657,7 +789,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
 
   Future<void> _confirmDelete(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    final filename = widget.imageFile.path.split(Platform.pathSeparator).last;
+    final filename = widget.imageFile.name;
     final isWindows = Platform.isWindows;
 
     final confirmed = await showDialog<bool>(
@@ -690,8 +822,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
     
     try {
       if (Platform.isWindows) {
-        // Use PowerShell to move to Recycle Bin
-        final path = widget.imageFile.path.replaceAll("'", "''"); // Escape single quotes for PowerShell
+        final path = widget.imageFile.path.replaceAll("'", "''"); 
         final result = await Process.run(
           'powershell', 
           [
@@ -704,8 +835,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
           throw Exception('PowerShell Error: ${result.stderr}');
         }
       } else {
-        // Permanent delete for other platforms (simplified)
-        await widget.imageFile.delete();
+        await File(widget.imageFile.path).delete();
       }
 
       if (context.mounted) {

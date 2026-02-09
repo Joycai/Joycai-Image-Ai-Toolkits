@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Joycai Image AI Toolkits"
-#define MyAppVersion "1.2.1"
+#define MyAppVersion "1.3.0"
 #define MyAppPublisher "Joycai"
 #define MyAppURL "https://github.com/Joycai/Joycai-Image-Ai-Toolkits"
 #define MyAppExeName "joycai_image_ai_toolkits.exe"
@@ -49,8 +49,8 @@ Source: "D:\github\Joycai-Image-Ai-Toolkits\build\windows\x64\runner\Release\*";
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; AppUserModelID: "com.joycai.image-ai-toolkits"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; AppUserModelID: "com.joycai.image-ai-toolkits"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

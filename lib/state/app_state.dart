@@ -1,25 +1,84 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../l10n/app_localizations.dart';
+import '../models/app_file.dart';
+import '../models/fee_group.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
+import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
+import '../services/web_scraper_service.dart';
+import 'downloader_state.dart';
 import 'gallery_state.dart';
+import 'window_state.dart';
 
 class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
+  final DownloaderState downloaderState = DownloaderState();
+  final WindowState windowState = WindowState();
+
+  AppState() {
+    taskQueue.addListener(notifyListeners);
+    galleryState.addListener(notifyListeners);
+    downloaderState.addListener(notifyListeners);
+    windowState.addListener(notifyListeners);
+    
+    // Wire up logs
+    galleryState.onLog = (msg, {level = 'INFO'}) {
+      addLog(msg, level: level);
+    };
+
+    taskQueue.onTaskCompleted = (file) {
+      galleryState.refreshImages();
+    };
+
+    taskQueue.onTaskFinished = (task) {
+      if (!notificationsEnabled) return;
+      
+      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
+      
+      if (task.status == TaskStatus.completed) {
+        NotificationService().showNotification(
+          title: l10n.taskCompletedNotification,
+          body: l10n.taskCompletedBody(task.id.substring(0, 8)),
+        );
+      } else if (task.status == TaskStatus.failed) {
+        NotificationService().showNotification(
+          title: l10n.taskFailedNotification,
+          body: l10n.taskFailedBody(task.id.substring(0, 8)),
+        );
+      }
+    };
+    
+    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
+      addLog(msg, level: level, taskId: taskId);
+    };
+
+    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
+      addLog(msg, level: level, taskId: contextId);
+    };
+
+    taskQueue.addListener(() {
+      isProcessing = taskQueue.runningCount > 0;
+      notifyListeners();
+    });
+  }
 
   List<LogEntry> logs = [];
   bool isProcessing = false;
   bool settingsLoaded = false;
   bool setupCompleted = true; 
   int concurrencyLimit = 2;
+  bool notificationsEnabled = true;
+  bool isConsoleExpanded = false;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -37,66 +96,52 @@ class AppState extends ChangeNotifier {
   bool isMarkdownRefinerTarget = true;
 
   // Data cache
-  List<Map<String, dynamic>> _models = [];
-  List<Map<String, dynamic>> _channels = [];
-  List<Map<String, dynamic>> _feeGroups = [];
+  List<LLMModel> _models = [];
+  List<LLMChannel> _channels = [];
+  List<FeeGroup> _feeGroups = [];
 
-  List<Map<String, dynamic>> get allModels => _models;
-  List<Map<String, dynamic>> get allChannels => _channels;
-  List<Map<String, dynamic>> get allFeeGroups => _feeGroups;
+  List<LLMModel> get allModels => _models;
+  List<LLMChannel> get allChannels => _channels;
+  List<FeeGroup> get allFeeGroups => _feeGroups;
 
-  List<Map<String, dynamic>> get imageModels => _models.where((m) => 
-    m['tag'] == ModelTag.image.value || m['tag'] == ModelTag.multimodal.value
+  List<LLMModel> get imageModels => _models.where((m) => 
+    m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
-  List<Map<String, dynamic>> get chatModels => _models.where((m) => 
-    m['tag'] == ModelTag.chat.value || m['tag'] == ModelTag.multimodal.value
+  List<LLMModel> get chatModels => _models.where((m) =>
+      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
-  List<Map<String, dynamic>> getModelsForChannel(int? channelId) {
-    if (channelId == null) return [];
-    return _models.where((m) => m['channel_id'] == channelId).toList();
+  Future<int> getDownloaderCacheSize() async {
+    return await WebScraperService().getCacheSize();
   }
 
-  AppState() {
-    loadSettings();
-    
-    // Wire up logs
-    galleryState.onLog = (msg, {level = 'INFO'}) {
-      addLog(msg, level: level);
-    };
+  Future<void> clearDownloaderCache() async {
+    await WebScraperService().clearCache();
+    notifyListeners();
+  }
 
-    taskQueue.onTaskCompleted = (file) {
-      galleryState.refreshImages();
-    };
-    
-    taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
-      addLog(msg, level: level, taskId: taskId);
-    };
-
-    LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
-      addLog(msg, level: level, taskId: contextId);
-    };
-
-    taskQueue.addListener(() {
-      isProcessing = taskQueue.runningCount > 0;
-      notifyListeners();
-    });
-    
-    // Propagate gallery changes
-    galleryState.addListener(notifyListeners);
+  List<LLMModel> getModelsForChannel(int? channelId) {
+    if (channelId == null) return [];
+    return _models.where((m) => m.channelId == channelId).toList();
   }
 
   @override
   void dispose() {
     galleryState.dispose();
+    taskQueue.removeListener(notifyListeners);
+    galleryState.removeListener(notifyListeners);
+    downloaderState.removeListener(notifyListeners);
+    windowState.removeListener(notifyListeners);
     super.dispose();
   }
 
-  // Proxies for Gallery State (for backward compatibility if needed, or consumers should access galleryState directly)
-  List<File> get galleryImages => galleryState.galleryImages;
-  List<File> get processedImages => galleryState.processedImages;
-  List<File> get selectedImages => galleryState.selectedImages;
+  // Proxies for Gallery State
+  List<AppFile> get galleryImages => galleryState.galleryImages;
+  List<AppFile> get processedImages => galleryState.processedImages;
+  List<AppFile> get selectedImages => galleryState.selectedImages;
+  List<AppFile> get droppedImages => galleryState.droppedImages;
+  
   String? get outputDirectory => galleryState.outputDirectory;
   String get imagePrefix => galleryState.imagePrefix;
   double get thumbnailSize => galleryState.thumbnailSize;
@@ -106,13 +151,15 @@ class AppState extends ChangeNotifier {
   Future<void> updateOutputDirectory(String path) => galleryState.updateOutputDirectory(path);
   Future<void> setImagePrefix(String prefix) => galleryState.setImagePrefix(prefix);
   void clearImageSelection() => galleryState.clearImageSelection();
-  void toggleImageSelection(File image) => galleryState.toggleImageSelection(image);
+  void toggleImageSelection(AppFile image) => galleryState.toggleImageSelection(image);
   Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
   Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
   Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);
   Future<void> setThumbnailSize(double size) => galleryState.setThumbnailSize(size);
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
+
+  Future<String?> getSetting(String key) => _db.getSetting(key);
 
   Future<void> loadSettings() async {
     addLog('Loading settings from database...');
@@ -125,6 +172,9 @@ class AppState extends ChangeNotifier {
       concurrencyLimit = int.tryParse(savedLimit) ?? 2;
       taskQueue.updateConcurrency(concurrencyLimit);
     }
+
+    notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
+    isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
 
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
@@ -150,6 +200,8 @@ class AppState extends ChangeNotifier {
     _models = await _db.getModels();
     _channels = await _db.getChannels();
     _feeGroups = await _db.getFeeGroups();
+    
+    await downloaderState.loadCookieHistory();
 
     settingsLoaded = true;
     notifyListeners();
@@ -191,6 +243,18 @@ class AppState extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
     await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+
+  Future<void> setNotificationsEnabled(bool value) async {
+    notificationsEnabled = value;
+    await _db.saveSetting('notifications_enabled', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setConsoleExpanded(bool value) async {
+    isConsoleExpanded = value;
+    await _db.saveSetting('is_console_expanded', value.toString());
     notifyListeners();
   }
   

@@ -4,7 +4,17 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../core/app_paths.dart';
+import '../models/fee_group.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
+import '../models/prompt.dart';
+import '../models/tag.dart';
 import 'database_migrations.dart';
+import 'repositories/model_repository.dart';
+import 'repositories/prompt_repository.dart';
+import 'repositories/task_repository.dart';
+import 'repositories/usage_repository.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -23,23 +33,22 @@ class DatabaseService {
   Future<Database> _initDatabase() async {
     String dbPath;
     
-    // Migration: Check if DB exists in Documents (old location) and move it to Support (new location)
-    // This applies primarily to macOS and Mobile where the previous implementation used Documents.
-    final supportDir = await getApplicationSupportDirectory();
-    final newPath = join(supportDir.path, 'joycai_workbench.db');
+    final dataDir = await AppPaths.getDataDirectory();
+    final newPath = join(dataDir, 'joycai_workbench.db');
     
-    final docsDir = await getApplicationDocumentsDirectory();
-    final oldPath = join(docsDir.path, 'joycai_workbench.db');
+    // Legacy migration check (Only for non-portable mode or first transition)
+    if (!await AppPaths.isPortableMode()) {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final oldPath = join(docsDir.path, 'joycai_workbench.db');
 
-    if (await File(oldPath).exists() && !await File(newPath).exists()) {
-      try {
-        if (!await supportDir.exists()) {
-          await supportDir.create(recursive: true);
-        }
-        await File(oldPath).rename(newPath);
-      } catch (e) {
-        // Fallback: If migration fails, we might just start fresh or log it.
-        // For now, we proceed.
+      if (await File(oldPath).exists() && !await File(newPath).exists()) {
+        try {
+          final dir = Directory(dataDir);
+          if (!await dir.exists()) {
+            await dir.create(recursive: true);
+          }
+          await File(oldPath).rename(newPath);
+        } catch (_) {}
       }
     }
 
@@ -50,7 +59,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 15, // Incremented for Markdown support
+          version: 19, // Incremented for Multi-tag support
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -58,7 +67,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 15,
+        version: 19,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -66,8 +75,7 @@ class DatabaseService {
   }
 
   Future<String> getDatabasePath() async {
-    final supportDir = await getApplicationSupportDirectory();
-    return supportDir.path;
+    return await AppPaths.getDataDirectory();
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -79,127 +87,34 @@ class DatabaseService {
   }
 
   // Task History Methods
-  Future<void> saveTask(Map<String, dynamic> task) async {
-    final db = await database;
-    await db.insert('tasks', task, conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-
-  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) async {
-    final db = await database;
-    return await db.query('tasks', orderBy: 'start_time DESC', limit: limit);
-  }
-
-  Future<void> deleteTask(String id) async {
-    final db = await database;
-    await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
-  }
+  Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
+  Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
+  Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);
+  Future<List<double>> getTaskDurations(int modelPk, int limit) => TaskRepository().getTaskDurations(modelPk, limit);
 
   // Token Usage Methods
-  Future<void> recordTokenUsage(Map<String, dynamic> usage) async {
-    final db = await database;
-    await db.insert('token_usage', usage);
-  }
+  Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
+  Future<void> clearTokenUsage({String? modelId}) => UsageRepository().clearTokenUsage(modelId: modelId);
+  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end}) 
+      => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end);
 
-  Future<void> clearTokenUsage({String? modelId}) async {
-    final db = await database;
-    if (modelId != null) {
-      await db.delete('token_usage', where: 'model_id = ?', whereArgs: [modelId]);
-    } else {
-      await db.delete('token_usage');
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getTokenUsage({
-    List<String>? modelIds,
-    DateTime? start,
-    DateTime? end,
-  }) async {
-    final db = await database;
-    String where = "1=1";
-    List<dynamic> args = [];
-
-    if (modelIds != null && modelIds.isNotEmpty) {
-      where += " AND model_id IN (${modelIds.map((_) => '?').join(',')})";
-      args.addAll(modelIds);
-    }
-
-    if (start != null) {
-      where += " AND timestamp >= ?";
-      args.add(start.toIso8601String());
-    }
-
-    if (end != null) {
-      where += " AND timestamp <= ?";
-      args.add(end.toIso8601String());
-    }
-
-    return await db.query('token_usage', where: where, whereArgs: args, orderBy: 'timestamp DESC');
-  }
+  // --- MODEL BASED METHODS ---
 
   // Prompts Methods
-  Future<int> addPrompt(Map<String, dynamic> prompt) async {
-    final db = await database;
-    return await db.insert('prompts', prompt);
-  }
-
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt) async {
-    final db = await database;
-    await db.update('prompts', prompt, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> deletePrompt(int id) async {
-    final db = await database;
-    await db.delete('prompts', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getPrompts() async {
-    final db = await database;
-    return await db.rawQuery('''
-      SELECT p.*, t.name as tag_name, t.color as tag_color, t.is_system as tag_is_system
-      FROM prompts p
-      LEFT JOIN prompt_tags t ON p.tag_id = t.id
-      ORDER BY p.sort_order ASC
-    ''');
-  }
-
-  Future<void> updatePromptOrder(List<int> ids) async {
-    final db = await database;
-    final batch = db.batch();
-    for (int i = 0; i < ids.length; i++) {
-      batch.update('prompts', {'sort_order': i}, where: 'id = ?', whereArgs: [ids[i]]);
-    }
-    await batch.commit(noResult: true);
-  }
+  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);
+  Future<List<Prompt>> getPrompts() => PromptRepository().getPrompts();
+  Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
 
   // LLM Models Methods
-  Future<int> addModel(Map<String, dynamic> model) async {
-    final db = await database;
-    return await db.insert('llm_models', model);
-  }
-
-  Future<void> updateModel(int id, Map<String, dynamic> model) async {
-    final db = await database;
-    await db.update('llm_models', model, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> updateModelOrder(List<int> ids) async {
-    final db = await database;
-    final batch = db.batch();
-    for (int i = 0; i < ids.length; i++) {
-      batch.update('llm_models', {'sort_order': i}, where: 'id = ?', whereArgs: [ids[i]]);
-    }
-    await batch.commit(noResult: true);
-  }
-
-  Future<void> deleteModel(int id) async {
-    final db = await database;
-    await db.delete('llm_models', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getModels() async {
-    final db = await database;
-    return await db.query('llm_models', orderBy: 'sort_order ASC');
-  }
+  Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(LLMModel.fromMap(model));
+  Future<void> updateModel(int id, Map<String, dynamic> model) => ModelRepository().updateModel(id, LLMModel.fromMap(model));
+  Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
+  Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);
+  Future<List<LLMModel>> getModels() => ModelRepository().getModels();
+  Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) 
+      => ModelRepository().updateModelEstimation(modelPk, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
   Future<void> saveSetting(String key, String value) async {
@@ -221,6 +136,31 @@ class DatabaseService {
     await db.delete('prompts');
     await db.delete('token_usage');
     await db.delete('tasks');
+    await db.delete('downloader_cookies');
+  }
+
+  // Downloader Cookies History
+  Future<void> saveDownloaderCookie(String host, String cookies) async {
+    final db = await database;
+    await db.insert('downloader_cookies', {
+      'host': host,
+      'cookies': cookies,
+      'last_used': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    
+    // Limit to last 5
+    final all = await db.query('downloader_cookies', orderBy: 'last_used DESC');
+    if (all.length > 5) {
+      final toDelete = all.sublist(5);
+      for (var row in toDelete) {
+        await db.delete('downloader_cookies', where: 'host = ?', whereArgs: [row['host']]);
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getDownloaderCookies() async {
+    final db = await database;
+    return await db.query('downloader_cookies', orderBy: 'last_used DESC');
   }
 
   // Source Directories Methods
@@ -245,150 +185,93 @@ class DatabaseService {
   }
 
   // Fee Groups Methods
-  Future<int> addFeeGroup(Map<String, dynamic> group) async {
-    final db = await database;
-    return await db.insert('fee_groups', group);
-  }
-
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) async {
-    final db = await database;
-    await db.update('fee_groups', group, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> deleteFeeGroup(int id) async {
-    final db = await database;
-    // Set associated models to NULL or a default group?
-    // For now, let's just set them to NULL (no fee group)
-    await db.update('llm_models', {'fee_group_id': null}, where: 'fee_group_id = ?', whereArgs: [id]);
-    await db.delete('fee_groups', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getFeeGroups() async {
-    final db = await database;
-    return await db.query('fee_groups');
-  }
+  Future<int> addFeeGroup(Map<String, dynamic> group) => ModelRepository().addFeeGroup(FeeGroup.fromMap(group));
+  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) => ModelRepository().updateFeeGroup(id, FeeGroup.fromMap(group));
+  Future<void> deleteFeeGroup(int id) => ModelRepository().deleteFeeGroup(id);
+  Future<List<FeeGroup>> getFeeGroups() => ModelRepository().getFeeGroups();
 
   // LLM Channels Methods
-  Future<int> addChannel(Map<String, dynamic> channel) async {
-    final db = await database;
-    return await db.insert('llm_channels', channel);
-  }
-
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
-    final db = await database;
-    await db.update('llm_channels', channel, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> deleteChannel(int id) async {
-    final db = await database;
-    // Set associated models to NULL? or delete models? 
-    // Requirement says user can delete channel. Usually we should handle orphaned models.
-    await db.update('llm_models', {'channel_id': null}, where: 'channel_id = ?', whereArgs: [id]);
-    await db.delete('llm_channels', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getChannels() async {
-    final db = await database;
-    return await db.query('llm_channels');
-  }
-
-  Future<Map<String, dynamic>?> getChannel(int id) async {
-    final db = await database;
-    final maps = await db.query('llm_channels', where: 'id = ?', whereArgs: [id]);
-    return maps.isNotEmpty ? maps.first : null;
-  }
+  Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) => ModelRepository().updateChannel(id, LLMChannel.fromMap(channel));
+  Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);
+  Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();
+  Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);
 
   // Prompt Tags Methods
-  Future<int> addPromptTag(Map<String, dynamic> tag) async {
-    final db = await database;
-    return await db.insert('prompt_tags', tag);
-  }
-
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
-    final db = await database;
-    await db.update('prompt_tags', tag, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> deletePromptTag(int id) async {
-    final db = await database;
-    // Set associated prompts to "General" or null? 
-    // Let's find "General" tag ID first.
-    final general = await db.query('prompt_tags', where: 'name = ?', whereArgs: ['General'], limit: 1);
-    int? generalId = general.isNotEmpty ? general.first['id'] as int : null;
-    
-    await db.update('prompts', {'tag_id': generalId}, where: 'tag_id = ?', whereArgs: [id]);
-    await db.delete('prompt_tags', where: 'id = ? AND is_system = 0', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getPromptTags() async {
-    final db = await database;
-    return await db.query('prompt_tags');
-  }
+  Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(PromptTag.fromMap(tag));
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => PromptRepository().updatePromptTag(id, PromptTag.fromMap(tag));
+  Future<void> deletePromptTag(int id) => PromptRepository().deletePromptTag(id);
+  Future<List<PromptTag>> getPromptTags() => PromptRepository().getPromptTags();
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt) async {
-    final db = await database;
-    return await db.insert('system_prompts', prompt);
-  }
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt));
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt));
+  Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
+  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
 
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) async {
-    final db = await database;
-    await db.update('system_prompts', prompt, where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> deleteSystemPrompt(int id) async {
-    final db = await database;
-    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<List<Map<String, dynamic>>> getSystemPrompts({String? type}) async {
-    final db = await database;
-    if (type != null) {
-      return await db.query('system_prompts', where: 'type = ?', whereArgs: [type]);
-    }
-    return await db.query('system_prompts');
-  }
-
-  // Backup & Restore
-  Future<Map<String, dynamic>> getAllDataRaw() async {
-    final db = await database;
+  // Standalone Prompt Data
+  Future<Map<String, dynamic>> getPromptDataRaw() async {
     return {
-      'settings': await db.query('settings'),
-      'llm_channels': await db.query('llm_channels'),
-      'llm_models': await db.query('llm_models'),
-      'prompt_tags': await db.query('prompt_tags'),
-      'prompts': await db.query('prompts'),
-      'system_prompts': await db.query('system_prompts'),
-      'fee_groups': await db.query('fee_groups'),
-      'source_directories': await db.query('source_directories'),
+      'tags': (await getPromptTags()).map((t) => t.toMap()).toList(),
+      'user_prompts': (await getPrompts()).map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
+      'system_prompts': (await getSystemPrompts()).map((p) => p.toMap()).toList(),
     };
   }
 
-  Future<void> clearAllData(DatabaseExecutor txn) async {
+  // Backup & Restore (Now with optional prompt inclusion)
+  Future<Map<String, dynamic>> getAllDataRaw({bool includePrompts = false}) async {
+    final db = await database;
+    final Map<String, dynamic> data = {
+      'settings': await db.query('settings'),
+      'llm_channels': await db.query('llm_channels'),
+      'llm_models': await db.query('llm_models'),
+      'fee_groups': await db.query('fee_groups'),
+      'source_directories': await db.query('source_directories'),
+    };
+
+    if (includePrompts) {
+      data.addAll(await getPromptDataRaw());
+    }
+
+    return data;
+  }
+
+  Future<void> clearAllData(DatabaseExecutor txn, {bool includePrompts = false}) async {
     await txn.delete('settings');
     await txn.delete('llm_channels');
     await txn.delete('llm_models');
-    await txn.delete('prompt_tags');
-    await txn.delete('prompts');
-    await txn.delete('system_prompts');
     await txn.delete('fee_groups');
     await txn.delete('source_directories');
+
+    if (includePrompts) {
+      await txn.delete('prompt_tags');
+      await txn.delete('prompts');
+      await txn.delete('system_prompts');
+      await txn.delete('prompt_tag_refs');
+    }
   }
 
   Future<void> restoreBackup(Map<String, dynamic> data) async {
     final db = await database;
+    final bool includePrompts = data.containsKey('prompts') || data.containsKey('user_prompts');
+
     await db.transaction((txn) async {
-      await clearAllData(txn);
+      await clearAllData(txn, includePrompts: includePrompts);
 
       final channelIdMap = await _importChannels(txn, data['llm_channels']);
       final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
       await _importModels(txn, data['llm_models'], channelIdMap, feeGroupIdMap);
       
-      final tagIdMap = await _importPromptTags(txn, data['prompt_tags']);
-      await _importPrompts(txn, data['prompts'], tagIdMap);
+      if (includePrompts) {
+        final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
+        await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
+        await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
+      }
       
       await _importSimpleTable(txn, 'settings', data['settings']);
-      await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
       await _importSimpleTable(txn, 'source_directories', data['source_directories']);
     });
   }
@@ -459,12 +342,32 @@ class DatabaseService {
 
   Future<void> _importPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
     if (rows == null) return;
-    final batch = txn.batch();
     for (var p in rows) {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
-      if (row['tag_id'] != null) row['tag_id'] = tagIdMap[row['tag_id']];
-      batch.insert('prompts', row);
+      final originalTagId = row['tag_id'] as int?;
+      
+      final List<dynamic>? tagsFromData = row['tags'];
+      row.remove('tags');
+      row.remove('tag_name'); 
+      row.remove('tag_color');
+      row.remove('tag_is_system');
+
+      final newPromptId = await txn.insert('prompts', row);
+
+      if (tagsFromData != null) {
+        for (var t in tagsFromData) {
+          final oldTagId = t['id'] as int;
+          final newTagId = tagIdMap[oldTagId];
+          if (newTagId != null) {
+            await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+          }
+        }
+      } else if (originalTagId != null) {
+        final newTagId = tagIdMap[originalTagId];
+        if (newTagId != null) {
+          await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+        }
+      }
     }
-    await batch.commit(noResult: true);
   }
 }

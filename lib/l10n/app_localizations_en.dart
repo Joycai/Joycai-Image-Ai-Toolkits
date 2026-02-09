@@ -25,6 +25,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usage => 'Usage';
 
   @override
+  String get downloader => 'Downloader';
+
+  @override
+  String get url => 'URL';
+
+  @override
+  String get prefix => 'Prefix';
+
+  @override
   String get models => 'Models';
 
   @override
@@ -645,6 +654,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceConfig => 'Price Config';
 
   @override
+  String get portableMode => 'Portable Mode';
+
+  @override
+  String get portableModeDesc =>
+      'Store database and cache in the application folder (requires restart)';
+
+  @override
+  String get restartRequired => 'Restart Required';
+
+  @override
+  String get restartMessage =>
+      'The application must be restarted to apply changes to the data storage location.';
+
+  @override
   String get usageByGroup => 'Usage by Group';
 
   @override
@@ -702,6 +725,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runSetupWizard => 'Run Setup Wizard';
 
   @override
+  String get clearDownloaderCache => 'Clear Downloader Cache';
+
+  @override
   String get skip => 'Skip';
 
   @override
@@ -734,4 +760,157 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preview => 'Preview';
+
+  @override
+  String get openRawImage => 'Open Raw Image';
+
+  @override
+  String get pasteFromClipboard => 'Paste from Clipboard';
+
+  @override
+  String get saveOriginHtml => 'Save Origin HTML';
+
+  @override
+  String htmlSavedTo(String path) {
+    return 'HTML saved to: $path';
+  }
+
+  @override
+  String get manualHtmlMode => 'Manual HTML Mode';
+
+  @override
+  String get manualHtmlHint =>
+      'Paste rendered HTML here (F12 -> Copy Outer HTML)';
+
+  @override
+  String get cookieHistory => 'Cookie History';
+
+  @override
+  String get noCookieHistory => 'No cookie history saved';
+
+  @override
+  String get openInPreview => 'Open in Preview';
+
+  @override
+  String get sendToComparator => 'Send to Comparator';
+
+  @override
+  String get sendToComparatorRaw => 'Send to Comparator (Raw)';
+
+  @override
+  String get sendToComparatorAfter => 'Send to Comparator (After)';
+
+  @override
+  String get compareModeSync => 'Sync Mode';
+
+  @override
+  String get compareModeSwap => 'Swap Mode';
+
+  @override
+  String get tempWorkspace => 'Temp Workspace';
+
+  @override
+  String get clearTempWorkspace => 'Clear Workspace';
+
+  @override
+  String get dropFilesHere =>
+      'Drop images here to add them to temporary workspace';
+
+  @override
+  String get enableNotifications => 'Enable System Notifications';
+
+  @override
+  String get taskCompletedNotification => 'Task Completed';
+
+  @override
+  String get taskFailedNotification => 'Task Failed';
+
+  @override
+  String taskCompletedBody(String id) {
+    return 'Task $id has finished successfully.';
+  }
+
+  @override
+  String taskFailedBody(String id) {
+    return 'Task $id has failed.';
+  }
+
+  @override
+  String get imageDownloader => 'Image Downloader';
+
+  @override
+  String get websiteUrl => 'Website URL';
+
+  @override
+  String get websiteUrlHint => 'https://example.com';
+
+  @override
+  String get whatToFind => 'What to find?';
+
+  @override
+  String get whatToFindHint => 'e.g. all product gallery images';
+
+  @override
+  String get analysisModel => 'Analysis Model';
+
+  @override
+  String get advancedOptions => 'Advanced Options';
+
+  @override
+  String get analyzing => 'Analyzing...';
+
+  @override
+  String get findImages => 'Find Images';
+
+  @override
+  String get noImagesDiscovered => 'No images discovered yet.';
+
+  @override
+  String get enterUrlToStart => 'Enter a URL and requirement to start.';
+
+  @override
+  String get addToQueue => 'Add to Queue';
+
+  @override
+  String imagesSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String addedToQueue(int count) {
+    return 'Added $count images to download queue.';
+  }
+
+  @override
+  String get setOutputDirFirst =>
+      'Please set output directory in settings first.';
+
+  @override
+  String get cookiesHint => 'Cookies (Raw or Netscape format)';
+
+  @override
+  String get logs => 'Logs';
+
+  @override
+  String get selectImagesToDownload => 'Select images to download';
+
+  @override
+  String get openaiEndpointHint =>
+      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+
+  @override
+  String get googleEndpointHint =>
+      'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)';
+
+  @override
+  String get importCookieFile => 'Import Cookie File';
+
+  @override
+  String get cookieFileInvalid =>
+      'Unsupported cookie file format. Please use Netscape format or raw text.';
+
+  @override
+  String cookieImportSuccess(Object count) {
+    return 'Successfully imported $count cookies.';
+  }
 }

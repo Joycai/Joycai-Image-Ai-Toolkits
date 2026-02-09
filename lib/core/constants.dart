@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum AppAspectRatio {
   notSet('not_set'),
   r1_1('1:1'),
@@ -67,6 +69,19 @@ class AppConstants {
   static const double opacityLow = 0.05;
   static const double opacityMedium = 0.3;
   static const double opacityHigh = 0.5;
+
+  static const List<Color> tagColors = [
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.teal,
+    Colors.pink,
+    Colors.indigo,
+    Colors.brown,
+    Colors.blueGrey,
+  ];
 
   static bool isImageFile(String path) {
     final ext = path.toLowerCase();

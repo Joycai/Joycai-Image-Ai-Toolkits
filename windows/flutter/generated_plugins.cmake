@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  desktop_drop
+  local_notifier
   sqlite3_flutter_libs
   url_launcher_windows
 )
