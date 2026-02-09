@@ -9,12 +9,14 @@ import '../../state/app_state.dart';
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
+  final bool useBrowserState;
   final Function(String, String)? onRemove; // Only needed for roots
 
   const DirectoryTreeItem({
     super.key,
     required this.path,
     this.isRoot = false,
+    this.useBrowserState = false,
     this.onRemove,
   });
 
@@ -73,10 +75,14 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to selection changes efficiently
-    final isSelected = context.select<AppState, bool>(
-      (state) => state.activeSourceDirectories.contains(widget.path)
-    );
+    // Listen to selection changes efficiently based on the target state
+    final isSelected = context.select<AppState, bool>((state) {
+      if (widget.useBrowserState) {
+        return state.browserState.activeDirectories.contains(widget.path);
+      } else {
+        return state.activeSourceDirectories.contains(widget.path);
+      }
+    });
     
     final appState = Provider.of<AppState>(context, listen: false);
     final folderName = p.basename(widget.path);
@@ -93,7 +99,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             children: [
               Checkbox(
                 value: isSelected,
-                onChanged: (_) => appState.toggleDirectory(widget.path),
+                onChanged: (_) {
+                  if (widget.useBrowserState) {
+                    appState.browserState.toggleDirectory(widget.path);
+                  } else {
+                    appState.toggleDirectory(widget.path);
+                  }
+                },
                 visualDensity: VisualDensity.compact,
               ),
               Icon(
@@ -147,6 +159,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 return DirectoryTreeItem(
                   path: dir.path,
                   isRoot: false,
+                  useBrowserState: widget.useBrowserState,
                   // onRemove not needed for children
                 );
               }).toList(),

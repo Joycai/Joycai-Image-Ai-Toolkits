@@ -7,7 +7,12 @@ import '../../state/app_state.dart';
 import 'directory_tree_item.dart';
 
 class SourceExplorerWidget extends StatelessWidget {
-  const SourceExplorerWidget({super.key});
+  final bool useBrowserState;
+
+  const SourceExplorerWidget({
+    super.key,
+    this.useBrowserState = false,
+  });
 
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
     final l10n = AppLocalizations.of(context)!;
@@ -17,7 +22,11 @@ class SourceExplorerWidget extends StatelessWidget {
       );
 
       if (selectedDirectory != null) {
-        appState.addBaseDirectory(selectedDirectory);
+        if (useBrowserState) {
+          appState.browserState.addBaseDirectory(selectedDirectory);
+        } else {
+          appState.addBaseDirectory(selectedDirectory);
+        }
       }
     } catch (e) {
       appState.addLog('Error picking directory: $e', level: 'ERROR');
@@ -29,6 +38,10 @@ class SourceExplorerWidget extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+
+    final sourceDirectories = useBrowserState 
+        ? appState.browserState.sourceDirectories 
+        : appState.sourceDirectories;
 
     return Container(
       width: 250,
@@ -57,28 +70,30 @@ class SourceExplorerWidget extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-color: colorScheme.onSurface,                    letterSpacing: 1.2,
+                    color: colorScheme.onSurface,
+                    letterSpacing: 1.2,
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  '${appState.sourceDirectories.length}',
+                  '${sourceDirectories.length}',
                   style: TextStyle(fontSize: 11, color: colorScheme.primary),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: appState.sourceDirectories.isEmpty
+            child: sourceDirectories.isEmpty
                 ? _buildEmptyState(colorScheme, l10n)
                 : ListView.builder(
-                    itemCount: appState.sourceDirectories.length,
+                    itemCount: sourceDirectories.length,
                     itemBuilder: (context, index) {
-                      final path = appState.sourceDirectories[index];
+                      final path = sourceDirectories[index];
                       return DirectoryTreeItem(
                         key: ValueKey(path),
                         path: path,
                         isRoot: true,
+                        useBrowserState: useBrowserState,
                         onRemove: (p, name) => _confirmRemove(context, appState, p, name),
                       );
                     },
@@ -103,7 +118,11 @@ color: colorScheme.onSurface,                    letterSpacing: 1.2,
           ),
           TextButton(
             onPressed: () {
-              appState.removeBaseDirectory(path);
+              if (useBrowserState) {
+                appState.browserState.removeBaseDirectory(path);
+              } else {
+                appState.removeBaseDirectory(path);
+              }
               Navigator.pop(context);
             },
             child: Text(l10n.remove, style: const TextStyle(color: Colors.red)),

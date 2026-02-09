@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
+import 'screens/browser/file_browser_screen.dart';
 import 'screens/downloader/image_downloader_screen.dart';
 import 'screens/metrics/token_usage_screen.dart';
 import 'screens/models/models_screen.dart';
@@ -42,6 +43,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: appState),
         ChangeNotifierProvider.value(value: appState.windowState),
+        ChangeNotifierProvider.value(value: appState.browserState),
+        ChangeNotifierProvider.value(value: appState.downloaderState),
       ],
       child: MyApp(version: packageInfo.version),
     ),
@@ -117,6 +120,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const WorkbenchScreen(),
+    const FileBrowserScreen(),
     const TaskQueueScreen(),
     const ImageDownloaderScreen(),
     const PromptsScreen(),
@@ -136,6 +140,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         icon: const Icon(Icons.work_outline),
         selectedIcon: const Icon(Icons.work),
         label: l10n.workbench,
+      ),
+      (
+        icon: const Icon(Icons.folder_copy_outlined),
+        selectedIcon: const Icon(Icons.folder_copy),
+        label: l10n.fileBrowser,
       ),
       (
         icon: const Icon(Icons.assignment_outlined),

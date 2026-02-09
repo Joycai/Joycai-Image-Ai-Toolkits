@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'Usage'**
   String get usage;
 
+  /// No description provided for @fileBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'File Browser'**
+  String get fileBrowser;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:
@@ -1219,6 +1225,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Permanently Delete'**
   String get permanentlyDelete;
+
+  /// No description provided for @aiBatchRename.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Batch Rename'**
+  String get aiBatchRename;
+
+  /// No description provided for @switchViewMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch View Mode'**
+  String get switchViewMode;
+
+  /// No description provided for @noFilesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No files found'**
+  String get noFilesFound;
+
+  /// No description provided for @rulesInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming Rules / Instructions'**
+  String get rulesInstructions;
+
+  /// No description provided for @generateSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Suggestions'**
+  String get generateSuggestions;
+
+  /// No description provided for @noSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'No suggestions generated yet'**
+  String get noSuggestions;
+
+  /// No description provided for @applyRenames.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Renames'**
+  String get applyRenames;
+
+  /// No description provided for @originalName.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Name'**
+  String get originalName;
+
+  /// No description provided for @newName.
+  ///
+  /// In en, this message translates to:
+  /// **'New Name'**
+  String get newName;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortBy;
+
+  /// No description provided for @sortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sortName;
+
+  /// No description provided for @sortDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Modify Date'**
+  String get sortDate;
+
+  /// No description provided for @sortType.
+  ///
+  /// In en, this message translates to:
+  /// **'File Type'**
+  String get sortType;
+
+  /// No description provided for @sortAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'ASC'**
+  String get sortAsc;
+
+  /// No description provided for @sortDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'DESC'**
+  String get sortDesc;
+
+  /// No description provided for @catAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get catAll;
+
+  /// No description provided for @catImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get catImages;
+
+  /// No description provided for @catVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get catVideos;
+
+  /// No description provided for @catAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get catAudio;
+
+  /// No description provided for @catText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get catText;
+
+  /// No description provided for @catOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get catOthers;
 
   /// No description provided for @deleteSuccess.
   ///

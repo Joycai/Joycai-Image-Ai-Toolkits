@@ -25,6 +25,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usage => '用量';
 
   @override
+  String get fileBrowser => '文件浏览器';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -603,6 +606,72 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get permanentlyDelete => '永久删除';
+
+  @override
+  String get aiBatchRename => 'AI 批量重命名';
+
+  @override
+  String get switchViewMode => '切换视图模式';
+
+  @override
+  String get noFilesFound => '未找到文件';
+
+  @override
+  String get rulesInstructions => '重命名规则 / 指令';
+
+  @override
+  String get generateSuggestions => '生成建议';
+
+  @override
+  String get noSuggestions => '尚未生成建议';
+
+  @override
+  String get applyRenames => '应用重命名';
+
+  @override
+  String get originalName => '原始名称';
+
+  @override
+  String get newName => '新名称';
+
+  @override
+  String get status => '状态';
+
+  @override
+  String get sortBy => '排序方式';
+
+  @override
+  String get sortName => '文件名';
+
+  @override
+  String get sortDate => '修改日期';
+
+  @override
+  String get sortType => '文件类型';
+
+  @override
+  String get sortAsc => '正序';
+
+  @override
+  String get sortDesc => '倒序';
+
+  @override
+  String get catAll => '全部';
+
+  @override
+  String get catImages => '图片';
+
+  @override
+  String get catVideos => '视频';
+
+  @override
+  String get catAudio => '音频';
+
+  @override
+  String get catText => '文本';
+
+  @override
+  String get catOthers => '其他';
 
   @override
   String get deleteSuccess => '删除成功';

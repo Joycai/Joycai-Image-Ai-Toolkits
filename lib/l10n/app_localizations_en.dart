@@ -25,6 +25,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usage => 'Usage';
 
   @override
+  String get fileBrowser => 'File Browser';
+
+  @override
   String get downloader => 'Downloader';
 
   @override
@@ -608,6 +611,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permanentlyDelete => 'Permanently Delete';
+
+  @override
+  String get aiBatchRename => 'AI Batch Rename';
+
+  @override
+  String get switchViewMode => 'Switch View Mode';
+
+  @override
+  String get noFilesFound => 'No files found';
+
+  @override
+  String get rulesInstructions => 'Renaming Rules / Instructions';
+
+  @override
+  String get generateSuggestions => 'Generate Suggestions';
+
+  @override
+  String get noSuggestions => 'No suggestions generated yet';
+
+  @override
+  String get applyRenames => 'Apply Renames';
+
+  @override
+  String get originalName => 'Original Name';
+
+  @override
+  String get newName => 'New Name';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get sortBy => 'Sort by';
+
+  @override
+  String get sortName => 'Name';
+
+  @override
+  String get sortDate => 'Modify Date';
+
+  @override
+  String get sortType => 'File Type';
+
+  @override
+  String get sortAsc => 'ASC';
+
+  @override
+  String get sortDesc => 'DESC';
+
+  @override
+  String get catAll => 'All';
+
+  @override
+  String get catImages => 'Images';
+
+  @override
+  String get catVideos => 'Videos';
+
+  @override
+  String get catAudio => 'Audio';
+
+  @override
+  String get catText => 'Text';
+
+  @override
+  String get catOthers => 'Others';
 
   @override
   String get deleteSuccess => 'Deleted successfully';

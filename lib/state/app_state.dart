@@ -14,6 +14,7 @@ import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
+import 'browser_state.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
 import 'window_state.dart';
@@ -23,12 +24,14 @@ class AppState extends ChangeNotifier {
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
+  final BrowserState browserState = BrowserState();
   final WindowState windowState = WindowState();
 
   AppState() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
+    browserState.addListener(notifyListeners);
     windowState.addListener(notifyListeners);
     
     // Wire up logs
@@ -129,9 +132,11 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     galleryState.dispose();
+    browserState.dispose();
     taskQueue.removeListener(notifyListeners);
     galleryState.removeListener(notifyListeners);
     downloaderState.removeListener(notifyListeners);
+    browserState.removeListener(notifyListeners);
     windowState.removeListener(notifyListeners);
     super.dispose();
   }
