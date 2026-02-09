@@ -80,6 +80,7 @@ class AppState extends ChangeNotifier {
   bool settingsLoaded = false;
   bool setupCompleted = true; 
   int concurrencyLimit = 2;
+  int retryCount = 0;
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
 
@@ -178,6 +179,11 @@ class AppState extends ChangeNotifier {
       taskQueue.updateConcurrency(concurrencyLimit);
     }
 
+    final savedRetry = await _db.getSetting('retry_count');
+    if (savedRetry != null) {
+      retryCount = int.tryParse(savedRetry) ?? 0;
+    }
+
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
 
@@ -242,6 +248,13 @@ class AppState extends ChangeNotifier {
     taskQueue.updateConcurrency(limit);
     await _db.saveSetting('concurrency_limit', limit.toString());
     addLog('Concurrency limit set to $limit');
+    notifyListeners();
+  }
+
+  Future<void> setRetryCount(int count) async {
+    retryCount = count;
+    await _db.saveSetting('retry_count', count.toString());
+    addLog('Retry count set to $count');
     notifyListeners();
   }
 
@@ -379,6 +392,7 @@ class AppState extends ChangeNotifier {
     if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
     
     params['imagePrefix'] = galleryState.imagePrefix;
+    params['retryCount'] = retryCount;
     
     final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
     await taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);

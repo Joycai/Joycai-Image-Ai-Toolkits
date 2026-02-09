@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
@@ -27,8 +28,22 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   @override
   void initState() {
     super.initState();
+    _loadLastSettings();
+  }
+
+  Future<void> _loadLastSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    _selectedModelPk = int.tryParse(appState.lastSelectedModelId ?? '');
+    final lastModelId = await appState.getSetting('last_ai_rename_model_id');
+    final lastInstructions = await appState.getSetting('last_ai_rename_instructions');
+    
+    if (mounted) {
+      setState(() {
+        _selectedModelPk = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
+        if (lastInstructions != null) {
+          _instructionController.text = lastInstructions;
+        }
+      });
+    }
   }
 
   Future<void> _generateSuggestions() async {
@@ -37,6 +52,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final selectedFiles = browserState.selectedFiles.toList();
 
     if (_selectedModelPk == null || _instructionController.text.isEmpty) return;
+
+    // Save current settings as last used
+    final db = DatabaseService();
+    db.saveSetting('last_ai_rename_model_id', _selectedModelPk.toString());
+    db.saveSetting('last_ai_rename_instructions', _instructionController.text);
 
     setState(() {
       _isProcessing = true;

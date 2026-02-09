@@ -827,17 +827,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final String? importMode = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Import Mode"),
-        content: const Text("Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data."),
+        title: Text(l10n.importMode),
+        content: Text(l10n.importModeDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, 'merge'),
-            child: const Text("Merge"),
+            child: Text(l10n.merge),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, 'replace'),
-            child: const Text("Replace All"),
+            child: Text(l10n.replaceAll),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),

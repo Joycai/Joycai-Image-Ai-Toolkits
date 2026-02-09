@@ -359,14 +359,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Import Settings?"),
-          content: const Text("This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management."),
+          title: Text(l10n.importSettingsTitle),
+          content: Text(l10n.importSettingsConfirm),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: const Text("Import & Replace"),
+              child: Text(l10n.importAndReplace),
             ),
           ],
         ),

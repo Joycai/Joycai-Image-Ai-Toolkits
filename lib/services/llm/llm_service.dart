@@ -42,62 +42,111 @@ class LLMService {
       fullHistory = _sessions[sessionId]!;
     }
 
-    LLMResponse response;
+    final int maxRetries = options?['retryCount'] ?? 0;
+    int attempt = 0;
 
-    if (useStream) {
-      onLogAdded?.call('Connecting to ${config.type} provider (streaming)...', level: 'DEBUG', contextId: contextId);
-      String accumulatedText = "";
-      List<Uint8List> accumulatedImages = [];
-      Map<String, dynamic>? finalMetadata;
+    while (true) {
+      try {
+        if (useStream) {
+          onLogAdded?.call('Connecting to ${config.type} provider (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          String accumulatedText = "";
+          List<Uint8List> accumulatedImages = [];
+          Map<String, dynamic>? finalMetadata;
 
-      await for (final chunk in provider.generateStream(
-        config, 
-        fullHistory, 
-        options: options, 
-        logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-      )) {
-        if (chunk.textPart != null) {
-          accumulatedText += chunk.textPart!;
-          onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+          await for (final chunk in provider.generateStream(
+            config, 
+            fullHistory, 
+            options: options, 
+            logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+          )) {
+            if (chunk.textPart != null) {
+              accumulatedText += chunk.textPart!;
+              onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+            }
+            if (chunk.imagePart != null) {
+              accumulatedImages.add(chunk.imagePart!);
+            }
+            if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          }
+          
+          final response = LLMResponse(
+            text: accumulatedText,
+            generatedImages: accumulatedImages,
+            metadata: finalMetadata ?? {},
+          );
+
+          // Record usage
+          if (response.metadata.isNotEmpty) {
+            _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+          }
+
+          // Update session
+          if (sessionId != null) {
+            _sessions[sessionId]!.add(LLMMessage(
+              role: LLMRole.assistant,
+              content: response.text,
+            ));
+          }
+
+          return response;
+        } else {
+          onLogAdded?.call('Connecting to ${config.type} provider (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          final response = await provider.generate(
+            config,
+            fullHistory,
+            options: options,
+            logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+          );
+          if (response.text.isNotEmpty) {
+            onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
+          }
+
+          // Record usage
+          if (response.metadata.isNotEmpty) {
+            _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+          }
+
+          // Update session
+          if (sessionId != null) {
+            _sessions[sessionId]!.add(LLMMessage(
+              role: LLMRole.assistant,
+              content: response.text,
+            ));
+          }
+
+          return response;
         }
-        if (chunk.imagePart != null) {
-          accumulatedImages.add(chunk.imagePart!);
+      } catch (e) {
+        attempt++;
+        if (attempt > maxRetries || !_isRetryable(e)) {
+          rethrow;
         }
-        if (chunk.metadata != null) finalMetadata = chunk.metadata;
-      }
-      
-      response = LLMResponse(
-        text: accumulatedText,
-        generatedImages: accumulatedImages,
-        metadata: finalMetadata ?? {},
-      );
-    } else {
-      onLogAdded?.call('Connecting to ${config.type} provider (standard)...', level: 'DEBUG', contextId: contextId);
-      response = await provider.generate(
-        config,
-        fullHistory,
-        options: options,
-        logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-      );
-      if (response.text.isNotEmpty) {
-        onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
+        onLogAdded?.call('Request failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
+        await Future.delayed(const Duration(seconds: 2));
       }
     }
+  }
 
-    // Record usage
-    if (response.metadata.isNotEmpty) {
-      _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+  bool _isRetryable(Object e) {
+    // Only retry on network errors or 5xx server errors
+    // The providers throw Exception('... statusCode - body') on non-200 responses
+    final errorStr = e.toString();
+    
+    // Check for common network exceptions
+    if (e is TimeoutException || errorStr.contains('SocketException') || errorStr.contains('Connection closed')) {
+      return true;
     }
 
-    // Update session
-    if (sessionId != null) {
-      _sessions[sessionId]!.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: response.text,
-      ));
+    // Check for 5xx status codes in the exception message
+    final statusCodeMatch = RegExp(r'(\d{3})').firstMatch(errorStr);
+    if (statusCodeMatch != null) {
+      final code = int.tryParse(statusCodeMatch.group(1)!);
+      if (code != null && code >= 500 && code < 600) {
+        return true;
+      }
     }
 
-    return response;
+    return false;
   }
 
   Stream<LLMResponseChunk> requestStream({
@@ -123,36 +172,51 @@ class LLMService {
 
     onLogAdded?.call('Connecting to ${config.type} provider...', level: 'DEBUG', contextId: contextId);
 
-    String accumulatedText = "";
-    int imageCount = 0;
-    Map<String, dynamic>? finalMetadata;
-    
-    await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId))) {
-      if (chunk.textPart != null) {
-        accumulatedText += chunk.textPart!;
-        onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+    final int maxRetries = options?['retryCount'] ?? 0;
+    int attempt = 0;
+
+    while (true) {
+      try {
+        String accumulatedText = "";
+        int imageCount = 0;
+        Map<String, dynamic>? finalMetadata;
+        
+        await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId))) {
+          if (chunk.textPart != null) {
+            accumulatedText += chunk.textPart!;
+            onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+          }
+          if (chunk.imagePart != null) {
+            imageCount++;
+            onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
+          }
+          if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          yield chunk;
+        }
+
+        onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG', contextId: contextId);
+
+        // Unified Token Usage Recording
+        if (finalMetadata != null) {
+          onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
+          _recordUsage(config.modelId, config, finalMetadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+        }
+
+        if (sessionId != null) {
+          _sessions[sessionId]!.add(LLMMessage(
+            role: LLMRole.assistant,
+            content: accumulatedText,
+          ));
+        }
+        return; // Success, exit retry loop
+      } catch (e) {
+        attempt++;
+        if (attempt > maxRetries || !_isRetryable(e)) {
+          rethrow;
+        }
+        onLogAdded?.call('Stream failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
+        await Future.delayed(const Duration(seconds: 2));
       }
-      if (chunk.imagePart != null) {
-        imageCount++;
-        onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
-      }
-      if (chunk.metadata != null) finalMetadata = chunk.metadata;
-      yield chunk;
-    }
-
-    onLogAdded?.call('Stream completed. Total images: $imageCount', level: 'DEBUG', contextId: contextId);
-
-    // Unified Token Usage Recording
-    if (finalMetadata != null) {
-      onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
-      _recordUsage(config.modelId, config, finalMetadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
-    }
-
-    if (sessionId != null) {
-      _sessions[sessionId]!.add(LLMMessage(
-        role: LLMRole.assistant,
-        content: accumulatedText,
-      ));
     }
   }
 

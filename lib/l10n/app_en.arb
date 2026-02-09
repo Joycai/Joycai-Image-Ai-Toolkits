@@ -83,6 +83,29 @@
       }
     }
   },
+  "retryCount": "Retry Count: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "back": "Back",
+  "next": "Next",
+  "storageLocationDesc": "Select where generated images will be saved.",
+  "addChannelOptional": "Add your first AI provider channel (Optional).",
+  "configureModelOptional": "Configure a model for your new channel (Optional).",
+  "importSettingsTitle": "Import Settings?",
+  "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
+  "importAndReplace": "Import & Replace",
+  "importMode": "Import Mode",
+  "importModeDesc": "Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.",
+  "merge": "Merge",
+  "replaceAll": "Replace All",
+  "exit": "Exit",
+  "applyOverwrite": "Apply (Overwrite)",
+  "applyAppend": "Apply (Append)",
   "aiPromptRefiner": "AI Prompt Refiner",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",

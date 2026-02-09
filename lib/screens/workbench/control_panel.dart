@@ -470,6 +470,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     setDialogState(() {});
                   },
                 ),
+                const SizedBox(height: 16),
+                Text(l10n.retryCount(appState.retryCount)),
+                Slider(
+                  value: appState.retryCount.toDouble(),
+                  min: 0,
+                  max: 5,
+                  divisions: 5,
+                  onChanged: (v) {
+                    appState.setRetryCount(v.toInt());
+                    setDialogState(() {});
+                  },
+                ),
                 const Divider(),
                 const SizedBox(height: 8),
                 Text(l10n.filenamePrefix, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),

@@ -350,6 +350,102 @@ abstract class AppLocalizations {
   /// **'Concurrency Limit: {limit}'**
   String concurrencyLimit(int limit);
 
+  /// No description provided for @retryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Count: {count}'**
+  String retryCount(int count);
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @storageLocationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select where generated images will be saved.'**
+  String get storageLocationDesc;
+
+  /// No description provided for @addChannelOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first AI provider channel (Optional).'**
+  String get addChannelOptional;
+
+  /// No description provided for @configureModelOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure a model for your new channel (Optional).'**
+  String get configureModelOptional;
+
+  /// No description provided for @importSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Settings?'**
+  String get importSettingsTitle;
+
+  /// No description provided for @importSettingsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.'**
+  String get importSettingsConfirm;
+
+  /// No description provided for @importAndReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Import & Replace'**
+  String get importAndReplace;
+
+  /// No description provided for @importMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Mode'**
+  String get importMode;
+
+  /// No description provided for @importModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.'**
+  String get importModeDesc;
+
+  /// No description provided for @merge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// No description provided for @replaceAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace All'**
+  String get replaceAll;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
+
+  /// No description provided for @applyOverwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Overwrite)'**
+  String get applyOverwrite;
+
+  /// No description provided for @applyAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Append)'**
+  String get applyAppend;
+
   /// No description provided for @aiPromptRefiner.
   ///
   /// In en, this message translates to:

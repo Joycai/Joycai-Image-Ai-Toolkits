@@ -148,6 +148,58 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String retryCount(int count) {
+    return '重试次数: $count';
+  }
+
+  @override
+  String get back => '返回';
+
+  @override
+  String get next => '下一步';
+
+  @override
+  String get storageLocationDesc => '选择生成图像的保存位置。';
+
+  @override
+  String get addChannelOptional => '添加您的第一个 AI 渠道（可选）。';
+
+  @override
+  String get configureModelOptional => '为新渠道配置一个模型（可选）。';
+
+  @override
+  String get importSettingsTitle => '导入设置？';
+
+  @override
+  String get importSettingsConfirm =>
+      '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
+
+  @override
+  String get importAndReplace => '导入并替换';
+
+  @override
+  String get importMode => '导入模式';
+
+  @override
+  String get importModeDesc =>
+      '选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。';
+
+  @override
+  String get merge => '合并';
+
+  @override
+  String get replaceAll => '全部替换';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get applyOverwrite => '应用 (覆盖)';
+
+  @override
+  String get applyAppend => '应用 (追加)';
+
+  @override
   String get aiPromptRefiner => 'AI 提示词优化器';
 
   @override

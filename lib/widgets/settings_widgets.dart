@@ -54,10 +54,10 @@ class LanguageSelector extends StatelessWidget {
         Text(l10n.language, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
         const SizedBox(height: 8),
         SegmentedButton<String?>(
-          segments: const [
-            ButtonSegment(value: null, label: Text('Default')),
-            ButtonSegment(value: 'en', label: Text('English')),
-            ButtonSegment(value: 'zh', label: Text('中文')),
+          segments: [
+            ButtonSegment(value: null, label: Text(l10n.themeAuto)),
+            const ButtonSegment(value: 'en', label: Text('English')),
+            const ButtonSegment(value: 'zh', label: Text('中文')),
           ],
           selected: {appState.locale?.languageCode},
           onSelectionChanged: (Set<String?> newSelection) {

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -146,6 +147,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String concurrencyLimit(int limit) {
     return 'Concurrency Limit: $limit';
   }
+
+  @override
+  String retryCount(int count) {
+    return 'Retry Count: $count';
+  }
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get storageLocationDesc =>
+      'Select where generated images will be saved.';
+
+  @override
+  String get addChannelOptional =>
+      'Add your first AI provider channel (Optional).';
+
+  @override
+  String get configureModelOptional =>
+      'Configure a model for your new channel (Optional).';
+
+  @override
+  String get importSettingsTitle => 'Import Settings?';
+
+  @override
+  String get importSettingsConfirm =>
+      'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.';
+
+  @override
+  String get importAndReplace => 'Import & Replace';
+
+  @override
+  String get importMode => 'Import Mode';
+
+  @override
+  String get importModeDesc =>
+      'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.';
+
+  @override
+  String get merge => 'Merge';
+
+  @override
+  String get replaceAll => 'Replace All';
+
+  @override
+  String get exit => 'Exit';
+
+  @override
+  String get applyOverwrite => 'Apply (Overwrite)';
+
+  @override
+  String get applyAppend => 'Apply (Append)';
 
   @override
   String get aiPromptRefiner => 'AI Prompt Refiner';
