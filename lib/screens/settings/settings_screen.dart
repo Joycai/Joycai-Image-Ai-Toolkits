@@ -330,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final data = await _db.getAllDataRaw(includePrompts: false);
+    final data = await _db.getAllDataRaw(includePrompts: true);
     final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(

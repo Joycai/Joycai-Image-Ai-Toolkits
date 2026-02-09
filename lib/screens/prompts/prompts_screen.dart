@@ -853,65 +853,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       final file = File(result.files.single.path!);
       final Map<String, dynamic> data = jsonDecode(await file.readAsString());
       
-      await _db.database.then((db) async {
-        await db.transaction((txn) async {
-          if (importMode == 'replace') {
-            await txn.delete('prompts');
-            await txn.delete('prompt_tag_refs');
-            await txn.delete('system_prompts');
-            await txn.delete('prompt_tags', where: 'is_system = 0');
-          }
-
-          // Import Tags first to get new IDs
-          final Map<int, int> tagIdMap = {};
-          if (data['tags'] != null) {
-            for (var t in data['tags']) {
-              final oldId = t['id'] as int;
-              final Map<String, dynamic> row = Map.from(t)..remove('id');
-              // Check if tag exists by name
-              final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
-              if (existing.isNotEmpty) {
-                tagIdMap[oldId] = existing.first['id'] as int;
-              } else {
-                final newId = await txn.insert('prompt_tags', row);
-                tagIdMap[oldId] = newId;
-              }
-            }
-          }
-
-          // Import User Prompts
-          if (data['user_prompts'] != null) {
-            for (var p in data['user_prompts']) {
-              final Map<String, dynamic> row = Map.from(p)..remove('id');
-              final List<dynamic>? tags = row['tags'];
-              row.remove('tags');
-              row.remove('tag_name'); 
-              row.remove('tag_color');
-              row.remove('tag_is_system');
-              row.remove('tag_id');
-
-              final newPromptId = await txn.insert('prompts', row);
-              if (tags != null) {
-                for (var t in tags) {
-                  final oldTagId = t['id'] as int;
-                  final newTagId = tagIdMap[oldTagId];
-                  if (newTagId != null) {
-                    await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
-                  }
-                }
-              }
-            }
-          }
-
-          // Import System Prompts
-          if (data['system_prompts'] != null) {
-            for (var p in data['system_prompts']) {
-              final Map<String, dynamic> row = Map.from(p)..remove('id');
-              await txn.insert('system_prompts', row);
-            }
-          }
-        });
-      });
+      await _db.importPromptData(data, replace: importMode == 'replace');
 
       if (mounted) {
         _loadData();
