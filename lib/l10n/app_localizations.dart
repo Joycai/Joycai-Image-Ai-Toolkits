@@ -1694,6 +1694,72 @@ abstract class AppLocalizations {
   /// **'Open in Preview'**
   String get openInPreview;
 
+  /// No description provided for @openWithSystemDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Open with System Default'**
+  String get openWithSystemDefault;
+
+  /// No description provided for @drawMask.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw Mask'**
+  String get drawMask;
+
+  /// No description provided for @maskEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask Editor'**
+  String get maskEditor;
+
+  /// No description provided for @brushSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Brush Size'**
+  String get brushSize;
+
+  /// No description provided for @maskColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask Color'**
+  String get maskColor;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @saveAndSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Select'**
+  String get saveAndSelect;
+
+  /// No description provided for @black.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get black;
+
+  /// No description provided for @white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get white;
+
+  /// No description provided for @red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get red;
+
+  /// No description provided for @green.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get green;
+
   /// No description provided for @sendToSelection.
   ///
   /// In en, this message translates to:

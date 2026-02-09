@@ -397,36 +397,48 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
         const SizedBox(height: 8),
         SizedBox(
           height: 100,
-          child: ListView.separated(
+          child: ReorderableListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: appState.selectedImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            onReorder: (oldIndex, newIndex) {
+              appState.galleryState.reorderSelectedImages(oldIndex, newIndex);
+            },
+            proxyDecorator: (child, index, animation) {
+              return Material(
+                color: Colors.transparent,
+                child: child,
+              );
+            },
             itemBuilder: (context, index) {
               final image = appState.selectedImages[index];
-              return Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image(
-                      image: image.imageProvider,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: () => appState.toggleImageSelection(image),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+              return Padding(
+                key: ValueKey(image.path),
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image(
+                        image: image.imageProvider,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => appState.toggleImageSelection(image),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),

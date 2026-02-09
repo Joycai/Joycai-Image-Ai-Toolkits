@@ -7,6 +7,7 @@ class FileCard extends StatelessWidget {
   final bool isSelected;
   final double thumbnailSize;
   final VoidCallback onTap;
+  final VoidCallback? onDoubleTap;
   final Function(Offset) onSecondaryTap;
 
   const FileCard({
@@ -15,6 +16,7 @@ class FileCard extends StatelessWidget {
     required this.isSelected,
     required this.thumbnailSize,
     required this.onTap,
+    this.onDoubleTap,
     required this.onSecondaryTap,
   });
 
@@ -24,6 +26,7 @@ class FileCard extends StatelessWidget {
     
     return GestureDetector(
       onTap: onTap,
+      onDoubleTap: onDoubleTap,
       onSecondaryTapDown: (details) => onSecondaryTap(details.globalPosition),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,

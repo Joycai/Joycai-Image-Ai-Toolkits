@@ -277,6 +277,15 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void reorderSelectedImages(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final AppFile item = selectedImages.removeAt(oldIndex);
+    selectedImages.insert(newIndex, item);
+    notifyListeners();
+  }
+
   void clearImageSelection() {
     selectedImages.clear();
     notifyListeners();

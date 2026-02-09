@@ -861,6 +861,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openInPreview => 'Open in Preview';
 
   @override
+  String get openWithSystemDefault => 'Open with System Default';
+
+  @override
+  String get drawMask => 'Draw Mask';
+
+  @override
+  String get maskEditor => 'Mask Editor';
+
+  @override
+  String get brushSize => 'Brush Size';
+
+  @override
+  String get maskColor => 'Mask Color';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get saveAndSelect => 'Save & Select';
+
+  @override
+  String get black => 'Black';
+
+  @override
+  String get white => 'White';
+
+  @override
+  String get red => 'Red';
+
+  @override
+  String get green => 'Green';
+
+  @override
   String get sendToSelection => 'Send to Selection';
 
   @override

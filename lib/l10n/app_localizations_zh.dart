@@ -852,6 +852,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openInPreview => '在预览窗口打开';
 
   @override
+  String get openWithSystemDefault => '使用系统默认程序打开';
+
+  @override
+  String get drawMask => '绘制蒙版';
+
+  @override
+  String get maskEditor => '蒙版编辑器';
+
+  @override
+  String get brushSize => '画笔大小';
+
+  @override
+  String get maskColor => '蒙版颜色';
+
+  @override
+  String get undo => '撤销';
+
+  @override
+  String get saveAndSelect => '保存并选中';
+
+  @override
+  String get black => '黑色';
+
+  @override
+  String get white => '白色';
+
+  @override
+  String get red => '红色';
+
+  @override
+  String get green => '绿色';
+
+  @override
   String get sendToSelection => '发送到选中列表';
 
   @override

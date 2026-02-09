@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,6 +11,9 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
+import '../../widgets/dialogs/file_rename_dialog.dart';
+import '../../widgets/dialogs/image_preview_dialog.dart';
+import '../../widgets/dialogs/mask_editor_dialog.dart';
 
 class GalleryWidget extends StatefulWidget {
   const GalleryWidget({super.key});
@@ -303,136 +305,9 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
   void _showPreviewDialog(BuildContext context, List<AppFile> images, int initialIndex) {
     showDialog(
       context: context,
-      builder: (context) => _ImagePreviewDialog(
+      builder: (context) => ImagePreviewDialog(
         images: images,
         initialIndex: initialIndex,
-      ),
-    );
-  }
-}
-
-class _ImagePreviewDialog extends StatefulWidget {
-  final List<AppFile> images;
-  final int initialIndex;
-
-  const _ImagePreviewDialog({
-    required this.images,
-    required this.initialIndex,
-  });
-
-  @override
-  State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
-}
-
-class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
-  late int _currentIndex;
-  late final PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: _currentIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final imageFile = widget.images[_currentIndex];
-
-    return Dialog.fullscreen(
-      backgroundColor: Colors.black,
-      child: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.images.length,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) {
-              return InteractiveViewer(
-                panEnabled: true,
-                boundaryMargin: const EdgeInsets.all(100),
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image(
-                  image: widget.images[index].imageProvider,
-                  fit: BoxFit.contain,
-                ),
-              );
-            },
-          ),
-          Positioned(
-            top: 16,
-            right: 16,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 32),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          if (_currentIndex > 0)
-            Positioned(
-              top: 0,
-              bottom: 0,
-              left: 16,
-              child: Center(
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 40),
-                  onPressed: () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                ),
-              ),
-            ),
-          if (_currentIndex < widget.images.length - 1)
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: 16,
-              child: Center(
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 40),
-                  onPressed: () {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                ),
-              ),
-            ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${imageFile.name} (${_currentIndex + 1} / ${widget.images.length})',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -619,6 +494,16 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
+            leading: const Icon(Icons.brush_outlined, size: 18),
+            title: Text(l10n.drawMask),
+            dense: true,
+          ),
+          onTap: () {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _showMaskEditor(context));
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
             leading: Icon(widget.isSelected ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
             title: Text(l10n.sendToSelection),
             dense: true,
@@ -695,7 +580,13 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _showRenameDialog(context));
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showFileRenameDialog(
+                context: context,
+                filePath: widget.imageFile.path,
+                onSuccess: () => appState.galleryState.refreshImages(),
+              );
+            });
           },
         ),
         PopupMenuItem(
@@ -712,90 +603,11 @@ class _ImageCardState extends State<_ImageCard> {
     );
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context, listen: false);
-    final file = File(widget.imageFile.path);
-    final dir = p.dirname(file.path);
-    final extension = p.extension(file.path);
-    final nameStem = p.basenameWithoutExtension(file.path);
-
-    final controller = TextEditingController(text: nameStem);
-
+  void _showMaskEditor(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.renameFile),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: l10n.newFilename,
-                suffixText: extension,
-                border: const OutlineInputBorder(),
-              ),
-              autofocus: true,
-              onSubmitted: (_) => _performRename(context, controller, dir, extension, appState, l10n),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => _performRename(context, controller, dir, extension, appState, l10n),
-            child: Text(l10n.rename),
-          ),
-        ],
-      ),
+      builder: (context) => MaskEditorDialog(sourceImage: widget.imageFile),
     );
-  }
-
-  Future<void> _performRename(
-    BuildContext context, 
-    TextEditingController controller, 
-    String dir, 
-    String extension, 
-    AppState appState, 
-    AppLocalizations l10n
-  ) async {
-    final newName = controller.text.trim();
-    if (newName.isEmpty || newName == p.basenameWithoutExtension(widget.imageFile.path)) {
-      Navigator.pop(context);
-      return;
-    }
-    
-    final newFilename = '$newName$extension';
-    final newPath = p.join(dir, newFilename);
-    
-    if (File(newPath).existsSync()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.fileAlreadyExists), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
-    try {
-      await File(widget.imageFile.path).rename(newPath);
-      if (context.mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
-        );
-        appState.galleryState.refreshImages();
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
-        );
-      }
-    }
   }
 
   Future<void> _confirmDelete(BuildContext context) async {

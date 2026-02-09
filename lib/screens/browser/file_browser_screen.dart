@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
+import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../workbench/source_explorer.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
@@ -92,6 +95,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           isSelected: state.selectedFiles.contains(file),
           thumbnailSize: state.thumbnailSize,
           onTap: () => state.toggleSelection(file),
+          onDoubleTap: () {
+            if (file.category == FileCategory.image) {
+              _showPreviewDialog(context, state.filteredFiles, index);
+            } else {
+              _handleOpenFile(file);
+            }
+          },
           onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
         );
       },
@@ -110,6 +120,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         final isSelected = state.selectedFiles.contains(file);
         return GestureDetector(
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
+          onDoubleTap: () {
+            if (file.category == FileCategory.image) {
+              _showPreviewDialog(context, state.filteredFiles, index);
+            } else {
+              _handleOpenFile(file);
+            }
+          },
           child: ListTile(
             leading: Icon(file.icon, color: file.color),
             title: Text(file.name, style: const TextStyle(fontSize: 13)),
@@ -126,8 +143,32 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
+  Future<void> _handleOpenFile(BrowserFile file) async {
+    final uri = Uri.file(file.path);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
   Widget _buildEmptyState(BuildContext context) {
     return Center(child: Text(AppLocalizations.of(context)!.noFilesFound));
+  }
+
+  void _showPreviewDialog(BuildContext context, List<BrowserFile> allFiles, int initialIndex) {
+    // Filter only images for the multi-image preview
+    final images = allFiles.where((f) => f.category == FileCategory.image).toList();
+    final currentFile = allFiles[initialIndex];
+    final imageIndex = images.indexOf(currentFile);
+
+    if (imageIndex == -1) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => ImagePreviewDialog(
+        images: images.map((f) => AppFile(path: f.path, name: f.name)).toList(),
+        initialIndex: imageIndex,
+      ),
+    );
   }
 
   void _showAiRenameDialog(BuildContext context) {
@@ -139,11 +180,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
+    final state = Provider.of<AppState>(context, listen: false).browserState;
     showFileContextMenu(
       context: context,
       file: file,
       position: position,
       windowState: Provider.of<WindowState>(context, listen: false),
+      onRefresh: () => state.refresh(),
     );
   }
 }
