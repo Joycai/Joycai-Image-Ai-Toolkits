@@ -807,6 +807,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compareModeSwap => 'Swap Mode';
 
   @override
+  String get tempWorkspace => 'Temp Workspace';
+
+  @override
+  String get clearTempWorkspace => 'Clear Workspace';
+
+  @override
+  String get dropFilesHere =>
+      'Drop images here to add them to temporary workspace';
+
+  @override
   String get enableNotifications => 'Enable System Notifications';
 
   @override

@@ -1586,6 +1586,24 @@ abstract class AppLocalizations {
   /// **'Swap Mode'**
   String get compareModeSwap;
 
+  /// No description provided for @tempWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Temp Workspace'**
+  String get tempWorkspace;
+
+  /// No description provided for @clearTempWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Workspace'**
+  String get clearTempWorkspace;
+
+  /// No description provided for @dropFilesHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here to add them to temporary workspace'**
+  String get dropFilesHere;
+
   /// No description provided for @enableNotifications.
   ///
   /// In en, this message translates to:

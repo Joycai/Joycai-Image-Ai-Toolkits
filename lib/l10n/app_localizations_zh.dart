@@ -798,6 +798,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compareModeSwap => '切换模式';
 
   @override
+  String get tempWorkspace => '临时工作区';
+
+  @override
+  String get clearTempWorkspace => '清空工作区';
+
+  @override
+  String get dropFilesHere => '将图片拖放到此处以添加到临时工作区';
+
+  @override
   String get enableNotifications => '启用系统通知';
 
   @override

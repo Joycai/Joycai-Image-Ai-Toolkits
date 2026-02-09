@@ -32,9 +32,8 @@ class LLMChannel {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final map = {
       'display_name': displayName,
       'endpoint': endpoint,
       'api_key': apiKey,
@@ -43,5 +42,9 @@ class LLMChannel {
       'tag': tag,
       'tag_color': tagColor,
     };
+    if (includeId) {
+      map['id'] = id;
+    }
+    return map;
   }
 }

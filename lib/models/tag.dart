@@ -22,13 +22,16 @@ class PromptTag {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final Map<String, dynamic> data = {
       'name': name,
       'color': color,
       'is_system': isSystem ? 1 : 0,
     };
+    if (includeId) {
+      data['id'] = id;
+    }
+    return data;
   }
 
   Color get uiColor => Color(color);

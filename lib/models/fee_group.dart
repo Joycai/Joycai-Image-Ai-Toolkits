@@ -26,14 +26,17 @@ class FeeGroup {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final Map<String, dynamic> data = {
       'name': name,
       'billing_mode': billingMode,
       'input_price': inputPrice,
       'output_price': outputPrice,
       'request_price': requestPrice,
     };
+    if (includeId) {
+      data['id'] = id;
+    }
+    return data;
   }
 }

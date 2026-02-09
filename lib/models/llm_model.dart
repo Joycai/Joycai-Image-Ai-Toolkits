@@ -46,9 +46,8 @@ class LLMModel {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final map = {
       'model_id': modelId,
       'model_name': modelName,
       'type': type,
@@ -61,5 +60,9 @@ class LLMModel {
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,
     };
+    if (includeId) {
+      map['id'] = id;
+    }
+    return map;
   }
 }

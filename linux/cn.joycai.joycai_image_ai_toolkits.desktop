@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Joycai Image AI Toolkits
+Comment=A powerful cross-platform AI image toolkit for batch processing, prompt optimization, and LLM-powered image analysis.
+Exec=joycai_image_ai_toolkits
+Icon=joycai_image_ai_toolkits
+Terminal=false
+Categories=Graphics;Utility;
+Keywords=AI;Image;Prompt;Gemini;OpenAI;
+StartupWMClass=cn.joycai.joycai_image_ai_toolkits

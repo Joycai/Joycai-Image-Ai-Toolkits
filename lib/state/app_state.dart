@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
+import '../models/app_file.dart';
 import '../models/fee_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -137,9 +137,11 @@ class AppState extends ChangeNotifier {
   }
 
   // Proxies for Gallery State
-  List<File> get galleryImages => galleryState.galleryImages;
-  List<File> get processedImages => galleryState.processedImages;
-  List<File> get selectedImages => galleryState.selectedImages;
+  List<AppFile> get galleryImages => galleryState.galleryImages;
+  List<AppFile> get processedImages => galleryState.processedImages;
+  List<AppFile> get selectedImages => galleryState.selectedImages;
+  List<AppFile> get droppedImages => galleryState.droppedImages;
+  
   String? get outputDirectory => galleryState.outputDirectory;
   String get imagePrefix => galleryState.imagePrefix;
   double get thumbnailSize => galleryState.thumbnailSize;
@@ -149,7 +151,7 @@ class AppState extends ChangeNotifier {
   Future<void> updateOutputDirectory(String path) => galleryState.updateOutputDirectory(path);
   Future<void> setImagePrefix(String prefix) => galleryState.setImagePrefix(prefix);
   void clearImageSelection() => galleryState.clearImageSelection();
-  void toggleImageSelection(File image) => galleryState.toggleImageSelection(image);
+  void toggleImageSelection(AppFile image) => galleryState.toggleImageSelection(image);
   Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
   Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
   Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);

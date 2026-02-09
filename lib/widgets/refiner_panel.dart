@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
 import '../../models/llm_channel.dart';
 import '../../models/prompt.dart';
 import '../../services/database_service.dart';
@@ -14,7 +15,7 @@ import 'markdown_editor.dart';
 
 class AIPromptRefiner extends StatefulWidget {
   final String initialPrompt;
-  final List<File> selectedImages;
+  final List<AppFile> selectedImages;
   final Function(String) onApply;
 
   const AIPromptRefiner({
@@ -87,7 +88,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
     try {
       final attachments = widget.selectedImages.map((f) => 
-        LLMAttachment.fromFile(f, 'image/jpeg')
+        LLMAttachment.fromFile(File(f.path), 'image/jpeg')
       ).toList();
 
       final response = await LLMService().request(

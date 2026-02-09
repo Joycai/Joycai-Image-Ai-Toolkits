@@ -13,12 +13,12 @@ class ModelRepository {
   // LLM Models Methods
   Future<int> addModel(LLMModel model) async {
     final db = await _db;
-    return await db.insert('llm_models', model.toMap());
+    return await db.insert('llm_models', model.toMap(includeId: false));
   }
 
   Future<void> updateModel(int id, LLMModel model) async {
     final db = await _db;
-    await db.update('llm_models', model.toMap(), where: 'id = ?', whereArgs: [id]);
+    await db.update('llm_models', model.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateModelOrder(List<int> ids) async {
@@ -58,12 +58,12 @@ class ModelRepository {
   // LLM Channels Methods
   Future<int> addChannel(LLMChannel channel) async {
     final db = await _db;
-    return await db.insert('llm_channels', channel.toMap());
+    return await db.insert('llm_channels', channel.toMap(includeId: false));
   }
 
   Future<void> updateChannel(int id, LLMChannel channel) async {
     final db = await _db;
-    await db.update('llm_channels', channel.toMap(), where: 'id = ?', whereArgs: [id]);
+    await db.update('llm_channels', channel.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deleteChannel(int id) async {
@@ -90,12 +90,12 @@ class ModelRepository {
   // Fee Groups Methods
   Future<int> addFeeGroup(FeeGroup group) async {
     final db = await _db;
-    return await db.insert('fee_groups', group.toMap());
+    return await db.insert('fee_groups', group.toMap(includeId: false));
   }
 
   Future<void> updateFeeGroup(int id, FeeGroup group) async {
     final db = await _db;
-    await db.update('fee_groups', group.toMap(), where: 'id = ?', whereArgs: [id]);
+    await db.update('fee_groups', group.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deleteFeeGroup(int id) async {

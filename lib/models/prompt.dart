@@ -28,14 +28,17 @@ class Prompt {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final Map<String, dynamic> data = {
       'title': title,
       'content': content,
       'sort_order': sortOrder,
       'is_markdown': isMarkdown ? 1 : 0,
     };
+    if (includeId) {
+      data['id'] = id;
+    }
+    return data;
   }
 }
 
@@ -64,13 +67,16 @@ class SystemPrompt {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+  Map<String, dynamic> toMap({bool includeId = true}) {
+    final Map<String, dynamic> data = {
       'title': title,
       'content': content,
       'type': type,
       'is_markdown': isMarkdown ? 1 : 0,
     };
+    if (includeId) {
+      data['id'] = id;
+    }
+    return data;
   }
 }
