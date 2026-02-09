@@ -65,8 +65,12 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
           children: [
             // Title Bar
             GestureDetector(
-              onPanUpdate: (details) {
+              onPanUpdate: windowState.isComparatorMaximized ? null : (details) {
                 windowState.updateComparatorPosition(windowState.comparatorPosition + details.delta);
+              },
+              onDoubleTap: () {
+                final size = MediaQuery.of(context).size;
+                windowState.toggleMaximizeComparator(size);
               },
               child: Container(
                 height: 40,
@@ -89,6 +93,16 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     ),
                     const VerticalDivider(width: 20, indent: 10, endIndent: 10),
+                    IconButton(
+                      icon: Icon(windowState.isComparatorMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        final size = MediaQuery.of(context).size;
+                        windowState.toggleMaximizeComparator(size);
+                      },
+                    ),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
                       padding: EdgeInsets.zero,
@@ -120,17 +134,18 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                     ),
                   ),
                   // Resize Handle
-                  GestureDetector(
-                    onPanUpdate: (details) {
-                      final newWidth = (windowState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
-                      final newHeight = (windowState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
-                      windowState.updateComparatorSize(Size(newWidth, newHeight));
-                    },
-                    child: const MouseRegion(
-                      cursor: SystemMouseCursors.resizeDownRight,
-                      child: Icon(Icons.south_east, size: 14, color: Colors.white54),
+                  if (!windowState.isComparatorMaximized)
+                    GestureDetector(
+                      onPanUpdate: (details) {
+                        final newWidth = (windowState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
+                        final newHeight = (windowState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
+                        windowState.updateComparatorSize(Size(newWidth, newHeight));
+                      },
+                      child: const MouseRegion(
+                        cursor: SystemMouseCursors.resizeDownRight,
+                        child: Icon(Icons.south_east, size: 14, color: Colors.white54),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

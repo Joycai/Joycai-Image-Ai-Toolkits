@@ -52,14 +52,15 @@ class FloatingPreviewWindow extends StatelessWidget {
             children: [
               // Title Bar / Drag Handle
               GestureDetector(
-                onPanUpdate: (details) {
+                onPanUpdate: preview.isMaximized ? null : (details) {
                   windowState.updateFloatingPreviewPosition(
                     preview.id,
                     preview.position + details.delta,
                   );
                 },
                 onDoubleTap: () {
-                  windowState.updateFloatingPreviewSize(preview.id, const Size(400, 300));
+                  final size = MediaQuery.of(context).size;
+                  windowState.toggleMaximizeFloatingPreview(preview.id, size);
                 },
                 child: Container(
                   height: 36,
@@ -76,6 +77,16 @@ class FloatingPreviewWindow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(preview.isMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          final size = MediaQuery.of(context).size;
+                          windowState.toggleMaximizeFloatingPreview(preview.id, size);
+                        },
+                      ),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.close, size: 18),
                         padding: EdgeInsets.zero,
@@ -102,29 +113,30 @@ class FloatingPreviewWindow extends StatelessWidget {
                       ),
                     ),
                     // Resize Handle
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: GestureDetector(
-                        onPanUpdate: (details) {
-                          final newWidth = (preview.size.width + details.delta.dx).clamp(200.0, 1200.0);
-                          final newHeight = (preview.size.height + details.delta.dy).clamp(150.0, 1000.0);
-                          windowState.updateFloatingPreviewSize(preview.id, Size(newWidth, newHeight));
-                        },
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.resizeDownRight,
-                          child: Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(30),
-                              borderRadius: const BorderRadius.only(bottomRight: Radius.circular(12)),
+                    if (!preview.isMaximized)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: GestureDetector(
+                          onPanUpdate: (details) {
+                            final newWidth = (preview.size.width + details.delta.dx).clamp(200.0, 1200.0);
+                            final newHeight = (preview.size.height + details.delta.dy).clamp(150.0, 1000.0);
+                            windowState.updateFloatingPreviewSize(preview.id, Size(newWidth, newHeight));
+                          },
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.resizeDownRight,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(30),
+                                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(12)),
+                              ),
+                              child: const Icon(Icons.south_east, size: 12, color: Colors.white54),
                             ),
-                            child: const Icon(Icons.south_east, size: 12, color: Colors.white54),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
