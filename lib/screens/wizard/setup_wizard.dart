@@ -64,7 +64,7 @@ class _SetupWizardState extends State<SetupWizard> {
     if (_channelType == 'openai-api-rest') {
       _endpointController.text = 'https://api.openai.com/v1';
     } else {
-      _endpointController.text = 'https://generativelanguage.googleapis.com';
+      _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
   }
 
@@ -88,14 +88,15 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Future<void> _saveChannelAndContinue() async {
-    if (_apiKeyController.text.isNotEmpty) {
+    final apiKey = _apiKeyController.text.trim();
+    if (apiKey.isNotEmpty) {
       final id = await _db.addChannel({
-        'display_name': _channelNameController.text,
-        'endpoint': _endpointController.text,
-        'api_key': _apiKeyController.text,
+        'display_name': _channelNameController.text.trim(),
+        'endpoint': _endpointController.text.trim(),
+        'api_key': apiKey,
         'type': _channelType,
         'enable_discovery': 1,
-        'tag': _channelNameController.text.split(' ').first,
+        'tag': _channelNameController.text.trim().split(' ').first,
         'tag_color': Colors.blue.toARGB32(),
       });
       setState(() {
@@ -407,12 +408,14 @@ class _SetupWizardState extends State<SetupWizard> {
     
     try {
       final type = _channelType.contains('google') ? 'google-genai' : 'openai-api';
+      final apiKey = _apiKeyController.text.trim();
+      
       final config = LLMModelConfig(
         modelId: 'discovery',
         type: type,
         channelType: _channelType,
-        endpoint: _endpointController.text,
-        apiKey: _apiKeyController.text,
+        endpoint: _endpointController.text.trim(),
+        apiKey: apiKey,
       );
 
       final models = await ModelDiscoveryService().discoverModels(type, config);

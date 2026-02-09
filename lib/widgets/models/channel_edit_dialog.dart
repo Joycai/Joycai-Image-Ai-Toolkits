@@ -114,7 +114,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
                           } else {
 
-                            epCtrl.text = 'https://generativelanguage.googleapis.com';
+                            epCtrl.text = 'https://generativelanguage.googleapis.com/v1beta';
 
                           }
 
@@ -209,17 +209,17 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
 
                 final data = {
 
-                  'display_name': nameCtrl.text,
+                  'display_name': nameCtrl.text.trim(),
 
-                  'endpoint': epCtrl.text,
+                  'endpoint': epCtrl.text.trim(),
 
-                  'api_key': keyCtrl.text,
+                  'api_key': keyCtrl.text.trim(),
 
                   'type': type,
 
                   'enable_discovery': discovery ? 1 : 0,
 
-                  'tag': tagCtrl.text,
+                  'tag': tagCtrl.text.trim(),
 
                   'tag_color': tagColor,
 
