@@ -1,7 +1,7 @@
 name: joycai_image_ai_toolkits
 description: "A powerful cross-platform AI image toolkit for batch processing, prompt optimization, and LLM-powered image analysis."
 publish_to: 'none'
-version: 1.2.1+1
+version: 1.3.0+1
 
 environment:
   sdk: ^3.10.8
@@ -56,7 +56,7 @@ flutter_launcher_icons:
   windows:
     generate: true
     image_path: "assets/icon/icon.png"
-    icon_size: 512
+    icon_size: 256
   macos:
     generate: true
     image_path: "assets/icon/icon.png"
@@ -69,7 +69,7 @@ msix_config:
   publisher_display_name: Joycai
   publisher: CN=Joycai
   identity_name: com.joycai.image-ai-toolkits
-  msix_version: 1.2.1.0
+  msix_version: 1.3.0.0
   logo_path: assets/icon/icon.png
   capabilities: internetClient, privateNetworkClientServer
   install_certificate: false
