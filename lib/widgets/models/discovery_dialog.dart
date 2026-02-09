@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
 
 class DiscoveryDialog extends StatefulWidget {
-  final Map<String, dynamic> channel;
+  final LLMChannel channel;
   final LLMModelConfig config;
   final AppState appState;
   final AppLocalizations l10n;
@@ -130,8 +131,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                 itemBuilder: (context, index) {
                   final m = _filtered[index];
                   final bool isAdded = widget.appState.allModels.any((em) => 
-                      em['model_id'] == m.modelId && 
-                      em['channel_id'] == widget.channel['id']
+                      em.modelId == m.modelId && 
+                      em.channelId == widget.channel.id
                   );
                   
                   return CheckboxListTile(
@@ -174,7 +175,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                   'tag': _inferTag(m),
                   'is_paid': 1,
                   'sort_order': widget.appState.allModels.length,
-                  'channel_id': widget.channel['id'],
+                  'channel_id': widget.channel.id,
                 });
               }
               if (context.mounted) Navigator.pop(context);

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/prompt.dart';
+import '../../models/tag.dart';
 import '../markdown_editor.dart';
 import '../prompt_card.dart';
 
 class LibraryDialog extends StatefulWidget {
-  final List<Map<String, dynamic>> allPrompts;
-  final List<Map<String, dynamic>> tags;
+  final List<Prompt> allPrompts;
+  final List<PromptTag> tags;
   final String initialContent;
   final Function(String, bool isAppend) onApply;
 
@@ -60,12 +62,12 @@ class _LibraryDialogState extends State<LibraryDialog> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final filteredPrompts = widget.allPrompts.where((p) {
-      final matchesSearch = p['title'].toLowerCase().contains(_searchQuery) || 
-                            p['content'].toLowerCase().contains(_searchQuery);
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
+                            p.content.toLowerCase().contains(_searchQuery);
       
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       
-      final promptTagIds = (p['tags'] as List).map((t) => t['id'] as int).toSet();
+      final promptTagIds = p.tags.map((t) => t.id as int).toSet();
       // "OR" logic: if any selected tag matches
       final matchesTags = _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
       
@@ -130,12 +132,12 @@ class _LibraryDialogState extends State<LibraryDialog> {
                             separatorBuilder: (context, index) => const SizedBox(height: 4),
                             itemBuilder: (context, index) {
                               final tag = widget.tags[index];
-                              final id = tag['id'] as int;
+                              final id = tag.id as int;
                               final isSelected = _selectedFilterTagIds.contains(id);
-                              final color = Color(tag['color'] ?? 0xFF607D8B);
+                              final color = Color(tag.color);
                               
                               return FilterChip(
-                                label: Text(tag['name'], style: TextStyle(
+                                label: Text(tag.name, style: TextStyle(
                                   fontSize: 12, 
                                   color: isSelected ? Colors.white : color,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
@@ -189,7 +191,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
                             separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final p = filteredPrompts[index];
-                              final id = p['id'] as int;
+                              final id = p.id as int;
                               final isExpanded = _expandedPromptIds.contains(id);
 
                               return PromptCard(
@@ -205,14 +207,14 @@ class _LibraryDialogState extends State<LibraryDialog> {
                                 showCategory: true,
                                 actions: [
                                   TextButton.icon(
-                                    onPressed: () => setState(() => _draftController.text = p['content']),
+                                    onPressed: () => setState(() => _draftController.text = p.content),
                                     icon: const Icon(Icons.find_replace, size: 14),
                                     label: const Text("Replace", style: TextStyle(fontSize: 10)),
                                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                   ),
                                   const SizedBox(width: 4),
                                   FilledButton.icon(
-                                    onPressed: () => setState(() => _appendToDraft(p['content'])),
+                                    onPressed: () => setState(() => _appendToDraft(p.content)),
                                     icon: const Icon(Icons.add, size: 14),
                                     label: const Text("Append", style: TextStyle(fontSize: 10)),
                                     style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),

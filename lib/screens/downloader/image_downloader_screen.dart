@@ -85,7 +85,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final state = appState.downloaderState;
     
     if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-       state.selectedModelPk = appState.chatModels.first['id'] as int;
+       state.selectedModelPk = appState.chatModels.first.id;
     }
     if (state.selectedModelPk == null) return;
 
@@ -118,9 +118,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     } catch (e) {
       state.addLog('Error: $e');
     } finally {
-      setState(() {
-        _isAnalyzing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
 
@@ -195,7 +197,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-      state.selectedModelPk = appState.chatModels.first['id'] as int;
+      state.selectedModelPk = appState.chatModels.first.id;
     }
 
     return Scaffold(
@@ -244,8 +246,8 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                     ),
                     items: appState.chatModels.map((m) {
                       return DropdownMenuItem<int>(
-                        value: m['id'] as int,
-                        child: Text(m['model_name']),
+                        value: m.id,
+                        child: Text(m.modelName),
                       );
                     }).toList(),
                     onChanged: (v) => state.setState(selectedModelPk: v),

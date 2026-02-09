@@ -4,21 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
-import '../state/app_state.dart';
+import '../state/window_state.dart';
 
 class FloatingComparatorHost extends StatelessWidget {
   const FloatingComparatorHost({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    if (!appState.isComparatorOpen) return const SizedBox.shrink();
+    final windowState = Provider.of<WindowState>(context);
+    if (!windowState.isComparatorOpen) return const SizedBox.shrink();
 
     return Stack(
       children: [
         Positioned(
-          left: appState.comparatorPosition.dx,
-          top: appState.comparatorPosition.dy,
+          left: windowState.comparatorPosition.dx,
+          top: windowState.comparatorPosition.dy,
           child: const FloatingComparatorWindow(),
         ),
       ],
@@ -45,7 +45,7 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final windowState = Provider.of<WindowState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -55,8 +55,8 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
       clipBehavior: Clip.antiAlias,
       color: Colors.black,
       child: Container(
-        width: appState.comparatorSize.width,
-        height: appState.comparatorSize.height,
+        width: windowState.comparatorSize.width,
+        height: windowState.comparatorSize.height,
         decoration: BoxDecoration(
           border: Border.all(color: colorScheme.secondary.withAlpha(150), width: 2),
           borderRadius: BorderRadius.circular(12),
@@ -66,7 +66,7 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
             // Title Bar
             GestureDetector(
               onPanUpdate: (details) {
-                appState.updateComparatorPosition(appState.comparatorPosition + details.delta);
+                windowState.updateComparatorPosition(windowState.comparatorPosition + details.delta);
               },
               child: Container(
                 height: 40,
@@ -80,10 +80,10 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                     const Spacer(),
                     // Mode Toggle
                     TextButton.icon(
-                      onPressed: appState.toggleComparatorMode,
-                      icon: Icon(appState.isComparatorSyncMode ? Icons.view_column : Icons.view_stream, size: 16),
+                      onPressed: windowState.toggleComparatorMode,
+                      icon: Icon(windowState.isComparatorSyncMode ? Icons.view_column : Icons.view_stream, size: 16),
                       label: Text(
-                        appState.isComparatorSyncMode ? l10n.compareModeSync : l10n.compareModeSwap,
+                        windowState.isComparatorSyncMode ? l10n.compareModeSync : l10n.compareModeSwap,
                         style: const TextStyle(fontSize: 11),
                       ),
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -93,7 +93,7 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                       icon: const Icon(Icons.close, size: 20),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      onPressed: appState.closeComparator,
+                      onPressed: windowState.closeComparator,
                     ),
                   ],
                 ),
@@ -101,7 +101,7 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
             ),
             // Content
             Expanded(
-              child: appState.isComparatorSyncMode ? _buildSyncView(appState) : _buildSwapView(appState),
+              child: windowState.isComparatorSyncMode ? _buildSyncView(windowState) : _buildSwapView(windowState),
             ),
             // Footer Info
             Container(
@@ -114,7 +114,7 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      'Raw: ${appState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${appState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
+                      'Raw: ${windowState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${windowState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
                       style: const TextStyle(color: Colors.white54, fontSize: 10),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -122,9 +122,9 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                   // Resize Handle
                   GestureDetector(
                     onPanUpdate: (details) {
-                      final newWidth = (appState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
-                      final newHeight = (appState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
-                      appState.updateComparatorSize(Size(newWidth, newHeight));
+                      final newWidth = (windowState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
+                      final newHeight = (windowState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
+                      windowState.updateComparatorSize(Size(newWidth, newHeight));
                     },
                     child: const MouseRegion(
                       cursor: SystemMouseCursors.resizeDownRight,
@@ -140,17 +140,17 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
     );
   }
 
-  Widget _buildSyncView(AppState appState) {
+  Widget _buildSyncView(WindowState windowState) {
     return Row(
       children: [
-        Expanded(child: _buildViewer(appState.comparatorRawPath, "RAW")),
+        Expanded(child: _buildViewer(windowState.comparatorRawPath, "RAW")),
         const VerticalDivider(width: 1, color: Colors.white24),
-        Expanded(child: _buildViewer(appState.comparatorAfterPath, "AFTER")),
+        Expanded(child: _buildViewer(windowState.comparatorAfterPath, "AFTER")),
       ],
     );
   }
 
-  Widget _buildSwapView(AppState appState) {
+  Widget _buildSwapView(WindowState windowState) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return MouseRegion(
@@ -163,12 +163,12 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
             fit: StackFit.expand,
             children: [
               // Bottom Layer: After
-              _buildViewer(appState.comparatorAfterPath, "AFTER", showLabel: false),
+              _buildViewer(windowState.comparatorAfterPath, "AFTER", showLabel: false),
               
               // Top Layer: Raw (Clipped)
               ClipRect(
                 clipper: _CurtainClipper(_scanRatio),
-                child: _buildViewer(appState.comparatorRawPath, "RAW", showLabel: false),
+                child: _buildViewer(windowState.comparatorRawPath, "RAW", showLabel: false),
               ),
 
               // Scanning Line

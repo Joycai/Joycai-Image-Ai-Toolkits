@@ -38,8 +38,11 @@ void main() async {
   await appState.loadSettings();
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: appState,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider.value(value: appState.windowState),
+      ],
       child: MyApp(version: packageInfo.version),
     ),
   );

@@ -5,6 +5,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../core/app_paths.dart';
+import '../models/fee_group.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
+import '../models/prompt.dart';
+import '../models/tag.dart';
 import 'database_migrations.dart';
 import 'repositories/model_repository.dart';
 import 'repositories/prompt_repository.dart';
@@ -93,19 +98,21 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end}) 
       => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end);
 
+  // --- MODEL BASED METHODS ---
+
   // Prompts Methods
-  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(prompt, tagIds: tagIds);
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, prompt, tagIds: tagIds);
+  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
   Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);
-  Future<List<Map<String, dynamic>>> getPrompts() => PromptRepository().getPrompts();
+  Future<List<Prompt>> getPrompts() => PromptRepository().getPrompts();
   Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
 
   // LLM Models Methods
-  Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(model);
-  Future<void> updateModel(int id, Map<String, dynamic> model) => ModelRepository().updateModel(id, model);
+  Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(LLMModel.fromMap(model));
+  Future<void> updateModel(int id, Map<String, dynamic> model) => ModelRepository().updateModel(id, LLMModel.fromMap(model));
   Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
   Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);
-  Future<List<Map<String, dynamic>>> getModels() => ModelRepository().getModels();
+  Future<List<LLMModel>> getModels() => ModelRepository().getModels();
   Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) 
       => ModelRepository().updateModelEstimation(modelPk, mean, sd, tasksSinceUpdate);
 
@@ -178,36 +185,39 @@ class DatabaseService {
   }
 
   // Fee Groups Methods
-  Future<int> addFeeGroup(Map<String, dynamic> group) => ModelRepository().addFeeGroup(group);
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) => ModelRepository().updateFeeGroup(id, group);
+  Future<int> addFeeGroup(Map<String, dynamic> group) => ModelRepository().addFeeGroup(FeeGroup.fromMap(group));
+  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) => ModelRepository().updateFeeGroup(id, FeeGroup.fromMap(group));
   Future<void> deleteFeeGroup(int id) => ModelRepository().deleteFeeGroup(id);
-  Future<List<Map<String, dynamic>>> getFeeGroups() => ModelRepository().getFeeGroups();
+  Future<List<FeeGroup>> getFeeGroups() => ModelRepository().getFeeGroups();
 
   // LLM Channels Methods
-  Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(channel);
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) => ModelRepository().updateChannel(id, channel);
+  Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) => ModelRepository().updateChannel(id, LLMChannel.fromMap(channel));
   Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);
-  Future<List<Map<String, dynamic>>> getChannels() => ModelRepository().getChannels();
-  Future<Map<String, dynamic>?> getChannel(int id) => ModelRepository().getChannel(id);
+  Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();
+  Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);
 
   // Prompt Tags Methods
-  Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(tag);
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => PromptRepository().updatePromptTag(id, tag);
+  Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(PromptTag.fromMap(tag));
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => PromptRepository().updatePromptTag(id, PromptTag.fromMap(tag));
   Future<void> deletePromptTag(int id) => PromptRepository().deletePromptTag(id);
-  Future<List<Map<String, dynamic>>> getPromptTags() => PromptRepository().getPromptTags();
+  Future<List<PromptTag>> getPromptTags() => PromptRepository().getPromptTags();
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt) => PromptRepository().addSystemPrompt(prompt);
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) => PromptRepository().updateSystemPrompt(id, prompt);
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt));
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt));
   Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
-  Future<List<Map<String, dynamic>>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
+  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
 
   // Standalone Prompt Data
   Future<Map<String, dynamic>> getPromptDataRaw() async {
     return {
-      'tags': await getPromptTags(),
-      'user_prompts': await getPrompts(),
-      'system_prompts': await getSystemPrompts(),
+      'tags': (await getPromptTags()).map((t) => t.toMap()).toList(),
+      'user_prompts': (await getPrompts()).map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
+      'system_prompts': (await getSystemPrompts()).map((p) => p.toMap()).toList(),
     };
   }
 

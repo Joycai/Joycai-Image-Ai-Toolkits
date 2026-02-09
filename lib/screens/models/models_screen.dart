@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/fee_group.dart';
+import '../../models/llm_channel.dart';
+import '../../models/llm_model.dart';
 import '../../services/llm/llm_models.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_section.dart';
@@ -18,11 +21,6 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -66,7 +64,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     child: Center(child: Text(l10n.noModelsConfigured)),
                   ),
                 ...appState.allChannels.map((channel) {
-                  final channelModels = appState.getModelsForChannel(channel['id']);
+                  final channelModels = appState.getModelsForChannel(channel.id);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: _buildChannelGroup(channel, channelModels, l10n, appState),
@@ -78,7 +76,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               title: l10n.feeManagement,
               padding: const EdgeInsets.only(bottom: 64),
               children: [
-                FeeGroupManager(appState: appState, mode: FeeGroupManagerMode.section),
+                const FeeGroupManager(mode: FeeGroupManagerMode.section),
               ],
             ),
           ],
@@ -92,9 +90,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildChannelGroup(Map<String, dynamic> channel, List<Map<String, dynamic>> models, AppLocalizations l10n, AppState appState) {
+  Widget _buildChannelGroup(LLMChannel channel, List<LLMModel> models, AppLocalizations l10n, AppState appState) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bool enableDiscovery = (channel['enable_discovery'] ?? 1) == 1;
+    final bool enableDiscovery = channel.enableDiscovery;
 
     return Card(
       elevation: 0,
@@ -106,26 +104,26 @@ class _ModelsScreenState extends State<ModelsScreen> {
       child: ExpansionTile(
         title: Row(
           children: [
-            if (channel['tag'] != null && channel['tag'].toString().isNotEmpty) ...[
+            if (channel.tag != null && channel.tag!.isNotEmpty) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Color(channel['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                  color: Color(channel.tagColor ?? 0xFF607D8B).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Color(channel['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.5)),
+                  border: Border.all(color: Color(channel.tagColor ?? 0xFF607D8B).withValues(alpha: 0.5)),
                 ),
                 child: Text(
-                  channel['tag'],
+                  channel.tag!,
                   style: TextStyle(
                     fontSize: 10, 
-                    color: Color(channel['tag_color'] ?? 0xFF607D8B),
+                    color: Color(channel.tagColor ?? 0xFF607D8B),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
             ],
-            Text(channel['display_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ],
         ),
         initiallyExpanded: true,
@@ -142,7 +140,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ),
             IconButton(
               icon: const Icon(Icons.add, size: 20),
-              onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel['id']),
+              onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
               tooltip: l10n.addModel,
             ),
             const Icon(Icons.expand_more),
@@ -161,14 +159,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
               itemCount: models.length,
               itemBuilder: (context, index) {
                 final model = models[index];
-                final feeGroup = appState.allFeeGroups.firstWhere((g) => g['id'] == model['fee_group_id'], orElse: () => {});
+                final feeGroup = appState.allFeeGroups.cast<FeeGroup?>().firstWhere((g) => g?.id == model.feeGroupId, orElse: () => null);
                 return ListTile(
-                  title: Text(model['model_name']),
+                  title: Text(model.modelName),
                   subtitle: Row(
                     children: [
-                      Text(model['model_id'], style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                      Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                       const SizedBox(width: 8),
-                      if (feeGroup.isNotEmpty)
+                      if (feeGroup != null)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
@@ -176,7 +174,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            feeGroup['name'],
+                            feeGroup.name,
                             style: TextStyle(fontSize: 10, color: colorScheme.onSecondaryContainer),
                           ),
                         ),
@@ -185,7 +183,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTagChip(model['tag']),
+                      _buildTagChip(model.tag),
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
@@ -226,18 +224,18 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _confirmDeleteModel(AppLocalizations l10n, Map<String, dynamic> model, AppState appState) {
+  void _confirmDeleteModel(AppLocalizations l10n, LLMModel model, AppState appState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.deleteModelConfirmTitle),
-        content: Text(l10n.deleteModelConfirmMessage(model['model_name'])),
+        content: Text(l10n.deleteModelConfirmMessage(model.modelName)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await appState.deleteModel(model['id']);
+              await appState.deleteModel(model.id!);
               if (context.mounted) {
                 Navigator.pop(context);
               }
@@ -258,15 +256,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
           final channel = appState.allChannels[index];
           return Card(
             child: ListTile(
-              leading: (channel['tag'] != null && channel['tag'].toString().isNotEmpty)
+              leading: (channel.tag != null && channel.tag!.isNotEmpty)
                 ? CircleAvatar(
-                    backgroundColor: Color(channel['tag_color'] ?? 0xFF607D8B),
+                    backgroundColor: Color(channel.tagColor ?? 0xFF607D8B),
                     radius: 16,
-                    child: Text(channel['tag'][0], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    child: Text(channel.tag![0], style: const TextStyle(color: Colors.white, fontSize: 12)),
                   )
                 : const Icon(Icons.cloud_queue),
-              title: Text(channel['display_name']),
-              subtitle: Text(channel['endpoint'], style: const TextStyle(fontSize: 12)),
+              title: Text(channel.displayName),
+              subtitle: Text(channel.endpoint, style: const TextStyle(fontSize: 12)),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -292,25 +290,25 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _showChannelDialog(AppLocalizations l10n, AppState appState, {Map<String, dynamic>? channel}) {
+  void _showChannelDialog(AppLocalizations l10n, AppState appState, {LLMChannel? channel}) {
     showDialog(
       context: context,
       builder: (context) => ChannelEditDialog(l10n: l10n, appState: appState, channel: channel),
     );
   }
 
-  void _confirmDeleteChannel(AppLocalizations l10n, Map<String, dynamic> channel, AppState appState) {
+  void _confirmDeleteChannel(AppLocalizations l10n, LLMChannel channel, AppState appState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.delete),
-        content: Text(l10n.deleteChannelConfirm(channel['display_name'])),
+        content: Text(l10n.deleteChannelConfirm(channel.displayName)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await appState.deleteChannel(channel['id']);
+              await appState.deleteChannel(channel.id!);
               if (context.mounted) {
                 Navigator.pop(context);
               }
@@ -322,22 +320,22 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  void _showModelDialog(AppLocalizations l10n, AppState appState, {Map<String, dynamic>? model, int? preChannelId}) {
+  void _showModelDialog(AppLocalizations l10n, AppState appState, {LLMModel? model, int? preChannelId}) {
     showDialog(
       context: context,
       builder: (context) => ModelEditDialog(l10n: l10n, appState: appState, model: model, preChannelId: preChannelId),
     );
   }
 
-  void _showDiscoveryDialog(AppLocalizations l10n, Map<String, dynamic> channel, AppState appState) async {
-    final type = channel['type'].contains('google') ? 'google-genai' : 'openai-api';
+  void _showDiscoveryDialog(AppLocalizations l10n, LLMChannel channel, AppState appState) async {
+    final type = channel.type.contains('google') ? 'google-genai' : 'openai-api';
     
     final config = LLMModelConfig(
       modelId: 'discovery',
       type: type,
-      channelType: channel['type'],
-      endpoint: channel['endpoint'],
-      apiKey: channel['api_key'],
+      channelType: channel.type,
+      endpoint: channel.endpoint,
+      apiKey: channel.apiKey,
     );
 
     if (!mounted) return;

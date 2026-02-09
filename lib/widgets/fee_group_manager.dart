@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/fee_group.dart';
 import '../state/app_state.dart';
 
 enum FeeGroupManagerMode {
@@ -9,17 +11,16 @@ enum FeeGroupManagerMode {
 }
 
 class FeeGroupManager extends StatelessWidget {
-  final AppState appState;
   final FeeGroupManagerMode mode;
 
   const FeeGroupManager({
     super.key,
-    required this.appState,
     this.mode = FeeGroupManagerMode.section,
   });
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final groups = appState.allFeeGroups;
 
@@ -33,7 +34,7 @@ class FeeGroupManager extends StatelessWidget {
             Text(l10n.noModelsConfigured, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => _showGroupDialog(context, l10n),
+              onPressed: () => _showGroupDialog(context, appState, l10n),
               icon: const Icon(Icons.add),
               label: Text(l10n.addFeeGroup),
             ),
@@ -49,7 +50,7 @@ class FeeGroupManager extends StatelessWidget {
       itemCount: groups.length,
       itemBuilder: (context, index) {
         final group = groups[index];
-        final billingMode = group['billing_mode'] as String;
+        final billingMode = group.billingMode;
         
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -58,21 +59,21 @@ class FeeGroupManager extends StatelessWidget {
               billingMode == 'request' ? Icons.ads_click : Icons.token,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text(group['name']),
+            title: Text(group.name),
             subtitle: Text(billingMode == 'request'
-              ? '\$${group['request_price']}/Req'
-              : 'In: \$${group['input_price']}/M | Out: \$${group['output_price']}/M'
+              ? '\$${group.requestPrice}/Req'
+              : 'In: \$${group.inputPrice}/M | Out: \$${group.outputPrice}/M'
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showGroupDialog(context, l10n, group: group),
+                  onPressed: () => _showGroupDialog(context, appState, l10n, group: group),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDelete(context, l10n, group),
+                  onPressed: () => _confirmDelete(context, appState, l10n, group),
                 ),
               ],
             ),
@@ -84,7 +85,7 @@ class FeeGroupManager extends StatelessWidget {
     if (mode == FeeGroupManagerMode.fullPage) {
       return Scaffold(
         floatingActionButton: FloatingActionButton(
-          onPressed: () => _showGroupDialog(context, l10n),
+          onPressed: () => _showGroupDialog(context, appState, l10n),
           child: const Icon(Icons.add),
         ),
         body: listView,
@@ -96,7 +97,7 @@ class FeeGroupManager extends StatelessWidget {
         listView,
         const SizedBox(height: 8),
         OutlinedButton.icon(
-          onPressed: () => _showGroupDialog(context, l10n),
+          onPressed: () => _showGroupDialog(context, appState, l10n),
           icon: const Icon(Icons.add),
           label: Text(l10n.addFeeGroup),
         ),
@@ -104,17 +105,17 @@ class FeeGroupManager extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, AppLocalizations l10n, Map<String, dynamic> group) {
+  void _confirmDelete(BuildContext context, AppState appState, AppLocalizations l10n, FeeGroup group) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.deleteFeeGroupConfirm(group['name'])),
+        title: Text(l10n.deleteFeeGroupConfirm(group.name)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await appState.deleteFeeGroup(group['id']);
+              await appState.deleteFeeGroup(group.id!);
               if (context.mounted) {
                 Navigator.pop(context);
               }
@@ -126,12 +127,12 @@ class FeeGroupManager extends StatelessWidget {
     );
   }
 
-  void _showGroupDialog(BuildContext context, AppLocalizations l10n, {Map<String, dynamic>? group}) {
-    final nameCtrl = TextEditingController(text: group?['name'] ?? '');
-    final inputPriceCtrl = TextEditingController(text: (group?['input_price'] ?? 0.0).toString());
-    final outputPriceCtrl = TextEditingController(text: (group?['output_price'] ?? 0.0).toString());
-    final requestPriceCtrl = TextEditingController(text: (group?['request_price'] ?? 0.0).toString());
-    String billingMode = group?['billing_mode'] ?? 'token';
+  void _showGroupDialog(BuildContext context, AppState appState, AppLocalizations l10n, {FeeGroup? group}) {
+    final nameCtrl = TextEditingController(text: group?.name ?? '');
+    final inputPriceCtrl = TextEditingController(text: (group?.inputPrice ?? 0.0).toString());
+    final outputPriceCtrl = TextEditingController(text: (group?.outputPrice ?? 0.0).toString());
+    final requestPriceCtrl = TextEditingController(text: (group?.requestPrice ?? 0.0).toString());
+    String billingMode = group?.billingMode ?? 'token';
 
     showDialog(
       context: context,
@@ -197,7 +198,7 @@ class FeeGroupManager extends StatelessWidget {
                 if (group == null) {
                   await appState.addFeeGroup(data);
                 } else {
-                  await appState.updateFeeGroup(group['id'], data);
+                  await appState.updateFeeGroup(group.id!, data);
                 }
                 if (context.mounted) {
                   Navigator.pop(context);

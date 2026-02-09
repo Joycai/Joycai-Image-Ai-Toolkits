@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
+import '../../state/window_state.dart';
 
 class GalleryWidget extends StatelessWidget {
   const GalleryWidget({super.key});
@@ -510,7 +511,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
 
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context, listen: false);
+    final windowState = Provider.of<WindowState>(context, listen: false);
 
     showMenu(
       context: context,
@@ -523,10 +524,10 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
             dense: true,
           ),
           onTap: () {
-            appState.openFloatingPreview(widget.imageFile.path);
+            windowState.openFloatingPreview(widget.imageFile.path);
           },
         ),
-        if (!appState.isComparatorOpen)
+        if (!windowState.isComparatorOpen)
           PopupMenuItem(
             child: ListTile(
               leading: const Icon(Icons.compare, size: 18),
@@ -534,7 +535,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
               dense: true,
             ),
             onTap: () {
-              appState.sendToComparator(widget.imageFile.path);
+              windowState.sendToComparator(widget.imageFile.path);
             },
           )
         else ...[
@@ -545,7 +546,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
               dense: true,
             ),
             onTap: () {
-              appState.sendToComparator(widget.imageFile.path, isAfter: false);
+              windowState.sendToComparator(widget.imageFile.path, isAfter: false);
             },
           ),
           PopupMenuItem(
@@ -555,7 +556,7 @@ color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
               dense: true,
             ),
             onTap: () {
-              appState.sendToComparator(widget.imageFile.path, isAfter: true);
+              windowState.sendToComparator(widget.imageFile.path, isAfter: true);
             },
           ),
         ],

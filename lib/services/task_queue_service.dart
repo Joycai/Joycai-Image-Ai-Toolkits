@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../models/llm_model.dart';
 import 'database_service.dart';
 import 'llm/llm_models.dart';
 import 'llm/llm_service.dart';
@@ -128,14 +129,14 @@ class TaskQueueService extends ChangeNotifier {
       modelPk = modelIdentifier;
       // Fetch model and channel info for visual continuity in history
       final models = await db.getModels();
-      final model = models.firstWhere((m) => m['id'] == modelPk, orElse: () => {});
-      if (model.isNotEmpty) {
-        final channelId = model['channel_id'] as int?;
+      final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
+      if (model != null) {
+        final channelId = model.channelId;
         if (channelId != null) {
           final channel = await db.getChannel(channelId);
           if (channel != null) {
-            channelTag = channel['tag'];
-            channelColor = channel['tag_color'];
+            channelTag = channel.tag;
+            channelColor = channel.tagColor;
           }
         }
       }
@@ -261,16 +262,16 @@ class TaskQueueService extends ChangeNotifier {
   Future<void> _handleEstimationCheckpoint(int modelPk) async {
     final db = DatabaseService();
     final models = await db.getModels();
-    final model = models.cast<Map<String, dynamic>?>().firstWhere((m) => m?['id'] == modelPk, orElse: () => null);
+    final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
     
     if (model != null) {
-      int count = (model['tasks_since_update'] as int? ?? 0) + 1;
-      final mean = model['est_mean_ms'] as double? ?? 0.0;
+      int count = model.tasksSinceUpdate + 1;
+      final mean = model.estMeanMs ?? 0.0;
       
       if (count >= 10 || mean == 0) {
         await _updateModelCheckpoint(modelPk);
       } else {
-        await db.updateModelEstimation(modelPk, mean, model['est_sd_ms'] as double? ?? 0.0, count);
+        await db.updateModelEstimation(modelPk, mean, model.estSdMs ?? 0.0, count);
       }
     }
   }
@@ -429,14 +430,14 @@ class TaskQueueService extends ChangeNotifier {
       if (task.status == TaskStatus.processing && task.startTime != null) {
         hasActive = true;
         // Find checkpoint for this model
-        final model = models.cast<Map<String, dynamic>?>().firstWhere(
-          (m) => m?['id'] == task.modelPk, 
+        final model = models.cast<LLMModel?>().firstWhere(
+          (m) => m?.id == task.modelPk, 
           orElse: () => null
         );
 
         if (model != null) {
-          final mean = model['est_mean_ms'] as double? ?? 0.0;
-          final sd = model['est_sd_ms'] as double? ?? 0.0;
+          final mean = model.estMeanMs ?? 0.0;
+          final sd = model.estSdMs ?? 0.0;
           
           if (mean > 0) {
             final targetMs = mean + (2 * sd);

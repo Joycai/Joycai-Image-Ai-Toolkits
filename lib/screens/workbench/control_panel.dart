@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_model.dart';
+import '../../models/prompt.dart';
+import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
@@ -25,8 +28,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   
   bool _isModelSettingsExpanded = false;
 
-  List<Map<String, dynamic>> _allUserPrompts = [];
-  List<Map<String, dynamic>> _tags = [];
+  List<Prompt> _allUserPrompts = [];
+  List<PromptTag> _tags = [];
 
   @override
   void initState() {
@@ -87,19 +90,19 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     
     if (imageModels.isNotEmpty) {
       final savedModelId = appState.lastSelectedModelId;
-      final match = imageModels.firstWhere(
-        (m) => m['id'].toString() == savedModelId || m['model_id'] == savedModelId,
-        orElse: () => {},
+      final match = imageModels.cast<LLMModel?>().firstWhere(
+        (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
+        orElse: () => null,
       );
       
-      if (match.isNotEmpty) {
-        selectedModelPk = match['id'] as int;
-        selectedChannelId = match['channel_id'] as int?;
+      if (match != null) {
+        selectedModelPk = match.id;
+        selectedChannelId = match.channelId;
       } else {
         // Default to first
         final first = imageModels.first;
-        selectedModelPk = first['id'] as int;
-        selectedChannelId = first['channel_id'] as int?;
+        selectedModelPk = first.id;
+        selectedChannelId = first.channelId;
       }
     }
 
@@ -133,8 +136,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                 children: [
                   // Model Selection Section
                   ModelSelectionSection(
-                    availableModels: imageModels,
-                    channels: allChannels,
+                    availableModels: imageModels.map((m) => m.toMap()).toList(), // Adapter needed until ModelSelectionSection is refactored
+                    channels: allChannels.map((c) => c.toMap()).toList(), // Adapter
                     selectedChannelId: selectedChannelId,
                     selectedModelPk: selectedModelPk,
                     aspectRatio: appState.lastAspectRatio,
@@ -142,11 +145,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     isExpanded: _isModelSettingsExpanded,
                     onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
                     onChannelChanged: (val) {
-                      final firstInChannel = appState.getModelsForChannel(val).cast<Map<String, dynamic>?>().firstWhere(
-                        (m) => m != null,
-                        orElse: () => null,
-                      );
-                      final newPk = firstInChannel?['id'] as int?;
+                      final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
+                      final newPk = firstInChannel?.id;
                       if (newPk != null) {
                         _updateConfig(modelPk: newPk);
                       }
@@ -218,8 +218,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   onPressed: (_promptController.text.isEmpty || selectedModelPk == null) 
                       ? null 
                       : () {
-                          final selectedModel = appState.imageModels.firstWhere((m) => m['id'] == selectedModelPk);
-                          final modelName = selectedModel['model_name'] as String;
+                          final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
+                          final modelName = selectedModel.modelName;
                           
                           appState.submitTask(selectedModelPk, {
                             'prompt': _promptController.text,

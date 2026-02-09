@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
+import '../models/fee_group.dart';
+import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
 import '../models/log_entry.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
@@ -13,108 +16,20 @@ import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
-
-class PreviewWindowState {
-  final String id;
-  final String imagePath;
-  Offset position;
-  Size size;
-
-  PreviewWindowState({
-    required this.id,
-    required this.imagePath,
-    this.position = const Offset(100, 100),
-    this.size = const Size(400, 300),
-  });
-}
+import 'window_state.dart';
 
 class AppState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
-
-  final List<PreviewWindowState> floatingPreviews = [];
-
-  void openFloatingPreview(String path) {
-    final id = DateTime.now().millisecondsSinceEpoch.toString();
-    // Offset each new window slightly
-    final offset = Offset(
-      100.0 + (floatingPreviews.length % 5) * 30,
-      100.0 + (floatingPreviews.length % 5) * 30,
-    );
-    floatingPreviews.add(PreviewWindowState(id: id, imagePath: path, position: offset));
-    notifyListeners();
-  }
-
-  void closeFloatingPreview(String id) {
-    floatingPreviews.removeWhere((p) => p.id == id);
-    notifyListeners();
-  }
-
-  void updateFloatingPreviewPosition(String id, Offset newPosition) {
-    final index = floatingPreviews.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      floatingPreviews[index].position = newPosition;
-      notifyListeners();
-    }
-  }
-
-  void updateFloatingPreviewSize(String id, Size newSize) {
-    final index = floatingPreviews.indexWhere((p) => p.id == id);
-    if (index != -1) {
-      floatingPreviews[index].size = newSize;
-      notifyListeners();
-    }
-  }
-
-  // Comparator State
-  bool isComparatorOpen = false;
-  String? comparatorRawPath;
-  String? comparatorAfterPath;
-  bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
-  Offset comparatorPosition = const Offset(150, 150);
-  Size comparatorSize = const Size(800, 500);
-
-  void sendToComparator(String path, {bool isAfter = false}) {
-    if (!isComparatorOpen) {
-      isComparatorOpen = true;
-      comparatorRawPath = path;
-      comparatorAfterPath = null;
-    } else {
-      if (isAfter) {
-        comparatorAfterPath = path;
-      } else {
-        comparatorRawPath = path;
-      }
-    }
-    notifyListeners();
-  }
-
-  void closeComparator() {
-    isComparatorOpen = false;
-    notifyListeners();
-  }
-
-  void toggleComparatorMode() {
-    isComparatorSyncMode = !isComparatorSyncMode;
-    notifyListeners();
-  }
-
-  void updateComparatorPosition(Offset newPosition) {
-    comparatorPosition = newPosition;
-    notifyListeners();
-  }
-
-  void updateComparatorSize(Size newSize) {
-    comparatorSize = newSize;
-    notifyListeners();
-  }
+  final WindowState windowState = WindowState();
 
   AppState() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
+    windowState.addListener(notifyListeners);
     
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
@@ -181,20 +96,20 @@ class AppState extends ChangeNotifier {
   bool isMarkdownRefinerTarget = true;
 
   // Data cache
-  List<Map<String, dynamic>> _models = [];
-  List<Map<String, dynamic>> _channels = [];
-  List<Map<String, dynamic>> _feeGroups = [];
+  List<LLMModel> _models = [];
+  List<LLMChannel> _channels = [];
+  List<FeeGroup> _feeGroups = [];
 
-  List<Map<String, dynamic>> get allModels => _models;
-  List<Map<String, dynamic>> get allChannels => _channels;
-  List<Map<String, dynamic>> get allFeeGroups => _feeGroups;
+  List<LLMModel> get allModels => _models;
+  List<LLMChannel> get allChannels => _channels;
+  List<FeeGroup> get allFeeGroups => _feeGroups;
 
-  List<Map<String, dynamic>> get imageModels => _models.where((m) => 
-    m['tag'] == ModelTag.image.value || m['tag'] == ModelTag.multimodal.value
+  List<LLMModel> get imageModels => _models.where((m) => 
+    m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
-  List<Map<String, dynamic>> get chatModels => _models.where((m) =>
-      m['tag'] == ModelTag.chat.value || m['tag'] == ModelTag.multimodal.value
+  List<LLMModel> get chatModels => _models.where((m) =>
+      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
   Future<int> getDownloaderCacheSize() async {
@@ -206,9 +121,9 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Map<String, dynamic>> getModelsForChannel(int? channelId) {
+  List<LLMModel> getModelsForChannel(int? channelId) {
     if (channelId == null) return [];
-    return _models.where((m) => m['channel_id'] == channelId).toList();
+    return _models.where((m) => m.channelId == channelId).toList();
   }
 
   @override
@@ -217,6 +132,7 @@ class AppState extends ChangeNotifier {
     taskQueue.removeListener(notifyListeners);
     galleryState.removeListener(notifyListeners);
     downloaderState.removeListener(notifyListeners);
+    windowState.removeListener(notifyListeners);
     super.dispose();
   }
 

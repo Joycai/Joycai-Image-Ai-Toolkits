@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 
 class ChannelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
-  final Map<String, dynamic>? channel;
+  final LLMChannel? channel;
 
   const ChannelEditDialog({
     super.key,
@@ -35,14 +36,14 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   void initState() {
     super.initState();
     final channel = widget.channel;
-    nameCtrl = TextEditingController(text: channel?['display_name'] ?? '');
-    epCtrl = TextEditingController(text: channel?['endpoint'] ?? '');
-    keyCtrl = TextEditingController(text: channel?['api_key'] ?? '');
-    tagCtrl = TextEditingController(text: channel?['tag'] ?? '');
+    nameCtrl = TextEditingController(text: channel?.displayName ?? '');
+    epCtrl = TextEditingController(text: channel?.endpoint ?? '');
+    keyCtrl = TextEditingController(text: channel?.apiKey ?? '');
+    tagCtrl = TextEditingController(text: channel?.tag ?? '');
     
-    type = channel?['type'] ?? 'google-genai-rest';
-    discovery = (channel?['enable_discovery'] ?? 1) == 1;
-    tagColor = channel?['tag_color'] ?? AppConstants.tagColors.first.toARGB32();
+    type = channel?.type ?? 'google-genai-rest';
+    discovery = channel?.enableDiscovery ?? true;
+    tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
   }
 
   @override
@@ -150,7 +151,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             if (widget.channel == null) {
               await widget.appState.addChannel(data);
             } else {
-              await widget.appState.updateChannel(widget.channel!['id'], data);
+              await widget.appState.updateChannel(widget.channel!.id!, data);
             }
             if (context.mounted) {
               Navigator.pop(context);

@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/prompt.dart';
+import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../widgets/markdown_editor.dart';
 import '../../widgets/prompt_card.dart';
@@ -23,9 +25,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
   
-  List<Map<String, dynamic>> _userPrompts = [];
-  List<Map<String, dynamic>> _systemPrompts = [];
-  List<Map<String, dynamic>> _tags = [];
+  List<Prompt> _userPrompts = [];
+  List<SystemPrompt> _systemPrompts = [];
+  List<PromptTag> _tags = [];
   String _searchQuery = "";
   final Set<int> _selectedFilterTagIds = {};
   final Set<int> _expandedPromptIds = {};
@@ -53,9 +55,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final systemPrompts = await _db.getSystemPrompts();
     final tags = await _db.getPromptTags();
     setState(() {
-      _userPrompts = List.from(userPrompts);
-      _systemPrompts = List.from(systemPrompts);
-      _tags = List.from(tags);
+      _userPrompts = userPrompts;
+      _systemPrompts = systemPrompts;
+      _tags = tags;
     });
   }
 
@@ -65,20 +67,20 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final colorScheme = Theme.of(context).colorScheme;
     
     final filteredUser = _userPrompts.where((p) {
-      final matchesSearch = p['title'].toLowerCase().contains(_searchQuery) || 
-                            p['content'].toLowerCase().contains(_searchQuery);
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
+                            p.content.toLowerCase().contains(_searchQuery);
       
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       
-      final promptTagIds = (p['tags'] as List).map((t) => t['id'] as int).toSet();
+      final promptTagIds = p.tags.map((t) => t.id!).toSet();
       final matchesTags = _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
       
       return matchesSearch && matchesTags;
     }).toList();
 
     final filteredRefiner = _systemPrompts.where((p) {
-      return p['title'].toLowerCase().contains(_searchQuery) || 
-             p['content'].toLowerCase().contains(_searchQuery);
+      return p.title.toLowerCase().contains(_searchQuery) || 
+             p.content.toLowerCase().contains(_searchQuery);
     }).toList();
 
     return Scaffold(
@@ -101,12 +103,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.upload),
+            icon: const Icon(Icons.upload_file_outlined),
             tooltip: l10n.importSettings,
             onPressed: () => _importPrompts(l10n),
           ),
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: const Icon(Icons.download_for_offline_outlined),
             tooltip: l10n.exportSettings,
             onPressed: () => _exportPrompts(l10n),
           ),
@@ -170,12 +172,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final tag = _tags[index];
-          final id = tag['id'] as int;
+          final id = tag.id!;
           final isSelected = _selectedFilterTagIds.contains(id);
-          final color = Color(tag['color'] ?? 0xFF607D8B);
+          final color = Color(tag.color);
 
           return FilterChip(
-            label: Text(tag['name'], style: TextStyle(
+            label: Text(tag.name, style: TextStyle(
               fontSize: 12, 
               color: isSelected ? Colors.white : color,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -203,7 +205,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildUserPromptList(List<Map<String, dynamic>> prompts, AppLocalizations l10n) {
+  Widget _buildUserPromptList(List<Prompt> prompts, AppLocalizations l10n) {
     if (prompts.isEmpty) {
       return _buildEmptyState(l10n, false);
     }
@@ -219,7 +221,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           final item = _userPrompts.removeAt(oldIndex);
           _userPrompts.insert(newIndex, item);
         });
-        await _db.updatePromptOrder(_userPrompts.map((p) => p['id'] as int).toList());
+        await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
       },
       proxyDecorator: (child, index, animation) => Material(
         elevation: 8,
@@ -229,7 +231,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       itemBuilder: (context, index) {
         final prompt = prompts[index];
-        final id = prompt['id'] as int;
+        final id = prompt.id!;
         final isExpanded = _expandedPromptIds.contains(id);
 
         return Padding(
@@ -251,13 +253,27 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
                   )
                 : null,
+            onMoveToTop: index == 0 ? null : () async {
+              setState(() {
+                final item = _userPrompts.removeAt(_userPrompts.indexWhere((p) => p.id == id));
+                _userPrompts.insert(0, item);
+              });
+              await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
+            },
+            onMoveToBottom: index == prompts.length - 1 ? null : () async {
+              setState(() {
+                final item = _userPrompts.removeAt(_userPrompts.indexWhere((p) => p.id == id));
+                _userPrompts.add(item);
+              });
+              await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
+            },
             actions: [
               IconButton(
                 icon: const Icon(Icons.copy_all, size: 18),
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: prompt['content']));
+                  Clipboard.setData(ClipboardData(text: prompt.content));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                    SnackBar(content: Text(l10n.copiedToClipboard(prompt.title))),
                   );
                 },
               ),
@@ -276,7 +292,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSystemPromptList(List<Map<String, dynamic>> prompts, AppLocalizations l10n) {
+  Widget _buildSystemPromptList(List<SystemPrompt> prompts, AppLocalizations l10n) {
     if (prompts.isEmpty) {
       return _buildEmptyState(l10n, true);
     }
@@ -285,15 +301,24 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
       itemBuilder: (context, index) {
-        final prompt = prompts[index];
-        final id = prompt['id'] as int;
+        final systemPrompt = prompts[index];
+        final id = systemPrompt.id!;
         final isExpanded = _expandedSysPromptIds.contains(id);
+
+        // Map to Prompt for PromptCard
+        final promptForCard = Prompt(
+          id: systemPrompt.id,
+          title: systemPrompt.title,
+          content: systemPrompt.content,
+          isMarkdown: systemPrompt.isMarkdown,
+          tags: [], // System prompts don't use standard tags in UI
+        );
 
         return Padding(
           key: ValueKey('sys_$id'),
           padding: const EdgeInsets.only(bottom: 12),
           child: PromptCard(
-            prompt: prompt,
+            prompt: promptForCard,
             isExpanded: isExpanded,
             onToggle: () => setState(() {
               if (isExpanded) {
@@ -308,19 +333,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               IconButton(
                 icon: const Icon(Icons.copy_all, size: 18),
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: prompt['content']));
+                  Clipboard.setData(ClipboardData(text: systemPrompt.content));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.copiedToClipboard(prompt['title']))),
+                    SnackBar(content: Text(l10n.copiedToClipboard(systemPrompt.title))),
                   );
                 },
               ),
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _showSystemPromptDialog(l10n, prompt: prompt),
+                onPressed: () => _showSystemPromptDialog(l10n, prompt: systemPrompt),
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                onPressed: () => _confirmDelete(l10n, prompt, isSystem: true),
+                onPressed: () => _confirmDelete(l10n, systemPrompt, isSystem: true),
               ),
             ],
           ),
@@ -338,10 +363,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         return Card(
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: Color(tag['color'] ?? 0xFF607D8B),
+              backgroundColor: Color(tag.color),
               radius: 12,
             ),
-            title: Text(tag['name']),
+            title: Text(tag.name),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -388,21 +413,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _confirmDelete(AppLocalizations l10n, Map<String, dynamic> prompt, {required bool isSystem}) {
+  void _confirmDelete(AppLocalizations l10n, dynamic prompt, {required bool isSystem}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.deletePromptConfirmTitle),
-        content: Text(l10n.deletePromptConfirmMessage(prompt['title'])),
+        content: Text(l10n.deletePromptConfirmMessage(prompt.title)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               if (isSystem) {
-                await _db.deleteSystemPrompt(prompt['id']);
+                await _db.deleteSystemPrompt(prompt.id);
               } else {
-                await _db.deletePrompt(prompt['id']);
+                await _db.deletePrompt(prompt.id);
               }
               if (context.mounted) {
                 Navigator.pop(context);
@@ -416,18 +441,18 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _confirmDeleteTag(AppLocalizations l10n, Map<String, dynamic> tag) {
+  void _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.delete),
-        content: Text("Are you sure you want to delete category \"${tag['name']}\"? Prompts will be moved to General."),
+        content: Text("Are you sure you want to delete category \"${tag.name}\"? Prompts will be moved to General."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _db.deletePromptTag(tag['id']);
+              await _db.deletePromptTag(tag.id!);
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadData();
@@ -440,10 +465,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _showTagDialog(AppLocalizations l10n, {Map<String, dynamic>? tag}) {
-    final nameCtrl = TextEditingController(text: tag?['name'] ?? '');
-    final hexCtrl = TextEditingController(text: tag != null ? '#${(tag['color'] as int).toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}' : '#607D8B');
-    int selectedColor = tag?['color'] ?? AppConstants.tagColors.first.toARGB32();
+  void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) {
+    final nameCtrl = TextEditingController(text: tag?.name ?? '');
+    final hexCtrl = TextEditingController(text: tag != null ? '#${tag.color.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}' : '#607D8B');
+    int selectedColor = tag?.color ?? AppConstants.tagColors.first.toARGB32();
 
     showDialog(
       context: context,
@@ -502,7 +527,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 if (tag == null) {
                   await _db.addPromptTag(data);
                 } else {
-                  await _db.updatePromptTag(tag['id'], data);
+                  await _db.updatePromptTag(tag.id!, data);
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -517,10 +542,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _showSystemPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
-    final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
-    final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
-    bool isMarkdown = (prompt?['is_markdown'] ?? 1) == 1;
+  void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) {
+    final titleCtrl = TextEditingController(text: prompt?.title ?? '');
+    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    bool isMarkdown = prompt?.isMarkdown ?? true;
 
     showDialog(
       context: context,
@@ -566,7 +591,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 if (prompt == null) {
                   await _db.addSystemPrompt(data);
                 } else {
-                  await _db.updateSystemPrompt(prompt['id'], data);
+                  await _db.updateSystemPrompt(prompt.id!, data);
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -581,15 +606,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _showPromptDialog(AppLocalizations l10n, {Map<String, dynamic>? prompt}) {
-    final titleCtrl = TextEditingController(text: prompt?['title'] ?? '');
-    final contentCtrl = TextEditingController(text: prompt?['content'] ?? '');
-    bool isMarkdown = (prompt?['is_markdown'] ?? 1) == 1;
+  void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) {
+    final titleCtrl = TextEditingController(text: prompt?.title ?? '');
+    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    bool isMarkdown = prompt?.isMarkdown ?? true;
 
     final Set<int> selectedTagIds = {};
-    if (prompt != null && prompt['tags'] != null) {
-      for (var t in prompt['tags']) {
-        selectedTagIds.add(t['id'] as int);
+    if (prompt != null) {
+      for (var t in prompt.tags) {
+        if (t.id != null) selectedTagIds.add(t.id!);
+      }
+    } else {
+      // Default to 'General' tag if creating new
+      final generalTag = _tags.cast<PromptTag?>().firstWhere((t) => t?.name == 'General', orElse: () => null);
+      if (generalTag != null && generalTag.id != null) {
+        selectedTagIds.add(generalTag.id!);
       }
     }
 
@@ -626,11 +657,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     spacing: 8,
                     runSpacing: 8,
                     children: _tags.map((t) {
-                      final id = t['id'] as int;
+                      final id = t.id!;
                       final isSelected = selectedTagIds.contains(id);
-                      final color = Color(t['color'] ?? 0xFF607D8B);
+                      final color = Color(t.color);
                       return FilterChip(
-                        label: Text(t['name'], style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : color)),
+                        label: Text(t.name, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : color)),
                         selected: isSelected,
                         onSelected: (val) {
                           setDialogState(() {
@@ -673,7 +704,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   data['sort_order'] = 0;
                   await _db.addPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
-                  await _db.updatePrompt(prompt['id'] as int, data, tagIds: selectedTagIds.toList());
+                  await _db.updatePrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -690,9 +721,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Future<void> _exportPrompts(AppLocalizations l10n) async {
     final data = {
-      'tags': _tags,
-      'user_prompts': _userPrompts,
-      'system_prompts': _systemPrompts,
+      'tags': _tags.map((t) => t.toMap()).toList(),
+      'user_prompts': _userPrompts.map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
+      'system_prompts': _systemPrompts.map((p) => p.toMap()).toList(),
       'export_type': 'prompts_only',
       'version': 1
     };
@@ -716,19 +750,30 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!mounted || result == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final String? importMode = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Import Prompts?"),
-        content: const Text("This will MERGE imported prompts and tags with your current library. Existing items with same IDs may be updated."),
+        title: const Text("Import Mode"),
+        content: const Text("Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Merge Import")),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'merge'),
+            child: const Text("Merge"),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, 'replace'),
+            child: const Text("Replace All"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
         ],
       ),
     );
 
-    if (confirmed != true) return;
+    if (importMode == null) return;
 
     try {
       final file = File(result.files.single.path!);
@@ -736,6 +781,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       
       await _db.database.then((db) async {
         await db.transaction((txn) async {
+          if (importMode == 'replace') {
+            await txn.delete('prompts');
+            await txn.delete('prompt_tag_refs');
+            await txn.delete('system_prompts');
+            await txn.delete('prompt_tags', where: 'is_system = 0');
+          }
+
           // Import Tags first to get new IDs
           final Map<int, int> tagIdMap = {};
           if (data['tags'] != null) {
@@ -759,7 +811,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               final Map<String, dynamic> row = Map.from(p)..remove('id');
               final List<dynamic>? tags = row['tags'];
               row.remove('tags');
-              row.remove('tag_name'); // Clean up old format fields if any
+              row.remove('tag_name'); 
               row.remove('tag_color');
               row.remove('tag_is_system');
               row.remove('tag_id');

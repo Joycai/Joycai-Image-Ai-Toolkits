@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
+import '../../models/prompt.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
@@ -31,7 +33,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
   
-  List<Map<String, dynamic>> _sysPrompts = [];
+  List<SystemPrompt> _sysPrompts = [];
   
   int? _selectedModelPk;
   String? _selectedSysPrompt;
@@ -61,9 +63,9 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         setState(() {
           _sysPrompts = refinerPrompts;
           if (appState.chatModels.isNotEmpty) {
-            _selectedModelPk = appState.chatModels.first['id'] as int;
+            _selectedModelPk = appState.chatModels.first.id;
           }
-          if (_sysPrompts.isNotEmpty) _selectedSysPrompt = _sysPrompts.first['content'];
+          if (_sysPrompts.isNotEmpty) _selectedSysPrompt = _sysPrompts.first.content;
           _isLoadingData = false;
         });
       }
@@ -148,18 +150,18 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
                   ),
                   const SizedBox(height: 24),
                   
-                                  // Config Section
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildModelSelector(l10n, appState),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: _buildSysPromptSelector(l10n),
-                                      ),
-                                    ],
-                                  ),                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModelSelector(l10n, appState),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSysPromptSelector(l10n),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   
                   // Prompts Section
                   Expanded(
@@ -244,30 +246,30 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       items: appState.chatModels.map((m) {
-        final channel = appState.allChannels.firstWhere((c) => c['id'] == m['channel_id'], orElse: () => {});
+        final channel = appState.allChannels.cast<LLMChannel?>().firstWhere((c) => c?.id == m.channelId, orElse: () => null);
         return DropdownMenuItem(
-          value: m['id'] as int,
+          value: m.id,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (channel.isNotEmpty && channel['tag'] != null)
+              if (channel != null && channel.tag != null)
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
-                    color: Color(channel['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
+                    color: Color(channel.tagColor ?? 0xFF607D8B).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    channel['tag'],
+                    channel.tag!,
                     style: TextStyle(
                       fontSize: 9, 
-                      color: Color(channel['tag_color'] ?? 0xFF607D8B),
+                      color: Color(channel.tagColor ?? 0xFF607D8B),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              Text(m['model_name'], overflow: TextOverflow.ellipsis),
+              Text(m.modelName, overflow: TextOverflow.ellipsis),
             ],
           ),
         );
@@ -285,8 +287,8 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       items: _sysPrompts.map((p) => DropdownMenuItem(
-        value: p['content'] as String, 
-        child: Text(p['title'], overflow: TextOverflow.ellipsis)
+        value: p.content, 
+        child: Text(p.title, overflow: TextOverflow.ellipsis)
       )).toList(),
       onChanged: (v) => setState(() => _selectedSysPrompt = v),
     );

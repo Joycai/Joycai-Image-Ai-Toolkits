@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_model.dart';
 import '../../state/app_state.dart';
 
 class ModelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
-  final Map<String, dynamic>? model;
+  final LLMModel? model;
   final int? preChannelId;
 
   const ModelEditDialog({
@@ -33,12 +34,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   void initState() {
     super.initState();
     final model = widget.model;
-    idCtrl = TextEditingController(text: model?['model_id'] ?? '');
-    nameCtrl = TextEditingController(text: model?['model_name'] ?? '');
+    idCtrl = TextEditingController(text: model?.modelId ?? '');
+    nameCtrl = TextEditingController(text: model?.modelName ?? '');
     
-    channelId = model?['channel_id'] ?? widget.preChannelId ?? (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first['id'] : null);
-    tag = model?['tag'] ?? 'chat';
-    feeGroupId = model?['fee_group_id'];
+    channelId = model?.channelId ?? widget.preChannelId ?? (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
+    tag = model?.tag ?? 'chat';
+    feeGroupId = model?.feeGroupId;
   }
 
   @override
@@ -62,8 +63,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             DropdownButtonFormField<int>(
               initialValue: channelId,
               items: appState.allChannels.map((c) => DropdownMenuItem(
-                value: c['id'] as int,
-                child: Text(c['display_name']),
+                value: c.id!,
+                child: Text(c.displayName),
               )).toList(),
               onChanged: (v) => setState(() => channelId = v),
               decoration: InputDecoration(labelText: l10n.channel),
@@ -88,8 +89,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               items: [
                  DropdownMenuItem(value: null, child: Text(l10n.noFeeGroup, style: const TextStyle(color: Colors.grey))),
                 ...appState.allFeeGroups.map((g) => DropdownMenuItem(
-                  value: g['id'] as int, 
-                  child: Text(g['name']),
+                  value: g.id!, 
+                  child: Text(g.name),
                 )),
               ],
               onChanged: (v) => setState(() => feeGroupId = v),
@@ -102,11 +103,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
         ElevatedButton(
           onPressed: channelId == null ? null : () async {
-            final channel = appState.allChannels.firstWhere((c) => c['id'] == channelId);
+            final channel = appState.allChannels.firstWhere((c) => c.id == channelId);
             final data = {
               'model_id': idCtrl.text,
               'model_name': nameCtrl.text,
-              'type': channel['type'].contains('google') ? 'google-genai' : 'openai-api',
+              'type': channel.type.contains('google') ? 'google-genai' : 'openai-api',
               'tag': tag,
               'is_paid': 1, // Simplified, derived from channel if needed
               'fee_group_id': feeGroupId,
@@ -114,10 +115,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             };
             
             if (widget.model == null) {
-              data['sort_order'] = appState.allModels.length;
-              await appState.addModel(data);
+              await widget.appState.addModel(data);
             } else {
-              await appState.updateModel(widget.model!['id'], data);
+              await widget.appState.updateModel(widget.model!.id!, data);
             }
             
             if (context.mounted) {
