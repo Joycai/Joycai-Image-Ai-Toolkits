@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -52,8 +51,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFolders => 'No folders added';
 
   @override
-  String get clickAddFolder =>
-      'Click \"Add Folder\" to start scanning for images.';
+  String get clickAddFolder => 'Click \"Add Folder\" to start scanning for images.';
 
   @override
   String get sourceGallery => 'Source Gallery';
@@ -279,8 +277,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmReset => 'Reset All Settings?';
 
   @override
-  String get resetWarning =>
-      'This will delete all configurations, models, and added folders. This action cannot be undone.';
+  String get resetWarning => 'This will delete all configurations, models, and added folders. This action cannot be undone.';
 
   @override
   String get cancel => 'Cancel';
@@ -304,8 +301,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTasksInQueue => 'No tasks in queue';
 
   @override
-  String get submitTaskFromWorkbench =>
-      'Submit a task from the Workbench to see it here.';
+  String get submitTaskFromWorkbench => 'Submit a task from the Workbench to see it here.';
 
   @override
   String taskId(String id) {
@@ -354,8 +350,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPromptsSaved => 'No prompts saved';
 
   @override
-  String get saveFavoritePrompts =>
-      'Save your favorite prompts or Refiner system prompts here';
+  String get saveFavoritePrompts => 'Save your favorite prompts or Refiner system prompts here';
 
   @override
   String get createFirstPrompt => 'Create First Prompt';
@@ -399,8 +394,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearAllUsage => 'Clear All Usage Data?';
 
   @override
-  String get clearUsageWarning =>
-      'This will permanently delete all token usage records from the database.';
+  String get clearUsageWarning => 'This will permanently delete all token usage records from the database.';
 
   @override
   String get clearAll => 'Clear All';
@@ -726,15 +720,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portableMode => 'Portable Mode';
 
   @override
-  String get portableModeDesc =>
-      'Store database and cache in the application folder (requires restart)';
+  String get portableModeDesc => 'Store database and cache in the application folder (requires restart)';
 
   @override
   String get restartRequired => 'Restart Required';
 
   @override
-  String get restartMessage =>
-      'The application must be restarted to apply changes to the data storage location.';
+  String get restartMessage => 'The application must be restarted to apply changes to the data storage location.';
 
   @override
   String get usageByGroup => 'Usage by Group';
@@ -769,8 +761,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setupWizardTitle => 'Welcome Setup';
 
   @override
-  String get welcomeMessage =>
-      'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.';
+  String get welcomeMessage => 'Welcome to Joycai Image AI Toolkits! Let\'s get you set up.';
 
   @override
   String get getStarted => 'Get Started';
@@ -848,8 +839,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualHtmlMode => 'Manual HTML Mode';
 
   @override
-  String get manualHtmlHint =>
-      'Paste rendered HTML here (F12 -> Copy Outer HTML)';
+  String get manualHtmlHint => 'Paste rendered HTML here (F12 -> Copy Outer HTML)';
 
   @override
   String get cookieHistory => 'Cookie History';
@@ -918,8 +908,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearTempWorkspace => 'Clear Workspace';
 
   @override
-  String get dropFilesHere =>
-      'Drop images here to add them to temporary workspace';
+  String get dropFilesHere => 'Drop images here to add them to temporary workspace';
 
   @override
   String get enableNotifications => 'Enable System Notifications';
@@ -987,8 +976,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get setOutputDirFirst =>
-      'Please set output directory in settings first.';
+  String get setOutputDirFirst => 'Please set output directory in settings first.';
 
   @override
   String get cookiesHint => 'Cookies (Raw or Netscape format)';
@@ -1000,19 +988,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectImagesToDownload => 'Select images to download';
 
   @override
-  String get openaiEndpointHint =>
-      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+  String get openaiEndpointHint => 'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
 
   @override
-  String get googleEndpointHint =>
-      'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)';
+  String get googleEndpointHint => 'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)';
 
   @override
   String get importCookieFile => 'Import Cookie File';
 
   @override
-  String get cookieFileInvalid =>
-      'Unsupported cookie file format. Please use Netscape format or raw text.';
+  String get cookieFileInvalid => 'Unsupported cookie file format. Please use Netscape format or raw text.';
 
   @override
   String cookieImportSuccess(Object count) {

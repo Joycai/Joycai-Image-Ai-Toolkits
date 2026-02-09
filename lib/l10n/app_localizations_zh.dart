@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -992,8 +991,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openaiEndpointHint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
 
   @override
-  String get googleEndpointHint =>
-      '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
+  String get googleEndpointHint => '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
 
   @override
   String get importCookieFile => '导入 Cookie 文件';
