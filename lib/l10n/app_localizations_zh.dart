@@ -740,6 +740,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get refinerPrompts => '优化器提示词';
 
   @override
+  String get systemTemplates => '系统模板';
+
+  @override
+  String get templateType => '模板用途';
+
+  @override
+  String get typeRename => '批量重命名';
+
+  @override
+  String get typeRefiner => '提示词优化';
+
+  @override
+  String get selectRenameTemplate => '选择重命名模板';
+
+  @override
   String get selectCategory => '选择分类';
 
   @override
@@ -1057,4 +1072,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String cookieImportSuccess(Object count) {
     return '成功导入 $count 条 Cookie。';
   }
+
+  @override
+  String get share => '分享';
+
+  @override
+  String shareFiles(int count) {
+    return '分享选中的项 ($count)';
+  }
+
+  @override
+  String get importFromGallery => '从系统图库导入';
 }

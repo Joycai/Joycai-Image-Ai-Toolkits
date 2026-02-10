@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/prompt.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
@@ -20,6 +21,7 @@ class AiRenameDialog extends StatefulWidget {
 
 class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
+  final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
   int? _selectedModelPk;
   List<Map<String, String>> _proposedRenames = [];
@@ -42,6 +44,47 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         if (lastInstructions != null) {
           _instructionController.text = lastInstructions;
         }
+      });
+    }
+  }
+
+  Future<void> _showTemplatePicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    final List<SystemPrompt> templates = await _db.getSystemPrompts(type: 'rename');
+    
+    if (!mounted) return;
+
+    final SystemPrompt? selected = await showDialog<SystemPrompt>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.selectRenameTemplate),
+        content: SizedBox(
+          width: 400,
+          child: templates.isEmpty 
+            ? Center(child: Text(l10n.noPromptsSaved))
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: templates.length,
+                itemBuilder: (context, index) {
+                  final t = templates[index];
+                  return ListTile(
+                    title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                    onTap: () => Navigator.pop(context, t),
+                  );
+                },
+              ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _instructionController.text = selected.content;
       });
     }
   }
@@ -224,13 +267,23 @@ Do not include any other text or markdown formatting.
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold))),
+                TextButton.icon(
+                  onPressed: _showTemplatePicker,
+                  icon: const Icon(Icons.library_books, size: 16),
+                  label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _instructionController,
-              decoration: InputDecoration(
-                labelText: l10n.rulesInstructions,
+              decoration: const InputDecoration(
                 hintText: "e.g. Normalize to S01E01 format for Jellyfin",
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),

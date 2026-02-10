@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
@@ -130,10 +133,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           child: ListTile(
             leading: Icon(file.icon, color: file.color),
             title: Text(file.name, style: const TextStyle(fontSize: 13)),
-            subtitle: Text(
-              "${(file.size / 1024).toStringAsFixed(1)} KB | ${file.modified.toString().substring(0, 16)}",
-              style: const TextStyle(fontSize: 11),
-            ),
+            subtitle: _FileListItemSubtitle(file: file),
             selected: isSelected,
             onTap: () => state.toggleSelection(file),
             trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
@@ -179,14 +179,150 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-  void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
-    final state = Provider.of<AppState>(context, listen: false).browserState;
-    showFileContextMenu(
-      context: context,
-      file: file,
-      position: position,
-      windowState: Provider.of<WindowState>(context, listen: false),
-      onRefresh: () => state.refresh(),
-    );
+    void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
+
+      final state = Provider.of<AppState>(context, listen: false).browserState;
+
+      showFileContextMenu(
+
+        context: context,
+
+        file: file,
+
+        position: position,
+
+        windowState: Provider.of<WindowState>(context, listen: false),
+
+        onRefresh: () => state.refresh(),
+
+      );
+
+    }
+
   }
-}
+
+  
+
+  class _FileListItemSubtitle extends StatefulWidget {
+
+    final BrowserFile file;
+
+    const _FileListItemSubtitle({required this.file});
+
+  
+
+    @override
+
+    State<_FileListItemSubtitle> createState() => _FileListItemSubtitleState();
+
+  }
+
+  
+
+  class _FileListItemSubtitleState extends State<_FileListItemSubtitle> {
+
+    String _extraInfo = "";
+
+  
+
+    @override
+
+    void initState() {
+
+      super.initState();
+
+      if (widget.file.category == FileCategory.image) {
+
+        _loadDimensions();
+
+      }
+
+    }
+
+  
+
+    @override
+
+    void didUpdateWidget(_FileListItemSubtitle oldWidget) {
+
+      super.didUpdateWidget(oldWidget);
+
+      if (widget.file.path != oldWidget.file.path) {
+
+        _extraInfo = "";
+
+        if (widget.file.category == FileCategory.image) {
+
+          _loadDimensions();
+
+        }
+
+      }
+
+    }
+
+  
+
+    Future<void> _loadDimensions() async {
+
+      try {
+
+        final bytes = await File(widget.file.path).readAsBytes();
+
+        final image = await decodeImageFromList(bytes);
+
+        if (mounted) {
+
+          setState(() {
+
+            final ratioStr = AppConstants.formatAspectRatio(image.width, image.height);
+
+            _extraInfo = " | ${image.width}x${image.height} ($ratioStr)";
+
+          });
+
+        }
+
+      } catch (_) {}
+
+    }
+
+  
+
+      @override
+
+  
+
+      Widget build(BuildContext context) {
+
+  
+
+        final sizeStr = AppConstants.formatFileSize(widget.file.size);
+
+  
+
+        return Text(
+
+  
+
+          "$sizeStr | ${widget.file.modified.toString().substring(0, 16)}$_extraInfo",
+
+  
+
+          style: const TextStyle(fontSize: 11),
+
+  
+
+        );
+
+  
+
+      }
+
+  
+
+    
+
+  }
+
+  

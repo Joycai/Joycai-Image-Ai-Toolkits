@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
@@ -248,6 +250,20 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
               onPressed: () => appState.galleryState.refreshImages(),
               tooltip: l10n.refresh,
             ),
+            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
+            TextButton.icon(
+              onPressed: () async {
+                final picker = ImagePicker();
+                final List<XFile> picked = await picker.pickMultiImage();
+                if (picked.isNotEmpty) {
+                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                  appState.galleryState.addDroppedFiles(newFiles);
+                  _tabController.animateTo(2);
+                }
+              },
+              icon: const Icon(Icons.photo_library_outlined, size: 18),
+              label: Text(l10n.importFromGallery),
+            ),
           ],
         ),
       ),
@@ -339,25 +355,18 @@ class _ImageCardState extends State<_ImageCard> {
     _getImageDimensions();
   }
 
-  int _gcd(int a, int b) {
-    while (b != 0) {
-      var t = b;
-      b = a % b;
-      a = t;
-    }
-    return a;
-  }
-
   Future<void> _getImageDimensions() async {
     try {
-      final bytes = await File(widget.imageFile.path).readAsBytes();
+      final file = File(widget.imageFile.path);
+      final bytes = await file.readAsBytes();
       final image = await decodeImageFromList(bytes);
+      final fileSize = await file.length();
+      
       if (mounted) {
         setState(() {
-          final commonDivisor = _gcd(image.width, image.height);
-          final ratioW = image.width ~/ commonDivisor;
-          final ratioH = image.height ~/ commonDivisor;
-          _dimensions = "${image.width}x${image.height} ($ratioW:$ratioH)";
+          final ratioStr = AppConstants.formatAspectRatio(image.width, image.height);
+          final sizeStr = AppConstants.formatFileSize(fileSize);
+          _dimensions = "${image.width}x${image.height} ($ratioStr) | $sizeStr";
         });
       }
     } catch (e) {
@@ -478,6 +487,9 @@ class _ImageCardState extends State<_ImageCard> {
     final windowState = Provider.of<WindowState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
+    final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
+    final List<AppFile> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
+
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
@@ -490,6 +502,34 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.openFloatingPreview(widget.imageFile.path);
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.share_outlined, size: 18),
+            title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
+            dense: true,
+          ),
+          onTap: () async {
+            try {
+              final xFiles = filesToShare.map((f) => XFile(
+                f.path, 
+                name: f.name,
+                mimeType: AppConstants.getMimeType(f.path),
+              )).toList();
+              
+              // ignore: deprecated_member_use
+              await Share.shareXFiles(
+                xFiles, 
+                subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+              );
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Share failed: $e')),
+                );
+              }
+            }
           },
         ),
         PopupMenuItem(

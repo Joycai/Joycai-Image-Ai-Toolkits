@@ -363,6 +363,11 @@
   },
   "userPrompts": "User Prompts",
   "refinerPrompts": "Refiner Prompts",
+  "systemTemplates": "System Templates",
+  "templateType": "Template Type",
+  "typeRename": "Batch Rename",
+  "typeRefiner": "Prompt Refiner",
+  "selectRenameTemplate": "Select Rename Template",
   "selectCategory": "Select Category",
   "feeGroups": "Fee Groups",
   "feeGroup": "Fee Group",
@@ -504,5 +509,16 @@
   "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
   "importCookieFile": "Import Cookie File",
   "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
-  "cookieImportSuccess": "Successfully imported {count} cookies."
-}
+    "cookieImportSuccess": "Successfully imported {count} cookies.",
+    "share": "Share",
+    "shareFiles": "Share selected items ({count})",
+    "@shareFiles": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "importFromGallery": "Import from Gallery"
+  }
+  

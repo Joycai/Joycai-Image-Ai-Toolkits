@@ -59,7 +59,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 20, // Incremented for System Prompt Tags and Sorting
+          version: 21, // Incremented for Preset Rename Templates
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -67,7 +67,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 20,
+        version: 21,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );

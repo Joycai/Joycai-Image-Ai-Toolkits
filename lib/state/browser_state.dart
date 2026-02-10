@@ -172,8 +172,6 @@ class BrowserState extends ChangeNotifier {
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
 
     // Evict from image cache only if the file was modified or removed
-    // For simplicity and performance, we can skip full eviction on every refresh 
-    // unless we detect a change, but here we just ensure the new list is used.
     for (var file in newAllFiles) {
       if (file.category == FileCategory.image) {
         final existing = allFiles.cast<BrowserFile?>().firstWhere((f) => f?.path == file.path, orElse: () => null);

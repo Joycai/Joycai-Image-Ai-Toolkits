@@ -748,6 +748,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refinerPrompts => 'Refiner Prompts';
 
   @override
+  String get systemTemplates => 'System Templates';
+
+  @override
+  String get templateType => 'Template Type';
+
+  @override
+  String get typeRename => 'Batch Rename';
+
+  @override
+  String get typeRefiner => 'Prompt Refiner';
+
+  @override
+  String get selectRenameTemplate => 'Select Rename Template';
+
+  @override
   String get selectCategory => 'Select Category';
 
   @override
@@ -1073,4 +1088,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String cookieImportSuccess(Object count) {
     return 'Successfully imported $count cookies.';
   }
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String shareFiles(int count) {
+    return 'Share selected items ($count)';
+  }
+
+  @override
+  String get importFromGallery => 'Import from Gallery';
 }

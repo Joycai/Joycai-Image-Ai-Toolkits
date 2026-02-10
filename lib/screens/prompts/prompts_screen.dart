@@ -30,6 +30,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
   String _searchQuery = "";
+  String _selectedSystemType = 'refiner'; // 'refiner' or 'rename'
   final Set<int> _selectedFilterTagIds = {};
   final Set<int> _expandedPromptIds = {};
   final Set<int> _expandedSysPromptIds = {};
@@ -86,9 +87,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return matchesSearch && matchesTags;
     }).toList();
 
-    final filteredRefiner = _systemPrompts.where((p) {
-      return p.title.toLowerCase().contains(_searchQuery) || 
-             p.content.toLowerCase().contains(_searchQuery);
+    final filteredSystem = _systemPrompts.where((p) {
+      final matchesType = p.type == _selectedSystemType;
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
+                            p.content.toLowerCase().contains(_searchQuery);
+      return matchesType && matchesSearch;
     }).toList();
 
     return Scaffold(
@@ -185,7 +188,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 controller: _tabController,
                 tabs: [
                   Tab(text: l10n.userPrompts),
-                  Tab(text: l10n.refinerPrompts),
+                  Tab(text: l10n.systemTemplates),
                   Tab(text: l10n.categoriesTab),
                 ],
               ),
@@ -197,17 +200,41 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         children: [
           if (_tabController.index == 0 && _tags.isNotEmpty)
             _buildFilterBar(colorScheme),
+          if (_tabController.index == 1)
+            _buildSystemTypeToggle(colorScheme, l10n),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
                 _buildUserPromptList(filteredUser, l10n),
-                _buildSystemPromptList(filteredRefiner, l10n),
+                _buildSystemPromptList(filteredSystem, l10n),
                 _buildTagList(l10n),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSystemTypeToggle(ColorScheme colorScheme, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
+      ),
+      child: SegmentedButton<String>(
+        segments: [
+          ButtonSegment(value: 'refiner', label: Text(l10n.typeRefiner), icon: const Icon(Icons.auto_fix_high, size: 16)),
+          ButtonSegment(value: 'rename', label: Text(l10n.typeRename), icon: const Icon(Icons.drive_file_rename_outline, size: 16)),
+        ],
+        selected: {_selectedSystemType},
+        onSelectionChanged: (val) {
+          setState(() => _selectedSystemType = val.first);
+        },
+        showSelectedIcon: false,
       ),
     );
   }
@@ -624,7 +651,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
               ElevatedButton(
                 onPressed: () async {
-                  final data = {'name': nameCtrl.text, 'color': selectedColor};
+                  final data = {
+                    'name': nameCtrl.text, 
+                    'color': selectedColor,
+                    'sort_order': tag?.sortOrder ?? (_tags.isEmpty ? 0 : _tags.map((t) => t.sortOrder).reduce(math.max) + 1),
+                  };
                   if (tag == null) {
                     await _db.addPromptTag(data);
                   } else {
@@ -648,6 +679,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
     final contentCtrl = TextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
+    String selectedType = prompt?.type ?? _selectedSystemType;
 
     final Set<int> selectedTagIds = {};
     if (prompt != null) {
@@ -662,9 +694,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         builder: (context, setDialogState) => AlertDialog(
           title: Row(
             children: [
-              const Icon(Icons.auto_fix_high, color: Colors.purple),
+              Icon(selectedType == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple),
               const SizedBox(width: 12),
-              Text(prompt == null ? "New Refiner Prompt" : "Edit Refiner Prompt"),
+              Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
             ],
           ),
           content: SizedBox(
@@ -674,7 +706,27 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedType,
+                          decoration: InputDecoration(labelText: l10n.templateType, border: const OutlineInputBorder()),
+                          items: [
+                            DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
+                            DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),
+                          ],
+                          onChanged: (v) => setDialogState(() => selectedType = v!),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 8),
@@ -722,8 +774,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 final data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
-                  'type': 'refiner',
+                  'type': selectedType,
                   'is_markdown': isMarkdown ? 1 : 0,
+                  'sort_order': prompt?.sortOrder ?? (_systemPrompts.isEmpty ? 0 : _systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 };
                 if (prompt == null) {
                   await _db.addSystemPrompt(data, tagIds: selectedTagIds.toList());
@@ -836,9 +889,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
                   'is_markdown': isMarkdown ? 1 : 0,
+                  'sort_order': prompt?.sortOrder ?? (_userPrompts.isEmpty ? 0 : _userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 };
                 if (prompt == null) {
-                  data['sort_order'] = 0;
                   await _db.addPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
                   await _db.updatePrompt(prompt.id!, data, tagIds: selectedTagIds.toList());

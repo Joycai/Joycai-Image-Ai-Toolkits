@@ -1478,6 +1478,36 @@ abstract class AppLocalizations {
   /// **'Refiner Prompts'**
   String get refinerPrompts;
 
+  /// No description provided for @systemTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'System Templates'**
+  String get systemTemplates;
+
+  /// No description provided for @templateType.
+  ///
+  /// In en, this message translates to:
+  /// **'Template Type'**
+  String get templateType;
+
+  /// No description provided for @typeRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Rename'**
+  String get typeRename;
+
+  /// No description provided for @typeRefiner.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Refiner'**
+  String get typeRefiner;
+
+  /// No description provided for @selectRenameTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Rename Template'**
+  String get selectRenameTemplate;
+
   /// No description provided for @selectCategory.
   ///
   /// In en, this message translates to:
@@ -2077,6 +2107,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Successfully imported {count} cookies.'**
   String cookieImportSuccess(Object count);
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @shareFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Share selected items ({count})'**
+  String shareFiles(int count);
+
+  /// No description provided for @importFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Gallery'**
+  String get importFromGallery;
 }
 
 class _AppLocalizationsDelegate

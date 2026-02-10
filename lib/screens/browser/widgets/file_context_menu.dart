@@ -2,11 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_file.dart';
 import '../../../models/browser_file.dart';
+import '../../../state/app_state.dart';
 import '../../../state/window_state.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../../widgets/dialogs/mask_editor_dialog.dart';
@@ -19,8 +23,15 @@ void showFileContextMenu({
   required VoidCallback onRefresh,
 }) {
   final l10n = AppLocalizations.of(context)!;
+  final appState = Provider.of<AppState>(context, listen: false);
+  
   final bool isImage = file.category == FileCategory.image;
   final bool isMediaOrText = [FileCategory.video, FileCategory.audio, FileCategory.text].contains(file.category);
+
+  final bool isPartOfSelection = appState.browserState.selectedFiles.contains(file);
+  final List<BrowserFile> filesToShare = isPartOfSelection 
+      ? appState.browserState.selectedFiles.toList() 
+      : [file];
 
   showMenu(
     context: context,
@@ -65,6 +76,34 @@ void showFileContextMenu({
           },
         ),
       ],
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.share_outlined, size: 18),
+          title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
+          dense: true,
+        ),
+        onTap: () async {
+          try {
+            final xFiles = filesToShare.map((f) => XFile(
+              f.path, 
+              name: f.name,
+              mimeType: AppConstants.getMimeType(f.path),
+            )).toList();
+            
+            // ignore: deprecated_member_use
+            await Share.shareXFiles(
+              xFiles,
+              subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+            );
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Share failed: $e')),
+              );
+            }
+          }
+        },
+      ),
       if (isMediaOrText)
         PopupMenuItem(
           child: ListTile(

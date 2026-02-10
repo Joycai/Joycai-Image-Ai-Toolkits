@@ -363,6 +363,11 @@
   },
   "userPrompts": "用户提示词",
   "refinerPrompts": "优化器提示词",
+  "systemTemplates": "系统模板",
+  "templateType": "模板用途",
+  "typeRename": "批量重命名",
+  "typeRefiner": "提示词优化",
+  "selectRenameTemplate": "选择重命名模板",
   "selectCategory": "选择分类",
   "feeGroups": "费率组",
   "feeGroup": "费率组",
@@ -504,5 +509,16 @@
   "googleEndpointHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾（内部已处理）",
   "importCookieFile": "导入 Cookie 文件",
   "cookieFileInvalid": "不支持的 Cookie 文件格式。请使用 Netscape 格式或原始文本。",
-  "cookieImportSuccess": "成功导入 {count} 条 Cookie。"
-}
+    "cookieImportSuccess": "成功导入 {count} 条 Cookie。",
+    "share": "分享",
+    "shareFiles": "分享选中的项 ({count})",
+    "@shareFiles": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "importFromGallery": "从系统图库导入"
+  }
+  

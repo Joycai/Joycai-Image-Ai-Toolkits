@@ -36,6 +36,7 @@ class DatabaseMigration {
     if (oldVersion < 18) await _createV18Tables(db);
     if (oldVersion < 19) await _createV19Tables(db);
     if (oldVersion < 20) await _createV20Tables(db);
+    if (oldVersion < 21) await _insertPresetTemplates(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -59,6 +60,29 @@ class DatabaseMigration {
     await _createV18Tables(db);
     await _createV19Tables(db);
     await _createV20Tables(db);
+    await _insertPresetTemplates(db);
+  }
+
+  static Future<void> _insertPresetTemplates(Database db) async {
+    // Check if they already exist to avoid duplicates
+    final existing = await db.query('system_prompts', where: 'type = ?', whereArgs: ['rename']);
+    if (existing.isNotEmpty) return;
+
+    await db.insert('system_prompts', {
+      'title': 'Jellyfin Movie Standard',
+      'content': 'Normalize movie filenames to "Movie Name (Year).ext" format. Remove all noise like quality (1080p, 4K), codec (x264, h265), and release group names. Example: "Inception.2010.1080p.Bluray.x264.mp4" -> "Inception (2010).mp4"',
+      'type': 'rename',
+      'is_markdown': 0,
+      'sort_order': 0,
+    });
+
+    await db.insert('system_prompts', {
+      'title': 'Jellyfin TV Show Standard',
+      'content': 'Normalize TV show filenames to "Show Name - S01E01 - Episode Name.ext" format. Ensure season and episode numbers are zero-padded (e.g., S01E01 instead of S1E1). Keep the original file extension.',
+      'type': 'rename',
+      'is_markdown': 0,
+      'sort_order': 1,
+    });
   }
 
   static Future<void> _createV20Tables(Database db) async {
