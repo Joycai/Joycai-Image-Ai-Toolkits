@@ -24,11 +24,11 @@ List<Map<String, dynamic>> _scanFilesIsolate(List<String> paths) {
             int categoryIndex = 5; // other
             if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
               categoryIndex = 1; // image
-            } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'].contains(ext)) {
+            } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
               categoryIndex = 2; // video
-            } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac'].contains(ext)) {
+            } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
               categoryIndex = 3; // audio
-            } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt'].contains(ext)) {
+            } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log'].contains(ext)) {
               categoryIndex = 4; // text
             }
 

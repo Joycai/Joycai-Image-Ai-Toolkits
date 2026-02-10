@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +6,7 @@ import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
+import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
@@ -263,29 +262,39 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   
 
-    Future<void> _loadDimensions() async {
+      Future<void> _loadDimensions() async {
 
-      try {
+  
 
-        final bytes = await File(widget.file.path).readAsBytes();
+        final metadata = await ImageMetadataService().getMetadata(widget.file.path);
 
-        final image = await decodeImageFromList(bytes);
+  
 
-        if (mounted) {
+        if (metadata != null && mounted) {
+
+  
 
           setState(() {
 
-            final ratioStr = AppConstants.formatAspectRatio(image.width, image.height);
+  
 
-            _extraInfo = " | ${image.width}x${image.height} ($ratioStr)";
+            _extraInfo = " | ${metadata.width}x${metadata.height} (${metadata.aspectRatio})";
+
+  
 
           });
 
+  
+
         }
 
-      } catch (_) {}
+  
 
-    }
+      }
+
+  
+
+    
 
   
 

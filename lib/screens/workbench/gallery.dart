@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,11 +10,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
+import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../../widgets/dialogs/mask_editor_dialog.dart';
+import 'widgets/gallery_toolbar.dart';
 
 class GalleryWidget extends StatefulWidget {
   const GalleryWidget({super.key});
@@ -112,7 +113,7 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
                   ),
                 ],
               ),
-              _buildToolbar(context),
+              GalleryToolbar(tabController: _tabController),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -177,99 +178,6 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
     );
   }
 
-  Widget _buildToolbar(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
-    
-    final selectedCount = appState.selectedImages.length;
-    final thumbnailSize = appState.thumbnailSize;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            Text(
-              l10n.selectedCount(selectedCount),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            const SizedBox(width: 16),
-            TextButton.icon(
-              onPressed: () => appState.galleryState.selectAllImages(),
-              icon: const Icon(Icons.select_all, size: 18),
-              label: Text(l10n.selectAll),
-            ),
-            TextButton.icon(
-              onPressed: selectedCount == 0 ? null : () => appState.galleryState.clearImageSelection(),
-              icon: const Icon(Icons.deselect, size: 18),
-              label: Text(l10n.clear),
-            ),
-            const SizedBox(width: 16),
-            
-            if (appState.droppedImages.isNotEmpty)
-              TextButton.icon(
-                onPressed: () => appState.galleryState.clearDroppedImages(),
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: Text(l10n.clearTempWorkspace),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-              ),
-
-            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-            
-            // Thumbnail Size Slider
-            Tooltip(
-              message: l10n.thumbnailSize,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                  SizedBox(
-                    width: 120,
-                    child: Slider(
-                      value: thumbnailSize,
-                      min: 80,
-                      max: 400,
-                      onChanged: (v) => appState.galleryState.setThumbnailSize(v),
-                    ),
-                  ),
-                  Icon(Icons.image, size: 20, color: colorScheme.outline),
-                ],
-              ),
-            ),
-            
-            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-            
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 20),
-              onPressed: () => appState.galleryState.refreshImages(),
-              tooltip: l10n.refresh,
-            ),
-            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-            TextButton.icon(
-              onPressed: () async {
-                final picker = ImagePicker();
-                final List<XFile> picked = await picker.pickMultiImage();
-                if (picked.isNotEmpty) {
-                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
-                  appState.galleryState.addDroppedFiles(newFiles);
-                  _tabController.animateTo(2);
-                }
-              },
-              icon: const Icon(Icons.photo_library_outlined, size: 18),
-              label: Text(l10n.importFromGallery),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
     if (images.isEmpty) {
@@ -305,6 +213,7 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
           imageFile: imageFile,
           isSelected: isSelected,
           isResult: isResult,
+          thumbnailSize: state.thumbnailSize,
           onTap: () {
             // Results open preview on tap, others toggle selection
             if (isResult) {
@@ -333,12 +242,14 @@ class _ImageCard extends StatefulWidget {
   final AppFile imageFile;
   final bool isSelected;
   final bool isResult;
+  final double thumbnailSize;
   final VoidCallback onTap;
 
   const _ImageCard({
     required this.imageFile,
     required this.isSelected,
     required this.isResult,
+    required this.thumbnailSize,
     required this.onTap,
   });
 
@@ -356,21 +267,11 @@ class _ImageCardState extends State<_ImageCard> {
   }
 
   Future<void> _getImageDimensions() async {
-    try {
-      final file = File(widget.imageFile.path);
-      final bytes = await file.readAsBytes();
-      final image = await decodeImageFromList(bytes);
-      final fileSize = await file.length();
-      
-      if (mounted) {
-        setState(() {
-          final ratioStr = AppConstants.formatAspectRatio(image.width, image.height);
-          final sizeStr = AppConstants.formatFileSize(fileSize);
-          _dimensions = "${image.width}x${image.height} ($ratioStr) | $sizeStr";
-        });
-      }
-    } catch (e) {
-      // Ignore errors
+    final metadata = await ImageMetadataService().getMetadata(widget.imageFile.path);
+    if (metadata != null && mounted) {
+      setState(() {
+        _dimensions = metadata.displayString;
+      });
     }
   }
 
@@ -408,7 +309,10 @@ class _ImageCardState extends State<_ImageCard> {
               Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Image(
-                  image: widget.imageFile.imageProvider,
+                  image: ResizeImage(
+                    widget.imageFile.imageProvider,
+                    width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                  ),
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey[200],

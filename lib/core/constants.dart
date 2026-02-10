@@ -70,6 +70,17 @@ class AppConstants {
   static const double opacityMedium = 0.3;
   static const double opacityHigh = 0.5;
 
+  // UI Layout Constants
+  static const double defaultPadding = 16.0;
+  static const double smallPadding = 8.0;
+  static const double cardRadius = 12.0;
+  static const double smallRadius = 8.0;
+  static const double inputFontSize = 13.0;
+  static const double smallFontSize = 11.0;
+  
+  static const double minThumbnailSize = 80.0;
+  static const double maxThumbnailSize = 400.0;
+
   static const List<Color> tagColors = [
     Colors.blue,
     Colors.red,

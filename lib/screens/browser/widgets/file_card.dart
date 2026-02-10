@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
-import '../../../core/constants.dart';
 import '../../../models/browser_file.dart';
+import '../../../services/image_metadata_service.dart';
+
 
 class FileCard extends StatefulWidget {
   final BrowserFile file;
@@ -47,18 +46,11 @@ class _FileCardState extends State<FileCard> {
   }
 
   Future<void> _getImageDimensions() async {
-    try {
-      final bytes = await File(widget.file.path).readAsBytes();
-      final image = await decodeImageFromList(bytes);
-      if (mounted) {
-        setState(() {
-          final ratioStr = AppConstants.formatAspectRatio(image.width, image.height);
-          final sizeStr = AppConstants.formatFileSize(widget.file.size);
-          _dimensions = "${image.width}x${image.height} ($ratioStr) | $sizeStr";
-        });
-      }
-    } catch (e) {
-      // Ignore
+    final metadata = await ImageMetadataService().getMetadata(widget.file.path);
+    if (metadata != null && mounted) {
+      setState(() {
+        _dimensions = metadata.displayString;
+      });
     }
   }
 
@@ -89,11 +81,18 @@ class _FileCardState extends State<FileCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: widget.file.category == FileCategory.image
-                        ? Image(image: widget.file.imageProvider, fit: BoxFit.cover)
-                        : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
-                  ),
+                                Expanded(
+                                  child: widget.file.category == FileCategory.image
+                                      ? Image(
+                                          image: ResizeImage(
+                                            widget.file.imageProvider,
+                                            width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                                          ),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
+                                ),
+                  
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     color: Colors.black54,

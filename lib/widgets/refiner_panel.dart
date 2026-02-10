@@ -8,7 +8,6 @@ import '../../models/app_file.dart';
 import '../../models/llm_channel.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
@@ -31,7 +30,6 @@ class AIPromptRefiner extends StatefulWidget {
 }
 
 class _AIPromptRefinerState extends State<AIPromptRefiner> {
-  final DatabaseService _db = DatabaseService();
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
   
@@ -49,7 +47,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   void initState() {
     super.initState();
     _currentPromptCtrl = TextEditingController(text: widget.initialPrompt);
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   @override
@@ -62,8 +60,8 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   Future<void> _loadData() async {
     try {
       final appState = Provider.of<AppState>(context, listen: false);
-      final refinerPrompts = await _db.getSystemPrompts(type: 'refiner');
-      final tags = await _db.getPromptTags();
+      final refinerPrompts = await appState.getSystemPrompts(type: 'refiner');
+      final tags = await appState.getPromptTags();
 
       if (mounted) {
         setState(() {
