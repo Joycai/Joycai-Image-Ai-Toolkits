@@ -35,6 +35,7 @@ class DatabaseMigration {
     if (oldVersion < 17) await _createV17Tables(db);
     if (oldVersion < 18) await _createV18Tables(db);
     if (oldVersion < 19) await _createV19Tables(db);
+    if (oldVersion < 20) await _createV20Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -57,6 +58,24 @@ class DatabaseMigration {
     await _createV17Tables(db);
     await _createV18Tables(db);
     await _createV19Tables(db);
+    await _createV20Tables(db);
+  }
+
+  static Future<void> _createV20Tables(Database db) async {
+    // 1. Add sort_order to system_prompts and prompt_tags
+    await _addColumnIfNotExists(db, 'system_prompts', 'sort_order', 'INTEGER DEFAULT 0');
+    await _addColumnIfNotExists(db, 'prompt_tags', 'sort_order', 'INTEGER DEFAULT 0');
+
+    // 2. Create junction table for system prompts
+    await db.execute('''
+      CREATE TABLE system_prompt_tag_refs (
+        prompt_id INTEGER NOT NULL,
+        tag_id INTEGER NOT NULL,
+        PRIMARY KEY (prompt_id, tag_id),
+        FOREIGN KEY (prompt_id) REFERENCES system_prompts (id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES prompt_tags (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   static Future<void> _createV19Tables(Database db) async {

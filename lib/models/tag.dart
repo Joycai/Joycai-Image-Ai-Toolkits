@@ -5,12 +5,14 @@ class PromptTag {
   final String name;
   final int color;
   final bool isSystem;
+  final int sortOrder;
 
   PromptTag({
     this.id,
     required this.name,
     this.color = 0xFF607D8B,
     this.isSystem = false,
+    this.sortOrder = 0,
   });
 
   factory PromptTag.fromMap(Map<String, dynamic> map) {
@@ -19,6 +21,7 @@ class PromptTag {
       name: map['name'] as String,
       color: map['color'] as int? ?? 0xFF607D8B,
       isSystem: (map['is_system'] ?? 0) == 1,
+      sortOrder: map['sort_order'] as int? ?? 0,
     );
   }
 
@@ -27,6 +30,7 @@ class PromptTag {
       'name': name,
       'color': color,
       'is_system': isSystem ? 1 : 0,
+      'sort_order': sortOrder,
     };
     if (includeId) {
       data['id'] = id;

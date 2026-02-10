@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../models/llm_channel.dart';
 import '../../models/prompt.dart';
+import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
@@ -34,9 +35,12 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   late TextEditingController _currentPromptCtrl;
   final TextEditingController _refinedPromptCtrl = TextEditingController();
   
-  List<SystemPrompt> _sysPrompts = [];
+  List<SystemPrompt> _allSysPrompts = [];
+  List<SystemPrompt> _filteredSysPrompts = [];
+  List<PromptTag> _tags = [];
   
   int? _selectedModelPk;
+  int? _selectedTagId;
   String? _selectedSysPrompt;
   bool _isRefining = false;
   bool _isLoadingData = true;
@@ -59,14 +63,18 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
     try {
       final appState = Provider.of<AppState>(context, listen: false);
       final refinerPrompts = await _db.getSystemPrompts(type: 'refiner');
+      final tags = await _db.getPromptTags();
 
       if (mounted) {
         setState(() {
-          _sysPrompts = refinerPrompts;
+          _allSysPrompts = refinerPrompts;
+          _tags = tags;
+          _applyFilter();
+          
           if (appState.chatModels.isNotEmpty) {
             _selectedModelPk = appState.chatModels.first.id;
           }
-          if (_sysPrompts.isNotEmpty) _selectedSysPrompt = _sysPrompts.first.content;
+          if (_filteredSysPrompts.isNotEmpty) _selectedSysPrompt = _filteredSysPrompts.first.content;
           _isLoadingData = false;
         });
       }
@@ -74,6 +82,19 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
       if (mounted) {
         setState(() => _isLoadingData = false);
       }
+    }
+  }
+
+  void _applyFilter() {
+    if (_selectedTagId == null) {
+      _filteredSysPrompts = _allSysPrompts;
+    } else {
+      _filteredSysPrompts = _allSysPrompts.where((p) => p.tags.any((t) => t.id == _selectedTagId)).toList();
+    }
+    
+    // Ensure selected prompt is still in the filtered list
+    if (_selectedSysPrompt != null && !_filteredSysPrompts.any((p) => p.content == _selectedSysPrompt)) {
+      _selectedSysPrompt = _filteredSysPrompts.isNotEmpty ? _filteredSysPrompts.first.content : null;
     }
   }
 
@@ -161,15 +182,24 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
                   if (isNarrow) ...[
                     _buildModelSelector(l10n, appState),
                     const SizedBox(height: 8),
+                    _buildTagSelector(l10n),
+                    const SizedBox(height: 8),
                     _buildSysPromptSelector(l10n),
                   ] else
                     Row(
                       children: [
                         Expanded(
+                          flex: 2,
                           child: _buildModelSelector(l10n, appState),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
+                          flex: 1,
+                          child: _buildTagSelector(l10n),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
                           child: _buildSysPromptSelector(l10n),
                         ),
                       ],
@@ -317,6 +347,37 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
     );
   }
 
+  Widget _buildTagSelector(AppLocalizations l10n) {
+    return DropdownButtonFormField<int?>(
+      initialValue: _selectedTagId,
+      decoration: InputDecoration(
+        labelText: l10n.tag,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      items: [
+        DropdownMenuItem<int?>(value: null, child: Text(l10n.catAll)),
+        ..._tags.map((t) => DropdownMenuItem<int?>(
+          value: t.id,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(backgroundColor: Color(t.color), radius: 6),
+              const SizedBox(width: 8),
+              Text(t.name, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        )),
+      ],
+      onChanged: (v) {
+        setState(() {
+          _selectedTagId = v;
+          _applyFilter();
+        });
+      },
+    );
+  }
+
   Widget _buildSysPromptSelector(AppLocalizations l10n) {
     return DropdownButtonFormField<String>(
       initialValue: _selectedSysPrompt,
@@ -325,7 +386,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      items: _sysPrompts.map((p) => DropdownMenuItem(
+      items: _filteredSysPrompts.map((p) => DropdownMenuItem(
         value: p.content, 
         child: Text(p.title, overflow: TextOverflow.ellipsis)
       )).toList(),

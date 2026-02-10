@@ -59,7 +59,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 19, // Incremented for Multi-tag support
+          version: 20, // Incremented for System Prompt Tags and Sorting
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -67,7 +67,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 19,
+        version: 20,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -198,12 +198,14 @@ class DatabaseService {
   Future<void> updatePromptTag(int id, Map<String, dynamic> tag) => PromptRepository().updatePromptTag(id, PromptTag.fromMap(tag));
   Future<void> deletePromptTag(int id) => PromptRepository().deletePromptTag(id);
   Future<List<PromptTag>> getPromptTags() => PromptRepository().getPromptTags();
+  Future<void> updateTagOrder(List<int> ids) => PromptRepository().updateTagOrder(ids);
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt));
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt));
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt), tagIds: tagIds);
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt), tagIds: tagIds);
   Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
+  Future<void> updateSystemPromptOrder(List<int> ids) => PromptRepository().updateSystemPromptOrder(ids);
 
   // Standalone Prompt Data
   Future<Map<String, dynamic>> getPromptDataRaw() async {
@@ -213,7 +215,10 @@ class DatabaseService {
         ...p.toMap(),
         'tags': p.tags.map((t) => t.toMap()).toList()
       }).toList(),
-      'system_prompts': (await getSystemPrompts()).map((p) => p.toMap()).toList(),
+      'system_prompts': (await getSystemPrompts()).map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
     };
   }
 
@@ -251,6 +256,7 @@ class DatabaseService {
       await txn.delete('prompts');
       await txn.delete('system_prompts');
       await txn.delete('prompt_tag_refs');
+      await txn.delete('system_prompt_tag_refs');
       await txn.delete('prompt_tags');
     }
   }
@@ -340,11 +346,24 @@ class DatabaseService {
       if (data['system_prompts'] != null) {
         for (var p in data['system_prompts']) {
           final Map<String, dynamic> row = Map.from(p)..remove('id');
+          final List<dynamic>? tags = row['tags'];
+          row.remove('tags');
+
           if (!replace) {
             final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
             if (existing.isNotEmpty) continue;
           }
-          await txn.insert('system_prompts', row);
+          
+          final newPromptId = await txn.insert('system_prompts', row);
+          if (tags != null) {
+            for (var t in tags) {
+              final oldTagId = t['id'] as int;
+              final newTagId = tagIdMap[oldTagId];
+              if (newTagId != null) {
+                await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+              }
+            }
+          }
         }
       }
     });

@@ -69,7 +69,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
       
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       
-      final promptTagIds = p.tags.map((t) => t.id as int).toSet();
+      final promptTagIds = p.tags.map((t) => t.id!).toSet();
       final matchesTags = _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
       
       return matchesSearch && matchesTags;

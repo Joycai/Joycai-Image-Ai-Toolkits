@@ -38,6 +38,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
     });
@@ -346,9 +351,18 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return _buildEmptyState(l10n, true);
     }
     
-    return ListView.builder(
+    return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
+      onReorder: (oldIndex, newIndex) async {
+        if (_searchQuery.isNotEmpty) return;
+        setState(() {
+          if (newIndex > oldIndex) newIndex -= 1;
+          final item = _systemPrompts.removeAt(oldIndex);
+          _systemPrompts.insert(newIndex, item);
+        });
+        await _db.updateSystemPromptOrder(_systemPrompts.map((p) => p.id!).toList());
+      },
       itemBuilder: (context, index) {
         final systemPrompt = prompts[index];
         final id = systemPrompt.id!;
@@ -360,7 +374,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           title: systemPrompt.title,
           content: systemPrompt.content,
           isMarkdown: systemPrompt.isMarkdown,
-          tags: [], // System prompts don't use standard tags in UI
+          tags: systemPrompt.tags,
         );
 
         return Padding(
@@ -376,8 +390,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 _expandedSysPromptIds.add(id);
               }
             }),
-            leading: const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
-            showCategory: false,
+            leading: _searchQuery.isEmpty 
+                ? ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20))
+                : const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
+            showCategory: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.copy_all, size: 18),
@@ -404,16 +420,28 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Widget _buildTagList(AppLocalizations l10n) {
-    return ListView.builder(
+    return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _tags.length,
+      onReorder: (oldIndex, newIndex) async {
+        setState(() {
+          if (newIndex > oldIndex) newIndex -= 1;
+          final item = _tags.removeAt(oldIndex);
+          _tags.insert(newIndex, item);
+        });
+        await _db.updateTagOrder(_tags.map((t) => t.id!).toList());
+      },
       itemBuilder: (context, index) {
         final tag = _tags[index];
         return Card(
+          key: ValueKey('tag_${tag.id}'),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Color(tag.color),
-              radius: 12,
+            leading: ReorderableDragStartListener(
+              index: index,
+              child: CircleAvatar(
+                backgroundColor: Color(tag.color),
+                radius: 12,
+              ),
             ),
             title: Text(tag.name),
             trailing: Row(
@@ -621,6 +649,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final contentCtrl = TextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
 
+    final Set<int> selectedTagIds = {};
+    if (prompt != null) {
+      for (var t in prompt.tags) {
+        if (t.id != null) selectedTagIds.add(t.id!);
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -637,8 +672,36 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                  const SizedBox(height: 16),
+                  Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _tags.map((t) {
+                      final id = t.id!;
+                      final isSelected = selectedTagIds.contains(id);
+                      final color = Color(t.color);
+                      return FilterChip(
+                        label: Text(t.name, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : color)),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setDialogState(() {
+                            if (val) {
+                              selectedTagIds.add(id);
+                            } else {
+                              selectedTagIds.remove(id);
+                            }
+                          });
+                        },
+                        selectedColor: color,
+                        checkmarkColor: Colors.white,
+                      );
+                    }).toList(),
+                  ),
                   const SizedBox(height: 16),
                   MarkdownEditor(
                     controller: contentCtrl,
@@ -663,9 +726,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   'is_markdown': isMarkdown ? 1 : 0,
                 };
                 if (prompt == null) {
-                  await _db.addSystemPrompt(data);
+                  await _db.addSystemPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
-                  await _db.updateSystemPrompt(prompt.id!, data);
+                  await _db.updateSystemPrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
                 }
                 if (context.mounted) {
                   Navigator.pop(context);

@@ -55,7 +55,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
-    final payload = _preparePayload(history, options);
+    final payload = _preparePayload(history, options, config.endpoint);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -111,7 +111,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
-    final payload = _preparePayload(history, options);
+    final payload = _preparePayload(history, options, config.endpoint);
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -254,7 +254,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     return headers;
   }
 
-  Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options) {
+  Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
     final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
     final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
 
@@ -300,7 +300,9 @@ class GoogleGenAIProvider implements ILLMProvider {
     if (options != null) {
       final imageConfig = <String, dynamic>{};
       // Only add aspectRatio if it's not "not_set"
-      imageConfig['personGeneration'] = "ALLOW_ALL";
+      if (endpoint?.contains("aabao") == false) {
+        imageConfig['personGeneration'] = "ALLOW_ALL";
+      }
       if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
         imageConfig['aspectRatio'] = options['aspectRatio'];
       }
