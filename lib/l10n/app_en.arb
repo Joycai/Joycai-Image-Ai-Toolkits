@@ -519,6 +519,9 @@
         }
       }
     },
-    "importFromGallery": "Import from Gallery"
-  }
-  
+      "importFromGallery": "Import from Gallery",
+      "enableApiDebug": "Enable API Debug Logging",
+      "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
+      "openLogFolder": "Open Log Folder"
+    }
+    

@@ -1083,4 +1083,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get importFromGallery => '从系统图库导入';
+
+  @override
+  String get enableApiDebug => '开启 API 调试日志';
+
+  @override
+  String get apiDebugDesc => '将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。';
+
+  @override
+  String get openLogFolder => '打开日志目录';
 }

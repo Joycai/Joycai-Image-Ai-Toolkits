@@ -2125,6 +2125,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import from Gallery'**
   String get importFromGallery;
+
+  /// No description provided for @enableApiDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable API Debug Logging'**
+  String get enableApiDebug;
+
+  /// No description provided for @apiDebugDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.'**
+  String get apiDebugDesc;
+
+  /// No description provided for @openLogFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Log Folder'**
+  String get openLogFolder;
 }
 
 class _AppLocalizationsDelegate

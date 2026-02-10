@@ -1099,4 +1099,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importFromGallery => 'Import from Gallery';
+
+  @override
+  String get enableApiDebug => 'Enable API Debug Logging';
+
+  @override
+  String get apiDebugDesc =>
+      'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.';
+
+  @override
+  String get openLogFolder => 'Open Log Folder';
 }

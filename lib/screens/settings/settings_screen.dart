@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/llm_debug_logger.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_section.dart';
@@ -105,6 +106,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.settings,
                     children: [
                       _buildNotificationTile(appState, l10n),
+                      const SizedBox(height: 8),
+                      _buildApiDebugTile(appState, l10n),
                       const SizedBox(height: 8),
                       _buildPortableModeTile(l10n),
                       const SizedBox(height: 8),
@@ -216,6 +219,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(l10n.enableNotifications),
       value: appState.notificationsEnabled,
       onChanged: (v) => appState.setNotificationsEnabled(v),
+    );
+  }
+
+  Widget _buildApiDebugTile(AppState appState, AppLocalizations l10n) {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: Text(l10n.enableApiDebug),
+          subtitle: Text(l10n.apiDebugDesc),
+          value: appState.enableApiDebug,
+          onChanged: (v) => appState.setEnableApiDebug(v),
+        ),
+        if (appState.enableApiDebug)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => LLMDebugLogger.openLogFolder(),
+                icon: const Icon(Icons.folder_zip_outlined, size: 18),
+                label: Text(l10n.openLogFolder),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

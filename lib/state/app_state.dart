@@ -83,6 +83,7 @@ class AppState extends ChangeNotifier {
   int retryCount = 0;
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
+  bool enableApiDebug = false;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -186,6 +187,7 @@ class AppState extends ChangeNotifier {
 
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
+    enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
 
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
@@ -279,6 +281,12 @@ class AppState extends ChangeNotifier {
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    notifyListeners();
+  }
+
+  Future<void> setEnableApiDebug(bool value) async {
+    enableApiDebug = value;
+    await _db.saveSetting('enable_api_debug', value.toString());
     notifyListeners();
   }
 

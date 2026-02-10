@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../state/app_state.dart';
+import '../llm_debug_logger.dart';
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
 import '../model_discovery_service.dart';
@@ -60,7 +62,22 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': payload,
+        });
+      }
+
       final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
 
       final data = jsonDecode(response.body);
 
@@ -118,11 +135,25 @@ class GoogleGenAIProvider implements ILLMProvider {
     request.body = jsonEncode(payload);
 
     final client = config.createClient();
+    final appState = AppState();
+    File? debugFile;
+    if (appState.enableApiDebug) {
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
+        'url': url.toString(),
+        'headers': headers,
+        'body': payload,
+      });
+    }
+
     final response = await client.send(request);
 
     if (response.statusCode != 200) {
       // Try to parse error from body if possible
       final body = await response.stream.bytesToString();
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+      }
       client.close();
       try {
         final data = jsonDecode(body);
@@ -141,8 +172,15 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
     try {
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+      }
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (line.isEmpty) continue;
+
+        if (debugFile != null) {
+          await LLMDebugLogger.appendLine(debugFile, line);
+        }
 
         String dataLine = line;
         if (line.startsWith('data: ')) {
