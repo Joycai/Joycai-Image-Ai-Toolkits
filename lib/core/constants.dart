@@ -81,6 +81,16 @@ class AppConstants {
   static const double minThumbnailSize = 80.0;
   static const double maxThumbnailSize = 400.0;
 
+  static const Map<String, Color> presetThemes = {
+    'BlueGrey': Colors.blueGrey,
+    'Indigo': Colors.indigo,
+    'Teal': Colors.teal,
+    'Green': Colors.green,
+    'Orange': Colors.orange,
+    'DeepPurple': Colors.deepPurple,
+    'Rose': Colors.pink,
+  };
+
   static const List<Color> tagColors = [
     Colors.blue,
     Colors.red,

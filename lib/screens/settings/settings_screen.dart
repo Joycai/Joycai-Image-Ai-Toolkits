@@ -82,7 +82,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: l10n.appearance,
                     children: [
                       ThemeSelector(appState: appState, l10n: l10n),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      ThemeColorSelector(appState: appState, l10n: l10n),
+                      const SizedBox(height: 24),
                       LanguageSelector(appState: appState, l10n: l10n),
                     ],
                   ),

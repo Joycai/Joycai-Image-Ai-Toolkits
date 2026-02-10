@@ -92,6 +92,7 @@ class AppState extends ChangeNotifier {
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
+  Color themeSeedColor = Colors.blueGrey;
   
   // Language configuration
   Locale? locale;
@@ -199,6 +200,13 @@ class AppState extends ChangeNotifier {
     if (savedTheme != null) {
       themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
     }
+
+    final savedSeed = await _db.getSetting('theme_seed_color');
+    if (savedSeed != null) {
+      try {
+        themeSeedColor = Color(int.parse(savedSeed));
+      } catch (_) {}
+    }
     
     // Load locale
     final savedLocale = await _db.getSetting('locale');
@@ -274,6 +282,12 @@ class AppState extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
     await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+
+  Future<void> setThemeSeedColor(Color color) async {
+    themeSeedColor = color;
+    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());
     notifyListeners();
   }
 

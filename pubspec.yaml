@@ -35,6 +35,7 @@ dependencies:
   share_plus: ^12.0.1
   image_picker: ^1.2.1
   image_size_getter: ^2.4.1
+  google_fonts: ^8.0.1
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +49,14 @@ flutter:
   generate: true
   assets:
     - assets/icon/icon.png
+    - assets/fonts/
+
+  fonts:
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Regular.ttf
+        - asset: assets/fonts/NotoSansSC-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: "launcher_icon"

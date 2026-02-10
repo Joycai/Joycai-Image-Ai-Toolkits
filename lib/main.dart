@@ -67,11 +67,13 @@ class MyApp extends StatelessWidget {
       locale: appState.locale,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(seedColor: appState.themeSeedColor, brightness: Brightness.light),
+        fontFamily: 'NotoSansSC',
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(seedColor: appState.themeSeedColor, brightness: Brightness.dark),
+        fontFamily: 'NotoSansSC',
       ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
