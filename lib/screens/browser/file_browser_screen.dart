@@ -33,10 +33,33 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final browserState = appState.browserState;
+    final l10n = AppLocalizations.of(context)!;
     final isNarrow = Responsive.isNarrow(context);
 
     return Scaffold(
       key: _scaffoldKey,
+      appBar: isNarrow ? AppBar(
+        title: Text(l10n.fileBrowser),
+        leading: IconButton(
+          icon: const Icon(Icons.folder_open),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          tooltip: l10n.sourceExplorer,
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view),
+            onPressed: () => browserState.setViewMode(
+              browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
+            ),
+            tooltip: l10n.switchViewMode,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => browserState.refresh(),
+            tooltip: l10n.refresh,
+          ),
+        ],
+      ) : null,
       drawer: isNarrow ? const Drawer(width: 300, child: SourceExplorerWidget(useBrowserState: true)) : null,
       body: Row(
         children: [
@@ -56,22 +79,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                     ),
                     BrowserFilterBar(state: browserState),
                     Expanded(
-                      child: Stack(
-                        children: [
-                          browserState.viewMode == BrowserViewMode.grid
-                              ? _buildFileGrid(context, browserState)
-                              : _buildFileListView(context, browserState),
-                          if (isNarrow)
-                            Positioned(
-                              left: 16,
-                              bottom: 16,
-                              child: FloatingActionButton.small(
-                                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                                child: const Icon(Icons.folder_open),
-                              ),
-                            ),
-                        ],
-                      ),
+                      child: browserState.viewMode == BrowserViewMode.grid
+                          ? _buildFileGrid(context, browserState)
+                          : _buildFileListView(context, browserState),
                     ),
                   ],
                 ),
@@ -183,160 +193,63 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-    void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
+  void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
+    final state = Provider.of<AppState>(context, listen: false).browserState;
+    showFileContextMenu(
+      context: context,
+      file: file,
+      position: position,
+      windowState: Provider.of<WindowState>(context, listen: false),
+      onRefresh: () => state.refresh(),
+    );
+  }
+}
 
-      final state = Provider.of<AppState>(context, listen: false).browserState;
+class _FileListItemSubtitle extends StatefulWidget {
+  final BrowserFile file;
+  const _FileListItemSubtitle({required this.file});
 
-      showFileContextMenu(
+  @override
+  State<_FileListItemSubtitle> createState() => _FileListItemSubtitleState();
+}
 
-        context: context,
+class _FileListItemSubtitleState extends State<_FileListItemSubtitle> {
+  String _extraInfo = "";
 
-        file: file,
-
-        position: position,
-
-        windowState: Provider.of<WindowState>(context, listen: false),
-
-        onRefresh: () => state.refresh(),
-
-      );
-
+  @override
+  void initState() {
+    super.initState();
+    if (widget.file.category == FileCategory.image) {
+      _loadDimensions();
     }
-
   }
 
-  
-
-  class _FileListItemSubtitle extends StatefulWidget {
-
-    final BrowserFile file;
-
-    const _FileListItemSubtitle({required this.file});
-
-  
-
-    @override
-
-    State<_FileListItemSubtitle> createState() => _FileListItemSubtitleState();
-
-  }
-
-  
-
-  class _FileListItemSubtitleState extends State<_FileListItemSubtitle> {
-
-    String _extraInfo = "";
-
-  
-
-    @override
-
-    void initState() {
-
-      super.initState();
-
+  @override
+  void didUpdateWidget(_FileListItemSubtitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.file.path != oldWidget.file.path) {
+      _extraInfo = "";
       if (widget.file.category == FileCategory.image) {
-
         _loadDimensions();
-
       }
-
     }
-
-  
-
-    @override
-
-    void didUpdateWidget(_FileListItemSubtitle oldWidget) {
-
-      super.didUpdateWidget(oldWidget);
-
-      if (widget.file.path != oldWidget.file.path) {
-
-        _extraInfo = "";
-
-        if (widget.file.category == FileCategory.image) {
-
-          _loadDimensions();
-
-        }
-
-      }
-
-    }
-
-  
-
-      Future<void> _loadDimensions() async {
-
-  
-
-        final metadata = await ImageMetadataService().getMetadata(widget.file.path);
-
-  
-
-        if (metadata != null && mounted) {
-
-  
-
-          setState(() {
-
-  
-
-            _extraInfo = " | ${metadata.width}x${metadata.height} (${metadata.aspectRatio})";
-
-  
-
-          });
-
-  
-
-        }
-
-  
-
-      }
-
-  
-
-    
-
-  
-
-      @override
-
-  
-
-      Widget build(BuildContext context) {
-
-  
-
-        final sizeStr = AppConstants.formatFileSize(widget.file.size);
-
-  
-
-        return Text(
-
-  
-
-          "$sizeStr | ${widget.file.modified.toString().substring(0, 16)}$_extraInfo",
-
-  
-
-          style: const TextStyle(fontSize: 11),
-
-  
-
-        );
-
-  
-
-      }
-
-  
-
-    
-
   }
 
-  
+  Future<void> _loadDimensions() async {
+    final metadata = await ImageMetadataService().getMetadata(widget.file.path);
+    if (metadata != null && mounted) {
+      setState(() {
+        _extraInfo = " | ${metadata.width}x${metadata.height} (${metadata.aspectRatio})";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sizeStr = AppConstants.formatFileSize(widget.file.size);
+    return Text(
+      "$sizeStr | ${widget.file.modified.toString().substring(0, 16)}$_extraInfo",
+      style: const TextStyle(fontSize: 11),
+    );
+  }
+}

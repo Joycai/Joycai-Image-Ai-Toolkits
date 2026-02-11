@@ -75,8 +75,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 800;
+    final isNarrow = Responsive.isNarrow(context);
     
     final filteredUser = _userPrompts.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
@@ -102,26 +101,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         title: Text(l10n.promptLibrary),
         actions: isNarrow 
           ? [
-              PopupMenuButton<String>(
-                onSelected: (val) {
-                  if (val == 'import') _importPrompts(l10n);
-                  if (val == 'export') _exportPrompts(l10n);
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
-                  PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
-                ],
-              ),
+              _buildImportExportMenu(l10n),
               IconButton(
-                onPressed: () {
-                  if (_tabController.index == 1) {
-                    _showSystemPromptDialog(l10n);
-                  } else if (_tabController.index == 2) {
-                    _showTagDialog(l10n);
-                  } else {
-                    _showPromptDialog(l10n);
-                  }
-                },
+                onPressed: _handleAddAction,
                 icon: const Icon(Icons.add),
               ),
             ]
@@ -155,15 +137,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: FilledButton.icon(
-                  onPressed: () {
-                    if (_tabController.index == 1) {
-                      _showSystemPromptDialog(l10n);
-                    } else if (_tabController.index == 2) {
-                      _showTagDialog(l10n);
-                    } else {
-                      _showPromptDialog(l10n);
-                    }
-                  },
+                  onPressed: _handleAddAction,
                   icon: const Icon(Icons.add),
                   label: Text(l10n.add),
                 ),
@@ -199,36 +173,46 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
         ),
       ),
-      body: Column(
+      body: Row(
         children: [
-          if (_tabController.index == 0 && _tags.isNotEmpty)
-            _buildFilterBar(colorScheme),
-          if (_tabController.index == 1)
-            _buildSystemTypeToggle(colorScheme, l10n),
+          if (!isNarrow && _tabController.index != 2) ...[
+            _buildSidebar(colorScheme, l10n),
+            const VerticalDivider(width: 1),
+          ],
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Column(
               children: [
-                UserPromptList(
-                  prompts: filteredUser, 
-                  searchQuery: _searchQuery, 
-                  selectedFilterTagIds: _selectedFilterTagIds,
-                  onRefresh: _loadData,
-                  onShowEditDialog: _showPromptDialog,
-                  onConfirmDelete: _confirmDelete,
-                ),
-                SystemTemplateList(
-                  prompts: filteredSystem, 
-                  searchQuery: _searchQuery,
-                  onRefresh: _loadData,
-                  onShowEditDialog: _showSystemPromptDialog,
-                  onConfirmDelete: _confirmDelete,
-                ),
-                TagManagementList(
-                  tags: _tags,
-                  onRefresh: _loadData,
-                  onShowEditDialog: _showTagDialog,
-                  onConfirmDelete: _confirmDeleteTag,
+                if (isNarrow && _tabController.index == 0 && _tags.isNotEmpty)
+                  _buildMobileFilterBar(colorScheme),
+                if (_tabController.index == 1)
+                  _buildSystemTypeToggle(colorScheme, l10n),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      UserPromptList(
+                        prompts: filteredUser, 
+                        searchQuery: _searchQuery, 
+                        selectedFilterTagIds: _selectedFilterTagIds,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {prompt}) => _showPromptDialog(l10n, prompt: prompt),
+                        onConfirmDelete: _confirmDelete,
+                      ),
+                      SystemTemplateList(
+                        prompts: filteredSystem, 
+                        searchQuery: _searchQuery,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {prompt}) => _showSystemPromptDialog(l10n, prompt: prompt),
+                        onConfirmDelete: _confirmDelete,
+                      ),
+                      TagManagementList(
+                        tags: _tags,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {tag}) => _showTagDialog(l10n, tag: tag),
+                        onConfirmDelete: _confirmDeleteTag,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -238,7 +222,92 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildFilterBar(ColorScheme colorScheme) {
+  void _handleAddAction() {
+    final l10n = AppLocalizations.of(context)!;
+    if (_tabController.index == 1) {
+      _showSystemPromptDialog(l10n);
+    } else if (_tabController.index == 2) {
+      _showTagDialog(l10n);
+    } else {
+      _showPromptDialog(l10n);
+    }
+  }
+
+  Widget _buildImportExportMenu(AppLocalizations l10n) {
+    return PopupMenuButton<String>(
+      onSelected: (val) {
+        if (val == 'import') _importPrompts(l10n);
+        if (val == 'export') _exportPrompts(l10n);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
+        PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
+      ],
+    );
+  }
+
+  Widget _buildSidebar(ColorScheme colorScheme, AppLocalizations l10n) {
+    return Container(
+      width: 250,
+      color: colorScheme.surfaceContainerLow,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              l10n.categoriesTab,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+                fontSize: 12,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _tags.length,
+              itemBuilder: (context, index) {
+                final tag = _tags[index];
+                final isSelected = _selectedFilterTagIds.contains(tag.id);
+                return ListTile(
+                  dense: true,
+                  leading: Icon(
+                    isSelected ? Icons.label : Icons.label_outline,
+                    color: Color(tag.color),
+                    size: 18,
+                  ),
+                  title: Text(tag.name),
+                  selected: isSelected,
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedFilterTagIds.remove(tag.id);
+                      } else {
+                        _selectedFilterTagIds.add(tag.id!);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          if (_selectedFilterTagIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextButton.icon(
+                onPressed: () => setState(() => _selectedFilterTagIds.clear()),
+                icon: const Icon(Icons.clear_all, size: 16),
+                label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileFilterBar(ColorScheme colorScheme) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -293,16 +362,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         color: colorScheme.surface,
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
       ),
-      child: SegmentedButton<String>(
-        segments: [
-          ButtonSegment(value: 'refiner', label: Text(l10n.typeRefiner), icon: const Icon(Icons.auto_fix_high, size: 16)),
-          ButtonSegment(value: 'rename', label: Text(l10n.typeRename), icon: const Icon(Icons.drive_file_rename_outline, size: 16)),
-        ],
-        selected: {_selectedSystemType},
-        onSelectionChanged: (val) {
-          setState(() => _selectedSystemType = val.first);
-        },
-        showSelectedIcon: false,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment(value: 'refiner', label: Text(l10n.typeRefiner), icon: const Icon(Icons.auto_fix_high, size: 16)),
+              ButtonSegment(value: 'rename', label: Text(l10n.typeRename), icon: const Icon(Icons.drive_file_rename_outline, size: 16)),
+            ],
+            selected: {_selectedSystemType},
+            onSelectionChanged: (val) {
+              setState(() => _selectedSystemType = val.first);
+            },
+            showSelectedIcon: false,
+          ),
+        ),
       ),
     );
   }

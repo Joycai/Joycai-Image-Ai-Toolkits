@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../state/browser_state.dart';
@@ -16,6 +17,7 @@ class BrowserFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = Responsive.isMobile(context);
 
     return Container(
       height: 50,
@@ -34,7 +36,7 @@ class BrowserFilterBar extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   child: FilterChip(
-                    label: Text(_getCategoryLabel(cat, l10n)),
+                    label: Text(_getCategoryLabel(cat, l10n), style: const TextStyle(fontSize: 12)),
                     selected: isSelected,
                     onSelected: (_) => state.setFilter(cat),
                     visualDensity: VisualDensity.compact,
@@ -43,11 +45,14 @@ class BrowserFilterBar extends StatelessWidget {
               }).toList(),
             ),
           ),
-          const VerticalDivider(width: 24, indent: 12, endIndent: 12),
+          const VerticalDivider(width: 16, indent: 12, endIndent: 12),
           
           // Sort Options
-          Text(l10n.sortBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
+          if (!isMobile) ...[
+            Text(l10n.sortBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+          ],
+          
           PopupMenuButton<BrowserSortField>(
             initialValue: state.sortField,
             tooltip: l10n.sortBy,
@@ -58,7 +63,7 @@ class BrowserFilterBar extends StatelessWidget {
               PopupMenuItem(value: BrowserSortField.type, child: Text(l10n.sortType)),
             ],
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
                 border: Border.all(color: colorScheme.outlineVariant),
                 borderRadius: BorderRadius.circular(4),
@@ -66,15 +71,15 @@ class BrowserFilterBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_getSortFieldLabel(state.sortField, l10n), style: const TextStyle(fontSize: 12)),
-                  const Icon(Icons.arrow_drop_down, size: 16),
+                  Text(_getSortFieldLabel(state.sortField, l10n), style: const TextStyle(fontSize: 11)),
+                  const Icon(Icons.arrow_drop_down, size: 14),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
-            icon: Icon(state.sortAscending ? Icons.south : Icons.north, size: 18),
+            icon: Icon(state.sortAscending ? Icons.south : Icons.north, size: 16),
             onPressed: () => state.setSortAscending(!state.sortAscending),
             tooltip: state.sortAscending ? l10n.sortAsc : l10n.sortDesc,
             visualDensity: VisualDensity.compact,

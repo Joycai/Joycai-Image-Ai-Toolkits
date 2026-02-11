@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/fee_group.dart';
 import '../../models/llm_channel.dart';
@@ -21,10 +22,21 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
+  int? _selectedChannelId;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isNarrow = Responsive.isNarrow(context);
 
+    if (isNarrow) {
+      return _buildMobileLayout(l10n);
+    } else {
+      return _buildDesktopLayout(l10n);
+    }
+  }
+
+  Widget _buildMobileLayout(AppLocalizations l10n) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -46,6 +58,221 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppLocalizations l10n) {
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.modelManager)),
+      body: Consumer<AppState>(
+        builder: (context, appState, child) {
+          final channels = appState.allChannels;
+          if (_selectedChannelId == null && channels.isNotEmpty) {
+            _selectedChannelId = channels.first.id;
+          }
+
+          final selectedChannel = channels.cast<LLMChannel?>().firstWhere(
+            (c) => c?.id == _selectedChannelId,
+            orElse: () => null,
+          );
+
+          return Row(
+            children: [
+              // Left Sidebar: Channels
+              Container(
+                width: 300,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(l10n.channelsTab, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          IconButton(
+                            icon: const Icon(Icons.add, size: 20),
+                            onPressed: () => _showChannelDialog(l10n, appState),
+                            tooltip: l10n.addChannel,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: channels.length,
+                        itemBuilder: (context, index) {
+                          final channel = channels[index];
+                          final isSelected = channel.id == _selectedChannelId;
+                          return ListTile(
+                            selected: isSelected,
+                            leading: (channel.tag != null && channel.tag!.isNotEmpty)
+                              ? CircleAvatar(
+                                  backgroundColor: Color(channel.tagColor ?? 0xFF607D8B),
+                                  radius: 12,
+                                  child: Text(channel.tag![0], style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                )
+                              : const Icon(Icons.cloud_queue, size: 18),
+                            title: Text(channel.displayName, style: const TextStyle(fontSize: 13)),
+                            trailing: isSelected ? const Icon(Icons.chevron_right, size: 16) : null,
+                            onTap: () => setState(() => _selectedChannelId = channel.id),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const VerticalDivider(width: 1),
+              // Right Detail: Models & Fees
+              Expanded(
+                child: selectedChannel == null 
+                  ? Center(child: Text(l10n.noModelsConfigured))
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1000),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildChannelHeader(selectedChannel, l10n, appState),
+                              const SizedBox(height: 24),
+                              AppSection(
+                                title: l10n.modelsTab,
+                                children: [
+                                  _buildModelsList(selectedChannel, l10n, appState),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              AppSection(
+                                title: l10n.feeManagement,
+                                padding: const EdgeInsets.only(bottom: 64),
+                                children: [
+                                  const FeeGroupManager(mode: FeeGroupManagerMode.section),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChannelHeader(LLMChannel channel, AppLocalizations l10n, AppState appState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(channel.displayName, style: Theme.of(context).textTheme.headlineSmall),
+                      Text(channel.endpoint, style: TextStyle(color: colorScheme.outline, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showChannelDialog(l10n, appState, channel: channel),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => _confirmDeleteChannel(l10n, channel, appState),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              children: [
+                if (channel.enableDiscovery)
+                  FilledButton.icon(
+                    onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text(l10n.fetchModels),
+                  ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(l10n.addModel),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModelsList(LLMChannel channel, AppLocalizations l10n, AppState appState) {
+    final models = appState.getModelsForChannel(channel.id!);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (models.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(child: Text(l10n.noModelsConfigured, style: TextStyle(color: colorScheme.outline))),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: models.length,
+      separatorBuilder: (context, index) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final model = models[index];
+        final feeGroup = appState.allFeeGroups.cast<FeeGroup?>().firstWhere((g) => g?.id == model.feeGroupId, orElse: () => null);
+        return ListTile(
+          title: Text(model.modelName),
+          subtitle: Row(
+            children: [
+              Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              if (feeGroup != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    feeGroup.name,
+                    style: TextStyle(fontSize: 10, color: colorScheme.onSecondaryContainer),
+                  ),
+                ),
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTagChip(model.tag),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: () => _showModelDialog(l10n, appState, model: model),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                onPressed: () => _confirmDeleteModel(l10n, model, appState),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -123,7 +350,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ),
               const SizedBox(width: 8),
             ],
-            Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Expanded(child: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
           ],
         ),
         initiallyExpanded: true,
@@ -164,7 +391,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   title: Text(model.modelName),
                   subtitle: Row(
                     children: [
-                      Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                      Expanded(child: Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 8),
                       if (feeGroup != null)
                         Container(
