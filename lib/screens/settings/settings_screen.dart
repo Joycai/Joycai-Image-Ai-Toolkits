@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_debug_logger.dart';
@@ -68,72 +69,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
+    final isMobile = Responsive.isMobile(context);
 
     return Scaffold(
-      body: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppSection(
-                    title: l10n.appearance,
-                    children: [
-                      ThemeSelector(appState: appState, l10n: l10n),
-                      const SizedBox(height: 24),
-                      ThemeColorSelector(appState: appState, l10n: l10n),
-                      const SizedBox(height: 24),
-                      LanguageSelector(appState: appState, l10n: l10n),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppSection(
+                  title: l10n.appearance,
+                  children: [
+                    ThemeSelector(appState: appState, l10n: l10n),
+                    const SizedBox(height: 24),
+                    ThemeColorSelector(appState: appState, l10n: l10n),
+                    const SizedBox(height: 24),
+                    LanguageSelector(appState: appState, l10n: l10n),
+                  ],
+                ),
+                const SizedBox(height: 32),
 
-                  AppSection(
-                    title: l10n.proxySettings,
-                    children: [
-                      _buildProxySettings(l10n),
-                    ],
-                  ),
+                AppSection(
+                  title: l10n.proxySettings,
+                  children: [
+                    _buildProxySettings(l10n, isMobile),
+                  ],
+                ),
 
-                  AppSection(
-                    title: l10n.mcpServerSettings,
-                    children: [
-                      _buildMcpSettings(l10n),
-                    ],
-                  ),
+                AppSection(
+                  title: l10n.mcpServerSettings,
+                  children: [
+                    _buildMcpSettings(l10n),
+                  ],
+                ),
 
-                  AppSection(
-                    title: l10n.settings,
-                    children: [
-                      _buildNotificationTile(appState, l10n),
-                      const SizedBox(height: 8),
-                      _buildApiDebugTile(appState, l10n),
-                      const SizedBox(height: 8),
-                      _buildPortableModeTile(l10n),
-                      const SizedBox(height: 8),
-                      _buildOutputDirectoryTile(appState, l10n),
-                    ],
-                  ),
+                AppSection(
+                  title: l10n.settings,
+                  children: [
+                    _buildNotificationTile(appState, l10n),
+                    const SizedBox(height: 8),
+                    _buildApiDebugTile(appState, l10n),
+                    const SizedBox(height: 8),
+                    _buildPortableModeTile(l10n),
+                    const SizedBox(height: 8),
+                    _buildOutputDirectoryTile(appState, l10n),
+                  ],
+                ),
 
-                  AppSection(
-                    title: l10n.dataManagement,
-                    padding: const EdgeInsets.only(bottom: 64),
-                    children: [
-                      _buildDataActions(colorScheme, l10n),
-                    ],
-                  ),
-                ],
-              ),
+                AppSection(
+                  title: l10n.dataManagement,
+                  padding: const EdgeInsets.only(bottom: 64),
+                  children: [
+                    _buildDataActions(colorScheme, l10n, isMobile),
+                  ],
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildProxySettings(AppLocalizations l10n) {
+  Widget _buildProxySettings(AppLocalizations l10n, bool isMobile) {
     return Column(
       children: [
         SwitchListTile(
@@ -159,28 +160,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) => _db.saveSetting('proxy_url', v),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _proxyUsernameController,
-                        decoration: InputDecoration(
-                          labelText: l10n.proxyUsername,
-                          border: const OutlineInputBorder(),
+                if (isMobile) ...[
+                  TextField(
+                    controller: _proxyUsernameController,
+                    decoration: InputDecoration(
+                      labelText: l10n.proxyUsername,
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (v) => _db.saveSetting('proxy_username', v),
+                  ),
+                  const SizedBox(height: 16),
+                  ApiKeyField(
+                    controller: _proxyPasswordController,
+                    label: l10n.proxyPassword,
+                    onChanged: (v) => _db.saveSetting('proxy_password', v),
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _proxyUsernameController,
+                          decoration: InputDecoration(
+                            labelText: l10n.proxyUsername,
+                            border: const OutlineInputBorder(),
+                          ),
+                          onChanged: (v) => _db.saveSetting('proxy_username', v),
                         ),
-                        onChanged: (v) => _db.saveSetting('proxy_username', v),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ApiKeyField(
-                        controller: _proxyPasswordController,
-                        label: l10n.proxyPassword,
-                        onChanged: (v) => _db.saveSetting('proxy_password', v),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ApiKeyField(
+                          controller: _proxyPasswordController,
+                          label: l10n.proxyPassword,
+                          onChanged: (v) => _db.saveSetting('proxy_password', v),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -274,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           FilledButton(
             onPressed: () => exit(0),
-            child: Text(l10n.resetEverything), // Reusing "Restart" feel
+            child: Text(l10n.resetEverything),
           ),
         ],
       ),
@@ -297,53 +314,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDataActions(ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildDataActions(ColorScheme colorScheme, AppLocalizations l10n, bool isMobile) {
     return Wrap(
-      spacing: 16,
+      spacing: 12,
+      runSpacing: 12,
+      alignment: isMobile ? WrapAlignment.center : WrapAlignment.start,
       children: [
-        OutlinedButton.icon(
-          onPressed: () => _exportSettings(l10n),
-          icon: const Icon(Icons.download),
-          label: Text(l10n.exportSettings),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => _importSettings(l10n),
-          icon: const Icon(Icons.upload),
-          label: Text(l10n.importSettings),
-        ),
-        OutlinedButton.icon(
-          onPressed: _openAppDataDir,
-          icon: const Icon(Icons.folder_shared),
-          label: Text(l10n.openAppDataDirectory),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
-          icon: const Icon(Icons.auto_fix_high),
-          label: Text(l10n.runSetupWizard),
-        ),
-        OutlinedButton.icon(
+        _buildActionButton(onPressed: () => _exportSettings(l10n), icon: Icons.download, label: l10n.exportSettings, isMobile: isMobile),
+        _buildActionButton(onPressed: () => _importSettings(l10n), icon: Icons.upload, label: l10n.importSettings, isMobile: isMobile),
+        _buildActionButton(onPressed: _openAppDataDir, icon: Icons.folder_shared, label: l10n.openAppDataDirectory, isMobile: isMobile),
+        _buildActionButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, isMobile: isMobile),
+        _buildActionButton(
           onPressed: () async {
             final appState = Provider.of<AppState>(context, listen: false);
             await appState.clearDownloaderCache();
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Downloader cache cleared.')),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloader cache cleared.')));
             }
           },
-          icon: const Icon(Icons.delete_sweep_outlined),
-          label: Text(l10n.clearDownloaderCache),
+          icon: Icons.delete_sweep_outlined,
+          label: l10n.clearDownloaderCache,
+          isMobile: isMobile,
         ),
-        ElevatedButton.icon(
+        _buildActionButton(
           onPressed: () => _resetSettings(l10n),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.errorContainer,
-            foregroundColor: colorScheme.error,
-          ),
-          icon: const Icon(Icons.refresh),
-          label: Text(l10n.resetAllSettings),
+          icon: Icons.refresh,
+          label: l10n.resetAllSettings,
+          isMobile: isMobile,
+          isError: true,
+          colorScheme: colorScheme,
         ),
       ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required bool isMobile,
+    bool isError = false,
+    ColorScheme? colorScheme,
+  }) {
+    final style = isError
+        ? ElevatedButton.styleFrom(
+            backgroundColor: colorScheme?.errorContainer,
+            foregroundColor: colorScheme?.error,
+          )
+        : null;
+
+    final child = Row(
+      mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+
+    if (isError) {
+      return SizedBox(
+        width: isMobile ? double.infinity : null,
+        child: ElevatedButton(onPressed: onPressed, style: style, child: child),
+      );
+    }
+
+    return SizedBox(
+      width: isMobile ? double.infinity : null,
+      child: OutlinedButton(onPressed: onPressed, child: child),
     );
   }
 

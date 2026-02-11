@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../widgets/collapsible_card.dart';
@@ -25,8 +26,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 1000;
+    final isNarrow = Responsive.isNarrow(context);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -44,7 +44,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> {
                 Expanded(
                   child: Stack(
                     children: [
-                      const GalleryWidget(),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1600),
+                          child: const GalleryWidget(),
+                        ),
+                      ),
                       if (isNarrow)
                         Positioned(
                           left: 16,

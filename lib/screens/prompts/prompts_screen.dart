@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
@@ -491,8 +492,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.add : l10n.editPrompt),
             ],
           ),
-          content: SizedBox(
-            width: 600,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 800,
+              minWidth: Responsive.isMobile(context) ? 0 : 500,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -618,8 +622,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
             ],
           ),
-          content: SizedBox(
-            width: 600,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 800,
+              minWidth: Responsive.isMobile(context) ? 0 : 500,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

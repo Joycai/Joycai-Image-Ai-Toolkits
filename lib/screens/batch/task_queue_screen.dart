@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
@@ -32,14 +33,19 @@ class TaskQueueScreen extends StatelessWidget {
       ),
       body: tasks.isEmpty
           ? _buildEmptyState(colorScheme, l10n)
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: tasks.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final task = tasks[tasks.length - 1 - index]; // Show newest first
-                return _TaskTile(task: task);
-              },
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: tasks.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final task = tasks[tasks.length - 1 - index]; // Show newest first
+                    return _TaskTile(task: task);
+                  },
+                ),
+              ),
             ),
     );
   }
@@ -78,6 +84,7 @@ class _TaskTileState extends State<_TaskTile> {
     final appState = Provider.of<AppState>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
     final task = widget.task;
+    final isMobile = Responsive.isMobile(context);
 
     return Card(
       elevation: 0,
@@ -93,51 +100,77 @@ class _TaskTileState extends State<_TaskTile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  _buildStatusBadge(task, colorScheme),
-                  const SizedBox(width: 12),
-                  if (task.channelTag != null) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.5)),
-                      ),
-                      child: Text(
-                        task.channelTag!,
-                        style: TextStyle(
-                          fontSize: 10, 
-                          color: Color(task.channelColor ?? 0xFF607D8B),
-                          fontWeight: FontWeight.bold,
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _buildStatusBadge(task, colorScheme),
+                        const Spacer(),
+                        if (task.status == TaskStatus.pending)
+                          IconButton(
+                            icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                            tooltip: l10n.cancelTask,
+                            onPressed: () => appState.taskQueue.cancelTask(task.id),
+                          ),
+                        if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            tooltip: l10n.removeFromList,
+                            onPressed: () => appState.taskQueue.removeTask(task.id),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (task.channelTag != null) ...[
+                          _buildChannelBadge(task),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            l10n.taskId(task.id.substring(0, 8)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                          ),
                         ),
+                        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
+                      ],
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    _buildStatusBadge(task, colorScheme),
+                    const SizedBox(width: 12),
+                    if (task.channelTag != null) ...[
+                      _buildChannelBadge(task),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        l10n.taskId(task.id.substring(0, 8)),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
                       ),
                     ),
+                    Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
                     const SizedBox(width: 8),
+                    if (task.status == TaskStatus.pending)
+                      IconButton(
+                        icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                        tooltip: l10n.cancelTask,
+                        onPressed: () => appState.taskQueue.cancelTask(task.id),
+                      ),
+                    if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: l10n.removeFromList,
+                        onPressed: () => appState.taskQueue.removeTask(task.id),
+                      ),
                   ],
-                  Expanded(
-                    child: Text(
-                      l10n.taskId(task.id.substring(0, 8)),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
-                    ),
-                  ),
-                  Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  if (task.status == TaskStatus.pending)
-                    IconButton(
-                      icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                      tooltip: l10n.cancelTask,
-                      onPressed: () => appState.taskQueue.cancelTask(task.id),
-                    ),
-                  if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: l10n.removeFromList,
-                      onPressed: () => appState.taskQueue.removeTask(task.id),
-                    ),
-                ],
-              ),
+                ),
               if (task.status == TaskStatus.processing && task.progress != null) ...[
                 const SizedBox(height: 12),
                 ClipRRect(
@@ -154,41 +187,64 @@ class _TaskTileState extends State<_TaskTile> {
               ],
               if (_isExpanded) ...[
                 const Divider(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (task.type == TaskType.imageProcess)
-                            _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
-                          else
-                            _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
-                          _buildInfoRow(
-                            task.type == TaskType.imageProcess ? Icons.image : Icons.link,
-                            task.type == TaskType.imageProcess ? l10n.images : 'URLs',
-                            l10n.filesCount(task.imagePaths.length),
-                          ),
-                          _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
-                        ],
+                if (isMobile)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (task.type == TaskType.imageProcess)
+                        _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
+                      else
+                        _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
+                      _buildInfoRow(
+                        task.type == TaskType.imageProcess ? Icons.image : Icons.link,
+                        task.type == TaskType.imageProcess ? l10n.images : 'URLs',
+                        l10n.filesCount(task.imagePaths.length),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
-                          if (task.type == TaskType.imageProcess)
-                            _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
-                          else
-                            _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
-                          _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
-                        ],
+                      _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
+                      _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
+                      if (task.type == TaskType.imageProcess)
+                        _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
+                      else
+                        _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
+                      _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
+                    ],
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (task.type == TaskType.imageProcess)
+                              _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
+                            else
+                              _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
+                            _buildInfoRow(
+                              task.type == TaskType.imageProcess ? Icons.image : Icons.link,
+                              task.type == TaskType.imageProcess ? l10n.images : 'URLs',
+                              l10n.filesCount(task.imagePaths.length),
+                            ),
+                            _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
+                            if (task.type == TaskType.imageProcess)
+                              _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
+                            else
+                              _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
+                            _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 8),
                 if (task.type == TaskType.imageProcess)
                   _buildInfoRow(
@@ -273,6 +329,25 @@ class _TaskTileState extends State<_TaskTile> {
     );
   }
 
+  Widget _buildChannelBadge(TaskItem task) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        task.channelTag!,
+        style: TextStyle(
+          fontSize: 10, 
+          color: Color(task.channelColor ?? 0xFF607D8B),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatusBadge(TaskItem task, ColorScheme colorScheme) {
     Color color;
     IconData icon;
@@ -303,7 +378,6 @@ class _TaskTileState extends State<_TaskTile> {
     }
 
     if (task.type == TaskType.imageDownload) {
-      // Use Teal/Cyan theme for download tasks as per plan
       color = (status == TaskStatus.completed) ? Colors.teal : (status == TaskStatus.processing ? Colors.cyan : color);
       if (status == TaskStatus.processing || status == TaskStatus.completed) {
         icon = (status == TaskStatus.completed) ? Icons.cloud_done : Icons.cloud_download;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
@@ -32,11 +33,16 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            _UsageView(),
-            FeeGroupManager(mode: FeeGroupManagerMode.section),
-          ],
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: TabBarView(
+              children: [
+                const _UsageView(),
+                const FeeGroupManager(mode: FeeGroupManagerMode.section),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -112,6 +118,7 @@ class _UsageViewState extends State<_UsageView> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
+    final isMobile = Responsive.isMobile(context);
 
     // Calculate aggregated stats
     final Map<int, double> groupCosts = {};
@@ -140,7 +147,6 @@ class _UsageViewState extends State<_UsageView> {
       totalOutput += output;
       totalCost += cost;
 
-      // Find Fee Group ID for this usage record
       final modelPk = row['model_pk'] as int?;
       int? groupId;
       if (modelPk != null) {
@@ -160,16 +166,24 @@ class _UsageViewState extends State<_UsageView> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Text(l10n.rangeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              _buildPresetChip('today', l10n.today),
-              const SizedBox(width: 4),
-              _buildPresetChip('week', l10n.lastWeek),
-              const SizedBox(width: 4),
-              _buildPresetChip('month', l10n.lastMonth),
-              const SizedBox(width: 4),
-              _buildPresetChip('year', l10n.thisYear),
-              const Spacer(),
+              if (!isMobile) Text(l10n.rangeLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+              if (!isMobile) const SizedBox(width: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildPresetChip('today', l10n.today),
+                      const SizedBox(width: 4),
+                      _buildPresetChip('week', l10n.lastWeek),
+                      const SizedBox(width: 4),
+                      _buildPresetChip('month', l10n.lastMonth),
+                      const SizedBox(width: 4),
+                      _buildPresetChip('year', l10n.thisYear),
+                    ],
+                  ),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.delete_sweep_outlined),
                 onPressed: _confirmClearAll,
@@ -186,15 +200,29 @@ class _UsageViewState extends State<_UsageView> {
         // Summary Cards
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              _buildStatCard(l10n.inputTokens, totalInput.toString(), Colors.blue),
-              const SizedBox(width: 16),
-              _buildStatCard(l10n.outputTokens, totalOutput.toString(), Colors.green),
-              const SizedBox(width: 16),
-              _buildStatCard(l10n.estimatedCost, '\$${totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
-            ],
-          ),
+          child: isMobile
+            ? Column(
+                children: [
+                  Row(
+                    children: [
+                      _buildStatCard(l10n.inputTokens, totalInput.toString(), Colors.blue),
+                      const SizedBox(width: 8),
+                      _buildStatCard(l10n.outputTokens, totalOutput.toString(), Colors.green),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildStatCard(l10n.estimatedCost, '\$${totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
+                ],
+              )
+            : Row(
+                children: [
+                  _buildStatCard(l10n.inputTokens, totalInput.toString(), Colors.blue),
+                  const SizedBox(width: 16),
+                  _buildStatCard(l10n.outputTokens, totalOutput.toString(), Colors.green),
+                  const SizedBox(width: 16),
+                  _buildStatCard(l10n.estimatedCost, '\$${totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
+                ],
+              ),
         ),
 
         const SizedBox(height: 16),
@@ -248,28 +276,29 @@ class _UsageViewState extends State<_UsageView> {
   }
 
   Widget _buildPresetChip(String id, String label) {
-    final isSelected = false; // Simplified
-    return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      selected: isSelected,
-      onSelected: (_) => _updateRange(id),
+    return ActionChip(
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      onPressed: () => _updateRange(id),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
     );
   }
 
   Widget _buildStatCard(String label, String value, Color color, {bool isBold = false}) {
     return Expanded(
       child: Card(
+        margin: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
               const SizedBox(height: 4),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
                   color: color,
                 ),
@@ -296,11 +325,11 @@ class _UsageViewState extends State<_UsageView> {
             dense: true,
             title: Row(
               children: [
-                Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                const Spacer(),
+                Expanded(child: Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
                 Text(
                   DateFormat('MM-dd HH:mm').format(time),
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
             ),
@@ -309,17 +338,17 @@ class _UsageViewState extends State<_UsageView> {
               child: Row(
                 children: [
                   if (billingMode == 'token') ...[
-                    const Icon(Icons.input, size: 12, color: Colors.blue),
-                    const SizedBox(width: 4),
-                    Text('${row['input_tokens']}'),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.output, size: 12, color: Colors.green),
-                    const SizedBox(width: 4),
-                    Text('${row['output_tokens']}'),
+                    const Icon(Icons.input, size: 10, color: Colors.blue),
+                    const SizedBox(width: 2),
+                    Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.output, size: 10, color: Colors.green),
+                    const SizedBox(width: 2),
+                    Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
                   ] else ...[
-                    const Icon(Icons.repeat, size: 12, color: Colors.purple),
-                    const SizedBox(width: 4),
-                    Text('${row['request_count']} ${l10n.requests}'),
+                    const Icon(Icons.repeat, size: 10, color: Colors.purple),
+                    const SizedBox(width: 2),
+                    Text('${row['request_count']} ${l10n.requests}', style: const TextStyle(fontSize: 11)),
                   ],
                   const Spacer(),
                   _buildCostBadge(row),
@@ -350,14 +379,14 @@ class _UsageViewState extends State<_UsageView> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         '\$${cost.toStringAsFixed(5)}',
-        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 11),
+        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 10),
       ),
     );
   }

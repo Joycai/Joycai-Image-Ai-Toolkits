@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
@@ -32,8 +33,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final browserState = appState.browserState;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 1000;
+    final isNarrow = Responsive.isNarrow(context);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -45,32 +45,37 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             const VerticalDivider(width: 1, thickness: 1),
           ],
           Expanded(
-            child: Column(
-              children: [
-                BrowserToolbar(
-                  state: browserState,
-                  onAiRename: () => _showAiRenameDialog(context),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
+                child: Column(
+                  children: [
+                    BrowserToolbar(
+                      state: browserState,
+                      onAiRename: () => _showAiRenameDialog(context),
+                    ),
+                    BrowserFilterBar(state: browserState),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          browserState.viewMode == BrowserViewMode.grid
+                              ? _buildFileGrid(context, browserState)
+                              : _buildFileListView(context, browserState),
+                          if (isNarrow)
+                            Positioned(
+                              left: 16,
+                              bottom: 16,
+                              child: FloatingActionButton.small(
+                                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                                child: const Icon(Icons.folder_open),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                BrowserFilterBar(state: browserState),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      browserState.viewMode == BrowserViewMode.grid
-                          ? _buildFileGrid(context, browserState)
-                          : _buildFileListView(context, browserState),
-                      if (isNarrow)
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: FloatingActionButton.small(
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                            child: const Icon(Icons.folder_open),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],

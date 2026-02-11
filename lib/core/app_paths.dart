@@ -16,6 +16,11 @@ class AppPaths {
     return supportDir.path;
   }
 
+  static Future<String> getTempDirectory() async {
+    final tempDir = await getTemporaryDirectory();
+    return tempDir.path;
+  }
+
   static Future<bool> isPortableMode() async {
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     return await File(p.join(exeDir, '.portable')).exists();

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import 'core/responsive.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
 import 'screens/browser/file_browser_screen.dart';
@@ -106,6 +107,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkFirstRun();
+
+    // Update window state with current screen size
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final size = MediaQuery.of(context).size;
+        Provider.of<AppState>(context, listen: false).windowState.updateScreenSize(size);
+      }
+    });
   }
 
   void _checkFirstRun() {
@@ -134,8 +143,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 700;
+    final isMobile = Responsive.isMobile(context);
 
     final navDestinations = [
       (
