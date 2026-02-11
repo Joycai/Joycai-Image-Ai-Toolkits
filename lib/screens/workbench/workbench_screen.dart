@@ -22,6 +22,7 @@ class WorkbenchScreen extends StatefulWidget {
 class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TabController _tabController;
+  double _consoleHeight = 200.0;
 
   @override
   void initState() {
@@ -113,33 +114,63 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           ),
           
           if (!isMobile) ...[
-            const Divider(height: 1, thickness: 1),
-            Container(
-              color: colorScheme.surfaceContainerHighest.withAlpha((255 * AppConstants.opacityLow).round()),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: CollapsibleCard(
-                title: l10n.executionLogs,
-                subtitle: appState.isConsoleExpanded ? null : l10n.clickToExpand,
-                isExpanded: appState.isConsoleExpanded,
-                onToggle: () => appState.setConsoleExpanded(!appState.isConsoleExpanded),
-                collapsedIcon: Icons.keyboard_arrow_up,
-                expandedIcon: Icons.keyboard_arrow_down,
-                content: const SizedBox(
-                  height: 200,
-                  child: LogConsoleWidget(),
-                ),
-              ),
-            ),
+            _buildResizableConsole(context, appState, l10n),
           ] else 
-            // Mobile log toggle - maybe a smaller status bar or button
             _buildMobileStatusBar(context, appState, l10n),
         ],
       ),
     );
   }
 
+  Widget _buildResizableConsole(BuildContext context, AppState appState, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Column(
+      children: [
+        // Resize Handle
+        if (appState.isConsoleExpanded)
+          GestureDetector(
+            onVerticalDragUpdate: (details) {
+              setState(() {
+                _consoleHeight = (_consoleHeight - details.delta.dy).clamp(100.0, 600.0);
+              });
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.resizeUpDown,
+              child: Container(
+                height: 4,
+                width: double.infinity,
+                color: colorScheme.outlineVariant.withAlpha(50),
+              ),
+            ),
+          ),
+        
+        const Divider(height: 1, thickness: 1),
+        
+        Container(
+          color: colorScheme.surfaceContainerHighest.withAlpha((255 * AppConstants.opacityLow).round()),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: CollapsibleCard(
+            title: l10n.executionLogs,
+            subtitle: appState.isConsoleExpanded ? null : l10n.clickToExpand,
+            isExpanded: appState.isConsoleExpanded,
+            onToggle: () => appState.setConsoleExpanded(!appState.isConsoleExpanded),
+            collapsedIcon: Icons.keyboard_arrow_up,
+            expandedIcon: Icons.keyboard_arrow_down,
+            content: SizedBox(
+              height: _consoleHeight,
+              child: const LogConsoleWidget(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMobileStatusBar(BuildContext context, AppState appState, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
+    final lastLog = appState.logs.isNotEmpty ? appState.logs.last : null;
+
     return InkWell(
       onTap: () => _showMobileLogs(context),
       child: Container(
@@ -148,9 +179,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         child: Row(
           children: [
             const Icon(Icons.terminal, size: 16),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                lastLog?.message ?? l10n.executionLogs,
+                style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             const SizedBox(width: 8),
-            Text(l10n.executionLogs, style: const TextStyle(fontSize: 12)),
-            const Spacer(),
             const Icon(Icons.keyboard_arrow_up, size: 16),
           ],
         ),
@@ -162,8 +200,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.7,
         minChildSize: 0.4,
         maxChildSize: 0.95,
         expand: false,
@@ -172,13 +212,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             Container(
               height: 4,
               width: 40,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: Colors.white24,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Expanded(child: const LogConsoleWidget()),
+            const Expanded(child: LogConsoleWidget()),
           ],
         ),
       ),

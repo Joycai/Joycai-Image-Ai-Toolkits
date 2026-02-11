@@ -3,13 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/fee_group.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/llm_models.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_section.dart';
-import '../../widgets/fee_group_manager.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
@@ -125,7 +123,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
               ),
               const VerticalDivider(width: 1),
-              // Right Detail: Models & Fees
+              // Right Detail: Models
               Expanded(
                 child: selectedChannel == null 
                   ? Center(child: Text(l10n.noModelsConfigured))
@@ -143,14 +141,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
                                 title: l10n.modelsTab,
                                 children: [
                                   _buildModelsList(selectedChannel, l10n, appState),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
-                              AppSection(
-                                title: l10n.feeManagement,
-                                padding: const EdgeInsets.only(bottom: 64),
-                                children: [
-                                  const FeeGroupManager(mode: FeeGroupManagerMode.section),
                                 ],
                               ),
                             ],
@@ -235,7 +225,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final model = models[index];
-        final feeGroup = appState.allFeeGroups.cast<FeeGroup?>().firstWhere((g) => g?.id == model.feeGroupId, orElse: () => null);
+        final feeGroup = appState.allFeeGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
         return ListTile(
           title: Text(model.modelName),
           subtitle: Row(
@@ -297,13 +287,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     child: _buildChannelGroup(channel, channelModels, l10n, appState),
                   );
                 }),
-              ],
-            ),
-            AppSection(
-              title: l10n.feeManagement,
-              padding: const EdgeInsets.only(bottom: 64),
-              children: [
-                const FeeGroupManager(mode: FeeGroupManagerMode.section),
               ],
             ),
           ],
@@ -386,7 +369,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               itemCount: models.length,
               itemBuilder: (context, index) {
                 final model = models[index];
-                final feeGroup = appState.allFeeGroups.cast<FeeGroup?>().firstWhere((g) => g?.id == model.feeGroupId, orElse: () => null);
+                final feeGroup = appState.allFeeGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
                 return ListTile(
                   title: Text(model.modelName),
                   subtitle: Row(

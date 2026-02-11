@@ -264,6 +264,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearLogs() {
+    logs.clear();
+    notifyListeners();
+  }
+
   Future<void> setConcurrency(int limit) async {
     concurrencyLimit = limit;
     taskQueue.updateConcurrency(limit);
