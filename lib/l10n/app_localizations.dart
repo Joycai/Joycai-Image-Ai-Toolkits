@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Source Gallery'**
   String get sourceGallery;
 
+  /// No description provided for @sourceExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Explorer'**
+  String get sourceExplorer;
+
   /// No description provided for @processResults.
   ///
   /// In en, this message translates to:

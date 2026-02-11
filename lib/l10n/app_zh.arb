@@ -15,6 +15,7 @@
   "noFolders": "未添加文件夹",
   "clickAddFolder": "点击“添加文件夹”开始扫描图像。",
   "sourceGallery": "源图库",
+  "sourceExplorer": "源目录浏览器",
   "processResults": "处理结果",
   "noImagesFound": "未找到图像",
   "noResultsYet": "暂无结果",

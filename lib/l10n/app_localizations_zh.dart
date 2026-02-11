@@ -58,6 +58,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceGallery => '源图库';
 
   @override
+  String get sourceExplorer => '源目录浏览器';
+
+  @override
   String get processResults => '处理结果';
 
   @override

@@ -59,6 +59,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceGallery => 'Source Gallery';
 
   @override
+  String get sourceExplorer => 'Source Explorer';
+
+  @override
   String get processResults => 'Process Results';
 
   @override

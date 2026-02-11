@@ -16,30 +16,21 @@ import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../../widgets/dialogs/mask_editor_dialog.dart';
-import 'widgets/gallery_toolbar.dart';
 
 class GalleryWidget extends StatefulWidget {
-  const GalleryWidget({super.key});
+  final TabController tabController;
+
+  const GalleryWidget({
+    super.key,
+    required this.tabController,
+  });
 
   @override
   State<GalleryWidget> createState() => _GalleryWidgetState();
 }
 
-class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProviderStateMixin {
+class _GalleryWidgetState extends State<GalleryWidget> {
   bool _isDragging = false;
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,73 +48,19 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
         if (newFiles.isNotEmpty) {
           appState.galleryState.addDroppedFiles(newFiles);
           // Switch to the 3rd tab (Temporary Workspace) automatically
-          _tabController.animateTo(2);
+          widget.tabController.animateTo(2);
         }
       },
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          Column(
+          TabBarView(
+            controller: widget.tabController,
             children: [
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.sourceGallery),
-                        if (appState.galleryImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.galleryImages.length),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.processResults),
-                        if (appState.processedImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.processedImages.length, isResult: true),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.auto_awesome_motion_outlined, size: 16),
-                        const SizedBox(width: 8),
-                        Text(l10n.tempWorkspace),
-                        if (appState.droppedImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.droppedImages.length, isTemp: true),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              GalleryToolbar(tabController: _tabController),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
-                    _buildImageGrid(context, appState.processedImages, appState, isResult: true),
-                    _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
-                  ],
-                ),
-              ),
+              _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
+              _buildImageGrid(context, appState.processedImages, appState, isResult: true),
+              _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
             ],
           ),
           if (_isDragging)
@@ -148,32 +85,6 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBadge(BuildContext context, int count, {bool isResult = false, bool isTemp = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    Color bgColor = colorScheme.primaryContainer;
-    Color textColor = colorScheme.onPrimaryContainer;
-
-    if (isResult) {
-      bgColor = colorScheme.secondaryContainer;
-      textColor = colorScheme.onSecondaryContainer;
-    } else if (isTemp) {
-      bgColor = Colors.teal.withAlpha(40);
-      textColor = Colors.teal;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        '$count',
-        style: TextStyle(fontSize: 10, color: textColor, fontWeight: FontWeight.bold),
       ),
     );
   }
