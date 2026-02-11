@@ -111,7 +111,15 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                     child: TabBar(
                       controller: _tabController,
                       isScrollable: true,
-                      tabs: [
+                      tabAlignment: TabAlignment.start,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      tabs: !isNarrow ? [
+                        Tab(child: Row(children: [const Icon(Icons.image_search, size: 18), const SizedBox(width: 8), Text(l10n.sourceGallery)])),
+                        Tab(child: Row(children: [const Icon(Icons.auto_awesome, size: 18), const SizedBox(width: 8), Text(l10n.processResults)])),
+                        Tab(child: Row(children: [const Icon(Icons.workspaces, size: 18), const SizedBox(width: 8), Text(l10n.tempWorkspace)])),
+                        Tab(child: Row(children: [const Icon(Icons.visibility, size: 18), const SizedBox(width: 8), Text(l10n.preview)])),
+                        Tab(child: Row(children: [const Icon(Icons.compare, size: 18), const SizedBox(width: 8), Text(l10n.comparator)])),
+                      ] : [
                         Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
                         Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
                         Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),

@@ -67,18 +67,45 @@ void showFileContextMenu({
             });
           },
         ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.compare, size: 18),
-            title: Text(l10n.sendToComparator),
-            dense: true,
+        if (!windowState.isComparatorOpen)
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18),
+              title: Text(l10n.sendToComparator),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path);
+              appState.navigateToScreen(0);
+              appState.setWorkbenchTab(4);
+            },
+          )
+        else ...[
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+              title: Text(l10n.sendToComparatorRaw),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path, isAfter: false);
+              appState.navigateToScreen(0);
+              appState.setWorkbenchTab(4);
+            },
           ),
-          onTap: () {
-            windowState.sendToComparator(file.path);
-            appState.navigateToScreen(0);
-            appState.setWorkbenchTab(4);
-          },
-        ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+              title: Text(l10n.sendToComparatorAfter),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path, isAfter: true);
+              appState.navigateToScreen(0);
+              appState.setWorkbenchTab(4);
+            },
+          ),
+        ],
       ],
       PopupMenuItem(
         child: ListTile(
