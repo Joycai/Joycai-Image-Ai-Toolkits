@@ -88,7 +88,12 @@ class AppState extends ChangeNotifier {
   int retryCount = 0;
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
+  bool isSidebarExpanded = true;
   bool enableApiDebug = false;
+
+  // Navigation State
+  int activeScreenIndex = 0;
+  int workbenchTabIndex = 0;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -193,6 +198,7 @@ class AppState extends ChangeNotifier {
 
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
+    isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
 
     // Load theme mode
@@ -305,6 +311,22 @@ class AppState extends ChangeNotifier {
   Future<void> setConsoleExpanded(bool value) async {
     isConsoleExpanded = value;
     await _db.saveSetting('is_console_expanded', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setSidebarExpanded(bool value) async {
+    isSidebarExpanded = value;
+    await _db.saveSetting('is_sidebar_expanded', value.toString());
+    notifyListeners();
+  }
+  
+  void navigateToScreen(int index) {
+    activeScreenIndex = index;
+    notifyListeners();
+  }
+
+  void setWorkbenchTab(int index) {
+    workbenchTabIndex = index;
     notifyListeners();
   }
   

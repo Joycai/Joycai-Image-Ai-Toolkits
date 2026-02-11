@@ -445,6 +445,7 @@
   "cookieHistory": "Cookie 历史",
   "noCookieHistory": "未保存 Cookie 历史",
   "openInPreview": "在预览窗口打开",
+  "comparator": "对比器",
   "openWithSystemDefault": "使用系统默认程序打开",
   "drawMask": "绘制蒙版",
   "maskEditor": "蒙版编辑器",

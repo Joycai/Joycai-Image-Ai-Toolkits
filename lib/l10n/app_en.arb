@@ -445,6 +445,7 @@
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
   "openInPreview": "Open in Preview",
+  "comparator": "Comparator",
   "openWithSystemDefault": "Open with System Default",
   "drawMask": "Draw Mask",
   "maskEditor": "Mask Editor",

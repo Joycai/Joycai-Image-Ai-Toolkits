@@ -27,7 +27,27 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
+    
+    // Sync with AppState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppState>(context, listen: false);
+      if (appState.workbenchTabIndex != _tabController.index) {
+        _tabController.animateTo(appState.workbenchTabIndex);
+      }
+      
+      _tabController.addListener(() {
+        if (!_tabController.indexIsChanging) {
+          appState.setWorkbenchTab(_tabController.index);
+        }
+      });
+      
+      appState.addListener(() {
+        if (mounted && appState.workbenchTabIndex != _tabController.index) {
+          _tabController.animateTo(appState.workbenchTabIndex);
+        }
+      });
+    });
   }
 
   @override
@@ -64,9 +84,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           controller: _tabController,
           isScrollable: true,
           tabs: [
-            Tab(text: l10n.sourceGallery),
-            Tab(text: l10n.processResults),
-            Tab(text: l10n.tempWorkspace),
+            Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
+            Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
+            Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
+            Tab(text: l10n.preview, icon: const Icon(Icons.visibility)),
+            Tab(text: l10n.comparator, icon: const Icon(Icons.compare)),
           ],
         ),
       ) : null,
@@ -77,13 +99,27 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           if (!isNarrow)
             Container(
               color: colorScheme.surface,
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabs: [
-                  Tab(text: l10n.sourceGallery),
-                  Tab(text: l10n.processResults),
-                  Tab(text: l10n.tempWorkspace),
+              child: Row(
+                children: [
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
+                    onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
+                    tooltip: appState.isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar",
+                  ),
+                  Expanded(
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabs: [
+                        Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
+                        Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
+                        Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
+                        Tab(text: l10n.preview, icon: const Icon(Icons.visibility)),
+                        Tab(text: l10n.comparator, icon: const Icon(Icons.compare)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -94,7 +130,19 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             child: Row(
               children: [
                 if (!isNarrow) ...[
-                  const SizedBox(width: 280, child: SourceExplorerWidget()),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    width: appState.isSidebarExpanded ? 280 : 0,
+                    child: const ClipRect(
+                      child: OverflowBox(
+                        minWidth: 280,
+                        maxWidth: 280,
+                        alignment: Alignment.topLeft,
+                        child: SourceExplorerWidget(),
+                      ),
+                    ),
+                  ),
                   const VerticalDivider(width: 1, thickness: 1),
                 ],
                 Expanded(

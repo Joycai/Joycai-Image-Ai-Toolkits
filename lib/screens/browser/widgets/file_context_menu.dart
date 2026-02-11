@@ -45,7 +45,9 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () {
-            windowState.openFloatingPreview(file.path);
+            windowState.openPreview(file.path);
+            appState.navigateToScreen(0); // Workbench
+            appState.setWorkbenchTab(3); // Preview
           },
         ),
         PopupMenuItem(
@@ -73,6 +75,8 @@ void showFileContextMenu({
           ),
           onTap: () {
             windowState.sendToComparator(file.path);
+            appState.navigateToScreen(0);
+            appState.setWorkbenchTab(4);
           },
         ),
       ],

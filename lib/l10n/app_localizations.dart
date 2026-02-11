@@ -1880,6 +1880,12 @@ abstract class AppLocalizations {
   /// **'Open in Preview'**
   String get openInPreview;
 
+  /// No description provided for @comparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparator'**
+  String get comparator;
+
   /// No description provided for @openWithSystemDefault.
   ///
   /// In en, this message translates to:

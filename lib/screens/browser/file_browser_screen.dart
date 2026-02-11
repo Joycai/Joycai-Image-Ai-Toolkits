@@ -5,13 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
-import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../workbench/source_explorer.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
@@ -64,7 +62,19 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       body: Row(
         children: [
           if (!isNarrow) ...[
-            const SizedBox(width: 280, child: SourceExplorerWidget(useBrowserState: true)),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: appState.isSidebarExpanded ? 280 : 0,
+              child: const ClipRect(
+                child: OverflowBox(
+                  minWidth: 280,
+                  maxWidth: 280,
+                  alignment: Alignment.topLeft,
+                  child: SourceExplorerWidget(useBrowserState: true),
+                ),
+              ),
+            ),
             const VerticalDivider(width: 1, thickness: 1),
           ],
           Expanded(
@@ -73,10 +83,28 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 constraints: const BoxConstraints(maxWidth: 1600),
                 child: Column(
                   children: [
-                    BrowserToolbar(
-                      state: browserState,
-                      onAiRename: () => _showAiRenameDialog(context),
-                    ),
+                    if (!isNarrow)
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
+                            onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
+                            tooltip: appState.isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar",
+                          ),
+                          Expanded(
+                            child: BrowserToolbar(
+                              state: browserState,
+                              onAiRename: () => _showAiRenameDialog(context),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      BrowserToolbar(
+                        state: browserState,
+                        onAiRename: () => _showAiRenameDialog(context),
+                      ),
+                    
                     BrowserFilterBar(state: browserState),
                     Expanded(
                       child: browserState.viewMode == BrowserViewMode.grid
@@ -114,7 +142,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onTap: () => state.toggleSelection(file),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              _showPreviewDialog(context, state.filteredFiles, index);
+              final appState = Provider.of<AppState>(context, listen: false);
+              appState.windowState.openPreview(file.path);
+              appState.navigateToScreen(0);
+              appState.setWorkbenchTab(3);
             } else {
               _handleOpenFile(file);
             }
@@ -139,7 +170,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              _showPreviewDialog(context, state.filteredFiles, index);
+              final appState = Provider.of<AppState>(context, listen: false);
+              appState.windowState.openPreview(file.path);
+              appState.navigateToScreen(0);
+              appState.setWorkbenchTab(3);
             } else {
               _handleOpenFile(file);
             }
@@ -166,23 +200,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(child: Text(AppLocalizations.of(context)!.noFilesFound));
-  }
-
-  void _showPreviewDialog(BuildContext context, List<BrowserFile> allFiles, int initialIndex) {
-    // Filter only images for the multi-image preview
-    final images = allFiles.where((f) => f.category == FileCategory.image).toList();
-    final currentFile = allFiles[initialIndex];
-    final imageIndex = images.indexOf(currentFile);
-
-    if (imageIndex == -1) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => ImagePreviewDialog(
-        images: images.map((f) => AppFile(path: f.path, name: f.name)).toList(),
-        initialIndex: imageIndex,
-      ),
-    );
   }
 
   void _showAiRenameDialog(BuildContext context) {

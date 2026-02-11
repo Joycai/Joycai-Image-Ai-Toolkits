@@ -949,6 +949,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openInPreview => '在预览窗口打开';
 
   @override
+  String get comparator => '对比器';
+
+  @override
   String get openWithSystemDefault => '使用系统默认程序打开';
 
   @override

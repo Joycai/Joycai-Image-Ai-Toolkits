@@ -961,6 +961,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openInPreview => 'Open in Preview';
 
   @override
+  String get comparator => 'Comparator';
+
+  @override
   String get openWithSystemDefault => 'Open with System Default';
 
   @override

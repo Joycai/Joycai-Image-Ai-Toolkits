@@ -14,8 +14,9 @@ import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
-import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../../widgets/dialogs/mask_editor_dialog.dart';
+import 'tabs/comparator_tab.dart';
+import 'tabs/preview_tab.dart';
 
 class GalleryWidget extends StatefulWidget {
   final TabController tabController;
@@ -61,6 +62,8 @@ class _GalleryWidgetState extends State<GalleryWidget> {
               _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
               _buildImageGrid(context, appState.processedImages, appState, isResult: true),
               _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
+              const PreviewTab(),
+              const ComparatorTab(),
             ],
           ),
           if (_isDragging)
@@ -128,23 +131,14 @@ class _GalleryWidgetState extends State<GalleryWidget> {
           onTap: () {
             // Results open preview on tap, others toggle selection
             if (isResult) {
-              _showPreviewDialog(context, images, index);
+               state.windowState.openPreview(imageFile.path);
+               state.setWorkbenchTab(3);
             } else {
               state.galleryState.toggleImageSelection(imageFile);
             }
           },
         );
       },
-    );
-  }
-
-  void _showPreviewDialog(BuildContext context, List<AppFile> images, int initialIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => ImagePreviewDialog(
-        images: images,
-        initialIndex: initialIndex,
-      ),
     );
   }
 }
@@ -316,7 +310,8 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            windowState.openFloatingPreview(widget.imageFile.path);
+            windowState.openPreview(widget.imageFile.path);
+            appState.setWorkbenchTab(3); // Navigate to Preview Tab
           },
         ),
         PopupMenuItem(
@@ -367,39 +362,39 @@ class _ImageCardState extends State<_ImageCard> {
             appState.galleryState.toggleImageSelection(widget.imageFile);
           },
         ),
-        if (!windowState.isComparatorOpen)
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18),
-              title: Text(l10n.sendToComparator),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path);
-            },
-          )
-        else ...[
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
-              title: Text(l10n.sendToComparatorRaw),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path, isAfter: false);
-            },
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18),
+            title: Text(l10n.sendToComparator),
+            dense: true,
           ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
-              title: Text(l10n.sendToComparatorAfter),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path, isAfter: true);
-            },
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path);
+            appState.setWorkbenchTab(4); // Navigate to Comparator Tab
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+            title: Text(l10n.sendToComparatorRaw),
+            dense: true,
           ),
-        ],
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path, isAfter: false);
+            appState.setWorkbenchTab(4);
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+            title: Text(l10n.sendToComparatorAfter),
+            dense: true,
+          ),
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path, isAfter: true);
+            appState.setWorkbenchTab(4);
+          },
+        ),
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.copy, size: 18),
