@@ -25,7 +25,7 @@ void main() {
           ChangeNotifierProvider.value(value: appState),
           ChangeNotifierProvider.value(value: appState.windowState),
         ],
-        child: const MyApp(version: '1.3.1'),
+        child: const MyApp(version: '1.4.0'),
       ),
     );
 
