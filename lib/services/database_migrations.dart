@@ -37,6 +37,7 @@ class DatabaseMigration {
     if (oldVersion < 19) await _createV19Tables(db);
     if (oldVersion < 20) await _createV20Tables(db);
     if (oldVersion < 21) await _insertPresetTemplates(db);
+    if (oldVersion < 22) await _createV22Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -60,7 +61,22 @@ class DatabaseMigration {
     await _createV18Tables(db);
     await _createV19Tables(db);
     await _createV20Tables(db);
+    await _createV22Tables(db);
     await _insertPresetTemplates(db);
+  }
+
+  static Future<void> _createV22Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE usage_checkpoints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        total_input_tokens INTEGER DEFAULT 0,
+        total_output_tokens INTEGER DEFAULT 0,
+        total_request_count INTEGER DEFAULT 0,
+        total_cost REAL DEFAULT 0.0,
+        metadata TEXT -- JSON for group-based breakdown
+      )
+    ''');
   }
 
   static Future<void> _insertPresetTemplates(Database db) async {

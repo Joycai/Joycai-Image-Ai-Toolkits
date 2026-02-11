@@ -59,7 +59,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 21, // Incremented for Preset Rename Templates
+          version: 22, // Incremented for Usage Checkpoints
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -67,7 +67,7 @@ class DatabaseService {
     } else {
       return await openDatabase(
         dbPath,
-        version: 21,
+        version: 22,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -95,8 +95,11 @@ class DatabaseService {
   // Token Usage Methods
   Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
   Future<void> clearTokenUsage({String? modelId}) => UsageRepository().clearTokenUsage(modelId: modelId);
-  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end}) 
-      => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end);
+  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset}) 
+      => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
+
+  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) => UsageRepository().saveUsageCheckpoint(checkpoint);
+  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() => UsageRepository().getLatestUsageCheckpoint();
 
   // --- MODEL BASED METHODS ---
 

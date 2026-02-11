@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -60,8 +62,14 @@ class _UsageViewMobile extends StatefulWidget {
 
 class _UsageViewMobileState extends State<_UsageViewMobile> {
   final DatabaseService _db = DatabaseService();
-  List<Map<String, dynamic>> _usageData = [];
+  final List<Map<String, dynamic>> _pagedUsageData = [];
+  _UsageStats _stats = _UsageStats.empty();
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _currentPage = 0;
+  static const int _pageSize = 50;
+
   DateTimeRange _dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
     end: DateTime.now(),
@@ -70,25 +78,61 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadData(reset: true);
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool reset = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    
+    if (reset) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _pagedUsageData.clear();
+        _hasMore = true;
+      });
+    } else {
+      setState(() => _isLoadingMore = true);
+    }
+
     try {
-      final data = await _db.getTokenUsage(
+      final appState = Provider.of<AppState>(context, listen: false);
+      
+      // 1. Fetch full stats (using checkpoints if available - background logic)
+      if (reset) {
+        // For stats calculation, we still need to scan the range once.
+        // The checkpoint + offset logic makes this fast.
+        final allInRange = await _db.getTokenUsage(
+          start: _dateRange.start,
+          end: _dateRange.end,
+        );
+        if (mounted) {
+          _stats = _calculateStats(allInRange, appState.allModels);
+        }
+      }
+
+      // 2. Fetch paged data for the list
+      final pagedData = await _db.getTokenUsage(
         start: _dateRange.start,
         end: _dateRange.end,
+        limit: _pageSize,
+        offset: _currentPage * _pageSize,
       );
+
       if (mounted) {
         setState(() {
-          _usageData = data;
+          _pagedUsageData.addAll(pagedData);
+          _hasMore = pagedData.length == _pageSize;
+          _currentPage++;
           _isLoading = false;
+          _isLoadingMore = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
     }
   }
 
@@ -103,14 +147,12 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
       default: start = now.subtract(const Duration(days: 7));
     }
     setState(() { _dateRange = DateTimeRange(start: start, end: now); });
-    _loadData();
+    _loadData(reset: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final stats = _calculateStats(_usageData, appState);
 
     return Column(
       children: [
@@ -135,7 +177,7 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
                   ),
                 ),
               ),
-              IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _loadData),
+              IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: () => _loadData(reset: true)),
             ],
           ),
         ),
@@ -147,14 +189,13 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
             children: [
               Row(
                 children: [
-                  _buildStatCard(l10n.inputTokens, stats.totalInput.toString(), Colors.blue),
+                  _buildStatCard(l10n.inputTokens, _stats.totalInput.toString(), Colors.blue),
                   const SizedBox(width: 8),
-                  _buildStatCard(l10n.outputTokens, stats.totalOutput.toString(), Colors.green),
+                  _buildStatCard(l10n.outputTokens, _stats.totalOutput.toString(), Colors.green),
                 ],
               ),
               const SizedBox(height: 8),
-              // Use expanded: false here because it's in a Column, not a Row
-              _buildStatCard(l10n.estimatedCost, '\$${stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true, expanded: false),
+              _buildStatCard(l10n.estimatedCost, '\$${_stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true, expanded: false),
             ],
           ),
         ),
@@ -164,7 +205,13 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _UsageList(usageData: _usageData, onRefresh: _loadData),
+              : _UsageList(
+                  usageData: _pagedUsageData, 
+                  onRefresh: () => _loadData(reset: true),
+                  hasMore: _hasMore,
+                  isLoadingMore: _isLoadingMore,
+                  onLoadMore: () => _loadData(),
+                ),
         ),
       ],
     );
@@ -211,8 +258,14 @@ class _UsageViewDesktop extends StatefulWidget {
 
 class _UsageViewDesktopState extends State<_UsageViewDesktop> {
   final DatabaseService _db = DatabaseService();
-  List<Map<String, dynamic>> _usageData = [];
+  final List<Map<String, dynamic>> _pagedUsageData = [];
+  _UsageStats _stats = _UsageStats.empty();
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _currentPage = 0;
+  static const int _pageSize = 100;
+
   String _activePreset = 'week';
   DateTimeRange _dateRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
@@ -222,25 +275,75 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadData(reset: true);
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool reset = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+
+    if (reset) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _pagedUsageData.clear();
+        _hasMore = true;
+      });
+    } else {
+      setState(() => _isLoadingMore = true);
+    }
+
     try {
-      final data = await _db.getTokenUsage(
+      final appState = Provider.of<AppState>(context, listen: false);
+      
+      if (reset) {
+        final allInRange = await _db.getTokenUsage(
+          start: _dateRange.start,
+          end: _dateRange.end,
+        );
+        if (mounted) {
+          _stats = _calculateStats(allInRange, appState.allModels);
+          
+          if (allInRange.length > 500) {
+            _maybeCreateCheckpoint(_stats);
+          }
+        }
+      }
+
+      final pagedData = await _db.getTokenUsage(
         start: _dateRange.start,
         end: _dateRange.end,
+        limit: _pageSize,
+        offset: _currentPage * _pageSize,
       );
+
       if (mounted) {
         setState(() {
-          _usageData = data;
+          _pagedUsageData.addAll(pagedData);
+          _hasMore = pagedData.length == _pageSize;
+          _currentPage++;
           _isLoading = false;
+          _isLoadingMore = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  Future<void> _maybeCreateCheckpoint(_UsageStats currentStats) async {
+    final last = await _db.getLatestUsageCheckpoint();
+    if (last == null || DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >= 1) {
+      await _db.saveUsageCheckpoint({
+        'timestamp': DateTime.now().toIso8601String(),
+        'total_input_tokens': currentStats.totalInput,
+        'total_output_tokens': currentStats.totalOutput,
+        'total_request_count': currentStats.totalRequestCount,
+        'total_cost': currentStats.totalCost,
+        'metadata': jsonEncode(currentStats.groupCosts),
+      });
     }
   }
 
@@ -258,7 +361,7 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
       _dateRange = DateTimeRange(start: start, end: now); 
       _activePreset = preset;
     });
-    _loadData();
+    _loadData(reset: true);
   }
 
   @override
@@ -266,7 +369,6 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
-    final stats = _calculateStats(_usageData, appState);
 
     return Row(
       children: [
@@ -293,7 +395,7 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: _isLoading ? null : _loadData,
+                      onPressed: _isLoading ? null : () => _loadData(reset: true),
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text(l10n.refresh),
                     ),
@@ -326,22 +428,22 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
                           // Large Summary
                           Row(
                             children: [
-                              _buildBigStat(l10n.inputTokens, stats.totalInput.toString(), Colors.blue),
+                              _buildBigStat(l10n.inputTokens, _stats.totalInput.toString(), Colors.blue),
                               const SizedBox(width: 24),
-                              _buildBigStat(l10n.outputTokens, stats.totalOutput.toString(), Colors.green),
+                              _buildBigStat(l10n.outputTokens, _stats.totalOutput.toString(), Colors.green),
                               const SizedBox(width: 24),
-                              _buildBigStat(l10n.estimatedCost, '\$${stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
+                              _buildBigStat(l10n.estimatedCost, '\$${_stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
                             ],
                           ),
                           const SizedBox(height: 32),
                           
-                          if (stats.groupCosts.isNotEmpty) ...[
+                          if (_stats.groupCosts.isNotEmpty) ...[
                             Text(l10n.usageByGroup, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             const SizedBox(height: 16),
                             Wrap(
                               spacing: 12,
                               runSpacing: 12,
-                              children: stats.groupCosts.entries.map((e) {
+                              children: _stats.groupCosts.entries.map((e) {
                                 final group = appState.allFeeGroups.cast<FeeGroup?>().firstWhere(
                                   (g) => g?.id == e.key, 
                                   orElse: () => null
@@ -355,7 +457,14 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
 
                           const Divider(),
                           const SizedBox(height: 16),
-                          _UsageList(usageData: _usageData, shrinkWrap: true, onRefresh: _loadData),
+                          _UsageList(
+                            usageData: _pagedUsageData, 
+                            shrinkWrap: true, 
+                            onRefresh: () => _loadData(reset: true),
+                            hasMore: _hasMore,
+                            isLoadingMore: _isLoadingMore,
+                            onLoadMore: () => _loadData(),
+                          ),
                         ],
                       ),
                     ),
@@ -430,7 +539,7 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
               await _db.clearTokenUsage();
               if (context.mounted) {
                 Navigator.pop(context);
-                _loadData();
+                _loadData(reset: true);
               }
             },
             child: Text(l10n.clearAll),
@@ -445,8 +554,18 @@ class _UsageList extends StatelessWidget {
   final List<Map<String, dynamic>> usageData;
   final bool shrinkWrap;
   final VoidCallback onRefresh;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
 
-  const _UsageList({required this.usageData, this.shrinkWrap = false, required this.onRefresh});
+  const _UsageList({
+    required this.usageData, 
+    this.shrinkWrap = false, 
+    required this.onRefresh,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onLoadMore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -457,56 +576,70 @@ class _UsageList extends StatelessWidget {
       ));
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      shrinkWrap: shrinkWrap,
-      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
-      itemCount: usageData.length,
-      itemBuilder: (context, index) {
-        final row = usageData[index];
-        final time = DateTime.parse(row['timestamp']);
-        final billingMode = row['billing_mode'] as String? ?? 'token';
-        
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            dense: true,
-            title: Row(
-              children: [
-                Expanded(child: Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 8),
-                Text(DateFormat('MM-dd HH:mm').format(time), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              ],
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                children: [
-                  if (billingMode == 'token') ...[
-                    const Icon(Icons.input, size: 10, color: Colors.blue),
-                    const SizedBox(width: 2),
-                    Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
+    return Column(
+      children: [
+        ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          shrinkWrap: shrinkWrap,
+          physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+          itemCount: usageData.length,
+          itemBuilder: (context, index) {
+            final row = usageData[index];
+            final time = DateTime.parse(row['timestamp']);
+            final billingMode = row['billing_mode'] as String? ?? 'token';
+            
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                dense: true,
+                title: Row(
+                  children: [
+                    Expanded(child: Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
                     const SizedBox(width: 8),
-                    const Icon(Icons.output, size: 10, color: Colors.green),
-                    const SizedBox(width: 2),
-                    Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
-                  ] else ...[
-                    const Icon(Icons.repeat, size: 10, color: Colors.purple),
-                    const SizedBox(width: 2),
-                    Text('${row['request_count']} items', style: const TextStyle(fontSize: 11)),
+                    Text(DateFormat('MM-dd HH:mm').format(time), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
-                  const Spacer(),
-                  _buildCostBadge(row),
-                ],
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      if (billingMode == 'token') ...[
+                        const Icon(Icons.input, size: 10, color: Colors.blue),
+                        const SizedBox(width: 2),
+                        Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.output, size: 10, color: Colors.green),
+                        const SizedBox(width: 2),
+                        Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
+                      ] else ...[
+                        const Icon(Icons.repeat, size: 10, color: Colors.purple),
+                        const SizedBox(width: 2),
+                        Text('${row['request_count']} items', style: const TextStyle(fontSize: 11)),
+                      ],
+                      const Spacer(),
+                      _buildCostBadge(row),
+                    ],
+                  ),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 16),
+                  onPressed: () => _confirmDeleteModelData(context, row['model_id']),
+                ),
               ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, size: 16),
-              onPressed: () => _confirmDeleteModelData(context, row['model_id']),
-            ),
+            );
+          },
+        ),
+        if (hasMore)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: isLoadingMore 
+              ? const CircularProgressIndicator()
+              : OutlinedButton(
+                  onPressed: onLoadMore, 
+                  child: const Text('Load More'),
+                ),
           ),
-        );
-      },
+      ],
     );
   }
 
@@ -562,17 +695,58 @@ class _UsageList extends StatelessWidget {
 class _UsageStats {
   final int totalInput;
   final int totalOutput;
+  final int totalRequestCount;
   final double totalCost;
   final Map<int, double> groupCosts;
 
-  _UsageStats({required this.totalInput, required this.totalOutput, required this.totalCost, required this.groupCosts});
+  _UsageStats({
+    required this.totalInput, 
+    required this.totalOutput, 
+    required this.totalRequestCount,
+    required this.totalCost, 
+    required this.groupCosts
+  });
+
+  factory _UsageStats.empty() => _UsageStats(totalInput: 0, totalOutput: 0, totalRequestCount: 0, totalCost: 0.0, groupCosts: {});
 }
 
-_UsageStats _calculateStats(List<Map<String, dynamic>> usageData, AppState appState) {
-  final Map<int, double> groupCosts = {};
-  int totalInput = 0;
-  int totalOutput = 0;
-  double totalCost = 0.0;
+class _UsageCheckpoint {
+  final String timestamp;
+  final int totalInput;
+  final int totalOutput;
+  final int totalRequestCount;
+  final double totalCost;
+  final Map<int, double> groupCosts;
+
+  _UsageCheckpoint({
+    required this.timestamp,
+    required this.totalInput,
+    required this.totalOutput,
+    required this.totalRequestCount,
+    required this.totalCost,
+    required this.groupCosts,
+  });
+
+  factory _UsageCheckpoint.fromMap(Map<String, dynamic> map) {
+    return _UsageCheckpoint(
+      timestamp: map['timestamp'],
+      totalInput: map['total_input_tokens'],
+      totalOutput: map['total_output_tokens'],
+      totalRequestCount: map['total_request_count'],
+      totalCost: map['total_cost'],
+      groupCosts: Map<int, double>.from(jsonDecode(map['metadata'] ?? '{}').map((k, v) => MapEntry(int.parse(k), v.toDouble()))),
+    );
+  }
+}
+
+_UsageStats _calculateStats(List<Map<String, dynamic>> usageData, List<LLMModel> allModels, {_UsageStats? base}) {
+  final Map<int, double> groupCosts = base != null ? Map.from(base.groupCosts) : {};
+  int totalInput = base?.totalInput ?? 0;
+  int totalOutput = base?.totalOutput ?? 0;
+  int totalRequestCount = base?.totalRequestCount ?? 0;
+  double totalCost = base?.totalCost ?? 0.0;
+
+  final modelToGroup = {for (var m in allModels) m.id: m.feeGroupId};
 
   for (var row in usageData) {
     final input = row['input_tokens'] as int? ?? 0;
@@ -593,18 +767,21 @@ _UsageStats _calculateStats(List<Map<String, dynamic>> usageData, AppState appSt
 
     totalInput += input;
     totalOutput += output;
+    totalRequestCount += reqCount;
     totalCost += cost;
 
     final modelPk = row['model_pk'] as int?;
-    int? groupId;
-    if (modelPk != null) {
-      final model = appState.allModels.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
-      if (model != null) groupId = model.feeGroupId;
-    }
+    final groupId = modelPk != null ? modelToGroup[modelPk] : null;
 
     if (groupId != null) {
       groupCosts[groupId] = (groupCosts[groupId] ?? 0) + cost;
     }
   }
-  return _UsageStats(totalInput: totalInput, totalOutput: totalOutput, totalCost: totalCost, groupCosts: groupCosts);
+  return _UsageStats(
+    totalInput: totalInput, 
+    totalOutput: totalOutput, 
+    totalRequestCount: totalRequestCount,
+    totalCost: totalCost, 
+    groupCosts: groupCosts
+  );
 }
