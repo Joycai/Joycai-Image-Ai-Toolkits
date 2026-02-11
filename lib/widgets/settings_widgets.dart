@@ -20,17 +20,24 @@ class ThemeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(l10n.appearance, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        SegmentedButton<ThemeMode>(
-          segments: [
-            ButtonSegment(value: ThemeMode.system, label: Text(l10n.themeAuto), icon: const Icon(Icons.brightness_auto)),
-            ButtonSegment(value: ThemeMode.light, label: Text(l10n.themeLight), icon: const Icon(Icons.light_mode)),
-            ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark), icon: const Icon(Icons.dark_mode)),
-          ],
-          selected: {appState.themeMode},
-          onSelectionChanged: (Set<ThemeMode> newSelection) {
-            appState.setThemeMode(newSelection.first);
-          },
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              segments: [
+                ButtonSegment(value: ThemeMode.system, label: Text(l10n.themeAuto), icon: const Icon(Icons.brightness_auto, size: 18)),
+                ButtonSegment(value: ThemeMode.light, label: Text(l10n.themeLight), icon: const Icon(Icons.light_mode, size: 18)),
+                ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark), icon: const Icon(Icons.dark_mode, size: 18)),
+              ],
+              selected: {appState.themeMode},
+              showSelectedIcon: false,
+              onSelectionChanged: (Set<ThemeMode> newSelection) {
+                appState.setThemeMode(newSelection.first);
+              },
+            ),
+          ),
         ),
       ],
     );
@@ -113,18 +120,25 @@ class LanguageSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(l10n.language, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        const SizedBox(height: 8),
-        SegmentedButton<String?>(
-          segments: [
-            ButtonSegment(value: null, label: Text(l10n.themeAuto)),
-            const ButtonSegment(value: 'en', label: Text('English')),
-            const ButtonSegment(value: 'zh', label: Text('中文')),
-          ],
-          selected: {appState.locale?.languageCode},
-          onSelectionChanged: (Set<String?> newSelection) {
-            final code = newSelection.first;
-            appState.setLocale(code == null ? null : Locale(code));
-          },
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String?>(
+              segments: [
+                ButtonSegment(value: null, label: Text(l10n.themeAuto), icon: const Icon(Icons.auto_awesome, size: 18)),
+                const ButtonSegment(value: 'en', label: Text('English'), icon: Icon(Icons.language, size: 18)),
+                const ButtonSegment(value: 'zh', label: Text('中文'), icon: Icon(Icons.translate, size: 18)),
+              ],
+              selected: {appState.locale?.languageCode},
+              showSelectedIcon: false,
+              onSelectionChanged: (Set<String?> newSelection) {
+                final code = newSelection.first;
+                appState.setLocale(code == null ? null : Locale(code));
+              },
+            ),
+          ),
         ),
       ],
     );

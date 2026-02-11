@@ -166,9 +166,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: l10n.appearance,
       children: [
         ThemeSelector(appState: appState, l10n: l10n),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         ThemeColorSelector(appState: appState, l10n: l10n),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         LanguageSelector(appState: appState, l10n: l10n),
       ],
     );
@@ -216,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: l10n.dataManagement,
       padding: const EdgeInsets.only(bottom: 64),
       children: [
-        _buildDataActions(colorScheme, l10n, isMobile),
+        _buildAdaptiveDataActions(colorScheme, l10n, isMobile),
       ],
     );
   }
@@ -401,75 +401,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDataActions(ColorScheme colorScheme, AppLocalizations l10n, bool isMobile) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      alignment: isMobile ? WrapAlignment.center : WrapAlignment.start,
-      children: [
-        _buildActionButton(onPressed: () => _exportSettings(l10n), icon: Icons.download, label: l10n.exportSettings, isMobile: isMobile),
-        _buildActionButton(onPressed: () => _importSettings(l10n), icon: Icons.upload, label: l10n.importSettings, isMobile: isMobile),
-        _buildActionButton(onPressed: _openAppDataDir, icon: Icons.folder_shared, label: l10n.openAppDataDirectory, isMobile: isMobile),
-        _buildActionButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, isMobile: isMobile),
-        _buildActionButton(
-          onPressed: () async {
-            final appState = Provider.of<AppState>(context, listen: false);
-            await appState.clearDownloaderCache();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloader cache cleared.')));
-            }
-          },
-          icon: Icons.delete_sweep_outlined,
-          label: l10n.clearDownloaderCache,
-          isMobile: isMobile,
-        ),
-        _buildActionButton(
-          onPressed: () => _resetSettings(l10n),
-          icon: Icons.refresh,
-          label: l10n.resetAllSettings,
-          isMobile: isMobile,
-          isError: true,
-          colorScheme: colorScheme,
-        ),
-      ],
-    );
-  }
+  Widget _buildAdaptiveDataActions(ColorScheme colorScheme, AppLocalizations l10n, bool isMobile) {
+    final actions = [
+      (onPressed: () => _exportSettings(l10n), icon: Icons.download, label: l10n.exportSettings, color: null),
+      (onPressed: () => _importSettings(l10n), icon: Icons.upload, label: l10n.importSettings, color: null),
+      (onPressed: _openAppDataDir, icon: Icons.folder_shared, label: l10n.openAppDataDirectory, color: null),
+      (onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, color: null),
+      (
+        onPressed: () async {
+          final appState = Provider.of<AppState>(context, listen: false);
+          await appState.clearDownloaderCache();
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloader cache cleared.')));
+        },
+        icon: Icons.delete_sweep_outlined,
+        label: l10n.clearDownloaderCache,
+        color: null
+      ),
+      (onPressed: () => _resetSettings(l10n), icon: Icons.refresh, label: l10n.resetAllSettings, color: colorScheme.error),
+    ];
 
-  Widget _buildActionButton({
-    required VoidCallback onPressed,
-    required IconData icon,
-    required String label,
-    required bool isMobile,
-    bool isError = false,
-    ColorScheme? colorScheme,
-  }) {
-    final style = isError
-        ? ElevatedButton.styleFrom(
-            backgroundColor: colorScheme?.errorContainer,
-            foregroundColor: colorScheme?.error,
-          )
-        : null;
-
-    final child = Row(
-      mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-
-    if (isError) {
-      return SizedBox(
-        width: isMobile ? double.infinity : null,
-        child: ElevatedButton(onPressed: onPressed, style: style, child: child),
+    if (isMobile) {
+      return Column(
+        children: actions.map((a) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildActionBtn(a, true),
+        )).toList(),
       );
     }
 
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 4,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (context, index) => _buildActionBtn(actions[index], false),
+    );
+  }
+
+  Widget _buildActionBtn(dynamic action, bool fullWidth) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool isError = action.color != null;
+
+    final btnContent = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(action.icon, size: 18),
+        const SizedBox(width: 12),
+        Text(action.label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+
     return SizedBox(
-      width: isMobile ? double.infinity : null,
-      child: OutlinedButton(onPressed: onPressed, child: child),
+      width: fullWidth ? double.infinity : null,
+      height: 50,
+      child: OutlinedButton(
+        onPressed: action.onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: action.color,
+          side: isError ? BorderSide(color: colorScheme.error.withAlpha(100)) : null,
+          backgroundColor: isError ? colorScheme.errorContainer.withAlpha(20) : null,
+        ),
+        child: btnContent,
+      ),
     );
   }
 
