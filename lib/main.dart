@@ -22,6 +22,7 @@ import 'services/notification_service.dart';
 import 'state/app_state.dart';
 import 'widgets/floating_comparator.dart';
 import 'widgets/floating_preview.dart';
+import 'widgets/window_dock.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -259,6 +260,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : null,
         ),
+        if (isMobile) 
+          const Padding(
+            padding: EdgeInsets.only(bottom: 80), // Offset above BottomNavigationBar
+            child: WindowDock(),
+          )
+        else
+          const WindowDock(),
         const FloatingPreviewHost(),
         const FloatingComparatorHost(),
       ],

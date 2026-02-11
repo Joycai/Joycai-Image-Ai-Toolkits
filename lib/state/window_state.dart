@@ -8,6 +8,7 @@ class PreviewWindowState {
   Offset position;
   Size size;
   bool isMaximized;
+  bool isMinimized;
   Offset restorePosition;
   Size restoreSize;
 
@@ -17,6 +18,7 @@ class PreviewWindowState {
     this.position = const Offset(100, 100),
     this.size = const Size(400, 300),
     this.isMaximized = false,
+    this.isMinimized = false,
   })  : restorePosition = position,
         restoreSize = size;
 }
@@ -33,6 +35,7 @@ class WindowState extends ChangeNotifier {
   Offset comparatorPosition = const Offset(150, 150);
   Size comparatorSize = const Size(800, 500);
   bool isComparatorMaximized = false;
+  bool isComparatorMinimized = false;
   Offset comparatorRestorePosition = const Offset(150, 150);
   Size comparatorRestoreSize = const Size(800, 500);
 
@@ -48,14 +51,14 @@ class WindowState extends ChangeNotifier {
     for (var preview in floatingPreviews) {
       if (preview.isMaximized) {
         preview.size = size;
-      } else {
+      } else if (!preview.isMinimized) {
         _ensurePreviewInBounds(preview, size);
       }
     }
 
     if (isComparatorMaximized) {
       comparatorSize = size;
-    } else {
+    } else if (!isComparatorMinimized) {
       _ensureComparatorInBounds(size);
     }
 
@@ -127,6 +130,18 @@ class WindowState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleMinimizeFloatingPreview(String id) {
+    final index = floatingPreviews.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      floatingPreviews[index].isMinimized = !floatingPreviews[index].isMinimized;
+      if (!floatingPreviews[index].isMinimized) {
+        // Upon restore, ensure it's in bounds
+        _ensurePreviewInBounds(floatingPreviews[index], _lastScreenSize);
+      }
+      notifyListeners();
+    }
+  }
+
   void bringToFront(String id) {
     final index = floatingPreviews.indexWhere((p) => p.id == id);
     if (index != -1 && index != floatingPreviews.length - 1) {
@@ -182,6 +197,7 @@ class WindowState extends ChangeNotifier {
       isComparatorOpen = true;
       comparatorRawPath = path;
       comparatorAfterPath = null;
+      isComparatorMinimized = false;
       
       final isMobile = _lastScreenSize.width < Responsive.mobileBreakpoint;
       if (isMobile) {
@@ -201,6 +217,14 @@ class WindowState extends ChangeNotifier {
 
   void closeComparator() {
     isComparatorOpen = false;
+    notifyListeners();
+  }
+
+  void toggleMinimizeComparator() {
+    isComparatorMinimized = !isComparatorMinimized;
+    if (!isComparatorMinimized) {
+      _ensureComparatorInBounds(_lastScreenSize);
+    }
     notifyListeners();
   }
 

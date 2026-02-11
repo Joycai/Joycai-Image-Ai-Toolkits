@@ -12,7 +12,7 @@ class FloatingComparatorHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final windowState = Provider.of<WindowState>(context);
-    if (!windowState.isComparatorOpen) return const SizedBox.shrink();
+    if (!windowState.isComparatorOpen || windowState.isComparatorMinimized) return const SizedBox.shrink();
 
     return Stack(
       children: [
@@ -93,6 +93,14 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     ),
                     const VerticalDivider(width: 20, indent: 10, endIndent: 10),
+                    IconButton(
+                      icon: const Icon(Icons.remove, size: 18),
+                      tooltip: 'Minimize',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => windowState.toggleMinimizeComparator(),
+                    ),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: Icon(windowState.isComparatorMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
                       padding: EdgeInsets.zero,

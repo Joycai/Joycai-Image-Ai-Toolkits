@@ -12,8 +12,11 @@ class FloatingPreviewHost extends StatelessWidget {
   Widget build(BuildContext context) {
     final windowState = Provider.of<WindowState>(context);
     
+    // Only show previews that are NOT minimized
+    final visiblePreviews = windowState.floatingPreviews.where((p) => !p.isMinimized).toList();
+
     return Stack(
-      children: windowState.floatingPreviews.map((preview) {
+      children: visiblePreviews.map((preview) {
         return Positioned(
           left: preview.position.dx,
           top: preview.position.dy,
@@ -77,6 +80,14 @@ class FloatingPreviewWindow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.remove, size: 18),
+                        tooltip: 'Minimize',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => windowState.toggleMinimizeFloatingPreview(preview.id),
+                      ),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: Icon(preview.isMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
                         padding: EdgeInsets.zero,
