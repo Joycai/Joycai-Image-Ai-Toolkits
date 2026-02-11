@@ -12,17 +12,9 @@ class FloatingComparatorHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final windowState = Provider.of<WindowState>(context);
-    if (!windowState.isComparatorOpen || windowState.isComparatorMinimized) return const SizedBox.shrink();
+    if (!windowState.isComparatorOpen) return const SizedBox.shrink();
 
-    return Stack(
-      children: [
-        Positioned(
-          left: windowState.comparatorPosition.dx,
-          top: windowState.comparatorPosition.dy,
-          child: const FloatingComparatorWindow(),
-        ),
-      ],
-    );
+    return const FloatingComparatorWindow();
   }
 }
 
@@ -34,6 +26,70 @@ class FloatingComparatorWindow extends StatefulWidget {
 }
 
 class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
+  bool _isInteracting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WindowState>(
+      builder: (context, windowState, child) {
+        final screenSize = MediaQuery.of(context).size;
+
+        // Position calculation
+        final double targetX = windowState.isComparatorMinimized ? screenSize.width / 2 - (windowState.comparatorSize.width / 2) : windowState.comparatorPosition.dx;
+        final double targetY = windowState.isComparatorMinimized ? screenSize.height + 200 : windowState.comparatorPosition.dy;
+
+        final duration = _isInteracting ? Duration.zero : const Duration(milliseconds: 400);
+
+        return AnimatedPositioned(
+          duration: duration,
+          curve: Curves.fastOutSlowIn,
+          left: targetX,
+          top: targetY,
+          child: IgnorePointer(
+            ignoring: windowState.isComparatorMinimized,
+            child: AnimatedScale(
+              duration: duration,
+              scale: windowState.isComparatorMinimized ? 0.1 : 1.0,
+              curve: Curves.fastOutSlowIn,
+              child: AnimatedOpacity(
+                duration: duration,
+                opacity: windowState.isComparatorMinimized ? 0.0 : 1.0,
+                child: RepaintBoundary(
+                  child: child!,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      child: Material(
+        elevation: 12,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        color: Colors.black,
+        child: _ComparatorWindowContent(
+          onInteractionStart: () => setState(() => _isInteracting = true),
+          onInteractionEnd: () => setState(() => _isInteracting = false),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComparatorWindowContent extends StatefulWidget {
+  final VoidCallback onInteractionStart;
+  final VoidCallback onInteractionEnd;
+
+  const _ComparatorWindowContent({
+    required this.onInteractionStart,
+    required this.onInteractionEnd,
+  });
+
+  @override
+  State<_ComparatorWindowContent> createState() => _ComparatorWindowContentState();
+}
+
+class _ComparatorWindowContentState extends State<_ComparatorWindowContent> {
   final TransformationController _sharedController = TransformationController();
   double _scanRatio = 0.5;
 
@@ -45,120 +101,121 @@ class _FloatingComparatorWindowState extends State<FloatingComparatorWindow> {
 
   @override
   Widget build(BuildContext context) {
-    final windowState = Provider.of<WindowState>(context);
+    final windowState = Provider.of<WindowState>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Material(
-      elevation: 12,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
-      color: Colors.black,
-      child: Container(
-        width: windowState.comparatorSize.width,
-        height: windowState.comparatorSize.height,
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.secondary.withAlpha(150), width: 2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            // Title Bar
-            GestureDetector(
-              onPanUpdate: windowState.isComparatorMaximized ? null : (details) {
-                windowState.updateComparatorPosition(windowState.comparatorPosition + details.delta);
-              },
-              onDoubleTap: () {
-                final size = MediaQuery.of(context).size;
-                windowState.toggleMaximizeComparator(size);
-              },
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                color: colorScheme.surfaceContainerHigh,
-                child: Row(
-                  children: [
-                    Icon(Icons.compare, size: 18, color: colorScheme.secondary),
-                    const SizedBox(width: 8),
-                    const Text('Image Comparator', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    // Mode Toggle
-                    TextButton.icon(
-                      onPressed: windowState.toggleComparatorMode,
-                      icon: Icon(windowState.isComparatorSyncMode ? Icons.view_column : Icons.view_stream, size: 16),
-                      label: Text(
-                        windowState.isComparatorSyncMode ? l10n.compareModeSync : l10n.compareModeSwap,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    ),
-                    const VerticalDivider(width: 20, indent: 10, endIndent: 10),
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18),
-                      tooltip: 'Minimize',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => windowState.toggleMinimizeComparator(),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(windowState.isComparatorMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        final size = MediaQuery.of(context).size;
-                        windowState.toggleMaximizeComparator(size);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: windowState.closeComparator,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Content
-            Expanded(
-              child: windowState.isComparatorSyncMode ? _buildSyncView(windowState) : _buildSwapView(windowState),
-            ),
-            // Footer Info
-            Container(
-              height: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              color: Colors.black54,
+    return Container(
+      width: windowState.comparatorSize.width,
+      height: windowState.comparatorSize.height,
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.secondary.withAlpha(150), width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          // Title Bar
+          GestureDetector(
+            onPanStart: (_) => widget.onInteractionStart(),
+            onPanUpdate: windowState.isComparatorMaximized ? null : (details) {
+              windowState.updateComparatorPosition(windowState.comparatorPosition + details.delta);
+            },
+            onPanEnd: (_) => widget.onInteractionEnd(),
+            onDoubleTap: () {
+              final size = MediaQuery.of(context).size;
+              windowState.toggleMaximizeComparator(size);
+            },
+            child: Container(
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              color: colorScheme.surfaceContainerHigh,
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 12, color: Colors.white54),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Raw: ${windowState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${windowState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
-                      style: const TextStyle(color: Colors.white54, fontSize: 10),
-                      overflow: TextOverflow.ellipsis,
+                  Icon(Icons.compare, size: 18, color: colorScheme.secondary),
+                  const SizedBox(width: 8),
+                  const Text('Image Comparator', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  // Mode Toggle
+                  TextButton.icon(
+                    onPressed: () {
+                      windowState.toggleComparatorMode();
+                      setState(() {});
+                    },
+                    icon: Icon(windowState.isComparatorSyncMode ? Icons.view_column : Icons.view_stream, size: 16),
+                    label: Text(
+                      windowState.isComparatorSyncMode ? l10n.compareModeSync : l10n.compareModeSwap,
+                      style: const TextStyle(fontSize: 11),
                     ),
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
-                  // Resize Handle
-                  if (!windowState.isComparatorMaximized)
-                    GestureDetector(
-                      onPanUpdate: (details) {
-                        final newWidth = (windowState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
-                        final newHeight = (windowState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
-                        windowState.updateComparatorSize(Size(newWidth, newHeight));
-                      },
-                      child: const MouseRegion(
-                        cursor: SystemMouseCursors.resizeDownRight,
-                        child: Icon(Icons.south_east, size: 14, color: Colors.white54),
-                      ),
-                    ),
+                  const VerticalDivider(width: 20, indent: 10, endIndent: 10),
+                  IconButton(
+                    icon: const Icon(Icons.remove, size: 18),
+                    tooltip: 'Minimize',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => windowState.toggleMinimizeComparator(),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(windowState.isComparatorMaximized ? Icons.fullscreen_exit : Icons.fullscreen, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      final size = MediaQuery.of(context).size;
+                      windowState.toggleMaximizeComparator(size);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: windowState.closeComparator,
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          // Content
+          Expanded(
+            child: windowState.isComparatorSyncMode ? _buildSyncView(windowState) : _buildSwapView(windowState),
+          ),
+          // Footer Info
+          Container(
+            height: 24,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            color: Colors.black54,
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 12, color: Colors.white54),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Raw: ${windowState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${windowState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
+                    style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                // Resize Handle
+                if (!windowState.isComparatorMaximized)
+                  GestureDetector(
+                    onPanStart: (_) => widget.onInteractionStart(),
+                    onPanUpdate: (details) {
+                      final newWidth = (windowState.comparatorSize.width + details.delta.dx).clamp(400.0, 1600.0);
+                      final newHeight = (windowState.comparatorSize.height + details.delta.dy).clamp(300.0, 1200.0);
+                      windowState.updateComparatorSize(Size(newWidth, newHeight));
+                    },
+                    onPanEnd: (_) => widget.onInteractionEnd(),
+                    child: const MouseRegion(
+                      cursor: SystemMouseCursors.resizeDownRight,
+                      child: Icon(Icons.south_east, size: 14, color: Colors.white54),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
