@@ -45,7 +45,7 @@ class TaskQueueScreen extends StatelessWidget {
               PopupMenuItem(value: 'clear_completed', child: Text(l10n.clearCompleted)),
               PopupMenuItem(value: 'cancel_pending', child: Text(l10n.cancelAllPending)),
               const PopupMenuDivider(),
-              PopupMenuItem(value: 'clear_all', child: Text(l10n.clearAll), enabled: tasks.isNotEmpty),
+              PopupMenuItem(value: 'clear_all', enabled: tasks.isNotEmpty, child: Text(l10n.clearAll)),
             ],
           ),
         ],

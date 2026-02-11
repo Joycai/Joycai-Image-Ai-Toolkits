@@ -129,10 +129,12 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() {
-        _isLoading = false;
-        _isLoadingMore = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -140,13 +142,24 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
     final now = DateTime.now();
     DateTime start;
     switch (preset) {
-      case 'today': start = DateTime(now.year, now.month, now.day); break;
-      case 'week': start = now.subtract(const Duration(days: 7)); break;
-      case 'month': start = DateTime(now.year, now.month - 1, now.day); break;
-      case 'year': start = DateTime(now.year - 1, now.month, now.day); break;
-      default: start = now.subtract(const Duration(days: 7));
+      case 'today': 
+        start = DateTime(now.year, now.month, now.day); 
+        break;
+      case 'week': 
+        start = now.subtract(const Duration(days: 7)); 
+        break;
+      case 'month': 
+        start = DateTime(now.year, now.month - 1, now.day); 
+        break;
+      case 'year': 
+        start = DateTime(now.year - 1, now.month, now.day); 
+        break;
+      default: 
+        start = now.subtract(const Duration(days: 7));
     }
-    setState(() { _dateRange = DateTimeRange(start: start, end: now); });
+    setState(() { 
+      _dateRange = DateTimeRange(start: start, end: now); 
+    });
     _loadData(reset: true);
   }
 
@@ -195,6 +208,7 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
                 ],
               ),
               const SizedBox(height: 8),
+              // Use expanded: false here because it's in a Column, not a Row
               _buildStatCard(l10n.estimatedCost, '\$${_stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true, expanded: false),
             ],
           ),
@@ -326,10 +340,12 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() {
-        _isLoading = false;
-        _isLoadingMore = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+      }
     }
   }
 
@@ -351,11 +367,20 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
     final now = DateTime.now();
     DateTime start;
     switch (preset) {
-      case 'today': start = DateTime(now.year, now.month, now.day); break;
-      case 'week': start = now.subtract(const Duration(days: 7)); break;
-      case 'month': start = DateTime(now.year, now.month - 1, now.day); break;
-      case 'year': start = DateTime(now.year - 1, now.month, now.day); break;
-      default: start = now.subtract(const Duration(days: 7));
+      case 'today': 
+        start = DateTime(now.year, now.month, now.day); 
+        break;
+      case 'week': 
+        start = now.subtract(const Duration(days: 7)); 
+        break;
+      case 'month': 
+        start = DateTime(now.year, now.month - 1, now.day); 
+        break;
+      case 'year': 
+        start = DateTime(now.year - 1, now.month, now.day); 
+        break;
+      default: 
+        start = now.subtract(const Duration(days: 7));
     }
     setState(() { 
       _dateRange = DateTimeRange(start: start, end: now); 
@@ -576,71 +601,76 @@ class _UsageList extends StatelessWidget {
       ));
     }
 
-    return Column(
-      children: [
-        ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          shrinkWrap: shrinkWrap,
-          physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
-          itemCount: usageData.length,
-          itemBuilder: (context, index) {
-            final row = usageData[index];
-            final time = DateTime.parse(row['timestamp']);
-            final billingMode = row['billing_mode'] as String? ?? 'token';
-            
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                dense: true,
-                title: Row(
-                  children: [
-                    Expanded(child: Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-                    const SizedBox(width: 8),
-                    Text(DateFormat('MM-dd HH:mm').format(time), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      if (billingMode == 'token') ...[
-                        const Icon(Icons.input, size: 10, color: Colors.blue),
-                        const SizedBox(width: 2),
-                        Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.output, size: 10, color: Colors.green),
-                        const SizedBox(width: 2),
-                        Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
-                      ] else ...[
-                        const Icon(Icons.repeat, size: 10, color: Colors.purple),
-                        const SizedBox(width: 2),
-                        Text('${row['request_count']} items', style: const TextStyle(fontSize: 11)),
-                      ],
-                      const Spacer(),
-                      _buildCostBadge(row),
-                    ],
-                  ),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 16),
-                  onPressed: () => _confirmDeleteModelData(context, row['model_id']),
-                ),
-              ),
-            );
-          },
-        ),
-        if (hasMore)
-          Padding(
+    final list = ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+      itemCount: usageData.length + (hasMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == usageData.length) {
+          return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: isLoadingMore 
-              ? const CircularProgressIndicator()
-              : OutlinedButton(
-                  onPressed: onLoadMore, 
-                  child: const Text('Load More'),
-                ),
+            child: Center(
+              child: isLoadingMore 
+                ? const CircularProgressIndicator()
+                : OutlinedButton(
+                    onPressed: onLoadMore, 
+                    child: const Text('Load More'),
+                  ),
+            ),
+          );
+        }
+
+        final row = usageData[index];
+        final time = DateTime.parse(row['timestamp']);
+        final billingMode = row['billing_mode'] as String? ?? 'token';
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            dense: true,
+            title: Row(
+              children: [
+                Expanded(child: Text(row['model_id'], style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
+                Text(DateFormat('MM-dd HH:mm').format(time), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              ],
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  if (billingMode == 'token') ...[
+                    const Icon(Icons.input, size: 10, color: Colors.blue),
+                    const SizedBox(width: 2),
+                    Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.output, size: 10, color: Colors.green),
+                    const SizedBox(width: 2),
+                    Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
+                  ] else ...[
+                    const Icon(Icons.repeat, size: 10, color: Colors.purple),
+                    const SizedBox(width: 2),
+                    Text('${row['request_count']} items', style: const TextStyle(fontSize: 11)),
+                  ],
+                  const Spacer(),
+                  _buildCostBadge(row),
+                ],
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 16),
+              onPressed: () => _confirmDeleteModelData(context, row['model_id']),
+            ),
           ),
-      ],
+        );
+      },
     );
+
+    if (shrinkWrap) {
+      return list;
+    }
+    return Expanded(child: list);
   }
 
   Widget _buildCostBadge(Map<String, dynamic> row) {
@@ -708,35 +738,6 @@ class _UsageStats {
   });
 
   factory _UsageStats.empty() => _UsageStats(totalInput: 0, totalOutput: 0, totalRequestCount: 0, totalCost: 0.0, groupCosts: {});
-}
-
-class _UsageCheckpoint {
-  final String timestamp;
-  final int totalInput;
-  final int totalOutput;
-  final int totalRequestCount;
-  final double totalCost;
-  final Map<int, double> groupCosts;
-
-  _UsageCheckpoint({
-    required this.timestamp,
-    required this.totalInput,
-    required this.totalOutput,
-    required this.totalRequestCount,
-    required this.totalCost,
-    required this.groupCosts,
-  });
-
-  factory _UsageCheckpoint.fromMap(Map<String, dynamic> map) {
-    return _UsageCheckpoint(
-      timestamp: map['timestamp'],
-      totalInput: map['total_input_tokens'],
-      totalOutput: map['total_output_tokens'],
-      totalRequestCount: map['total_request_count'],
-      totalCost: map['total_cost'],
-      groupCosts: Map<int, double>.from(jsonDecode(map['metadata'] ?? '{}').map((k, v) => MapEntry(int.parse(k), v.toDouble()))),
-    );
-  }
 }
 
 _UsageStats _calculateStats(List<Map<String, dynamic>> usageData, List<LLMModel> allModels, {_UsageStats? base}) {
