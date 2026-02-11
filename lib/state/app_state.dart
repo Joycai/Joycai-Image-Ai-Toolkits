@@ -9,6 +9,8 @@ import '../models/fee_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/log_entry.dart';
+import '../models/prompt.dart';
+import '../models/tag.dart';
 import '../services/database_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
@@ -20,6 +22,9 @@ import 'gallery_state.dart';
 import 'window_state.dart';
 
 class AppState extends ChangeNotifier {
+  static final AppState _instance = AppState._internal();
+  factory AppState() => _instance;
+
   final DatabaseService _db = DatabaseService();
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
@@ -27,7 +32,7 @@ class AppState extends ChangeNotifier {
   final BrowserState browserState = BrowserState();
   final WindowState windowState = WindowState();
 
-  AppState() {
+  AppState._internal() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
@@ -80,11 +85,14 @@ class AppState extends ChangeNotifier {
   bool settingsLoaded = false;
   bool setupCompleted = true; 
   int concurrencyLimit = 2;
+  int retryCount = 0;
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
+  bool enableApiDebug = false;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
+  Color themeSeedColor = Colors.blueGrey;
   
   // Language configuration
   Locale? locale;
@@ -178,13 +186,26 @@ class AppState extends ChangeNotifier {
       taskQueue.updateConcurrency(concurrencyLimit);
     }
 
+    final savedRetry = await _db.getSetting('retry_count');
+    if (savedRetry != null) {
+      retryCount = int.tryParse(savedRetry) ?? 0;
+    }
+
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
+    enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
 
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
     if (savedTheme != null) {
       themeMode = ThemeMode.values.firstWhere((e) => e.name == savedTheme, orElse: () => ThemeMode.system);
+    }
+
+    final savedSeed = await _db.getSetting('theme_seed_color');
+    if (savedSeed != null) {
+      try {
+        themeSeedColor = Color(int.parse(savedSeed));
+      } catch (_) {}
     }
     
     // Load locale
@@ -234,6 +255,17 @@ class AppState extends ChangeNotifier {
       }
     }
     logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
+    
+    // Maintain maximum log size
+    if (logs.length > 1000) {
+      logs.removeRange(0, logs.length - 1000);
+    }
+    
+    notifyListeners();
+  }
+
+  void clearLogs() {
+    logs.clear();
     notifyListeners();
   }
 
@@ -245,9 +277,22 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setRetryCount(int count) async {
+    retryCount = count;
+    await _db.saveSetting('retry_count', count.toString());
+    addLog('Retry count set to $count');
+    notifyListeners();
+  }
+
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
     await _db.saveSetting('theme_mode', mode.name);
+    notifyListeners();
+  }
+
+  Future<void> setThemeSeedColor(Color color) async {
+    themeSeedColor = color;
+    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());
     notifyListeners();
   }
 
@@ -266,6 +311,74 @@ class AppState extends ChangeNotifier {
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    notifyListeners();
+  }
+
+  Future<void> setEnableApiDebug(bool value) async {
+    enableApiDebug = value;
+    await _db.saveSetting('enable_api_debug', value.toString());
+    notifyListeners();
+  }
+
+  // Prompt Tags Methods
+  Future<List<PromptTag>> getPromptTags() => _db.getPromptTags();
+  Future<int> addPromptTag(Map<String, dynamic> tag) async {
+    final id = await _db.addPromptTag(tag);
+    notifyListeners();
+    return id;
+  }
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
+    await _db.updatePromptTag(id, tag);
+    notifyListeners();
+  }
+  Future<void> deletePromptTag(int id) async {
+    await _db.deletePromptTag(id);
+    notifyListeners();
+  }
+  Future<void> updateTagOrder(List<int> ids) => _db.updateTagOrder(ids);
+
+  // Prompts Methods
+  Future<List<Prompt>> getPrompts() => _db.getPrompts();
+  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+    final id = await _db.addPrompt(prompt, tagIds: tagIds);
+    notifyListeners();
+    return id;
+  }
+  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+    await _db.updatePrompt(id, prompt, tagIds: tagIds);
+    notifyListeners();
+  }
+  Future<void> deletePrompt(int id) async {
+    await _db.deletePrompt(id);
+    notifyListeners();
+  }
+  Future<void> updatePromptOrder(List<int> ids) => _db.updatePromptOrder(ids);
+
+  // System Prompts Methods
+  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _db.getSystemPrompts(type: type);
+  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+    final id = await _db.addSystemPrompt(prompt, tagIds: tagIds);
+    notifyListeners();
+    return id;
+  }
+  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
+    await _db.updateSystemPrompt(id, prompt, tagIds: tagIds);
+    notifyListeners();
+  }
+  Future<void> deleteSystemPrompt(int id) async {
+    await _db.deleteSystemPrompt(id);
+    notifyListeners();
+  }
+  Future<void> updateSystemPromptOrder(List<int> ids) => _db.updateSystemPromptOrder(ids);
+
+  Future<void> importPromptData(Map<String, dynamic> data, {bool replace = false}) async {
+    await _db.importPromptData(data, replace: replace);
+    notifyListeners();
+  }
+
+  Future<void> restoreBackup(Map<String, dynamic> data) async {
+    await _db.restoreBackup(data);
+    await loadSettings();
     notifyListeners();
   }
 
@@ -379,6 +492,7 @@ class AppState extends ChangeNotifier {
     if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
     
     params['imagePrefix'] = galleryState.imagePrefix;
+    params['retryCount'] = retryCount;
     
     final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
     await taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);

@@ -15,6 +15,7 @@
   "noFolders": "No folders added",
   "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
   "sourceGallery": "Source Gallery",
+  "sourceExplorer": "Source Explorer",
   "processResults": "Process Results",
   "noImagesFound": "No images found",
   "noResultsYet": "No results yet",
@@ -83,6 +84,29 @@
       }
     }
   },
+  "retryCount": "Retry Count: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "back": "Back",
+  "next": "Next",
+  "storageLocationDesc": "Select where generated images will be saved.",
+  "addChannelOptional": "Add your first AI provider channel (Optional).",
+  "configureModelOptional": "Configure a model for your new channel (Optional).",
+  "importSettingsTitle": "Import Settings?",
+  "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
+  "importAndReplace": "Import & Replace",
+  "importMode": "Import Mode",
+  "importModeDesc": "Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.",
+  "merge": "Merge",
+  "replaceAll": "Replace All",
+  "exit": "Exit",
+  "applyOverwrite": "Apply (Overwrite)",
+  "applyAppend": "Apply (Append)",
   "aiPromptRefiner": "AI Prompt Refiner",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",
@@ -112,6 +136,8 @@
   },
   "remove": "Remove",
   "appearance": "Appearance",
+  "connectivity": "Connectivity",
+  "application": "Application",
   "proxySettings": "Proxy Settings",
   "enableProxy": "Enable Global Proxy",
   "proxyUrl": "Proxy URL (host:port)",
@@ -156,6 +182,14 @@
       }
     }
   },
+  "taskSummary": "Task Summary",
+  "pendingTasks": "Pending",
+  "processingTasks": "Processing",
+  "completedTasks": "Completed",
+  "failedTasks": "Failed",
+  "clearCompleted": "Clear Completed",
+  "clearAll": "Clear All",
+  "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "removeFromList": "Remove from list",
   "model": "Model",
@@ -340,6 +374,11 @@
   },
   "userPrompts": "User Prompts",
   "refinerPrompts": "Refiner Prompts",
+  "systemTemplates": "System Templates",
+  "templateType": "Template Type",
+  "typeRename": "Batch Rename",
+  "typeRefiner": "Prompt Refiner",
+  "selectRenameTemplate": "Select Rename Template",
   "selectCategory": "Select Category",
   "feeGroups": "Fee Groups",
   "feeGroup": "Fee Group",
@@ -481,5 +520,19 @@
   "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
   "importCookieFile": "Import Cookie File",
   "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
-  "cookieImportSuccess": "Successfully imported {count} cookies."
-}
+    "cookieImportSuccess": "Successfully imported {count} cookies.",
+    "share": "Share",
+    "shareFiles": "Share selected items ({count})",
+    "@shareFiles": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+      "importFromGallery": "Import from Gallery",
+      "enableApiDebug": "Enable API Debug Logging",
+      "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
+      "openLogFolder": "Open Log Folder"
+    }
+    

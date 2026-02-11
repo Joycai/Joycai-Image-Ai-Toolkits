@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -56,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sourceGallery => 'Source Gallery';
+
+  @override
+  String get sourceExplorer => 'Source Explorer';
 
   @override
   String get processResults => 'Process Results';
@@ -148,6 +152,61 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String retryCount(int count) {
+    return 'Retry Count: $count';
+  }
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String get storageLocationDesc =>
+      'Select where generated images will be saved.';
+
+  @override
+  String get addChannelOptional =>
+      'Add your first AI provider channel (Optional).';
+
+  @override
+  String get configureModelOptional =>
+      'Configure a model for your new channel (Optional).';
+
+  @override
+  String get importSettingsTitle => 'Import Settings?';
+
+  @override
+  String get importSettingsConfirm =>
+      'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.';
+
+  @override
+  String get importAndReplace => 'Import & Replace';
+
+  @override
+  String get importMode => 'Import Mode';
+
+  @override
+  String get importModeDesc =>
+      'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.';
+
+  @override
+  String get merge => 'Merge';
+
+  @override
+  String get replaceAll => 'Replace All';
+
+  @override
+  String get exit => 'Exit';
+
+  @override
+  String get applyOverwrite => 'Apply (Overwrite)';
+
+  @override
+  String get applyAppend => 'Apply (Append)';
+
+  @override
   String get aiPromptRefiner => 'AI Prompt Refiner';
 
   @override
@@ -195,6 +254,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearance => 'Appearance';
+
+  @override
+  String get connectivity => 'Connectivity';
+
+  @override
+  String get application => 'Application';
 
   @override
   String get proxySettings => 'Proxy Settings';
@@ -312,6 +377,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get taskSummary => 'Task Summary';
+
+  @override
+  String get pendingTasks => 'Pending';
+
+  @override
+  String get processingTasks => 'Processing';
+
+  @override
+  String get completedTasks => 'Completed';
+
+  @override
+  String get failedTasks => 'Failed';
+
+  @override
+  String get clearCompleted => 'Clear Completed';
+
+  @override
+  String get clearAll => 'Clear All';
+
+  @override
+  String get cancelAllPending => 'Cancel All Pending';
+
+  @override
   String get cancelTask => 'Cancel Task';
 
   @override
@@ -400,9 +489,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearUsageWarning =>
       'This will permanently delete all token usage records from the database.';
-
-  @override
-  String get clearAll => 'Clear All';
 
   @override
   String get modelsLabel => 'Models: ';
@@ -690,6 +776,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refinerPrompts => 'Refiner Prompts';
+
+  @override
+  String get systemTemplates => 'System Templates';
+
+  @override
+  String get templateType => 'Template Type';
+
+  @override
+  String get typeRename => 'Batch Rename';
+
+  @override
+  String get typeRefiner => 'Prompt Refiner';
+
+  @override
+  String get selectRenameTemplate => 'Select Rename Template';
 
   @override
   String get selectCategory => 'Select Category';
@@ -1017,4 +1118,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String cookieImportSuccess(Object count) {
     return 'Successfully imported $count cookies.';
   }
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String shareFiles(int count) {
+    return 'Share selected items ($count)';
+  }
+
+  @override
+  String get importFromGallery => 'Import from Gallery';
+
+  @override
+  String get enableApiDebug => 'Enable API Debug Logging';
+
+  @override
+  String get apiDebugDesc =>
+      'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.';
+
+  @override
+  String get openLogFolder => 'Open Log Folder';
 }

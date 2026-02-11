@@ -72,8 +72,8 @@ class WebScraperService {
   }
 
   Future<Directory> get _cacheDir async {
-    final dataDir = await AppPaths.getDataDirectory();
-    final dir = Directory(p.join(dataDir, 'cache', 'downloader'));
+    final tempDir = await AppPaths.getTempDirectory();
+    final dir = Directory(p.join(tempDir, 'joycai', 'cache', 'downloader'));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }

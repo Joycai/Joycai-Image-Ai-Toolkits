@@ -69,7 +69,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
       
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       
-      final promptTagIds = p.tags.map((t) => t.id as int).toSet();
+      final promptTagIds = p.tags.map((t) => t.id!).toSet();
       final matchesTags = _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
       
       return matchesSearch && matchesTags;
@@ -256,14 +256,14 @@ class _LibraryDialogState extends State<LibraryDialog> {
                   TextButton.icon(
                     onPressed: () => setState(() => _draftController.text = p.content),
                     icon: const Icon(Icons.find_replace, size: 14),
-                    label: const Text("Replace", style: TextStyle(fontSize: 10)),
+                    label: Text(l10n.apply, style: const TextStyle(fontSize: 10)),
                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
                   const SizedBox(width: 4),
                   FilledButton.icon(
                     onPressed: () => setState(() => _appendToDraft(p.content)),
                     icon: const Icon(Icons.add, size: 14),
-                    label: const Text("Append", style: TextStyle(fontSize: 10)),
+                    label: Text(l10n.add, style: const TextStyle(fontSize: 10)),
                     style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
                 ],
@@ -276,6 +276,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
   }
 
   Widget _buildDraftPane(ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
@@ -286,12 +287,12 @@ class _LibraryDialogState extends State<LibraryDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("PROMPT DRAFT", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
+            Text(l10n.promptContent.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.outline)),
             const SizedBox(height: 12),
             Expanded(
               child: MarkdownEditor(
                 controller: _draftController,
-                label: "Draft",
+                label: l10n.prompt,
                 isMarkdown: _isMarkdown,
                 onMarkdownChanged: (v) => setState(() => _isMarkdown = v), 
                 maxLines: 20,
@@ -308,7 +309,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.check),
-                label: const Text("Apply (Overwrite)"),
+                label: Text(l10n.applyOverwrite),
               ),
             ),
             const SizedBox(height: 8),
@@ -320,7 +321,7 @@ class _LibraryDialogState extends State<LibraryDialog> {
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.add_task),
-                label: const Text("Apply (Append)"),
+                label: Text(l10n.applyAppend),
               ),
             ),
           ],

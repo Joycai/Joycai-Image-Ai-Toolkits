@@ -35,6 +35,9 @@ class DatabaseMigration {
     if (oldVersion < 17) await _createV17Tables(db);
     if (oldVersion < 18) await _createV18Tables(db);
     if (oldVersion < 19) await _createV19Tables(db);
+    if (oldVersion < 20) await _createV20Tables(db);
+    if (oldVersion < 21) await _insertPresetTemplates(db);
+    if (oldVersion < 22) await _createV22Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -57,6 +60,62 @@ class DatabaseMigration {
     await _createV17Tables(db);
     await _createV18Tables(db);
     await _createV19Tables(db);
+    await _createV20Tables(db);
+    await _createV22Tables(db);
+    await _insertPresetTemplates(db);
+  }
+
+  static Future<void> _createV22Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE usage_checkpoints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        total_input_tokens INTEGER DEFAULT 0,
+        total_output_tokens INTEGER DEFAULT 0,
+        total_request_count INTEGER DEFAULT 0,
+        total_cost REAL DEFAULT 0.0,
+        metadata TEXT -- JSON for group-based breakdown
+      )
+    ''');
+  }
+
+  static Future<void> _insertPresetTemplates(Database db) async {
+    // Check if they already exist to avoid duplicates
+    final existing = await db.query('system_prompts', where: 'type = ?', whereArgs: ['rename']);
+    if (existing.isNotEmpty) return;
+
+    await db.insert('system_prompts', {
+      'title': 'Jellyfin Movie Standard',
+      'content': 'Normalize movie filenames to "Movie Name (Year).ext" format. Remove all noise like quality (1080p, 4K), codec (x264, h265), and release group names. Example: "Inception.2010.1080p.Bluray.x264.mp4" -> "Inception (2010).mp4"',
+      'type': 'rename',
+      'is_markdown': 0,
+      'sort_order': 0,
+    });
+
+    await db.insert('system_prompts', {
+      'title': 'Jellyfin TV Show Standard',
+      'content': 'Normalize TV show filenames to "Show Name - S01E01 - Episode Name.ext" format. Ensure season and episode numbers are zero-padded (e.g., S01E01 instead of S1E1). Keep the original file extension.',
+      'type': 'rename',
+      'is_markdown': 0,
+      'sort_order': 1,
+    });
+  }
+
+  static Future<void> _createV20Tables(Database db) async {
+    // 1. Add sort_order to system_prompts and prompt_tags
+    await _addColumnIfNotExists(db, 'system_prompts', 'sort_order', 'INTEGER DEFAULT 0');
+    await _addColumnIfNotExists(db, 'prompt_tags', 'sort_order', 'INTEGER DEFAULT 0');
+
+    // 2. Create junction table for system prompts
+    await db.execute('''
+      CREATE TABLE system_prompt_tag_refs (
+        prompt_id INTEGER NOT NULL,
+        tag_id INTEGER NOT NULL,
+        PRIMARY KEY (prompt_id, tag_id),
+        FOREIGN KEY (prompt_id) REFERENCES system_prompts (id) ON DELETE CASCADE,
+        FOREIGN KEY (tag_id) REFERENCES prompt_tags (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   static Future<void> _createV19Tables(Database db) async {

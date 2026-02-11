@@ -48,6 +48,8 @@ class SystemPrompt {
   final String content;
   final String type; // e.g. 'refiner'
   final bool isMarkdown;
+  final int sortOrder;
+  final List<PromptTag> tags;
 
   SystemPrompt({
     this.id,
@@ -55,6 +57,8 @@ class SystemPrompt {
     required this.content,
     required this.type,
     this.isMarkdown = true,
+    this.sortOrder = 0,
+    this.tags = const [],
   });
 
   factory SystemPrompt.fromMap(Map<String, dynamic> map) {
@@ -64,6 +68,8 @@ class SystemPrompt {
       content: map['content'] as String,
       type: map['type'] as String,
       isMarkdown: (map['is_markdown'] ?? 1) == 1,
+      sortOrder: map['sort_order'] as int? ?? 0,
+      tags: (map['tags'] as List?)?.map((t) => PromptTag.fromMap(t)).toList() ?? [],
     );
   }
 
@@ -73,6 +79,7 @@ class SystemPrompt {
       'content': content,
       'type': type,
       'is_markdown': isMarkdown ? 1 : 0,
+      'sort_order': sortOrder,
     };
     if (includeId) {
       data['id'] = id;

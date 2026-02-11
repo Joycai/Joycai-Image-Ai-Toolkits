@@ -184,14 +184,14 @@ class _SetupWizardState extends State<SetupWizard> {
                       _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                       setState(() => _currentStep = prev);
                     },
-                    child: const Text("Back"),
+                    child: Text(l10n.back),
                   ),
                 const SizedBox(width: 16),
                 FilledButton(
                   onPressed: _currentStep == 1 && _outputDirController.text.isEmpty 
                       ? null 
                       : _nextStep,
-                  child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? "Skip" : "Next")),
+                  child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next)),
                 ),
               ],
             ),
@@ -230,7 +230,7 @@ class _SetupWizardState extends State<SetupWizard> {
         children: [
           Text(l10n.stepStorage, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text("Select where generated images will be saved."),
+          Text(l10n.storageLocationDesc),
           const SizedBox(height: 24),
           SwitchListTile(
             title: Text(l10n.portableMode),
@@ -292,7 +292,7 @@ class _SetupWizardState extends State<SetupWizard> {
         children: [
           Text(l10n.addChannel, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text("Add your first AI provider channel (Optional)."),
+          Text(l10n.addChannelOptional),
           const SizedBox(height: 24),
           TextField(
             controller: _channelNameController,
@@ -350,7 +350,7 @@ class _SetupWizardState extends State<SetupWizard> {
         children: [
           Text(l10n.addModel, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text("Configure a model for your new channel (Optional)."),
+          Text(l10n.configureModelOptional),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -478,7 +478,7 @@ class _SetupWizardState extends State<SetupWizard> {
         actions: [
           FilledButton(
             onPressed: () => exit(0),
-            child: const Text("Exit"),
+            child: Text(l10n.exit),
           ),
         ],
       ),

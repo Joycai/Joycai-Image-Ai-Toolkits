@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../state/app_state.dart';
+import '../llm_debug_logger.dart';
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
 import '../model_discovery_service.dart';
@@ -55,12 +57,27 @@ class GoogleGenAIProvider implements ILLMProvider {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
-    final payload = _preparePayload(history, options);
+    final payload = _preparePayload(history, options, config.endpoint);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': payload,
+        });
+      }
+
       final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
 
       final data = jsonDecode(response.body);
 
@@ -111,18 +128,32 @@ class GoogleGenAIProvider implements ILLMProvider {
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
-    final payload = _preparePayload(history, options);
+    final payload = _preparePayload(history, options, config.endpoint);
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
     request.body = jsonEncode(payload);
 
     final client = config.createClient();
+    final appState = AppState();
+    File? debugFile;
+    if (appState.enableApiDebug) {
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
+        'url': url.toString(),
+        'headers': headers,
+        'body': payload,
+      });
+    }
+
     final response = await client.send(request);
 
     if (response.statusCode != 200) {
       // Try to parse error from body if possible
       final body = await response.stream.bytesToString();
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+      }
       client.close();
       try {
         final data = jsonDecode(body);
@@ -141,8 +172,15 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
     try {
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+      }
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (line.isEmpty) continue;
+
+        if (debugFile != null) {
+          await LLMDebugLogger.appendLine(debugFile, line);
+        }
 
         String dataLine = line;
         if (line.startsWith('data: ')) {
@@ -254,7 +292,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     return headers;
   }
 
-  Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options) {
+  Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
     final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
     final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
 
@@ -300,7 +338,9 @@ class GoogleGenAIProvider implements ILLMProvider {
     if (options != null) {
       final imageConfig = <String, dynamic>{};
       // Only add aspectRatio if it's not "not_set"
-      imageConfig['personGeneration'] = "ALLOW_ALL";
+      if (endpoint?.contains("aabao") == false) {
+        imageConfig['personGeneration'] = "ALLOW_ALL";
+      }
       if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
         imageConfig['aspectRatio'] = options['aspectRatio'];
       }

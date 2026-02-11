@@ -77,8 +77,8 @@ class _MaskEditorDialogState extends State<MaskEditorDialog> {
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      final dataDir = await AppPaths.getDataDirectory();
-      final maskDir = Directory(p.join(dataDir, 'masks'));
+      final tempDir = await AppPaths.getTempDirectory();
+      final maskDir = Directory(p.join(tempDir, 'joycai', 'masks'));
       if (!maskDir.existsSync()) {
         maskDir.createSync(recursive: true);
       }

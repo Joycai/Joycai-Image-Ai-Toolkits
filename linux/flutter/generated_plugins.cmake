@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
+  file_selector_linux
   local_notifier
   sqlite3_flutter_libs
   url_launcher_linux

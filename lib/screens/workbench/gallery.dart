@@ -4,11 +4,13 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
+import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
@@ -16,27 +18,19 @@ import '../../widgets/dialogs/image_preview_dialog.dart';
 import '../../widgets/dialogs/mask_editor_dialog.dart';
 
 class GalleryWidget extends StatefulWidget {
-  const GalleryWidget({super.key});
+  final TabController tabController;
+
+  const GalleryWidget({
+    super.key,
+    required this.tabController,
+  });
 
   @override
   State<GalleryWidget> createState() => _GalleryWidgetState();
 }
 
-class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProviderStateMixin {
+class _GalleryWidgetState extends State<GalleryWidget> {
   bool _isDragging = false;
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,73 +48,19 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
         if (newFiles.isNotEmpty) {
           appState.galleryState.addDroppedFiles(newFiles);
           // Switch to the 3rd tab (Temporary Workspace) automatically
-          _tabController.animateTo(2);
+          widget.tabController.animateTo(2);
         }
       },
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          Column(
+          TabBarView(
+            controller: widget.tabController,
             children: [
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.sourceGallery),
-                        if (appState.galleryImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.galleryImages.length),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.processResults),
-                        if (appState.processedImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.processedImages.length, isResult: true),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.auto_awesome_motion_outlined, size: 16),
-                        const SizedBox(width: 8),
-                        Text(l10n.tempWorkspace),
-                        if (appState.droppedImages.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildBadge(context, appState.droppedImages.length, isTemp: true),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              _buildToolbar(context),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
-                    _buildImageGrid(context, appState.processedImages, appState, isResult: true),
-                    _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
-                  ],
-                ),
-              ),
+              _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
+              _buildImageGrid(context, appState.processedImages, appState, isResult: true),
+              _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
             ],
           ),
           if (_isDragging)
@@ -145,111 +85,6 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBadge(BuildContext context, int count, {bool isResult = false, bool isTemp = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    Color bgColor = colorScheme.primaryContainer;
-    Color textColor = colorScheme.onPrimaryContainer;
-
-    if (isResult) {
-      bgColor = colorScheme.secondaryContainer;
-      textColor = colorScheme.onSecondaryContainer;
-    } else if (isTemp) {
-      bgColor = Colors.teal.withAlpha(40);
-      textColor = Colors.teal;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        '$count',
-        style: TextStyle(fontSize: 10, color: textColor, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildToolbar(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
-    
-    final selectedCount = appState.selectedImages.length;
-    final thumbnailSize = appState.thumbnailSize;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            Text(
-              l10n.selectedCount(selectedCount),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            const SizedBox(width: 16),
-            TextButton.icon(
-              onPressed: () => appState.galleryState.selectAllImages(),
-              icon: const Icon(Icons.select_all, size: 18),
-              label: Text(l10n.selectAll),
-            ),
-            TextButton.icon(
-              onPressed: selectedCount == 0 ? null : () => appState.galleryState.clearImageSelection(),
-              icon: const Icon(Icons.deselect, size: 18),
-              label: Text(l10n.clear),
-            ),
-            const SizedBox(width: 16),
-            
-            if (appState.droppedImages.isNotEmpty)
-              TextButton.icon(
-                onPressed: () => appState.galleryState.clearDroppedImages(),
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: Text(l10n.clearTempWorkspace),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-              ),
-
-            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-            
-            // Thumbnail Size Slider
-            Tooltip(
-              message: l10n.thumbnailSize,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                  SizedBox(
-                    width: 120,
-                    child: Slider(
-                      value: thumbnailSize,
-                      min: 80,
-                      max: 400,
-                      onChanged: (v) => appState.galleryState.setThumbnailSize(v),
-                    ),
-                  ),
-                  Icon(Icons.image, size: 20, color: colorScheme.outline),
-                ],
-              ),
-            ),
-            
-            const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-            
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 20),
-              onPressed: () => appState.galleryState.refreshImages(),
-              tooltip: l10n.refresh,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -289,6 +124,7 @@ class _GalleryWidgetState extends State<GalleryWidget> with SingleTickerProvider
           imageFile: imageFile,
           isSelected: isSelected,
           isResult: isResult,
+          thumbnailSize: state.thumbnailSize,
           onTap: () {
             // Results open preview on tap, others toggle selection
             if (isResult) {
@@ -317,12 +153,14 @@ class _ImageCard extends StatefulWidget {
   final AppFile imageFile;
   final bool isSelected;
   final bool isResult;
+  final double thumbnailSize;
   final VoidCallback onTap;
 
   const _ImageCard({
     required this.imageFile,
     required this.isSelected,
     required this.isResult,
+    required this.thumbnailSize,
     required this.onTap,
   });
 
@@ -339,29 +177,12 @@ class _ImageCardState extends State<_ImageCard> {
     _getImageDimensions();
   }
 
-  int _gcd(int a, int b) {
-    while (b != 0) {
-      var t = b;
-      b = a % b;
-      a = t;
-    }
-    return a;
-  }
-
   Future<void> _getImageDimensions() async {
-    try {
-      final bytes = await File(widget.imageFile.path).readAsBytes();
-      final image = await decodeImageFromList(bytes);
-      if (mounted) {
-        setState(() {
-          final commonDivisor = _gcd(image.width, image.height);
-          final ratioW = image.width ~/ commonDivisor;
-          final ratioH = image.height ~/ commonDivisor;
-          _dimensions = "${image.width}x${image.height} ($ratioW:$ratioH)";
-        });
-      }
-    } catch (e) {
-      // Ignore errors
+    final metadata = await ImageMetadataService().getMetadata(widget.imageFile.path);
+    if (metadata != null && mounted) {
+      setState(() {
+        _dimensions = metadata.displayString;
+      });
     }
   }
 
@@ -399,7 +220,10 @@ class _ImageCardState extends State<_ImageCard> {
               Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: Image(
-                  image: widget.imageFile.imageProvider,
+                  image: ResizeImage(
+                    widget.imageFile.imageProvider,
+                    width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                  ),
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey[200],
@@ -478,6 +302,9 @@ class _ImageCardState extends State<_ImageCard> {
     final windowState = Provider.of<WindowState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
+    final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
+    final List<AppFile> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
+
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
@@ -490,6 +317,34 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.openFloatingPreview(widget.imageFile.path);
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.share_outlined, size: 18),
+            title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
+            dense: true,
+          ),
+          onTap: () async {
+            try {
+              final xFiles = filesToShare.map((f) => XFile(
+                f.path, 
+                name: f.name,
+                mimeType: AppConstants.getMimeType(f.path),
+              )).toList();
+              
+              // ignore: deprecated_member_use
+              await Share.shareXFiles(
+                xFiles, 
+                subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+              );
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Share failed: $e')),
+                );
+              }
+            }
           },
         ),
         PopupMenuItem(

@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Source Gallery'**
   String get sourceGallery;
 
+  /// No description provided for @sourceExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Explorer'**
+  String get sourceExplorer;
+
   /// No description provided for @processResults.
   ///
   /// In en, this message translates to:
@@ -350,6 +356,102 @@ abstract class AppLocalizations {
   /// **'Concurrency Limit: {limit}'**
   String concurrencyLimit(int limit);
 
+  /// No description provided for @retryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Count: {count}'**
+  String retryCount(int count);
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @storageLocationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select where generated images will be saved.'**
+  String get storageLocationDesc;
+
+  /// No description provided for @addChannelOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first AI provider channel (Optional).'**
+  String get addChannelOptional;
+
+  /// No description provided for @configureModelOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure a model for your new channel (Optional).'**
+  String get configureModelOptional;
+
+  /// No description provided for @importSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Settings?'**
+  String get importSettingsTitle;
+
+  /// No description provided for @importSettingsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.'**
+  String get importSettingsConfirm;
+
+  /// No description provided for @importAndReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Import & Replace'**
+  String get importAndReplace;
+
+  /// No description provided for @importMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Mode'**
+  String get importMode;
+
+  /// No description provided for @importModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.'**
+  String get importModeDesc;
+
+  /// No description provided for @merge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// No description provided for @replaceAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace All'**
+  String get replaceAll;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
+
+  /// No description provided for @applyOverwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Overwrite)'**
+  String get applyOverwrite;
+
+  /// No description provided for @applyAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Append)'**
+  String get applyAppend;
+
   /// No description provided for @aiPromptRefiner.
   ///
   /// In en, this message translates to:
@@ -439,6 +541,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Appearance'**
   String get appearance;
+
+  /// No description provided for @connectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connectivity'**
+  String get connectivity;
+
+  /// No description provided for @application.
+  ///
+  /// In en, this message translates to:
+  /// **'Application'**
+  String get application;
 
   /// No description provided for @proxySettings.
   ///
@@ -662,6 +776,54 @@ abstract class AppLocalizations {
   /// **'Task ID: {id}'**
   String taskId(String id);
 
+  /// No description provided for @taskSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Summary'**
+  String get taskSummary;
+
+  /// No description provided for @pendingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingTasks;
+
+  /// No description provided for @processingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processingTasks;
+
+  /// No description provided for @completedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedTasks;
+
+  /// No description provided for @failedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failedTasks;
+
+  /// No description provided for @clearCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Completed'**
+  String get clearCompleted;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
+  /// No description provided for @cancelAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel All Pending'**
+  String get cancelAllPending;
+
   /// No description provided for @cancelTask.
   ///
   /// In en, this message translates to:
@@ -829,12 +991,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will permanently delete all token usage records from the database.'**
   String get clearUsageWarning;
-
-  /// No description provided for @clearAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get clearAll;
 
   /// No description provided for @modelsLabel.
   ///
@@ -1381,6 +1537,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refiner Prompts'**
   String get refinerPrompts;
+
+  /// No description provided for @systemTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'System Templates'**
+  String get systemTemplates;
+
+  /// No description provided for @templateType.
+  ///
+  /// In en, this message translates to:
+  /// **'Template Type'**
+  String get templateType;
+
+  /// No description provided for @typeRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Rename'**
+  String get typeRename;
+
+  /// No description provided for @typeRefiner.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Refiner'**
+  String get typeRefiner;
+
+  /// No description provided for @selectRenameTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Rename Template'**
+  String get selectRenameTemplate;
 
   /// No description provided for @selectCategory.
   ///
@@ -1981,6 +2167,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Successfully imported {count} cookies.'**
   String cookieImportSuccess(Object count);
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @shareFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Share selected items ({count})'**
+  String shareFiles(int count);
+
+  /// No description provided for @importFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Gallery'**
+  String get importFromGallery;
+
+  /// No description provided for @enableApiDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable API Debug Logging'**
+  String get enableApiDebug;
+
+  /// No description provided for @apiDebugDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.'**
+  String get apiDebugDesc;
+
+  /// No description provided for @openLogFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Log Folder'**
+  String get openLogFolder;
 }
 
 class _AppLocalizationsDelegate

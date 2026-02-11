@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
+import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
@@ -30,11 +33,33 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final browserState = appState.browserState;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 1000;
+    final l10n = AppLocalizations.of(context)!;
+    final isNarrow = Responsive.isNarrow(context);
 
     return Scaffold(
       key: _scaffoldKey,
+      appBar: isNarrow ? AppBar(
+        title: Text(l10n.fileBrowser),
+        leading: IconButton(
+          icon: const Icon(Icons.folder_open),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          tooltip: l10n.sourceExplorer,
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view),
+            onPressed: () => browserState.setViewMode(
+              browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
+            ),
+            tooltip: l10n.switchViewMode,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => browserState.refresh(),
+            tooltip: l10n.refresh,
+          ),
+        ],
+      ) : null,
       drawer: isNarrow ? const Drawer(width: 300, child: SourceExplorerWidget(useBrowserState: true)) : null,
       body: Row(
         children: [
@@ -43,32 +68,24 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             const VerticalDivider(width: 1, thickness: 1),
           ],
           Expanded(
-            child: Column(
-              children: [
-                BrowserToolbar(
-                  state: browserState,
-                  onAiRename: () => _showAiRenameDialog(context),
-                ),
-                BrowserFilterBar(state: browserState),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      browserState.viewMode == BrowserViewMode.grid
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
+                child: Column(
+                  children: [
+                    BrowserToolbar(
+                      state: browserState,
+                      onAiRename: () => _showAiRenameDialog(context),
+                    ),
+                    BrowserFilterBar(state: browserState),
+                    Expanded(
+                      child: browserState.viewMode == BrowserViewMode.grid
                           ? _buildFileGrid(context, browserState)
                           : _buildFileListView(context, browserState),
-                      if (isNarrow)
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: FloatingActionButton.small(
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                            child: const Icon(Icons.folder_open),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -130,10 +147,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           child: ListTile(
             leading: Icon(file.icon, color: file.color),
             title: Text(file.name, style: const TextStyle(fontSize: 13)),
-            subtitle: Text(
-              "${(file.size / 1024).toStringAsFixed(1)} KB | ${file.modified.toString().substring(0, 16)}",
-              style: const TextStyle(fontSize: 11),
-            ),
+            subtitle: _FileListItemSubtitle(file: file),
             selected: isSelected,
             onTap: () => state.toggleSelection(file),
             trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
@@ -187,6 +201,55 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       position: position,
       windowState: Provider.of<WindowState>(context, listen: false),
       onRefresh: () => state.refresh(),
+    );
+  }
+}
+
+class _FileListItemSubtitle extends StatefulWidget {
+  final BrowserFile file;
+  const _FileListItemSubtitle({required this.file});
+
+  @override
+  State<_FileListItemSubtitle> createState() => _FileListItemSubtitleState();
+}
+
+class _FileListItemSubtitleState extends State<_FileListItemSubtitle> {
+  String _extraInfo = "";
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.file.category == FileCategory.image) {
+      _loadDimensions();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_FileListItemSubtitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.file.path != oldWidget.file.path) {
+      _extraInfo = "";
+      if (widget.file.category == FileCategory.image) {
+        _loadDimensions();
+      }
+    }
+  }
+
+  Future<void> _loadDimensions() async {
+    final metadata = await ImageMetadataService().getMetadata(widget.file.path);
+    if (metadata != null && mounted) {
+      setState(() {
+        _extraInfo = " | ${metadata.width}x${metadata.height} (${metadata.aspectRatio})";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sizeStr = AppConstants.formatFileSize(widget.file.size);
+    return Text(
+      "$sizeStr | ${widget.file.modified.toString().substring(0, 16)}$_extraInfo",
+      style: const TextStyle(fontSize: 11),
     );
   }
 }

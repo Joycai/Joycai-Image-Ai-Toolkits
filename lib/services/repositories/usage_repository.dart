@@ -25,6 +25,8 @@ class UsageRepository {
     List<String>? modelIds,
     DateTime? start,
     DateTime? end,
+    int? limit,
+    int? offset,
   }) async {
     final db = await _db;
     String where = "1=1";
@@ -45,6 +47,25 @@ class UsageRepository {
       args.add(end.toIso8601String());
     }
 
-    return await db.query('token_usage', where: where, whereArgs: args, orderBy: 'timestamp DESC');
+    return await db.query(
+      'token_usage', 
+      where: where, 
+      whereArgs: args, 
+      orderBy: 'timestamp DESC',
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) async {
+    final db = await _db;
+    await db.insert('usage_checkpoints', checkpoint);
+  }
+
+  Future<Map<String, dynamic>?> getLatestUsageCheckpoint() async {
+    final db = await _db;
+    final results = await db.query('usage_checkpoints', orderBy: 'timestamp DESC', limit: 1);
+    if (results.isEmpty) return null;
+    return results.first;
   }
 }

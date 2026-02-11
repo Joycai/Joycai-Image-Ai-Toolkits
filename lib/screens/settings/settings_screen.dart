@@ -7,13 +7,17 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/llm_debug_logger.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_section.dart';
 import '../../widgets/settings_widgets.dart';
 import '../wizard/setup_wizard.dart';
+
+enum SettingsCategory { appearance, connectivity, application, data }
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,6 +28,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final DatabaseService _db = DatabaseService();
+  SettingsCategory _selectedCategory = SettingsCategory.appearance;
   
   // Controllers
   final TextEditingController _outputDirController = TextEditingController();
@@ -64,62 +69,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
+    final isNarrow = Responsive.isNarrow(context);
 
+    if (isNarrow) {
+      return _buildMobileLayout(l10n);
+    } else {
+      return _buildDesktopLayout(l10n);
+    }
+  }
+
+  Widget _buildMobileLayout(AppLocalizations l10n) {
     return Scaffold(
+      appBar: AppBar(title: Text(l10n.settings)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildAppearanceSection(l10n),
+            const SizedBox(height: 24),
+            _buildConnectivitySection(l10n, true),
+            const SizedBox(height: 24),
+            _buildApplicationSection(l10n),
+            const SizedBox(height: 24),
+            _buildDataSection(l10n, true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settings)),
       body: Row(
         children: [
+          // Sidebar
+          Container(
+            width: 250,
+            color: colorScheme.surfaceContainerLow,
+            child: ListView(
+              children: [
+                _buildCategoryTile(SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance),
+                _buildCategoryTile(SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity),
+                _buildCategoryTile(SettingsCategory.application, Icons.settings_applications_outlined, l10n.application),
+                _buildCategoryTile(SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement),
+              ],
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppSection(
-                    title: l10n.appearance,
-                    children: [
-                      ThemeSelector(appState: appState, l10n: l10n),
-                      const SizedBox(height: 16),
-                      LanguageSelector(appState: appState, l10n: l10n),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  AppSection(
-                    title: l10n.proxySettings,
-                    children: [
-                      _buildProxySettings(l10n),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.mcpServerSettings,
-                    children: [
-                      _buildMcpSettings(l10n),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.settings,
-                    children: [
-                      _buildNotificationTile(appState, l10n),
-                      const SizedBox(height: 8),
-                      _buildPortableModeTile(l10n),
-                      const SizedBox(height: 8),
-                      _buildOutputDirectoryTile(appState, l10n),
-                    ],
-                  ),
-
-                  AppSection(
-                    title: l10n.dataManagement,
-                    padding: const EdgeInsets.only(bottom: 64),
-                    children: [
-                      _buildDataActions(colorScheme, l10n),
-                    ],
-                  ),
-                ],
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: _buildSelectedCategory(l10n),
+                ),
               ),
             ),
           ),
@@ -128,7 +137,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProxySettings(AppLocalizations l10n) {
+  Widget _buildCategoryTile(SettingsCategory category, IconData icon, String label) {
+    final isSelected = _selectedCategory == category;
+    return ListTile(
+      selected: isSelected,
+      leading: Icon(icon, size: 20),
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      onTap: () => setState(() => _selectedCategory = category),
+    );
+  }
+
+  Widget _buildSelectedCategory(AppLocalizations l10n) {
+    switch (_selectedCategory) {
+      case SettingsCategory.appearance:
+        return _buildAppearanceSection(l10n);
+      case SettingsCategory.connectivity:
+        return _buildConnectivitySection(l10n, false);
+      case SettingsCategory.application:
+        return _buildApplicationSection(l10n);
+      case SettingsCategory.data:
+        return _buildDataSection(l10n, false);
+    }
+  }
+
+  Widget _buildAppearanceSection(AppLocalizations l10n) {
+    final appState = Provider.of<AppState>(context);
+    return AppSection(
+      title: l10n.appearance,
+      children: [
+        ThemeSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 32),
+        ThemeColorSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 32),
+        LanguageSelector(appState: appState, l10n: l10n),
+      ],
+    );
+  }
+
+  Widget _buildConnectivitySection(AppLocalizations l10n, bool isMobile) {
+    return Column(
+      children: [
+        AppSection(
+          title: l10n.proxySettings,
+          children: [
+            _buildProxySettings(l10n, isMobile),
+          ],
+        ),
+        const SizedBox(height: 24),
+        AppSection(
+          title: l10n.mcpServerSettings,
+          children: [
+            _buildMcpSettings(l10n),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApplicationSection(AppLocalizations l10n) {
+    final appState = Provider.of<AppState>(context);
+    return AppSection(
+      title: l10n.application,
+      children: [
+        _buildNotificationTile(appState, l10n),
+        const SizedBox(height: 8),
+        _buildApiDebugTile(appState, l10n),
+        const SizedBox(height: 8),
+        _buildPortableModeTile(l10n),
+        const SizedBox(height: 8),
+        _buildOutputDirectoryTile(appState, l10n),
+      ],
+    );
+  }
+
+  Widget _buildDataSection(AppLocalizations l10n, bool isMobile) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AppSection(
+      title: l10n.dataManagement,
+      padding: const EdgeInsets.only(bottom: 64),
+      children: [
+        _buildAdaptiveDataActions(colorScheme, l10n, isMobile),
+      ],
+    );
+  }
+
+  Widget _buildProxySettings(AppLocalizations l10n, bool isMobile) {
     return Column(
       children: [
         SwitchListTile(
@@ -154,28 +247,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) => _db.saveSetting('proxy_url', v),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _proxyUsernameController,
-                        decoration: InputDecoration(
-                          labelText: l10n.proxyUsername,
-                          border: const OutlineInputBorder(),
+                if (isMobile) ...[
+                  TextField(
+                    controller: _proxyUsernameController,
+                    decoration: InputDecoration(
+                      labelText: l10n.proxyUsername,
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (v) => _db.saveSetting('proxy_username', v),
+                  ),
+                  const SizedBox(height: 16),
+                  ApiKeyField(
+                    controller: _proxyPasswordController,
+                    label: l10n.proxyPassword,
+                    onChanged: (v) => _db.saveSetting('proxy_password', v),
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _proxyUsernameController,
+                          decoration: InputDecoration(
+                            labelText: l10n.proxyUsername,
+                            border: const OutlineInputBorder(),
+                          ),
+                          onChanged: (v) => _db.saveSetting('proxy_username', v),
                         ),
-                        onChanged: (v) => _db.saveSetting('proxy_username', v),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ApiKeyField(
-                        controller: _proxyPasswordController,
-                        label: l10n.proxyPassword,
-                        onChanged: (v) => _db.saveSetting('proxy_password', v),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ApiKeyField(
+                          controller: _proxyPasswordController,
+                          label: l10n.proxyPassword,
+                          onChanged: (v) => _db.saveSetting('proxy_password', v),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -219,6 +328,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildApiDebugTile(AppState appState, AppLocalizations l10n) {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: Text(l10n.enableApiDebug),
+          subtitle: Text(l10n.apiDebugDesc),
+          value: appState.enableApiDebug,
+          onChanged: (v) => appState.setEnableApiDebug(v),
+        ),
+        if (appState.enableApiDebug)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => LLMDebugLogger.openLogFolder(),
+                icon: const Icon(Icons.folder_zip_outlined, size: 18),
+                label: Text(l10n.openLogFolder),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildPortableModeTile(AppLocalizations l10n) {
     return SwitchListTile(
       title: Text(l10n.portableMode),
@@ -244,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           FilledButton(
             onPressed: () => exit(0),
-            child: Text(l10n.resetEverything), // Reusing "Restart" feel
+            child: Text(l10n.resetEverything),
           ),
         ],
       ),
@@ -267,53 +401,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDataActions(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Wrap(
-      spacing: 16,
+  Widget _buildAdaptiveDataActions(ColorScheme colorScheme, AppLocalizations l10n, bool isMobile) {
+    final actions = [
+      (onPressed: () => _exportSettings(l10n), icon: Icons.download, label: l10n.exportSettings, color: null),
+      (onPressed: () => _importSettings(l10n), icon: Icons.upload, label: l10n.importSettings, color: null),
+      (onPressed: _openAppDataDir, icon: Icons.folder_shared, label: l10n.openAppDataDirectory, color: null),
+      (onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, color: null),
+      (
+        onPressed: () async {
+          final appState = Provider.of<AppState>(context, listen: false);
+          await appState.clearDownloaderCache();
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Downloader cache cleared.')));
+        },
+        icon: Icons.delete_sweep_outlined,
+        label: l10n.clearDownloaderCache,
+        color: null
+      ),
+      (onPressed: () => _resetSettings(l10n), icon: Icons.refresh, label: l10n.resetAllSettings, color: colorScheme.error),
+    ];
+
+    if (isMobile) {
+      return Column(
+        children: actions.map((a) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildActionBtn(a, true),
+        )).toList(),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 4,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (context, index) => _buildActionBtn(actions[index], false),
+    );
+  }
+
+  Widget _buildActionBtn(dynamic action, bool fullWidth) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool isError = action.color != null;
+
+    final btnContent = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        OutlinedButton.icon(
-          onPressed: () => _exportSettings(l10n),
-          icon: const Icon(Icons.download),
-          label: Text(l10n.exportSettings),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => _importSettings(l10n),
-          icon: const Icon(Icons.upload),
-          label: Text(l10n.importSettings),
-        ),
-        OutlinedButton.icon(
-          onPressed: _openAppDataDir,
-          icon: const Icon(Icons.folder_shared),
-          label: Text(l10n.openAppDataDirectory),
-        ),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())),
-          icon: const Icon(Icons.auto_fix_high),
-          label: Text(l10n.runSetupWizard),
-        ),
-        OutlinedButton.icon(
-          onPressed: () async {
-            final appState = Provider.of<AppState>(context, listen: false);
-            await appState.clearDownloaderCache();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Downloader cache cleared.')),
-              );
-            }
-          },
-          icon: const Icon(Icons.delete_sweep_outlined),
-          label: Text(l10n.clearDownloaderCache),
-        ),
-        ElevatedButton.icon(
-          onPressed: () => _resetSettings(l10n),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.errorContainer,
-            foregroundColor: colorScheme.error,
-          ),
-          icon: const Icon(Icons.refresh),
-          label: Text(l10n.resetAllSettings),
-        ),
+        Icon(action.icon, size: 18),
+        const SizedBox(width: 12),
+        Text(action.label, style: const TextStyle(fontSize: 12)),
       ],
+    );
+
+    return SizedBox(
+      width: fullWidth ? double.infinity : null,
+      height: 50,
+      child: OutlinedButton(
+        onPressed: action.onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: action.color,
+          side: isError ? BorderSide(color: colorScheme.error.withAlpha(100)) : null,
+          backgroundColor: isError ? colorScheme.errorContainer.withAlpha(20) : null,
+        ),
+        child: btnContent,
+      ),
     );
   }
 
@@ -330,7 +484,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _exportSettings(AppLocalizations l10n) async {
-    final data = await _db.getAllDataRaw(includePrompts: false);
+    final data = await _db.getAllDataRaw(includePrompts: true);
     final json = jsonEncode(data);
     
     String? path = await FilePicker.platform.saveFile(
@@ -359,14 +513,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Import Settings?"),
-          content: const Text("This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management."),
+          title: Text(l10n.importSettingsTitle),
+          content: Text(l10n.importSettingsConfirm),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: const Text("Import & Replace"),
+              child: Text(l10n.importAndReplace),
             ),
           ],
         ),

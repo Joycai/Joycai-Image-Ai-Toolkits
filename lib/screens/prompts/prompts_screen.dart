@@ -4,15 +4,18 @@ import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/database_service.dart';
+import '../../state/app_state.dart';
 import '../../widgets/markdown_editor.dart';
-import '../../widgets/prompt_card.dart';
+import 'widgets/system_template_list.dart';
+import 'widgets/tag_management_list.dart';
+import 'widgets/user_prompt_list.dart';
 
 class PromptsScreen extends StatefulWidget {
   const PromptsScreen({super.key});
@@ -22,7 +25,6 @@ class PromptsScreen extends StatefulWidget {
 }
 
 class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProviderStateMixin {
-  final DatabaseService _db = DatabaseService();
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
   
@@ -30,18 +32,22 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
   String _searchQuery = "";
+  String _selectedSystemType = 'refiner'; // 'refiner' or 'rename'
   final Set<int> _selectedFilterTagIds = {};
-  final Set<int> _expandedPromptIds = {};
-  final Set<int> _expandedSysPromptIds = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
     });
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   @override
@@ -52,22 +58,24 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Future<void> _loadData() async {
-    final userPrompts = await _db.getPrompts();
-    final systemPrompts = await _db.getSystemPrompts();
-    final tags = await _db.getPromptTags();
-    setState(() {
-      _userPrompts = userPrompts;
-      _systemPrompts = systemPrompts;
-      _tags = tags;
-    });
+    final appState = Provider.of<AppState>(context, listen: false);
+    final userPrompts = await appState.getPrompts();
+    final systemPrompts = await appState.getSystemPrompts();
+    final tags = await appState.getPromptTags();
+    if (mounted) {
+      setState(() {
+        _userPrompts = userPrompts;
+        _systemPrompts = systemPrompts;
+        _tags = tags;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 800;
+    final isNarrow = Responsive.isNarrow(context);
     
     final filteredUser = _userPrompts.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
@@ -81,9 +89,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return matchesSearch && matchesTags;
     }).toList();
 
-    final filteredRefiner = _systemPrompts.where((p) {
-      return p.title.toLowerCase().contains(_searchQuery) || 
-             p.content.toLowerCase().contains(_searchQuery);
+    final filteredSystem = _systemPrompts.where((p) {
+      final matchesType = p.type == _selectedSystemType;
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
+                            p.content.toLowerCase().contains(_searchQuery);
+      return matchesType && matchesSearch;
     }).toList();
 
     return Scaffold(
@@ -91,26 +101,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         title: Text(l10n.promptLibrary),
         actions: isNarrow 
           ? [
-              PopupMenuButton<String>(
-                onSelected: (val) {
-                  if (val == 'import') _importPrompts(l10n);
-                  if (val == 'export') _exportPrompts(l10n);
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
-                  PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
-                ],
-              ),
+              _buildImportExportMenu(l10n),
               IconButton(
-                onPressed: () {
-                  if (_tabController.index == 1) {
-                    _showSystemPromptDialog(l10n);
-                  } else if (_tabController.index == 2) {
-                    _showTagDialog(l10n);
-                  } else {
-                    _showPromptDialog(l10n);
-                  }
-                },
+                onPressed: _handleAddAction,
                 icon: const Icon(Icons.add),
               ),
             ]
@@ -144,15 +137,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: FilledButton.icon(
-                  onPressed: () {
-                    if (_tabController.index == 1) {
-                      _showSystemPromptDialog(l10n);
-                    } else if (_tabController.index == 2) {
-                      _showTagDialog(l10n);
-                    } else {
-                      _showPromptDialog(l10n);
-                    }
-                  },
+                  onPressed: _handleAddAction,
                   icon: const Icon(Icons.add),
                   label: Text(l10n.add),
                 ),
@@ -180,7 +165,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 controller: _tabController,
                 tabs: [
                   Tab(text: l10n.userPrompts),
-                  Tab(text: l10n.refinerPrompts),
+                  Tab(text: l10n.systemTemplates),
                   Tab(text: l10n.categoriesTab),
                 ],
               ),
@@ -188,17 +173,47 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ),
         ),
       ),
-      body: Column(
+      body: Row(
         children: [
-          if (_tabController.index == 0 && _tags.isNotEmpty)
-            _buildFilterBar(colorScheme),
+          if (!isNarrow && _tabController.index != 2) ...[
+            _buildSidebar(colorScheme, l10n),
+            const VerticalDivider(width: 1),
+          ],
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Column(
               children: [
-                _buildUserPromptList(filteredUser, l10n),
-                _buildSystemPromptList(filteredRefiner, l10n),
-                _buildTagList(l10n),
+                if (isNarrow && _tabController.index == 0 && _tags.isNotEmpty)
+                  _buildMobileFilterBar(colorScheme),
+                if (_tabController.index == 1)
+                  _buildSystemTypeToggle(colorScheme, l10n),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      UserPromptList(
+                        prompts: filteredUser, 
+                        searchQuery: _searchQuery, 
+                        selectedFilterTagIds: _selectedFilterTagIds,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {prompt}) => _showPromptDialog(l10n, prompt: prompt),
+                        onConfirmDelete: _confirmDelete,
+                      ),
+                      SystemTemplateList(
+                        prompts: filteredSystem, 
+                        searchQuery: _searchQuery,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {prompt}) => _showSystemPromptDialog(l10n, prompt: prompt),
+                        onConfirmDelete: _confirmDelete,
+                      ),
+                      TagManagementList(
+                        tags: _tags,
+                        onRefresh: _loadData,
+                        onShowEditDialog: (l10n, {tag}) => _showTagDialog(l10n, tag: tag),
+                        onConfirmDelete: _confirmDeleteTag,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -207,7 +222,92 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildFilterBar(ColorScheme colorScheme) {
+  void _handleAddAction() {
+    final l10n = AppLocalizations.of(context)!;
+    if (_tabController.index == 1) {
+      _showSystemPromptDialog(l10n);
+    } else if (_tabController.index == 2) {
+      _showTagDialog(l10n);
+    } else {
+      _showPromptDialog(l10n);
+    }
+  }
+
+  Widget _buildImportExportMenu(AppLocalizations l10n) {
+    return PopupMenuButton<String>(
+      onSelected: (val) {
+        if (val == 'import') _importPrompts(l10n);
+        if (val == 'export') _exportPrompts(l10n);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
+        PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
+      ],
+    );
+  }
+
+  Widget _buildSidebar(ColorScheme colorScheme, AppLocalizations l10n) {
+    return Container(
+      width: 250,
+      color: colorScheme.surfaceContainerLow,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              l10n.categoriesTab,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+                fontSize: 12,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _tags.length,
+              itemBuilder: (context, index) {
+                final tag = _tags[index];
+                final isSelected = _selectedFilterTagIds.contains(tag.id);
+                return ListTile(
+                  dense: true,
+                  leading: Icon(
+                    isSelected ? Icons.label : Icons.label_outline,
+                    color: Color(tag.color),
+                    size: 18,
+                  ),
+                  title: Text(tag.name),
+                  selected: isSelected,
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedFilterTagIds.remove(tag.id);
+                      } else {
+                        _selectedFilterTagIds.add(tag.id!);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          if (_selectedFilterTagIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextButton.icon(
+                onPressed: () => setState(() => _selectedFilterTagIds.clear()),
+                icon: const Icon(Icons.clear_all, size: 16),
+                label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileFilterBar(ColorScheme colorScheme) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -254,210 +354,29 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildUserPromptList(List<Prompt> prompts, AppLocalizations l10n) {
-    if (prompts.isEmpty) {
-      return _buildEmptyState(l10n, false);
-    }
-    
-    return ReorderableListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: prompts.length,
-      onReorder: (oldIndex, newIndex) async {
-        if (_searchQuery.isNotEmpty || _selectedFilterTagIds.isNotEmpty) return;
-        
-        setState(() {
-          if (newIndex > oldIndex) newIndex -= 1;
-          final item = _userPrompts.removeAt(oldIndex);
-          _userPrompts.insert(newIndex, item);
-        });
-        await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
-      },
-      proxyDecorator: (child, index, animation) => Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.transparent,
-        child: child,
+  Widget _buildSystemTypeToggle(ColorScheme colorScheme, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
       ),
-      itemBuilder: (context, index) {
-        final prompt = prompts[index];
-        final id = prompt.id!;
-        final isExpanded = _expandedPromptIds.contains(id);
-
-        return Padding(
-          key: ValueKey('user_$id'),
-          padding: const EdgeInsets.only(bottom: 12),
-          child: PromptCard(
-            prompt: prompt,
-            isExpanded: isExpanded,
-            onToggle: () => setState(() {
-              if (isExpanded) {
-                _expandedPromptIds.remove(id);
-              } else {
-                _expandedPromptIds.add(id);
-              }
-            }),
-            leading: (_searchQuery.isEmpty && _selectedFilterTagIds.isEmpty)
-                ? ReorderableDragStartListener(
-                    index: index,
-                    child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
-                  )
-                : null,
-            onMoveToTop: index == 0 ? null : () async {
-              setState(() {
-                final item = _userPrompts.removeAt(_userPrompts.indexWhere((p) => p.id == id));
-                _userPrompts.insert(0, item);
-              });
-              await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
-            },
-            onMoveToBottom: index == prompts.length - 1 ? null : () async {
-              setState(() {
-                final item = _userPrompts.removeAt(_userPrompts.indexWhere((p) => p.id == id));
-                _userPrompts.add(item);
-              });
-              await _db.updatePromptOrder(_userPrompts.map((p) => p.id!).toList());
-            },
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.copy_all, size: 18),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: prompt.content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.copiedToClipboard(prompt.title))),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _showPromptDialog(l10n, prompt: prompt),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                onPressed: () => _confirmDelete(l10n, prompt, isSystem: false),
-              ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment(value: 'refiner', label: Text(l10n.typeRefiner), icon: const Icon(Icons.auto_fix_high, size: 16)),
+              ButtonSegment(value: 'rename', label: Text(l10n.typeRename), icon: const Icon(Icons.drive_file_rename_outline, size: 16)),
             ],
+            selected: {_selectedSystemType},
+            onSelectionChanged: (val) {
+              setState(() => _selectedSystemType = val.first);
+            },
+            showSelectedIcon: false,
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSystemPromptList(List<SystemPrompt> prompts, AppLocalizations l10n) {
-    if (prompts.isEmpty) {
-      return _buildEmptyState(l10n, true);
-    }
-    
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: prompts.length,
-      itemBuilder: (context, index) {
-        final systemPrompt = prompts[index];
-        final id = systemPrompt.id!;
-        final isExpanded = _expandedSysPromptIds.contains(id);
-
-        // Map to Prompt for PromptCard
-        final promptForCard = Prompt(
-          id: systemPrompt.id,
-          title: systemPrompt.title,
-          content: systemPrompt.content,
-          isMarkdown: systemPrompt.isMarkdown,
-          tags: [], // System prompts don't use standard tags in UI
-        );
-
-        return Padding(
-          key: ValueKey('sys_$id'),
-          padding: const EdgeInsets.only(bottom: 12),
-          child: PromptCard(
-            prompt: promptForCard,
-            isExpanded: isExpanded,
-            onToggle: () => setState(() {
-              if (isExpanded) {
-                _expandedSysPromptIds.remove(id);
-              } else {
-                _expandedSysPromptIds.add(id);
-              }
-            }),
-            leading: const Icon(Icons.auto_fix_high, color: Colors.purple, size: 20),
-            showCategory: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.copy_all, size: 18),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: systemPrompt.content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.copiedToClipboard(systemPrompt.title))),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _showSystemPromptDialog(l10n, prompt: systemPrompt),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                onPressed: () => _confirmDelete(l10n, systemPrompt, isSystem: true),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTagList(AppLocalizations l10n) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _tags.length,
-      itemBuilder: (context, index) {
-        final tag = _tags[index];
-        return Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Color(tag.color),
-              radius: 12,
-            ),
-            title: Text(tag.name),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showTagDialog(l10n, tag: tag),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDeleteTag(l10n, tag),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmptyState(AppLocalizations l10n, bool isRefiner) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(isRefiner ? Icons.auto_fix_high : Icons.notes, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noPromptsSaved, 
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isRefiner ? "Add system prompts for the Refiner here." : l10n.saveFavoritePrompts, 
-            style: const TextStyle(color: Colors.grey)
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => isRefiner ? _showSystemPromptDialog(l10n) : _showPromptDialog(l10n),
-            icon: const Icon(Icons.add),
-            label: Text(l10n.newPrompt),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -473,10 +392,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
+              final appState = Provider.of<AppState>(context, listen: false);
               if (isSystem) {
-                await _db.deleteSystemPrompt(prompt.id);
+                await appState.deleteSystemPrompt(prompt.id);
               } else {
-                await _db.deletePrompt(prompt.id);
+                await appState.deletePrompt(prompt.id);
               }
               if (context.mounted) {
                 Navigator.pop(context);
@@ -501,7 +421,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await _db.deletePromptTag(tag.id!);
+              final appState = Provider.of<AppState>(context, listen: false);
+              await appState.deletePromptTag(tag.id!);
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadData();
@@ -596,11 +517,16 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
               ElevatedButton(
                 onPressed: () async {
-                  final data = {'name': nameCtrl.text, 'color': selectedColor};
+                  final appState = Provider.of<AppState>(context, listen: false);
+                  final data = {
+                    'name': nameCtrl.text, 
+                    'color': selectedColor,
+                    'sort_order': tag?.sortOrder ?? (_tags.isEmpty ? 0 : _tags.map((t) => t.sortOrder).reduce(math.max) + 1),
+                  };
                   if (tag == null) {
-                    await _db.addPromptTag(data);
+                    await appState.addPromptTag(data);
                   } else {
-                    await _db.updatePromptTag(tag.id!, data);
+                    await appState.updatePromptTag(tag.id!, data,);
                   }
                   if (context.mounted) {
                     Navigator.pop(context);
@@ -620,6 +546,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
     final contentCtrl = TextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
+    String selectedType = prompt?.type ?? _selectedSystemType;
+
+    final Set<int> selectedTagIds = {};
+    if (prompt != null) {
+      for (var t in prompt.tags) {
+        if (t.id != null) selectedTagIds.add(t.id!);
+      }
+    }
 
     showDialog(
       context: context,
@@ -627,18 +561,69 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         builder: (context, setDialogState) => AlertDialog(
           title: Row(
             children: [
-              const Icon(Icons.auto_fix_high, color: Colors.purple),
+              Icon(selectedType == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple),
               const SizedBox(width: 12),
-              Text(prompt == null ? "New Refiner Prompt" : "Edit Refiner Prompt"),
+              Text(prompt == null ? l10n.add : l10n.editPrompt),
             ],
           ),
-          content: SizedBox(
-            width: 600,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 800,
+              minWidth: Responsive.isMobile(context) ? 0 : 500,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedType,
+                          decoration: InputDecoration(labelText: l10n.templateType, border: const OutlineInputBorder()),
+                          items: [
+                            DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
+                            DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),
+                          ],
+                          onChanged: (v) => setDialogState(() => selectedType = v!),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _tags.map((t) {
+                      final id = t.id!;
+                      final isSelected = selectedTagIds.contains(id);
+                      final color = Color(t.color);
+                      return FilterChip(
+                        label: Text(t.name, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : color)),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setDialogState(() {
+                            if (val) {
+                              selectedTagIds.add(id);
+                            } else {
+                              selectedTagIds.remove(id);
+                            }
+                          });
+                        },
+                        selectedColor: color,
+                        checkmarkColor: Colors.white,
+                      );
+                    }).toList(),
+                  ),
                   const SizedBox(height: 16),
                   MarkdownEditor(
                     controller: contentCtrl,
@@ -656,16 +641,18 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             FilledButton(
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
+                final appState = Provider.of<AppState>(context, listen: false);
                 final data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
-                  'type': 'refiner',
+                  'type': selectedType,
                   'is_markdown': isMarkdown ? 1 : 0,
+                  'sort_order': prompt?.sortOrder ?? (_systemPrompts.isEmpty ? 0 : _systemPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 };
                 if (prompt == null) {
-                  await _db.addSystemPrompt(data);
+                  await appState.addSystemPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
-                  await _db.updateSystemPrompt(prompt.id!, data);
+                  await appState.updateSystemPrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -709,8 +696,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
             ],
           ),
-          content: SizedBox(
-            width: 600,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 800,
+              minWidth: Responsive.isMobile(context) ? 0 : 500,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -769,16 +759,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
 
+                final appState = Provider.of<AppState>(context, listen: false);
                 final Map<String, dynamic> data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
                   'is_markdown': isMarkdown ? 1 : 0,
+                  'sort_order': prompt?.sortOrder ?? (_userPrompts.isEmpty ? 0 : _userPrompts.map((p) => p.sortOrder).reduce(math.max) + 1),
                 };
                 if (prompt == null) {
-                  data['sort_order'] = 0;
-                  await _db.addPrompt(data, tagIds: selectedTagIds.toList());
+                  await appState.addPrompt(data, tagIds: selectedTagIds.toList());
                 } else {
-                  await _db.updatePrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
+                  await appState.updatePrompt(prompt.id!, data, tagIds: selectedTagIds.toList());
                 }
                 if (context.mounted) {
                   Navigator.pop(context);
@@ -821,23 +812,27 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Future<void> _importPrompts(AppLocalizations l10n) async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final successMsg = l10n.settingsImported;
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!mounted || result == null) return;
 
     final String? importMode = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Import Mode"),
-        content: const Text("Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data."),
+        title: Text(l10n.importMode),
+        content: Text(l10n.importModeDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, 'merge'),
-            child: const Text("Merge"),
+            child: Text(l10n.merge),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, 'replace'),
-            child: const Text("Replace All"),
+            child: Text(l10n.replaceAll),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -851,75 +846,20 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
     try {
       final file = File(result.files.single.path!);
-      final Map<String, dynamic> data = jsonDecode(await file.readAsString());
+      final String content = await file.readAsString();
+      final Map<String, dynamic> data = jsonDecode(content);
       
-      await _db.database.then((db) async {
-        await db.transaction((txn) async {
-          if (importMode == 'replace') {
-            await txn.delete('prompts');
-            await txn.delete('prompt_tag_refs');
-            await txn.delete('system_prompts');
-            await txn.delete('prompt_tags', where: 'is_system = 0');
-          }
-
-          // Import Tags first to get new IDs
-          final Map<int, int> tagIdMap = {};
-          if (data['tags'] != null) {
-            for (var t in data['tags']) {
-              final oldId = t['id'] as int;
-              final Map<String, dynamic> row = Map.from(t)..remove('id');
-              // Check if tag exists by name
-              final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
-              if (existing.isNotEmpty) {
-                tagIdMap[oldId] = existing.first['id'] as int;
-              } else {
-                final newId = await txn.insert('prompt_tags', row);
-                tagIdMap[oldId] = newId;
-              }
-            }
-          }
-
-          // Import User Prompts
-          if (data['user_prompts'] != null) {
-            for (var p in data['user_prompts']) {
-              final Map<String, dynamic> row = Map.from(p)..remove('id');
-              final List<dynamic>? tags = row['tags'];
-              row.remove('tags');
-              row.remove('tag_name'); 
-              row.remove('tag_color');
-              row.remove('tag_is_system');
-              row.remove('tag_id');
-
-              final newPromptId = await txn.insert('prompts', row);
-              if (tags != null) {
-                for (var t in tags) {
-                  final oldTagId = t['id'] as int;
-                  final newTagId = tagIdMap[oldTagId];
-                  if (newTagId != null) {
-                    await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
-                  }
-                }
-              }
-            }
-          }
-
-          // Import System Prompts
-          if (data['system_prompts'] != null) {
-            for (var p in data['system_prompts']) {
-              final Map<String, dynamic> row = Map.from(p)..remove('id');
-              await txn.insert('system_prompts', row);
-            }
-          }
-        });
-      });
+      await appState.importPromptData(data, replace: importMode == 'replace');
 
       if (mounted) {
+        // ignore: use_build_context_synchronously
         _loadData();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsImported)));
+        // ignore: use_build_context_synchronously
+        messenger.showSnackBar(SnackBar(content: Text(successMsg)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
+        messenger.showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
       }
     }
   }
@@ -1048,4 +988,3 @@ class _ColorWheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ColorWheelPainter oldDelegate) => oldDelegate.hue != hue;
 }
-

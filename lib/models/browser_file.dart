@@ -78,6 +78,16 @@ class BrowserFile {
     );
   }
 
+  factory BrowserFile.fromMap(Map<String, dynamic> map) {
+    return BrowserFile(
+      path: map['path'] as String,
+      name: map['name'] as String,
+      category: FileCategory.values[map['categoryIndex'] as int],
+      size: map['size'] as int,
+      modified: DateTime.fromMillisecondsSinceEpoch(map['modified'] as int),
+    );
+  }
+
   ImageProvider get imageProvider => FileImage(File(path));
 
   @override

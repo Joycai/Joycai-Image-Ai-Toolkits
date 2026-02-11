@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../state/app_state.dart';
+import '../llm_debug_logger.dart';
 import '../llm_models.dart';
 import '../llm_provider_interface.dart';
 import '../model_discovery_service.dart';
@@ -50,7 +52,22 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
     try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Standard)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': payload,
+        });
+      }
+
       final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
 
       if (response.statusCode != 200) {
         logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
@@ -109,9 +126,24 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     request.body = jsonEncode(payload);
 
     final client = config.createClient();
+    final appState = AppState();
+    File? debugFile;
+    if (appState.enableApiDebug) {
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Stream)', {
+        'url': url.toString(),
+        'headers': headers,
+        'body': payload,
+      });
+    }
+
     final response = await client.send(request);
 
     if (response.statusCode != 200) {
+      if (debugFile != null) {
+        final body = await response.stream.bytesToString();
+        await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+      }
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
       throw Exception('OpenAI API Stream Request failed: ${response.statusCode}');
@@ -119,11 +151,18 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
 
+    if (debugFile != null) {
+      await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+    }
+
     String accumulatedText = "";
     bool isLikelyBase64Stream = false;
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+        if (debugFile != null && line.isNotEmpty) {
+          await LLMDebugLogger.appendLine(debugFile, line);
+        }
         if (line.isEmpty || line == 'data: [DONE]') continue;
         
         String dataLine = line;

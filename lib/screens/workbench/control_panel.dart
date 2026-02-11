@@ -6,7 +6,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
@@ -24,7 +23,6 @@ class ControlPanelWidget extends StatefulWidget {
 class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   late TextEditingController _promptController;
   late TextEditingController _prefixController;
-  final DatabaseService _db = DatabaseService();
   
   bool _isModelSettingsExpanded = false;
 
@@ -37,7 +35,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final appState = Provider.of<AppState>(context, listen: false);
     _promptController = TextEditingController(text: appState.lastPrompt);
     _prefixController = TextEditingController(text: appState.imagePrefix);
-    _loadPrompts();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrompts());
   }
 
   @override
@@ -47,10 +45,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     super.dispose();
   }
 
-  // Reloads prompts from DB
+  // Reloads prompts via AppState
   Future<void> _loadPrompts() async {
-    final prompts = await _db.getPrompts();
-    final tags = await _db.getPromptTags();
+    final appState = Provider.of<AppState>(context, listen: false);
+    final prompts = await appState.getPrompts();
+    final tags = await appState.getPromptTags();
     
     if (mounted) {
       setState(() {
@@ -203,7 +202,30 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           ),
           
           const Divider(),
-          _buildQueueStatus(appState, colorScheme, l10n),
+          Selector<AppState, (int, int, double?)>(
+            selector: (_, state) {
+              final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
+              final runningCount = state.taskQueue.runningCount;
+              final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
+              
+              double? avgProgress;
+              if (activeTasks.isNotEmpty) {
+                double total = 0;
+                int count = 0;
+                for (var t in activeTasks) {
+                  if (t.progress != null) {
+                    total += t.progress!;
+                    count++;
+                  }
+                }
+                if (count > 0) avgProgress = total / count;
+              }
+              return (pendingCount, runningCount, avgProgress);
+            },
+            builder: (context, data, _) {
+              return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
+            },
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -247,22 +269,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  Widget _buildQueueStatus(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
-    final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-    final runningCount = appState.taskQueue.runningCount;
-    final activeTasks = appState.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
-    
-    // Average progress of running tasks
-    double? totalProgress;
-    int progressCount = 0;
-    for (var t in activeTasks) {
-      if (t.progress != null) {
-        totalProgress = (totalProgress ?? 0) + t.progress!;
-        progressCount++;
-      }
-    }
-    final avgProgress = progressCount > 0 ? totalProgress! / progressCount : null;
-
+  Widget _buildQueueStatus(int pendingCount, int runningCount, double? avgProgress, ColorScheme colorScheme, AppLocalizations l10n) {
     if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
 
     return Column(
@@ -467,6 +474,18 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                   divisions: 7,
                   onChanged: (v) {
                     appState.setConcurrency(v.toInt());
+                    setDialogState(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text(l10n.retryCount(appState.retryCount)),
+                Slider(
+                  value: appState.retryCount.toDouble(),
+                  min: 0,
+                  max: 5,
+                  divisions: 5,
+                  onChanged: (v) {
+                    appState.setRetryCount(v.toInt());
                     setDialogState(() {});
                   },
                 ),

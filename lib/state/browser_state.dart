@@ -3,19 +3,42 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/browser_file.dart';
 import '../services/database_service.dart';
 
-List<String> _scanFilesIsolate(List<String> paths) {
-  List<String> results = [];
+List<Map<String, dynamic>> _scanFilesIsolate(List<String> paths) {
+  List<Map<String, dynamic>> results = [];
   for (var path in paths) {
     try {
       final dir = Directory(path);
       if (dir.existsSync()) {
         for (var file in dir.listSync(recursive: false)) {
           if (file is File) {
-            results.add(file.path);
+            final stat = file.statSync();
+            final filePath = file.path;
+            final name = p.basename(filePath);
+            final ext = p.extension(filePath).toLowerCase();
+            
+            int categoryIndex = 5; // other
+            if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif'].contains(ext)) {
+              categoryIndex = 1; // image
+            } else if (['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'].contains(ext)) {
+              categoryIndex = 2; // video
+            } else if (['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac', '.wma'].contains(ext)) {
+              categoryIndex = 3; // audio
+            } else if (['.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.srt', '.ass', '.vtt', '.csv', '.log'].contains(ext)) {
+              categoryIndex = 4; // text
+            }
+
+            results.add({
+              'path': filePath,
+              'name': name,
+              'categoryIndex': categoryIndex,
+              'size': stat.size,
+              'modified': stat.modified.millisecondsSinceEpoch,
+            });
           }
         }
       }
@@ -144,16 +167,21 @@ class BrowserState extends ChangeNotifier {
       return;
     }
 
-    final List<String> paths = await compute(_scanFilesIsolate, activeDirectories);
+    final List<Map<String, dynamic>> rawFiles = await compute(_scanFilesIsolate, activeDirectories);
     
-    // Evict from image cache if they are images
-    for (var path in paths) {
-      if (BrowserFile.fromFile(File(path)).category == FileCategory.image) {
-        PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
+    final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
+
+    // Evict from image cache only if the file was modified or removed
+    for (var file in newAllFiles) {
+      if (file.category == FileCategory.image) {
+        final existing = allFiles.cast<BrowserFile?>().firstWhere((f) => f?.path == file.path, orElse: () => null);
+        if (existing != null && existing.modified != file.modified) {
+          PaintingBinding.instance.imageCache.evict(FileImage(File(file.path)));
+        }
       }
     }
 
-    allFiles = paths.map((p) => BrowserFile.fromFile(File(p))).toList();
+    allFiles = newAllFiles;
     _applyFilterAndSort();
   }
 

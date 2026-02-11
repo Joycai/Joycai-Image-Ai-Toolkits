@@ -58,6 +58,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceGallery => '源图库';
 
   @override
+  String get sourceExplorer => '源目录浏览器';
+
+  @override
   String get processResults => '处理结果';
 
   @override
@@ -148,6 +151,58 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String retryCount(int count) {
+    return '重试次数: $count';
+  }
+
+  @override
+  String get back => '返回';
+
+  @override
+  String get next => '下一步';
+
+  @override
+  String get storageLocationDesc => '选择生成图像的保存位置。';
+
+  @override
+  String get addChannelOptional => '添加您的第一个 AI 渠道（可选）。';
+
+  @override
+  String get configureModelOptional => '为新渠道配置一个模型（可选）。';
+
+  @override
+  String get importSettingsTitle => '导入设置？';
+
+  @override
+  String get importSettingsConfirm =>
+      '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
+
+  @override
+  String get importAndReplace => '导入并替换';
+
+  @override
+  String get importMode => '导入模式';
+
+  @override
+  String get importModeDesc =>
+      '选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。';
+
+  @override
+  String get merge => '合并';
+
+  @override
+  String get replaceAll => '全部替换';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get applyOverwrite => '应用 (覆盖)';
+
+  @override
+  String get applyAppend => '应用 (追加)';
+
+  @override
   String get aiPromptRefiner => 'AI 提示词优化器';
 
   @override
@@ -195,6 +250,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appearance => '外观';
+
+  @override
+  String get connectivity => '连接设置';
+
+  @override
+  String get application => '应用设置';
 
   @override
   String get proxySettings => '代理设置';
@@ -310,6 +371,30 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get taskSummary => '任务摘要';
+
+  @override
+  String get pendingTasks => '待处理';
+
+  @override
+  String get processingTasks => '执行中';
+
+  @override
+  String get completedTasks => '已完成';
+
+  @override
+  String get failedTasks => '失败';
+
+  @override
+  String get clearCompleted => '清除已完成';
+
+  @override
+  String get clearAll => '全部清除';
+
+  @override
+  String get cancelAllPending => '取消所有等待中';
+
+  @override
   String get cancelTask => '取消任务';
 
   @override
@@ -396,9 +481,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearUsageWarning => '这将永久从数据库中删除所有 Token 使用记录。';
-
-  @override
-  String get clearAll => '全部清除';
 
   @override
   String get modelsLabel => '模型: ';
@@ -686,6 +768,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get refinerPrompts => '优化器提示词';
+
+  @override
+  String get systemTemplates => '系统模板';
+
+  @override
+  String get templateType => '模板用途';
+
+  @override
+  String get typeRename => '批量重命名';
+
+  @override
+  String get typeRefiner => '提示词优化';
+
+  @override
+  String get selectRenameTemplate => '选择重命名模板';
 
   @override
   String get selectCategory => '选择分类';
@@ -1005,4 +1102,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String cookieImportSuccess(Object count) {
     return '成功导入 $count 条 Cookie。';
   }
+
+  @override
+  String get share => '分享';
+
+  @override
+  String shareFiles(int count) {
+    return '分享选中的项 ($count)';
+  }
+
+  @override
+  String get importFromGallery => '从系统图库导入';
+
+  @override
+  String get enableApiDebug => '开启 API 调试日志';
+
+  @override
+  String get apiDebugDesc => '将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。';
+
+  @override
+  String get openLogFolder => '打开日志目录';
 }

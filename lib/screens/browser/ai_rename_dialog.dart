@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/prompt.dart';
+import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
@@ -19,6 +22,7 @@ class AiRenameDialog extends StatefulWidget {
 
 class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
+  final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
   int? _selectedModelPk;
   List<Map<String, String>> _proposedRenames = [];
@@ -27,8 +31,63 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   @override
   void initState() {
     super.initState();
+    _loadLastSettings();
+  }
+
+  Future<void> _loadLastSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    _selectedModelPk = int.tryParse(appState.lastSelectedModelId ?? '');
+    final lastModelId = await appState.getSetting('last_ai_rename_model_id');
+    final lastInstructions = await appState.getSetting('last_ai_rename_instructions');
+    
+    if (mounted) {
+      setState(() {
+        _selectedModelPk = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
+        if (lastInstructions != null) {
+          _instructionController.text = lastInstructions;
+        }
+      });
+    }
+  }
+
+  Future<void> _showTemplatePicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    final List<SystemPrompt> templates = await _db.getSystemPrompts(type: 'rename');
+    
+    if (!mounted) return;
+
+    final SystemPrompt? selected = await showDialog<SystemPrompt>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.selectRenameTemplate),
+        content: SizedBox(
+          width: 400,
+          child: templates.isEmpty 
+            ? Center(child: Text(l10n.noPromptsSaved))
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: templates.length,
+                itemBuilder: (context, index) {
+                  final t = templates[index];
+                  return ListTile(
+                    title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                    onTap: () => Navigator.pop(context, t),
+                  );
+                },
+              ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _instructionController.text = selected.content;
+      });
+    }
   }
 
   Future<void> _generateSuggestions() async {
@@ -37,6 +96,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final selectedFiles = browserState.selectedFiles.toList();
 
     if (_selectedModelPk == null || _instructionController.text.isEmpty) return;
+
+    // Save current settings as last used
+    final db = DatabaseService();
+    db.saveSetting('last_ai_rename_model_id', _selectedModelPk.toString());
+    db.saveSetting('last_ai_rename_instructions', _instructionController.text);
 
     setState(() {
       _isProcessing = true;
@@ -180,56 +244,69 @@ Do not include any other text or markdown formatting.
         children: [
           const Icon(Icons.auto_fix_high, color: Colors.blue),
           const SizedBox(width: 8),
-          Text(l10n.aiBatchRename),
+          Expanded(child: Text(l10n.aiBatchRename, overflow: TextOverflow.ellipsis)),
         ],
       ),
-      content: SizedBox(
-        width: 800,
-        height: 600,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: effectiveModelPk,
-                    decoration: InputDecoration(labelText: l10n.model, border: const OutlineInputBorder()),
-                    items: chatModels.map((m) => DropdownMenuItem(
-                      value: m.id,
-                      child: Text(m.modelName),
-                    )).toList(),
-                    onChanged: (v) => setState(() => _selectedModelPk = v),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 900,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          minWidth: Responsive.isMobile(context) ? 0 : 600,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<int>(
+                initialValue: effectiveModelPk,
+                decoration: InputDecoration(labelText: l10n.model, border: const OutlineInputBorder()),
+                items: chatModels.map((m) => DropdownMenuItem(
+                  value: m.id,
+                  child: Text(m.modelName),
+                )).toList(),
+                onChanged: (v) => setState(() => _selectedModelPk = v),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold))),
+                  TextButton.icon(
+                    onPressed: _showTemplatePicker,
+                    icon: const Icon(Icons.library_books, size: 16),
+                    label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _instructionController,
+                decoration: const InputDecoration(
+                  hintText: "e.g. Normalize to S01E01 format for Jellyfin",
+                  border: OutlineInputBorder(),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _instructionController,
-              decoration: InputDecoration(
-                labelText: l10n.rulesInstructions,
-                hintText: "e.g. Normalize to S01E01 format for Jellyfin",
-                border: const OutlineInputBorder(),
+                maxLines: 3,
               ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: FilledButton.icon(
-                onPressed: _isProcessing ? null : _generateSuggestions,
-                icon: _isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.psychology),
-                label: Text(l10n.generateSuggestions),
+              const SizedBox(height: 16),
+              Center(
+                child: FilledButton.icon(
+                  onPressed: _isProcessing ? null : _generateSuggestions,
+                  icon: _isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.psychology),
+                  label: Text(l10n.generateSuggestions),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            Expanded(
-              child: _proposedRenames.isEmpty 
-                ? Center(child: Text(l10n.noSuggestions, style: TextStyle(color: colorScheme.outline)))
-                : _buildPreviewTable(colorScheme, l10n),
-            ),
-          ],
+              const SizedBox(height: 16),
+              const Divider(),
+              if (_proposedRenames.isEmpty)
+                SizedBox(
+                  height: 100,
+                  child: Center(child: Text(l10n.noSuggestions, style: TextStyle(color: colorScheme.outline))),
+                )
+              else
+                _buildPreviewList(colorScheme, l10n),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -245,42 +322,46 @@ Do not include any other text or markdown formatting.
     );
   }
 
-  Widget _buildPreviewTable(ColorScheme colorScheme, AppLocalizations l10n) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: Table(
-        columnWidths: const {
-          0: FlexColumnWidth(2),
-          1: FlexColumnWidth(2),
-          2: IntrinsicColumnWidth(),
-        },
-        border: TableBorder.all(color: colorScheme.outlineVariant, width: 0.5),
-        children: [
-          TableRow(
-            decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest),
+  Widget _buildPreviewList(ColorScheme colorScheme, AppLocalizations l10n) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _proposedRenames.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        final item = _proposedRenames[index];
+        final hasConflict = _conflicts.containsKey(item['path']);
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(padding: const EdgeInsets.all(8), child: Text(l10n.originalName, style: const TextStyle(fontWeight: FontWeight.bold))),
-              Padding(padding: const EdgeInsets.all(8), child: Text(l10n.newName, style: const TextStyle(fontWeight: FontWeight.bold))),
-              Padding(padding: const EdgeInsets.all(8), child: Text(l10n.status, style: const TextStyle(fontWeight: FontWeight.bold))),
+              Text(item['old_name']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  const Icon(Icons.arrow_forward, size: 12, color: Colors.blue),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      item['new_name']!, 
+                      style: TextStyle(
+                        fontSize: 13, 
+                        fontWeight: FontWeight.bold,
+                        color: hasConflict ? Colors.red : Colors.green,
+                      ),
+                    ),
+                  ),
+                  if (hasConflict) 
+                    Tooltip(message: _conflicts[item['path']], child: const Icon(Icons.error_outline, color: Colors.red, size: 16))
+                  else
+                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                ],
+              ),
             ],
           ),
-          ..._proposedRenames.map((item) {
-            final hasConflict = _conflicts.containsKey(item['path']);
-            return TableRow(
-              children: [
-                Padding(padding: const EdgeInsets.all(8), child: Text(item['old_name']!, style: const TextStyle(fontSize: 12))),
-                Padding(padding: const EdgeInsets.all(8), child: Text(item['new_name']!, style: TextStyle(fontSize: 12, color: hasConflict ? Colors.red : Colors.green))),
-                Padding(
-                  padding: const EdgeInsets.all(8), 
-                  child: hasConflict 
-                    ? Tooltip(message: _conflicts[item['path']], child: const Icon(Icons.error_outline, color: Colors.red, size: 16))
-                    : const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                ),
-              ],
-            );
-          }),
-        ],
-      ),
+        );
+      },
     );
   }
 }
