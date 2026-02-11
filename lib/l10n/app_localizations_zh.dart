@@ -252,6 +252,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appearance => '外观';
 
   @override
+  String get connectivity => '连接设置';
+
+  @override
+  String get application => '应用设置';
+
+  @override
   String get proxySettings => '代理设置';
 
   @override
@@ -365,6 +371,30 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get taskSummary => '任务摘要';
+
+  @override
+  String get pendingTasks => '待处理';
+
+  @override
+  String get processingTasks => '执行中';
+
+  @override
+  String get completedTasks => '已完成';
+
+  @override
+  String get failedTasks => '失败';
+
+  @override
+  String get clearCompleted => '清除已完成';
+
+  @override
+  String get clearAll => '全部清除';
+
+  @override
+  String get cancelAllPending => '取消所有等待中';
+
+  @override
   String get cancelTask => '取消任务';
 
   @override
@@ -451,9 +481,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearUsageWarning => '这将永久从数据库中删除所有 Token 使用记录。';
-
-  @override
-  String get clearAll => '全部清除';
 
   @override
   String get modelsLabel => '模型: ';

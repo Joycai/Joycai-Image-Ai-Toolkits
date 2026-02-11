@@ -136,6 +136,8 @@
   },
   "remove": "移除",
   "appearance": "外观",
+  "connectivity": "连接设置",
+  "application": "应用设置",
   "proxySettings": "代理设置",
   "enableProxy": "启用全局代理",
   "proxyUrl": "代理地址 (host:port)",
@@ -180,6 +182,14 @@
       }
     }
   },
+  "taskSummary": "任务摘要",
+  "pendingTasks": "待处理",
+  "processingTasks": "执行中",
+  "completedTasks": "已完成",
+  "failedTasks": "失败",
+  "clearCompleted": "清除已完成",
+  "clearAll": "清除全部",
+  "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
   "removeFromList": "从列表中移除",
   "model": "模型",

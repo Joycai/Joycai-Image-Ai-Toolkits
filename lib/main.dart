@@ -102,6 +102,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   bool _isRailExtended = false;
   bool _wizardShown = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void didChangeDependencies() {
@@ -144,8 +145,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isMobile = Responsive.isMobile(context);
+    final isTablet = Responsive.isTablet(context);
 
-    final navDestinations = [
+    // If rail extended state hasn't been set by user, default based on tablet/desktop
+    if (isTablet) _isRailExtended = false;
+
+    final allNavItems = [
       (
         icon: const Icon(Icons.work_outline),
         selectedIcon: const Icon(Icons.work),
@@ -188,9 +193,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
     ];
 
+    // Split for mobile: 4 items + "More"
+    final primaryItems = allNavItems.take(4).toList();
+    final secondaryItems = allNavItems.skip(4).toList();
+
     return Stack(
       children: [
         Scaffold(
+          key: _scaffoldKey,
+          drawer: isMobile ? _buildMobileDrawer(secondaryItems, l10n) : null,
           body: Row(
             children: [
               if (!isMobile)
@@ -207,7 +218,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
                   ),
                   labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-                  destinations: navDestinations
+                  destinations: allNavItems
                       .map((d) => NavigationRailDestination(
                             icon: d.icon,
                             selectedIcon: d.selectedIcon,
@@ -223,25 +234,89 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
           bottomNavigationBar: isMobile
               ? NavigationBar(
-                  selectedIndex: _selectedIndex,
+                  selectedIndex: _selectedIndex < 4 ? _selectedIndex : 4,
                   onDestinationSelected: (int index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
+                    if (index < 4) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    } else {
+                      _scaffoldKey.currentState?.openDrawer();
+                    }
                   },
-                  destinations: navDestinations
-                      .map((d) => NavigationDestination(
-                            icon: d.icon,
-                            selectedIcon: d.selectedIcon,
-                            label: d.label,
-                          ))
-                      .toList(),
+                  destinations: [
+                    ...primaryItems.map((d) => NavigationDestination(
+                          icon: d.icon,
+                          selectedIcon: d.selectedIcon,
+                          label: d.label,
+                        )),
+                    const NavigationDestination(
+                      icon: Icon(Icons.more_horiz_outlined),
+                      selectedIcon: Icon(Icons.more_horiz),
+                      label: "More", // Usually stays English or translated if needed
+                    ),
+                  ],
                 )
               : null,
         ),
         const FloatingPreviewHost(),
         const FloatingComparatorHost(),
       ],
+    );
+  }
+
+  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n) {
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome, size: 48, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.appTitle,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          ...items.asMap().entries.map((entry) {
+            final index = entry.key + 4; // Skip first 4
+            final d = entry.value;
+            final isSelected = _selectedIndex == index;
+            return ListTile(
+              leading: isSelected ? d.selectedIcon : d.icon,
+              title: Text(d.label),
+              selected: isSelected,
+              onTap: () {
+                setState(() {
+                  _selectedIndex = index;
+                });
+                Navigator.pop(context);
+              },
+            );
+          }),
+          const Spacer(),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "Joycai Toolkits",
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

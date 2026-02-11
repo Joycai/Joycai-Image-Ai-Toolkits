@@ -542,6 +542,18 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @connectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connectivity'**
+  String get connectivity;
+
+  /// No description provided for @application.
+  ///
+  /// In en, this message translates to:
+  /// **'Application'**
+  String get application;
+
   /// No description provided for @proxySettings.
   ///
   /// In en, this message translates to:
@@ -764,6 +776,54 @@ abstract class AppLocalizations {
   /// **'Task ID: {id}'**
   String taskId(String id);
 
+  /// No description provided for @taskSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Summary'**
+  String get taskSummary;
+
+  /// No description provided for @pendingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingTasks;
+
+  /// No description provided for @processingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processingTasks;
+
+  /// No description provided for @completedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedTasks;
+
+  /// No description provided for @failedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failedTasks;
+
+  /// No description provided for @clearCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Completed'**
+  String get clearCompleted;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
+  /// No description provided for @cancelAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel All Pending'**
+  String get cancelAllPending;
+
   /// No description provided for @cancelTask.
   ///
   /// In en, this message translates to:
@@ -931,12 +991,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will permanently delete all token usage records from the database.'**
   String get clearUsageWarning;
-
-  /// No description provided for @clearAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get clearAll;
 
   /// No description provided for @modelsLabel.
   ///

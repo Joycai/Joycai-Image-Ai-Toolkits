@@ -17,6 +17,8 @@ import '../../widgets/app_section.dart';
 import '../../widgets/settings_widgets.dart';
 import '../wizard/setup_wizard.dart';
 
+enum SettingsCategory { appearance, connectivity, application, data }
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -26,6 +28,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final DatabaseService _db = DatabaseService();
+  SettingsCategory _selectedCategory = SettingsCategory.appearance;
   
   // Controllers
   final TextEditingController _outputDirController = TextEditingController();
@@ -66,71 +69,155 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
-    final isMobile = Responsive.isMobile(context);
+    final isNarrow = Responsive.isNarrow(context);
 
+    if (isNarrow) {
+      return _buildMobileLayout(l10n);
+    } else {
+      return _buildDesktopLayout(l10n);
+    }
+  }
+
+  Widget _buildMobileLayout(AppLocalizations l10n) {
     return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(isMobile ? 16 : 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(title: Text(l10n.settings)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildAppearanceSection(l10n),
+            const SizedBox(height: 24),
+            _buildConnectivitySection(l10n, true),
+            const SizedBox(height: 24),
+            _buildApplicationSection(l10n),
+            const SizedBox(height: 24),
+            _buildDataSection(l10n, true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.settings)),
+      body: Row(
+        children: [
+          // Sidebar
+          Container(
+            width: 250,
+            color: colorScheme.surfaceContainerLow,
+            child: ListView(
               children: [
-                AppSection(
-                  title: l10n.appearance,
-                  children: [
-                    ThemeSelector(appState: appState, l10n: l10n),
-                    const SizedBox(height: 24),
-                    ThemeColorSelector(appState: appState, l10n: l10n),
-                    const SizedBox(height: 24),
-                    LanguageSelector(appState: appState, l10n: l10n),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                AppSection(
-                  title: l10n.proxySettings,
-                  children: [
-                    _buildProxySettings(l10n, isMobile),
-                  ],
-                ),
-
-                AppSection(
-                  title: l10n.mcpServerSettings,
-                  children: [
-                    _buildMcpSettings(l10n),
-                  ],
-                ),
-
-                AppSection(
-                  title: l10n.settings,
-                  children: [
-                    _buildNotificationTile(appState, l10n),
-                    const SizedBox(height: 8),
-                    _buildApiDebugTile(appState, l10n),
-                    const SizedBox(height: 8),
-                    _buildPortableModeTile(l10n),
-                    const SizedBox(height: 8),
-                    _buildOutputDirectoryTile(appState, l10n),
-                  ],
-                ),
-
-                AppSection(
-                  title: l10n.dataManagement,
-                  padding: const EdgeInsets.only(bottom: 64),
-                  children: [
-                    _buildDataActions(colorScheme, l10n, isMobile),
-                  ],
-                ),
+                _buildCategoryTile(SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance),
+                _buildCategoryTile(SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity),
+                _buildCategoryTile(SettingsCategory.application, Icons.settings_applications_outlined, l10n.application),
+                _buildCategoryTile(SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement),
               ],
             ),
           ),
-        ),
+          const VerticalDivider(width: 1),
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: _buildSelectedCategory(l10n),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildCategoryTile(SettingsCategory category, IconData icon, String label) {
+    final isSelected = _selectedCategory == category;
+    return ListTile(
+      selected: isSelected,
+      leading: Icon(icon, size: 20),
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      onTap: () => setState(() => _selectedCategory = category),
+    );
+  }
+
+  Widget _buildSelectedCategory(AppLocalizations l10n) {
+    switch (_selectedCategory) {
+      case SettingsCategory.appearance:
+        return _buildAppearanceSection(l10n);
+      case SettingsCategory.connectivity:
+        return _buildConnectivitySection(l10n, false);
+      case SettingsCategory.application:
+        return _buildApplicationSection(l10n);
+      case SettingsCategory.data:
+        return _buildDataSection(l10n, false);
+    }
+  }
+
+  Widget _buildAppearanceSection(AppLocalizations l10n) {
+    final appState = Provider.of<AppState>(context);
+    return AppSection(
+      title: l10n.appearance,
+      children: [
+        ThemeSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 24),
+        ThemeColorSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 24),
+        LanguageSelector(appState: appState, l10n: l10n),
+      ],
+    );
+  }
+
+  Widget _buildConnectivitySection(AppLocalizations l10n, bool isMobile) {
+    return Column(
+      children: [
+        AppSection(
+          title: l10n.proxySettings,
+          children: [
+            _buildProxySettings(l10n, isMobile),
+          ],
+        ),
+        const SizedBox(height: 24),
+        AppSection(
+          title: l10n.mcpServerSettings,
+          children: [
+            _buildMcpSettings(l10n),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApplicationSection(AppLocalizations l10n) {
+    final appState = Provider.of<AppState>(context);
+    return AppSection(
+      title: l10n.application,
+      children: [
+        _buildNotificationTile(appState, l10n),
+        const SizedBox(height: 8),
+        _buildApiDebugTile(appState, l10n),
+        const SizedBox(height: 8),
+        _buildPortableModeTile(l10n),
+        const SizedBox(height: 8),
+        _buildOutputDirectoryTile(appState, l10n),
+      ],
+    );
+  }
+
+  Widget _buildDataSection(AppLocalizations l10n, bool isMobile) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AppSection(
+      title: l10n.dataManagement,
+      padding: const EdgeInsets.only(bottom: 64),
+      children: [
+        _buildDataActions(colorScheme, l10n, isMobile),
+      ],
     );
   }
 

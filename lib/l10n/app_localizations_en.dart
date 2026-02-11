@@ -256,6 +256,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get connectivity => 'Connectivity';
+
+  @override
+  String get application => 'Application';
+
+  @override
   String get proxySettings => 'Proxy Settings';
 
   @override
@@ -371,6 +377,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get taskSummary => 'Task Summary';
+
+  @override
+  String get pendingTasks => 'Pending';
+
+  @override
+  String get processingTasks => 'Processing';
+
+  @override
+  String get completedTasks => 'Completed';
+
+  @override
+  String get failedTasks => 'Failed';
+
+  @override
+  String get clearCompleted => 'Clear Completed';
+
+  @override
+  String get clearAll => 'Clear All';
+
+  @override
+  String get cancelAllPending => 'Cancel All Pending';
+
+  @override
   String get cancelTask => 'Cancel Task';
 
   @override
@@ -459,9 +489,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearUsageWarning =>
       'This will permanently delete all token usage records from the database.';
-
-  @override
-  String get clearAll => 'Clear All';
 
   @override
   String get modelsLabel => 'Models: ';

@@ -136,6 +136,8 @@
   },
   "remove": "Remove",
   "appearance": "Appearance",
+  "connectivity": "Connectivity",
+  "application": "Application",
   "proxySettings": "Proxy Settings",
   "enableProxy": "Enable Global Proxy",
   "proxyUrl": "Proxy URL (host:port)",
@@ -180,6 +182,14 @@
       }
     }
   },
+  "taskSummary": "Task Summary",
+  "pendingTasks": "Pending",
+  "processingTasks": "Processing",
+  "completedTasks": "Completed",
+  "failedTasks": "Failed",
+  "clearCompleted": "Clear Completed",
+  "clearAll": "Clear All",
+  "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "removeFromList": "Remove from list",
   "model": "Model",

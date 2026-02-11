@@ -15,39 +15,201 @@ class TaskQueueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final l10n = AppLocalizations.of(context)!;
+    final isNarrow = Responsive.isNarrow(context);
+
+    if (isNarrow) {
+      return _buildMobileLayout(context, appState, l10n);
+    } else {
+      return _buildDesktopLayout(context, appState, l10n);
+    }
+  }
+
+  Widget _buildMobileLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
     final tasks = appState.taskQueue.queue;
     final colorScheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.taskQueueManager),
         actions: [
-          TextButton.icon(
-            onPressed: () => appState.taskQueue.refreshQueue(), // Refresh
+          IconButton(
+            onPressed: () => appState.taskQueue.refreshQueue(),
             icon: const Icon(Icons.refresh),
-            label: Text(l10n.refresh),
+            tooltip: l10n.refresh,
           ),
-          const SizedBox(width: 16),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (val) => _handleBulkAction(val, appState.taskQueue),
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 'clear_completed', child: Text(l10n.clearCompleted)),
+              PopupMenuItem(value: 'cancel_pending', child: Text(l10n.cancelAllPending)),
+              const PopupMenuDivider(),
+              PopupMenuItem(value: 'clear_all', child: Text(l10n.clearAll), enabled: tasks.isNotEmpty),
+            ],
+          ),
         ],
       ),
       body: tasks.isEmpty
           ? _buildEmptyState(colorScheme, l10n)
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: tasks.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final task = tasks[tasks.length - 1 - index]; // Show newest first
-                    return _TaskTile(task: task);
-                  },
-                ),
-              ),
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: tasks.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final task = tasks[tasks.length - 1 - index];
+                return _TaskTile(task: task);
+              },
             ),
     );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
+    final tasks = appState.taskQueue.queue;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.taskQueueManager)),
+      body: Row(
+        children: [
+          // Left Sidebar: Summary & Controls
+          Container(
+            width: 300,
+            color: colorScheme.surfaceContainerLow,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    l10n.taskSummary,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                      fontSize: 12,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                _buildSummaryStat(l10n.pendingTasks, _getCount(tasks, TaskStatus.pending), Colors.orange),
+                _buildSummaryStat(l10n.processingTasks, _getCount(tasks, TaskStatus.processing), Colors.blue),
+                _buildSummaryStat(l10n.completedTasks, _getCount(tasks, TaskStatus.completed), Colors.green),
+                _buildSummaryStat(l10n.failedTasks, _getCount(tasks, TaskStatus.failed), Colors.red),
+                
+                const Spacer(),
+                const Divider(height: 1),
+                
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.concurrencyLimit(appState.taskQueue.concurrencyLimit),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      Slider(
+                        value: appState.taskQueue.concurrencyLimit.toDouble(),
+                        min: 1,
+                        max: 10,
+                        divisions: 9,
+                        onChanged: (v) => appState.taskQueue.updateConcurrency(v.round()),
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () => _handleBulkAction('clear_completed', appState.taskQueue),
+                        icon: const Icon(Icons.cleaning_services_outlined, size: 18),
+                        label: Text(l10n.clearCompleted),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _handleBulkAction('cancel_pending', appState.taskQueue),
+                        icon: const Icon(Icons.cancel_presentation_outlined, size: 18),
+                        label: Text(l10n.cancelAllPending),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: tasks.isEmpty ? null : () => _handleBulkAction('clear_all', appState.taskQueue),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.errorContainer,
+                          foregroundColor: colorScheme.error,
+                        ),
+                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                        label: Text(l10n.clearAll),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          // Right Pane: Task List
+          Expanded(
+            child: tasks.isEmpty
+                ? _buildEmptyState(colorScheme, l10n)
+                : Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 900),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(24),
+                        itemCount: tasks.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final task = tasks[tasks.length - 1 - index];
+                          return _TaskTile(task: task);
+                        },
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryStat(String label, int count, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
+          Text(
+            '$count',
+            style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _getCount(List<TaskItem> tasks, TaskStatus status) {
+    return tasks.where((t) => t.status == status).length;
+  }
+
+  void _handleBulkAction(String action, TaskQueueService queue) {
+    if (action == 'clear_completed') {
+      final toRemove = queue.queue.where((t) => t.status == TaskStatus.completed).map((t) => t.id).toList();
+      for (var id in toRemove) {
+        queue.removeTask(id);
+      }
+    } else if (action == 'cancel_pending') {
+      final toCancel = queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
+      for (var id in toCancel) {
+        queue.cancelTask(id);
+      }
+    } else if (action == 'clear_all') {
+      final toRemove = queue.queue.where((t) => t.status != TaskStatus.processing).map((t) => t.id).toList();
+      for (var id in toRemove) {
+        queue.removeTask(id);
+      }
+    }
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
@@ -132,7 +294,7 @@ class _TaskTileState extends State<_TaskTile> {
                         Expanded(
                           child: Text(
                             l10n.taskId(task.id.substring(0, 8)),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13),
                           ),
                         ),
                         Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
@@ -155,7 +317,7 @@ class _TaskTileState extends State<_TaskTile> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
                       ),
                     ),
-                    Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
+                    Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey, size: 20),
                     const SizedBox(width: 8),
                     if (task.status == TaskStatus.pending)
                       IconButton(
@@ -310,7 +472,23 @@ class _TaskTileState extends State<_TaskTile> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.latestLog, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(l10n.latestLog, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            IconButton(
+                              icon: const Icon(Icons.copy, size: 12),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                final log = task.logs.join('\n');
+                                Clipboard.setData(ClipboardData(text: log));
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs copied to clipboard.')));
+                              },
+                              tooltip: 'Copy Logs',
+                            ),
+                          ],
+                        ),
                         Text(
                           task.logs.last,
                           style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
