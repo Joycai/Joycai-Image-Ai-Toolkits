@@ -43,10 +43,7 @@ class SourceExplorerWidget extends StatelessWidget {
         ? appState.browserState.sourceDirectories 
         : appState.sourceDirectories;
 
-    return Container(
-      width: 250,
-      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
-      child: Column(
+    return Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -100,7 +97,6 @@ class SourceExplorerWidget extends StatelessWidget {
                   ),
           ),
         ],
-      ),
     );
   }
 

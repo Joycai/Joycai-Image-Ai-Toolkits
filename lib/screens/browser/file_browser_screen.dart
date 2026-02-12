@@ -10,7 +10,7 @@ import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
-import '../workbench/source_explorer.dart';
+import '../../widgets/unified_sidebar.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_toolbar.dart';
@@ -58,21 +58,16 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           ),
         ],
       ) : null,
-      drawer: isNarrow ? const Drawer(width: 300, child: SourceExplorerWidget(useBrowserState: true)) : null,
+      drawer: isNarrow ? const Drawer(width: 300, child: UnifiedSidebar(useBrowserState: true)) : null,
       body: Row(
         children: [
           if (!isNarrow) ...[
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              width: appState.isSidebarExpanded ? 280 : 0,
+              width: appState.isSidebarExpanded ? appState.sidebarWidth : 0,
               child: const ClipRect(
-                child: OverflowBox(
-                  minWidth: 280,
-                  maxWidth: 280,
-                  alignment: Alignment.topLeft,
-                  child: SourceExplorerWidget(useBrowserState: true),
-                ),
+                child: UnifiedSidebar(useBrowserState: true),
               ),
             ),
             const VerticalDivider(width: 1, thickness: 1),
@@ -124,35 +119,41 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget _buildFileGrid(BuildContext context, BrowserState state) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: state.thumbnailSize,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: state.filteredFiles.length,
-      itemBuilder: (context, index) {
-        final file = state.filteredFiles[index];
-        return FileCard(
-          file: file,
-          isSelected: state.selectedFiles.contains(file),
-          thumbnailSize: state.thumbnailSize,
-          onTap: () => state.toggleSelection(file),
-          onDoubleTap: () {
-            if (file.category == FileCategory.image) {
-              final appState = Provider.of<AppState>(context, listen: false);
-              appState.windowState.openPreview(file.path);
-              appState.navigateToScreen(0);
-              appState.setWorkbenchTab(3);
-            } else {
-              _handleOpenFile(file);
-            }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: state.thumbnailSize,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.85,
+          ),
+          itemCount: state.filteredFiles.length,
+          itemBuilder: (context, index) {
+            final file = state.filteredFiles[index];
+            return FileCard(
+              file: file,
+              isSelected: state.selectedFiles.contains(file),
+              thumbnailSize: state.thumbnailSize,
+              onTap: () => state.toggleSelection(file),
+              onDoubleTap: () {
+                if (file.category == FileCategory.image) {
+                  final appState = Provider.of<AppState>(context, listen: false);
+                  appState.windowState.openPreview(file.path);
+                  appState.setSidebarMode(SidebarMode.preview);
+                  if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+                } else {
+                  _handleOpenFile(file);
+                }
+              },
+              onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
+            );
           },
-          onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
         );
-      },
+      }
     );
   }
 
@@ -172,8 +173,8 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             if (file.category == FileCategory.image) {
               final appState = Provider.of<AppState>(context, listen: false);
               appState.windowState.openPreview(file.path);
-              appState.navigateToScreen(0);
-              appState.setWorkbenchTab(3);
+              appState.setSidebarMode(SidebarMode.preview);
+              if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
             } else {
               _handleOpenFile(file);
             }

@@ -7,9 +7,9 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../widgets/collapsible_card.dart';
 import '../../widgets/log_console.dart';
+import '../../widgets/unified_sidebar.dart';
 import 'control_panel.dart';
 import 'gallery.dart';
-import 'source_explorer.dart';
 import 'widgets/gallery_toolbar.dart';
 
 class WorkbenchScreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     
     // Sync with AppState
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -87,12 +87,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
             Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
             Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
-            Tab(text: l10n.preview, icon: const Icon(Icons.visibility)),
-            Tab(text: l10n.comparator, icon: const Icon(Icons.compare)),
           ],
         ),
       ) : null,
-      drawer: isNarrow ? const Drawer(width: 300, child: SourceExplorerWidget()) : null,
+      drawer: isNarrow ? const Drawer(width: 300, child: UnifiedSidebar()) : null,
       endDrawer: isNarrow ? const Drawer(width: 350, child: ControlPanelWidget()) : null,
       body: Column(
         children: [
@@ -117,14 +115,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                         Tab(child: Row(children: [const Icon(Icons.image_search, size: 18), const SizedBox(width: 8), Text(l10n.sourceGallery)])),
                         Tab(child: Row(children: [const Icon(Icons.auto_awesome, size: 18), const SizedBox(width: 8), Text(l10n.processResults)])),
                         Tab(child: Row(children: [const Icon(Icons.workspaces, size: 18), const SizedBox(width: 8), Text(l10n.tempWorkspace)])),
-                        Tab(child: Row(children: [const Icon(Icons.visibility, size: 18), const SizedBox(width: 8), Text(l10n.preview)])),
-                        Tab(child: Row(children: [const Icon(Icons.compare, size: 18), const SizedBox(width: 8), Text(l10n.comparator)])),
                       ] : [
                         Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
                         Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
                         Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
-                        Tab(text: l10n.preview, icon: const Icon(Icons.visibility)),
-                        Tab(text: l10n.comparator, icon: const Icon(Icons.compare)),
                       ],
                     ),
                   ),
@@ -141,14 +135,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
-                    width: appState.isSidebarExpanded ? 280 : 0,
+                    width: appState.isSidebarExpanded ? appState.sidebarWidth : 0,
                     child: const ClipRect(
-                      child: OverflowBox(
-                        minWidth: 280,
-                        maxWidth: 280,
-                        alignment: Alignment.topLeft,
-                        child: SourceExplorerWidget(),
-                      ),
+                      child: UnifiedSidebar(),
                     ),
                   ),
                   const VerticalDivider(width: 1, thickness: 1),

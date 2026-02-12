@@ -14,9 +14,6 @@ import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
-import '../../widgets/dialogs/mask_editor_dialog.dart';
-import 'tabs/comparator_tab.dart';
-import 'tabs/preview_tab.dart';
 
 class GalleryWidget extends StatefulWidget {
   final TabController tabController;
@@ -62,8 +59,6 @@ class _GalleryWidgetState extends State<GalleryWidget> {
               _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
               _buildImageGrid(context, appState.processedImages, appState, isResult: true),
               _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
-              const PreviewTab(),
-              const ComparatorTab(),
             ],
           ),
           if (_isDragging)
@@ -110,35 +105,42 @@ class _GalleryWidgetState extends State<GalleryWidget> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: state.thumbnailSize,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1,
-      ),
-      itemCount: images.length,
-      itemBuilder: (context, index) {
-        final imageFile = images[index];
-        final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
         
-        return _ImageCard(
-          imageFile: imageFile,
-          isSelected: isSelected,
-          isResult: isResult,
-          thumbnailSize: state.thumbnailSize,
-          onTap: () {
-            // Results open preview on tap, others toggle selection
-            if (isResult) {
-               state.windowState.openPreview(imageFile.path);
-               state.setWorkbenchTab(3);
-            } else {
-              state.galleryState.toggleImageSelection(imageFile);
-            }
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: state.thumbnailSize,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1,
+          ),
+          itemCount: images.length,
+          itemBuilder: (context, index) {
+            final imageFile = images[index];
+            final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
+            
+            return _ImageCard(
+              imageFile: imageFile,
+              isSelected: isSelected,
+              isResult: isResult,
+              thumbnailSize: state.thumbnailSize,
+              onTap: () {
+                // Results open preview in sidebar on tap, others toggle selection
+                if (isResult) {
+                   state.windowState.openPreview(imageFile.path);
+                   state.setSidebarMode(SidebarMode.preview);
+                   if (!state.isSidebarExpanded) state.setSidebarExpanded(true);
+                } else {
+                  state.galleryState.toggleImageSelection(imageFile);
+                }
+              },
+            );
           },
         );
-      },
+      }
     );
   }
 }
@@ -311,7 +313,8 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.openPreview(widget.imageFile.path);
-            appState.setWorkbenchTab(3); // Navigate to Preview Tab
+            appState.setSidebarMode(SidebarMode.preview);
+            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
           },
         ),
         PopupMenuItem(
@@ -349,7 +352,9 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _showMaskEditor(context));
+            windowState.setMaskEditorSourceImage(widget.imageFile);
+            appState.setSidebarMode(SidebarMode.maskEditor);
+            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
           },
         ),
         PopupMenuItem(
@@ -370,7 +375,8 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.sendToComparator(widget.imageFile.path);
-            appState.setWorkbenchTab(4); // Navigate to Comparator Tab
+            appState.setSidebarMode(SidebarMode.comparator);
+            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
           },
         ),
         PopupMenuItem(
@@ -381,7 +387,8 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.sendToComparator(widget.imageFile.path, isAfter: false);
-            appState.setWorkbenchTab(4);
+            appState.setSidebarMode(SidebarMode.comparator);
+            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
           },
         ),
         PopupMenuItem(
@@ -392,7 +399,8 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             windowState.sendToComparator(widget.imageFile.path, isAfter: true);
-            appState.setWorkbenchTab(4);
+            appState.setSidebarMode(SidebarMode.comparator);
+            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
           },
         ),
         PopupMenuItem(
@@ -450,13 +458,6 @@ class _ImageCardState extends State<_ImageCard> {
           },
         ),
       ],
-    );
-  }
-
-  void _showMaskEditor(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => MaskEditorDialog(sourceImage: widget.imageFile),
     );
   }
 

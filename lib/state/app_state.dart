@@ -21,6 +21,13 @@ import 'downloader_state.dart';
 import 'gallery_state.dart';
 import 'window_state.dart';
 
+enum SidebarMode {
+  directories,
+  preview,
+  comparator,
+  maskEditor,
+}
+
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
@@ -89,6 +96,8 @@ class AppState extends ChangeNotifier {
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
+  SidebarMode sidebarMode = SidebarMode.directories;
+  double sidebarWidth = 280.0;
   bool enableApiDebug = false;
 
   // Navigation State
@@ -199,6 +208,20 @@ class AppState extends ChangeNotifier {
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
+    
+    final savedSidebarWidth = await _db.getSetting('sidebar_width');
+    if (savedSidebarWidth != null) {
+      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 280.0;
+    }
+
+    final savedSidebarMode = await _db.getSetting('sidebar_mode');
+    if (savedSidebarMode != null) {
+      sidebarMode = SidebarMode.values.firstWhere(
+        (e) => e.name == savedSidebarMode, 
+        orElse: () => SidebarMode.directories
+      );
+    }
+
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
 
     // Load theme mode
@@ -224,6 +247,11 @@ class AppState extends ChangeNotifier {
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    
+    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
+    if (savedWorkbenchTab != null) {
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 2);
+    }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
     isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
@@ -319,6 +347,24 @@ class AppState extends ChangeNotifier {
     await _db.saveSetting('is_sidebar_expanded', value.toString());
     notifyListeners();
   }
+
+  Future<void> setSidebarMode(SidebarMode mode) async {
+    sidebarMode = mode;
+    await _db.saveSetting('sidebar_mode', mode.name);
+    notifyListeners();
+  }
+
+  Timer? _sidebarWidthSaveTimer;
+
+  Future<void> setSidebarWidth(double width) async {
+    sidebarWidth = width.clamp(200.0, 800.0);
+    notifyListeners();
+
+    _sidebarWidthSaveTimer?.cancel();
+    _sidebarWidthSaveTimer = Timer(const Duration(milliseconds: 500), () async {
+      await _db.saveSetting('sidebar_width', sidebarWidth.toString());
+    });
+  }
   
   void navigateToScreen(int index) {
     activeScreenIndex = index;
@@ -326,7 +372,8 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index;
+    workbenchTabIndex = index.clamp(0, 2);
+    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
   

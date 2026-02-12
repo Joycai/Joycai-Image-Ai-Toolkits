@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/app_file.dart';
+
 class WindowState extends ChangeNotifier {
   // Preview State
   final List<String> openedPreviewPaths = [];
@@ -10,6 +12,9 @@ class WindowState extends ChangeNotifier {
   String? comparatorRawPath;
   String? comparatorAfterPath;
   bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
+
+  // Mask Editor State
+  AppFile? maskEditorSourceImage;
 
   // Preview Methods
   void openPreview(String path) {
@@ -60,6 +65,11 @@ class WindowState extends ChangeNotifier {
 
   void toggleComparatorMode() {
     isComparatorSyncMode = !isComparatorSyncMode;
+    notifyListeners();
+  }
+
+  void setMaskEditorSourceImage(AppFile? image) {
+    maskEditorSourceImage = image;
     notifyListeners();
   }
 }

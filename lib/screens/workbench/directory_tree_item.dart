@@ -113,20 +113,24 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 size: 20,
                 color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
               ),
+              const SizedBox(width: 8),
             ],
           ),
-          title: Text(
-            folderName,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-            overflow: TextOverflow.ellipsis,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  folderName,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Show expand button even if we haven't loaded subs yet, 
-              // assuming folders generally might have children. 
-              // Ideally we check if empty, but that requires pre-loading.
-              // For lazily loading, we always show it initially or check isEmpty after load.
               if (_subDirectories == null || _subDirectories!.isNotEmpty)
                 IconButton(
                   icon: _isLoading 

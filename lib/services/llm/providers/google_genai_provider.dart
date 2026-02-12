@@ -337,10 +337,11 @@ class GoogleGenAIProvider implements ILLMProvider {
     final generationConfig = <String, dynamic>{};
     if (options != null) {
       final imageConfig = <String, dynamic>{};
+      // personGeneration is Only for Imagen model
       // Only add aspectRatio if it's not "not_set"
-      if (endpoint?.contains("aabao") == false) {
-        imageConfig['personGeneration'] = "ALLOW_ALL";
-      }
+      // if (endpoint?.contains("aabao") == false) {
+      //   imageConfig['personGeneration'] = "ALLOW_ALL";
+      // }
       if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
         imageConfig['aspectRatio'] = options['aspectRatio'];
       }
