@@ -76,9 +76,10 @@ flutter_launcher_icons:
 msix_config:
   display_name: Joycai Image AI Toolkits
   publisher_display_name: Joycai
-  publisher: CN=Joycai
-  identity_name: com.joycai.image-ai-toolkits
+  publisher: CN=76DB0498-B398-4C2F-953A-2D26ADD20625
+  identity_name: Joycai.JoycaiImageAIToolkits
   msix_version: 1.5.0.0
   logo_path: assets/icon/icon.png
   capabilities: internetClient, privateNetworkClientServer
   install_certificate: false
+  sign_msix: false
