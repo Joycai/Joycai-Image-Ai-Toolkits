@@ -429,17 +429,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 4,
-      ),
-      itemCount: actions.length,
-      itemBuilder: (context, index) => _buildActionBtn(actions[index], false),
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: actions.map((a) => _buildActionBtn(a, false)).toList(),
     );
   }
 
@@ -457,7 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     return SizedBox(
-      width: fullWidth ? double.infinity : null,
+      width: fullWidth ? double.infinity : 220,
       height: 50,
       child: OutlinedButton(
         onPressed: action.onPressed,

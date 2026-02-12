@@ -488,7 +488,7 @@ Do NOT output markdown. Output ONLY raw JSON.
                           builder: (context, appState, _) {
                             final models = appState.imageModels;
                             return DropdownButtonFormField<String>(
-                              value: _selectedModelId,
+                              initialValue: _selectedModelId,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Select Model',
