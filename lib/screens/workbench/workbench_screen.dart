@@ -23,30 +23,43 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TabController _tabController;
   double _consoleHeight = 200.0;
+  int _lastKnownTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     
-    // Sync with AppState
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final appState = Provider.of<AppState>(context, listen: false);
-      if (appState.workbenchTabIndex != _tabController.index) {
-        _tabController.animateTo(appState.workbenchTabIndex);
-      }
-      
-      _tabController.addListener(() {
-        if (!_tabController.indexIsChanging) {
+    // Initialize with current state
+    final appState = Provider.of<AppState>(context, listen: false);
+    _lastKnownTabIndex = appState.workbenchTabIndex;
+    if (_lastKnownTabIndex != _tabController.index) {
+      _tabController.animateTo(_lastKnownTabIndex);
+    }
+    
+    // Sync from TabController to AppState (User interaction)
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // User finished switching tabs
+        if (_tabController.index != _lastKnownTabIndex) {
+          _lastKnownTabIndex = _tabController.index;
           appState.setWorkbenchTab(_tabController.index);
         }
-      });
+      }
+    });
+    
+    // Sync from AppState to TabController (Programmatic change)
+    appState.addListener(() {
+      if (!mounted) return;
       
-      appState.addListener(() {
-        if (mounted && appState.workbenchTabIndex != _tabController.index) {
-          _tabController.animateTo(appState.workbenchTabIndex);
+      // Only react if the index ACTUALLY changed in AppState
+      // and it's different from our local controller
+      if (appState.workbenchTabIndex != _lastKnownTabIndex) {
+        _lastKnownTabIndex = appState.workbenchTabIndex;
+        if (_tabController.index != _lastKnownTabIndex) {
+           _tabController.animateTo(_lastKnownTabIndex);
         }
-      });
+      }
     });
   }
 
@@ -129,31 +142,52 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           GalleryToolbar(tabController: _tabController),
           
           Expanded(
-            child: Row(
+            child: Stack(
               children: [
-                if (!isNarrow) ...[
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    width: appState.isSidebarExpanded ? appState.sidebarWidth : 0,
-                    child: const ClipRect(
-                      child: UnifiedSidebar(),
+                // Layer 1: Main Content & Control Panel
+                Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1600),
+                          child: GalleryWidget(tabController: _tabController),
+                        ),
+                      ),
                     ),
-                  ),
-                  const VerticalDivider(width: 1, thickness: 1),
-                ],
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1600),
-                      child: GalleryWidget(tabController: _tabController),
-                    ),
-                  ),
+                    if (!isNarrow) ...[
+                      const VerticalDivider(width: 1, thickness: 1),
+                      const SizedBox(width: 350, child: ControlPanelWidget()),
+                    ],
+                  ],
                 ),
-                if (!isNarrow) ...[
-                  const VerticalDivider(width: 1, thickness: 1),
-                  const SizedBox(width: 350, child: ControlPanelWidget()),
-                ],
+                
+                // Layer 2: Scrim (Dark overlay)
+                if (!isNarrow && appState.isSidebarExpanded)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => appState.setSidebarExpanded(false),
+                      child: Container(
+                        color: Colors.black.withAlpha(100),
+                      ),
+                    ),
+                  ),
+
+                // Layer 3: Overlay Sidebar
+                if (!isNarrow)
+                  AnimatedPositioned(
+                    duration: appState.isSidebarResizing ? Duration.zero : const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    left: appState.isSidebarExpanded ? 0 : -appState.sidebarWidth,
+                    top: 0,
+                    bottom: 0,
+                    width: appState.sidebarWidth,
+                    child: Material(
+                      elevation: 16,
+                      shadowColor: Colors.black54,
+                      child: const UnifiedSidebar(),
+                    ),
+                  ),
               ],
             ),
           ),

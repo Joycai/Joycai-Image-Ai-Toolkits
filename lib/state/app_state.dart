@@ -96,8 +96,9 @@ class AppState extends ChangeNotifier {
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
+  bool isSidebarResizing = false;
   SidebarMode sidebarMode = SidebarMode.directories;
-  double sidebarWidth = 280.0;
+  double sidebarWidth = 400.0;
   bool enableApiDebug = false;
 
   // Navigation State
@@ -211,7 +212,7 @@ class AppState extends ChangeNotifier {
     
     final savedSidebarWidth = await _db.getSetting('sidebar_width');
     if (savedSidebarWidth != null) {
-      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 280.0;
+      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 400.0;
     }
 
     final savedSidebarMode = await _db.getSetting('sidebar_mode');
@@ -348,6 +349,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setIsSidebarResizing(bool value) {
+    isSidebarResizing = value;
+    notifyListeners();
+  }
+
   Future<void> setSidebarMode(SidebarMode mode) async {
     sidebarMode = mode;
     await _db.saveSetting('sidebar_mode', mode.name);
@@ -357,7 +363,7 @@ class AppState extends ChangeNotifier {
   Timer? _sidebarWidthSaveTimer;
 
   Future<void> setSidebarWidth(double width) async {
-    sidebarWidth = width.clamp(200.0, 800.0);
+    sidebarWidth = width.clamp(280.0, 800.0);
     notifyListeners();
 
     _sidebarWidthSaveTimer?.cancel();

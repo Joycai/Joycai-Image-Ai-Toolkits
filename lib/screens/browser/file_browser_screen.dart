@@ -59,58 +59,79 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         ],
       ) : null,
       drawer: isNarrow ? const Drawer(width: 300, child: UnifiedSidebar(useBrowserState: true)) : null,
-      body: Row(
+      body: Stack(
         children: [
-          if (!isNarrow) ...[
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              width: appState.isSidebarExpanded ? appState.sidebarWidth : 0,
-              child: const ClipRect(
-                child: UnifiedSidebar(useBrowserState: true),
-              ),
-            ),
-            const VerticalDivider(width: 1, thickness: 1),
-          ],
-          Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1600),
-                child: Column(
-                  children: [
-                    if (!isNarrow)
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
-                            onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
-                            tooltip: appState.isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar",
+          // Layer 1: Main Content
+          Row(
+            children: [
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1600),
+                    child: Column(
+                      children: [
+                        if (!isNarrow)
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
+                                onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
+                                tooltip: appState.isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar",
+                              ),
+                              Expanded(
+                                child: BrowserToolbar(
+                                  state: browserState,
+                                  onAiRename: () => _showAiRenameDialog(context),
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          BrowserToolbar(
+                            state: browserState,
+                            onAiRename: () => _showAiRenameDialog(context),
                           ),
-                          Expanded(
-                            child: BrowserToolbar(
-                              state: browserState,
-                              onAiRename: () => _showAiRenameDialog(context),
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      BrowserToolbar(
-                        state: browserState,
-                        onAiRename: () => _showAiRenameDialog(context),
-                      ),
-                    
-                    BrowserFilterBar(state: browserState),
-                    Expanded(
-                      child: browserState.viewMode == BrowserViewMode.grid
-                          ? _buildFileGrid(context, browserState)
-                          : _buildFileListView(context, browserState),
+                        
+                        BrowserFilterBar(state: browserState),
+                        Expanded(
+                          child: browserState.viewMode == BrowserViewMode.grid
+                              ? _buildFileGrid(context, browserState)
+                              : _buildFileListView(context, browserState),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Layer 2: Scrim
+          if (!isNarrow && appState.isSidebarExpanded)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => appState.setSidebarExpanded(false),
+                child: Container(
+                  color: Colors.black.withAlpha(100),
                 ),
               ),
             ),
-          ),
+
+          // Layer 3: Overlay Sidebar
+          if (!isNarrow)
+            AnimatedPositioned(
+              duration: appState.isSidebarResizing ? Duration.zero : const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              left: appState.isSidebarExpanded ? 0 : -appState.sidebarWidth,
+              top: 0,
+              bottom: 0,
+              width: appState.sidebarWidth,
+              child: Material(
+                elevation: 16,
+                shadowColor: Colors.black54,
+                child: const UnifiedSidebar(useBrowserState: true),
+              ),
+            ),
         ],
       ),
     );

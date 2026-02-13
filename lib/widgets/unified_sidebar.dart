@@ -20,10 +20,6 @@ class UnifiedSidebar extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (!appState.isSidebarExpanded) {
-      return const SizedBox.shrink();
-    }
-
     return Row(
       children: [
         // Navigation Rail
@@ -69,11 +65,13 @@ class UnifiedSidebar extends StatelessWidget {
           ),
         ),
 
-        // Resize Handle
+        // Resize Handle (Desktop Only)
         GestureDetector(
+          onHorizontalDragStart: (_) => appState.setIsSidebarResizing(true),
           onHorizontalDragUpdate: (details) {
             appState.setSidebarWidth(appState.sidebarWidth + details.delta.dx);
           },
+          onHorizontalDragEnd: (_) => appState.setIsSidebarResizing(false),
           child: MouseRegion(
             cursor: SystemMouseCursors.resizeLeftRight,
             child: Container(
