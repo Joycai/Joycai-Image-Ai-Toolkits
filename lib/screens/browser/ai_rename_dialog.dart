@@ -94,8 +94,25 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final appState = Provider.of<AppState>(context, listen: false);
     final browserState = appState.browserState;
     final selectedFiles = browserState.selectedFiles.toList();
+    final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedModelPk == null || _instructionController.text.isEmpty) return;
+    if (_selectedModelPk == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.noModelsConfigured),
+          action: SnackBarAction(
+            label: l10n.settings,
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              appState.navigateToScreen(5); // Settings screen index
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_instructionController.text.isEmpty) return;
 
     // Save current settings as last used
     final db = DatabaseService();

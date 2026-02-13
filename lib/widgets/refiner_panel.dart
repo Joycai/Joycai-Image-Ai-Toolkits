@@ -97,8 +97,25 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   }
 
   Future<void> _refine() async {
-    if (_selectedModelPk == null) return;
     final l10n = AppLocalizations.of(context)!;
+    if (_selectedModelPk == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.noModelsConfigured),
+            action: SnackBarAction(
+              label: l10n.settings,
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                final appState = Provider.of<AppState>(context, listen: false);
+                appState.navigateToScreen(5); // Settings screen index
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() {
       _isRefining = true;

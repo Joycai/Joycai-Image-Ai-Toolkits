@@ -236,9 +236,22 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: (_promptController.text.isEmpty || selectedModelPk == null) 
+                  onPressed: _promptController.text.isEmpty 
                       ? null 
                       : () {
+                          if (selectedModelPk == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.noModelsConfigured),
+                                action: SnackBarAction(
+                                  label: l10n.settings,
+                                  onPressed: () => appState.navigateToScreen(5),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
                           final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
                           final modelName = selectedModel.modelName;
                           

@@ -87,7 +87,22 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
        state.selectedModelPk = appState.chatModels.first.id;
     }
-    if (state.selectedModelPk == null) return;
+    
+    if (state.selectedModelPk == null) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.noModelsConfigured),
+            action: SnackBarAction(
+              label: l10n.settings,
+              onPressed: () => appState.navigateToScreen(5),
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isAnalyzing = true);
     state.reset();

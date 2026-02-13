@@ -83,3 +83,4 @@ msix_config:
   capabilities: internetClient, privateNetworkClientServer
   install_certificate: false
   sign_msix: false
+  languages: en-US,zh-CN

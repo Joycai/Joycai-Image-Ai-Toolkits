@@ -111,10 +111,24 @@ class _MaskEditorSidebarViewState extends State<MaskEditorSidebarView> {
   Future<void> _generateAIMask(AppFile sourceImage) async {
     final prompt = _aiPromptController.text.trim();
     if (prompt.isEmpty) return;
+    
+    final l10n = AppLocalizations.of(context)!;
 
     if (_selectedModelId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No AI model selected. Please configure a model first.'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(l10n.noModelsConfigured),
+          action: SnackBarAction(
+            label: l10n.settings,
+            onPressed: () {
+              // Note: Sidebar will remain open, but we navigate to settings in main view?
+              // Or close sidebar? For now, let's close sidebar to show settings.
+              final appState = Provider.of<AppState>(context, listen: false);
+              appState.setSidebarExpanded(false); // Close sidebar
+              appState.navigateToScreen(5); // Settings
+            },
+          ),
+        ),
       );
       return;
     }
