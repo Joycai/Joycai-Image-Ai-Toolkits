@@ -1,7 +1,7 @@
 name: joycai_image_ai_toolkits
 description: "A powerful cross-platform AI image toolkit for batch processing, prompt optimization, and LLM-powered image analysis."
 publish_to: 'none'
-version: 1.5.0+1
+version: 1.5.1+1
 
 environment:
   sdk: ^3.10.8
@@ -78,7 +78,7 @@ msix_config:
   publisher_display_name: Joycai
   publisher: CN=76DB0498-B398-4C2F-953A-2D26ADD20625
   identity_name: Joycai.JoycaiImageAIToolkits
-  msix_version: 1.5.0.0
+  msix_version: 1.5.1.0
   logo_path: assets/icon/icon.png
   capabilities: internetClient, privateNetworkClientServer
   install_certificate: false
