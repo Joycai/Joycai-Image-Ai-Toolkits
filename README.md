@@ -13,15 +13,16 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop application built
 
 ### 🛠️ AI Workbench & Dynamic Channels
 *   **Dynamic AI Channels**: Add any number of AI provider channels (OpenAI, Google GenAI, or 3rd-party REST proxies) with custom endpoints and visual tags.
+*   **Unified Sidebar**: A new, resizable overlay sidebar providing quick access to **Directories**, **Preview**, **Comparator**, and **Mask Editor** tools without leaving your current context.
 *   **Source Explorer**: Easily manage local image directories with built-in directory watching and **Background Isolate Scanning** for zero-stutter performance.
 *   **Unified Gallery**: Seamlessly switch between source images and processed results.
 *   **Control Panel**: Fine-tune your AI requests with model selection, aspect ratio, and resolution settings.
 *   **AI Prompt Refiner**: Leverage specialized models to optimize and "polish" your prompts before submission.
 
-### 📝 Staging Prompt Workbench
-*   **Drafting Pane**: Build complex prompts by iteratively adding or replacing snippets from your library in a professional three-pane layout.
-*   **Manual Staging**: Edit your combined prompt in a dedicated area before committing it to your work.
-*   **Append/Overwrite**: Choose exactly how to apply your drafted prompt to the workbench.
+### 🎨 Advanced Editing Tools
+*   **Smart Mask Editor**: Integrated directly into the sidebar, this tool allows for precise mask creation using manual brushes or AI-powered object segmentation.
+*   **Image Comparator**: Compare raw and processed images side-by-side or with a sliding swap view to analyze changes in detail.
+*   **Preview Mode**: Quickly inspect images in full detail with zoom and pan capabilities.
 
 ### 🔌 Ecosystem & Interoperability
 *   **MCP Server**: Built-in **Model Context Protocol (MCP)** server allows external clients (like Claude Desktop) to interact with your image gallery and tasks.
