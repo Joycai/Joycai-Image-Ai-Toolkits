@@ -252,7 +252,7 @@ class AppState extends ChangeNotifier {
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 2);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 3);
     }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -379,7 +379,7 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index.clamp(0, 2);
+    workbenchTabIndex = index.clamp(0, 3);
     _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }

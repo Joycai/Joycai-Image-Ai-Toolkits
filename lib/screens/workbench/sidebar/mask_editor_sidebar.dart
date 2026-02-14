@@ -125,7 +125,7 @@ class _MaskEditorSidebarViewState extends State<MaskEditorSidebarView> {
               // Or close sidebar? For now, let's close sidebar to show settings.
               final appState = Provider.of<AppState>(context, listen: false);
               appState.setSidebarExpanded(false); // Close sidebar
-              appState.navigateToScreen(5); // Settings
+              appState.navigateToScreen(6); // Settings
             },
           ),
         ),

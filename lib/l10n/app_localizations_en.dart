@@ -1141,4 +1141,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openLogFolder => 'Open Log Folder';
+
+  @override
+  String get promptOptimizer => 'Prompt Optimizer';
+
+  @override
+  String get refinerIntro => 'Use AI to analyze images and refine your prompt.';
+
+  @override
+  String get roughPrompt => 'Rough Prompt / Ideas';
+
+  @override
+  String get optimizedPrompt => 'Optimized Prompt';
+
+  @override
+  String get applyToWorkbench => 'Apply to Workbench';
+
+  @override
+  String get sidebar => 'Sidebar';
 }

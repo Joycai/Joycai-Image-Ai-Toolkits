@@ -2209,6 +2209,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Log Folder'**
   String get openLogFolder;
+
+  /// No description provided for @promptOptimizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Optimizer'**
+  String get promptOptimizer;
+
+  /// No description provided for @refinerIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Use AI to analyze images and refine your prompt.'**
+  String get refinerIntro;
+
+  /// No description provided for @roughPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough Prompt / Ideas'**
+  String get roughPrompt;
+
+  /// No description provided for @optimizedPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimized Prompt'**
+  String get optimizedPrompt;
+
+  /// No description provided for @applyToWorkbench.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to Workbench'**
+  String get applyToWorkbench;
+
+  /// No description provided for @sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar'**
+  String get sidebar;
 }
 
 class _AppLocalizationsDelegate

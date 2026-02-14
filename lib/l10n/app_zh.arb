@@ -531,9 +531,14 @@
         }
       }
     },
-      "importFromGallery": "从系统图库导入",
-      "enableApiDebug": "开启 API 调试日志",
-      "apiDebugDesc": "将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。",
-      "openLogFolder": "打开日志目录"
-    }
-    
+        "importFromGallery": "从系统图库导入",
+        "enableApiDebug": "开启 API 调试日志",
+        "apiDebugDesc": "将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。",
+        "openLogFolder": "打开日志目录",
+        "promptOptimizer": "提示词优化器",
+        "refinerIntro": "使用 AI 分析图像并优化您的提示词。",
+        "roughPrompt": "初步想法 / 提示词",
+        "optimizedPrompt": "优化后的提示词",
+        "applyToWorkbench": "应用到工作台",
+        "sidebar": "侧边栏"
+      }    

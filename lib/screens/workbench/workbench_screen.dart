@@ -28,27 +28,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    
-    // Initialize with current state
-    final appState = Provider.of<AppState>(context, listen: false);
-    _lastKnownTabIndex = appState.workbenchTabIndex;
-    if (_lastKnownTabIndex != _tabController.index) {
-      _tabController.animateTo(_lastKnownTabIndex);
-    }
-    
-    // Sync from TabController to AppState (User interaction)
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        // User finished switching tabs
-        if (_tabController.index != _lastKnownTabIndex) {
-          _lastKnownTabIndex = _tabController.index;
-          appState.setWorkbenchTab(_tabController.index);
-        }
-      }
-    });
+    _initTabController();
     
     // Sync from AppState to TabController (Programmatic change)
+    final appState = Provider.of<AppState>(context, listen: false);
     appState.addListener(() {
       if (!mounted) return;
       
@@ -56,8 +39,28 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       // and it's different from our local controller
       if (appState.workbenchTabIndex != _lastKnownTabIndex) {
         _lastKnownTabIndex = appState.workbenchTabIndex;
+        // Check bounds before animating
+        final targetIndex = _lastKnownTabIndex.clamp(0, _tabController.length - 1);
+        if (_tabController.index != targetIndex) {
+           _tabController.animateTo(targetIndex);
+        }
+      }
+    });
+  }
+
+  void _initTabController() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    // Ensure we use the latest safe index
+    _lastKnownTabIndex = appState.workbenchTabIndex.clamp(0, 3);
+    
+    _tabController = TabController(length: 4, vsync: this, initialIndex: _lastKnownTabIndex);
+    
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // User finished switching tabs
         if (_tabController.index != _lastKnownTabIndex) {
-           _tabController.animateTo(_lastKnownTabIndex);
+          _lastKnownTabIndex = _tabController.index;
+          appState.setWorkbenchTab(_tabController.index);
         }
       }
     });
@@ -71,6 +74,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    // Check for Hot Reload mismatch or length change
+    if (_tabController.length != 4) {
+       _tabController.dispose();
+       _initTabController();
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
@@ -82,9 +91,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       appBar: isNarrow ? AppBar(
         title: Text(l10n.workbench),
         leading: IconButton(
-          icon: const Icon(Icons.folder_open),
+          icon: const Icon(Icons.view_sidebar),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          tooltip: l10n.sourceExplorer,
+          tooltip: l10n.sidebar,
         ),
         actions: [
           IconButton(
@@ -98,6 +107,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           isScrollable: true,
           tabs: [
             Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
+            Tab(text: l10n.promptOptimizer, icon: const Icon(Icons.auto_fix_high)),
             Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
             Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
           ],
@@ -126,10 +136,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                       tabs: !isNarrow ? [
                         Tab(child: Row(children: [const Icon(Icons.image_search, size: 18), const SizedBox(width: 8), Text(l10n.sourceGallery)])),
+                        Tab(child: Row(children: [const Icon(Icons.auto_fix_high, size: 18), const SizedBox(width: 8), Text(l10n.promptOptimizer)])),
                         Tab(child: Row(children: [const Icon(Icons.auto_awesome, size: 18), const SizedBox(width: 8), Text(l10n.processResults)])),
                         Tab(child: Row(children: [const Icon(Icons.workspaces, size: 18), const SizedBox(width: 8), Text(l10n.tempWorkspace)])),
                       ] : [
                         Tab(text: l10n.sourceGallery, icon: const Icon(Icons.image_search)),
+                        Tab(text: l10n.promptOptimizer, icon: const Icon(Icons.auto_fix_high)),
                         Tab(text: l10n.processResults, icon: const Icon(Icons.auto_awesome)),
                         Tab(text: l10n.tempWorkspace, icon: const Icon(Icons.workspaces)),
                       ],

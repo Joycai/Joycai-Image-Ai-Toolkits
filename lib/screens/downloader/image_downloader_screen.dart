@@ -96,7 +96,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
             content: Text(l10n.noModelsConfigured),
             action: SnackBarAction(
               label: l10n.settings,
-              onPressed: () => appState.navigateToScreen(5),
+              onPressed: () => appState.navigateToScreen(6),
             ),
           ),
         );

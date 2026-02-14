@@ -531,9 +531,14 @@
         }
       }
     },
-      "importFromGallery": "Import from Gallery",
-      "enableApiDebug": "Enable API Debug Logging",
-      "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
-      "openLogFolder": "Open Log Folder"
-    }
-    
+        "importFromGallery": "Import from Gallery",
+        "enableApiDebug": "Enable API Debug Logging",
+        "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
+        "openLogFolder": "Open Log Folder",
+        "promptOptimizer": "Prompt Optimizer",
+        "refinerIntro": "Use AI to analyze images and refine your prompt.",
+        "roughPrompt": "Rough Prompt / Ideas",
+        "optimizedPrompt": "Optimized Prompt",
+        "applyToWorkbench": "Apply to Workbench",
+        "sidebar": "Sidebar"
+      }    

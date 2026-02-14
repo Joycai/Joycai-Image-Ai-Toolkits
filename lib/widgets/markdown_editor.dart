@@ -53,39 +53,35 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            Expanded(
-              child: Row(
-                children: [
-                  if (!widget.isRefined) ...[
-                    Checkbox(
-                      value: widget.isMarkdown,
-                      onChanged: (v) {
-                        widget.onMarkdownChanged(v ?? false);
-                        if (!(v ?? false)) {
-                          setState(() => _isPreview = false);
-                        }
-                      },
-                    ),
-                    const Flexible(
-                      child: Text(
-                        "Markdown",
-                        style: TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ] else
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!widget.isRefined) ...[
+                  Checkbox(
+                    value: widget.isMarkdown,
+                    onChanged: (v) {
+                      widget.onMarkdownChanged(v ?? false);
+                      if (!(v ?? false)) {
+                        setState(() => _isPreview = false);
+                      }
+                    },
+                  ),
+                  const Text(
+                    "Markdown",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ] else
+                  Text(
+                    widget.label,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+              ],
             ),
             if (widget.isMarkdown || widget.isRefined)
               SegmentedButton<bool>(

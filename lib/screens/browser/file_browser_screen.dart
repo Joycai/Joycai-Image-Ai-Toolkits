@@ -39,9 +39,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       appBar: isNarrow ? AppBar(
         title: Text(l10n.fileBrowser),
         leading: IconButton(
-          icon: const Icon(Icons.folder_open),
+          icon: const Icon(Icons.view_sidebar),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          tooltip: l10n.sourceExplorer,
+          tooltip: l10n.sidebar,
         ),
         actions: [
           IconButton(

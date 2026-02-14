@@ -14,6 +14,7 @@ import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
+import '../../widgets/refiner_panel.dart';
 
 class GalleryWidget extends StatefulWidget {
   final TabController tabController;
@@ -45,8 +46,8 @@ class _GalleryWidgetState extends State<GalleryWidget> {
         }
         if (newFiles.isNotEmpty) {
           appState.galleryState.addDroppedFiles(newFiles);
-          // Switch to the 3rd tab (Temporary Workspace) automatically
-          widget.tabController.animateTo(2);
+          // Switch to the 4th tab (Temporary Workspace) automatically
+          widget.tabController.animateTo(3);
         }
       },
       onDragEntered: (details) => setState(() => _isDragging = true),
@@ -57,6 +58,11 @@ class _GalleryWidgetState extends State<GalleryWidget> {
             controller: widget.tabController,
             children: [
               _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
+              AIPromptRefiner(
+                initialPrompt: appState.lastPrompt,
+                selectedImages: appState.selectedImages,
+                onApply: (refined) => appState.updateWorkbenchConfig(prompt: refined),
+              ),
               _buildImageGrid(context, appState.processedImages, appState, isResult: true),
               _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
             ],

@@ -11,6 +11,7 @@ import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
 import 'chat_model_selector.dart';
+import 'collapsible_card.dart';
 import 'markdown_editor.dart';
 
 class AIPromptRefiner extends StatefulWidget {
@@ -42,6 +43,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   String? _selectedSysPrompt;
   bool _isRefining = false;
   bool _isLoadingData = true;
+  bool _isSettingsExpanded = true;
 
   @override
   void initState() {
@@ -106,9 +108,8 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
             action: SnackBarAction(
               label: l10n.settings,
               onPressed: () {
-                Navigator.pop(context); // Close dialog
                 final appState = Provider.of<AppState>(context, listen: false);
-                appState.navigateToScreen(5); // Settings screen index
+                appState.navigateToScreen(6); // Settings screen index
               },
             ),
           ),
@@ -160,164 +161,252 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 900;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Consumer<AppState>(
-        builder: (context, appState, child) => Container(
-          width: isNarrow ? size.width * 0.95 : 1000,
-          height: isNarrow ? size.height * 0.9 : 700,
-          padding: EdgeInsets.all(isNarrow ? 12 : 24),
-          child: _isLoadingData 
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.auto_fix_high, color: Colors.blue),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          l10n.aiPromptRefiner, 
-                          style: isNarrow ? Theme.of(context).textTheme.titleLarge : Theme.of(context).textTheme.headlineSmall,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  if (isNarrow) ...[
-                    _buildModelSelector(l10n, appState),
-                    const SizedBox(height: 8),
-                    _buildTagSelector(l10n),
-                    const SizedBox(height: 8),
-                    _buildSysPromptSelector(l10n),
-                  ] else
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _buildModelSelector(l10n, appState),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: _buildTagSelector(l10n),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: _buildSysPromptSelector(l10n),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 16),
-                  
-                  // Prompts Section
-                  Expanded(
-                    child: isNarrow 
-                      ? SingleChildScrollView(
-                          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 750;
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return Consumer<AppState>(
+          builder: (context, appState, child) => Container(
+            color: colorScheme.surface,
+            padding: EdgeInsets.all(isNarrow ? 12 : 24),
+            child: _isLoadingData 
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isNarrow) ...[
+                       // Mobile: Scrollable content (Header + Settings + Input + Output)
+                       Expanded(
+                         child: SingleChildScrollView(
+                           padding: const EdgeInsets.only(bottom: 16),
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               _buildHeader(l10n, colorScheme),
+                               const SizedBox(height: 24),
+                               _buildSettings(l10n, colorScheme, isNarrow, appState),
+                               const SizedBox(height: 16),
+                               _buildInputSection(l10n, appState, isNarrow),
+                               const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                                  child: Center(child: Icon(Icons.arrow_downward_rounded, color: Colors.grey)),
+                                ),
+                               _buildOutputSection(l10n, appState, isNarrow),
+                             ],
+                           ),
+                         ),
+                       ),
+                       // Mobile: Fixed Action Bar
+                       _buildActionBar(l10n, colorScheme),
+                    ] else ...[
+                       // Desktop: Fixed Header/Settings/Action, Expanded Content
+                       _buildHeader(l10n, colorScheme),
+                       const SizedBox(height: 24),
+                       _buildSettings(l10n, colorScheme, isNarrow, appState),
+                       const SizedBox(height: 16),
+                       Expanded(
+                         child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              MarkdownEditor(
-                                controller: _currentPromptCtrl,
-                                label: l10n.currentPrompt,
-                                isMarkdown: appState.isMarkdownRefinerSource,
-                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
-                                maxLines: 8,
-                                initiallyPreview: false,
+                              Expanded(child: _buildInputSection(l10n, appState, isNarrow)),
+                              const SizedBox(width: 24),
+                              const Center(
+                                child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
                               ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 8.0),
-                                child: Center(child: Icon(Icons.arrow_downward_rounded, color: Colors.grey)),
-                              ),
-                              MarkdownEditor(
-                                controller: _refinedPromptCtrl,
-                                label: l10n.refinedPrompt,
-                                isMarkdown: appState.isMarkdownRefinerTarget,
-                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
-                                maxLines: 12,
-                                initiallyPreview: true,
-                                isRefined: true,
-                              ),
+                              const SizedBox(width: 24),
+                              Expanded(child: _buildOutputSection(l10n, appState, isNarrow)),
                             ],
-                          ),
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: MarkdownEditor(
-                                controller: _currentPromptCtrl,
-                                label: l10n.currentPrompt,
-                                isMarkdown: appState.isMarkdownRefinerSource,
-                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
-                                maxLines: 20,
-                                initiallyPreview: false,
-                                expand: true,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            const Center(
-                              child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: MarkdownEditor(
-                                controller: _refinedPromptCtrl,
-                                label: l10n.refinedPrompt,
-                                isMarkdown: appState.isMarkdownRefinerTarget,
-                                onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
-                                maxLines: 20,
-                                initiallyPreview: true,
-                                isRefined: true,
-                                expand: true,
-                              ),
-                            ),
-                          ],
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Actions
-                  Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(l10n.cancel),
-                      ),
-                      FilledButton.icon(
-                        onPressed: _isRefining ? null : _refine,
-                        icon: _isRefining 
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.auto_fix_high),
-                        label: Text(l10n.refine),
-                      ),
-                      FilledButton(
-                        onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
-                          widget.onApply(_refinedPromptCtrl.text);
-                          Navigator.pop(context);
-                        },
-                        child: Text(l10n.apply),
-                      ),
-                    ],
-                  ),
+                         ),
+                       ),
+                       const SizedBox(height: 16),
+                       _buildActionBar(l10n, colorScheme),
+                    ]
+                  ],
+                ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.auto_fix_high, color: colorScheme.onPrimaryContainer),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.promptOptimizer,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              l10n.refinerIntro,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettings(AppLocalizations l10n, ColorScheme colorScheme, bool isNarrow, AppState appState) {
+    return CollapsibleCard(
+      title: l10n.config,
+      isExpanded: _isSettingsExpanded,
+      onToggle: () => setState(() => _isSettingsExpanded = !_isSettingsExpanded),
+      content: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: isNarrow
+            ? Column(
+                children: [
+                  _buildModelSelector(l10n, appState),
+                  const SizedBox(height: 12),
+                  _buildTagSelector(l10n),
+                  const SizedBox(height: 12),
+                  _buildSysPromptSelector(l10n),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(flex: 2, child: _buildModelSelector(l10n, appState)),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 1, child: _buildTagSelector(l10n)),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: _buildSysPromptSelector(l10n)),
                 ],
               ),
-        ),
       ),
+    );
+  }
+
+  Widget _buildActionBar(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (_isRefining)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          FilledButton.icon(
+            onPressed: _isRefining ? null : _refine,
+            icon: const Icon(Icons.auto_fix_high),
+            label: Text(l10n.refine),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton.icon(
+            onPressed: _refinedPromptCtrl.text.isEmpty ? null : () {
+              widget.onApply(_refinedPromptCtrl.text);
+              // Ensure we notify user
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.taskSubmitted)),
+              );
+            },
+            icon: const Icon(Icons.check),
+            label: Text(l10n.applyToWorkbench),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.tertiary,
+              foregroundColor: colorScheme.onTertiary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection(AppLocalizations l10n, AppState appState, bool isNarrow) {
+    final editor = MarkdownEditor(
+      controller: _currentPromptCtrl,
+      label: l10n.roughPrompt,
+      isMarkdown: appState.isMarkdownRefinerSource,
+      onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
+      maxLines: isNarrow ? 8 : 20, // Smaller fixed height for mobile
+      initiallyPreview: false,
+      expand: !isNarrow, // Only expand on desktop
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.selectedImages.isNotEmpty) ...[
+          Text(l10n.selectedCount(widget.selectedImages.length), style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 80,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.selectedImages.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final image = widget.selectedImages[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image(
+                    image: image.imageProvider,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (isNarrow) 
+          editor 
+        else 
+          Expanded(child: editor),
+      ],
+    );
+  }
+
+  Widget _buildOutputSection(AppLocalizations l10n, AppState appState, bool isNarrow) {
+    final editor = MarkdownEditor(
+      controller: _refinedPromptCtrl,
+      label: l10n.optimizedPrompt,
+      isMarkdown: appState.isMarkdownRefinerTarget,
+      onMarkdownChanged: (v) => appState.setIsMarkdownRefinerTarget(v),
+      maxLines: isNarrow ? 12 : 20, // Smaller fixed height for mobile
+      initiallyPreview: true,
+      isRefined: true,
+      expand: !isNarrow,
+    );
+
+    return Column(
+      children: [
+        if (isNarrow) editor else Expanded(child: editor),
+      ],
     );
   }
 
@@ -330,49 +419,61 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   }
 
   Widget _buildTagSelector(AppLocalizations l10n) {
-    return DropdownButtonFormField<int?>(
-      initialValue: _selectedTagId,
+    return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.tag,
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        isDense: true,
       ),
-      items: [
-        DropdownMenuItem<int?>(value: null, child: Text(l10n.catAll)),
-        ..._tags.map((t) => DropdownMenuItem<int?>(
-          value: t.id,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(backgroundColor: Color(t.color), radius: 6),
-              const SizedBox(width: 8),
-              Text(t.name, overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        )),
-      ],
-      onChanged: (v) {
-        setState(() {
-          _selectedTagId = v;
-          _applyFilter();
-        });
-      },
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int?>(
+          value: _selectedTagId,
+          isDense: true,
+          onChanged: (v) {
+            setState(() {
+              _selectedTagId = v;
+              _applyFilter();
+            });
+          },
+          items: [
+            DropdownMenuItem<int?>(value: null, child: Text(l10n.catAll)),
+            ..._tags.map((t) => DropdownMenuItem<int?>(
+              value: t.id,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(backgroundColor: Color(t.color), radius: 6),
+                  const SizedBox(width: 8),
+                  Text(t.name, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            )),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildSysPromptSelector(AppLocalizations l10n) {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedSysPrompt,
+    return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.systemPrompt,
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        isDense: true,
       ),
-      items: _filteredSysPrompts.map((p) => DropdownMenuItem(
-        value: p.content, 
-        child: Text(p.title, overflow: TextOverflow.ellipsis)
-      )).toList(),
-      onChanged: (v) => setState(() => _selectedSysPrompt = v),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedSysPrompt,
+          isDense: true,
+          onChanged: (v) => setState(() => _selectedSysPrompt = v),
+          items: _filteredSysPrompts.map((p) => DropdownMenuItem(
+            value: p.content, 
+            child: Text(p.title, overflow: TextOverflow.ellipsis)
+          )).toList(),
+        ),
+      ),
     );
   }
 }

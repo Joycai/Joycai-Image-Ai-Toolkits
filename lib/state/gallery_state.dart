@@ -207,11 +207,15 @@ class GalleryState extends ChangeNotifier {
     _evictImages(paths);
     galleryImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
     
-    selectedImages.removeWhere((selected) => 
-      !galleryImages.any((img) => img.path == selected.path) &&
-      !processedImages.any((img) => img.path == selected.path) &&
-      !droppedImages.any((img) => img.path == selected.path)
-    );
+    final validSelection = selectedImages.where((selected) => 
+      galleryImages.any((img) => img.path == selected.path) ||
+      processedImages.any((img) => img.path == selected.path) ||
+      droppedImages.any((img) => img.path == selected.path)
+    ).toList();
+    
+    if (validSelection.length != selectedImages.length) {
+      selectedImages = validSelection;
+    }
     notifyListeners();
   }
 
@@ -237,11 +241,15 @@ class GalleryState extends ChangeNotifier {
       processedImages = files.map((f) => AppFile.fromFile(f)).toList();
       
       // Also clean up selection if images were deleted from disk
-      selectedImages.removeWhere((selected) => 
-        !galleryImages.any((img) => img.path == selected.path) &&
-        !processedImages.any((img) => img.path == selected.path) &&
-        !droppedImages.any((img) => img.path == selected.path)
-      );
+      final validSelection = selectedImages.where((selected) => 
+        galleryImages.any((img) => img.path == selected.path) ||
+        processedImages.any((img) => img.path == selected.path) ||
+        droppedImages.any((img) => img.path == selected.path)
+      ).toList();
+      
+      if (validSelection.length != selectedImages.length) {
+        selectedImages = validSelection;
+      }
     } catch (e) {
       processedImages = [];
     }
@@ -260,20 +268,26 @@ class GalleryState extends ChangeNotifier {
   void clearDroppedImages() {
     droppedImages.clear();
     // Also remove from selection if they were selected and are not in other collections
-    selectedImages.removeWhere((s) => 
-      !galleryImages.any((g) => g.path == s.path) &&
-      !processedImages.any((p) => p.path == s.path)
-    );
+    final validSelection = selectedImages.where((s) => 
+      galleryImages.any((g) => g.path == s.path) ||
+      processedImages.any((p) => p.path == s.path)
+    ).toList();
+    
+    if (validSelection.length != selectedImages.length) {
+      selectedImages = validSelection;
+    }
     notifyListeners();
   }
 
   void toggleImageSelection(AppFile image) {
-    final index = selectedImages.indexWhere((img) => img.path == image.path);
+    final newList = List<AppFile>.from(selectedImages);
+    final index = newList.indexWhere((img) => img.path == image.path);
     if (index != -1) {
-      selectedImages.removeAt(index);
+      newList.removeAt(index);
     } else {
-      selectedImages.add(image);
+      newList.add(image);
     }
+    selectedImages = newList;
     notifyListeners();
   }
 
@@ -281,13 +295,15 @@ class GalleryState extends ChangeNotifier {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final AppFile item = selectedImages.removeAt(oldIndex);
-    selectedImages.insert(newIndex, item);
+    final newList = List<AppFile>.from(selectedImages);
+    final AppFile item = newList.removeAt(oldIndex);
+    newList.insert(newIndex, item);
+    selectedImages = newList;
     notifyListeners();
   }
 
   void clearImageSelection() {
-    selectedImages.clear();
+    selectedImages = [];
     notifyListeners();
   }
 
@@ -296,7 +312,7 @@ class GalleryState extends ChangeNotifier {
     // Usually it's better to select from the currently visible list, 
     // but the state doesn't know what's visible (Tab index).
     // For now, let's select from galleryImages.
-    selectedImages.addAll(galleryImages);
+    selectedImages = List<AppFile>.from(galleryImages);
     notifyListeners();
   }
 

@@ -286,7 +286,7 @@ class DatabaseService {
       if (includePrompts) {
         final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
         await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
-        await _importSimpleTable(txn, 'system_prompts', data['system_prompts']);
+        await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);
       }
       
       await _importSimpleTable(txn, 'settings', data['settings']);
@@ -444,6 +444,27 @@ class DatabaseService {
         final newTagId = tagIdMap[originalTagId];
         if (newTagId != null) {
           await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+        }
+      }
+    }
+  }
+
+  Future<void> _importSystemPrompts(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> tagIdMap) async {
+    if (rows == null) return;
+    for (var p in rows) {
+      final Map<String, dynamic> row = Map.from(p)..remove('id');
+      final List<dynamic>? tagsFromData = row['tags'];
+      row.remove('tags');
+      
+      final newPromptId = await txn.insert('system_prompts', row);
+
+      if (tagsFromData != null) {
+        for (var t in tagsFromData) {
+          final oldTagId = t['id'] as int;
+          final newTagId = tagIdMap[oldTagId];
+          if (newTagId != null) {
+            await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+          }
         }
       }
     }

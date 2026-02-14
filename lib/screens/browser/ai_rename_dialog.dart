@@ -105,7 +105,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             label: l10n.settings,
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              appState.navigateToScreen(5); // Settings screen index
+              appState.navigateToScreen(6); // Settings screen index
             },
           ),
         ),

@@ -1,8 +1,16 @@
 PODS:
+  - desktop_drop (0.0.1):
+    - FlutterMacOS
   - file_picker (0.0.1):
     - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - local_notifier (0.1.0):
+    - FlutterMacOS
   - package_info_plus (0.0.1):
+    - FlutterMacOS
+  - share_plus (0.0.1):
     - FlutterMacOS
   - sqflite_darwin (0.0.4):
     - Flutter
@@ -36,9 +44,13 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - desktop_drop (from `Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - local_notifier (from `Flutter/ephemeral/.symlinks/plugins/local_notifier/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
+  - share_plus (from `Flutter/ephemeral/.symlinks/plugins/share_plus/macos`)
   - sqflite_darwin (from `Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin`)
   - sqlite3_flutter_libs (from `Flutter/ephemeral/.symlinks/plugins/sqlite3_flutter_libs/darwin`)
   - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
@@ -48,12 +60,20 @@ SPEC REPOS:
     - sqlite3
 
 EXTERNAL SOURCES:
+  desktop_drop:
+    :path: Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos
   file_picker:
     :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
+  local_notifier:
+    :path: Flutter/ephemeral/.symlinks/plugins/local_notifier/macos
   package_info_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
+  share_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/share_plus/macos
   sqflite_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin
   sqlite3_flutter_libs:
@@ -62,9 +82,13 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
 
 SPEC CHECKSUMS:
+  desktop_drop: 10a3e6a7fa9dbe350541f2574092fecfa345a07b
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
+  file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  local_notifier: ebf072651e35ae5e47280ad52e2707375cb2ae4e
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870
+  share_plus: 510bf0af1a42cd602274b4629920c9649c52f4cc
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: 8d708bc63e9f4ce48f0ad9d6269e478c5ced1d9b
   sqlite3_flutter_libs: d13b8b3003f18f596e542bcb9482d105577eff41

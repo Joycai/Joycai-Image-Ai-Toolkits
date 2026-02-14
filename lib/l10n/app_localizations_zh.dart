@@ -1124,4 +1124,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openLogFolder => '打开日志目录';
+
+  @override
+  String get promptOptimizer => '提示词优化器';
+
+  @override
+  String get refinerIntro => '使用 AI 分析图像并优化您的提示词。';
+
+  @override
+  String get roughPrompt => '初步想法 / 提示词';
+
+  @override
+  String get optimizedPrompt => '优化后的提示词';
+
+  @override
+  String get applyToWorkbench => '应用到工作台';
+
+  @override
+  String get sidebar => '侧边栏';
 }

@@ -12,7 +12,6 @@ import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/markdown_editor.dart';
-import '../../widgets/refiner_panel.dart';
 import 'model_selection_section.dart';
 
 class ControlPanelWidget extends StatefulWidget {
@@ -182,15 +181,6 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextButton.icon(
-                            onPressed: () {
-                              final appState = Provider.of<AppState>(context, listen: false);
-                              _showRefinerDialog(appState, l10n);
-                            },
-                            icon: const Icon(Icons.auto_fix_high, size: 14),
-                            label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
-                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                          ),
                           _buildPromptPicker(colorScheme, l10n),
                         ],
                       ),
@@ -261,7 +251,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                                   content: Text(l10n.noModelsConfigured),
                                   action: SnackBarAction(
                                     label: l10n.settings,
-                                    onPressed: () => appState.navigateToScreen(5),
+                                    onPressed: () => appState.navigateToScreen(6),
                                   ),
                                 ),
                               );
@@ -350,19 +340,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showRefinerDialog(AppState appState, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AIPromptRefiner(
-        initialPrompt: _promptController.text,
-        selectedImages: appState.selectedImages,
-        onApply: (refined) {
-          _promptController.text = refined;
-          _updateConfig(prompt: refined);
-        },
-      ),
-    );
-  }
+
 
   Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
     return TextButton.icon(
