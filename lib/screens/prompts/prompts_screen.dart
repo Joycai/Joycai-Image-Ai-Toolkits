@@ -407,64 +407,67 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
           return AlertDialog(
             title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
-                  const SizedBox(height: 24),
-                  
-                  // Color Picker Section
-                  ColorHuePicker(
-                    initialColor: Color(selectedColor),
-                    onColorChanged: updateColor,
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: hexCtrl, 
-                    decoration: const InputDecoration(
-                      labelText: 'HEX Color', 
-                      prefixIcon: Icon(Icons.colorize),
-                      isDense: true,
-                      border: OutlineInputBorder(),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
+                    const SizedBox(height: 24),
+                    
+                    // Color Picker Section
+                    ColorHuePicker(
+                      initialColor: Color(selectedColor),
+                      onColorChanged: updateColor,
                     ),
-                    onChanged: (v) {
-                      if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
-                        try {
-                          final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
-                          final color = int.parse(colorStr, radix: 16);
-                          setDialogState(() => selectedColor = color);
-                        } catch (_) {}
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: AppConstants.tagColors.map((color) => InkWell(
-                      onTap: () => updateColor(color.toARGB32()),
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
-                            width: 2,
+                    
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: hexCtrl, 
+                      decoration: const InputDecoration(
+                        labelText: 'HEX Color', 
+                        prefixIcon: Icon(Icons.colorize),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) {
+                        if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
+                          try {
+                            final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
+                            final color = int.parse(colorStr, radix: 16);
+                            setDialogState(() => selectedColor = color);
+                          } catch (_) {}
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: AppConstants.tagColors.map((color) => InkWell(
+                        onTap: () => updateColor(color.toARGB32()),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
+                              width: 2,
+                            ),
                           ),
                         ),
-                      ),
-                    )).toList(),
-                  ),
-                ],
+                      )).toList(),
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -520,11 +523,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.add : l10n.editPrompt),
             ],
           ),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 800,
-              minWidth: Responsive.isMobile(context) ? 0 : 500,
-            ),
+          content: SizedBox(
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -650,11 +650,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
             ],
           ),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 800,
-              minWidth: Responsive.isMobile(context) ? 0 : 500,
-            ),
+          content: SizedBox(
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

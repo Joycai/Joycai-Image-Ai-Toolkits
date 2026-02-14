@@ -549,6 +549,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editChannel => '编辑渠道';
 
   @override
+  String get basicInfo => '基本信息';
+
+  @override
+  String get configuration => '配置信息';
+
+  @override
+  String get tagAndAppearance => '标签与外观';
+
+  @override
+  String get billing => '计费设置';
+
+  @override
   String get channelType => '渠道类型';
 
   @override

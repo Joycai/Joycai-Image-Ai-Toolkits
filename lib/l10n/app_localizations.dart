@@ -1118,6 +1118,30 @@ abstract class AppLocalizations {
   /// **'Edit Channel'**
   String get editChannel;
 
+  /// No description provided for @basicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Info'**
+  String get basicInfo;
+
+  /// No description provided for @configuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration'**
+  String get configuration;
+
+  /// No description provided for @tagAndAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag & Appearance'**
+  String get tagAndAppearance;
+
+  /// No description provided for @billing.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing'**
+  String get billing;
+
   /// No description provided for @channelType.
   ///
   /// In en, this message translates to:

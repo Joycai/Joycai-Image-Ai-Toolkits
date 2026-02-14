@@ -557,6 +557,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editChannel => 'Edit Channel';
 
   @override
+  String get basicInfo => 'Basic Info';
+
+  @override
+  String get configuration => 'Configuration';
+
+  @override
+  String get tagAndAppearance => 'Tag & Appearance';
+
+  @override
+  String get billing => 'Billing';
+
+  @override
   String get channelType => 'Channel Type';
 
   @override

@@ -49,65 +49,70 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
+    final header = Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!widget.isRefined) ...[
+              Checkbox(
+                value: widget.isMarkdown,
+                onChanged: (v) {
+                  widget.onMarkdownChanged(v ?? false);
+                  if (!(v ?? false)) {
+                    setState(() => _isPreview = false);
+                  }
+                },
+              ),
+              const Text(
+                "Markdown",
+                style: TextStyle(fontSize: 12),
+              ),
+            ] else
+              Text(
+                widget.label,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+          ],
+        ),
+        if (widget.isMarkdown || widget.isRefined)
+          SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: Text(l10n.edit),
+                icon: const Icon(Icons.edit, size: 16),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text(l10n.preview),
+                icon: const Icon(Icons.visibility, size: 16),
+              ),
+            ],
+            selected: {_isPreview},
+            onSelectionChanged: (v) => setState(() => _isPreview = v.first),
+            style: SegmentedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+          ),
+      ],
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!widget.isRefined) ...[
-                  Checkbox(
-                    value: widget.isMarkdown,
-                    onChanged: (v) {
-                      widget.onMarkdownChanged(v ?? false);
-                      if (!(v ?? false)) {
-                        setState(() => _isPreview = false);
-                      }
-                    },
-                  ),
-                  const Text(
-                    "Markdown",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ] else
-                  Text(
-                    widget.label,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-              ],
-            ),
-            if (widget.isMarkdown || widget.isRefined)
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    label: Text(l10n.edit),
-                    icon: const Icon(Icons.edit, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text(l10n.preview),
-                    icon: const Icon(Icons.visibility, size: 16),
-                  ),
-                ],
-                selected: {_isPreview},
-                onSelectionChanged: (v) => setState(() => _isPreview = v.first),
-                style: SegmentedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 11),
-                ),
-              ),
-          ],
-        ),
+        header,
         const SizedBox(height: 8),
-        _buildEditorContent(colorScheme),
+        if (widget.expand)
+          Expanded(child: _buildEditorContent(colorScheme))
+        else
+          Flexible(child: _buildEditorContent(colorScheme)),
       ],
     );
   }
@@ -147,9 +152,11 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       );
     }
 
-    final content = Container(
+    return Container(
       width: double.infinity,
-      height: widget.expand ? null : widget.maxLines * 24.0,
+      constraints: widget.expand ? null : BoxConstraints(
+        maxHeight: widget.maxLines * 24.0,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(8),
@@ -157,10 +164,5 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       ),
       child: inner,
     );
-
-    if (widget.expand) {
-      return Expanded(child: content);
-    }
-    return content;
   }
 }
