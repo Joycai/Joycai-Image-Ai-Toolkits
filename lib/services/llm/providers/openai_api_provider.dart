@@ -313,7 +313,8 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
             parts.add({
               "type": "image_url",
               "image_url": {
-                "url": "data:${attachment.mimeType};base64,$b64Data"
+                "url": "data:${attachment.mimeType};base64,$b64Data",
+                "detail": "auto"
               }
             });
           }
@@ -337,7 +338,9 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       payload["stream_options"] = {"include_usage": true};
     }
 
-    if (modelId.contains('gemini-3') || modelId.contains('image')) {
+    // Support Google-style OpenAI compatibility extensions (like Gemini via OpenAI API)
+    // or next-gen models that might require explicit modality hints.
+    if (modelId.contains('gemini') || modelId.contains('image') || modelId.contains('gpt-5')) {
       payload["modalities"] = ["image", "text"];
       
       payload["safety_settings"] = [

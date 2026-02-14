@@ -103,17 +103,40 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       ],
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
-      children: [
-        header,
-        const SizedBox(height: 8),
-        if (widget.expand)
-          Expanded(child: _buildEditorContent(colorScheme))
-        else
-          Flexible(child: _buildEditorContent(colorScheme)),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // If height is extremely limited (e.g. log console expanded on small screen),
+        // fallback to a scrollable Column instead of using Expanded/Flexible
+        // to prevent RenderFlex overflow errors.
+        final bool isSpaceTooTight = widget.expand && constraints.maxHeight < 120;
+
+        if (isSpaceTooTight) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                header,
+                const SizedBox(height: 8),
+                _buildEditorContent(colorScheme),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            header,
+            const SizedBox(height: 8),
+            if (widget.expand)
+              Expanded(child: _buildEditorContent(colorScheme))
+            else
+              Flexible(child: _buildEditorContent(colorScheme)),
+          ],
+        );
+      },
     );
   }
 
