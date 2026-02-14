@@ -12,6 +12,7 @@ import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/chat_model_selector.dart';
 
 class AiRenameDialog extends StatefulWidget {
   const AiRenameDialog({super.key});
@@ -275,13 +276,9 @@ Do not include any other text or markdown formatting.
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<int>(
-                initialValue: effectiveModelPk,
-                decoration: InputDecoration(labelText: l10n.model, border: const OutlineInputBorder()),
-                items: chatModels.map((m) => DropdownMenuItem(
-                  value: m.id,
-                  child: Text(m.modelName),
-                )).toList(),
+              ChatModelSelector(
+                selectedModelId: effectiveModelPk,
+                label: l10n.model,
                 onChanged: (v) => setState(() => _selectedModelPk = v),
               ),
               const SizedBox(height: 12),

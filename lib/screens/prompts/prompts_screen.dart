@@ -13,6 +13,8 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../state/app_state.dart';
 import '../../widgets/markdown_editor.dart';
+import 'widgets/color_hue_picker.dart';
+import 'widgets/prompts_sidebar.dart';
 import 'widgets/system_template_list.dart';
 import 'widgets/tag_management_list.dart';
 import 'widgets/user_prompt_list.dart';
@@ -176,7 +178,20 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       body: Row(
         children: [
           if (!isNarrow && _tabController.index != 2) ...[
-            _buildSidebar(colorScheme, l10n),
+            PromptsSidebar(
+              tags: _tags,
+              selectedFilterTagIds: _selectedFilterTagIds,
+              onTagToggle: (id) {
+                setState(() {
+                  if (_selectedFilterTagIds.contains(id)) {
+                    _selectedFilterTagIds.remove(id);
+                  } else {
+                    _selectedFilterTagIds.add(id);
+                  }
+                });
+              },
+              onClear: () => setState(() => _selectedFilterTagIds.clear()),
+            ),
             const VerticalDivider(width: 1),
           ],
           Expanded(
@@ -243,67 +258,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
         PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
       ],
-    );
-  }
-
-  Widget _buildSidebar(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Container(
-      width: 250,
-      color: colorScheme.surfaceContainerLow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              l10n.categoriesTab,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-                fontSize: 12,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _tags.length,
-              itemBuilder: (context, index) {
-                final tag = _tags[index];
-                final isSelected = _selectedFilterTagIds.contains(tag.id);
-                return ListTile(
-                  dense: true,
-                  leading: Icon(
-                    isSelected ? Icons.label : Icons.label_outline,
-                    color: Color(tag.color),
-                    size: 18,
-                  ),
-                  title: Text(tag.name),
-                  selected: isSelected,
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedFilterTagIds.remove(tag.id);
-                      } else {
-                        _selectedFilterTagIds.add(tag.id!);
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          if (_selectedFilterTagIds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextButton.icon(
-                onPressed: () => setState(() => _selectedFilterTagIds.clear()),
-                icon: const Icon(Icons.clear_all, size: 16),
-                label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -461,7 +415,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   const SizedBox(height: 24),
                   
                   // Color Picker Section
-                  _ColorHuePicker(
+                  ColorHuePicker(
                     initialColor: Color(selectedColor),
                     onColorChanged: updateColor,
                   ),
@@ -863,128 +817,4 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       }
     }
   }
-}
-
-/// A simple Hue color picker wheel implementation
-class _ColorHuePicker extends StatefulWidget {
-  final Color initialColor;
-  final ValueChanged<int> onColorChanged;
-
-  const _ColorHuePicker({
-    required this.initialColor,
-    required this.onColorChanged,
-  });
-
-  @override
-  State<_ColorHuePicker> createState() => _ColorHuePickerState();
-}
-
-class _ColorHuePickerState extends State<_ColorHuePicker> {
-  late double _hue;
-
-  @override
-  void initState() {
-    super.initState();
-    _hue = HSVColor.fromColor(widget.initialColor).hue;
-  }
-
-  @override
-  void didUpdateWidget(_ColorHuePicker oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final newHue = HSVColor.fromColor(widget.initialColor).hue;
-    if ((newHue - _hue).abs() > 1.0) {
-      setState(() => _hue = newHue);
-    }
-  }
-
-  void _handleGesture(Offset localPosition, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    
-    double rad = (localPosition - center).direction; // -pi to pi
-    double deg = (rad * 180 / 3.1415926535) + 90;
-    if (deg < 0) deg += 360;
-
-    setState(() {
-      _hue = deg % 360;
-    });
-    
-    final color = HSVColor.fromAHSV(1.0, _hue, 0.8, 0.9).toColor();
-    widget.onColorChanged(color.toARGB32());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const size = Size(160, 160);
-    return GestureDetector(
-      onPanUpdate: (details) => _handleGesture(details.localPosition, size),
-      onPanDown: (details) => _handleGesture(details.localPosition, size),
-      child: CustomPaint(
-        size: size,
-        painter: _ColorWheelPainter(hue: _hue),
-      ),
-    );
-  }
-}
-
-class _ColorWheelPainter extends CustomPainter {
-  final double hue;
-  _ColorWheelPainter({required this.hue});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    const strokeWidth = 20.0;
-
-    for (double i = 0; i < 360; i += 1) {
-      final paint = Paint()
-        ..color = HSVColor.fromAHSV(1.0, i, 1.0, 1.0).toColor()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth + 1;
-      
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
-        (i - 90) * 3.1415926535 / 180,
-        1.5 * 3.1415926535 / 180,
-        false,
-        paint,
-      );
-    }
-
-    final indicatorAngle = (hue - 90) * 3.1415926535 / 180;
-    final indicatorOffset = Offset(
-      center.dx + (radius - (strokeWidth / 2)) * math.cos(indicatorAngle),
-      center.dy + (radius - (strokeWidth / 2)) * math.sin(indicatorAngle),
-    );
-
-    canvas.drawCircle(
-      indicatorOffset, 
-      12, 
-      Paint()..color = Colors.black26..style = PaintingStyle.fill..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
-    );
-    canvas.drawCircle(
-      indicatorOffset, 
-      10, 
-      Paint()..color = Colors.white..style = PaintingStyle.fill
-    );
-    canvas.drawCircle(
-      indicatorOffset, 
-      7, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor()..style = PaintingStyle.fill
-    );
-
-    canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 0.8, 0.9).toColor()..style = PaintingStyle.fill
-    );
-    canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = Colors.white24..style = PaintingStyle.stroke..strokeWidth = 2
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ColorWheelPainter oldDelegate) => oldDelegate.hue != hue;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../screens/workbench/sidebar/mask_editor_sidebar.dart';
 import '../screens/workbench/source_explorer.dart';
 import '../screens/workbench/tabs/comparator_tab.dart';
@@ -19,6 +20,7 @@ class UnifiedSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Row(
       children: [
@@ -33,25 +35,25 @@ class UnifiedSidebar extends StatelessWidget {
                 icon: Icons.folder_open,
                 isSelected: appState.sidebarMode == SidebarMode.directories,
                 onTap: () => appState.setSidebarMode(SidebarMode.directories),
-                tooltip: "Directories",
+                tooltip: l10n.directories,
               ),
               _SidebarNavItem(
                 icon: Icons.visibility,
                 isSelected: appState.sidebarMode == SidebarMode.preview,
                 onTap: () => appState.setSidebarMode(SidebarMode.preview),
-                tooltip: "Preview",
+                tooltip: l10n.preview,
               ),
               _SidebarNavItem(
                 icon: Icons.compare,
                 isSelected: appState.sidebarMode == SidebarMode.comparator,
                 onTap: () => appState.setSidebarMode(SidebarMode.comparator),
-                tooltip: "Comparator",
+                tooltip: l10n.comparator,
               ),
               _SidebarNavItem(
                 icon: Icons.brush,
                 isSelected: appState.sidebarMode == SidebarMode.maskEditor,
                 onTap: () => appState.setSidebarMode(SidebarMode.maskEditor),
-                tooltip: "Mask Editor",
+                tooltip: l10n.maskEditor,
               ),
             ],
           ),

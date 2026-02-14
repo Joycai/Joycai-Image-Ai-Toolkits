@@ -15,7 +15,7 @@ import '../../../services/llm/llm_models.dart';
 import '../../../services/llm/llm_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/window_state.dart';
-import '../../../widgets/dialogs/mask_editor_dialog.dart';
+import '../../../widgets/drawing_canvas.dart';
 
 class MaskEditorSidebarView extends StatefulWidget {
   const MaskEditorSidebarView({super.key});

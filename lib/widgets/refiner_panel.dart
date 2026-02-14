@@ -5,12 +5,12 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
-import '../../models/llm_channel.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
+import 'chat_model_selector.dart';
 import 'markdown_editor.dart';
 
 class AIPromptRefiner extends StatefulWidget {
@@ -322,42 +322,9 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   }
 
   Widget _buildModelSelector(AppLocalizations l10n, AppState appState) {
-    return DropdownButtonFormField<int>(
-      initialValue: _selectedModelPk,
-      decoration: InputDecoration(
-        labelText: l10n.refinerModel,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      items: appState.chatModels.map((m) {
-        final channel = appState.allChannels.cast<LLMChannel?>().firstWhere((c) => c?.id == m.channelId, orElse: () => null);
-        return DropdownMenuItem(
-          value: m.id,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (channel != null && channel.tag != null)
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: Color(channel.tagColor ?? 0xFF607D8B).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    channel.tag!,
-                    style: TextStyle(
-                      fontSize: 9, 
-                      color: Color(channel.tagColor ?? 0xFF607D8B),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              Text(m.modelName, overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        );
-      }).toList(),
+    return ChatModelSelector(
+      selectedModelId: _selectedModelPk,
+      label: l10n.refinerModel,
       onChanged: (v) => setState(() => _selectedModelPk = v),
     );
   }

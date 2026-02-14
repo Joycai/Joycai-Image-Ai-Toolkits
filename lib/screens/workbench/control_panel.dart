@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
+import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
@@ -78,17 +80,21 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   @override
   Widget build(BuildContext context) {
     // Select specific values to rebuild on change
-    final appState = context.watch<AppState>();
-    final imageModels = appState.imageModels;
-    final allChannels = appState.allChannels;
-    final isMarkdownWorkbench = appState.isMarkdownWorkbench;
+    final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
+    final allChannels = context.select<AppState, List<LLMChannel>>((s) => s.allChannels);
+    final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
+    final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
+    final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
+    final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
+    final lastAspectRatio = context.select<AppState, AppAspectRatio>((s) => s.lastAspectRatio);
+    final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
     
     // Determine selected model from AppState
     int? selectedModelPk;
     int? selectedChannelId;
     
     if (imageModels.isNotEmpty) {
-      final savedModelId = appState.lastSelectedModelId;
+      final savedModelId = lastSelectedModelId;
       final match = imageModels.cast<LLMModel?>().firstWhere(
         (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
         orElse: () => null,
@@ -106,14 +112,14 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     }
 
     // Keep controllers in sync if state changes externally (e.g. prompt refiner)
-    if (_promptController.text != appState.lastPrompt) {
+    if (_promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
-        text: appState.lastPrompt,
-        selection: TextSelection.collapsed(offset: appState.lastPrompt.length),
+        text: lastPrompt,
+        selection: TextSelection.collapsed(offset: lastPrompt.length),
       );
     }
-    if (_prefixController.text != appState.imagePrefix) {
-      _prefixController.text = appState.imagePrefix;
+    if (_prefixController.text != imagePrefix) {
+      _prefixController.text = imagePrefix;
     }
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -124,7 +130,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSelectionPreview(appState, colorScheme, l10n),
+          Selector<AppState, List<AppFile>>(
+            selector: (_, s) => s.selectedImages,
+            builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
+          ),
           const Divider(height: 32),
           
           Expanded(
@@ -138,11 +147,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     channels: allChannels.map((c) => c.toMap()).toList(), // Adapter
                     selectedChannelId: selectedChannelId,
                     selectedModelPk: selectedModelPk,
-                    aspectRatio: appState.lastAspectRatio,
-                    resolution: appState.lastResolution,
+                    aspectRatio: lastAspectRatio,
+                    resolution: lastResolution,
                     isExpanded: _isModelSettingsExpanded,
                     onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
                     onChannelChanged: (val) {
+                      final appState = Provider.of<AppState>(context, listen: false);
                       final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
                       final newPk = firstInChannel?.id;
                       if (newPk != null) {
@@ -173,7 +183,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextButton.icon(
-                            onPressed: () => _showRefinerDialog(appState, l10n),
+                            onPressed: () {
+                              final appState = Provider.of<AppState>(context, listen: false);
+                              _showRefinerDialog(appState, l10n);
+                            },
                             icon: const Icon(Icons.auto_fix_high, size: 14),
                             label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
                             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -188,7 +201,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                     controller: _promptController,
                     label: l10n.prompt,
                     isMarkdown: isMarkdownWorkbench,
-                    onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
+                    onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
                     maxLines: 15,
                     initiallyPreview: false,
                     hint: l10n.promptHint,
@@ -235,44 +248,48 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: _promptController.text.isEmpty 
-                      ? null 
-                      : () {
-                          if (selectedModelPk == null) {
+                child: Selector<AppState, int>(
+                  selector: (_, s) => s.selectedImages.length,
+                  builder: (context, selectedCount, _) => FilledButton.icon(
+                    onPressed: _promptController.text.isEmpty 
+                        ? null 
+                        : () {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            if (selectedModelPk == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.noModelsConfigured),
+                                  action: SnackBarAction(
+                                    label: l10n.settings,
+                                    onPressed: () => appState.navigateToScreen(5),
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
+                            final modelName = selectedModel.modelName;
+                            
+                            appState.submitTask(selectedModelPk, {
+                              'prompt': _promptController.text,
+                              'aspectRatio': lastAspectRatio.value,
+                              'imageSize': lastResolution.value,
+                            }, modelIdDisplay: modelName);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(l10n.noModelsConfigured),
-                                action: SnackBarAction(
-                                  label: l10n.settings,
-                                  onPressed: () => appState.navigateToScreen(5),
-                                ),
+                                content: Text(l10n.taskSubmitted),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                width: 250,
                               ),
                             );
-                            return;
-                          }
-
-                          final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
-                          final modelName = selectedModel.modelName;
-                          
-                          appState.submitTask(selectedModelPk, {
-                            'prompt': _promptController.text,
-                            'aspectRatio': appState.lastAspectRatio.value,
-                            'imageSize': appState.lastResolution.value,
-                          }, modelIdDisplay: modelName);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.taskSubmitted),
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              width: 250,
-                            ),
-                          );
-                        },
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(appState.selectedImages.isEmpty 
-                      ? l10n.processPrompt 
-                      : l10n.processImages(appState.selectedImages.length)),
+                          },
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text(selectedCount == 0 
+                        ? l10n.processPrompt 
+                        : l10n.processImages(selectedCount)),
+                  ),
                 ),
               ),
             ],
@@ -376,8 +393,8 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  Widget _buildSelectionPreview(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
-    if (appState.selectedImages.isEmpty) {
+  Widget _buildSelectionPreview(BuildContext context, List<AppFile> selectedImages, ColorScheme colorScheme, AppLocalizations l10n) {
+    if (selectedImages.isEmpty) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Container(
@@ -405,11 +422,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              l10n.selectedCount(appState.selectedImages.length),
+              l10n.selectedCount(selectedImages.length),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             TextButton(
-              onPressed: appState.clearImageSelection,
+              onPressed: () => Provider.of<AppState>(context, listen: false).clearImageSelection(),
               child: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
             ),
           ],
@@ -419,9 +436,9 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           height: 100,
           child: ReorderableListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: appState.selectedImages.length,
+            itemCount: selectedImages.length,
             onReorder: (oldIndex, newIndex) {
-              appState.galleryState.reorderSelectedImages(oldIndex, newIndex);
+              Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
             },
             proxyDecorator: (child, index, animation) {
               return Material(
@@ -430,7 +447,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               );
             },
             itemBuilder: (context, index) {
-              final image = appState.selectedImages[index];
+              final image = selectedImages[index];
               return Padding(
                 key: ValueKey(image.path),
                 padding: const EdgeInsets.only(right: 8.0),
@@ -449,7 +466,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                       top: 4,
                       right: 4,
                       child: GestureDetector(
-                        onTap: () => appState.toggleImageSelection(image),
+                        onTap: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),

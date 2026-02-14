@@ -161,6 +161,7 @@ class AppState extends ChangeNotifier {
     downloaderState.removeListener(notifyListeners);
     browserState.removeListener(notifyListeners);
     windowState.removeListener(notifyListeners);
+    _sidebarWidthSaveTimer?.cancel();
     super.dispose();
   }
 
