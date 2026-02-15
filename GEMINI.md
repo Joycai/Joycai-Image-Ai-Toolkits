@@ -84,4 +84,11 @@ When running the application in **Debug mode** on macOS, you may encounter a `Nu
     2.  If Debug mode is absolutely necessary on macOS, temporarily remove/comment out the `gal` dependency in `pubspec.yaml`.
     3.  Always perform a deep clean when switching platforms or experiencing native build issues: `rm -rf build .dart_tool` followed by `flutter pub get`.
     4.  The database initialization has been optimized to use standard `sqflite` on macOS to reduce Native Asset triggers, but transitive dependencies may still cause the crash.
+    5.  **Hotfix for Flutter 3.38.5:** If the error persists at `xcode_backend.dart:345`, you can patch your local SDK with the following command:
+        ```bash
+        # Replace the forced null check with a fallback value
+        sed -i '' "s/environment\['FLUTTER_BUILD_DIR'\]!/environment['FLUTTER_BUILD_DIR'] ?? 'build'/" $FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.dart
+        ```
+        *Note: Replace `$FLUTTER_ROOT` with your Flutter installation path.*
+
 

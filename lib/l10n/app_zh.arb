@@ -219,6 +219,14 @@
   "addModel": "添加模型",
   "editModel": "编辑模型",
   "noModelsConfigured": "未配置模型",
+  "countModels": "{count} 个模型",
+  "@countModels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addFirstModel": "添加您的第一个 LLM 模型以开始使用",
   "addNewModel": "添加新模型",
   "deleteModel": "删除模型",

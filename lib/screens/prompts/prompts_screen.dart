@@ -76,19 +76,151 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isNarrow = Responsive.isNarrow(context);
     
+    return ResponsiveBuilder(
+      mobile: _buildMobileLayout(l10n),
+      tablet: _buildDesktopLayout(l10n, isTablet: true),
+      desktop: _buildDesktopLayout(l10n),
+    );
+  }
+
+  // --- Mobile Layout ---
+  Widget _buildMobileLayout(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            title: Text(l10n.promptLibrary),
+            pinned: true,
+            floating: true,
+            snap: true,
+            actions: [
+              _buildImportExportMenu(l10n),
+              IconButton(onPressed: _handleAddAction, icon: const Icon(Icons.add)),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(108),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: _buildSearchField(l10n, isMobile: true),
+                  ),
+                  TabBar(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: l10n.userPrompts),
+                      Tab(text: l10n.systemTemplates),
+                      Tab(text: l10n.categoriesTab),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        body: Column(
+          children: [
+            if (_tabController.index == 0 && _tags.isNotEmpty)
+              _buildMobileFilterBar(colorScheme),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: _buildTabViews(l10n),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Desktop/Tablet Layout ---
+  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.promptLibrary, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: colorScheme.surface,
+        centerTitle: false,
+        actions: [
+          _buildSearchField(l10n),
+          const SizedBox(width: 8),
+          _buildImportExportActions(l10n),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton.icon(
+              onPressed: _handleAddAction,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.add),
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+        ),
+      ),
+      body: Row(
+        children: [
+          // Navigation Rail / Sidebar
+          NavigationRail(
+            selectedIndex: _tabController.index,
+            onDestinationSelected: (index) => setState(() => _tabController.index = index),
+            labelType: NavigationRailLabelType.all,
+            backgroundColor: colorScheme.surfaceContainerLow,
+            destinations: [
+              NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.userPrompts)),
+              NavigationRailDestination(icon: const Icon(Icons.auto_fix_high_outlined), selectedIcon: const Icon(Icons.auto_fix_high), label: Text(l10n.systemTemplates)),
+              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          // Tag Sidebar (Only for Prompts)
+          if (_tabController.index != 2) ...[
+            SizedBox(
+              width: isTablet ? 200 : 260,
+              child: PromptsSidebar(
+                tags: _tags,
+                selectedFilterTagIds: _selectedFilterTagIds,
+                onTagToggle: (id) {
+                  setState(() {
+                    if (_selectedFilterTagIds.contains(id)) {
+                      _selectedFilterTagIds.remove(id);
+                    } else {
+                      _selectedFilterTagIds.add(id);
+                    }
+                  });
+                },
+                onClear: () => setState(() => _selectedFilterTagIds.clear()),
+              ),
+            ),
+            const VerticalDivider(width: 1),
+          ],
+          // Main Content
+          Expanded(
+            child: Container(
+              color: colorScheme.surface,
+              child: _buildTabViews(l10n)[_tabController.index],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildTabViews(AppLocalizations l10n) {
     final filteredUser = _userPrompts.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
                             p.content.toLowerCase().contains(_searchQuery);
-      
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
-      
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      final matchesTags = _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
-      
-      return matchesSearch && matchesTags;
+      return matchesSearch && _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
     }).toList();
 
     final filteredSystem = _systemPrompts.where((p) {
@@ -98,144 +230,78 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return matchesType && matchesSearch;
     }).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.promptLibrary),
-        actions: isNarrow 
-          ? [
-              _buildImportExportMenu(l10n),
-              IconButton(
-                onPressed: _handleAddAction,
-                icon: const Icon(Icons.add),
-              ),
-            ]
-          : [
-              Container(
-                width: 250,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.filterPrompts,
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.upload_file_outlined),
-                tooltip: l10n.importSettings,
-                onPressed: () => _importPrompts(l10n),
-              ),
-              IconButton(
-                icon: const Icon(Icons.download_for_offline_outlined),
-                tooltip: l10n.exportSettings,
-                onPressed: () => _exportPrompts(l10n),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: FilledButton.icon(
-                  onPressed: _handleAddAction,
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.add),
-                ),
-              ),
-            ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(isNarrow ? 100 : 50),
-          child: Column(
-            children: [
-              if (isNarrow)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: l10n.filterPrompts,
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      isDense: true,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ),
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(text: l10n.userPrompts),
-                  Tab(text: l10n.systemTemplates),
-                  Tab(text: l10n.categoriesTab),
-                ],
-              ),
-            ],
-          ),
-        ),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return [
+      UserPromptList(
+        prompts: filteredUser, 
+        searchQuery: _searchQuery, 
+        selectedFilterTagIds: _selectedFilterTagIds,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
+        onConfirmDelete: _confirmDelete,
       ),
-      body: Row(
-        children: [
-          if (!isNarrow && _tabController.index != 2) ...[
-            PromptsSidebar(
-              tags: _tags,
-              selectedFilterTagIds: _selectedFilterTagIds,
-              onTagToggle: (id) {
-                setState(() {
-                  if (_selectedFilterTagIds.contains(id)) {
-                    _selectedFilterTagIds.remove(id);
-                  } else {
-                    _selectedFilterTagIds.add(id);
-                  }
-                });
-              },
-              onClear: () => setState(() => _selectedFilterTagIds.clear()),
-            ),
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Column(
-              children: [
-                if (isNarrow && _tabController.index == 0 && _tags.isNotEmpty)
-                  _buildMobileFilterBar(colorScheme),
-                if (_tabController.index == 1)
-                  _buildSystemTypeToggle(colorScheme, l10n),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      UserPromptList(
-                        prompts: filteredUser, 
-                        searchQuery: _searchQuery, 
-                        selectedFilterTagIds: _selectedFilterTagIds,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {prompt}) => _showPromptDialog(l10n, prompt: prompt),
-                        onConfirmDelete: _confirmDelete,
-                      ),
-                      SystemTemplateList(
-                        prompts: filteredSystem, 
-                        searchQuery: _searchQuery,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {prompt}) => _showSystemPromptDialog(l10n, prompt: prompt),
-                        onConfirmDelete: _confirmDelete,
-                      ),
-                      TagManagementList(
-                        tags: _tags,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {tag}) => _showTagDialog(l10n, tag: tag),
-                        onConfirmDelete: _confirmDeleteTag,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      SystemTemplateList(
+        prompts: filteredSystem, 
+        searchQuery: _searchQuery,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
+        onConfirmDelete: _confirmDelete,
+        header: _buildSystemTypeToggle(colorScheme, l10n),
+      ),
+      TagManagementList(
+        tags: _tags,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
+        onConfirmDelete: _confirmDeleteTag,
+      ),
+    ];
+  }
+
+  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false}) {
+    return Container(
+      width: isMobile ? double.infinity : 300,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: TextField(
+        controller: _searchCtrl,
+        textAlignVertical: TextAlignVertical.center,
+        decoration: InputDecoration(
+          hintText: l10n.filterPrompts,
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty 
+              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear()) 
+              : null,
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
       ),
     );
   }
+
+  Widget _buildImportExportActions(AppLocalizations l10n) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.upload_file_outlined, size: 20),
+          tooltip: l10n.importSettings,
+          onPressed: () => _importPrompts(l10n),
+        ),
+        const SizedBox(width: 4),
+        IconButton.filledTonal(
+          icon: const Icon(Icons.download_for_offline_outlined, size: 20),
+          tooltip: l10n.exportSettings,
+          onPressed: () => _exportPrompts(l10n),
+        ),
+      ],
+    );
+  }
+
 
   void _handleAddAction() {
     final l10n = AppLocalizations.of(context)!;

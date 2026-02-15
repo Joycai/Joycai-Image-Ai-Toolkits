@@ -277,8 +277,16 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text(l10n.imageDownloader),
+        title: Text(l10n.imageDownloader, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant.withAlpha(100)),
+        ),
         leading: isNarrow ? IconButton(
           icon: const Icon(Icons.tune),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
@@ -288,12 +296,19 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       body: Row(
         children: [
           if (!isNarrow) ...[
-            SizedBox(width: 350, child: controlPanel),
-            const VerticalDivider(width: 1, thickness: 1),
+            Container(
+              width: 350, 
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: controlPanel,
+            ),
+            const VerticalDivider(width: 1),
           ],
           Expanded(
-            child: DownloaderResultsArea(
-              onAddToQueue: _addToQueue,
+            child: Container(
+              color: Theme.of(context).colorScheme.surface,
+              child: DownloaderResultsArea(
+                onAddToQueue: _addToQueue,
+              ),
             ),
           ),
         ],

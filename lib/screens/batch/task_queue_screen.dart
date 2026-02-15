@@ -69,7 +69,17 @@ class TaskQueueScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.taskQueueManager)),
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.taskQueueManager, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: colorScheme.surface,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+        ),
+      ),
       body: Row(
         children: [
           // Left Sidebar: Summary & Controls
@@ -146,22 +156,25 @@ class TaskQueueScreen extends StatelessWidget {
           const VerticalDivider(width: 1),
           // Right Pane: Task List
           Expanded(
-            child: tasks.isEmpty
-                ? _buildEmptyState(colorScheme, l10n)
-                : Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 900),
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(24),
-                        itemCount: tasks.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final task = tasks[tasks.length - 1 - index];
-                          return _TaskTile(task: task);
-                        },
+            child: Container(
+              color: colorScheme.surface,
+              child: tasks.isEmpty
+                  ? _buildEmptyState(colorScheme, l10n)
+                  : Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 900),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(24),
+                          itemCount: tasks.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final task = tasks[tasks.length - 1 - index];
+                            return _TaskTile(task: task);
+                          },
+                        ),
                       ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),
