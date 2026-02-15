@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/browser_file.dart';
 import '../services/database_service.dart';
+import '../services/file_permission_service.dart';
 
 List<Map<String, dynamic>> _scanFilesIsolate(List<String> paths) {
   List<Map<String, dynamic>> results = [];
@@ -170,14 +171,7 @@ class BrowserState extends ChangeNotifier {
     // Check for unreachable directories
     final newUnreachable = <String>{};
     for (var path in sourceDirectories) {
-      try {
-        final dir = Directory(path);
-        if (!dir.existsSync()) {
-          newUnreachable.add(path);
-        } else {
-          dir.listSync();
-        }
-      } catch (_) {
+      if (FilePermissionService().isPathUnreachable(path)) {
         newUnreachable.add(path);
       }
     }

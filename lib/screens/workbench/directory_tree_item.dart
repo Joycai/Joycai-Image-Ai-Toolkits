@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 
@@ -46,9 +46,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   }
 
   Future<void> _reAuthorize(BuildContext context, AppState appState) async {
-    final String? newPath = await FilePicker.platform.getDirectoryPath(
-      initialDirectory: widget.path,
-      dialogTitle: "Re-authorize access to: ${widget.path}",
+    final String? newPath = await FilePermissionService().reAuthorize(
+      widget.path,
+      title: "Authorize Access to: ${widget.path}",
     );
 
     if (newPath != null) {

@@ -14,10 +14,12 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../services/image_metadata_service.dart';
+import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
+import '../../widgets/placeholders/permission_placeholder.dart';
 import 'widgets/image_preview_dialog.dart';
 
 class GalleryWidget extends StatefulWidget {
@@ -105,9 +107,9 @@ class _GalleryWidgetState extends State<GalleryWidget> {
   }
 
   Future<void> _reAuthorize(BuildContext context, AppState state, String path, bool isResult) async {
-    final String? newPath = await FilePicker.platform.getDirectoryPath(
-      initialDirectory: path,
-      dialogTitle: "Re-authorize access to: $path",
+    final String? newPath = await FilePermissionService().reAuthorize(
+      path,
+      title: isResult ? "Authorize Output Directory" : "Authorize Folder: $path",
     );
 
     if (newPath != null) {
@@ -147,38 +149,22 @@ class _GalleryWidgetState extends State<GalleryWidget> {
     final bool isUnreachable = !isTemp && currentPath != null && state.galleryState.isPathUnreachable(currentPath);
 
     if (images.isEmpty) {
+      if (isUnreachable) {
+        return PermissionPlaceholder(
+          onReAuthorize: () => _reAuthorize(context, state, currentPath, isResult),
+        );
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isUnreachable ? Icons.lock_person_outlined : (isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined), 
-              size: 64, 
-              color: isUnreachable ? colorScheme.error.withAlpha(150) : Colors.grey[400]
-            ),
+            Icon(isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              isUnreachable 
-                ? (Platform.isMacOS ? "macOS Permission Required" : "Folder Access Denied")
-                : (isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound)),
-              style: TextStyle(color: isUnreachable ? colorScheme.error : Colors.grey[600], fontSize: 16),
+              isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound),
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
-            if (isUnreachable) ...[
-              const SizedBox(height: 12),
-              Text(
-                Platform.isMacOS 
-                  ? "Access to this folder was denied by the OS after restart.\nPlease click the button below to re-authorize."
-                  : "The saved path is no longer accessible or has been moved.\nPlease re-select the folder.",
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => _reAuthorize(context, state, currentPath, isResult),
-                icon: const Icon(Icons.folder_open),
-                label: Text(Platform.isMacOS ? "Re-authorize Access" : "Re-select Folder"),
-              ),
-            ]
           ],
         ),
       );

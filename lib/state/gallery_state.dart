@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../core/constants.dart';
 import '../models/app_file.dart';
 import '../services/database_service.dart';
+import '../services/file_permission_service.dart';
 
 /// Top-level function for background disk scanning to keep UI smooth.
 List<String> _scanImagesIsolate(List<String> paths) {
@@ -217,19 +218,6 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isPathUnreachable(String? path) {
-    if (path == null || path.isEmpty) return false;
-    try {
-      final dir = Directory(path);
-      // existsSync can be true while listSync throws on macOS Sandbox
-      if (!dir.existsSync()) return true;
-      dir.listSync(); 
-      return false;
-    } catch (_) {
-      return true;
-    }
-  }
-
   Future<void> refreshImages() async {
     _log('Manually refreshing images...');
     _refreshCounter++;
@@ -403,4 +391,6 @@ class GalleryState extends ChangeNotifier {
     viewSourcePath = path;
     notifyListeners();
   }
+
+  bool isPathUnreachable(String? path) => FilePermissionService().isPathUnreachable(path);
 }
