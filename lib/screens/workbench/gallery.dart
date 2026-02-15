@@ -16,7 +16,6 @@ import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
-
 import 'widgets/image_preview_dialog.dart';
 
 class GalleryWidget extends StatefulWidget {
