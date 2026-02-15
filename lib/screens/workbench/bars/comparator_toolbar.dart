@@ -51,7 +51,7 @@ class ComparatorToolbar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
-            tooltip: "Metadata",
+            tooltip: l10n.metadata,
             visualDensity: VisualDensity.compact,
           ),
         ],

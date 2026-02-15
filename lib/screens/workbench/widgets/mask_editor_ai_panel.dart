@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 
 class MaskEditorAIPanel extends StatelessWidget {
@@ -27,6 +28,7 @@ class MaskEditorAIPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
 
@@ -46,9 +48,9 @@ class MaskEditorAIPanel extends StatelessWidget {
                     child: DropdownButtonFormField<String>(
                       initialValue: selectedModelId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Model',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.maskModel,
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                       items: appState.imageModels.map((m) => DropdownMenuItem(
@@ -64,7 +66,7 @@ class MaskEditorAIPanel extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("Detail: ${pointCount.toInt()}", style: const TextStyle(fontSize: 10)),
+                        Text(l10n.maskDetail(pointCount.toInt()), style: const TextStyle(fontSize: 10)),
                         Slider(
                           value: pointCount,
                           min: 10,
@@ -83,9 +85,9 @@ class MaskEditorAIPanel extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: promptController,
-                      decoration: const InputDecoration(
-                        labelText: "What to mask?",
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.maskPromptLabel,
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                       onSubmitted: (_) => onGenerate(),
@@ -111,9 +113,9 @@ class MaskEditorAIPanel extends StatelessWidget {
                 child: DropdownButtonFormField<String>(
                   initialValue: selectedModelId,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Model',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.maskModel,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   items: appState.imageModels.map((m) => DropdownMenuItem(
@@ -130,7 +132,7 @@ class MaskEditorAIPanel extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Detail: ${pointCount.toInt()}", style: const TextStyle(fontSize: 10)),
+                    Text(l10n.maskDetail(pointCount.toInt()), style: const TextStyle(fontSize: 10)),
                     Slider(
                       value: pointCount,
                       min: 10,
@@ -146,9 +148,9 @@ class MaskEditorAIPanel extends StatelessWidget {
                 flex: 3,
                 child: TextField(
                   controller: promptController,
-                  decoration: const InputDecoration(
-                    labelText: "What to mask?",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.maskPromptLabel,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   onSubmitted: (_) => onGenerate(),
@@ -160,7 +162,7 @@ class MaskEditorAIPanel extends StatelessWidget {
                 icon: isGenerating 
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.auto_awesome, size: 16),
-                label: Text(isGenerating ? "Generating..." : "Generate"),
+                label: Text(isGenerating ? l10n.generating : l10n.generate),
               ),
             ],
           ),

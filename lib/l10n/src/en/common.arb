@@ -1,0 +1,69 @@
+{
+  "appTitle": "Joycai Image AI Toolkits",
+  "save": "Save",
+  "update": "Update",
+  "cancel": "Cancel",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "finish": "Finish",
+  "exit": "Exit",
+  "add": "Add",
+  "edit": "Edit",
+  "delete": "Delete",
+  "remove": "Remove",
+  "clear": "Clear",
+  "refresh": "Refresh",
+  "preview": "Preview",
+  "share": "Share",
+  "status": "Status",
+  "started": "Started",
+  "finished": "Finished",
+  "config": "Config",
+  "logs": "Logs",
+  "copyFilename": "Copy Filename",
+  "openInFolder": "Open in Folder",
+  "openInPreview": "Open in Preview",
+  "copiedToClipboard": "Copied: {text}",
+  "@copiedToClipboard": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shareFiles": "Share selected items ({count})",
+  "@shareFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comingSoon": "Coming Soon",
+  "sidebar": "Sidebar",
+  "white": "White",
+  "black": "Black",
+  "red": "Red",
+  "green": "Green",
+  "refine": "Refine",
+  "apply": "Apply",
+  "metadata": "Metadata",
+  "filterPrompts": "Filter prompts...",
+  "shareFailed": "Share failed: {error}",
+  "@shareFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+}

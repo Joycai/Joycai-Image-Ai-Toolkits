@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -426,6 +427,29 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
+            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),
+            title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
+            dense: true,
+          ),
+          onTap: () async {
+            try {
+              await Gal.putImage(widget.imageFile.path);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.saveFailed(e.toString())), backgroundColor: Colors.red),
+                );
+              }
+            }
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
             leading: const Icon(Icons.share_outlined, size: 18),
             title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
             dense: true,
@@ -442,11 +466,12 @@ class _ImageCardState extends State<_ImageCard> {
               await Share.shareXFiles(
                 xFiles, 
                 subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+                sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
               );
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Share failed: $e')),
+                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),
                 );
               }
             }

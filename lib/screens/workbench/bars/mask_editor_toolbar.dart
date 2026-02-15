@@ -50,7 +50,7 @@ class MaskEditorToolbar extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.auto_awesome, color: showAIPanel ? colorScheme.primary : null),
               onPressed: onToggleAI,
-              tooltip: "AI Smart Mask",
+              tooltip: l10n.aiSmartMask,
               visualDensity: VisualDensity.compact,
             ),
             const VerticalDivider(width: 16, indent: 12, endIndent: 12),
@@ -87,7 +87,7 @@ class MaskEditorToolbar extends StatelessWidget {
             IconButton(
               icon: Icon(isBinaryMode ? Icons.contrast : Icons.image, size: 20),
               onPressed: onToggleBinary,
-              tooltip: "Binary Mode",
+              tooltip: l10n.binaryMode,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -110,7 +110,7 @@ class MaskEditorToolbar extends StatelessWidget {
                   value: 'ai',
                   child: ListTile(
                     leading: Icon(Icons.auto_awesome, color: showAIPanel ? colorScheme.primary : null),
-                    title: const Text("AI Smart Mask"),
+                    title: Text(l10n.aiSmartMask),
                     dense: true,
                   ),
                 ),
@@ -118,7 +118,7 @@ class MaskEditorToolbar extends StatelessWidget {
                   value: 'binary',
                   child: ListTile(
                     leading: Icon(isBinaryMode ? Icons.contrast : Icons.image),
-                    title: const Text("Binary Mode"),
+                    title: Text(l10n.binaryMode),
                     dense: true,
                   ),
                 ),

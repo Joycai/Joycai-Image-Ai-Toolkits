@@ -118,6 +118,7 @@ void showFileContextMenu({
             await Share.shareXFiles(
               xFiles,
               subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+              sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
             );
           } catch (e) {
             if (context.mounted) {

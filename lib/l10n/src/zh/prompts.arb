@@ -1,0 +1,35 @@
+{
+  "prompts": "提示词",
+  "promptLibrary": "提示词库",
+  "newPrompt": "新建提示词",
+  "editPrompt": "编辑提示词",
+  "noPromptsSaved": "未保存提示词",
+  "saveFavoritePrompts": "在此保存您常用的提示词或优化器系统提示词",
+  "createFirstPrompt": "创建第一个提示词",
+  "deletePromptConfirmTitle": "删除提示词？",
+  "deletePromptConfirmMessage": "确定要删除“{title}”吗？",
+  "@deletePromptConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "title": "标题",
+  "tagCategory": "标签 (分类)",
+  "setAsRefiner": "设为优化器",
+  "promptContent": "提示词内容",
+  "userPrompts": "用户提示词",
+  "refinerPrompts": "优化器提示词",
+  "systemTemplates": "系统模板",
+  "templateType": "模板用途",
+  "typeRename": "批量重命名",
+  "typeRefiner": "提示词优化",
+  "selectRenameTemplate": "选择重命名模板",
+  "selectCategory": "选择分类",
+  "categoriesTab": "分类管理",
+  "addCategory": "添加分类",
+  "editCategory": "编辑分类",
+  "library": "提示词库",
+  "refiner": "优化器"
+}

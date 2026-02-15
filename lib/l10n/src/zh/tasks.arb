@@ -1,0 +1,86 @@
+{
+  "tasks": "任务",
+  "taskQueueManager": "任务队列管理",
+  "noTasksInQueue": "队列中没有任务",
+  "submitTaskFromWorkbench": "从工作台提交任务后在此处查看。",
+  "taskId": "任务 ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskSummary": "任务摘要",
+  "pendingTasks": "待处理",
+  "processingTasks": "执行中",
+  "completedTasks": "已完成",
+  "failedTasks": "失败",
+  "clearCompleted": "清除已完成",
+  "clearAll": "清除全部",
+  "cancelAllPending": "取消所有等待中",
+  "cancelTask": "取消任务",
+  "removeFromList": "从列表中移除",
+  "model": "模型",
+  "images": "图像",
+  "filesCount": "{count} 个文件",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runningCount": "{count} 个正在运行",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} 个已计划",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "latestLog": "最新日志:",
+  "taskCompletedNotification": "任务已完成",
+  "taskFailedNotification": "任务失败",
+  "taskCompletedBody": "任务 {id} 已成功完成。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "任务 {id} 运行失败。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "queueSettings": "队列设置",
+  "concurrencyLimit": "并发限制: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "retryCount": "重试次数: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

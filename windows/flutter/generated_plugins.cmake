@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   file_selector_windows
+  gal
   local_notifier
   share_plus
   sqlite3_flutter_libs

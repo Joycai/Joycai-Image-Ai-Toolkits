@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
 import '../models/app_file.dart';
@@ -14,6 +16,7 @@ List<String> _scanImagesIsolate(List<String> paths) {
   for (var path in paths) {
     try {
       final dir = Directory(path);
+      // On iOS, listing arbitrary external directories might throw even if exists() is true
       if (dir.existsSync()) {
         for (var file in dir.listSync(recursive: false)) {
           if (file is File && AppConstants.isImageFile(file.path)) {
@@ -85,6 +88,15 @@ class GalleryState extends ChangeNotifier {
 
     imagePrefix = await _db.getSetting('image_prefix') ?? "result";
     outputDirectory = await _db.getSetting('output_directory');
+
+    // On iOS, we use the System Cache folder as a "Result Cache"
+    if (Platform.isIOS) {
+      final cacheDir = await getTemporaryDirectory();
+      outputDirectory = p.join(cacheDir.path, 'result_cache');
+      final dir = Directory(outputDirectory!);
+      if (!dir.existsSync()) dir.createSync(recursive: true);
+      await _db.saveSetting('output_directory', outputDirectory!);
+    }
     
     final dirs = await _db.getSourceDirectories();
     sourceDirectories = dirs.map((d) => d['path'] as String).toList();
@@ -110,6 +122,9 @@ class GalleryState extends ChangeNotifier {
     }
     _watchers.clear();
 
+    // iOS does not support directory watching
+    if (Platform.isIOS) return;
+
     for (var path in activeSourceDirectories) {
       try {
         final dir = Directory(path);
@@ -126,6 +141,9 @@ class GalleryState extends ChangeNotifier {
 
   void _setupOutputWatcher() {
     _outputWatcher?.cancel();
+    // iOS does not support directory watching
+    if (Platform.isIOS) return;
+
     if (outputDirectory != null && outputDirectory!.isNotEmpty) {
       try {
         final dir = Directory(outputDirectory!);

@@ -1,0 +1,34 @@
+{
+  "usage": "用量",
+  "tokenUsageMetrics": "Token 使用统计",
+  "clearAllUsage": "清除所有使用数据？",
+  "clearUsageWarning": "这将永久从数据库中删除所有 Token 使用记录。",
+  "modelsLabel": "模型: ",
+  "rangeLabel": "范围: ",
+  "today": "今天",
+  "lastWeek": "最近一周",
+  "lastMonth": "最近一月",
+  "thisYear": "今年",
+  "inputTokens": "输入 Token",
+  "outputTokens": "输出 Token",
+  "estimatedCost": "预估成本",
+  "clearDataForModel": "清除 {modelId} 的数据？",
+  "@clearDataForModel": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelDataWarning": "这将删除与模型“{modelId}”相关的所有使用记录。",
+  "@clearModelDataWarning": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelData": "清除模型数据",
+  "usageByGroup": "按费率组统计",
+  "clearAll": "清除全部"
+}

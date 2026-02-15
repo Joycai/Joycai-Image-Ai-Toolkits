@@ -1,0 +1,35 @@
+{
+  "prompts": "Prompts",
+  "promptLibrary": "Prompt Library",
+  "newPrompt": "New Prompt",
+  "editPrompt": "Edit Prompt",
+  "noPromptsSaved": "No prompts saved",
+  "saveFavoritePrompts": "Save your favorite prompts or Refiner system prompts here",
+  "createFirstPrompt": "Create First Prompt",
+  "deletePromptConfirmTitle": "Delete Prompt?",
+  "deletePromptConfirmMessage": "Are you sure you want to delete \"{title}\"?",
+  "@deletePromptConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "title": "Title",
+  "tagCategory": "Tag (Category)",
+  "setAsRefiner": "Set as Refiner",
+  "promptContent": "Prompt Content",
+  "userPrompts": "User Prompts",
+  "refinerPrompts": "Refiner Prompts",
+  "systemTemplates": "System Templates",
+  "templateType": "Template Type",
+  "typeRename": "Batch Rename",
+  "typeRefiner": "Prompt Refiner",
+  "selectRenameTemplate": "Select Rename Template",
+  "selectCategory": "Select Category",
+  "categoriesTab": "Categories",
+  "addCategory": "Add Category",
+  "editCategory": "Edit Category",
+  "library": "Library",
+  "refiner": "Refiner"
+}

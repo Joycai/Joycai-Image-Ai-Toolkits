@@ -1,0 +1,44 @@
+{
+  "fileBrowser": "File Browser",
+  "rename": "Rename",
+  "renameFile": "Rename File",
+  "newFilename": "New Filename",
+  "renameSuccess": "Renamed successfully",
+  "renameFailed": "Failed to rename: {error}",
+  "@renameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "fileAlreadyExists": "A file with this name already exists",
+  "noFilesFound": "No files found",
+  "switchViewMode": "Switch View Mode",
+  "sortBy": "Sort by",
+  "sortName": "Name",
+  "sortDate": "Modify Date",
+  "sortType": "File Type",
+  "sortAsc": "ASC",
+  "sortDesc": "DESC",
+  "catAll": "All",
+  "catImages": "Images",
+  "catVideos": "Videos",
+  "catAudio": "Audio",
+  "catText": "Text",
+  "catOthers": "Others",
+  "openWithSystemDefault": "Open with System Default",
+  "aiBatchRename": "AI Batch Rename",
+  "rulesInstructions": "Renaming Rules / Instructions",
+  "generateSuggestions": "Generate Suggestions",
+  "noSuggestions": "No suggestions generated yet",
+  "applyRenames": "Apply Renames",
+  "imagesSelected": "{count} selected",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

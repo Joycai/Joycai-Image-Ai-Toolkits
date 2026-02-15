@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -177,7 +178,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (_appState == null) return;
     _appState!.updateWorkbenchConfig(prompt: _optRefinedPromptCtrl.text);
     _appState!.setWorkbenchTab(0);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Prompt applied to workbench")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.promptApplied)));
   }
 
   void _onAppStateChanged() {
@@ -225,6 +226,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       
       await File(filePath).writeAsBytes(pngBytes);
 
+      if (Platform.isIOS) {
+        try {
+          await Gal.putImage(filePath);
+        } catch (_) {}
+      }
+
       final maskFile = AppFile(path: filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
       _appState!.galleryState.toggleImageSelection(maskFile);
@@ -233,13 +240,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Mask saved and selected"), backgroundColor: Colors.green),
+          SnackBar(content: Text(AppLocalizations.of(context)!.maskSaved), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving mask: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context)!.maskSaveError(e.toString())), backgroundColor: Colors.red),
         );
       }
     }
@@ -300,7 +307,7 @@ Coordinates are 0-1000. Form a closed loop.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('AI Mask generation failed: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context)!.maskGenError(e.toString())), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -442,7 +449,7 @@ Coordinates are 0-1000. Form a closed loop.
         showLeftPanel = !isNarrow; // Show reference images on left
         break;
       default:
-        centerContent = const Center(child: Text("Coming Soon"));
+        centerContent = Center(child: Text(AppLocalizations.of(context)!.comingSoon));
         showRightPanel = false;
         showLeftPanel = false;
     }

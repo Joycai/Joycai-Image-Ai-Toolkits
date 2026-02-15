@@ -146,18 +146,51 @@ class _ComparatorViewState extends State<ComparatorView> {
                 child: _buildViewer(windowState.comparatorRawPath, "RAW", _controller1, showLabel: false), // Share controller for perfect sync
               ),
 
-              // Scanning Line
+              // Scanning Line & Handle
               Positioned(
                 top: 0,
                 bottom: 0,
-                left: constraints.maxWidth * _scanRatio - 1,
-                child: Container(
-                  width: 2,
-                  decoration: BoxDecoration(
-                    color: Colors.white70,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 4),
-                    ],
+                left: constraints.maxWidth * _scanRatio - 20, // Wider hit area
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onHorizontalDragUpdate: (details) {
+                    setState(() {
+                      double newPos = constraints.maxWidth * _scanRatio + details.delta.dx;
+                      _scanRatio = (newPos / constraints.maxWidth).clamp(0.0, 1.0);
+                    });
+                  },
+                  child: Container(
+                    width: 40,
+                    color: Colors.transparent,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 2,
+                          decoration: BoxDecoration(
+                            color: Colors.white70,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withAlpha(100), blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                        // Handle icon for touch
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(200),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 4),
+                            ],
+                          ),
+                          child: const RotatedBox(
+                            quarterTurns: 1,
+                            child: Icon(Icons.unfold_more, size: 16, color: Colors.black87),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -166,12 +199,16 @@ class _ComparatorViewState extends State<ComparatorView> {
               Positioned(
                 top: 10,
                 left: 10,
-                child: _buildLabelBadge("RAW", Colors.blueAccent, opacity: (1.0 - _scanRatio).clamp(0.4, 1.0)),
+                child: IgnorePointer(
+                  child: _buildLabelBadge("RAW", Colors.blueAccent, opacity: (1.0 - _scanRatio).clamp(0.4, 1.0)),
+                ),
               ),
               Positioned(
                 top: 10,
                 right: 10,
-                child: _buildLabelBadge("AFTER", Colors.orangeAccent, opacity: _scanRatio.clamp(0.4, 1.0)),
+                child: IgnorePointer(
+                  child: _buildLabelBadge("AFTER", Colors.orangeAccent, opacity: _scanRatio.clamp(0.4, 1.0)),
+                ),
               ),
             ],
           ),

@@ -522,10 +522,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _prefixController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g. result',
+                    border: const OutlineInputBorder(),
+                    hintText: l10n.prefixHint,
                   ),
                   onChanged: (v) => appState.setImagePrefix(v),
                 ),

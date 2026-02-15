@@ -1,0 +1,20 @@
+{
+  "setupWizardTitle": "欢迎设置向导",
+  "welcomeMessage": "欢迎使用 Joycai 图像 AI 工具箱！让我们开始设置吧。",
+  "getStarted": "开始",
+  "stepAppearance": "外观",
+  "stepStorage": "存储",
+  "stepApi": "智能 (API)",
+  "finish": "完成",
+  "setupCompleteMessage": "设置完成！尽情创作吧。",
+  "skip": "跳过",
+  "storageLocationDesc": "选择生成图像的保存位置。",
+  "addChannelOptional": "添加您的第一个 AI 渠道（可选）。",
+  "configureModelOptional": "为新渠道配置一个模型（可选）。",
+  "googleGenAiFree": "Google GenAI (免费)",
+  "googleGenAiPaid": "Google GenAI (付费)",
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "文件名前缀",
+  "openaiEndpointHint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
+  "googleEndpointHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾（内部已处理）"
+}

@@ -17,14 +17,21 @@ class _MetadataInspectorState extends State<MetadataInspector> {
   Map<String, String>? _rawMetadata;
   Map<String, String>? _afterMetadata;
   bool _isLoading = false;
+  WindowState? _windowState;
 
   @override
   void initState() {
     super.initState();
     _loadMetadata();
-    
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    windowState.addListener(_onWindowStateChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_windowState == null) {
+      _windowState = Provider.of<WindowState>(context, listen: false);
+      _windowState!.addListener(_onWindowStateChanged);
+    }
   }
 
   void _onWindowStateChanged() {
@@ -33,31 +40,31 @@ class _MetadataInspectorState extends State<MetadataInspector> {
 
   @override
   void dispose() {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    windowState.removeListener(_onWindowStateChanged);
+    _windowState?.removeListener(_onWindowStateChanged);
     super.dispose();
   }
 
   Future<void> _loadMetadata() async {
-    final windowState = Provider.of<WindowState>(context, listen: false);
+    // Access state via stored reference if available, or provider (safely)
+    final state = _windowState ?? Provider.of<WindowState>(context, listen: false);
     
-    if (windowState.comparatorRawPath == null && windowState.comparatorAfterPath == null) {
+    if (state.comparatorRawPath == null && state.comparatorAfterPath == null) {
       if (mounted) setState(() { _rawMetadata = null; _afterMetadata = null; });
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     Map<String, String>? rawMeta;
     Map<String, String>? afterMeta;
 
-    if (windowState.comparatorRawPath != null) {
-      final meta = await ImageMetadataService().getMetadata(windowState.comparatorRawPath!);
+    if (state.comparatorRawPath != null) {
+      final meta = await ImageMetadataService().getMetadata(state.comparatorRawPath!);
       rawMeta = meta?.params;
     }
 
-    if (windowState.comparatorAfterPath != null) {
-      final meta = await ImageMetadataService().getMetadata(windowState.comparatorAfterPath!);
+    if (state.comparatorAfterPath != null) {
+      final meta = await ImageMetadataService().getMetadata(state.comparatorAfterPath!);
       afterMeta = meta?.params;
     }
 
@@ -82,7 +89,7 @@ class _MetadataInspectorState extends State<MetadataInspector> {
     if (_rawMetadata == null && _afterMetadata == null) {
       return Center(
         child: Text(
-          "No image metadata selected",
+          l10n.metadataSelectedNone,
           style: TextStyle(color: colorScheme.outline),
         ),
       );
@@ -93,12 +100,12 @@ class _MetadataInspectorState extends State<MetadataInspector> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (_rawMetadata != null) ...[
-          _buildSectionHeader("RAW", colorScheme),
+          _buildSectionHeader(l10n.labelRaw, colorScheme),
           _buildMetadataListItems(_rawMetadata!, l10n),
           const SizedBox(height: 24),
         ],
         if (_afterMetadata != null) ...[
-          _buildSectionHeader("AFTER", colorScheme),
+          _buildSectionHeader(l10n.labelAfter, colorScheme),
           _buildMetadataListItems(_afterMetadata!, l10n),
         ],
       ],

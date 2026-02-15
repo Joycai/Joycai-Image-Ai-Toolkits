@@ -205,7 +205,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 8),
         _buildPortableModeTile(l10n),
         const SizedBox(height: 8),
-        _buildOutputDirectoryTile(appState, l10n),
+        if (!Platform.isIOS)
+          _buildOutputDirectoryTile(appState, l10n),
       ],
     );
   }
@@ -386,18 +387,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildOutputDirectoryTile(AppState appState, AppLocalizations l10n) {
-    return ListTile(
-      title: Text(l10n.outputDirectory),
-      subtitle: Text(_outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text),
-      trailing: const Icon(Icons.folder_open),
-      shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
-      onTap: () async {
-        String? path = await FilePicker.platform.getDirectoryPath();
-        if (path != null) {
-          setState(() => _outputDirController.text = path);
-          await appState.updateOutputDirectory(path);
-        }
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          title: Text(l10n.outputDirectory),
+          subtitle: Text(_outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text),
+          trailing: const Icon(Icons.folder_open),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          onTap: () async {
+            String? path = await FilePicker.platform.getDirectoryPath();
+            if (path != null) {
+              setState(() => _outputDirController.text = path);
+              await appState.updateOutputDirectory(path);
+            }
+          },
+        ),
+        if (Platform.isIOS)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
+            child: Text(
+              l10n.iosOutputRecommend,
+              style: TextStyle(fontSize: 11, color: Colors.orange.shade800),
+            ),
+          ),
+      ],
     );
   }
 

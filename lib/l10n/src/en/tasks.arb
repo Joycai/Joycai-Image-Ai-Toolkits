@@ -1,0 +1,86 @@
+{
+  "tasks": "Tasks",
+  "taskQueueManager": "Task Queue Manager",
+  "noTasksInQueue": "No tasks in queue",
+  "submitTaskFromWorkbench": "Submit a task from the Workbench to see it here.",
+  "taskId": "Task ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskSummary": "Task Summary",
+  "pendingTasks": "Pending",
+  "processingTasks": "Processing",
+  "completedTasks": "Completed",
+  "failedTasks": "Failed",
+  "clearCompleted": "Clear Completed",
+  "clearAll": "Clear All",
+  "cancelAllPending": "Cancel All Pending",
+  "cancelTask": "Cancel Task",
+  "removeFromList": "Remove from list",
+  "model": "Model",
+  "images": "Images",
+  "filesCount": "{count} files",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runningCount": "{count} running",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} planned",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "latestLog": "Latest Log:",
+  "taskCompletedNotification": "Task Completed",
+  "taskFailedNotification": "Task Failed",
+  "taskCompletedBody": "Task {id} has finished successfully.",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "Task {id} has failed.",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "queueSettings": "Queue Settings",
+  "concurrencyLimit": "Concurrency Limit: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "retryCount": "Retry Count: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}
