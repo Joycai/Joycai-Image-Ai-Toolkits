@@ -47,6 +47,7 @@ class WorkbenchScreen extends StatefulWidget {
 
 class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  AppState? _appState;
   int _lastKnownTabIndex = 0;
 
   // Mask Editor State
@@ -79,25 +80,34 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    final appState = Provider.of<AppState>(context, listen: false);
-    _optCurrentPromptCtrl = TextEditingController(text: appState.lastPrompt);
-    _initTabController();
-    
-    appState.addListener(_onAppStateChanged);
-    
-    if (appState.imageModels.isNotEmpty) {
-      _maskSelectedModelId = appState.imageModels.first.modelId;
+    // We'll initialize _appState in didChangeDependencies
+    _optCurrentPromptCtrl = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_appState == null) {
+      _appState = Provider.of<AppState>(context, listen: false);
+      _optCurrentPromptCtrl.text = _appState!.lastPrompt;
+      _initTabController();
+      
+      _appState!.addListener(_onAppStateChanged);
+      
+      if (_appState!.imageModels.isNotEmpty) {
+        _maskSelectedModelId = _appState!.imageModels.first.modelId;
+      }
+      
+      _loadOptimizerData();
     }
-    
-    _loadOptimizerData();
   }
 
   // Optimizer Helpers
   Future<void> _loadOptimizerData() async {
+    if (_appState == null) return;
     try {
-      final appState = Provider.of<AppState>(context, listen: false);
-      final refinerPrompts = await appState.getSystemPrompts(type: 'refiner');
-      final tags = await appState.getPromptTags();
+      final refinerPrompts = await _appState!.getSystemPrompts(type: 'refiner');
+      final tags = await _appState!.getPromptTags();
 
       if (mounted) {
         setState(() {
@@ -105,8 +115,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           _optTags = tags;
           _applyOptimizerFilter();
           
-          if (appState.chatModels.isNotEmpty) {
-            _optSelectedModelPk = appState.chatModels.first.id;
+          if (_appState!.chatModels.isNotEmpty) {
+            _optSelectedModelPk = _appState!.chatModels.first.id;
           }
           if (_optFilteredSysPrompts.isNotEmpty) _optSelectedSysPrompt = _optFilteredSysPrompts.first.content;
           _optIsLoadingData = false;
@@ -130,8 +140,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   Future<void> _handleRefine() async {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context, listen: false);
-    if (_optSelectedModelPk == null) {
+    if (_optSelectedModelPk == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
@@ -142,7 +151,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     });
 
     try {
-      final attachments = appState.selectedImages.map((f) => 
+      final attachments = _appState!.selectedImages.map((f) => 
         LLMAttachment.fromFile(File(f.path), 'image/jpeg')
       ).toList();
 
@@ -165,17 +174,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   void _handleOptimizerApply() {
-    final appState = Provider.of<AppState>(context, listen: false);
-    appState.updateWorkbenchConfig(prompt: _optRefinedPromptCtrl.text);
-    appState.setWorkbenchTab(0);
+    if (_appState == null) return;
+    _appState!.updateWorkbenchConfig(prompt: _optRefinedPromptCtrl.text);
+    _appState!.setWorkbenchTab(0);
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Prompt applied to workbench")));
   }
 
   void _onAppStateChanged() {
-    if (!mounted) return;
-    final appState = Provider.of<AppState>(context, listen: false);
-    if (appState.workbenchTabIndex != _lastKnownTabIndex) {
-      _lastKnownTabIndex = appState.workbenchTabIndex;
+    if (!mounted || _appState == null) return;
+    
+    if (_appState!.workbenchTabIndex != _lastKnownTabIndex) {
+      _lastKnownTabIndex = _appState!.workbenchTabIndex;
       final targetIndex = _lastKnownTabIndex.clamp(0, _tabController.length - 1);
       if (_tabController.index != targetIndex) {
          _tabController.animateTo(targetIndex);
@@ -189,9 +198,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   
   Future<void> _handleMaskSave() async {
     final windowState = Provider.of<WindowState>(context, listen: false);
-    final appState = Provider.of<AppState>(context, listen: false);
     final sourceImage = windowState.maskEditorSourceImage;
-    if (sourceImage == null) return;
+    if (sourceImage == null || _appState == null) return;
 
     try {
       RenderRepaintBoundary boundary = _maskRepaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -218,10 +226,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       await File(filePath).writeAsBytes(pngBytes);
 
       final maskFile = AppFile(path: filePath, name: fileName);
-      appState.galleryState.addDroppedFiles([maskFile]);
-      appState.galleryState.toggleImageSelection(maskFile);
-      appState.galleryState.setViewMode(GalleryViewMode.temp);
-      appState.setWorkbenchTab(0); // Return to gallery
+      _appState!.galleryState.addDroppedFiles([maskFile]);
+      _appState!.galleryState.toggleImageSelection(maskFile);
+      _appState!.galleryState.setViewMode(GalleryViewMode.temp);
+      _appState!.setWorkbenchTab(0); // Return to gallery
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -301,8 +309,8 @@ Coordinates are 0-1000. Form a closed loop.
   }
 
   void _initTabController() {
-    final appState = Provider.of<AppState>(context, listen: false);
-    _lastKnownTabIndex = appState.workbenchTabIndex.clamp(0, 3);
+    if (_appState == null) return;
+    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 3);
     
     _tabController = TabController(length: 4, vsync: this, initialIndex: _lastKnownTabIndex);
     
@@ -310,7 +318,7 @@ Coordinates are 0-1000. Form a closed loop.
       if (!_tabController.indexIsChanging) {
         if (_tabController.index != _lastKnownTabIndex) {
           _lastKnownTabIndex = _tabController.index;
-          appState.setWorkbenchTab(_tabController.index);
+          _appState!.setWorkbenchTab(_tabController.index);
         }
       }
     });
@@ -318,8 +326,7 @@ Coordinates are 0-1000. Form a closed loop.
 
   @override
   void dispose() {
-    final appState = Provider.of<AppState>(context, listen: false);
-    appState.removeListener(_onAppStateChanged);
+    _appState?.removeListener(_onAppStateChanged);
     _tabController.dispose();
     super.dispose();
   }

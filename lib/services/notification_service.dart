@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:local_notifier/local_notifier.dart';
 
 class NotificationService {
@@ -6,9 +7,10 @@ class NotificationService {
   NotificationService._internal();
 
   bool _initialized = false;
+  bool get _isDesktop => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
   Future<void> init() async {
-    if (_initialized) return;
+    if (_initialized || !_isDesktop) return;
 
     // Add your custom initialization here
     await localNotifier.setup(
@@ -24,6 +26,7 @@ class NotificationService {
     String? subtitle,
     bool silent = false,
   }) async {
+    if (!_isDesktop) return;
     if (!_initialized) await init();
 
     LocalNotification notification = LocalNotification(

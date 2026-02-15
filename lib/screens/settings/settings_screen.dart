@@ -479,18 +479,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _exportSettings(AppLocalizations l10n) async {
     final data = await _db.getAllDataRaw(includePrompts: true);
     final json = jsonEncode(data);
+    final bytes = utf8.encode(json);
     
     String? path = await FilePicker.platform.saveFile(
       fileName: 'joycai_backup.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
+      bytes: bytes,
     );
     
-    if (path != null) {
+    if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
       await File(path).writeAsString(json);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
-      }
+    }
+    
+    if (path != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
   }
 

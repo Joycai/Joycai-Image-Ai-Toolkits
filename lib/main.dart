@@ -192,33 +192,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         Scaffold(
           key: _scaffoldKey,
           drawer: isMobile ? _buildMobileDrawer(secondaryItems, l10n, appState) : null,
-          body: Row(
-            children: [
-              if (!isMobile)
-                NavigationRail(
-                  extended: _isRailExtended,
-                  selectedIndex: appState.activeScreenIndex,
-                  onDestinationSelected: (int index) {
-                    appState.navigateToScreen(index);
-                  },
-                  leading: IconButton(
-                    icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
-                    onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (!isMobile)
+                  NavigationRail(
+                    extended: _isRailExtended,
+                    selectedIndex: appState.activeScreenIndex,
+                    onDestinationSelected: (int index) {
+                      appState.navigateToScreen(index);
+                    },
+                    leading: IconButton(
+                      icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
+                      onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+                    ),
+                    labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                    destinations: allNavItems
+                        .map((d) => NavigationRailDestination(
+                              icon: d.icon,
+                              selectedIcon: d.selectedIcon,
+                              label: Text(d.label),
+                            ))
+                        .toList(),
                   ),
-                  labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-                  destinations: allNavItems
-                      .map((d) => NavigationRailDestination(
-                            icon: d.icon,
-                            selectedIcon: d.selectedIcon,
-                            label: Text(d.label),
-                          ))
-                      .toList(),
+                if (!isMobile) const VerticalDivider(thickness: 1, width: 1),
+                Expanded(
+                  child: _screens[appState.activeScreenIndex],
                 ),
-              if (!isMobile) const VerticalDivider(thickness: 1, width: 1),
-              Expanded(
-                child: _screens[appState.activeScreenIndex],
-              ),
-            ],
+              ],
+            ),
           ),
           bottomNavigationBar: isMobile
               ? NavigationBar(

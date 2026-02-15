@@ -742,23 +742,30 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         ...p.toMap(),
         'tags': p.tags.map((t) => t.toMap()).toList()
       }).toList(),
-      'system_prompts': _systemPrompts.map((p) => p.toMap()).toList(),
+      'system_prompts': _systemPrompts.map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
       'export_type': 'prompts_only',
       'version': 1
     };
     
     final json = jsonEncode(data);
+    final bytes = utf8.encode(json);
+
     String? path = await FilePicker.platform.saveFile(
       fileName: 'joycai_prompts.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
+      bytes: bytes,
     );
     
-    if (path != null) {
+    if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
       await File(path).writeAsString(json);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
-      }
+    }
+
+    if (path != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
   }
 
