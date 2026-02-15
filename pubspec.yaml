@@ -63,6 +63,7 @@ flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
   android: "launcher_icon"
   ios: true
+  remove_alpha_ios: true
   windows: true
   macos: true
   linux: true
