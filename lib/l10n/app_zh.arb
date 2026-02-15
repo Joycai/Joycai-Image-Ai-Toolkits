@@ -375,6 +375,7 @@
   "apiDebugDesc": "将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。",
   "openLogFolder": "打开日志目录",
   "iosOutputRecommend": "建议：在 iOS 上保持默认。生成的图片可在“文件”App 中查看。",
+  "downloaderCacheCleared": "下载器缓存已清除。",
   "tasks": "任务",
   "taskQueueManager": "任务队列管理",
   "noTasksInQueue": "队列中没有任务",

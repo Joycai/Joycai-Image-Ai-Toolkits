@@ -826,6 +826,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Recommended: Leave as default on iOS. The app\'s folder is visible in the \'Files\' app.';
 
   @override
+  String get downloaderCacheCleared => 'Downloader cache cleared.';
+
+  @override
   String get tasks => 'Tasks';
 
   @override

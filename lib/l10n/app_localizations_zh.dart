@@ -816,6 +816,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get iosOutputRecommend => '建议：在 iOS 上保持默认。生成的图片可在“文件”App 中查看。';
 
   @override
+  String get downloaderCacheCleared => '下载器缓存已清除。';
+
+  @override
   String get tasks => '任务';
 
   @override

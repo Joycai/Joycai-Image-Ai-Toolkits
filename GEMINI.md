@@ -71,4 +71,17 @@ The project follows standard Flutter conventions.
 *   **Immutability:** When modifying state in `AppState`, create new instances of lists or objects rather than modifying them in place, especially when using `notifyListeners()`.
 *   **Services:** Business logic that is not directly tied to the UI should be implemented in the `lib/services` directory. For example, all interactions with external APIs are cleanly separated in the `LLMService`.
 *   **Data Persistence:** All configuration and user data (prompts, models, etc.) must be saved to the SQLite database via the `DatabaseService`. Avoid storing important data in memory only.
-*   **Localization:** All user-facing strings must be added to `lib/l10n/app_en.arb` (and its translations) and accessed via `AppLocalizations.of(context)!`.
+*   **Localization:** All user-facing strings must be added to modular files in `lib/l10n/src/` (e.g., `workbench.arb`), then merged using `dart tool/merge_l10n.dart` before running `flutter gen-l10n`.
+
+## Known Issues & Troubleshooting
+
+### macOS Debug Build Crash (Flutter 3.38+)
+When running the application in **Debug mode** on macOS, you may encounter a `Null check operator used on a null value` error in `xcode_backend.dart` (specifically in `_embedNativeAssets`).
+
+*   **Cause:** This is an external Flutter SDK bug triggered by dependencies that use the "Native Assets" feature (e.g., `sqlite3`, `objective_c` via the `gal` plugin).
+*   **Workaround:** 
+    1.  Use **Release mode** for macOS development/testing: `flutter run --release`.
+    2.  If Debug mode is absolutely necessary on macOS, temporarily remove/comment out the `gal` dependency in `pubspec.yaml`.
+    3.  Always perform a deep clean when switching platforms or experiencing native build issues: `rm -rf build .dart_tool` followed by `flutter pub get`.
+    4.  The database initialization has been optimized to use standard `sqflite` on macOS to reduce Native Asset triggers, but transitive dependencies may still cause the crash.
+

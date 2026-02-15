@@ -375,6 +375,7 @@
   "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
   "openLogFolder": "Open Log Folder",
   "iosOutputRecommend": "Recommended: Leave as default on iOS. The app's folder is visible in the 'Files' app.",
+  "downloaderCacheCleared": "Downloader cache cleared.",
   "tasks": "Tasks",
   "taskQueueManager": "Task Queue Manager",
   "noTasksInQueue": "No tasks in queue",

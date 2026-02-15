@@ -59,12 +59,14 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 22, // Incremented for Usage Checkpoints
+          version: 22,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
       );
     } else {
+      // On macOS, iOS, and Android, use standard sqflite (non-FFI)
+      // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
       return await openDatabase(
         dbPath,
         version: 22,

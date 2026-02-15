@@ -1640,6 +1640,12 @@ abstract class AppLocalizations {
   /// **'Recommended: Leave as default on iOS. The app\'s folder is visible in the \'Files\' app.'**
   String get iosOutputRecommend;
 
+  /// No description provided for @downloaderCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader cache cleared.'**
+  String get downloaderCacheCleared;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:
