@@ -118,7 +118,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
               children: [
                 header,
                 const SizedBox(height: 8),
-                _buildEditorContent(colorScheme),
+                _buildEditorContent(colorScheme, forceDisableExpand: true),
               ],
             ),
           );
@@ -140,7 +140,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     );
   }
 
-  Widget _buildEditorContent(ColorScheme colorScheme) {
+  Widget _buildEditorContent(ColorScheme colorScheme, {bool forceDisableExpand = false}) {
+    final bool shouldExpand = widget.expand && !forceDisableExpand;
     Widget inner;
     if (_isPreview) {
       inner = MarkdownBody(
@@ -159,8 +160,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     } else {
       inner = TextField(
         controller: widget.controller,
-        maxLines: widget.expand ? null : widget.maxLines,
-        expands: widget.expand,
+        maxLines: shouldExpand ? null : widget.maxLines,
+        expands: shouldExpand,
         onChanged: widget.onChanged,
         readOnly: widget.isRefined,
         textAlignVertical: TextAlignVertical.top,
@@ -177,7 +178,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
     return Container(
       width: double.infinity,
-      constraints: widget.expand ? null : BoxConstraints(
+      constraints: shouldExpand ? null : BoxConstraints(
         maxHeight: widget.maxLines * 24.0,
       ),
       decoration: BoxDecoration(

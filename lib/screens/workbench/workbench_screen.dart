@@ -157,24 +157,27 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             child: Stack(
               children: [
                 // Layer 1: Main Content & Control Panel
-                Row(
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1600),
-                          child: GalleryWidget(tabController: _tabController),
+                Positioned.fill(
+                  bottom: isMobile ? 0 : 40, // Reserve space for the collapsed console bar
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1600),
+                            child: GalleryWidget(tabController: _tabController),
+                          ),
                         ),
                       ),
-                    ),
-                    if (!isNarrow) ...[
-                      const VerticalDivider(width: 1, thickness: 1),
-                      const SizedBox(width: 350, child: ControlPanelWidget()),
+                      if (!isNarrow) ...[
+                        const VerticalDivider(width: 1, thickness: 1),
+                        const SizedBox(width: 350, child: ControlPanelWidget()),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
                 
-                // Layer 2: Scrim (Dark overlay)
+                // Layer 2: Scrim (Dark overlay for sidebar)
                 if (!isNarrow && appState.isSidebarExpanded)
                   Positioned.fill(
                     child: GestureDetector(
@@ -200,13 +203,20 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       child: const UnifiedSidebar(),
                     ),
                   ),
+
+                // Layer 4: Floating Overlay Console (Desktop only)
+                if (!isMobile)
+                  Positioned(
+                    left: 0,
+                    right: isNarrow ? 0 : 351, 
+                    bottom: 0,
+                    child: _buildResizableConsole(context, appState, l10n),
+                  ),
               ],
             ),
           ),
           
-          if (!isMobile) ...[
-            _buildResizableConsole(context, appState, l10n),
-          ] else 
+          if (isMobile) 
             _buildMobileStatusBar(context, appState, l10n),
         ],
       ),
@@ -216,45 +226,60 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   Widget _buildResizableConsole(BuildContext context, AppState appState, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    return Column(
-      children: [
-        // Resize Handle
-        if (appState.isConsoleExpanded)
-          GestureDetector(
-            onVerticalDragUpdate: (details) {
-              setState(() {
-                _consoleHeight = (_consoleHeight - details.delta.dy).clamp(100.0, 600.0);
-              });
-            },
-            child: MouseRegion(
-              cursor: SystemMouseCursors.resizeUpDown,
-              child: Container(
-                height: 4,
-                width: double.infinity,
-                color: colorScheme.outlineVariant.withAlpha(50),
+    return Material(
+      elevation: appState.isConsoleExpanded ? 24 : 0,
+      color: Colors.transparent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Resize Handle
+          if (appState.isConsoleExpanded)
+            GestureDetector(
+              onVerticalDragUpdate: (details) {
+                setState(() {
+                  _consoleHeight = (_consoleHeight - details.delta.dy).clamp(100.0, 600.0);
+                });
+              },
+              child: MouseRegion(
+                cursor: SystemMouseCursors.resizeUpDown,
+                child: Container(
+                  height: 6,
+                  width: double.infinity,
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+          
+          Container(
+            height: appState.isConsoleExpanded ? null : 52,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: appState.isConsoleExpanded ? 0.98 : 0.8),
+              border: Border(top: BorderSide(color: colorScheme.outlineVariant, width: 1)),
+              boxShadow: appState.isConsoleExpanded ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, -3),
+                )
+              ] : null,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: CollapsibleCard(
+              title: l10n.executionLogs,
+              subtitle: appState.isConsoleExpanded ? null : l10n.clickToExpand,
+              isExpanded: appState.isConsoleExpanded,
+              onToggle: () => appState.setConsoleExpanded(!appState.isConsoleExpanded),
+              collapsedIcon: Icons.keyboard_arrow_up,
+              expandedIcon: Icons.keyboard_arrow_down,
+              content: SizedBox(
+                height: _consoleHeight,
+                child: const LogConsoleWidget(),
               ),
             ),
           ),
-        
-        const Divider(height: 1, thickness: 1),
-        
-        Container(
-          color: colorScheme.surfaceContainerHighest.withAlpha((255 * AppConstants.opacityLow).round()),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: CollapsibleCard(
-            title: l10n.executionLogs,
-            subtitle: appState.isConsoleExpanded ? null : l10n.clickToExpand,
-            isExpanded: appState.isConsoleExpanded,
-            onToggle: () => appState.setConsoleExpanded(!appState.isConsoleExpanded),
-            collapsedIcon: Icons.keyboard_arrow_up,
-            expandedIcon: Icons.keyboard_arrow_down,
-            content: SizedBox(
-              height: _consoleHeight,
-              child: const LogConsoleWidget(),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

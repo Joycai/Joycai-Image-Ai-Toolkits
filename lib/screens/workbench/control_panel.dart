@@ -110,8 +110,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       }
     }
 
-    // Keep controllers in sync if state changes externally (e.g. prompt refiner)
-    if (_promptController.text != lastPrompt) {
+    final appState = Provider.of<AppState>(context);
+    
+    // Keep controllers in sync if state changes externally (e.g. prompt refiner apply)
+    // BUT only if we are NOT currently on the refiner tab to avoid overriding work-in-progress
+    if (appState.workbenchTabIndex != 1 && _promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
         text: lastPrompt,
         selection: TextSelection.collapsed(offset: lastPrompt.length),

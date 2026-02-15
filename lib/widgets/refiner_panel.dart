@@ -161,71 +161,70 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appState = Provider.of<AppState>(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 750;
         final colorScheme = Theme.of(context).colorScheme;
 
-        return Consumer<AppState>(
-          builder: (context, appState, child) => Container(
-            color: colorScheme.surface,
-            padding: EdgeInsets.all(isNarrow ? 12 : 24),
-            child: _isLoadingData 
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isNarrow) ...[
-                       // Mobile: Scrollable content (Header + Settings + Input + Output)
-                       Expanded(
-                         child: SingleChildScrollView(
-                           padding: const EdgeInsets.only(bottom: 16),
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               _buildHeader(l10n, colorScheme),
-                               const SizedBox(height: 24),
-                               _buildSettings(l10n, colorScheme, isNarrow, appState),
-                               const SizedBox(height: 16),
-                               _buildInputSection(l10n, appState, isNarrow),
-                               const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                                  child: Center(child: Icon(Icons.arrow_downward_rounded, color: Colors.grey)),
-                                ),
-                               _buildOutputSection(l10n, appState, isNarrow),
-                             ],
-                           ),
-                         ),
-                       ),
-                       // Mobile: Fixed Action Bar
-                       _buildActionBar(l10n, colorScheme),
-                    ] else ...[
-                       // Desktop: Fixed Header/Settings/Action, Expanded Content
-                       _buildHeader(l10n, colorScheme),
-                       const SizedBox(height: 24),
-                       _buildSettings(l10n, colorScheme, isNarrow, appState),
-                       const SizedBox(height: 16),
-                       Expanded(
-                         child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(child: _buildInputSection(l10n, appState, isNarrow)),
-                              const SizedBox(width: 24),
-                              const Center(
-                                child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
+        return Container(
+          color: colorScheme.surface,
+          padding: EdgeInsets.all(isNarrow ? 12 : 24),
+          child: _isLoadingData 
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isNarrow) ...[
+                     // Mobile: Scrollable content (Header + Settings + Input + Output)
+                     Expanded(
+                       child: SingleChildScrollView(
+                         padding: const EdgeInsets.only(bottom: 16),
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             _buildHeader(l10n, colorScheme),
+                             const SizedBox(height: 24),
+                             _buildSettings(l10n, colorScheme, isNarrow, appState),
+                             const SizedBox(height: 16),
+                             _buildInputSection(l10n, appState, isNarrow),
+                             const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                child: Center(child: Icon(Icons.arrow_downward_rounded, color: Colors.grey)),
                               ),
-                              const SizedBox(width: 24),
-                              Expanded(child: _buildOutputSection(l10n, appState, isNarrow)),
-                            ],
+                             _buildOutputSection(l10n, appState, isNarrow),
+                           ],
                          ),
                        ),
-                       const SizedBox(height: 16),
-                       _buildActionBar(l10n, colorScheme),
-                    ]
-                  ],
-                ),
-          ),
+                     ),
+                     // Mobile: Fixed Action Bar
+                     _buildActionBar(l10n, colorScheme),
+                  ] else ...[
+                     // Desktop: Fixed Header/Settings/Action, Expanded Content
+                     _buildHeader(l10n, colorScheme),
+                     const SizedBox(height: 24),
+                     _buildSettings(l10n, colorScheme, isNarrow, appState),
+                     const SizedBox(height: 16),
+                     Expanded(
+                       child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: _buildInputSection(l10n, appState, isNarrow)),
+                            const SizedBox(width: 24),
+                            const Center(
+                              child: Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(child: _buildOutputSection(l10n, appState, isNarrow)),
+                          ],
+                       ),
+                     ),
+                     const SizedBox(height: 16),
+                     _buildActionBar(l10n, colorScheme),
+                  ]
+                ],
+              ),
         );
       },
     );
