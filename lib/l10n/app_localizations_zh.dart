@@ -441,6 +441,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noModelsConfigured => '未配置模型';
 
   @override
+  String countModels(int count) {
+    return '$count 个模型';
+  }
+
+  @override
   String get addFirstModel => '添加您的第一个 LLM 模型以开始使用';
 
   @override

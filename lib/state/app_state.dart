@@ -180,6 +180,10 @@ class AppState extends ChangeNotifier {
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
 
+  // Browser State Proxies
+  Set<String> get unreachableBrowserDirectories => browserState.unreachableDirectories;
+  int get browserRefreshCounter => browserState.refreshCounter;
+
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
   Future<void> loadSettings() async {

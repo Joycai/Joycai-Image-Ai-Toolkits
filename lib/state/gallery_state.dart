@@ -41,6 +41,7 @@ class GalleryState extends ChangeNotifier {
   
   List<String> sourceDirectories = [];
   List<String> activeSourceDirectories = [];
+  Set<String> unreachableDirectories = {};
   
   // View State
   GalleryViewMode viewMode = GalleryViewMode.all;
@@ -64,6 +65,9 @@ class GalleryState extends ChangeNotifier {
 
   // Callback for logging to the main app log
   Function(String, {String level})? onLog;
+
+  int _refreshCounter = 0;
+  int get refreshCounter => _refreshCounter;
 
   GalleryState() {
     _loadSettings();
@@ -213,10 +217,25 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool isPathUnreachable(String? path) {
+    if (path == null || path.isEmpty) return false;
+    try {
+      final dir = Directory(path);
+      // existsSync can be true while listSync throws on macOS Sandbox
+      if (!dir.existsSync()) return true;
+      dir.listSync(); 
+      return false;
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<void> refreshImages() async {
     _log('Manually refreshing images...');
+    _refreshCounter++;
     await _scanImages();
     await _scanProcessedImages();
+    notifyListeners();
   }
 
   void _evictImages(List<String> paths) {
@@ -226,6 +245,14 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> _scanImages() async {
+    final newUnreachable = <String>{};
+    for (var path in sourceDirectories) {
+      if (isPathUnreachable(path)) {
+        newUnreachable.add(path);
+      }
+    }
+    unreachableDirectories = newUnreachable;
+
     if (activeSourceDirectories.isEmpty) {
       galleryImages = [];
       notifyListeners();

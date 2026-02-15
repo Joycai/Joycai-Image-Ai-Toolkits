@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
@@ -29,6 +30,47 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   bool _isExpanded = false;
   List<Directory>? _subDirectories;
   bool _isLoading = false;
+  int _lastRefreshCounter = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final appState = Provider.of<AppState>(context);
+    final currentCounter = widget.useBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
+    
+    if (currentCounter != _lastRefreshCounter) {
+      _lastRefreshCounter = currentCounter;
+      _subDirectories = null;
+      if (_isExpanded) _loadSubDirectories();
+    }
+  }
+
+  Future<void> _reAuthorize(BuildContext context, AppState appState) async {
+    final String? newPath = await FilePicker.platform.getDirectoryPath(
+      initialDirectory: widget.path,
+      dialogTitle: "Re-authorize access to: ${widget.path}",
+    );
+
+    if (newPath != null) {
+      // If it was a root, we might need to replace it in the list
+      if (widget.isRoot) {
+        if (widget.useBrowserState) {
+          await appState.browserState.removeBaseDirectory(widget.path);
+          await appState.browserState.addBaseDirectory(newPath);
+        } else {
+          await appState.removeBaseDirectory(widget.path);
+          await appState.addBaseDirectory(newPath);
+        }
+      } else {
+        // Just refresh the whole state
+        if (widget.useBrowserState) {
+          appState.browserState.refresh();
+        } else {
+          appState.galleryState.refreshImages();
+        }
+      }
+    }
+  }
 
   Future<void> _loadSubDirectories() async {
     if (_subDirectories != null) return;
@@ -91,6 +133,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     });
     
     final appState = Provider.of<AppState>(context, listen: false);
+    final isUnreachable = widget.useBrowserState 
+        ? appState.unreachableBrowserDirectories.contains(widget.path)
+        : appState.galleryState.unreachableDirectories.contains(widget.path);
     final folderName = p.basename(widget.path);
     final theme = Theme.of(context);
 
@@ -104,28 +149,44 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Checkbox(
-                value: isSelected,
-                onChanged: (_) {
-                  if (widget.useBrowserState) {
-                    appState.browserState.toggleDirectory(widget.path);
-                  } else {
-                    appState.toggleDirectory(widget.path);
-                  }
-                },
-                visualDensity: VisualDensity.compact,
-              ),
+              if (isUnreachable)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Tooltip(
+                    message: "Access Denied (Click to re-authorize)",
+                    child: InkWell(
+                      onTap: () => _reAuthorize(context, appState),
+                      child: Icon(Icons.lock_person, size: 18, color: theme.colorScheme.error),
+                    ),
+                  ),
+                )
+              else
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (_) {
+                    if (widget.useBrowserState) {
+                      appState.browserState.toggleDirectory(widget.path);
+                    } else {
+                      appState.toggleDirectory(widget.path);
+                    }
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
               Icon(
                 _isExpanded ? Icons.folder_open : Icons.folder,
                 size: 20,
-                color: isViewing ? theme.colorScheme.primary : (isSelected ? theme.colorScheme.primary.withAlpha(150) : theme.colorScheme.outline),
+                color: isUnreachable 
+                  ? theme.colorScheme.error.withAlpha(100)
+                  : (isViewing ? theme.colorScheme.primary : (isSelected ? theme.colorScheme.primary.withAlpha(150) : theme.colorScheme.outline)),
               ),
               const SizedBox(width: 8),
             ],
           ),
           title: InkWell(
             onTap: () {
-              if (!widget.useBrowserState) {
+              if (isUnreachable) {
+                _reAuthorize(context, appState);
+              } else if (!widget.useBrowserState) {
                 appState.galleryState.setViewFolder(widget.path);
               }
             },
@@ -138,7 +199,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                     style: TextStyle(
                       fontSize: 13, 
                       fontWeight: isViewing ? FontWeight.bold : FontWeight.w500,
-                      color: isViewing ? theme.colorScheme.primary : null,
+                      color: isViewing ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -149,7 +210,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_subDirectories == null || _subDirectories!.isNotEmpty)
+              if (!isUnreachable && (_subDirectories == null || _subDirectories!.isNotEmpty))
                 IconButton(
                   icon: _isLoading 
                     ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
@@ -170,7 +231,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 ),
             ],
           ),
-          onTap: () => _handleExpansionChanged(!_isExpanded),
+          onTap: () {
+            if (isUnreachable) {
+              _reAuthorize(context, appState);
+            } else {
+              _handleExpansionChanged(!_isExpanded);
+            }
+          },
         ),
         
         if (_isExpanded && _subDirectories != null)

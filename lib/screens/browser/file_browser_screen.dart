@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,109 +32,123 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bool isMobile = Platform.isIOS || Platform.isAndroid;
+
+    if (isMobile) {
+      return _buildMobileRestrictedView(l10n);
+    }
+
+    return _buildDesktopLayout(l10n);
+  }
+
+  Widget _buildMobileRestrictedView(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.fileBrowser),
+        backgroundColor: colorScheme.surface,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.desktop_access_disabled_outlined, size: 80, color: colorScheme.outline.withAlpha(100)),
+              const SizedBox(height: 24),
+              Text(
+                "Feature Limited on Mobile",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                Platform.isIOS 
+                  ? "Please use the system 'Files' app to manage your generated images."
+                  : "Please use your device's file manager to organize files.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: colorScheme.primary, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
     final browserState = appState.browserState;
-    final l10n = AppLocalizations.of(context)!;
-    final isNarrow = Responsive.isNarrow(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: isNarrow ? AppBar(
-        title: Text(l10n.fileBrowser),
-        leading: IconButton(
-          icon: const Icon(Icons.view_sidebar),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          tooltip: l10n.sidebar,
-        ),
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.fileBrowser, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: colorScheme.surface,
+        centerTitle: false,
         actions: [
-          IconButton(
-            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view),
+          IconButton.filledTonal(
+            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view, size: 20),
             onPressed: () => browserState.setViewMode(
               browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
             ),
             tooltip: l10n.switchViewMode,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.refresh, size: 20),
             onPressed: () => browserState.refresh(),
             tooltip: l10n.refresh,
           ),
+          const SizedBox(width: 16),
         ],
-      ) : null,
-      drawer: isNarrow ? const Drawer(width: 300, child: UnifiedSidebar(useBrowserState: true)) : null,
-      body: Stack(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+        ),
+      ),
+      body: Row(
         children: [
-          // Layer 1: Main Content
-          Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1600),
-                    child: Column(
-                      children: [
-                        if (!isNarrow)
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
-                                onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
-                                tooltip: appState.isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar",
-                              ),
-                              Expanded(
-                                child: BrowserToolbar(
-                                  state: browserState,
-                                  onAiRename: () => _showAiRenameDialog(context),
-                                ),
-                              ),
-                            ],
-                          )
-                        else
-                          BrowserToolbar(
-                            state: browserState,
-                            onAiRename: () => _showAiRenameDialog(context),
-                          ),
-                        
-                        BrowserFilterBar(state: browserState),
-                        Expanded(
-                          child: browserState.viewMode == BrowserViewMode.grid
-                              ? _buildFileGrid(context, browserState)
-                              : _buildFileListView(context, browserState),
-                        ),
-                      ],
+          // Sidebar
+          Container(
+            width: 300,
+            color: colorScheme.surfaceContainerLow,
+            child: const UnifiedSidebar(useBrowserState: true),
+          ),
+          const VerticalDivider(width: 1),
+          // Main Content
+          Expanded(
+            child: Container(
+              color: colorScheme.surface,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: BrowserToolbar(
+                      state: browserState,
+                      onAiRename: () => _showAiRenameDialog(context),
                     ),
                   ),
-                ),
+                  BrowserFilterBar(state: browserState),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: browserState.viewMode == BrowserViewMode.grid
+                        ? _buildFileGrid(context, browserState)
+                        : _buildFileListView(context, browserState),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-
-          // Layer 2: Scrim
-          if (!isNarrow && appState.isSidebarExpanded)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => appState.setSidebarExpanded(false),
-                child: Container(
-                  color: Colors.black.withAlpha(100),
-                ),
-              ),
-            ),
-
-          // Layer 3: Overlay Sidebar
-          if (!isNarrow)
-            AnimatedPositioned(
-              duration: appState.isSidebarResizing ? Duration.zero : const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              left: appState.isSidebarExpanded ? 0 : -appState.sidebarWidth,
-              top: 0,
-              bottom: 0,
-              width: appState.sidebarWidth,
-              child: Material(
-                elevation: 16,
-                shadowColor: Colors.black54,
-                child: const UnifiedSidebar(useBrowserState: true),
-              ),
-            ),
         ],
       ),
     );

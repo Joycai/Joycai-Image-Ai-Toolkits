@@ -74,6 +74,9 @@ class BrowserState extends ChangeNotifier {
   // Directory management
   List<String> sourceDirectories = [];
   List<String> activeDirectories = [];
+  Set<String> unreachableDirectories = {};
+  int _refreshCounter = 0;
+  int get refreshCounter => _refreshCounter;
   
   BrowserState() {
     _loadSettings();
@@ -118,6 +121,7 @@ class BrowserState extends ChangeNotifier {
       activeDirectories = savedActive.split('|');
     }
 
+    await refresh();
     notifyListeners();
   }
 
@@ -161,6 +165,24 @@ class BrowserState extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
+    _refreshCounter++;
+    
+    // Check for unreachable directories
+    final newUnreachable = <String>{};
+    for (var path in sourceDirectories) {
+      try {
+        final dir = Directory(path);
+        if (!dir.existsSync()) {
+          newUnreachable.add(path);
+        } else {
+          dir.listSync();
+        }
+      } catch (_) {
+        newUnreachable.add(path);
+      }
+    }
+    unreachableDirectories = newUnreachable;
+
     if (activeDirectories.isEmpty) {
       allFiles = [];
       _applyFilterAndSort();

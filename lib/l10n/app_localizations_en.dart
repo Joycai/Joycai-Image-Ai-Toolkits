@@ -445,6 +445,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noModelsConfigured => 'No models configured';
 
   @override
+  String countModels(int count) {
+    return '$count models';
+  }
+
+  @override
   String get addFirstModel => 'Add your first LLM model to get started';
 
   @override

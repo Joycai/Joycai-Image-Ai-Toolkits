@@ -371,22 +371,20 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   }
 
   void _showPromptPickerMenu(AppLocalizations l10n) {
-    showDialog(
+    PromptLibrarySheet.show(
       context: context,
-      builder: (context) => LibraryDialog(
-        allPrompts: _allUserPrompts,
-        tags: _tags,
-        initialContent: _promptController.text,
-        onApply: (content, isAppend) {
-          if (isAppend) {
-            final existing = _promptController.text;
-            _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
-          } else {
-            _promptController.text = content;
-          }
-          _updateConfig(prompt: _promptController.text);
-        },
-      ),
+      allPrompts: _allUserPrompts,
+      tags: _tags,
+      initialContent: _promptController.text,
+      onApply: (content, isAppend) {
+        if (isAppend) {
+          final existing = _promptController.text;
+          _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
+        } else {
+          _promptController.text = content;
+        }
+        _updateConfig(prompt: _promptController.text);
+      },
     );
   }
 

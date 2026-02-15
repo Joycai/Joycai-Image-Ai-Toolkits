@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'No models configured'**
   String get noModelsConfigured;
 
+  /// No description provided for @countModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models'**
+  String countModels(int count);
+
   /// No description provided for @addFirstModel.
   ///
   /// In en, this message translates to:

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
@@ -91,6 +92,7 @@ class _GalleryWidgetState extends State<GalleryWidget> {
         return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
       case GalleryViewMode.folder:
         return FutureBuilder<List<AppFile>>(
+          key: ValueKey('${galleryState.viewSourcePath}_${galleryState.refreshCounter}'),
           future: _loadImagesFromFolder(galleryState.viewSourcePath),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -102,6 +104,22 @@ class _GalleryWidgetState extends State<GalleryWidget> {
     }
   }
 
+  Future<void> _reAuthorize(BuildContext context, AppState state, String path, bool isResult) async {
+    final String? newPath = await FilePicker.platform.getDirectoryPath(
+      initialDirectory: path,
+      dialogTitle: "Re-authorize access to: $path",
+    );
+
+    if (newPath != null) {
+      if (isResult) {
+        await state.updateOutputDirectory(newPath);
+      } else {
+        state.galleryState.setViewFolder(newPath);
+        state.galleryState.refreshImages();
+      }
+    }
+  }
+
   Future<List<AppFile>> _loadImagesFromFolder(String? path) async {
     if (path == null) return [];
     try {
@@ -110,6 +128,7 @@ class _GalleryWidgetState extends State<GalleryWidget> {
         final List<AppFile> files = [];
         await for (final entity in dir.list()) {
           if (entity is File && AppConstants.isImageFile(entity.path)) {
+            PaintingBinding.instance.imageCache.evict(FileImage(entity));
             files.add(AppFile.fromFile(entity));
           }
         }
@@ -121,17 +140,45 @@ class _GalleryWidgetState extends State<GalleryWidget> {
 
   Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Check for macOS permission issues
+    final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);
+    final bool isUnreachable = !isTemp && currentPath != null && state.galleryState.isPathUnreachable(currentPath);
+
     if (images.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined, size: 64, color: Colors.grey[400]),
+            Icon(
+              isUnreachable ? Icons.lock_person_outlined : (isTemp ? Icons.move_to_inbox_outlined : Icons.image_not_supported_outlined), 
+              size: 64, 
+              color: isUnreachable ? colorScheme.error.withAlpha(150) : Colors.grey[400]
+            ),
             const SizedBox(height: 16),
             Text(
-              isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound),
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              isUnreachable 
+                ? (Platform.isMacOS ? "macOS Permission Required" : "Folder Access Denied")
+                : (isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound)),
+              style: TextStyle(color: isUnreachable ? colorScheme.error : Colors.grey[600], fontSize: 16),
             ),
+            if (isUnreachable) ...[
+              const SizedBox(height: 12),
+              Text(
+                Platform.isMacOS 
+                  ? "Access to this folder was denied by the OS after restart.\nPlease click the button below to re-authorize."
+                  : "The saved path is no longer accessible or has been moved.\nPlease re-select the folder.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => _reAuthorize(context, state, currentPath, isResult),
+                icon: const Icon(Icons.folder_open),
+                label: Text(Platform.isMacOS ? "Re-authorize Access" : "Re-select Folder"),
+              ),
+            ]
           ],
         ),
       );
@@ -433,6 +480,7 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () async {
             try {
+              // On macOS Debug, gal might still cause issues due to SDK bug
               await Gal.putImage(widget.imageFile.path);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -441,8 +489,11 @@ class _ImageCardState extends State<_ImageCard> {
               }
             } catch (e) {
               if (context.mounted) {
+                final message = e.toString().contains('not implemented') 
+                  ? "Feature not available in this build mode"
+                  : l10n.saveFailed(e.toString());
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.saveFailed(e.toString())), backgroundColor: Colors.red),
+                  SnackBar(content: Text(message), backgroundColor: Colors.red),
                 );
               }
             }

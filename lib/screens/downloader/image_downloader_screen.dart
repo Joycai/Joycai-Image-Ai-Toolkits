@@ -136,10 +136,15 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
-    final outputDir = await appState.getSetting('output_directory');
+    final l10n = AppLocalizations.of(context)!;
+    
+    // On iOS we use the app's safe output directory (Result Cache)
+    String? outputDir = await appState.getSetting('output_directory');
+    if (Platform.isIOS && (outputDir == null || outputDir.isEmpty)) {
+      outputDir = appState.galleryState.outputDirectory;
+    }
     
     if (!mounted) return;
-    final l10n = AppLocalizations.of(context)!;
 
     if (outputDir == null || outputDir.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.setOutputDirFirst)));
@@ -262,17 +267,41 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.selectedModelPk = appState.chatModels.first.id;
     }
 
-    final controlPanel = DownloaderControlPanel(
-      urlController: _urlController,
-      requirementController: _requirementController,
-      cookieController: _cookieController,
-      prefixController: _prefixController,
-      manualHtmlController: _manualHtmlController,
-      isAnalyzing: _isAnalyzing,
-      onAnalyze: _analyze,
-      onSaveHtml: _saveOriginHtml,
-      onPasteHtml: _pasteHtml,
-      onImportCookie: _importCookieFile,
+    final controlPanel = Column(
+      children: [
+        if (Platform.isIOS)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Theme.of(context).colorScheme.primaryContainer.withAlpha(100),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.iosOutputRecommend,
+                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: DownloaderControlPanel(
+            urlController: _urlController,
+            requirementController: _requirementController,
+            cookieController: _cookieController,
+            prefixController: _prefixController,
+            manualHtmlController: _manualHtmlController,
+            isAnalyzing: _isAnalyzing,
+            onAnalyze: _analyze,
+            onSaveHtml: _saveOriginHtml,
+            onPasteHtml: _pasteHtml,
+            onImportCookie: _importCookieFile,
+          ),
+        ),
+      ],
     );
 
     return Scaffold(
