@@ -1045,6 +1045,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageDownloader => '图像下载器';
 
   @override
+  String get imageProcessing => '图片处理';
+
+  @override
   String get websiteUrl => '网站地址';
 
   @override

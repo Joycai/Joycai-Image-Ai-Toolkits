@@ -26,12 +26,23 @@ List<String> _scanImagesIsolate(List<String> paths) {
   return results;
 }
 
+enum GalleryViewMode {
+  all,
+  processed,
+  temp,
+  folder,
+}
+
 class GalleryState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   
   List<String> sourceDirectories = [];
   List<String> activeSourceDirectories = [];
   
+  // View State
+  GalleryViewMode viewMode = GalleryViewMode.all;
+  String? viewSourcePath; // Used when viewMode is folder
+
   // Model-based image lists
   List<AppFile> galleryImages = [];
   List<AppFile> processedImages = [];
@@ -333,6 +344,18 @@ class GalleryState extends ChangeNotifier {
     await _db.saveSetting('output_directory', path);
     _setupOutputWatcher();
     _scanProcessedImages();
+    notifyListeners();
+  }
+
+  void setViewMode(GalleryViewMode mode) {
+    viewMode = mode;
+    viewSourcePath = null;
+    notifyListeners();
+  }
+
+  void setViewFolder(String path) {
+    viewMode = GalleryViewMode.folder;
+    viewSourcePath = path;
     notifyListeners();
   }
 }

@@ -21,13 +21,6 @@ import 'downloader_state.dart';
 import 'gallery_state.dart';
 import 'window_state.dart';
 
-enum SidebarMode {
-  directories,
-  preview,
-  comparator,
-  maskEditor,
-}
-
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
@@ -97,7 +90,6 @@ class AppState extends ChangeNotifier {
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
   bool isSidebarResizing = false;
-  SidebarMode sidebarMode = SidebarMode.directories;
   double sidebarWidth = 400.0;
   bool enableApiDebug = false;
 
@@ -214,14 +206,6 @@ class AppState extends ChangeNotifier {
     final savedSidebarWidth = await _db.getSetting('sidebar_width');
     if (savedSidebarWidth != null) {
       sidebarWidth = double.tryParse(savedSidebarWidth) ?? 400.0;
-    }
-
-    final savedSidebarMode = await _db.getSetting('sidebar_mode');
-    if (savedSidebarMode != null) {
-      sidebarMode = SidebarMode.values.firstWhere(
-        (e) => e.name == savedSidebarMode, 
-        orElse: () => SidebarMode.directories
-      );
     }
 
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
@@ -352,12 +336,6 @@ class AppState extends ChangeNotifier {
 
   void setIsSidebarResizing(bool value) {
     isSidebarResizing = value;
-    notifyListeners();
-  }
-
-  Future<void> setSidebarMode(SidebarMode mode) async {
-    sidebarMode = mode;
-    await _db.saveSetting('sidebar_mode', mode.name);
     notifyListeners();
   }
 

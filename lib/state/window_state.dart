@@ -63,6 +63,12 @@ class WindowState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearComparator() {
+    comparatorRawPath = null;
+    comparatorAfterPath = null;
+    notifyListeners();
+  }
+
   void toggleComparatorMode() {
     isComparatorSyncMode = !isComparatorSyncMode;
     notifyListeners();

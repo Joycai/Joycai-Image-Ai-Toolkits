@@ -490,6 +490,7 @@
     }
   },
   "imageDownloader": "图像下载器",
+  "imageProcessing": "图片处理",
   "websiteUrl": "网站地址",
   "websiteUrlHint": "https://example.com",
   "whatToFind": "寻找什么？",

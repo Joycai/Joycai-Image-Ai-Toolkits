@@ -490,6 +490,7 @@
     }
   },
   "imageDownloader": "Image Downloader",
+  "imageProcessing": "Image Processing",
   "websiteUrl": "Website URL",
   "websiteUrlHint": "https://example.com",
   "whatToFind": "What to find?",

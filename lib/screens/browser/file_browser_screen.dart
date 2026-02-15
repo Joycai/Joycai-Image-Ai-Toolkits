@@ -11,6 +11,7 @@ import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/unified_sidebar.dart';
+import '../workbench/widgets/image_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_toolbar.dart';
@@ -162,10 +163,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               onTap: () => state.toggleSelection(file),
               onDoubleTap: () {
                 if (file.category == FileCategory.image) {
-                  final appState = Provider.of<AppState>(context, listen: false);
-                  appState.windowState.openPreview(file.path);
-                  appState.setSidebarMode(SidebarMode.preview);
-                  if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+                  showImagePreview(context, file.path);
                 } else {
                   _handleOpenFile(file);
                 }
@@ -192,10 +190,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              final appState = Provider.of<AppState>(context, listen: false);
-              appState.windowState.openPreview(file.path);
-              appState.setSidebarMode(SidebarMode.preview);
-              if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+              showImagePreview(context, file.path);
             } else {
               _handleOpenFile(file);
             }

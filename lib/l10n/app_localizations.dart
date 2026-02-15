@@ -2066,6 +2066,12 @@ abstract class AppLocalizations {
   /// **'Image Downloader'**
   String get imageDownloader;
 
+  /// No description provided for @imageProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Processing'**
+  String get imageProcessing;
+
   /// No description provided for @websiteUrl.
   ///
   /// In en, this message translates to:

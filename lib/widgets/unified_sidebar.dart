@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../l10n/app_localizations.dart';
-import '../screens/workbench/sidebar/mask_editor_sidebar.dart';
 import '../screens/workbench/source_explorer.dart';
-import '../screens/workbench/tabs/comparator_tab.dart';
-import '../screens/workbench/tabs/preview_tab.dart';
 import '../state/app_state.dart';
 
 class UnifiedSidebar extends StatelessWidget {
@@ -20,50 +16,14 @@ class UnifiedSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Row(
       children: [
-        // Navigation Rail
-        Container(
-          width: 50,
-          color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
-              _SidebarNavItem(
-                icon: Icons.folder_open,
-                isSelected: appState.sidebarMode == SidebarMode.directories,
-                onTap: () => appState.setSidebarMode(SidebarMode.directories),
-                tooltip: l10n.directories,
-              ),
-              _SidebarNavItem(
-                icon: Icons.visibility,
-                isSelected: appState.sidebarMode == SidebarMode.preview,
-                onTap: () => appState.setSidebarMode(SidebarMode.preview),
-                tooltip: l10n.preview,
-              ),
-              _SidebarNavItem(
-                icon: Icons.compare,
-                isSelected: appState.sidebarMode == SidebarMode.comparator,
-                onTap: () => appState.setSidebarMode(SidebarMode.comparator),
-                tooltip: l10n.comparator,
-              ),
-              _SidebarNavItem(
-                icon: Icons.brush,
-                isSelected: appState.sidebarMode == SidebarMode.maskEditor,
-                onTap: () => appState.setSidebarMode(SidebarMode.maskEditor),
-                tooltip: l10n.maskEditor,
-              ),
-            ],
-          ),
-        ),
-        
-        // Content Area (Expanded to take remaining space)
+        // Content Area (Now takes full width of the panel)
         Expanded(
           child: Container(
             color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.2).round()),
-            child: _buildSidebarContent(context, appState),
+            child: SourceExplorerWidget(useBrowserState: useBrowserState),
           ),
         ),
 
@@ -79,55 +39,16 @@ class UnifiedSidebar extends StatelessWidget {
             child: Container(
               width: 4,
               color: colorScheme.outlineVariant.withAlpha(50),
+              child: Center(
+                child: Container(
+                  width: 1,
+                  color: colorScheme.outlineVariant.withAlpha(100),
+                ),
+              ),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSidebarContent(BuildContext context, AppState appState) {
-    switch (appState.sidebarMode) {
-      case SidebarMode.directories:
-        return SourceExplorerWidget(useBrowserState: useBrowserState);
-      case SidebarMode.preview:
-        return const PreviewTab();
-      case SidebarMode.comparator:
-        return const ComparatorTab();
-      case SidebarMode.maskEditor:
-        return const MaskEditorSidebarView();
-    }
-  }
-}
-
-class _SidebarNavItem extends StatelessWidget {
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  const _SidebarNavItem({
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: IconButton(
-        icon: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
-        onPressed: onTap,
-        tooltip: tooltip,
-        style: IconButton.styleFrom(
-          backgroundColor: isSelected ? colorScheme.primaryContainer : null,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      ),
     );
   }
 }

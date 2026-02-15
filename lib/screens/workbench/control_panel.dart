@@ -15,7 +15,8 @@ import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 
 class ControlPanelWidget extends StatefulWidget {
-  const ControlPanelWidget({super.key});
+  final ScrollController? scrollController;
+  const ControlPanelWidget({super.key, this.scrollController});
 
   @override
   State<ControlPanelWidget> createState() => _ControlPanelWidgetState();
@@ -127,168 +128,183 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Selector<AppState, List<AppFile>>(
-            selector: (_, s) => s.selectedImages,
-            builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
-          ),
-          const Divider(height: 32),
-          
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Model Selection Section
-                  ModelSelectionSection(
-                    availableModels: imageModels.map((m) => m.toMap()).toList(), // Adapter needed until ModelSelectionSection is refactored
-                    channels: allChannels.map((c) => c.toMap()).toList(), // Adapter
-                    selectedChannelId: selectedChannelId,
-                    selectedModelPk: selectedModelPk,
-                    aspectRatio: lastAspectRatio,
-                    resolution: lastResolution,
-                    isExpanded: _isModelSettingsExpanded,
-                    onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
-                    onChannelChanged: (val) {
-                      final appState = Provider.of<AppState>(context, listen: false);
-                      final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
-                      final newPk = firstInChannel?.id;
-                      if (newPk != null) {
-                        _updateConfig(modelPk: newPk);
-                      }
-                    },
-                    onModelChanged: (val) {
-                      _updateConfig(modelPk: val);
-                    },
-                    onAspectRatioChanged: (v) {
-                      _updateConfig(ar: v);
-                    },
-                    onResolutionChanged: (v) {
-                      _updateConfig(res: v);
-                    },
-                  ),
-
-                  const Divider(height: 24),
-                  
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildPromptPicker(colorScheme, l10n),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  MarkdownEditor(
-                    controller: _promptController,
-                    label: l10n.prompt,
-                    isMarkdown: isMarkdownWorkbench,
-                    onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
-                    maxLines: 15,
-                    initiallyPreview: false,
-                    hint: l10n.promptHint,
-                    onChanged: (v) => _updateConfig(prompt: v),
-                  ),
-                  const SizedBox(height: 8),
-
-                ],
-              ),
+    // Use a layout builder to detect if we should be internally scrollable (Desktop sidebar)
+    // or if we are being scrolled by an external controller (Mobile BottomSheet)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Selector<AppState, List<AppFile>>(
+              selector: (_, s) => s.selectedImages,
+              builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
             ),
-          ),
-          
-          const Divider(),
-          Selector<AppState, (int, int, double?)>(
-            selector: (_, state) {
-              final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-              final runningCount = state.taskQueue.runningCount;
-              final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
-              
-              double? avgProgress;
-              if (activeTasks.isNotEmpty) {
-                double total = 0;
-                int count = 0;
-                for (var t in activeTasks) {
-                  if (t.progress != null) {
-                    total += t.progress!;
-                    count++;
-                  }
+            const Divider(height: 32),
+            
+            // Model Selection Section
+            ModelSelectionSection(
+              availableModels: imageModels.map((m) => m.toMap()).toList(),
+              channels: allChannels.map((c) => c.toMap()).toList(),
+              selectedChannelId: selectedChannelId,
+              selectedModelPk: selectedModelPk,
+              aspectRatio: lastAspectRatio,
+              resolution: lastResolution,
+              isExpanded: _isModelSettingsExpanded,
+              onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
+              onChannelChanged: (val) {
+                final appState = Provider.of<AppState>(context, listen: false);
+                final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
+                final newPk = firstInChannel?.id;
+                if (newPk != null) {
+                  _updateConfig(modelPk: newPk);
                 }
-                if (count > 0) avgProgress = total / count;
-              }
-              return (pendingCount, runningCount, avgProgress);
-            },
-            builder: (context, data, _) {
-              return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
-            },
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () => _showQueueSettings(context, l10n),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Selector<AppState, int>(
-                  selector: (_, s) => s.selectedImages.length,
-                  builder: (context, selectedCount, _) => FilledButton.icon(
-                    onPressed: _promptController.text.isEmpty 
-                        ? null 
-                        : () {
-                            final appState = Provider.of<AppState>(context, listen: false);
-                            if (selectedModelPk == null) {
+              },
+              onModelChanged: (val) {
+                _updateConfig(modelPk: val);
+              },
+              onAspectRatioChanged: (v) {
+                _updateConfig(ar: v);
+              },
+              onResolutionChanged: (v) {
+                _updateConfig(res: v);
+              },
+            ),
+
+            const Divider(height: 24),
+            
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPromptPicker(colorScheme, l10n),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            MarkdownEditor(
+              controller: _promptController,
+              label: l10n.prompt,
+              isMarkdown: isMarkdownWorkbench,
+              onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+              maxLines: 15,
+              initiallyPreview: false,
+              hint: l10n.promptHint,
+              onChanged: (v) => _updateConfig(prompt: v),
+              expand: false, // Don't expand inside scrollable
+            ),
+            const SizedBox(height: 16),
+            
+            const Divider(),
+            Selector<AppState, (int, int, double?)>(
+              selector: (_, state) {
+                final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
+                final runningCount = state.taskQueue.runningCount;
+                final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
+                
+                double? avgProgress;
+                if (activeTasks.isNotEmpty) {
+                  double total = 0;
+                  int count = 0;
+                  for (var t in activeTasks) {
+                    if (t.progress != null) {
+                      total += t.progress!;
+                      count++;
+                    }
+                  }
+                  if (count > 0) avgProgress = total / count;
+                }
+                return (pendingCount, runningCount, avgProgress);
+              },
+              builder: (context, data, _) {
+                return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => _showQueueSettings(context, l10n),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Selector<AppState, int>(
+                    selector: (_, s) => s.selectedImages.length,
+                    builder: (context, selectedCount, _) => FilledButton.icon(
+                      onPressed: _promptController.text.isEmpty 
+                          ? null 
+                          : () {
+                              final appState = Provider.of<AppState>(context, listen: false);
+                              if (selectedModelPk == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l10n.noModelsConfigured),
+                                    action: SnackBarAction(
+                                      label: l10n.settings,
+                                      onPressed: () => appState.navigateToScreen(6),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
+                              final modelName = selectedModel.modelName;
+                              
+                              appState.submitTask(selectedModelPk, {
+                                'prompt': _promptController.text,
+                                'aspectRatio': lastAspectRatio.value,
+                                'imageSize': lastResolution.value,
+                              }, modelIdDisplay: modelName);
+                              
+                              if (widget.scrollController != null) {
+                                Navigator.pop(context); // Close bottom sheet on mobile
+                              }
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(l10n.noModelsConfigured),
-                                  action: SnackBarAction(
-                                    label: l10n.settings,
-                                    onPressed: () => appState.navigateToScreen(6),
-                                  ),
+                                  content: Text(l10n.taskSubmitted),
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  width: 250,
                                 ),
                               );
-                              return;
-                            }
-
-                            final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
-                            final modelName = selectedModel.modelName;
-                            
-                            appState.submitTask(selectedModelPk, {
-                              'prompt': _promptController.text,
-                              'aspectRatio': lastAspectRatio.value,
-                              'imageSize': lastResolution.value,
-                            }, modelIdDisplay: modelName);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.taskSubmitted),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                width: 250,
-                              ),
-                            );
-                          },
-                    icon: const Icon(Icons.play_arrow),
-                    label: Text(selectedCount == 0 
-                        ? l10n.processPrompt 
-                        : l10n.processImages(selectedCount)),
+                            },
+                      icon: const Icon(Icons.play_arrow),
+                      label: Text(selectedCount == 0 
+                          ? l10n.processPrompt 
+                          : l10n.processImages(selectedCount)),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
+          ],
+        );
+
+        if (widget.scrollController != null) {
+          // Being scrolled by external sheet
+          return SingleChildScrollView(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.all(16),
+            child: content,
+          );
+        } else {
+          // Sidebar mode: use own scroll if needed
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: content,
+          );
+        }
+      },
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../state/app_state.dart';
+import '../../state/gallery_state.dart';
 
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
@@ -83,6 +84,11 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         return state.activeSourceDirectories.contains(widget.path);
       }
     });
+
+    final isViewing = context.select<AppState, bool>((state) {
+      if (widget.useBrowserState) return false;
+      return state.galleryState.viewMode == GalleryViewMode.folder && state.galleryState.viewSourcePath == widget.path;
+    });
     
     final appState = Provider.of<AppState>(context, listen: false);
     final folderName = p.basename(widget.path);
@@ -93,6 +99,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       children: [
         ListTile(
           dense: true,
+          selected: isViewing,
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -111,22 +118,33 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               Icon(
                 _isExpanded ? Icons.folder_open : Icons.folder,
                 size: 20,
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                color: isViewing ? theme.colorScheme.primary : (isSelected ? theme.colorScheme.primary.withAlpha(150) : theme.colorScheme.outline),
               ),
               const SizedBox(width: 8),
             ],
           ),
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  folderName,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
+          title: InkWell(
+            onTap: () {
+              if (!widget.useBrowserState) {
+                appState.galleryState.setViewFolder(widget.path);
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    folderName,
+                    style: TextStyle(
+                      fontSize: 13, 
+                      fontWeight: isViewing ? FontWeight.bold : FontWeight.w500,
+                      color: isViewing ? theme.colorScheme.primary : null,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,

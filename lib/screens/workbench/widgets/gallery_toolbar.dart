@@ -6,13 +6,11 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_file.dart';
 import '../../../state/app_state.dart';
+import '../../../state/gallery_state.dart';
 
 class GalleryToolbar extends StatelessWidget {
-  final TabController tabController;
-
   const GalleryToolbar({
     super.key,
-    required this.tabController,
   });
 
   @override
@@ -20,6 +18,7 @@ class GalleryToolbar extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
+    final galleryState = appState.galleryState;
     final isMobile = Responsive.isMobile(context);
     
     final selectedCount = appState.selectedImages.length;
@@ -44,13 +43,13 @@ class GalleryToolbar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    onPressed: () => appState.galleryState.selectAllImages(),
+                    onPressed: () => galleryState.selectAllImages(),
                     icon: const Icon(Icons.select_all, size: 20),
                     tooltip: l10n.selectAll,
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
-                    onPressed: selectedCount == 0 ? null : () => appState.galleryState.clearImageSelection(),
+                    onPressed: selectedCount == 0 ? null : () => galleryState.clearImageSelection(),
                     icon: const Icon(Icons.deselect, size: 20),
                     tooltip: l10n.clear,
                     visualDensity: VisualDensity.compact,
@@ -58,9 +57,9 @@ class GalleryToolbar extends StatelessWidget {
                   
                   if (!isMobile) ...[
                     const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                    if (appState.droppedImages.isNotEmpty)
+                    if (galleryState.droppedImages.isNotEmpty)
                       TextButton.icon(
-                        onPressed: () => appState.galleryState.clearDroppedImages(),
+                        onPressed: () => galleryState.clearDroppedImages(),
                         icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                         label: Text(l10n.clearTempWorkspace),
                         style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -78,7 +77,7 @@ class GalleryToolbar extends StatelessWidget {
                             value: thumbnailSize,
                             min: 80,
                             max: 400,
-                            onChanged: (v) => appState.galleryState.setThumbnailSize(v),
+                            onChanged: (v) => galleryState.setThumbnailSize(v),
                           ),
                         ),
                         Icon(Icons.image, size: 20, color: colorScheme.outline),
@@ -94,15 +93,15 @@ class GalleryToolbar extends StatelessWidget {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (val) async {
-                if (val == 'refresh') appState.galleryState.refreshImages();
-                if (val == 'clear_temp') appState.galleryState.clearDroppedImages();
+                if (val == 'refresh') galleryState.refreshImages();
+                if (val == 'clear_temp') galleryState.clearDroppedImages();
                 if (val == 'import') {
                   final picker = ImagePicker();
                   final List<XFile> picked = await picker.pickMultiImage();
                   if (picked.isNotEmpty) {
                     final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
-                    appState.galleryState.addDroppedFiles(newFiles);
-                    tabController.animateTo(2);
+                    galleryState.addDroppedFiles(newFiles);
+                    galleryState.setViewMode(GalleryViewMode.temp);
                   }
                 }
               },
@@ -115,7 +114,7 @@ class GalleryToolbar extends StatelessWidget {
                     dense: true,
                   ),
                 ),
-                if (appState.droppedImages.isNotEmpty)
+                if (galleryState.droppedImages.isNotEmpty)
                   PopupMenuItem(
                     value: 'clear_temp',
                     child: ListTile(
@@ -137,7 +136,7 @@ class GalleryToolbar extends StatelessWidget {
           else ...[
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
-              onPressed: () => appState.galleryState.refreshImages(),
+              onPressed: () => galleryState.refreshImages(),
               tooltip: l10n.refresh,
             ),
             const VerticalDivider(width: 24, indent: 8, endIndent: 8),
@@ -147,8 +146,8 @@ class GalleryToolbar extends StatelessWidget {
                 final List<XFile> picked = await picker.pickMultiImage();
                 if (picked.isNotEmpty) {
                   final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
-                  appState.galleryState.addDroppedFiles(newFiles);
-                  tabController.animateTo(2);
+                  galleryState.addDroppedFiles(newFiles);
+                  galleryState.setViewMode(GalleryViewMode.temp);
                 }
               },
               icon: const Icon(Icons.photo_library_outlined, size: 18),

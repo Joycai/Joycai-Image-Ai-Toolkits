@@ -13,6 +13,7 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/window_state.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
+import '../../workbench/widgets/image_preview_dialog.dart';
 
 void showFileContextMenu({
   required BuildContext context,
@@ -44,9 +45,7 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () {
-            windowState.openPreview(file.path);
-            appState.setSidebarMode(SidebarMode.preview);
-            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+            showImagePreview(context, file.path);
           },
         ),
         PopupMenuItem(
@@ -57,8 +56,8 @@ void showFileContextMenu({
           ),
           onTap: () {
             windowState.setMaskEditorSourceImage(AppFile(path: file.path, name: file.name));
-            appState.setSidebarMode(SidebarMode.maskEditor);
-            if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+            appState.setWorkbenchTab(2); // Mask Editor
+            appState.navigateToScreen(0); // Workbench
           },
         ),
         if (!windowState.isComparatorOpen)
@@ -70,8 +69,8 @@ void showFileContextMenu({
             ),
             onTap: () {
               windowState.sendToComparator(file.path);
-              appState.setSidebarMode(SidebarMode.comparator);
-              if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
             },
           )
         else ...[
@@ -83,8 +82,8 @@ void showFileContextMenu({
             ),
             onTap: () {
               windowState.sendToComparator(file.path, isAfter: false);
-              appState.setSidebarMode(SidebarMode.comparator);
-              if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
             },
           ),
           PopupMenuItem(
@@ -95,8 +94,8 @@ void showFileContextMenu({
             ),
             onTap: () {
               windowState.sendToComparator(file.path, isAfter: true);
-              appState.setSidebarMode(SidebarMode.comparator);
-              if (!appState.isSidebarExpanded) appState.setSidebarExpanded(true);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
             },
           ),
         ],

@@ -1058,6 +1058,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageDownloader => 'Image Downloader';
 
   @override
+  String get imageProcessing => 'Image Processing';
+
+  @override
   String get websiteUrl => 'Website URL';
 
   @override
