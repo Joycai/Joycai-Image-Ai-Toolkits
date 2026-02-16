@@ -2,6 +2,12 @@
 flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
 
+  android:
+    generate: true
+
+  ios:
+    generate: true
+
   web:
     generate: true
     background_color: "#hexcode"

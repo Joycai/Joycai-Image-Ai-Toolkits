@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application
-        android:label="joycai_image_ai_toolkits"
+        android:label="Joycai Image Ai Toolkits"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
