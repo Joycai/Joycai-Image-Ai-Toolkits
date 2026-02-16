@@ -60,13 +60,19 @@ flutter:
 
 flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
-  android: true
+  android: "launcher_icon"
   ios: true
-  remove_alpha_ios: true
-  windows: true
-  macos: true
-  linux: true
   min_sdk_android: 21
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    icon_size: 96 # min:48, max:256, default: 48
+  macos:
+    generate: true
+  web:
+    generate: false
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
 
 msix_config:
   display_name: Joycai Image AI Toolkits
