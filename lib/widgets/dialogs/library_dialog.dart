@@ -3,7 +3,6 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../prompt_card.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
   final List<Prompt> allPrompts;

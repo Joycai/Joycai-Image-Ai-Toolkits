@@ -7,7 +7,6 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/llm_models.dart';
 import '../../state/app_state.dart';
-import '../../widgets/app_section.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';

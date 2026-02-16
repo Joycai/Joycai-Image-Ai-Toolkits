@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
-import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/browser_file.dart';
 import '../../services/image_metadata_service.dart';
@@ -28,7 +27,6 @@ class FileBrowserScreen extends StatefulWidget {
 }
 
 class _FileBrowserScreenState extends State<FileBrowserScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {

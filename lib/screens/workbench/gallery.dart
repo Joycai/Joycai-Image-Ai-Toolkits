@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
@@ -142,7 +141,6 @@ class _GalleryWidgetState extends State<GalleryWidget> {
 
   Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     // Check for macOS permission issues
     final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);
