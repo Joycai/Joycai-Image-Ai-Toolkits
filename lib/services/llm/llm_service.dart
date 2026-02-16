@@ -22,7 +22,7 @@ class LLMService {
   }
 
   Future<LLMResponse> request({
-    required dynamic modelIdentifier,
+    required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,
@@ -150,7 +150,7 @@ class LLMService {
   }
 
   Stream<LLMResponseChunk> requestStream({
-    required dynamic modelIdentifier, // Can be String (legacy ID) or int (PK)
+    required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,

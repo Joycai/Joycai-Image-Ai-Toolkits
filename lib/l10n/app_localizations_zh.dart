@@ -92,6 +92,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get applyRenames => '应用重命名';
 
   @override
+  String get addToSelection => '添加到选中列表';
+
+  @override
+  String get removeFromSelection => '从选中列表移除';
+
+  @override
   String imagesSelected(int count) {
     return '已选 $count 项';
   }
@@ -1152,6 +1158,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importFromGallery => '从系统图库导入';
 
   @override
+  String get takePhoto => '拍摄照片';
+
+  @override
   String get clearTempWorkspace => '清空工作区';
 
   @override
@@ -1254,9 +1263,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sendToSelection => '添加到选中列表';
-
-  @override
-  String get removeFromSelection => '从选中列表移除';
 
   @override
   String get optimizePromptWithImage => '以此图优化提示词';

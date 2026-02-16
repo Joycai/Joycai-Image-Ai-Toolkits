@@ -92,6 +92,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applyRenames => 'Apply Renames';
 
   @override
+  String get addToSelection => 'Add to Selection';
+
+  @override
+  String get removeFromSelection => 'Remove from Selection';
+
+  @override
   String imagesSelected(int count) {
     return '$count selected';
   }
@@ -1176,6 +1182,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importFromGallery => 'Import from Gallery';
 
   @override
+  String get takePhoto => 'Take Photo';
+
+  @override
   String get clearTempWorkspace => 'Clear Workspace';
 
   @override
@@ -1279,9 +1288,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendToSelection => 'Add to Selection';
-
-  @override
-  String get removeFromSelection => 'Remove from Selection';
 
   @override
   String get optimizePromptWithImage => 'Optimize Prompt with Image';

@@ -260,6 +260,18 @@ abstract class AppLocalizations {
   /// **'Apply Renames'**
   String get applyRenames;
 
+  /// No description provided for @addToSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Selection'**
+  String get addToSelection;
+
+  /// No description provided for @removeFromSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Selection'**
+  String get removeFromSelection;
+
   /// No description provided for @imagesSelected.
   ///
   /// In en, this message translates to:
@@ -2270,6 +2282,12 @@ abstract class AppLocalizations {
   /// **'Import from Gallery'**
   String get importFromGallery;
 
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
   /// No description provided for @clearTempWorkspace.
   ///
   /// In en, this message translates to:
@@ -2461,12 +2479,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Selection'**
   String get sendToSelection;
-
-  /// No description provided for @removeFromSelection.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from Selection'**
-  String get removeFromSelection;
 
   /// No description provided for @optimizePromptWithImage.
   ///

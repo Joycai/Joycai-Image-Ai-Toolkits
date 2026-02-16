@@ -33,6 +33,8 @@
   "generateSuggestions": "生成建议",
   "noSuggestions": "尚未生成建议",
   "applyRenames": "应用重命名",
+  "addToSelection": "添加到选中列表",
+  "removeFromSelection": "从选中列表移除",
   "imagesSelected": "已选 {count} 项",
   "@imagesSelected": {
     "placeholders": {

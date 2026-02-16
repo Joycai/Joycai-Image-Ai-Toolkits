@@ -20,6 +20,7 @@ class GalleryToolbar extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final galleryState = appState.galleryState;
     final isMobile = Responsive.isMobile(context);
+    final isDesktop = Responsive.isDesktop(context);
     
     final selectedCount = appState.selectedImages.length;
     final thumbnailSize = appState.thumbnailSize;
@@ -56,7 +57,7 @@ class GalleryToolbar extends StatelessWidget {
                   ),
                   
                   const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                  if (!isMobile && galleryState.droppedImages.isNotEmpty) ...[
+                  if (!isDesktop && galleryState.droppedImages.isNotEmpty) ...[
                     TextButton.icon(
                       onPressed: () => galleryState.clearDroppedImages(),
                       icon: const Icon(Icons.delete_sweep_outlined, size: 18),
@@ -88,7 +89,19 @@ class GalleryToolbar extends StatelessWidget {
             ),
           ),
           
-          if (isMobile) ...[
+          if (!isDesktop) ...[
+            IconButton(
+              icon: const Icon(Icons.camera_alt_outlined, size: 22),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                if (photo != null) {
+                  galleryState.addDroppedFiles([AppImage(path: photo.path, name: photo.name)]);
+                  galleryState.setViewMode(GalleryViewMode.temp);
+                }
+              },
+              tooltip: l10n.takePhoto,
+            ),
             IconButton(
               icon: const Icon(Icons.add_photo_alternate_outlined, size: 22),
               onPressed: () async {
@@ -107,6 +120,14 @@ class GalleryToolbar extends StatelessWidget {
               onSelected: (val) async {
                 if (val == 'refresh') galleryState.refreshImages();
                 if (val == 'clear_temp') galleryState.clearDroppedImages();
+                if (val == 'camera') {
+                  final picker = ImagePicker();
+                  final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                  if (photo != null) {
+                    galleryState.addDroppedFiles([AppImage(path: photo.path, name: photo.name)]);
+                    galleryState.setViewMode(GalleryViewMode.temp);
+                  }
+                }
                 if (val == 'import') {
                   final picker = ImagePicker();
                   final List<XFile> picked = await picker.pickMultiImage();
@@ -135,6 +156,15 @@ class GalleryToolbar extends StatelessWidget {
                       dense: true,
                     ),
                   ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'camera',
+                  child: ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: Text(l10n.takePhoto),
+                    dense: true,
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'import',
                   child: ListTile(

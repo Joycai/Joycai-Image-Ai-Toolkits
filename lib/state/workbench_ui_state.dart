@@ -6,7 +6,6 @@ class WorkbenchUIState extends ChangeNotifier {
   // Preview State
   List<AppImage> previewImages = [];
   int activePreviewIndex = 0;
-  final List<String> openedPreviewPaths = []; // Kept for minimal compatibility if needed
 
   // Comparator State
   bool isComparatorOpen = false; 
@@ -24,18 +23,6 @@ class WorkbenchUIState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void openPreview(String path) {
-    // Legacy support logic
-    if (!openedPreviewPaths.contains(path)) {
-      openedPreviewPaths.add(path);
-    }
-    // We now prefer setPreviewList
-  }
-
-  void closePreview(int index) {
-    // No-op for the new browsing logic
-  }
-  
   void setActivePreview(int index) {
     if (index >= 0 && index < previewImages.length) {
       activePreviewIndex = index;
@@ -44,7 +31,6 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   void clearAllPreviews() {
-    openedPreviewPaths.clear();
     activePreviewIndex = 0;
     notifyListeners();
   }

@@ -14,6 +14,7 @@
   "noResultsYet": "暂无结果",
   "selectAll": "全选",
   "importFromGallery": "从系统图库导入",
+  "takePhoto": "拍摄照片",
   "clearTempWorkspace": "清空工作区",
   "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
   "noImagesSelected": "未选择图像",

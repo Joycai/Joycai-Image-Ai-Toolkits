@@ -14,6 +14,7 @@
   "noResultsYet": "No results yet",
   "selectAll": "Select All",
   "importFromGallery": "Import from Gallery",
+  "takePhoto": "Take Photo",
   "clearTempWorkspace": "Clear Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
