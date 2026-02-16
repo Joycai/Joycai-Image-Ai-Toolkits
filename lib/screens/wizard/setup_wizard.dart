@@ -234,20 +234,22 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 8),
           Text(l10n.storageLocationDesc),
           const SizedBox(height: 24),
-          SwitchListTile(
-            title: Text(l10n.portableMode),
-            subtitle: Text(l10n.portableModeDesc),
-            value: _isPortable,
-            onChanged: (v) async {
-              await AppPaths.setPortableMode(v);
-              setState(() => _isPortable = v);
-              if (mounted) {
-                _showRestartDialog(l10n);
-              }
-            },
-            contentPadding: EdgeInsets.zero,
-          ),
-          const SizedBox(height: 16),
+          if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+            SwitchListTile(
+              title: Text(l10n.portableMode),
+              subtitle: Text(l10n.portableModeDesc),
+              value: _isPortable,
+              onChanged: (v) async {
+                await AppPaths.setPortableMode(v);
+                setState(() => _isPortable = v);
+                if (mounted) {
+                  _showRestartDialog(l10n);
+                }
+              },
+              contentPadding: EdgeInsets.zero,
+            ),
+          if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+            const SizedBox(height: 16),
           TextField(
             controller: _outputDirController,
             readOnly: true,
