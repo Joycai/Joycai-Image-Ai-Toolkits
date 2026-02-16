@@ -163,6 +163,31 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
     _loadData(reset: true);
   }
 
+  void _confirmClearAll() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.clearAllUsage),
+        content: Text(l10n.clearUsageWarning),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await _db.clearTokenUsage();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadData(reset: true);
+              }
+            },
+            child: Text(l10n.clearAll),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -191,6 +216,11 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
                 ),
               ),
               IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: () => _loadData(reset: true)),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined, size: 20, color: Colors.red), 
+                onPressed: _confirmClearAll,
+                tooltip: l10n.clearAll,
+              ),
             ],
           ),
         ),

@@ -145,5 +145,7 @@
   },
   "iosSandboxActive": "iOS 沙盒模式生效",
   "iosSandboxDesc": "在 iOS 上，请使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
+  "mobileSandboxActive": "移动端存储限制生效",
+  "mobileSandboxDesc": "在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
   "filesAppSuffix": " (文件 App)"
 }

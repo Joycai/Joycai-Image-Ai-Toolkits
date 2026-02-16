@@ -48,7 +48,7 @@ class SourceExplorerWidget extends StatelessWidget {
 
     return Column(
         children: [
-          if (Platform.isIOS)
+          if (Platform.isIOS || Platform.isAndroid)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
@@ -62,12 +62,12 @@ class SourceExplorerWidget extends StatelessWidget {
                     Icon(Icons.photo_library_outlined, color: colorScheme.primary, size: 32),
                     const SizedBox(height: 12),
                     Text(
-                      l10n.iosSandboxActive,
+                      Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
                       style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      l10n.iosSandboxDesc,
+                      Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
                       style: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
                       textAlign: TextAlign.center,
                     ),

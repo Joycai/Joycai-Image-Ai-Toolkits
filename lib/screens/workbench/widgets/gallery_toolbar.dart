@@ -55,41 +55,53 @@ class GalleryToolbar extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                   ),
                   
-                  if (!isMobile) ...[
-                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                    if (galleryState.droppedImages.isNotEmpty)
-                      TextButton.icon(
-                        onPressed: () => galleryState.clearDroppedImages(),
-                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                        label: Text(l10n.clearTempWorkspace),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      ),
-                    
-                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                    // Thumbnail Size Slider
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                        SizedBox(
-                          width: 100,
-                          child: Slider(
-                            value: thumbnailSize,
-                            min: 80,
-                            max: 400,
-                            onChanged: (v) => galleryState.setThumbnailSize(v),
-                          ),
-                        ),
-                        Icon(Icons.image, size: 20, color: colorScheme.outline),
-                      ],
+                  const VerticalDivider(width: 24, indent: 8, endIndent: 8),
+                  if (!isMobile && galleryState.droppedImages.isNotEmpty) ...[
+                    TextButton.icon(
+                      onPressed: () => galleryState.clearDroppedImages(),
+                      icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                      label: Text(l10n.clearTempWorkspace),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                     ),
+                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
                   ],
+
+                  // Thumbnail Size Slider
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
+                      SizedBox(
+                        width: 100,
+                        child: Slider(
+                          value: thumbnailSize,
+                          min: 80,
+                          max: 400,
+                          onChanged: (v) => galleryState.setThumbnailSize(v),
+                        ),
+                      ),
+                      Icon(Icons.image, size: 20, color: colorScheme.outline),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
           
-          if (isMobile) 
+          if (isMobile) ...[
+            IconButton(
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 22),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final List<XFile> picked = await picker.pickMultiImage();
+                if (picked.isNotEmpty) {
+                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                  galleryState.addDroppedFiles(newFiles);
+                  galleryState.setViewMode(GalleryViewMode.temp);
+                }
+              },
+              tooltip: l10n.importFromGallery,
+            ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (val) async {
@@ -132,8 +144,8 @@ class GalleryToolbar extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-          else ...[
+            ),
+          ] else ...[
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               onPressed: () => galleryState.refreshImages(),

@@ -759,6 +759,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsImported => '设置导入成功';
 
   @override
+  String get exportOptions => '导出选项';
+
+  @override
+  String get includeDirectories => '包含目录配置';
+
+  @override
+  String get includeDirectoriesDesc => '工作台/浏览器目录及输出路径';
+
+  @override
+  String get includePrompts => '包含提示词';
+
+  @override
+  String get includePromptsDesc => '用户及系统提示词库';
+
+  @override
+  String get includeUsage => '包含用量统计';
+
+  @override
+  String get includeUsageDesc => 'API Token 消耗历史';
+
+  @override
+  String get exportNow => '立即导出';
+
+  @override
+  String get importNow => '立即导入';
+
+  @override
+  String get importOptions => '导入选项';
+
+  @override
+  String get notInBackup => '备份文件中不包含此项';
+
+  @override
   String get importSettingsTitle => '导入设置？';
 
   @override
@@ -1235,6 +1268,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get iosSandboxDesc => '在 iOS 上，请使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
+
+  @override
+  String get mobileSandboxActive => '移动端存储限制生效';
+
+  @override
+  String get mobileSandboxDesc =>
+      '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
 
   @override
   String get filesAppSuffix => ' (文件 App)';

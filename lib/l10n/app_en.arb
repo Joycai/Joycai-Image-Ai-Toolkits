@@ -219,7 +219,7 @@
   "addModel": "Add Model",
   "editModel": "Edit Model",
   "noModelsConfigured": "No models configured",
-  "countModels": "{count} models",
+  "countModels": "{count} Models",
   "@countModels": {
     "placeholders": {
       "count": {
@@ -363,6 +363,17 @@
   "resetEverything": "Reset Everything",
   "settingsExported": "Settings exported successfully",
   "settingsImported": "Settings imported successfully",
+  "exportOptions": "Export Options",
+  "includeDirectories": "Include Directory Config",
+  "includeDirectoriesDesc": "Workbench/Browser directories and output path",
+  "includePrompts": "Include Prompts",
+  "includePromptsDesc": "User and system prompt library",
+  "includeUsage": "Include Usage Metrics",
+  "includeUsageDesc": "API token consumption history",
+  "exportNow": "Export Now",
+  "importNow": "Import Now",
+  "importOptions": "Import Options",
+  "notInBackup": "Not available in backup file",
   "importSettingsTitle": "Import Settings?",
   "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
   "importAndReplace": "Import & Replace",
@@ -629,5 +640,7 @@
   },
   "iosSandboxActive": "iOS Sandbox Active",
   "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "mobileSandboxActive": "Mobile Storage Restriction",
+  "mobileSandboxDesc": "On mobile devices, direct folder access may be limited by the OS. It is recommended to use the 'Import from Gallery' button in the top toolbar.",
   "filesAppSuffix": " (Files App)"
 }

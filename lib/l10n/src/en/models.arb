@@ -27,6 +27,14 @@
   "addModel": "Add Model",
   "editModel": "Edit Model",
   "noModelsConfigured": "No models configured",
+  "countModels": "{count} Models",
+  "@countModels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addFirstModel": "Add your first LLM model to get started",
   "addNewModel": "Add New Model",
   "deleteModel": "Delete Model",

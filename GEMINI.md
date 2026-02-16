@@ -68,6 +68,7 @@ The project follows standard Flutter conventions.
 
 *   **Code Style:** The project uses `flutter_lints` for code analysis, with rules defined in `analysis_options.yaml`. Adherence to these linting rules is expected.
 *   **State Management:** All application state should be managed through the central `AppState` class. For new features, extend `AppState` and notify listeners to update the UI. Avoid local state (`StatefulWidget`) for data that needs to be persisted or shared across screens.
+*   **Code Analysis & Quality:** After every code change, **MUST** run `flutter analyze` and ensure **No issues found!** (including info-level lints). Any reported issues must be fixed before proceeding.
 *   **Immutability:** When modifying state in `AppState`, create new instances of lists or objects rather than modifying them in place, especially when using `notifyListeners()`.
 *   **Services:** Business logic that is not directly tied to the UI should be implemented in the `lib/services` directory. For example, all interactions with external APIs are cleanly separated in the `LLMService`.
 *   **Data Persistence:** All configuration and user data (prompts, models, etc.) must be saved to the SQLite database via the `DatabaseService`. Avoid storing important data in memory only.

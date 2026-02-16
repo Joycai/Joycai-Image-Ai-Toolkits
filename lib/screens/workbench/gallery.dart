@@ -342,27 +342,30 @@ class _ImageCardState extends State<_ImageCard> {
                     top: 8,
                     left: 8,
                     right: 8,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildOverlayButton(
-                          icon: Icons.auto_fix_high,
-                          onPressed: () => _handleOptimize(context),
-                          tooltip: 'Optimize',
-                        ),
-                        const SizedBox(width: 4),
-                        _buildOverlayButton(
-                          icon: Icons.compare,
-                          onPressed: () => _handleCompare(context),
-                          tooltip: 'Compare',
-                        ),
-                        const SizedBox(width: 4),
-                        _buildOverlayButton(
-                          icon: Icons.brush,
-                          onPressed: () => _handleMask(context),
-                          tooltip: 'Mask',
-                        ),
-                      ],
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildOverlayButton(
+                            icon: Icons.auto_fix_high,
+                            onPressed: () => _handleOptimize(context),
+                            tooltip: 'Optimize',
+                          ),
+                          const SizedBox(width: 4),
+                          _buildOverlayButton(
+                            icon: Icons.compare,
+                            onPressed: () => _handleCompare(context),
+                            tooltip: 'Compare',
+                          ),
+                          const SizedBox(width: 4),
+                          _buildOverlayButton(
+                            icon: Icons.brush,
+                            onPressed: () => _handleMask(context),
+                            tooltip: 'Mask',
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 

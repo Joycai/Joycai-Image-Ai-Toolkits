@@ -145,5 +145,7 @@
   },
   "iosSandboxActive": "iOS Sandbox Active",
   "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "mobileSandboxActive": "Mobile Storage Restriction",
+  "mobileSandboxDesc": "On mobile devices, direct folder access may be limited by the OS. It is recommended to use the 'Import from Gallery' button in the top toolbar.",
   "filesAppSuffix": " (Files App)"
 }

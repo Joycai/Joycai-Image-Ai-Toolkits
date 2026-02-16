@@ -228,17 +228,36 @@ class DatabaseService {
   }
 
   // Backup & Restore (Now with optional prompt inclusion)
-  Future<Map<String, dynamic>> getAllDataRaw({bool includePrompts = true}) async {
+  Future<Map<String, dynamic>> getAllDataRaw({
+    bool includePrompts = true, 
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
     final db = await database;
+    
+    // Filter settings if directories are excluded
+    final settingsRows = await db.query('settings');
+    var filteredSettings = settingsRows;
+    if (!includeDirectories) {
+      final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
+      filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
+    }
+
     final Map<String, dynamic> data = {
-      'settings': await db.query('settings'),
+      'settings': filteredSettings,
       'llm_channels': await db.query('llm_channels'),
       'llm_models': await db.query('llm_models'),
       'fee_groups': await db.query('fee_groups'),
-      'source_directories': await db.query('source_directories'),
       'downloader_cookies': await db.query('downloader_cookies'),
-      'token_usage': await db.query('token_usage'),
     };
+
+    if (includeUsage) {
+      data['token_usage'] = await db.query('token_usage');
+    }
+
+    if (includeDirectories) {
+      data['source_directories'] = await db.query('source_directories');
+    }
 
     if (includePrompts) {
       data.addAll(await getPromptDataRaw());
@@ -247,15 +266,25 @@ class DatabaseService {
     return data;
   }
 
-  Future<void> clearAllData(DatabaseExecutor txn, {bool includePrompts = true}) async {
+  Future<void> clearAllData(DatabaseExecutor txn, {
+    bool includePrompts = true, 
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
     await txn.delete('settings');
     await txn.delete('llm_channels');
     await txn.delete('llm_models');
     await txn.delete('fee_groups');
-    await txn.delete('source_directories');
     await txn.delete('tasks');
-    await txn.delete('token_usage');
     await txn.delete('downloader_cookies');
+
+    if (includeUsage) {
+      await txn.delete('token_usage');
+    }
+
+    if (includeDirectories) {
+      await txn.delete('source_directories');
+    }
 
     if (includePrompts) {
       await txn.delete('prompts');
@@ -266,12 +295,19 @@ class DatabaseService {
     }
   }
 
-  Future<void> restoreBackup(Map<String, dynamic> data) async {
+  Future<void> restoreBackup(Map<String, dynamic> data, {
+    bool includePrompts = true, 
+    bool includeUsage = true, 
+    bool includeDirectories = true,
+  }) async {
     final db = await database;
-    final bool includePrompts = data.containsKey('prompts') || data.containsKey('user_prompts') || data.containsKey('tags');
 
     await db.transaction((txn) async {
-      await clearAllData(txn, includePrompts: includePrompts);
+      await clearAllData(txn, 
+        includePrompts: includePrompts, 
+        includeUsage: includeUsage, 
+        includeDirectories: includeDirectories,
+      );
 
       final channelIdMap = await _importChannels(txn, data['llm_channels']);
       final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
@@ -281,7 +317,7 @@ class DatabaseService {
         await _importSimpleTable(txn, 'downloader_cookies', data['downloader_cookies']);
       }
 
-      if (data['token_usage'] != null) {
+      if (includeUsage && data['token_usage'] != null) {
         await _importTokenUsage(txn, data['token_usage'], modelIdMap);
       }
 
@@ -291,8 +327,19 @@ class DatabaseService {
         await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);
       }
       
-      await _importSimpleTable(txn, 'settings', data['settings']);
-      await _importSimpleTable(txn, 'source_directories', data['source_directories']);
+      if (data['settings'] != null) {
+        final List<dynamic> settingsRows = data['settings'];
+        var filteredSettings = settingsRows;
+        if (!includeDirectories) {
+          final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
+          filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
+        }
+        await _importSimpleTable(txn, 'settings', filteredSettings);
+      }
+
+      if (includeDirectories && data['source_directories'] != null) {
+        await _importSimpleTable(txn, 'source_directories', data['source_directories']);
+      }
     });
   }
 

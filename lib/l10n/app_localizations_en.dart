@@ -446,7 +446,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String countModels(int count) {
-    return '$count models';
+    return '$count Models';
   }
 
   @override
@@ -763,6 +763,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsImported => 'Settings imported successfully';
+
+  @override
+  String get exportOptions => 'Export Options';
+
+  @override
+  String get includeDirectories => 'Include Directory Config';
+
+  @override
+  String get includeDirectoriesDesc =>
+      'Workbench/Browser directories and output path';
+
+  @override
+  String get includePrompts => 'Include Prompts';
+
+  @override
+  String get includePromptsDesc => 'User and system prompt library';
+
+  @override
+  String get includeUsage => 'Include Usage Metrics';
+
+  @override
+  String get includeUsageDesc => 'API token consumption history';
+
+  @override
+  String get exportNow => 'Export Now';
+
+  @override
+  String get importNow => 'Import Now';
+
+  @override
+  String get importOptions => 'Import Options';
+
+  @override
+  String get notInBackup => 'Not available in backup file';
 
   @override
   String get importSettingsTitle => 'Import Settings?';
@@ -1254,6 +1288,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get iosSandboxDesc =>
       'On iOS, please use the \'Import from Gallery\' button in the top toolbar to add images to your Temporary Workspace.';
+
+  @override
+  String get mobileSandboxActive => 'Mobile Storage Restriction';
+
+  @override
+  String get mobileSandboxDesc =>
+      'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.';
 
   @override
   String get filesAppSuffix => ' (Files App)';

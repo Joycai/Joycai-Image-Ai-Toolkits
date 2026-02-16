@@ -917,7 +917,7 @@ abstract class AppLocalizations {
   /// No description provided for @countModels.
   ///
   /// In en, this message translates to:
-  /// **'{count} models'**
+  /// **'{count} Models'**
   String countModels(int count);
 
   /// No description provided for @addFirstModel.
@@ -1525,6 +1525,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings imported successfully'**
   String get settingsImported;
+
+  /// No description provided for @exportOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Options'**
+  String get exportOptions;
+
+  /// No description provided for @includeDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Directory Config'**
+  String get includeDirectories;
+
+  /// No description provided for @includeDirectoriesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Workbench/Browser directories and output path'**
+  String get includeDirectoriesDesc;
+
+  /// No description provided for @includePrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Prompts'**
+  String get includePrompts;
+
+  /// No description provided for @includePromptsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'User and system prompt library'**
+  String get includePromptsDesc;
+
+  /// No description provided for @includeUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Usage Metrics'**
+  String get includeUsage;
+
+  /// No description provided for @includeUsageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'API token consumption history'**
+  String get includeUsageDesc;
+
+  /// No description provided for @exportNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Now'**
+  String get exportNow;
+
+  /// No description provided for @importNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Now'**
+  String get importNow;
+
+  /// No description provided for @importOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Options'**
+  String get importOptions;
+
+  /// No description provided for @notInBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available in backup file'**
+  String get notInBackup;
 
   /// No description provided for @importSettingsTitle.
   ///
@@ -2407,6 +2473,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On iOS, please use the \'Import from Gallery\' button in the top toolbar to add images to your Temporary Workspace.'**
   String get iosSandboxDesc;
+
+  /// No description provided for @mobileSandboxActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Storage Restriction'**
+  String get mobileSandboxActive;
+
+  /// No description provided for @mobileSandboxDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.'**
+  String get mobileSandboxDesc;
 
   /// No description provided for @filesAppSuffix.
   ///
