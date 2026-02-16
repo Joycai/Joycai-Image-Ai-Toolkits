@@ -1,4 +1,4 @@
-class FeeGroup {
+class PricingGroup {
   final int? id;
   final String name;
   final String billingMode; // token, request
@@ -6,7 +6,7 @@ class FeeGroup {
   final double outputPrice;
   final double requestPrice;
 
-  FeeGroup({
+  PricingGroup({
     this.id,
     required this.name,
     this.billingMode = 'token',
@@ -15,8 +15,8 @@ class FeeGroup {
     this.requestPrice = 0.0,
   });
 
-  factory FeeGroup.fromMap(Map<String, dynamic> map) {
-    return FeeGroup(
+  factory PricingGroup.fromMap(Map<String, dynamic> map) {
+    return PricingGroup(
       id: map['id'] as int?,
       name: map['name'] as String,
       billingMode: map['billing_mode'] as String? ?? 'token',

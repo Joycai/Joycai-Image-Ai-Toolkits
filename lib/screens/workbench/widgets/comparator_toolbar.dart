@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../state/window_state.dart';
+import '../../../state/workbench_ui_state.dart';
 import '../workbench_layout.dart';
 
 class ComparatorToolbar extends StatelessWidget {
@@ -11,7 +11,7 @@ class ComparatorToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final windowState = Provider.of<WindowState>(context);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -22,10 +22,10 @@ class ComparatorToolbar extends StatelessWidget {
         children: [
           // Comparator Controls
           ToggleButtons(
-            isSelected: [windowState.isComparatorSyncMode, !windowState.isComparatorSyncMode],
+            isSelected: [workbenchUIState.isComparatorSyncMode, !workbenchUIState.isComparatorSyncMode],
             onPressed: (index) {
-              if (windowState.isComparatorSyncMode != (index == 0)) {
-                windowState.toggleComparatorMode();
+              if (workbenchUIState.isComparatorSyncMode != (index == 0)) {
+                workbenchUIState.toggleComparatorMode();
               }
             },
             borderRadius: BorderRadius.circular(8),
@@ -40,7 +40,7 @@ class ComparatorToolbar extends StatelessWidget {
           // Clear Button
           IconButton(
             icon: const Icon(Icons.cleaning_services_outlined, size: 20),
-            onPressed: () => windowState.clearComparator(),
+            onPressed: () => workbenchUIState.clearComparator(),
             tooltip: l10n.clear,
             visualDensity: VisualDensity.compact,
           ),

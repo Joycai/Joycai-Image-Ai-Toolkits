@@ -9,8 +9,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/app_file.dart';
-import '../../../state/window_state.dart';
+import '../../../models/app_image.dart';
+import '../../../state/workbench_ui_state.dart';
 
 class ImagePreviewDialog extends StatefulWidget {
   const ImagePreviewDialog({super.key});
@@ -26,8 +26,8 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
   @override
   void initState() {
     super.initState();
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    _pageController = PageController(initialPage: windowState.activePreviewIndex);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    _pageController = PageController(initialPage: workbenchUIState.activePreviewIndex);
   }
 
   @override
@@ -37,15 +37,15 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
   }
 
   void _nextImage(int count) {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    if (windowState.activePreviewIndex < count - 1) {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    if (workbenchUIState.activePreviewIndex < count - 1) {
       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
   }
 
   void _prevImage() {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    if (windowState.activePreviewIndex > 0) {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    if (workbenchUIState.activePreviewIndex > 0) {
       _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
   }
@@ -89,7 +89,7 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
     }
   }
 
-  Future<void> _shareImage(AppFile file, AppLocalizations l10n) async {
+  Future<void> _shareImage(AppImage file, AppLocalizations l10n) async {
     try {
       final xFile = XFile(file.path, name: file.name, mimeType: AppConstants.getMimeType(file.path));
       // ignore: deprecated_member_use
@@ -105,11 +105,11 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final windowState = Provider.of<WindowState>(context);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final images = windowState.previewImages;
-    final activeIndex = windowState.activePreviewIndex;
+    final images = workbenchUIState.previewImages;
+    final activeIndex = workbenchUIState.activePreviewIndex;
 
     if (images.isEmpty) return const SizedBox.shrink();
     
@@ -125,7 +125,7 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
             child: PageView.builder(
               controller: _pageController,
               itemCount: images.length,
-              onPageChanged: (index) => windowState.setActivePreview(index),
+              onPageChanged: (index) => workbenchUIState.setActivePreview(index),
               itemBuilder: (context, index) {
                 return InteractiveViewer(
                   minScale: 0.5,
@@ -292,9 +292,9 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
   }
 }
 
-void showImagePreview(BuildContext context, {required List<AppFile> galleryImages, required int initialIndex}) {
-  final windowState = Provider.of<WindowState>(context, listen: false);
-  windowState.setPreviewList(galleryImages, initialIndex);
+void showImagePreview(BuildContext context, {required List<AppImage> galleryImages, required int initialIndex}) {
+  final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+  workbenchUIState.setPreviewList(galleryImages, initialIndex);
   
   showDialog(
     context: context,

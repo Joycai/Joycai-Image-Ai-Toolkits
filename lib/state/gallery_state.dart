@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
-import '../models/app_file.dart';
+import '../models/app_image.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
 
@@ -49,11 +49,11 @@ class GalleryState extends ChangeNotifier {
   String? viewSourcePath; // Used when viewMode is folder
 
   // Model-based image lists
-  List<AppFile> galleryImages = [];
-  List<AppFile> folderImages = [];
-  List<AppFile> processedImages = [];
-  List<AppFile> selectedImages = [];
-  List<AppFile> droppedImages = []; // Transient workspace
+  List<AppImage> galleryImages = [];
+  List<AppImage> folderImages = [];
+  List<AppImage> processedImages = [];
+  List<AppImage> selectedImages = [];
+  List<AppImage> droppedImages = []; // Transient workspace
   
   String? outputDirectory;
   double thumbnailSize = 150.0;
@@ -239,7 +239,7 @@ class GalleryState extends ChangeNotifier {
   Future<void> _scanFolder(String path) async {
     final List<String> paths = await compute(_scanImagesIsolate, [path]);
     _evictImages(paths); // Ensure edited images are re-loaded from disk
-    folderImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
+    folderImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
@@ -260,7 +260,7 @@ class GalleryState extends ChangeNotifier {
 
     final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
     _evictImages(paths);
-    galleryImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
+    galleryImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
     
     final validSelection = selectedImages.where((selected) => 
       galleryImages.any((img) => img.path == selected.path) ||
@@ -293,7 +293,7 @@ class GalleryState extends ChangeNotifier {
           return 0;
         }
       });
-      processedImages = files.map((f) => AppFile.fromFile(f)).toList();
+      processedImages = files.map((f) => AppImage.fromFile(f)).toList();
       
       // Also clean up selection if images were deleted from disk
       final validSelection = selectedImages.where((selected) => 
@@ -311,7 +311,7 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addDroppedFiles(List<AppFile> files) {
+  void addDroppedFiles(List<AppImage> files) {
     for (var file in files) {
       if (!droppedImages.any((img) => img.path == file.path)) {
         droppedImages.add(file);
@@ -334,8 +334,8 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleImageSelection(AppFile image) {
-    final newList = List<AppFile>.from(selectedImages);
+  void toggleImageSelection(AppImage image) {
+    final newList = List<AppImage>.from(selectedImages);
     final index = newList.indexWhere((img) => img.path == image.path);
     if (index != -1) {
       newList.removeAt(index);
@@ -350,8 +350,8 @@ class GalleryState extends ChangeNotifier {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final newList = List<AppFile>.from(selectedImages);
-    final AppFile item = newList.removeAt(oldIndex);
+    final newList = List<AppImage>.from(selectedImages);
+    final AppImage item = newList.removeAt(oldIndex);
     newList.insert(newIndex, item);
     selectedImages = newList;
     notifyListeners();
@@ -367,7 +367,7 @@ class GalleryState extends ChangeNotifier {
     // Usually it's better to select from the currently visible list, 
     // but the state doesn't know what's visible (Tab index).
     // For now, let's select from galleryImages.
-    selectedImages = List<AppFile>.from(galleryImages);
+    selectedImages = List<AppImage>.from(galleryImages);
     notifyListeners();
   }
 
@@ -404,7 +404,7 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<AppFile> get currentViewImages {
+  List<AppImage> get currentViewImages {
     switch (viewMode) {
       case GalleryViewMode.all: return galleryImages;
       case GalleryViewMode.processed: return processedImages;

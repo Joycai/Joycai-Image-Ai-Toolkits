@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../state/window_state.dart';
+import '../../../state/workbench_ui_state.dart';
 
 class ComparatorView extends StatefulWidget {
   const ComparatorView({super.key});
@@ -40,11 +40,11 @@ class _ComparatorViewState extends State<ComparatorView> {
 
   @override
   Widget build(BuildContext context) {
-    final windowState = Provider.of<WindowState>(context);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (windowState.comparatorRawPath == null && windowState.comparatorAfterPath == null) {
+    if (workbenchUIState.comparatorRawPath == null && workbenchUIState.comparatorAfterPath == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -71,9 +71,9 @@ class _ComparatorViewState extends State<ComparatorView> {
         Expanded(
           child: Container(
             color: Colors.black,
-            child: windowState.isComparatorSyncMode 
-              ? _buildSyncView(windowState) 
-              : _buildSwapView(windowState),
+            child: workbenchUIState.isComparatorSyncMode 
+              ? _buildSyncView(workbenchUIState) 
+              : _buildSwapView(workbenchUIState),
           ),
         ),
         
@@ -88,7 +88,7 @@ class _ComparatorViewState extends State<ComparatorView> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'Raw: ${windowState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${windowState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
+                  'Raw: ${workbenchUIState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${workbenchUIState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
                   style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -100,12 +100,12 @@ class _ComparatorViewState extends State<ComparatorView> {
     );
   }
 
-  Widget _buildSyncView(WindowState windowState) {
+  Widget _buildSyncView(WorkbenchUIState workbenchUIState) {
     return Row(
       children: [
         Expanded(
           child: _buildViewer(
-            windowState.comparatorRawPath, 
+            workbenchUIState.comparatorRawPath, 
             "RAW", 
             _controller1, 
             borderColor: Colors.blueAccent
@@ -114,7 +114,7 @@ class _ComparatorViewState extends State<ComparatorView> {
         const VerticalDivider(width: 1, color: Colors.white24),
         Expanded(
           child: _buildViewer(
-            windowState.comparatorAfterPath, 
+            workbenchUIState.comparatorAfterPath, 
             "AFTER", 
             _controller2, 
             borderColor: Colors.orangeAccent
@@ -124,7 +124,7 @@ class _ComparatorViewState extends State<ComparatorView> {
     );
   }
 
-  Widget _buildSwapView(WindowState windowState) {
+  Widget _buildSwapView(WorkbenchUIState workbenchUIState) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Handle mouse movement for scan line
@@ -138,12 +138,12 @@ class _ComparatorViewState extends State<ComparatorView> {
             fit: StackFit.expand,
             children: [
               // Bottom Layer: After
-              _buildViewer(windowState.comparatorAfterPath, "AFTER", _controller1, showLabel: false),
+              _buildViewer(workbenchUIState.comparatorAfterPath, "AFTER", _controller1, showLabel: false),
               
               // Top Layer: Raw (Clipped)
               ClipRect(
                 clipper: _CurtainClipper(_scanRatio),
-                child: _buildViewer(windowState.comparatorRawPath, "RAW", _controller1, showLabel: false), // Share controller for perfect sync
+                child: _buildViewer(workbenchUIState.comparatorRawPath, "RAW", _controller1, showLabel: false), // Share controller for perfect sync
               ),
 
               // Scanning Line & Handle

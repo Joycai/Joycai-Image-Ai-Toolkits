@@ -12,7 +12,7 @@ class DownloaderState extends ChangeNotifier {
   bool isManualHtml = false;
   List<DiscoveredImage> discoveredImages = [];
   List<String> logs = [];
-  int? selectedModelPk;
+  int? selectedModelDbId;
   
   List<Map<String, dynamic>> cookieHistory = [];
 
@@ -35,7 +35,7 @@ class DownloaderState extends ChangeNotifier {
     String? manualHtml,
     bool? isManualHtml,
     List<DiscoveredImage>? discoveredImages,
-    int? selectedModelPk,
+    int? selectedModelDbId,
   }) {
     if (url != null) this.url = url;
     if (requirement != null) this.requirement = requirement;
@@ -44,7 +44,7 @@ class DownloaderState extends ChangeNotifier {
     if (manualHtml != null) this.manualHtml = manualHtml;
     if (isManualHtml != null) this.isManualHtml = isManualHtml;
     if (discoveredImages != null) this.discoveredImages = discoveredImages;
-    if (selectedModelPk != null) this.selectedModelPk = selectedModelPk;
+    if (selectedModelDbId != null) this.selectedModelDbId = selectedModelDbId;
     notifyListeners();
   }
 

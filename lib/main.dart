@@ -41,8 +41,8 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appState),
-        ChangeNotifierProvider.value(value: appState.windowState),
-        ChangeNotifierProvider.value(value: appState.browserState),
+        ChangeNotifierProvider.value(value: appState.workbenchUIState),
+        ChangeNotifierProvider.value(value: appState.fileBrowserState),
         ChangeNotifierProvider.value(value: appState.downloaderState),
       ],
       child: MyApp(version: packageInfo.version),

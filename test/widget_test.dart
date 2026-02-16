@@ -23,7 +23,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: appState),
-          ChangeNotifierProvider.value(value: appState.windowState),
+          ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ],
         child: const MyApp(version: '2.0.0'),
       ),

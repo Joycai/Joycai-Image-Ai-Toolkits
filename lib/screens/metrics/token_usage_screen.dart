@@ -6,11 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/fee_group.dart';
+import '../../models/pricing_group.dart';
 import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/fee_group_manager.dart';
+import '../../widgets/pricing_group_manager.dart';
 
 class TokenUsageScreen extends StatefulWidget {
   const TokenUsageScreen({super.key});
@@ -43,7 +43,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1000),
-                child: const FeeGroupManager(mode: FeeGroupManagerMode.section),
+                child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
               ),
             ),
           ],
@@ -499,7 +499,7 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
                               spacing: 12,
                               runSpacing: 12,
                               children: _stats.groupCosts.entries.map((e) {
-                                final group = appState.allFeeGroups.cast<FeeGroup?>().firstWhere(
+                                final group = appState.allPricingGroups.cast<PricingGroup?>().firstWhere(
                                   (g) => g?.id == e.key, 
                                   orElse: () => null
                                 );
@@ -801,8 +801,8 @@ _UsageStats _calculateStats(List<Map<String, dynamic>> usageData, List<LLMModel>
     totalRequestCount += reqCount;
     totalCost += cost;
 
-    final modelPk = row['model_pk'] as int?;
-    final groupId = modelPk != null ? modelToGroup[modelPk] : null;
+    final modelDbId = row['model_pk'] as int?;
+    final groupId = modelDbId != null ? modelToGroup[modelDbId] : null;
 
     if (groupId != null) {
       groupCosts[groupId] = (groupCosts[groupId] ?? 0) + cost;

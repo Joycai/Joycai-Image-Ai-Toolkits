@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/app_file.dart';
+import '../models/app_image.dart';
 
-class WindowState extends ChangeNotifier {
+class WorkbenchUIState extends ChangeNotifier {
   // Preview State
-  List<AppFile> previewImages = [];
+  List<AppImage> previewImages = [];
   int activePreviewIndex = 0;
   final List<String> openedPreviewPaths = []; // Kept for minimal compatibility if needed
 
@@ -15,10 +15,10 @@ class WindowState extends ChangeNotifier {
   bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
 
   // Mask Editor State
-  AppFile? maskEditorSourceImage;
+  AppImage? maskEditorSourceImage;
 
   // Preview Methods
-  void setPreviewList(List<AppFile> images, int initialIndex) {
+  void setPreviewList(List<AppImage> images, int initialIndex) {
     previewImages = List.from(images);
     activePreviewIndex = initialIndex.clamp(0, previewImages.isEmpty ? 0 : previewImages.length - 1);
     notifyListeners();
@@ -71,7 +71,7 @@ class WindowState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setMaskEditorSourceImage(AppFile? image) {
+  void setMaskEditorSourceImage(AppImage? image) {
     maskEditorSourceImage = image;
     notifyListeners();
   }

@@ -7,7 +7,7 @@ class ModelSelectionSection extends StatelessWidget {
   final List<Map<String, dynamic>> availableModels;
   final List<Map<String, dynamic>> channels;
   final int? selectedChannelId;
-  final int? selectedModelPk;
+  final int? selectedModelDbId;
   final AppAspectRatio aspectRatio;
   final AppResolution resolution;
   final bool isExpanded;
@@ -22,7 +22,7 @@ class ModelSelectionSection extends StatelessWidget {
     required this.availableModels,
     required this.channels,
     required this.selectedChannelId,
-    required this.selectedModelPk,
+    required this.selectedModelDbId,
     required this.aspectRatio,
     required this.resolution,
     required this.isExpanded,
@@ -61,9 +61,9 @@ class ModelSelectionSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      if (!isExpanded && selectedModelPk != null)
+                      if (!isExpanded && selectedModelDbId != null)
                         Text(
-                          availableModels.firstWhere((m) => m['id'] == selectedModelPk)['model_name'],
+                          availableModels.firstWhere((m) => m['id'] == selectedModelDbId)['model_name'],
                           style: TextStyle(fontSize: 11, color: colorScheme.outline),
                         ),
                     ],
@@ -96,8 +96,8 @@ class ModelSelectionSection extends StatelessWidget {
                     Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                     DropdownButton<int>(
                       isExpanded: true,
-                      value: (filteredModels.any((m) => m['id'] == selectedModelPk)) 
-                          ? selectedModelPk 
+                      value: (filteredModels.any((m) => m['id'] == selectedModelDbId)) 
+                          ? selectedModelDbId 
                           : null,
                       hint: Text(l10n.selectAModel),
                       style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
@@ -113,10 +113,10 @@ class ModelSelectionSection extends StatelessWidget {
               ),
             ],
           ),
-          if (selectedModelPk != null)
+          if (selectedModelDbId != null)
             Builder(
               builder: (context) {
-                final model = availableModels.firstWhere((m) => m['id'] == selectedModelPk, orElse: () => {});
+                final model = availableModels.firstWhere((m) => m['id'] == selectedModelDbId, orElse: () => {});
                 if (model.isNotEmpty) {
                   return _buildModelSpecificOptions(context, model['model_id'] as String, l10n);
                 }

@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../core/app_paths.dart';
-import '../models/fee_group.dart';
+import '../models/pricing_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/prompt.dart';
@@ -92,7 +92,7 @@ class DatabaseService {
   Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
   Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);
-  Future<List<double>> getTaskDurations(int modelPk, int limit) => TaskRepository().getTaskDurations(modelPk, limit);
+  Future<List<double>> getTaskDurations(int modelDbId, int limit) => TaskRepository().getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
   Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
@@ -118,8 +118,8 @@ class DatabaseService {
   Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
   Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);
   Future<List<LLMModel>> getModels() => ModelRepository().getModels();
-  Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) 
-      => ModelRepository().updateModelEstimation(modelPk, mean, sd, tasksSinceUpdate);
+  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) 
+      => ModelRepository().updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
   Future<void> saveSetting(String key, String value) async {
@@ -185,11 +185,11 @@ class DatabaseService {
     return await db.query('source_directories');
   }
 
-  // Fee Groups Methods
-  Future<int> addFeeGroup(Map<String, dynamic> group) => ModelRepository().addFeeGroup(FeeGroup.fromMap(group));
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) => ModelRepository().updateFeeGroup(id, FeeGroup.fromMap(group));
-  Future<void> deleteFeeGroup(int id) => ModelRepository().deleteFeeGroup(id);
-  Future<List<FeeGroup>> getFeeGroups() => ModelRepository().getFeeGroups();
+  // Pricing Groups Methods
+  Future<int> addPricingGroup(Map<String, dynamic> group) => ModelRepository().addPricingGroup(PricingGroup.fromMap(group));
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => ModelRepository().updatePricingGroup(id, PricingGroup.fromMap(group));
+  Future<void> deletePricingGroup(int id) => ModelRepository().deletePricingGroup(id);
+  Future<List<PricingGroup>> getPricingGroups() => ModelRepository().getPricingGroups();
 
   // LLM Channels Methods
   Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
@@ -310,8 +310,8 @@ class DatabaseService {
       );
 
       final channelIdMap = await _importChannels(txn, data['llm_channels']);
-      final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
-      final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, feeGroupIdMap);
+      final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
+      final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
       
       if (data['downloader_cookies'] != null) {
         await _importSimpleTable(txn, 'downloader_cookies', data['downloader_cookies']);
@@ -434,14 +434,14 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
-  Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> feeGroupIdMap) async {
+  Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> pricingGroupIdMap) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
     for (var m in rows) {
       final oldId = m['id'] as int;
       final Map<String, dynamic> row = Map.from(m)..remove('id');
       if (row['channel_id'] != null) row['channel_id'] = channelIdMap[row['channel_id']];
-      if (row['fee_group_id'] != null) row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
+      if (row['fee_group_id'] != null) row['fee_group_id'] = pricingGroupIdMap[row['fee_group_id']];
       final newId = await txn.insert('llm_models', row);
       idMap[oldId] = newId;
     }
@@ -540,7 +540,7 @@ class DatabaseService {
     return idMap;
   }
 
-  Future<Map<int, int>> _importFeeGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
+  Future<Map<int, int>> _importPricingGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
     for (var g in rows) {

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
-import '../../../state/window_state.dart';
+import '../../../state/workbench_ui_state.dart';
 
 class MetadataInspector extends StatefulWidget {
   final ScrollController? scrollController;
@@ -17,7 +17,7 @@ class _MetadataInspectorState extends State<MetadataInspector> {
   Map<String, String>? _rawMetadata;
   Map<String, String>? _afterMetadata;
   bool _isLoading = false;
-  WindowState? _windowState;
+  WorkbenchUIState? _workbenchUIState;
 
   @override
   void initState() {
@@ -28,25 +28,25 @@ class _MetadataInspectorState extends State<MetadataInspector> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_windowState == null) {
-      _windowState = Provider.of<WindowState>(context, listen: false);
-      _windowState!.addListener(_onWindowStateChanged);
+    if (_workbenchUIState == null) {
+      _workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+      _workbenchUIState!.addListener(_onWorkbenchUIStateChanged);
     }
   }
 
-  void _onWindowStateChanged() {
+  void _onWorkbenchUIStateChanged() {
     _loadMetadata();
   }
 
   @override
   void dispose() {
-    _windowState?.removeListener(_onWindowStateChanged);
+    _workbenchUIState?.removeListener(_onWorkbenchUIStateChanged);
     super.dispose();
   }
 
   Future<void> _loadMetadata() async {
     // Access state via stored reference if available, or provider (safely)
-    final state = _windowState ?? Provider.of<WindowState>(context, listen: false);
+    final state = _workbenchUIState ?? Provider.of<WorkbenchUIState>(context, listen: false);
     
     if (state.comparatorRawPath == null && state.comparatorAfterPath == null) {
       if (mounted) setState(() { _rawMetadata = null; _afterMetadata = null; });

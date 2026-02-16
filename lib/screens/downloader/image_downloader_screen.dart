@@ -84,11 +84,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
     
-    if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-       state.selectedModelPk = appState.chatModels.first.id;
+    if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
+       state.selectedModelDbId = appState.chatModels.first.id;
     }
     
-    if (state.selectedModelPk == null) {
+    if (state.selectedModelDbId == null) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +111,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       final results = await WebScraperService().discoverImages(
         url: _urlController.text,
         requirement: _requirementController.text,
-        modelIdentifier: state.selectedModelPk!,
+        modelIdentifier: state.selectedModelDbId!,
         cookies: _cookieController.text,
         manualHtml: state.isManualHtml ? state.manualHtml : null,
         onLog: state.addLog,
@@ -182,7 +182,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final urls = selected.map((img) => img.url).toList();
     appState.taskQueue.addTask(
       urls,
-      state.selectedModelPk,
+      state.selectedModelDbId,
       {
         'url': _urlController.text,
         'prefix': _prefixController.text,
@@ -263,8 +263,8 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final size = MediaQuery.of(context).size;
     final isNarrow = size.width < 900;
 
-    if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-      state.selectedModelPk = appState.chatModels.first.id;
+    if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
+      state.selectedModelDbId = appState.chatModels.first.id;
     }
 
     final controlPanel = Column(

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
-import '../models/app_file.dart';
-import '../models/fee_group.dart';
+import '../models/app_image.dart';
+import '../models/pricing_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/log_entry.dart';
@@ -16,10 +16,10 @@ import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
-import 'browser_state.dart';
+import 'file_browser_state.dart';
 import 'downloader_state.dart';
 import 'gallery_state.dart';
-import 'window_state.dart';
+import 'workbench_ui_state.dart';
 
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
@@ -29,15 +29,15 @@ class AppState extends ChangeNotifier {
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
-  final BrowserState browserState = BrowserState();
-  final WindowState windowState = WindowState();
+  final FileBrowserState fileBrowserState = FileBrowserState();
+  final WorkbenchUIState workbenchUIState = WorkbenchUIState();
 
   AppState._internal() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
-    browserState.addListener(notifyListeners);
-    windowState.addListener(notifyListeners);
+    fileBrowserState.addListener(notifyListeners);
+    workbenchUIState.addListener(notifyListeners);
     
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
@@ -116,11 +116,11 @@ class AppState extends ChangeNotifier {
   // Data cache
   List<LLMModel> _models = [];
   List<LLMChannel> _channels = [];
-  List<FeeGroup> _feeGroups = [];
+  List<PricingGroup> _pricingGroups = [];
 
   List<LLMModel> get allModels => _models;
   List<LLMChannel> get allChannels => _channels;
-  List<FeeGroup> get allFeeGroups => _feeGroups;
+  List<PricingGroup> get allPricingGroups => _pricingGroups;
 
   List<LLMModel> get imageModels => _models.where((m) => 
     m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
@@ -147,21 +147,21 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     galleryState.dispose();
-    browserState.dispose();
+    fileBrowserState.dispose();
     taskQueue.removeListener(notifyListeners);
     galleryState.removeListener(notifyListeners);
     downloaderState.removeListener(notifyListeners);
-    browserState.removeListener(notifyListeners);
-    windowState.removeListener(notifyListeners);
+    fileBrowserState.removeListener(notifyListeners);
+    workbenchUIState.removeListener(notifyListeners);
     _sidebarWidthSaveTimer?.cancel();
     super.dispose();
   }
 
   // Proxies for Gallery State
-  List<AppFile> get galleryImages => galleryState.galleryImages;
-  List<AppFile> get processedImages => galleryState.processedImages;
-  List<AppFile> get selectedImages => galleryState.selectedImages;
-  List<AppFile> get droppedImages => galleryState.droppedImages;
+  List<AppImage> get galleryImages => galleryState.galleryImages;
+  List<AppImage> get processedImages => galleryState.processedImages;
+  List<AppImage> get selectedImages => galleryState.selectedImages;
+  List<AppImage> get droppedImages => galleryState.droppedImages;
   
   String? get outputDirectory => galleryState.outputDirectory;
   String get imagePrefix => galleryState.imagePrefix;
@@ -172,7 +172,7 @@ class AppState extends ChangeNotifier {
   Future<void> updateOutputDirectory(String path) => galleryState.updateOutputDirectory(path);
   Future<void> setImagePrefix(String prefix) => galleryState.setImagePrefix(prefix);
   void clearImageSelection() => galleryState.clearImageSelection();
-  void toggleImageSelection(AppFile image) => galleryState.toggleImageSelection(image);
+  void toggleImageSelection(AppImage image) => galleryState.toggleImageSelection(image);
   Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
   Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
   Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);
@@ -181,8 +181,8 @@ class AppState extends ChangeNotifier {
   void selectAllImages() => galleryState.selectAllImages();
 
   // Browser State Proxies
-  Set<String> get unreachableBrowserDirectories => browserState.unreachableDirectories;
-  int get browserRefreshCounter => browserState.refreshCounter;
+  Set<String> get unreachableBrowserDirectories => fileBrowserState.unreachableDirectories;
+  int get browserRefreshCounter => fileBrowserState.refreshCounter;
 
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
@@ -249,8 +249,8 @@ class AppState extends ChangeNotifier {
     
     _models = await _db.getModels();
     _channels = await _db.getChannels();
-    _feeGroups = await _db.getFeeGroups();
-    
+    _pricingGroups = await _db.getPricingGroups();
+
     await downloaderState.loadCookieHistory();
 
     settingsLoaded = true;
@@ -440,11 +440,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Model, Channel & Fee Group Management
+  // Model, Channel & Pricing Group Management
   Future<void> refreshDataCache() async {
     _models = await _db.getModels();
     _channels = await _db.getChannels();
-    _feeGroups = await _db.getFeeGroups();
+    _pricingGroups = await _db.getPricingGroups();
     notifyListeners();
   }
 
@@ -485,20 +485,20 @@ class AppState extends ChangeNotifier {
     await refreshDataCache();
   }
 
-  // Fee Group Management
-  Future<int> addFeeGroup(Map<String, dynamic> group) async {
-    final id = await _db.addFeeGroup(group);
+  // Pricing Group Management
+  Future<int> addPricingGroup(Map<String, dynamic> group) async {
+    final id = await _db.addPricingGroup(group);
     await refreshDataCache();
     return id;
   }
 
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) async {
-    await _db.updateFeeGroup(id, group);
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {
+    await _db.updatePricingGroup(id, group);
     await refreshDataCache();
   }
 
-  Future<void> deleteFeeGroup(int id) async {
-    await _db.deleteFeeGroup(id);
+  Future<void> deletePricingGroup(int id) async {
+    await _db.deletePricingGroup(id);
     await refreshDataCache();
   }
 

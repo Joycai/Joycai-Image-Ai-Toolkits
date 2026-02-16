@@ -8,12 +8,12 @@ import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import 'directory_tree_item.dart';
 
-class SourceExplorerWidget extends StatelessWidget {
-  final bool useBrowserState;
+class FolderList extends StatelessWidget {
+  final bool useFileBrowserState;
 
-  const SourceExplorerWidget({
+  const FolderList({
     super.key,
-    this.useBrowserState = false,
+    this.useFileBrowserState = false,
   });
 
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
@@ -24,8 +24,8 @@ class SourceExplorerWidget extends StatelessWidget {
       );
 
       if (selectedDirectory != null) {
-        if (useBrowserState) {
-          appState.browserState.addBaseDirectory(selectedDirectory);
+        if (useFileBrowserState) {
+          appState.fileBrowserState.addBaseDirectory(selectedDirectory);
         } else {
           appState.addBaseDirectory(selectedDirectory);
         }
@@ -42,8 +42,8 @@ class SourceExplorerWidget extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final galleryState = appState.galleryState;
 
-    final sourceDirectories = useBrowserState 
-        ? appState.browserState.sourceDirectories 
+    final sourceDirectories = useFileBrowserState 
+        ? appState.fileBrowserState.sourceDirectories 
         : appState.sourceDirectories;
 
     return Column(
@@ -91,7 +91,7 @@ class SourceExplorerWidget extends StatelessWidget {
           const Divider(height: 1),
           
           // Fixed Nodes
-          if (!useBrowserState) ...[
+          if (!useFileBrowserState) ...[
             _buildFixedNode(
               context,
               icon: Icons.workspaces_outline,
@@ -143,7 +143,7 @@ class SourceExplorerWidget extends StatelessWidget {
                         key: ValueKey(path),
                         path: path,
                         isRoot: true,
-                        useBrowserState: useBrowserState,
+                        useFileBrowserState: useFileBrowserState,
                         onRemove: (p, name) => _confirmRemove(context, appState, p, name),
                       );
                     },
@@ -193,8 +193,8 @@ class SourceExplorerWidget extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              if (useBrowserState) {
-                appState.browserState.removeBaseDirectory(path);
+              if (useFileBrowserState) {
+                appState.fileBrowserState.removeBaseDirectory(path);
               } else {
                 appState.removeBaseDirectory(path);
               }

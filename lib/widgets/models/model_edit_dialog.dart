@@ -128,7 +128,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             isExpanded: true,
             items: [
               DropdownMenuItem(value: null, child: Text(l10n.noFeeGroup, style: TextStyle(color: colorScheme.outline))),
-              ...appState.allFeeGroups.map((g) => DropdownMenuItem(
+              ...appState.allPricingGroups.map((g) => DropdownMenuItem(
                 value: g.id!, 
                 child: Text(g.name),
               )),

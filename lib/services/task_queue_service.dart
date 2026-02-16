@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/llm_model.dart';
 import 'database_service.dart';
-import 'llm/llm_models.dart';
+import 'llm/llm_types.dart';
 import 'llm/llm_service.dart';
 import 'web_scraper_service.dart';
 
@@ -23,7 +23,7 @@ class TaskItem {
   final List<String> imagePaths;
   final Map<String, dynamic> parameters;
   final String modelId; // Legacy string ID
-  final int? modelPk;   // New internal ID
+  final int? modelDbId;   // New internal ID
   final String? channelTag;
   final int? channelColor;
   TaskStatus status;
@@ -38,7 +38,7 @@ class TaskItem {
     this.type = TaskType.imageProcess,
     required this.imagePaths,
     required this.modelId,
-    this.modelPk,
+    this.modelDbId,
     this.channelTag,
     this.channelColor,
     required this.parameters,
@@ -61,7 +61,7 @@ class TaskItem {
       'type': type.name,
       'image_path': jsonEncode(imagePaths),
       'model_id': modelId,
-      'model_pk': modelPk,
+      'model_pk': modelDbId,
       'channel_tag': channelTag,
       'channel_color': channelColor,
       'status': status.name,
@@ -78,7 +78,7 @@ class TaskItem {
       type: TaskType.values.firstWhere((e) => e.name == (map['type'] ?? 'imageProcess'), orElse: () => TaskType.imageProcess),
       imagePaths: List<String>.from(jsonDecode(map['image_path'])),
       modelId: map['model_id'] ?? 'unknown',
-      modelPk: map['model_pk'] as int?,
+      modelDbId: map['model_pk'] as int?,
       channelTag: map['channel_tag'] as String?,
       channelColor: map['channel_color'] as int?,
       status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
@@ -119,17 +119,17 @@ class TaskQueueService extends ChangeNotifier {
 
   Future<void> addTask(List<String> imagePaths, dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay, TaskType type = TaskType.imageProcess}) async {
     String modelIdStr = modelIdDisplay ?? modelIdentifier.toString();
-    int? modelPk;
+    int? modelDbId;
     String? channelTag;
     int? channelColor;
 
     final db = DatabaseService();
 
     if (modelIdentifier is int) {
-      modelPk = modelIdentifier;
+      modelDbId = modelIdentifier;
       // Fetch model and channel info for visual continuity in history
       final models = await db.getModels();
-      final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
+      final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
       if (model != null) {
         final channelId = model.channelId;
         if (channelId != null) {
@@ -147,7 +147,7 @@ class TaskQueueService extends ChangeNotifier {
       type: type,
       imagePaths: imagePaths,
       modelId: modelIdStr,
-      modelPk: modelPk,
+      modelDbId: modelDbId,
       channelTag: channelTag,
       channelColor: channelColor,
       parameters: params,
@@ -247,8 +247,8 @@ class TaskQueueService extends ChangeNotifier {
       task.endTime = DateTime.now();
       
       // Update Estimation Checkpoint
-      if (task.status == TaskStatus.completed && task.modelPk != null) {
-        _handleEstimationCheckpoint(task.modelPk!);
+      if (task.status == TaskStatus.completed && task.modelDbId != null) {
+        _handleEstimationCheckpoint(task.modelDbId!);
       }
 
       _runningCount--;
@@ -259,25 +259,25 @@ class TaskQueueService extends ChangeNotifier {
     }
   }
 
-  Future<void> _handleEstimationCheckpoint(int modelPk) async {
+  Future<void> _handleEstimationCheckpoint(int modelDbId) async {
     final db = DatabaseService();
     final models = await db.getModels();
-    final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelPk, orElse: () => null);
+    final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
     
     if (model != null) {
       int count = model.tasksSinceUpdate + 1;
       final mean = model.estMeanMs ?? 0.0;
       
       if (count >= 10 || mean == 0) {
-        await _updateModelCheckpoint(modelPk);
+        await _updateModelCheckpoint(modelDbId);
       } else {
-        await db.updateModelEstimation(modelPk, mean, model.estSdMs ?? 0.0, count);
+        await db.updateModelEstimation(modelDbId, mean, model.estSdMs ?? 0.0, count);
       }
     }
   }
 
   Future<void> _executeImageProcessTask(TaskItem task) async {
-    task.addLog('Start processing with model: ${task.modelPk ?? task.modelId}');
+    task.addLog('Start processing with model: ${task.modelDbId ?? task.modelId}');
     
     final db = DatabaseService();
     final outputDir = await db.getSetting('output_directory');
@@ -290,7 +290,7 @@ class TaskQueueService extends ChangeNotifier {
     ).toList();
 
     final stream = LLMService().requestStream(
-      modelIdentifier: task.modelPk ?? task.modelId,
+      modelIdentifier: task.modelDbId ?? task.modelId,
       messages: [
         LLMMessage(
           role: LLMRole.user,
@@ -431,7 +431,7 @@ class TaskQueueService extends ChangeNotifier {
         hasActive = true;
         // Find checkpoint for this model
         final model = models.cast<LLMModel?>().firstWhere(
-          (m) => m?.id == task.modelPk, 
+          (m) => m?.id == task.modelDbId, 
           orElse: () => null
         );
 
@@ -455,9 +455,9 @@ class TaskQueueService extends ChangeNotifier {
     }
   }
 
-  Future<void> _updateModelCheckpoint(int modelPk) async {
+  Future<void> _updateModelCheckpoint(int modelDbId) async {
     final db = DatabaseService();
-    final durations = await db.getTaskDurations(modelPk, 50);
+    final durations = await db.getTaskDurations(modelDbId, 50);
     
     if (durations.length >= 3) {
       // Calculate Mean
@@ -466,7 +466,7 @@ class TaskQueueService extends ChangeNotifier {
       final variance = durations.map((d) => math.pow(d - mean, 2)).reduce((a, b) => a + b) / durations.length;
       final sd = math.sqrt(variance);
       
-      await db.updateModelEstimation(modelPk, mean, sd, 0);
+      await db.updateModelEstimation(modelDbId, mean, sd, 0);
     }
   }
 }

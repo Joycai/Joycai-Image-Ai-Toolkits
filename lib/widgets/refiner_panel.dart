@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
+import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
 import 'chat_model_selector.dart';
@@ -16,7 +16,7 @@ import 'markdown_editor.dart';
 
 class AIPromptRefiner extends StatefulWidget {
   final String initialPrompt;
-  final List<AppFile> selectedImages;
+  final List<AppImage> selectedImages;
   final Function(String) onApply;
 
   const AIPromptRefiner({
@@ -38,7 +38,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
   List<SystemPrompt> _filteredSysPrompts = [];
   List<PromptTag> _tags = [];
   
-  int? _selectedModelPk;
+  int? _selectedModelDbId;
   int? _selectedTagId;
   String? _selectedSysPrompt;
   bool _isRefining = false;
@@ -72,7 +72,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
           _applyFilter();
           
           if (appState.chatModels.isNotEmpty) {
-            _selectedModelPk = appState.chatModels.first.id;
+            _selectedModelDbId = appState.chatModels.first.id;
           }
           if (_filteredSysPrompts.isNotEmpty) _selectedSysPrompt = _filteredSysPrompts.first.content;
           _isLoadingData = false;
@@ -100,7 +100,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
   Future<void> _refine() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_selectedModelPk == null) {
+    if (_selectedModelDbId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -129,7 +129,7 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
       ).toList();
 
       final response = await LLMService().request(
-        modelIdentifier: _selectedModelPk!,
+        modelIdentifier: _selectedModelDbId!,
         useStream: false,
         messages: [
           if (_selectedSysPrompt != null)
@@ -411,9 +411,9 @@ class _AIPromptRefinerState extends State<AIPromptRefiner> {
 
   Widget _buildModelSelector(AppLocalizations l10n, AppState appState) {
     return ChatModelSelector(
-      selectedModelId: _selectedModelPk,
+      selectedModelId: _selectedModelDbId,
       label: l10n.refinerModel,
-      onChanged: (v) => setState(() => _selectedModelPk = v),
+      onChanged: (v) => setState(() => _selectedModelDbId = v),
     );
   }
 

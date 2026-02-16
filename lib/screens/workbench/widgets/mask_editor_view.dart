@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../state/window_state.dart';
+import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drawing_canvas.dart';
 
 class MaskEditorView extends StatefulWidget {
@@ -47,8 +47,8 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   }
 
   Future<void> _checkImageChange() async {
-    final windowState = Provider.of<WindowState>(context);
-    final sourceImage = windowState.maskEditorSourceImage;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
+    final sourceImage = workbenchUIState.maskEditorSourceImage;
 
     if (sourceImage != null && sourceImage.path != _lastPath) {
       _lastPath = sourceImage.path;
@@ -81,8 +81,8 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final windowState = Provider.of<WindowState>(context);
-    final sourceImage = windowState.maskEditorSourceImage;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
+    final sourceImage = workbenchUIState.maskEditorSourceImage;
 
     if (sourceImage == null) {
       return Center(

@@ -1,6 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../models/fee_group.dart';
+import '../../models/pricing_group.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../database_service.dart';
@@ -41,7 +41,7 @@ class ModelRepository {
     return maps.map((m) => LLMModel.fromMap(m)).toList();
   }
 
-  Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) async {
+  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) async {
     final db = await _db;
     await db.update(
       'llm_models',
@@ -51,7 +51,7 @@ class ModelRepository {
         'tasks_since_update': tasksSinceUpdate,
       },
       where: 'id = ?',
-      whereArgs: [modelPk],
+      whereArgs: [modelDbId],
     );
   }
 
@@ -87,26 +87,26 @@ class ModelRepository {
     return null;
   }
 
-  // Fee Groups Methods
-  Future<int> addFeeGroup(FeeGroup group) async {
+  // Pricing Groups Methods
+  Future<int> addPricingGroup(PricingGroup group) async {
     final db = await _db;
     return await db.insert('fee_groups', group.toMap(includeId: false));
   }
 
-  Future<void> updateFeeGroup(int id, FeeGroup group) async {
+  Future<void> updatePricingGroup(int id, PricingGroup group) async {
     final db = await _db;
     await db.update('fee_groups', group.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> deleteFeeGroup(int id) async {
+  Future<void> deletePricingGroup(int id) async {
     final db = await _db;
     await db.update('llm_models', {'fee_group_id': null}, where: 'fee_group_id = ?', whereArgs: [id]);
     await db.delete('fee_groups', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<List<FeeGroup>> getFeeGroups() async {
+  Future<List<PricingGroup>> getPricingGroups() async {
     final db = await _db;
     final maps = await db.query('fee_groups');
-    return maps.map((m) => FeeGroup.fromMap(m)).toList();
+    return maps.map((m) => PricingGroup.fromMap(m)).toList();
   }
 }

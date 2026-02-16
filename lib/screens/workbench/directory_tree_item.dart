@@ -11,14 +11,14 @@ import '../../state/gallery_state.dart';
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
-  final bool useBrowserState;
+  final bool useFileBrowserState;
   final Function(String, String)? onRemove; // Only needed for roots
 
   const DirectoryTreeItem({
     super.key,
     required this.path,
     this.isRoot = false,
-    this.useBrowserState = false,
+    this.useFileBrowserState = false,
     this.onRemove,
   });
 
@@ -36,7 +36,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final appState = Provider.of<AppState>(context);
-    final currentCounter = widget.useBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
+    final currentCounter = widget.useFileBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
     
     if (currentCounter != _lastRefreshCounter) {
       _lastRefreshCounter = currentCounter;
@@ -54,17 +54,17 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     if (newPath != null) {
       // If it was a root, we might need to replace it in the list
       if (widget.isRoot) {
-        if (widget.useBrowserState) {
-          await appState.browserState.removeBaseDirectory(widget.path);
-          await appState.browserState.addBaseDirectory(newPath);
+        if (widget.useFileBrowserState) {
+          await appState.fileBrowserState.removeBaseDirectory(widget.path);
+          await appState.fileBrowserState.addBaseDirectory(newPath);
         } else {
           await appState.removeBaseDirectory(widget.path);
           await appState.addBaseDirectory(newPath);
         }
       } else {
         // Just refresh the whole state
-        if (widget.useBrowserState) {
-          appState.browserState.refresh();
+        if (widget.useFileBrowserState) {
+          appState.fileBrowserState.refresh();
         } else {
           appState.galleryState.refreshImages();
         }
@@ -120,20 +120,20 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   Widget build(BuildContext context) {
     // Listen to selection changes efficiently based on the target state
     final isSelected = context.select<AppState, bool>((state) {
-      if (widget.useBrowserState) {
-        return state.browserState.activeDirectories.contains(widget.path);
+      if (widget.useFileBrowserState) {
+        return state.fileBrowserState.activeDirectories.contains(widget.path);
       } else {
         return state.activeSourceDirectories.contains(widget.path);
       }
     });
 
     final isViewing = context.select<AppState, bool>((state) {
-      if (widget.useBrowserState) return false;
+      if (widget.useFileBrowserState) return false;
       return state.galleryState.viewMode == GalleryViewMode.folder && state.galleryState.viewSourcePath == widget.path;
     });
     
     final appState = Provider.of<AppState>(context, listen: false);
-    final isUnreachable = widget.useBrowserState 
+    final isUnreachable = widget.useFileBrowserState 
         ? appState.unreachableBrowserDirectories.contains(widget.path)
         : appState.galleryState.unreachableDirectories.contains(widget.path);
     final folderName = p.basename(widget.path);
@@ -164,8 +164,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 Checkbox(
                   value: isSelected,
                   onChanged: (_) {
-                    if (widget.useBrowserState) {
-                      appState.browserState.toggleDirectory(widget.path);
+                    if (widget.useFileBrowserState) {
+                      appState.fileBrowserState.toggleDirectory(widget.path);
                     } else {
                       appState.toggleDirectory(widget.path);
                     }
@@ -186,7 +186,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             onTap: () {
               if (isUnreachable) {
                 _reAuthorize(context, appState);
-              } else if (!widget.useBrowserState) {
+              } else if (!widget.useFileBrowserState) {
                 appState.galleryState.setViewFolder(widget.path);
               }
             },
@@ -248,7 +248,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 return DirectoryTreeItem(
                   path: dir.path,
                   isRoot: false,
-                  useBrowserState: widget.useBrowserState,
+                  useFileBrowserState: widget.useFileBrowserState,
                   // onRemove not needed for children
                 );
               }).toList(),

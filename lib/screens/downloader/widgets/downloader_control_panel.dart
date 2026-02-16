@@ -70,10 +70,10 @@ class DownloaderControlPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ChatModelSelector(
-                  selectedModelId: state.selectedModelPk,
+                  selectedModelId: state.selectedModelDbId,
                   label: l10n.analysisModel,
                   prefixIcon: Icons.psychology,
-                  onChanged: (v) => state.setState(selectedModelPk: v),
+                  onChanged: (v) => state.setState(selectedModelDbId: v),
                 ),
               ],
             ),

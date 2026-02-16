@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../state/browser_state.dart';
+import '../../../state/file_browser_state.dart';
 
 class BrowserToolbar extends StatelessWidget {
-  final BrowserState state;
+  final FileBrowserState state;
   final VoidCallback onAiRename;
 
   const BrowserToolbar({

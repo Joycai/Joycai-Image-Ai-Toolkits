@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
+import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
@@ -14,15 +14,15 @@ import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 
-class ControlPanelWidget extends StatefulWidget {
+class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
-  const ControlPanelWidget({super.key, this.scrollController});
+  const WorkbenchConfigPanel({super.key, this.scrollController});
 
   @override
-  State<ControlPanelWidget> createState() => _ControlPanelWidgetState();
+  State<WorkbenchConfigPanel> createState() => _WorkbenchConfigPanelState();
 }
 
-class _ControlPanelWidgetState extends State<ControlPanelWidget> {
+class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   late TextEditingController _promptController;
   late TextEditingController _prefixController;
   
@@ -61,12 +61,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     }
   }
 
-  void _updateConfig({int? modelPk, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt}) {
+  void _updateConfig({int? modelDbId, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt}) {
     final appState = Provider.of<AppState>(context, listen: false);
     
     String? idToSave;
-    if (modelPk != null) {
-      idToSave = modelPk.toString(); // Save PK as string
+    if (modelDbId != null) {
+      idToSave = modelDbId.toString(); // Save PK as string
     }
 
     appState.updateWorkbenchConfig(
@@ -90,7 +90,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
     
     // Determine selected model from AppState
-    int? selectedModelPk;
+    int? selectedModelDbId;
     int? selectedChannelId;
     
     if (imageModels.isNotEmpty) {
@@ -101,12 +101,12 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       );
       
       if (match != null) {
-        selectedModelPk = match.id;
+        selectedModelDbId = match.id;
         selectedChannelId = match.channelId;
       } else {
         // Default to first
         final first = imageModels.first;
-        selectedModelPk = first.id;
+        selectedModelDbId = first.id;
         selectedChannelId = first.channelId;
       }
     }
@@ -136,7 +136,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Selector<AppState, List<AppFile>>(
+            Selector<AppState, List<AppImage>>(
               selector: (_, s) => s.selectedImages,
               builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
             ),
@@ -147,7 +147,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               availableModels: imageModels.map((m) => m.toMap()).toList(),
               channels: allChannels.map((c) => c.toMap()).toList(),
               selectedChannelId: selectedChannelId,
-              selectedModelPk: selectedModelPk,
+              selectedModelDbId: selectedModelDbId,
               aspectRatio: lastAspectRatio,
               resolution: lastResolution,
               isExpanded: _isModelSettingsExpanded,
@@ -155,13 +155,13 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               onChannelChanged: (val) {
                 final appState = Provider.of<AppState>(context, listen: false);
                 final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
-                final newPk = firstInChannel?.id;
-                if (newPk != null) {
-                  _updateConfig(modelPk: newPk);
+                final newDbId = firstInChannel?.id;
+                if (newDbId != null) {
+                  _updateConfig(modelDbId: newDbId);
                 }
               },
               onModelChanged: (val) {
-                _updateConfig(modelPk: val);
+                _updateConfig(modelDbId: val);
               },
               onAspectRatioChanged: (v) {
                 _updateConfig(ar: v);
@@ -243,7 +243,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                           ? null 
                           : () {
                               final appState = Provider.of<AppState>(context, listen: false);
-                              if (selectedModelPk == null) {
+                              if (selectedModelDbId == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(l10n.noModelsConfigured),
@@ -256,10 +256,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                                 return;
                               }
 
-                              final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
+                              final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
                               final modelName = selectedModel.modelName;
                               
-                              appState.submitTask(selectedModelPk, {
+                              appState.submitTask(selectedModelDbId, {
                                 'prompt': _promptController.text,
                                 'aspectRatio': lastAspectRatio.value,
                                 'imageSize': lastResolution.value,
@@ -388,7 +388,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  Widget _buildSelectionPreview(BuildContext context, List<AppFile> selectedImages, ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildSelectionPreview(BuildContext context, List<AppImage> selectedImages, ColorScheme colorScheme, AppLocalizations l10n) {
     if (selectedImages.isEmpty) {
       return AspectRatio(
         aspectRatio: 16 / 9,

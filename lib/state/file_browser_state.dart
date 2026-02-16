@@ -59,7 +59,7 @@ enum BrowserSortField {
   type,
 }
 
-class BrowserState extends ChangeNotifier {
+class FileBrowserState extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   
   List<BrowserFile> allFiles = [];
@@ -79,7 +79,7 @@ class BrowserState extends ChangeNotifier {
   int _refreshCounter = 0;
   int get refreshCounter => _refreshCounter;
   
-  BrowserState() {
+  FileBrowserState() {
     _loadSettings();
   }
 

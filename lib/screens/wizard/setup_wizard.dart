@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';

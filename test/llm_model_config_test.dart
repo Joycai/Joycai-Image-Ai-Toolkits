@@ -1,13 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/llm_models.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 void main() {
   group('LLMModelConfig', () {
     test('Initialization should set correct values', () {
-      final config = LLMModelConfig(
-        pk: 1,
-        modelId: 'test-model',
-        type: 'openai-api',
+            final config = LLMModelConfig(
+              id: 1,
+              modelId: 'test-model',        type: 'openai-api',
         channelType: 'openai',
         endpoint: 'https://api.openai.com/v1',
         apiKey: 'sk-123',
@@ -19,7 +18,7 @@ void main() {
         proxyUrl: 'http://localhost:8080',
       );
 
-      expect(config.pk, 1);
+      expect(config.id, 1);
       expect(config.modelId, 'test-model');
       expect(config.type, 'openai-api');
       expect(config.endpoint, 'https://api.openai.com/v1');

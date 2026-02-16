@@ -3,27 +3,27 @@ import 'package:provider/provider.dart';
 
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
-import '../models/fee_group.dart';
+import '../models/pricing_group.dart';
 import '../state/app_state.dart';
 
-enum FeeGroupManagerMode {
+enum PricingGroupManagerMode {
   section,
   fullPage
 }
 
-class FeeGroupManager extends StatelessWidget {
-  final FeeGroupManagerMode mode;
+class PricingGroupManager extends StatelessWidget {
+  final PricingGroupManagerMode mode;
 
-  const FeeGroupManager({
+  const PricingGroupManager({
     super.key,
-    this.mode = FeeGroupManagerMode.section,
+    this.mode = PricingGroupManagerMode.section,
   });
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
-    final groups = appState.allFeeGroups;
+    final groups = appState.allPricingGroups;
     final isMobile = Responsive.isMobile(context);
 
     if (groups.isEmpty) {
@@ -32,14 +32,14 @@ class FeeGroupManager extends StatelessWidget {
 
     Widget content = LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = mode == FeeGroupManagerMode.section 
+        final crossAxisCount = mode == PricingGroupManagerMode.section 
             ? 1 
             : (constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1));
         
         return GridView.builder(
-          shrinkWrap: mode == FeeGroupManagerMode.section,
-          physics: mode == FeeGroupManagerMode.section ? const NeverScrollableScrollPhysics() : null,
-          padding: mode == FeeGroupManagerMode.fullPage ? const EdgeInsets.all(24) : EdgeInsets.zero,
+          shrinkWrap: mode == PricingGroupManagerMode.section,
+          physics: mode == PricingGroupManagerMode.section ? const NeverScrollableScrollPhysics() : null,
+          padding: mode == PricingGroupManagerMode.fullPage ? const EdgeInsets.all(24) : EdgeInsets.zero,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
@@ -52,7 +52,7 @@ class FeeGroupManager extends StatelessWidget {
       },
     );
 
-    if (mode == FeeGroupManagerMode.fullPage) {
+    if (mode == PricingGroupManagerMode.fullPage) {
       return Scaffold(
         backgroundColor: Colors.transparent,
         floatingActionButton: isMobile ? FloatingActionButton.extended(
@@ -139,7 +139,7 @@ class FeeGroupManager extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupCard(BuildContext context, FeeGroup group, AppState appState, AppLocalizations l10n) {
+  Widget _buildGroupCard(BuildContext context, PricingGroup group, AppState appState, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     final isToken = group.billingMode == 'token';
 
@@ -214,7 +214,7 @@ class FeeGroupManager extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, AppState appState, AppLocalizations l10n, FeeGroup group) {
+  void _confirmDelete(BuildContext context, AppState appState, AppLocalizations l10n, PricingGroup group) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -225,7 +225,7 @@ class FeeGroupManager extends StatelessWidget {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await appState.deleteFeeGroup(group.id!);
+              await appState.deletePricingGroup(group.id!);
               if (context.mounted) Navigator.pop(context);
             },
             child: Text(l10n.delete),
@@ -235,13 +235,13 @@ class FeeGroupManager extends StatelessWidget {
     );
   }
 
-  void _showGroupEditor(BuildContext context, AppState appState, AppLocalizations l10n, {FeeGroup? group}) {
+  void _showGroupEditor(BuildContext context, AppState appState, AppLocalizations l10n, {PricingGroup? group}) {
     if (Responsive.isMobile(context)) {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (context) => _FeeGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: true),
+        builder: (context) => _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: true),
       );
     } else {
       showDialog(
@@ -250,7 +250,7 @@ class FeeGroupManager extends StatelessWidget {
           title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
           content: SizedBox(
             width: 450,
-            child: _FeeGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: false),
+            child: _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: false),
           ),
         ),
       );
@@ -258,13 +258,13 @@ class FeeGroupManager extends StatelessWidget {
   }
 }
 
-class _FeeGroupEditor extends StatefulWidget {
+class _PricingGroupEditor extends StatefulWidget {
   final AppState appState;
   final AppLocalizations l10n;
-  final FeeGroup? group;
+  final PricingGroup? group;
   final bool isMobile;
 
-  const _FeeGroupEditor({
+  const _PricingGroupEditor({
     required this.appState,
     required this.l10n,
     this.group,
@@ -272,10 +272,10 @@ class _FeeGroupEditor extends StatefulWidget {
   });
 
   @override
-  State<_FeeGroupEditor> createState() => _FeeGroupEditorState();
+  State<_PricingGroupEditor> createState() => _PricingGroupEditorState();
 }
 
-class _FeeGroupEditorState extends State<_FeeGroupEditor> {
+class _PricingGroupEditorState extends State<_PricingGroupEditor> {
   late TextEditingController nameCtrl;
   late TextEditingController inputPriceCtrl;
   late TextEditingController outputPriceCtrl;
@@ -411,9 +411,9 @@ class _FeeGroupEditorState extends State<_FeeGroupEditor> {
       'request_price': double.tryParse(requestPriceCtrl.text) ?? 0.0,
     };
     if (widget.group == null) {
-      await widget.appState.addFeeGroup(data);
+      await widget.appState.addPricingGroup(data);
     } else {
-      await widget.appState.updateFeeGroup(widget.group!.id!, data);
+      await widget.appState.updatePricingGroup(widget.group!.id!, data);
     }
     if (mounted) {
       Navigator.pop(context);

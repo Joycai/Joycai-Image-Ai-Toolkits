@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/app_file.dart';
+import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 
@@ -95,7 +95,7 @@ class GalleryToolbar extends StatelessWidget {
                 final picker = ImagePicker();
                 final List<XFile> picked = await picker.pickMultiImage();
                 if (picked.isNotEmpty) {
-                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                  final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
                   galleryState.addDroppedFiles(newFiles);
                   galleryState.setViewMode(GalleryViewMode.temp);
                 }
@@ -111,7 +111,7 @@ class GalleryToolbar extends StatelessWidget {
                   final picker = ImagePicker();
                   final List<XFile> picked = await picker.pickMultiImage();
                   if (picked.isNotEmpty) {
-                    final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                    final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
                     galleryState.addDroppedFiles(newFiles);
                     galleryState.setViewMode(GalleryViewMode.temp);
                   }
@@ -157,7 +157,7 @@ class GalleryToolbar extends StatelessWidget {
                 final picker = ImagePicker();
                 final List<XFile> picked = await picker.pickMultiImage();
                 if (picked.isNotEmpty) {
-                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                  final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
                   galleryState.addDroppedFiles(newFiles);
                   galleryState.setViewMode(GalleryViewMode.temp);
                 }

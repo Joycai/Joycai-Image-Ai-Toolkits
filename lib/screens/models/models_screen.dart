@@ -5,7 +5,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
@@ -348,7 +348,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
     final colorScheme = Theme.of(context).colorScheme;
-    final feeGroup = appState.allFeeGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
+    final pricingGroup = appState.allPricingGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
 
     return Card(
       elevation: 0,
@@ -373,9 +373,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     Row(
                       children: [
                         Flexible(child: Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.outline), overflow: TextOverflow.ellipsis)),
-                        if (feeGroup != null) ...[
+                        if (pricingGroup != null) ...[
                           const SizedBox(width: 8),
-                          _buildFeeBadge(feeGroup.name, colorScheme),
+                          _buildFeeBadge(pricingGroup.name, colorScheme),
                         ],
                       ],
                     ),

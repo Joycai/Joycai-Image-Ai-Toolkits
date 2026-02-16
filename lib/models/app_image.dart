@@ -2,18 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-/// Cross-platform file abstraction
-class AppFile {
+/// Cross-platform image abstraction
+class AppImage {
   final String path;
   final String name;
 
-  AppFile({
+  AppImage({
     required this.path,
     required this.name,
   });
 
-  factory AppFile.fromFile(File file) {
-    return AppFile(
+  factory AppImage.fromFile(File file) {
+    return AppImage(
       path: file.path,
       name: file.path.split(Platform.pathSeparator).last,
     );
@@ -26,7 +26,7 @@ class AppFile {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AppFile && runtimeType == other.runtimeType && path == other.path;
+      other is AppImage && runtimeType == other.runtimeType && path == other.path;
 
   @override
   int get hashCode => path.hashCode;

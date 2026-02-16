@@ -12,26 +12,26 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
+import '../../models/app_image.dart';
 import '../../services/image_metadata_service.dart';
 import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
-import '../../state/window_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
 import 'widgets/image_preview_dialog.dart';
 
-class GalleryWidget extends StatefulWidget {
-  const GalleryWidget({
+class Gallery extends StatefulWidget {
+  const Gallery({
     super.key,
   });
 
   @override
-  State<GalleryWidget> createState() => _GalleryWidgetState();
+  State<Gallery> createState() => _GalleryState();
 }
 
-class _GalleryWidgetState extends State<GalleryWidget> {
+class _GalleryState extends State<Gallery> {
   bool _isDragging = false;
 
   @override
@@ -42,10 +42,10 @@ class _GalleryWidgetState extends State<GalleryWidget> {
 
     return DropTarget(
       onDragDone: (details) {
-        final List<AppFile> newFiles = [];
+        final List<AppImage> newFiles = [];
         for (var file in details.files) {
           if (AppConstants.isImageFile(file.path)) {
-            newFiles.add(AppFile(path: file.path, name: file.name));
+            newFiles.add(AppImage(path: file.path, name: file.name));
           }
         }
         if (newFiles.isNotEmpty) {
@@ -113,7 +113,7 @@ class _GalleryWidgetState extends State<GalleryWidget> {
     }
   }
 
-  Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
+  Widget _buildImageGrid(BuildContext context, List<AppImage> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
 
     // Check for macOS permission issues
@@ -183,7 +183,7 @@ class _GalleryWidgetState extends State<GalleryWidget> {
 }
 
 class _ImageCard extends StatefulWidget {
-  final AppFile imageFile;
+  final AppImage imageFile;
   final bool isSelected;
   final bool isResult;
   final double thumbnailSize;
@@ -404,15 +404,15 @@ class _ImageCardState extends State<_ImageCard> {
 
   void _handleCompare(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    windowState.sendToComparator(widget.imageFile.path);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    workbenchUIState.sendToComparator(widget.imageFile.path);
     appState.setWorkbenchTab(1); // Comparator
   }
 
   void _handleMask(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    windowState.setMaskEditorSourceImage(widget.imageFile);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
     appState.setWorkbenchTab(2); // Mask Editor
   }
 
@@ -457,11 +457,11 @@ class _ImageCardState extends State<_ImageCard> {
 
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
-    final windowState = Provider.of<WindowState>(context, listen: false);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
     final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
-    final List<AppFile> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
+    final List<AppImage> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
 
     showMenu<dynamic>(
       context: context,
@@ -487,7 +487,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            windowState.setMaskEditorSourceImage(widget.imageFile);
+            workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
             appState.setWorkbenchTab(2); // Mask Editor
           },
         ),
@@ -518,7 +518,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            windowState.sendToComparator(widget.imageFile.path, isAfter: false);
+            workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: false);
             appState.setWorkbenchTab(1); // Comparator
           },
         ),
@@ -529,7 +529,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            windowState.sendToComparator(widget.imageFile.path, isAfter: true);
+            workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: true);
             appState.setWorkbenchTab(1); // Comparator
           },
         ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
 

@@ -12,24 +12,24 @@ import 'package:provider/provider.dart';
 import '../../core/app_paths.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
+import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
-import '../../state/window_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
-import 'bars/comparator_toolbar.dart';
-import 'bars/mask_editor_toolbar.dart';
-import 'bars/prompt_optimizer_toolbar.dart';
-import 'control_panel.dart';
+import 'widgets/comparator_toolbar.dart';
+import 'widgets/mask_editor_toolbar.dart';
+import 'widgets/prompt_optimizer_toolbar.dart';
+import 'workbench_config_panel.dart';
 import 'gallery.dart';
-import 'views/comparator_view.dart';
-import 'views/mask_editor_view.dart';
-import 'views/prompt_optimizer_view.dart';
+import 'widgets/comparator_view.dart';
+import 'widgets/mask_editor_view.dart';
+import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/gallery_toolbar.dart';
 import 'widgets/mask_editor_ai_panel.dart';
 import 'widgets/metadata_inspector.dart';
@@ -72,7 +72,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   List<SystemPrompt> _optAllSysPrompts = [];
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
-  int? _optSelectedModelPk;
+  int? _optSelectedModelDbId;
   int? _optSelectedTagId;
   String? _optSelectedSysPrompt;
   bool _optIsRefining = false;
@@ -117,7 +117,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           _applyOptimizerFilter();
           
           if (_appState!.chatModels.isNotEmpty) {
-            _optSelectedModelPk = _appState!.chatModels.first.id;
+            _optSelectedModelDbId = _appState!.chatModels.first.id;
           }
           if (_optFilteredSysPrompts.isNotEmpty) _optSelectedSysPrompt = _optFilteredSysPrompts.first.content;
           _optIsLoadingData = false;
@@ -141,7 +141,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   Future<void> _handleRefine() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_optSelectedModelPk == null || _appState == null) {
+    if (_optSelectedModelDbId == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
@@ -157,7 +157,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       ).toList();
 
       final response = await LLMService().request(
-        modelIdentifier: _optSelectedModelPk!,
+        modelIdentifier: _optSelectedModelDbId!,
         useStream: false,
         messages: [
           if (_optSelectedSysPrompt != null)
@@ -198,8 +198,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   void _handleMaskClear() => setState(() => _maskPaths.clear());
   
   Future<void> _handleMaskSave() async {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    final sourceImage = windowState.maskEditorSourceImage;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final sourceImage = workbenchUIState.maskEditorSourceImage;
     if (sourceImage == null || _appState == null) return;
 
     try {
@@ -232,7 +232,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         } catch (_) {}
       }
 
-      final maskFile = AppFile(path: filePath, name: fileName);
+      final maskFile = AppImage(path: filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
       _appState!.galleryState.toggleImageSelection(maskFile);
       _appState!.galleryState.setViewMode(GalleryViewMode.temp);
@@ -253,8 +253,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   Future<void> _generateAIMask() async {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    final sourceImage = windowState.maskEditorSourceImage;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final sourceImage = workbenchUIState.maskEditorSourceImage;
     if (sourceImage == null || _maskAiPromptController.text.trim().isEmpty) return;
 
     setState(() => _maskIsGeneratingAI = true);
@@ -359,7 +359,7 @@ Coordinates are 0-1000. Form a closed loop.
         centerContent = const Column(
           children: [
             GalleryToolbar(),
-            Expanded(child: GalleryWidget()),
+            Expanded(child: Gallery()),
           ],
         );
         showRightPanel = !isNarrow; // Only show on desktop by default
@@ -461,18 +461,18 @@ Coordinates are 0-1000. Form a closed loop.
       rightPanelBuilder: (scrollController) {
         switch (appState.workbenchTabIndex) {
           case 0:
-            return ControlPanelWidget(scrollController: scrollController);
+            return WorkbenchConfigPanel(scrollController: scrollController);
           case 1:
             return MetadataInspector(scrollController: scrollController);
           case 3:
             return OptimizerConfigPanel(
               scrollController: scrollController,
-              selectedModelPk: _optSelectedModelPk,
+              selectedModelDbId: _optSelectedModelDbId,
               selectedTagId: _optSelectedTagId,
               selectedSysPrompt: _optSelectedSysPrompt,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
-              onModelChanged: (v) => setState(() => _optSelectedModelPk = v),
+              onModelChanged: (v) => setState(() => _optSelectedModelDbId = v),
               onTagChanged: (v) => setState(() { _optSelectedTagId = v; _applyOptimizerFilter(); }),
               onSysPromptChanged: (v) => setState(() => _optSelectedSysPrompt = v),
             );

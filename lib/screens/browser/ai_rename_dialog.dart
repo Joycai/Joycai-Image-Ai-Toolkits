@@ -9,7 +9,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/chat_model_selector.dart';
@@ -25,7 +25,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
-  int? _selectedModelPk;
+  int? _selectedModelDbId;
   List<Map<String, String>> _proposedRenames = [];
   Map<String, String> _conflicts = {};
 
@@ -42,7 +42,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     
     if (mounted) {
       setState(() {
-        _selectedModelPk = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
+        _selectedModelDbId = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
         if (lastInstructions != null) {
           _instructionController.text = lastInstructions;
         }
@@ -93,11 +93,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
   Future<void> _generateSuggestions() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    final browserState = appState.browserState;
-    final selectedFiles = browserState.selectedFiles.toList();
+    final fileBrowserState = appState.fileBrowserState;
+    final selectedFiles = fileBrowserState.selectedFiles.toList();
     final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedModelPk == null) {
+    if (_selectedModelDbId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.noModelsConfigured),
@@ -117,7 +117,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
     // Save current settings as last used
     final db = DatabaseService();
-    db.saveSetting('last_ai_rename_model_id', _selectedModelPk.toString());
+    db.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString());
     db.saveSetting('last_ai_rename_instructions', _instructionController.text);
 
     setState(() {
@@ -147,7 +147,7 @@ Do not include any other text or markdown formatting.
 """;
 
       final response = await LLMService().request(
-        modelIdentifier: _selectedModelPk,
+        modelIdentifier: _selectedModelDbId,
         messages: [LLMMessage(role: LLMRole.user, content: prompt)],
         useStream: false,
       );
@@ -240,7 +240,7 @@ Do not include any other text or markdown formatting.
       
       if (mounted) {
         Navigator.pop(context);
-        appState.browserState.refresh();
+        appState.fileBrowserState.refresh();
         scaffoldMessenger.showSnackBar(
           SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
         );
@@ -263,7 +263,7 @@ Do not include any other text or markdown formatting.
 
     final chatModels = appState.chatModels;
     // Safety check: ensure the selected PK actually exists in the current list of chat models
-    final effectiveModelPk = chatModels.any((m) => m.id == _selectedModelPk) ? _selectedModelPk : null;
+    final effectiveModelDbId = chatModels.any((m) => m.id == _selectedModelDbId) ? _selectedModelDbId : null;
 
     return AlertDialog(
       title: Row(
@@ -285,9 +285,9 @@ Do not include any other text or markdown formatting.
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ChatModelSelector(
-                selectedModelId: effectiveModelPk,
+                selectedModelId: effectiveModelDbId,
                 label: l10n.model,
-                onChanged: (v) => setState(() => _selectedModelPk = v),
+                onChanged: (v) => setState(() => _selectedModelDbId = v),
               ),
               const SizedBox(height: 12),
               Row(
