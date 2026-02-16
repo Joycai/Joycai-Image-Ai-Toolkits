@@ -561,6 +561,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectModelsToAdd => '选择要添加的模型';
 
   @override
+  String get searchModels => '搜索模型名称或 ID...';
+
+  @override
+  String get selectAll => '全选';
+
+  @override
+  String get deselectAll => '取消全选';
+
+  @override
+  String modelsDiscovered(int count) {
+    return '发现 $count 个模型';
+  }
+
+  @override
   String addSelected(int count) {
     return '添加所选 ($count)';
   }
@@ -575,6 +589,99 @@ class AppLocalizationsZh extends AppLocalizations {
   String fetchFailed(String error) {
     return '获取模型失败: $error';
   }
+
+  @override
+  String get stepProtocol => '选择协议';
+
+  @override
+  String get stepProvider => '选择提供商';
+
+  @override
+  String get stepApiKey => 'API 密钥';
+
+  @override
+  String get stepConfig => '额外配置';
+
+  @override
+  String get stepPreview => '预览';
+
+  @override
+  String get protocolOpenAI => 'OpenAI 兼容协议 (REST)';
+
+  @override
+  String get protocolOpenAIDesc => '标准 OpenAI REST API 兼容接口';
+
+  @override
+  String get protocolGoogle => 'Google GenAI 协议 (REST)';
+
+  @override
+  String get protocolGoogleDesc => 'Google Gemini 官方 REST API';
+
+  @override
+  String get providerOpenAIOfficial => 'OpenAI 官方';
+
+  @override
+  String get providerGoogleOfficial => 'Google GenAI 官方';
+
+  @override
+  String get providerGoogleCompatible => 'Google GenAI (OpenAI 兼容)';
+
+  @override
+  String get providerGoogleCompatibleDesc => '通过 OpenAI 适配端点访问 Gemini';
+
+  @override
+  String get providerCustom => '自定义提供商';
+
+  @override
+  String get providerCustomDesc => '自建或第三方 API 服务商';
+
+  @override
+  String get customEndpointHint => '请输入自定义端点 URL';
+
+  @override
+  String get openaiV1Hint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
+
+  @override
+  String get googleV1BetaHint => '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾';
+
+  @override
+  String get enterApiKey => '请输入 API 密钥';
+
+  @override
+  String get apiKeyStorageNotice => '您的密钥仅存储在本地，不会发送到我们的服务器。';
+
+  @override
+  String get nameHint => '例如：生产环境 API';
+
+  @override
+  String get enableDiscoveryDesc => '自动从端点获取可用模型列表';
+
+  @override
+  String get tagHint => '例如：GPT4, 核心, 等';
+
+  @override
+  String get bindTag => '绑定标签';
+
+  @override
+  String get previewReady => '准备好添加此渠道了吗？';
+
+  @override
+  String get feeGroupDesc => '定义模型的计费标准，以便准确计算使用成本。';
+
+  @override
+  String get noFeeGroups => '尚未创建费率组';
+
+  @override
+  String get pricePerMillion => '每百万 Token 价格';
+
+  @override
+  String get pricePerRequest => '单次请求价格';
+
+  @override
+  String get tokenBilling => 'Token 计费';
+
+  @override
+  String get requestBilling => '按次计费';
 
   @override
   String get model => '模型';
@@ -1042,9 +1149,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noResultsYet => '暂无结果';
 
   @override
-  String get selectAll => '全选';
-
-  @override
   String get importFromGallery => '从系统图库导入';
 
   @override
@@ -1143,13 +1247,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sendToComparator => '发送至对比器';
 
   @override
-  String get sendToComparatorRaw => '发送至对比器 (原图)';
+  String get sendToComparatorRaw => '设置为对比原图';
 
   @override
-  String get sendToComparatorAfter => '发送至对比器 (后图)';
+  String get sendToComparatorAfter => '设置为对比效果图';
 
   @override
-  String get sendToSelection => '发送到选中列表';
+  String get sendToSelection => '添加到选中列表';
+
+  @override
+  String get removeFromSelection => '从选中列表移除';
+
+  @override
+  String get optimizePromptWithImage => '以此图优化提示词';
 
   @override
   String get selectFromLibrary => '从库中选择';

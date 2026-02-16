@@ -101,8 +101,31 @@ class BrowserToolbar extends StatelessWidget {
               onSelected: (val) {
                 if (val == 'select_all') state.selectAll();
                 if (val == 'clear') state.clearSelection();
+                if (val == 'refresh') state.refresh();
+                if (val == 'view_mode') {
+                  state.setViewMode(
+                    state.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
+                  );
+                }
               },
               itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'refresh',
+                  child: ListTile(
+                    leading: const Icon(Icons.refresh),
+                    title: Text(l10n.refresh),
+                    dense: true,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'view_mode',
+                  child: ListTile(
+                    leading: Icon(state.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view),
+                    title: Text(l10n.switchViewMode),
+                    dense: true,
+                  ),
+                ),
+                const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'select_all',
                   child: ListTile(

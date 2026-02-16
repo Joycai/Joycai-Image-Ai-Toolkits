@@ -45,7 +45,12 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () {
-            showImagePreview(context, file.path);
+            final imageFiles = appState.browserState.filteredFiles
+                .where((f) => f.category == FileCategory.image)
+                .map((f) => AppFile(path: f.path, name: f.name))
+                .toList();
+            final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
+            showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
           },
         ),
         PopupMenuItem(

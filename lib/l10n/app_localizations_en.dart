@@ -565,6 +565,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectModelsToAdd => 'Select models to add';
 
   @override
+  String get searchModels => 'Search model name or ID...';
+
+  @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get deselectAll => 'Deselect All';
+
+  @override
+  String modelsDiscovered(int count) {
+    return '$count models discovered';
+  }
+
+  @override
   String addSelected(int count) {
     return 'Add Selected ($count)';
   }
@@ -579,6 +593,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String fetchFailed(String error) {
     return 'Failed to fetch models: $error';
   }
+
+  @override
+  String get stepProtocol => 'Choose Protocol';
+
+  @override
+  String get stepProvider => 'Choose Provider';
+
+  @override
+  String get stepApiKey => 'API Key';
+
+  @override
+  String get stepConfig => 'Extra Config';
+
+  @override
+  String get stepPreview => 'Preview';
+
+  @override
+  String get protocolOpenAI => 'OpenAI Compatible (REST)';
+
+  @override
+  String get protocolOpenAIDesc => 'Standard OpenAI REST API compatibility';
+
+  @override
+  String get protocolGoogle => 'Google GenAI (REST)';
+
+  @override
+  String get protocolGoogleDesc => 'Official Google Gemini REST API';
+
+  @override
+  String get providerOpenAIOfficial => 'OpenAI Official';
+
+  @override
+  String get providerGoogleOfficial => 'Google GenAI Official';
+
+  @override
+  String get providerGoogleCompatible => 'Google GenAI (OpenAI Compatible)';
+
+  @override
+  String get providerGoogleCompatibleDesc =>
+      'Google Gemini via OpenAI endpoint';
+
+  @override
+  String get providerCustom => 'Custom Provider';
+
+  @override
+  String get providerCustomDesc => 'Self-hosted or 3rd party provider';
+
+  @override
+  String get customEndpointHint => 'Enter your custom endpoint URL';
+
+  @override
+  String get openaiV1Hint =>
+      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+
+  @override
+  String get googleV1BetaHint =>
+      'Hint: Google GenAI endpoints usually end with \'/v1beta\'';
+
+  @override
+  String get enterApiKey => 'Enter your API Key';
+
+  @override
+  String get apiKeyStorageNotice =>
+      'Your key is stored locally and never sent to our servers.';
+
+  @override
+  String get nameHint => 'e.g. My Production API';
+
+  @override
+  String get enableDiscoveryDesc =>
+      'Automatically list available models from this endpoint';
+
+  @override
+  String get tagHint => 'e.g. GPT4, Local, etc.';
+
+  @override
+  String get bindTag => 'Bind Tag';
+
+  @override
+  String get previewReady => 'Ready to add this channel?';
+
+  @override
+  String get feeGroupDesc =>
+      'Define billing standards for models to accurately calculate usage costs.';
+
+  @override
+  String get noFeeGroups => 'No fee groups created yet';
+
+  @override
+  String get pricePerMillion => 'Price per Million Tokens';
+
+  @override
+  String get pricePerRequest => 'Price per Request';
+
+  @override
+  String get tokenBilling => 'Token Billing';
+
+  @override
+  String get requestBilling => 'Request Billing';
 
   @override
   String get model => 'Model';
@@ -1060,9 +1173,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noResultsYet => 'No results yet';
 
   @override
-  String get selectAll => 'Select All';
-
-  @override
   String get importFromGallery => 'Import from Gallery';
 
   @override
@@ -1162,13 +1272,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendToComparator => 'Send to Comparator';
 
   @override
-  String get sendToComparatorRaw => 'Send to Comparator (Raw)';
+  String get sendToComparatorRaw => 'Set as Before (RAW)';
 
   @override
-  String get sendToComparatorAfter => 'Send to Comparator (After)';
+  String get sendToComparatorAfter => 'Set as After (Result)';
 
   @override
-  String get sendToSelection => 'Send to Selection';
+  String get sendToSelection => 'Add to Selection';
+
+  @override
+  String get removeFromSelection => 'Remove from Selection';
+
+  @override
+  String get optimizePromptWithImage => 'Optimize Prompt with Image';
 
   @override
   String get selectFromLibrary => 'Select from Library';

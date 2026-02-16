@@ -1142,6 +1142,30 @@ abstract class AppLocalizations {
   /// **'Select models to add'**
   String get selectModelsToAdd;
 
+  /// No description provided for @searchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search model name or ID...'**
+  String get searchModels;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @deselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get deselectAll;
+
+  /// No description provided for @modelsDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models discovered'**
+  String modelsDiscovered(int count);
+
   /// No description provided for @addSelected.
   ///
   /// In en, this message translates to:
@@ -1165,6 +1189,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to fetch models: {error}'**
   String fetchFailed(String error);
+
+  /// No description provided for @stepProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Protocol'**
+  String get stepProtocol;
+
+  /// No description provided for @stepProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Provider'**
+  String get stepProvider;
+
+  /// No description provided for @stepApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get stepApiKey;
+
+  /// No description provided for @stepConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Config'**
+  String get stepConfig;
+
+  /// No description provided for @stepPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get stepPreview;
+
+  /// No description provided for @protocolOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Compatible (REST)'**
+  String get protocolOpenAI;
+
+  /// No description provided for @protocolOpenAIDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard OpenAI REST API compatibility'**
+  String get protocolOpenAIDesc;
+
+  /// No description provided for @protocolGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (REST)'**
+  String get protocolGoogle;
+
+  /// No description provided for @protocolGoogleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Official Google Gemini REST API'**
+  String get protocolGoogleDesc;
+
+  /// No description provided for @providerOpenAIOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Official'**
+  String get providerOpenAIOfficial;
+
+  /// No description provided for @providerGoogleOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI Official'**
+  String get providerGoogleOfficial;
+
+  /// No description provided for @providerGoogleCompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (OpenAI Compatible)'**
+  String get providerGoogleCompatible;
+
+  /// No description provided for @providerGoogleCompatibleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Gemini via OpenAI endpoint'**
+  String get providerGoogleCompatibleDesc;
+
+  /// No description provided for @providerCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Provider'**
+  String get providerCustom;
+
+  /// No description provided for @providerCustomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-hosted or 3rd party provider'**
+  String get providerCustomDesc;
+
+  /// No description provided for @customEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your custom endpoint URL'**
+  String get customEndpointHint;
+
+  /// No description provided for @openaiV1Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
+  String get openaiV1Hint;
+
+  /// No description provided for @googleV1BetaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\''**
+  String get googleV1BetaHint;
+
+  /// No description provided for @enterApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your API Key'**
+  String get enterApiKey;
+
+  /// No description provided for @apiKeyStorageNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your key is stored locally and never sent to our servers.'**
+  String get apiKeyStorageNotice;
+
+  /// No description provided for @nameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. My Production API'**
+  String get nameHint;
+
+  /// No description provided for @enableDiscoveryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically list available models from this endpoint'**
+  String get enableDiscoveryDesc;
+
+  /// No description provided for @tagHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. GPT4, Local, etc.'**
+  String get tagHint;
+
+  /// No description provided for @bindTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Bind Tag'**
+  String get bindTag;
+
+  /// No description provided for @previewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to add this channel?'**
+  String get previewReady;
+
+  /// No description provided for @feeGroupDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Define billing standards for models to accurately calculate usage costs.'**
+  String get feeGroupDesc;
+
+  /// No description provided for @noFeeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No fee groups created yet'**
+  String get noFeeGroups;
+
+  /// No description provided for @pricePerMillion.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per Million Tokens'**
+  String get pricePerMillion;
+
+  /// No description provided for @pricePerRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per Request'**
+  String get pricePerRequest;
+
+  /// No description provided for @tokenBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Token Billing'**
+  String get tokenBilling;
+
+  /// No description provided for @requestBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Billing'**
+  String get requestBilling;
 
   /// No description provided for @model.
   ///
@@ -2054,12 +2264,6 @@ abstract class AppLocalizations {
   /// **'No results yet'**
   String get noResultsYet;
 
-  /// No description provided for @selectAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Select All'**
-  String get selectAll;
-
   /// No description provided for @importFromGallery.
   ///
   /// In en, this message translates to:
@@ -2243,20 +2447,32 @@ abstract class AppLocalizations {
   /// No description provided for @sendToComparatorRaw.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (Raw)'**
+  /// **'Set as Before (RAW)'**
   String get sendToComparatorRaw;
 
   /// No description provided for @sendToComparatorAfter.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (After)'**
+  /// **'Set as After (Result)'**
   String get sendToComparatorAfter;
 
   /// No description provided for @sendToSelection.
   ///
   /// In en, this message translates to:
-  /// **'Send to Selection'**
+  /// **'Add to Selection'**
   String get sendToSelection;
+
+  /// No description provided for @removeFromSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Selection'**
+  String get removeFromSelection;
+
+  /// No description provided for @optimizePromptWithImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimize Prompt with Image'**
+  String get optimizePromptWithImage;
 
   /// No description provided for @selectFromLibrary.
   ///

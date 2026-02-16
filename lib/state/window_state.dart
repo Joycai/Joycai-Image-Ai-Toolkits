@@ -4,11 +4,12 @@ import '../models/app_file.dart';
 
 class WindowState extends ChangeNotifier {
   // Preview State
-  final List<String> openedPreviewPaths = [];
+  List<AppFile> previewImages = [];
   int activePreviewIndex = 0;
+  final List<String> openedPreviewPaths = []; // Kept for minimal compatibility if needed
 
   // Comparator State
-  bool isComparatorOpen = false; // Kept for logic, but might be redundant if we just use the tab
+  bool isComparatorOpen = false; 
   String? comparatorRawPath;
   String? comparatorAfterPath;
   bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
@@ -17,30 +18,26 @@ class WindowState extends ChangeNotifier {
   AppFile? maskEditorSourceImage;
 
   // Preview Methods
-  void openPreview(String path) {
-    if (!openedPreviewPaths.contains(path)) {
-      openedPreviewPaths.add(path);
-      activePreviewIndex = openedPreviewPaths.length - 1;
-    } else {
-      activePreviewIndex = openedPreviewPaths.indexOf(path);
-    }
+  void setPreviewList(List<AppFile> images, int initialIndex) {
+    previewImages = List.from(images);
+    activePreviewIndex = initialIndex.clamp(0, previewImages.isEmpty ? 0 : previewImages.length - 1);
     notifyListeners();
   }
 
-  void closePreview(int index) {
-    if (index < 0 || index >= openedPreviewPaths.length) return;
-    
-    openedPreviewPaths.removeAt(index);
-    if (activePreviewIndex >= openedPreviewPaths.length) {
-      activePreviewIndex = openedPreviewPaths.length - 1;
+  void openPreview(String path) {
+    // Legacy support logic
+    if (!openedPreviewPaths.contains(path)) {
+      openedPreviewPaths.add(path);
     }
-    if (activePreviewIndex < 0) activePreviewIndex = 0;
-    
-    notifyListeners();
+    // We now prefer setPreviewList
+  }
+
+  void closePreview(int index) {
+    // No-op for the new browsing logic
   }
   
   void setActivePreview(int index) {
-    if (index >= 0 && index < openedPreviewPaths.length) {
+    if (index >= 0 && index < previewImages.length) {
       activePreviewIndex = index;
       notifyListeners();
     }

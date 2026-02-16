@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
@@ -92,16 +93,7 @@ class _GalleryWidgetState extends State<GalleryWidget> {
       case GalleryViewMode.temp:
         return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
       case GalleryViewMode.folder:
-        return FutureBuilder<List<AppFile>>(
-          key: ValueKey('${galleryState.viewSourcePath}_${galleryState.refreshCounter}'),
-          future: _loadImagesFromFolder(galleryState.viewSourcePath),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return _buildImageGrid(context, snapshot.data ?? [], appState);
-          },
-        );
+        return _buildImageGrid(context, galleryState.folderImages, appState);
     }
   }
 
@@ -119,24 +111,6 @@ class _GalleryWidgetState extends State<GalleryWidget> {
         state.galleryState.refreshImages();
       }
     }
-  }
-
-  Future<List<AppFile>> _loadImagesFromFolder(String? path) async {
-    if (path == null) return [];
-    try {
-      final dir = Directory(path);
-      if (await dir.exists()) {
-        final List<AppFile> files = [];
-        await for (final entity in dir.list()) {
-          if (entity is File && AppConstants.isImageFile(entity.path)) {
-            PaintingBinding.instance.imageCache.evict(FileImage(entity));
-            files.add(AppFile.fromFile(entity));
-          }
-        }
-        return files;
-      }
-    } catch (_) {}
-    return [];
   }
 
   Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
@@ -183,20 +157,22 @@ class _GalleryWidgetState extends State<GalleryWidget> {
           itemCount: images.length,
           itemBuilder: (context, index) {
             final imageFile = images[index];
-            final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
             
-            return _ImageCard(
-              imageFile: imageFile,
-              isSelected: isSelected,
-              isResult: isResult,
-              thumbnailSize: state.thumbnailSize,
-              onTap: () {
-                // Results open preview dialog on tap, others toggle selection
-                if (isResult) {
-                   showImagePreview(context, imageFile.path);
-                } else {
-                  state.galleryState.toggleImageSelection(imageFile);
-                }
+            return Selector<AppState, bool>(
+              selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
+              builder: (context, isSelected, _) {
+                return _ImageCard(
+                  imageFile: imageFile,
+                  isSelected: isSelected,
+                  isResult: isResult,
+                  thumbnailSize: state.thumbnailSize,
+                  onTap: () {
+                    state.galleryState.toggleImageSelection(imageFile);
+                  },
+                  onDoubleTap: () {
+                    showImagePreview(context, galleryImages: state.galleryState.currentViewImages, initialIndex: index);
+                  },
+                );
               },
             );
           },
@@ -212,6 +188,7 @@ class _ImageCard extends StatefulWidget {
   final bool isResult;
   final double thumbnailSize;
   final VoidCallback onTap;
+  final VoidCallback? onDoubleTap;
 
   const _ImageCard({
     required this.imageFile,
@@ -219,6 +196,7 @@ class _ImageCard extends StatefulWidget {
     required this.isResult,
     required this.thumbnailSize,
     required this.onTap,
+    this.onDoubleTap,
   });
 
   @override
@@ -254,6 +232,7 @@ class _ImageCardState extends State<_ImageCard> {
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onDoubleTap: widget.onDoubleTap,
         onSecondaryTapDown: (details) => _showContextMenu(context, details.globalPosition),
         onLongPressStart: (details) => _showContextMenu(context, details.globalPosition),
         child: MouseRegion(
@@ -437,6 +416,45 @@ class _ImageCardState extends State<_ImageCard> {
     appState.setWorkbenchTab(2); // Mask Editor
   }
 
+  Future<void> _saveFile(BuildContext context, String sourcePath, String fileName, AppLocalizations l10n) async {
+    try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        // Desktop: Use FilePicker to save to a specific location
+        final extension = sourcePath.split('.').last;
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: l10n.save,
+          fileName: fileName,
+          type: FileType.custom,
+          allowedExtensions: [extension],
+        );
+
+        if (outputFile != null) {
+          final file = File(sourcePath);
+          await file.copy(outputFile);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.settingsExported), backgroundColor: Colors.green),
+            );
+          }
+        }
+      } else {
+        // Mobile: Use gal to save to system gallery
+        await Gal.putImage(sourcePath);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.saveFailed(e.toString())), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   void _showContextMenu(BuildContext context, Offset position) {
     final l10n = AppLocalizations.of(context)!;
     final windowState = Provider.of<WindowState>(context, listen: false);
@@ -445,10 +463,11 @@ class _ImageCardState extends State<_ImageCard> {
     final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
     final List<AppFile> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
 
-    showMenu(
+    showMenu<dynamic>(
       context: context,
       position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
-      items: [
+      items: <PopupMenuEntry<dynamic>>[
+        // View & Quick Edit
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.open_in_new, size: 18),
@@ -456,63 +475,9 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            showImagePreview(context, widget.imageFile.path);
-          },
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),
-            title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
-            dense: true,
-          ),
-          onTap: () async {
-            try {
-              // On macOS Debug, gal might still cause issues due to SDK bug
-              await Gal.putImage(widget.imageFile.path);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
-                );
-              }
-            } catch (e) {
-              if (context.mounted) {
-                final message = e.toString().contains('not implemented') 
-                  ? "Feature not available in this build mode"
-                  : l10n.saveFailed(e.toString());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(message), backgroundColor: Colors.red),
-                );
-              }
-            }
-          },
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.share_outlined, size: 18),
-            title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
-            dense: true,
-          ),
-          onTap: () async {
-            try {
-              final xFiles = filesToShare.map((f) => XFile(
-                f.path, 
-                name: f.name,
-                mimeType: AppConstants.getMimeType(f.path),
-              )).toList();
-              
-              // ignore: deprecated_member_use
-              await Share.shareXFiles(
-                xFiles, 
-                subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
-                sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
-              );
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),
-                );
-              }
-            }
+            final images = appState.galleryState.currentViewImages;
+            final idx = images.indexWhere((img) => img.path == widget.imageFile.path);
+            showImagePreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
           },
         ),
         PopupMenuItem(
@@ -528,24 +493,23 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: Icon(widget.isSelected ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
-            title: Text(l10n.sendToSelection),
+            leading: const Icon(Icons.auto_fix_high, size: 18),
+            title: Text(l10n.optimizePromptWithImage),
             dense: true,
           ),
-          onTap: () {
-            appState.galleryState.toggleImageSelection(widget.imageFile);
-          },
+          onTap: () => _handleOptimize(context),
         ),
+
+        const PopupMenuDivider(),
+
+        // Selection & Comparison
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.compare, size: 18),
-            title: Text(l10n.sendToComparator),
+            leading: Icon(isPartOfSelection ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
+            title: Text(isPartOfSelection ? l10n.removeFromSelection : l10n.sendToSelection),
             dense: true,
           ),
-          onTap: () {
-            windowState.sendToComparator(widget.imageFile.path);
-            appState.setWorkbenchTab(1); // Comparator
-          },
+          onTap: () => appState.galleryState.toggleImageSelection(widget.imageFile),
         ),
         PopupMenuItem(
           child: ListTile(
@@ -567,6 +531,26 @@ class _ImageCardState extends State<_ImageCard> {
           onTap: () {
             windowState.sendToComparator(widget.imageFile.path, isAfter: true);
             appState.setWorkbenchTab(1); // Comparator
+          },
+        ),
+
+        const PopupMenuDivider(),
+
+        // File Management
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.edit_outlined, size: 18),
+            title: Text(l10n.rename),
+            dense: true,
+          ),
+          onTap: () {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showFileRenameDialog(
+                context: context,
+                filePath: widget.imageFile.path,
+                onSuccess: () => appState.galleryState.refreshImages(),
+              );
+            });
           },
         ),
         PopupMenuItem(
@@ -597,22 +581,51 @@ class _ImageCardState extends State<_ImageCard> {
             }
           },
         ),
+
+        const PopupMenuDivider(),
+
+        // Save & Share
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.edit_outlined, size: 18),
-            title: Text(l10n.rename),
+            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),
+            title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
             dense: true,
           ),
-          onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              showFileRenameDialog(
-                context: context,
-                filePath: widget.imageFile.path,
-                onSuccess: () => appState.galleryState.refreshImages(),
+          onTap: () => _saveFile(context, widget.imageFile.path, widget.imageFile.name, l10n),
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.share_outlined, size: 18),
+            title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
+            dense: true,
+          ),
+          onTap: () async {
+            try {
+              final xFiles = filesToShare.map((f) => XFile(
+                f.path, 
+                name: f.name,
+                mimeType: AppConstants.getMimeType(f.path),
+              )).toList();
+              
+              // ignore: deprecated_member_use
+              await Share.shareXFiles(
+                xFiles, 
+                subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+                sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
               );
-            });
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),
+                );
+              }
+            }
           },
         ),
+
+        const PopupMenuDivider(),
+
+        // Danger Zone
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),

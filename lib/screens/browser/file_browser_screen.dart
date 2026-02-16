@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
@@ -93,22 +94,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: colorScheme.surface,
         centerTitle: false,
-        actions: [
-          IconButton.filledTonal(
-            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view, size: 20),
-            onPressed: () => browserState.setViewMode(
-              browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
-            ),
-            tooltip: l10n.switchViewMode,
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: () => browserState.refresh(),
-            tooltip: l10n.refresh,
-          ),
-          const SizedBox(width: 16),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
@@ -177,7 +162,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               onTap: () => state.toggleSelection(file),
               onDoubleTap: () {
                 if (file.category == FileCategory.image) {
-                  showImagePreview(context, file.path);
+                  final imageFiles = state.filteredFiles
+                      .where((f) => f.category == FileCategory.image)
+                      .map((f) => AppFile(path: f.path, name: f.name))
+                      .toList();
+                  final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
+                  showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
                 } else {
                   _handleOpenFile(file);
                 }
@@ -204,7 +194,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              showImagePreview(context, file.path);
+              final imageFiles = state.filteredFiles
+                  .where((f) => f.category == FileCategory.image)
+                  .map((f) => AppFile(path: f.path, name: f.name))
+                  .toList();
+              final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
+              showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
             } else {
               _handleOpenFile(file);
             }

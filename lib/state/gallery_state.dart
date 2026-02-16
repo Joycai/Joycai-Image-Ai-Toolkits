@@ -50,6 +50,7 @@ class GalleryState extends ChangeNotifier {
 
   // Model-based image lists
   List<AppFile> galleryImages = [];
+  List<AppFile> folderImages = [];
   List<AppFile> processedImages = [];
   List<AppFile> selectedImages = [];
   List<AppFile> droppedImages = []; // Transient workspace
@@ -223,6 +224,9 @@ class GalleryState extends ChangeNotifier {
     _refreshCounter++;
     await _scanImages();
     await _scanProcessedImages();
+    if (viewMode == GalleryViewMode.folder && viewSourcePath != null) {
+      await _scanFolder(viewSourcePath!);
+    }
     notifyListeners();
   }
 
@@ -230,6 +234,13 @@ class GalleryState extends ChangeNotifier {
     for (var path in paths) {
       PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
     }
+  }
+
+  Future<void> _scanFolder(String path) async {
+    final List<String> paths = await compute(_scanImagesIsolate, [path]);
+    _evictImages(paths); // Ensure edited images are re-loaded from disk
+    folderImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
+    notifyListeners();
   }
 
   Future<void> _scanImages() async {
@@ -389,7 +400,17 @@ class GalleryState extends ChangeNotifier {
   void setViewFolder(String path) {
     viewMode = GalleryViewMode.folder;
     viewSourcePath = path;
+    _scanFolder(path);
     notifyListeners();
+  }
+
+  List<AppFile> get currentViewImages {
+    switch (viewMode) {
+      case GalleryViewMode.all: return galleryImages;
+      case GalleryViewMode.processed: return processedImages;
+      case GalleryViewMode.temp: return droppedImages;
+      case GalleryViewMode.folder: return folderImages;
+    }
   }
 
   bool isPathUnreachable(String? path) => FilePermissionService().isPathUnreachable(path);
