@@ -99,6 +99,8 @@ class LLMDebugLogger {
       await Process.run('explorer.exe', [dir]);
     } else if (Platform.isMacOS) {
       await Process.run('open', [dir]);
+    } else if (Platform.isLinux) {
+      await Process.run('xdg-open', [dir]);
     }
   }
 }

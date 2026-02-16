@@ -22,6 +22,13 @@ class ImageMetadata {
   });
 
   String get displayString => "${width}x$height ($aspectRatio) | $sizeString";
+
+  Map<String, String> get params => {
+    "Width": "$width px",
+    "Height": "$height px",
+    "Aspect Ratio": aspectRatio,
+    "File Size": sizeString,
+  };
 }
 
 class ImageMetadataService {

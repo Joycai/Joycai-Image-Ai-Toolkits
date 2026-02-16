@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/browser_file.dart';
 import '../services/database_service.dart';
+import '../services/file_permission_service.dart';
 
 List<Map<String, dynamic>> _scanFilesIsolate(List<String> paths) {
   List<Map<String, dynamic>> results = [];
@@ -74,6 +75,9 @@ class BrowserState extends ChangeNotifier {
   // Directory management
   List<String> sourceDirectories = [];
   List<String> activeDirectories = [];
+  Set<String> unreachableDirectories = {};
+  int _refreshCounter = 0;
+  int get refreshCounter => _refreshCounter;
   
   BrowserState() {
     _loadSettings();
@@ -118,6 +122,7 @@ class BrowserState extends ChangeNotifier {
       activeDirectories = savedActive.split('|');
     }
 
+    await refresh();
     notifyListeners();
   }
 
@@ -161,6 +166,17 @@ class BrowserState extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
+    _refreshCounter++;
+    
+    // Check for unreachable directories
+    final newUnreachable = <String>{};
+    for (var path in sourceDirectories) {
+      if (FilePermissionService().isPathUnreachable(path)) {
+        newUnreachable.add(path);
+      }
+    }
+    unreachableDirectories = newUnreachable;
+
     if (activeDirectories.isEmpty) {
       allFiles = [];
       _applyFilterAndSort();

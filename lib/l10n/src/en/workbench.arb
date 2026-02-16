@@ -1,0 +1,149 @@
+{
+  "workbench": "Workbench",
+  "imageProcessing": "Image Processing",
+  "sourceGallery": "Source Gallery",
+  "sourceExplorer": "Source Explorer",
+  "tempWorkspace": "Temp Workspace",
+  "processResults": "Process Results",
+  "resultCache": "Result Cache",
+  "directories": "DIRECTORIES",
+  "addFolder": "Add Folder",
+  "noFolders": "No folders added",
+  "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
+  "noImagesFound": "No images found",
+  "noResultsYet": "No results yet",
+  "selectAll": "Select All",
+  "importFromGallery": "Import from Gallery",
+  "clearTempWorkspace": "Clear Workspace",
+  "dropFilesHere": "Drop images here to add them to temporary workspace",
+  "noImagesSelected": "No images selected",
+  "selectSourceDirectory": "Select Source Directory",
+  "removeFolderTooltip": "Remove folder",
+  "removeFolderConfirmTitle": "Remove Folder?",
+  "removeFolderConfirmMessage": "Are you sure you want to remove \"{folderName}\" from the list?",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "Thumbnail Size",
+  "deleteFile": "Delete File",
+  "deleteFileConfirmTitle": "Delete File?",
+  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "Move to Trash",
+  "permanentlyDelete": "Permanently Delete",
+  "deleteSuccess": "Deleted successfully",
+  "deleteFailed": "Failed to delete: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "Model Selection",
+  "selectAModel": "Select a model",
+  "aspectRatio": "Aspect Ratio",
+  "resolution": "Resolution",
+  "prompt": "Prompt",
+  "promptHint": "Enter prompt here...",
+  "prefixHint": "e.g. result",
+  "processPrompt": "Process Prompt",
+  "processImages": "Process {count} Images",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSubmitted": "Task submitted to queue",
+  "comparator": "Comparator",
+  "compareModeSync": "Sync Mode",
+  "compareModeSwap": "Swap Mode",
+  "sendToComparator": "Send to Comparator",
+  "sendToComparatorRaw": "Send to Comparator (Raw)",
+  "sendToComparatorAfter": "Send to Comparator (After)",
+  "sendToSelection": "Send to Selection",
+  "selectFromLibrary": "Select from Library",
+  "metadataSelectedNone": "No image metadata selected",
+  "labelRaw": "RAW",
+  "labelAfter": "AFTER",
+  "drawMask": "Draw Mask",
+  "maskEditor": "Mask Editor",
+  "brushSize": "Brush Size",
+  "maskColor": "Mask Color",
+  "undo": "Undo",
+  "saveAndSelect": "Save & Select",
+  "aiSmartMask": "AI Smart Mask",
+  "binaryMode": "Binary Mode",
+  "maskModel": "Model",
+  "maskDetail": "Detail: {count}",
+  "@maskDetail": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maskPromptLabel": "What to mask?",
+  "generating": "Generating...",
+  "generate": "Generate",
+  "maskSaved": "Mask saved and selected",
+  "maskSaveError": "Error saving mask: {error}",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "maskGenError": "AI Mask generation failed: {error}",
+  "@maskGenError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "promptOptimizer": "Prompt Optimizer",
+  "refinerModel": "Refiner Model",
+  "systemPrompt": "System Prompt",
+  "refinerIntro": "Use AI to analyze images and refine your prompt.",
+  "roughPrompt": "Rough Prompt / Ideas",
+  "optimizedPrompt": "Optimized Prompt",
+  "applyToWorkbench": "Apply to Workbench",
+  "promptApplied": "Prompt applied to workbench",
+  "refineFailed": "Refine failed: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "executionLogs": "EXECUTION LOGS",
+  "saveToPhotos": "Save to Photos",
+  "saveToGallery": "Save to Gallery",
+  "savedToPhotos": "Saved to Photos",
+  "saveFailed": "Save failed: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iosSandboxActive": "iOS Sandbox Active",
+  "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "filesAppSuffix": " (Files App)"
+}

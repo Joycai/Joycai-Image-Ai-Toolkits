@@ -13,7 +13,7 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/window_state.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
-import '../../../widgets/dialogs/mask_editor_dialog.dart';
+import '../../workbench/widgets/image_preview_dialog.dart';
 
 void showFileContextMenu({
   required BuildContext context,
@@ -45,7 +45,7 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () {
-            windowState.openFloatingPreview(file.path);
+            showImagePreview(context, file.path);
           },
         ),
         PopupMenuItem(
@@ -55,26 +55,50 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              showDialog(
-                context: context,
-                builder: (context) => MaskEditorDialog(
-                  sourceImage: AppFile(path: file.path, name: file.name),
-                ),
-              );
-            });
+            windowState.setMaskEditorSourceImage(AppFile(path: file.path, name: file.name));
+            appState.setWorkbenchTab(2); // Mask Editor
+            appState.navigateToScreen(0); // Workbench
           },
         ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.compare, size: 18),
-            title: Text(l10n.sendToComparator),
-            dense: true,
+        if (!windowState.isComparatorOpen)
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18),
+              title: Text(l10n.sendToComparator),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
+            },
+          )
+        else ...[
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+              title: Text(l10n.sendToComparatorRaw),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path, isAfter: false);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
+            },
           ),
-          onTap: () {
-            windowState.sendToComparator(file.path);
-          },
-        ),
+          PopupMenuItem(
+            child: ListTile(
+              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+              title: Text(l10n.sendToComparatorAfter),
+              dense: true,
+            ),
+            onTap: () {
+              windowState.sendToComparator(file.path, isAfter: true);
+              appState.setWorkbenchTab(1); // Comparator
+              appState.navigateToScreen(0); // Workbench
+            },
+          ),
+        ],
       ],
       PopupMenuItem(
         child: ListTile(
@@ -94,6 +118,7 @@ void showFileContextMenu({
             await Share.shareXFiles(
               xFiles,
               subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+              sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
             );
           } catch (e) {
             if (context.mounted) {

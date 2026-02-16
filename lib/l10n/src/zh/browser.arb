@@ -1,0 +1,44 @@
+{
+  "fileBrowser": "文件浏览器",
+  "rename": "重命名",
+  "renameFile": "重命名文件",
+  "newFilename": "新文件名",
+  "renameSuccess": "重命名成功",
+  "renameFailed": "重命名失败: {error}",
+  "@renameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "fileAlreadyExists": "同名文件已存在",
+  "noFilesFound": "未找到文件",
+  "switchViewMode": "切换视图模式",
+  "sortBy": "排序方式",
+  "sortName": "文件名",
+  "sortDate": "修改日期",
+  "sortType": "文件类型",
+  "sortAsc": "正序",
+  "sortDesc": "倒序",
+  "catAll": "全部",
+  "catImages": "图片",
+  "catVideos": "视频",
+  "catAudio": "音频",
+  "catText": "文本",
+  "catOthers": "其他",
+  "openWithSystemDefault": "使用系统默认程序打开",
+  "aiBatchRename": "AI 批量重命名",
+  "rulesInstructions": "重命名规则 / 指令",
+  "generateSuggestions": "生成建议",
+  "noSuggestions": "尚未生成建议",
+  "applyRenames": "应用重命名",
+  "imagesSelected": "已选 {count} 项",
+  "@imagesSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

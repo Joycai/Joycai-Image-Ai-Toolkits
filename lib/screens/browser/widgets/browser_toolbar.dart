@@ -18,7 +18,7 @@ class BrowserToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = Responsive.isMobile(context);
+    final isNarrow = Responsive.isNarrow(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -29,11 +29,11 @@ class BrowserToolbar extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            isMobile ? '${state.selectedFiles.length}' : l10n.imagesSelected(state.selectedFiles.length),
+            isNarrow ? '${state.selectedFiles.length}' : l10n.imagesSelected(state.selectedFiles.length),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 16),
-          if (!isMobile) ...[
+          if (!isNarrow) ...[
             TextButton.icon(
               onPressed: () => state.selectAll(),
               icon: const Icon(Icons.select_all, size: 18),

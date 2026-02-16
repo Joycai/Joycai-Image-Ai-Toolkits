@@ -153,50 +153,52 @@ class _SetupWizardState extends State<SetupWizard> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildWelcomeStep(context, l10n),
-                _buildStorageStep(context, l10n),
-                _buildChannelStep(context, l10n),
-                _buildModelStep(context, l10n),
-                _buildFinishStep(context, l10n),
-              ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _buildWelcomeStep(context, l10n),
+                  _buildStorageStep(context, l10n),
+                  _buildChannelStep(context, l10n),
+                  _buildModelStep(context, l10n),
+                  _buildFinishStep(context, l10n),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (_currentStep > 0 && _currentStep != 4)
-                  TextButton(
-                    onPressed: () {
-                      int prev = _currentStep - 1;
-                      if (_currentStep == 4 && _createdChannelId == null) {
-                        prev = 2; // Go back to channel if model was skipped
-                      }
-                      _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                      setState(() => _currentStep = prev);
-                    },
-                    child: Text(l10n.back),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (_currentStep > 0 && _currentStep != 4)
+                    TextButton(
+                      onPressed: () {
+                        int prev = _currentStep - 1;
+                        if (_currentStep == 4 && _createdChannelId == null) {
+                          prev = 2; // Go back to channel if model was skipped
+                        }
+                        _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        setState(() => _currentStep = prev);
+                      },
+                      child: Text(l10n.back),
+                    ),
+                  const SizedBox(width: 16),
+                  FilledButton(
+                    onPressed: _currentStep == 1 && _outputDirController.text.isEmpty 
+                        ? null 
+                        : _nextStep,
+                    child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next)),
                   ),
-                const SizedBox(width: 16),
-                FilledButton(
-                  onPressed: _currentStep == 1 && _outputDirController.text.isEmpty 
-                      ? null 
-                      : _nextStep,
-                  child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next)),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

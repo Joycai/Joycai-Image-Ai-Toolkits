@@ -88,7 +88,14 @@ class AppState extends ChangeNotifier {
   int retryCount = 0;
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
+  bool isSidebarExpanded = true;
+  bool isSidebarResizing = false;
+  double sidebarWidth = 400.0;
   bool enableApiDebug = false;
+
+  // Navigation State
+  int activeScreenIndex = 0;
+  int workbenchTabIndex = 0;
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
@@ -146,6 +153,7 @@ class AppState extends ChangeNotifier {
     downloaderState.removeListener(notifyListeners);
     browserState.removeListener(notifyListeners);
     windowState.removeListener(notifyListeners);
+    _sidebarWidthSaveTimer?.cancel();
     super.dispose();
   }
 
@@ -172,6 +180,10 @@ class AppState extends ChangeNotifier {
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
 
+  // Browser State Proxies
+  Set<String> get unreachableBrowserDirectories => browserState.unreachableDirectories;
+  int get browserRefreshCounter => browserState.refreshCounter;
+
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
   Future<void> loadSettings() async {
@@ -193,6 +205,13 @@ class AppState extends ChangeNotifier {
 
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
+    isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
+    
+    final savedSidebarWidth = await _db.getSetting('sidebar_width');
+    if (savedSidebarWidth != null) {
+      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 400.0;
+    }
+
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
 
     // Load theme mode
@@ -218,6 +237,11 @@ class AppState extends ChangeNotifier {
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    
+    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
+    if (savedWorkbenchTab != null) {
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 3);
+    }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
     isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
@@ -305,6 +329,40 @@ class AppState extends ChangeNotifier {
   Future<void> setConsoleExpanded(bool value) async {
     isConsoleExpanded = value;
     await _db.saveSetting('is_console_expanded', value.toString());
+    notifyListeners();
+  }
+
+  Future<void> setSidebarExpanded(bool value) async {
+    isSidebarExpanded = value;
+    await _db.saveSetting('is_sidebar_expanded', value.toString());
+    notifyListeners();
+  }
+
+  void setIsSidebarResizing(bool value) {
+    isSidebarResizing = value;
+    notifyListeners();
+  }
+
+  Timer? _sidebarWidthSaveTimer;
+
+  Future<void> setSidebarWidth(double width) async {
+    sidebarWidth = width.clamp(280.0, 800.0);
+    notifyListeners();
+
+    _sidebarWidthSaveTimer?.cancel();
+    _sidebarWidthSaveTimer = Timer(const Duration(milliseconds: 500), () async {
+      await _db.saveSetting('sidebar_width', sidebarWidth.toString());
+    });
+  }
+  
+  void navigateToScreen(int index) {
+    activeScreenIndex = index;
+    notifyListeners();
+  }
+
+  void setWorkbenchTab(int index) {
+    workbenchTabIndex = index.clamp(0, 3);
+    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
   

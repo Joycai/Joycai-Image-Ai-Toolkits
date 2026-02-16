@@ -1,0 +1,34 @@
+{
+  "usage": "Usage",
+  "tokenUsageMetrics": "Token Usage Metrics",
+  "clearAllUsage": "Clear All Usage Data?",
+  "clearUsageWarning": "This will permanently delete all token usage records from the database.",
+  "modelsLabel": "Models: ",
+  "rangeLabel": "Range: ",
+  "today": "Today",
+  "lastWeek": "Last Week",
+  "lastMonth": "Last Month",
+  "thisYear": "This Year",
+  "inputTokens": "Input Tokens",
+  "outputTokens": "Output Tokens",
+  "estimatedCost": "Estimated Cost",
+  "clearDataForModel": "Clear Data for {modelId}?",
+  "@clearDataForModel": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelDataWarning": "This will delete all usage records associated with the model \"{modelId}\".",
+  "@clearModelDataWarning": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "clearModelData": "Clear Model Data",
+  "usageByGroup": "Usage by Group",
+  "clearAll": "Clear All"
+}

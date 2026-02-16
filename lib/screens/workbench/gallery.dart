@@ -3,26 +3,27 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_file.dart';
 import '../../services/image_metadata_service.dart';
+import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
+import '../../state/gallery_state.dart';
 import '../../state/window_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
-import '../../widgets/dialogs/image_preview_dialog.dart';
-import '../../widgets/dialogs/mask_editor_dialog.dart';
+import '../../widgets/placeholders/permission_placeholder.dart';
+import 'widgets/image_preview_dialog.dart';
 
 class GalleryWidget extends StatefulWidget {
-  final TabController tabController;
-
   const GalleryWidget({
     super.key,
-    required this.tabController,
   });
 
   @override
@@ -36,7 +37,8 @@ class _GalleryWidgetState extends State<GalleryWidget> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
-    
+    final galleryState = appState.galleryState;
+
     return DropTarget(
       onDragDone: (details) {
         final List<AppFile> newFiles = [];
@@ -46,23 +48,15 @@ class _GalleryWidgetState extends State<GalleryWidget> {
           }
         }
         if (newFiles.isNotEmpty) {
-          appState.galleryState.addDroppedFiles(newFiles);
-          // Switch to the 3rd tab (Temporary Workspace) automatically
-          widget.tabController.animateTo(2);
+          galleryState.addDroppedFiles(newFiles);
+          galleryState.setViewMode(GalleryViewMode.temp);
         }
       },
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          TabBarView(
-            controller: widget.tabController,
-            children: [
-              _buildImageGrid(context, appState.galleryImages, appState, isResult: false),
-              _buildImageGrid(context, appState.processedImages, appState, isResult: true),
-              _buildImageGrid(context, appState.droppedImages, appState, isTemp: true),
-            ],
-          ),
+          _buildActiveView(context, galleryState, appState),
           if (_isDragging)
             Container(
               color: Theme.of(context).colorScheme.primary.withAlpha(40),
@@ -89,9 +83,76 @@ class _GalleryWidgetState extends State<GalleryWidget> {
     );
   }
 
+  Widget _buildActiveView(BuildContext context, GalleryState galleryState, AppState appState) {
+    switch (galleryState.viewMode) {
+      case GalleryViewMode.all:
+        return _buildImageGrid(context, galleryState.galleryImages, appState);
+      case GalleryViewMode.processed:
+        return _buildImageGrid(context, galleryState.processedImages, appState, isResult: true);
+      case GalleryViewMode.temp:
+        return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
+      case GalleryViewMode.folder:
+        return FutureBuilder<List<AppFile>>(
+          key: ValueKey('${galleryState.viewSourcePath}_${galleryState.refreshCounter}'),
+          future: _loadImagesFromFolder(galleryState.viewSourcePath),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return _buildImageGrid(context, snapshot.data ?? [], appState);
+          },
+        );
+    }
+  }
+
+  Future<void> _reAuthorize(BuildContext context, AppState state, String path, bool isResult) async {
+    final String? newPath = await FilePermissionService().reAuthorize(
+      path,
+      title: isResult ? "Authorize Output Directory" : "Authorize Folder: $path",
+    );
+
+    if (newPath != null) {
+      if (isResult) {
+        await state.updateOutputDirectory(newPath);
+      } else {
+        state.galleryState.setViewFolder(newPath);
+        state.galleryState.refreshImages();
+      }
+    }
+  }
+
+  Future<List<AppFile>> _loadImagesFromFolder(String? path) async {
+    if (path == null) return [];
+    try {
+      final dir = Directory(path);
+      if (await dir.exists()) {
+        final List<AppFile> files = [];
+        await for (final entity in dir.list()) {
+          if (entity is File && AppConstants.isImageFile(entity.path)) {
+            PaintingBinding.instance.imageCache.evict(FileImage(entity));
+            files.add(AppFile.fromFile(entity));
+          }
+        }
+        return files;
+      }
+    } catch (_) {}
+    return [];
+  }
+
   Widget _buildImageGrid(BuildContext context, List<AppFile> images, AppState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
+
+    // Check for macOS permission issues
+    final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);
+    final bool isUnreachable = !isTemp && currentPath != null && state.galleryState.isPathUnreachable(currentPath);
+
     if (images.isEmpty) {
+      if (isUnreachable) {
+        return PermissionPlaceholder(
+          onReAuthorize: () => _reAuthorize(context, state, currentPath, isResult),
+        );
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -107,44 +168,40 @@ class _GalleryWidgetState extends State<GalleryWidget> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: state.thumbnailSize,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1,
-      ),
-      itemCount: images.length,
-      itemBuilder: (context, index) {
-        final imageFile = images[index];
-        final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
         
-        return _ImageCard(
-          imageFile: imageFile,
-          isSelected: isSelected,
-          isResult: isResult,
-          thumbnailSize: state.thumbnailSize,
-          onTap: () {
-            // Results open preview on tap, others toggle selection
-            if (isResult) {
-              _showPreviewDialog(context, images, index);
-            } else {
-              state.galleryState.toggleImageSelection(imageFile);
-            }
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: state.thumbnailSize,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1,
+          ),
+          itemCount: images.length,
+          itemBuilder: (context, index) {
+            final imageFile = images[index];
+            final isSelected = state.selectedImages.any((img) => img.path == imageFile.path);
+            
+            return _ImageCard(
+              imageFile: imageFile,
+              isSelected: isSelected,
+              isResult: isResult,
+              thumbnailSize: state.thumbnailSize,
+              onTap: () {
+                // Results open preview dialog on tap, others toggle selection
+                if (isResult) {
+                   showImagePreview(context, imageFile.path);
+                } else {
+                  state.galleryState.toggleImageSelection(imageFile);
+                }
+              },
+            );
           },
         );
-      },
-    );
-  }
-
-  void _showPreviewDialog(BuildContext context, List<AppFile> images, int initialIndex) {
-    showDialog(
-      context: context,
-      builder: (context) => ImagePreviewDialog(
-        images: images,
-        initialIndex: initialIndex,
-      ),
+      }
     );
   }
 }
@@ -170,6 +227,7 @@ class _ImageCard extends StatefulWidget {
 
 class _ImageCardState extends State<_ImageCard> {
   String _dimensions = "";
+  bool _isHovering = false;
 
   @override
   void initState() {
@@ -189,112 +247,191 @@ class _ImageCardState extends State<_ImageCard> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = Responsive.isMobile(context);
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onSecondaryTapDown: (details) => _showContextMenu(context, details.globalPosition),
-      onLongPressStart: (details) => _showContextMenu(context, details.globalPosition),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
-            border: Border.all(
-              color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
-              width: widget.isSelected ? 2 : 1,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onSecondaryTapDown: (details) => _showContextMenu(context, details.globalPosition),
+        onLongPressStart: (details) => _showContextMenu(context, details.globalPosition),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
+              border: Border.all(
+                color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
+                width: widget.isSelected ? 2 : 1,
+              ),
+              boxShadow: widget.isSelected ? [
+                BoxShadow(
+                  color: colorScheme.primary.withAlpha((255 * 0.2).round()),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                )
+              ] : null,
             ),
-            boxShadow: widget.isSelected ? [
-              BoxShadow(
-                color: colorScheme.primary.withAlpha((255 * 0.2).round()),
-                blurRadius: 8,
-                spreadRadius: 2,
-              )
-            ] : null,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Image(
-                  image: ResizeImage(
-                    widget.imageFile.imageProvider,
-                    width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
-                  ),
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image, color: Colors.grey),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Image(
+                    image: ResizeImage(
+                      widget.imageFile.imageProvider,
+                      width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                    ),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
                   ),
                 ),
-              ),
-              
-              if (_dimensions.isNotEmpty)
+                
+                if (_dimensions.isNotEmpty)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                      color: Colors.black.withAlpha((255 * 0.4).round()),
+                      child: Text(
+                        _dimensions,
+                        style: const TextStyle(color: Colors.white, fontSize: 9),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+
+                if (widget.isSelected)
+                  Container(
+                    color: colorScheme.primary.withAlpha((255 * 0.1).round()),
+                  ),
+                
                 Positioned(
-                  top: 0,
+                  bottom: 0,
                   left: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                    color: Colors.black.withAlpha((255 * 0.4).round()),
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha((255 * 0.6).round()),
+                    ),
                     child: Text(
-                      _dimensions,
-                      style: const TextStyle(color: Colors.white, fontSize: 9),
+                      widget.imageFile.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                 ),
 
-              if (widget.isSelected)
-                Container(
-                  color: colorScheme.primary.withAlpha((255 * 0.1).round()),
-                ),
-              
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha((255 * 0.6).round()),
-                  ),
-                  child: Text(
-                    widget.imageFile.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              
-              if (widget.isSelected)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: colorScheme.primary,
-                      size: 24,
+                // Overlay Buttons
+                if (_isHovering || isMobile)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    right: 8,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildOverlayButton(
+                          icon: Icons.auto_fix_high,
+                          onPressed: () => _handleOptimize(context),
+                          tooltip: 'Optimize',
+                        ),
+                        const SizedBox(width: 4),
+                        _buildOverlayButton(
+                          icon: Icons.compare,
+                          onPressed: () => _handleCompare(context),
+                          tooltip: 'Compare',
+                        ),
+                        const SizedBox(width: 4),
+                        _buildOverlayButton(
+                          icon: Icons.brush,
+                          onPressed: () => _handleMask(context),
+                          tooltip: 'Mask',
+                        ),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                
+                if (widget.isSelected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: colorScheme.primary,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildOverlayButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required String tooltip,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(150),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 16, color: Colors.white),
+        onPressed: onPressed,
+        tooltip: tooltip,
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+      ),
+    );
+  }
+
+  void _handleOptimize(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    // Ensure image is selected or at least used for optimization
+    if (!appState.selectedImages.any((img) => img.path == widget.imageFile.path)) {
+      appState.galleryState.toggleImageSelection(widget.imageFile);
+    }
+    appState.setWorkbenchTab(3); // Prompt Optimizer
+  }
+
+  void _handleCompare(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final windowState = Provider.of<WindowState>(context, listen: false);
+    windowState.sendToComparator(widget.imageFile.path);
+    appState.setWorkbenchTab(1); // Comparator
+  }
+
+  void _handleMask(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final windowState = Provider.of<WindowState>(context, listen: false);
+    windowState.setMaskEditorSourceImage(widget.imageFile);
+    appState.setWorkbenchTab(2); // Mask Editor
   }
 
   void _showContextMenu(BuildContext context, Offset position) {
@@ -316,7 +453,34 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            windowState.openFloatingPreview(widget.imageFile.path);
+            showImagePreview(context, widget.imageFile.path);
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),
+            title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
+            dense: true,
+          ),
+          onTap: () async {
+            try {
+              // On macOS Debug, gal might still cause issues due to SDK bug
+              await Gal.putImage(widget.imageFile.path);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                final message = e.toString().contains('not implemented') 
+                  ? "Feature not available in this build mode"
+                  : l10n.saveFailed(e.toString());
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message), backgroundColor: Colors.red),
+                );
+              }
+            }
           },
         ),
         PopupMenuItem(
@@ -337,11 +501,12 @@ class _ImageCardState extends State<_ImageCard> {
               await Share.shareXFiles(
                 xFiles, 
                 subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+                sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
               );
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Share failed: $e')),
+                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),
                 );
               }
             }
@@ -354,7 +519,8 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _showMaskEditor(context));
+            windowState.setMaskEditorSourceImage(widget.imageFile);
+            appState.setWorkbenchTab(2); // Mask Editor
           },
         ),
         PopupMenuItem(
@@ -367,39 +533,39 @@ class _ImageCardState extends State<_ImageCard> {
             appState.galleryState.toggleImageSelection(widget.imageFile);
           },
         ),
-        if (!windowState.isComparatorOpen)
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18),
-              title: Text(l10n.sendToComparator),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path);
-            },
-          )
-        else ...[
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
-              title: Text(l10n.sendToComparatorRaw),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path, isAfter: false);
-            },
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18),
+            title: Text(l10n.sendToComparator),
+            dense: true,
           ),
-          PopupMenuItem(
-            child: ListTile(
-              leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
-              title: Text(l10n.sendToComparatorAfter),
-              dense: true,
-            ),
-            onTap: () {
-              windowState.sendToComparator(widget.imageFile.path, isAfter: true);
-            },
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path);
+            appState.setWorkbenchTab(1); // Comparator
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+            title: Text(l10n.sendToComparatorRaw),
+            dense: true,
           ),
-        ],
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path, isAfter: false);
+            appState.setWorkbenchTab(1); // Comparator
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+            title: Text(l10n.sendToComparatorAfter),
+            dense: true,
+          ),
+          onTap: () {
+            windowState.sendToComparator(widget.imageFile.path, isAfter: true);
+            appState.setWorkbenchTab(1); // Comparator
+          },
+        ),
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.copy, size: 18),
@@ -455,13 +621,6 @@ class _ImageCardState extends State<_ImageCard> {
           },
         ),
       ],
-    );
-  }
-
-  void _showMaskEditor(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => MaskEditorDialog(sourceImage: widget.imageFile),
     );
   }
 

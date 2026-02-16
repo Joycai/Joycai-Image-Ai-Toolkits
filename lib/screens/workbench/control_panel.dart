@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/app_file.dart';
+import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
@@ -10,11 +12,11 @@ import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/markdown_editor.dart';
-import '../../widgets/refiner_panel.dart';
 import 'model_selection_section.dart';
 
 class ControlPanelWidget extends StatefulWidget {
-  const ControlPanelWidget({super.key});
+  final ScrollController? scrollController;
+  const ControlPanelWidget({super.key, this.scrollController});
 
   @override
   State<ControlPanelWidget> createState() => _ControlPanelWidgetState();
@@ -78,17 +80,21 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   @override
   Widget build(BuildContext context) {
     // Select specific values to rebuild on change
-    final appState = context.watch<AppState>();
-    final imageModels = appState.imageModels;
-    final allChannels = appState.allChannels;
-    final isMarkdownWorkbench = appState.isMarkdownWorkbench;
+    final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
+    final allChannels = context.select<AppState, List<LLMChannel>>((s) => s.allChannels);
+    final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
+    final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
+    final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
+    final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
+    final lastAspectRatio = context.select<AppState, AppAspectRatio>((s) => s.lastAspectRatio);
+    final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
     
     // Determine selected model from AppState
     int? selectedModelPk;
     int? selectedChannelId;
     
     if (imageModels.isNotEmpty) {
-      final savedModelId = appState.lastSelectedModelId;
+      final savedModelId = lastSelectedModelId;
       final match = imageModels.cast<LLMModel?>().firstWhere(
         (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
         orElse: () => null,
@@ -105,167 +111,200 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
       }
     }
 
-    // Keep controllers in sync if state changes externally (e.g. prompt refiner)
-    if (_promptController.text != appState.lastPrompt) {
+    final appState = Provider.of<AppState>(context);
+    
+    // Keep controllers in sync if state changes externally (e.g. prompt refiner apply)
+    // BUT only if we are NOT currently on the refiner tab to avoid overriding work-in-progress
+    if (appState.workbenchTabIndex != 1 && _promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
-        text: appState.lastPrompt,
-        selection: TextSelection.collapsed(offset: appState.lastPrompt.length),
+        text: lastPrompt,
+        selection: TextSelection.collapsed(offset: lastPrompt.length),
       );
     }
-    if (_prefixController.text != appState.imagePrefix) {
-      _prefixController.text = appState.imagePrefix;
+    if (_prefixController.text != imagePrefix) {
+      _prefixController.text = imagePrefix;
     }
 
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSelectionPreview(appState, colorScheme, l10n),
-          const Divider(height: 32),
-          
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Model Selection Section
-                  ModelSelectionSection(
-                    availableModels: imageModels.map((m) => m.toMap()).toList(), // Adapter needed until ModelSelectionSection is refactored
-                    channels: allChannels.map((c) => c.toMap()).toList(), // Adapter
-                    selectedChannelId: selectedChannelId,
-                    selectedModelPk: selectedModelPk,
-                    aspectRatio: appState.lastAspectRatio,
-                    resolution: appState.lastResolution,
-                    isExpanded: _isModelSettingsExpanded,
-                    onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
-                    onChannelChanged: (val) {
-                      final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
-                      final newPk = firstInChannel?.id;
-                      if (newPk != null) {
-                        _updateConfig(modelPk: newPk);
-                      }
-                    },
-                    onModelChanged: (val) {
-                      _updateConfig(modelPk: val);
-                    },
-                    onAspectRatioChanged: (v) {
-                      _updateConfig(ar: v);
-                    },
-                    onResolutionChanged: (v) {
-                      _updateConfig(res: v);
-                    },
-                  ),
-
-                  const Divider(height: 24),
-                  
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () => _showRefinerDialog(appState, l10n),
-                            icon: const Icon(Icons.auto_fix_high, size: 14),
-                            label: Text(l10n.refiner, style: const TextStyle(fontSize: 11)),
-                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                          ),
-                          _buildPromptPicker(colorScheme, l10n),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  MarkdownEditor(
-                    controller: _promptController,
-                    label: l10n.prompt,
-                    isMarkdown: isMarkdownWorkbench,
-                    onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
-                    maxLines: 15,
-                    initiallyPreview: false,
-                    hint: l10n.promptHint,
-                    onChanged: (v) => _updateConfig(prompt: v),
-                  ),
-                  const SizedBox(height: 8),
-
-                ],
-              ),
+    // Use a layout builder to detect if we should be internally scrollable (Desktop sidebar)
+    // or if we are being scrolled by an external controller (Mobile BottomSheet)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final content = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Selector<AppState, List<AppFile>>(
+              selector: (_, s) => s.selectedImages,
+              builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
             ),
-          ),
-          
-          const Divider(),
-          Selector<AppState, (int, int, double?)>(
-            selector: (_, state) {
-              final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-              final runningCount = state.taskQueue.runningCount;
-              final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
-              
-              double? avgProgress;
-              if (activeTasks.isNotEmpty) {
-                double total = 0;
-                int count = 0;
-                for (var t in activeTasks) {
-                  if (t.progress != null) {
-                    total += t.progress!;
-                    count++;
-                  }
+            const Divider(height: 32),
+            
+            // Model Selection Section
+            ModelSelectionSection(
+              availableModels: imageModels.map((m) => m.toMap()).toList(),
+              channels: allChannels.map((c) => c.toMap()).toList(),
+              selectedChannelId: selectedChannelId,
+              selectedModelPk: selectedModelPk,
+              aspectRatio: lastAspectRatio,
+              resolution: lastResolution,
+              isExpanded: _isModelSettingsExpanded,
+              onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
+              onChannelChanged: (val) {
+                final appState = Provider.of<AppState>(context, listen: false);
+                final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
+                final newPk = firstInChannel?.id;
+                if (newPk != null) {
+                  _updateConfig(modelPk: newPk);
                 }
-                if (count > 0) avgProgress = total / count;
-              }
-              return (pendingCount, runningCount, avgProgress);
-            },
-            builder: (context, data, _) {
-              return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
-            },
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () => _showQueueSettings(context, l10n),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: (_promptController.text.isEmpty || selectedModelPk == null) 
-                      ? null 
-                      : () {
-                          final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
-                          final modelName = selectedModel.modelName;
-                          
-                          appState.submitTask(selectedModelPk, {
-                            'prompt': _promptController.text,
-                            'aspectRatio': appState.lastAspectRatio.value,
-                            'imageSize': appState.lastResolution.value,
-                          }, modelIdDisplay: modelName);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.taskSubmitted),
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              width: 250,
-                            ),
-                          );
-                        },
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(appState.selectedImages.isEmpty 
-                      ? l10n.processPrompt 
-                      : l10n.processImages(appState.selectedImages.length)),
+              },
+              onModelChanged: (val) {
+                _updateConfig(modelPk: val);
+              },
+              onAspectRatioChanged: (v) {
+                _updateConfig(ar: v);
+              },
+              onResolutionChanged: (v) {
+                _updateConfig(res: v);
+              },
+            ),
+
+            const Divider(height: 24),
+            
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPromptPicker(colorScheme, l10n),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            MarkdownEditor(
+              controller: _promptController,
+              label: l10n.prompt,
+              isMarkdown: isMarkdownWorkbench,
+              onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+              maxLines: 15,
+              initiallyPreview: false,
+              hint: l10n.promptHint,
+              onChanged: (v) => _updateConfig(prompt: v),
+              expand: false, // Don't expand inside scrollable
+            ),
+            const SizedBox(height: 16),
+            
+            const Divider(),
+            Selector<AppState, (int, int, double?)>(
+              selector: (_, state) {
+                final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
+                final runningCount = state.taskQueue.runningCount;
+                final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
+                
+                double? avgProgress;
+                if (activeTasks.isNotEmpty) {
+                  double total = 0;
+                  int count = 0;
+                  for (var t in activeTasks) {
+                    if (t.progress != null) {
+                      total += t.progress!;
+                      count++;
+                    }
+                  }
+                  if (count > 0) avgProgress = total / count;
+                }
+                return (pendingCount, runningCount, avgProgress);
+              },
+              builder: (context, data, _) {
+                return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => _showQueueSettings(context, l10n),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Selector<AppState, int>(
+                    selector: (_, s) => s.selectedImages.length,
+                    builder: (context, selectedCount, _) => FilledButton.icon(
+                      onPressed: _promptController.text.isEmpty 
+                          ? null 
+                          : () {
+                              final appState = Provider.of<AppState>(context, listen: false);
+                              if (selectedModelPk == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l10n.noModelsConfigured),
+                                    action: SnackBarAction(
+                                      label: l10n.settings,
+                                      onPressed: () => appState.navigateToScreen(6),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelPk);
+                              final modelName = selectedModel.modelName;
+                              
+                              appState.submitTask(selectedModelPk, {
+                                'prompt': _promptController.text,
+                                'aspectRatio': lastAspectRatio.value,
+                                'imageSize': lastResolution.value,
+                              }, modelIdDisplay: modelName);
+                              
+                              if (widget.scrollController != null) {
+                                Navigator.pop(context); // Close bottom sheet on mobile
+                              }
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.taskSubmitted),
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  width: 250,
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.play_arrow),
+                      label: Text(selectedCount == 0 
+                          ? l10n.processPrompt 
+                          : l10n.processImages(selectedCount)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+
+        if (widget.scrollController != null) {
+          // Being scrolled by external sheet
+          return SingleChildScrollView(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.all(16),
+            child: content,
+          );
+        } else {
+          // Sidebar mode: use own scroll if needed
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: content,
+          );
+        }
+      },
     );
   }
 
@@ -320,19 +359,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
     );
   }
 
-  void _showRefinerDialog(AppState appState, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AIPromptRefiner(
-        initialPrompt: _promptController.text,
-        selectedImages: appState.selectedImages,
-        onApply: (refined) {
-          _promptController.text = refined;
-          _updateConfig(prompt: refined);
-        },
-      ),
-    );
-  }
+
 
   Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
     return TextButton.icon(
@@ -344,27 +371,25 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
   }
 
   void _showPromptPickerMenu(AppLocalizations l10n) {
-    showDialog(
+    PromptLibrarySheet.show(
       context: context,
-      builder: (context) => LibraryDialog(
-        allPrompts: _allUserPrompts,
-        tags: _tags,
-        initialContent: _promptController.text,
-        onApply: (content, isAppend) {
-          if (isAppend) {
-            final existing = _promptController.text;
-            _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
-          } else {
-            _promptController.text = content;
-          }
-          _updateConfig(prompt: _promptController.text);
-        },
-      ),
+      allPrompts: _allUserPrompts,
+      tags: _tags,
+      initialContent: _promptController.text,
+      onApply: (content, isAppend) {
+        if (isAppend) {
+          final existing = _promptController.text;
+          _promptController.text = existing.isEmpty ? content : "$existing\n\n$content";
+        } else {
+          _promptController.text = content;
+        }
+        _updateConfig(prompt: _promptController.text);
+      },
     );
   }
 
-  Widget _buildSelectionPreview(AppState appState, ColorScheme colorScheme, AppLocalizations l10n) {
-    if (appState.selectedImages.isEmpty) {
+  Widget _buildSelectionPreview(BuildContext context, List<AppFile> selectedImages, ColorScheme colorScheme, AppLocalizations l10n) {
+    if (selectedImages.isEmpty) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Container(
@@ -392,11 +417,11 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              l10n.selectedCount(appState.selectedImages.length),
+              l10n.selectedCount(selectedImages.length),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             TextButton(
-              onPressed: appState.clearImageSelection,
+              onPressed: () => Provider.of<AppState>(context, listen: false).clearImageSelection(),
               child: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
             ),
           ],
@@ -406,9 +431,9 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
           height: 100,
           child: ReorderableListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: appState.selectedImages.length,
+            itemCount: selectedImages.length,
             onReorder: (oldIndex, newIndex) {
-              appState.galleryState.reorderSelectedImages(oldIndex, newIndex);
+              Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
             },
             proxyDecorator: (child, index, animation) {
               return Material(
@@ -417,7 +442,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
               );
             },
             itemBuilder: (context, index) {
-              final image = appState.selectedImages[index];
+              final image = selectedImages[index];
               return Padding(
                 key: ValueKey(image.path),
                 padding: const EdgeInsets.only(right: 8.0),
@@ -436,7 +461,7 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                       top: 4,
                       right: 4,
                       child: GestureDetector(
-                        onTap: () => appState.toggleImageSelection(image),
+                        onTap: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
@@ -495,10 +520,10 @@ class _ControlPanelWidgetState extends State<ControlPanelWidget> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _prefixController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g. result',
+                    border: const OutlineInputBorder(),
+                    hintText: l10n.prefixHint,
                   ),
                   onChanged: (v) => appState.setImagePrefix(v),
                 ),

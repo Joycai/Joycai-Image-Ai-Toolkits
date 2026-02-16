@@ -1,0 +1,100 @@
+{
+  "models": "Models",
+  "modelManagement": "Model Management",
+  "feeManagement": "Fee Management",
+  "modelsTab": "Models",
+  "channelsTab": "Channels",
+  "addChannel": "Add Channel",
+  "editChannel": "Edit Channel",
+  "basicInfo": "Basic Info",
+  "configuration": "Configuration",
+  "tagAndAppearance": "Tag & Appearance",
+  "billing": "Billing",
+  "channelType": "Channel Type",
+  "enableDiscovery": "Enable Model Discovery",
+  "filterModels": "Filter models...",
+  "tagColor": "Tag Color",
+  "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.",
+  "@deleteChannelConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "modelManager": "Model Manager",
+  "name": "Name",
+  "addModel": "Add Model",
+  "editModel": "Edit Model",
+  "noModelsConfigured": "No models configured",
+  "addFirstModel": "Add your first LLM model to get started",
+  "addNewModel": "Add New Model",
+  "deleteModel": "Delete Model",
+  "deleteModelConfirmTitle": "Delete Model?",
+  "deleteModelConfirmMessage": "Are you sure you want to delete \"{name}\"?",
+  "@deleteModelConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addLlmModel": "Add LLM Model",
+  "editLlmModel": "Edit LLM Model",
+  "modelIdLabel": "Model ID (e.g. gemini-pro)",
+  "displayName": "Display Name",
+  "type": "Type",
+  "tag": "Tag",
+  "inputFeeLabel": "Input Fee ($/M Tokens)",
+  "outputFeeLabel": "Output Fee ($/M Tokens)",
+  "paidModel": "Paid Model",
+  "freeModel": "Free Model",
+  "billingMode": "Billing Mode",
+  "perToken": "Per Million Tokens",
+  "perRequest": "Per Request",
+  "requestFeeLabel": "Request Fee ($/Request)",
+  "requestCount": "Request Count",
+  "requests": "Requests",
+  "feeGroups": "Fee Groups",
+  "feeGroup": "Fee Group",
+  "channels": "Channels",
+  "channel": "Channel",
+  "noFeeGroup": "No Fee Group",
+  "inputPrice": "Input Price ($/M Tokens)",
+  "outputPrice": "Output Price ($/M Tokens)",
+  "requestPrice": "Request Price ($/Req)",
+  "priceConfig": "Price Config",
+  "addFeeGroup": "Add Fee Group",
+  "editFeeGroup": "Edit Fee Group",
+  "deleteFeeGroupConfirm": "Delete Fee Group \"{name}\"?",
+  "@deleteFeeGroupConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupName": "Group Name",
+  "fetchModels": "Fetch Models",
+  "discoveringModels": "Discovering Models...",
+  "selectModelsToAdd": "Select models to add",
+  "addSelected": "Add Selected ({count})",
+  "@addSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alreadyAdded": "Already Added",
+  "noNewModelsFound": "No new models found.",
+  "fetchFailed": "Failed to fetch models: {error}",
+  "@fetchFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "model": "Model"
+}

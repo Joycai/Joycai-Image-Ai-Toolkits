@@ -1,36 +1,71 @@
 {
-  "appTitle": "Joycai Image AI Toolkits",
-  "workbench": "Workbench",
-  "tasks": "Tasks",
-  "prompts": "Prompts",
-  "usage": "Usage",
   "fileBrowser": "File Browser",
-  "downloader": "Downloader",
-  "url": "URL",
-  "prefix": "Prefix",
-  "models": "Models",
-  "settings": "Settings",
-  "addFolder": "Add Folder",
-  "directories": "DIRECTORIES",
-  "noFolders": "No folders added",
-  "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
-  "sourceGallery": "Source Gallery",
-  "sourceExplorer": "Source Explorer",
-  "processResults": "Process Results",
-  "noImagesFound": "No images found",
-  "noResultsYet": "No results yet",
-  "selectAll": "Select All",
-  "clear": "Clear",
-  "selectedCount": "{count} selected",
-  "@selectedCount": {
+  "rename": "Rename",
+  "renameFile": "Rename File",
+  "newFilename": "New Filename",
+  "renameSuccess": "Renamed successfully",
+  "renameFailed": "Failed to rename: {error}",
+  "@renameFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "fileAlreadyExists": "A file with this name already exists",
+  "noFilesFound": "No files found",
+  "switchViewMode": "Switch View Mode",
+  "sortBy": "Sort by",
+  "sortName": "Name",
+  "sortDate": "Modify Date",
+  "sortType": "File Type",
+  "sortAsc": "ASC",
+  "sortDesc": "DESC",
+  "catAll": "All",
+  "catImages": "Images",
+  "catVideos": "Videos",
+  "catAudio": "Audio",
+  "catText": "Text",
+  "catOthers": "Others",
+  "openWithSystemDefault": "Open with System Default",
+  "aiBatchRename": "AI Batch Rename",
+  "rulesInstructions": "Renaming Rules / Instructions",
+  "generateSuggestions": "Generate Suggestions",
+  "noSuggestions": "No suggestions generated yet",
+  "applyRenames": "Apply Renames",
+  "imagesSelected": "{count} selected",
+  "@imagesSelected": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
+  "appTitle": "Joycai Image AI Toolkits",
+  "save": "Save",
+  "update": "Update",
+  "cancel": "Cancel",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "finish": "Finish",
+  "exit": "Exit",
+  "add": "Add",
+  "edit": "Edit",
+  "delete": "Delete",
+  "remove": "Remove",
+  "clear": "Clear",
+  "refresh": "Refresh",
+  "preview": "Preview",
+  "share": "Share",
+  "status": "Status",
+  "started": "Started",
+  "finished": "Finished",
+  "config": "Config",
+  "logs": "Logs",
   "copyFilename": "Copy Filename",
   "openInFolder": "Open in Folder",
+  "openInPreview": "Open in Preview",
   "copiedToClipboard": "Copied: {text}",
   "@copiedToClipboard": {
     "placeholders": {
@@ -39,200 +74,95 @@
       }
     }
   },
-  "modelSelection": "Model Selection",
-  "selectAModel": "Select a model",
-  "aspectRatio": "Aspect Ratio",
-  "resolution": "Resolution",
-  "prompt": "Prompt",
-  "library": "Library",
-  "refiner": "Refiner",
-  "processPrompt": "Process Prompt",
-  "processImages": "Process {count} Images",
-  "@processImages": {
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "promptHint": "Enter prompt here...",
-  "taskSubmitted": "Task submitted to queue",
-  "runningCount": "{count} running",
-  "@runningCount": {
+  "shareFiles": "Share selected items ({count})",
+  "@shareFiles": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "plannedCount": "{count} planned",
-  "@plannedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "selectFromLibrary": "Select from Library",
-  "close": "Close",
-  "queueSettings": "Queue Settings",
-  "concurrencyLimit": "Concurrency Limit: {limit}",
-  "@concurrencyLimit": {
-    "placeholders": {
-      "limit": {
-        "type": "int"
-      }
-    }
-  },
-  "retryCount": "Retry Count: {count}",
-  "@retryCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "back": "Back",
-  "next": "Next",
-  "storageLocationDesc": "Select where generated images will be saved.",
-  "addChannelOptional": "Add your first AI provider channel (Optional).",
-  "configureModelOptional": "Configure a model for your new channel (Optional).",
-  "importSettingsTitle": "Import Settings?",
-  "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
-  "importAndReplace": "Import & Replace",
-  "importMode": "Import Mode",
-  "importModeDesc": "Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.",
-  "merge": "Merge",
-  "replaceAll": "Replace All",
-  "exit": "Exit",
-  "applyOverwrite": "Apply (Overwrite)",
-  "applyAppend": "Apply (Append)",
-  "aiPromptRefiner": "AI Prompt Refiner",
-  "refinerModel": "Refiner Model",
-  "systemPrompt": "System Prompt",
-  "currentPrompt": "Current Prompt",
-  "refinedPrompt": "Refined Prompt",
+  "comingSoon": "Coming Soon",
+  "sidebar": "Sidebar",
+  "white": "White",
+  "black": "Black",
+  "red": "Red",
+  "green": "Green",
   "refine": "Refine",
   "apply": "Apply",
-  "refineFailed": "Refine failed: {error}",
-  "@refineFailed": {
+  "metadata": "Metadata",
+  "filterPrompts": "Filter prompts...",
+  "shareFailed": "Share failed: {error}",
+  "@shareFailed": {
     "placeholders": {
       "error": {
         "type": "String"
       }
     }
   },
-  "noImagesSelected": "No images selected",
-  "selectSourceDirectory": "Select Source Directory",
-  "removeFolderTooltip": "Remove folder",
-  "removeFolderConfirmTitle": "Remove Folder?",
-  "removeFolderConfirmMessage": "Are you sure you want to remove \"{folderName}\" from the list?",
-  "@removeFolderConfirmMessage": {
-    "placeholders": {
-      "folderName": {
-        "type": "String"
-      }
-    }
-  },
-  "remove": "Remove",
-  "appearance": "Appearance",
-  "connectivity": "Connectivity",
-  "application": "Application",
-  "proxySettings": "Proxy Settings",
-  "enableProxy": "Enable Global Proxy",
-  "proxyUrl": "Proxy URL (host:port)",
-  "proxyUsername": "Proxy Username (Optional)",
-  "proxyPassword": "Proxy Password (Optional)",
-  "language": "Language",
-  "themeAuto": "Auto",
-  "themeLight": "Light",
-  "themeDark": "Dark",
-  "googleGenAiSettings": "Google GenAI REST Settings",
-  "openAiApiSettings": "OpenAI API REST Settings",
-  "freeModel": "Free Model",
-  "paidModel": "Paid Model",
-  "standardConfig": "Standard Config",
-  "endpointUrl": "Endpoint URL",
-  "apiKey": "API Key",
-  "outputDirectory": "Output Directory",
-  "notSet": "Not set",
-  "dataManagement": "Data Management",
-  "exportSettings": "Export Settings",
-  "importSettings": "Import Settings",
-  "openAppDataDirectory": "Open App Data Directory",
-  "mcpServerSettings": "MCP Server Settings",
-  "enableMcpServer": "Enable MCP Server",
-  "port": "Port",
-  "resetAllSettings": "Reset All Settings",
-  "confirmReset": "Reset All Settings?",
-  "resetWarning": "This will delete all configurations, models, and added folders. This action cannot be undone.",
-  "cancel": "Cancel",
-  "resetEverything": "Reset Everything",
-  "settingsExported": "Settings exported successfully",
-  "settingsImported": "Settings imported successfully",
-  "taskQueueManager": "Task Queue Manager",
-  "refresh": "Refresh",
-  "noTasksInQueue": "No tasks in queue",
-  "submitTaskFromWorkbench": "Submit a task from the Workbench to see it here.",
-  "taskId": "Task ID: {id}",
-  "@taskId": {
-    "placeholders": {
-      "id": {
-        "type": "String"
-      }
-    }
-  },
-  "taskSummary": "Task Summary",
-  "pendingTasks": "Pending",
-  "processingTasks": "Processing",
-  "completedTasks": "Completed",
-  "failedTasks": "Failed",
-  "clearCompleted": "Clear Completed",
-  "clearAll": "Clear All",
-  "cancelAllPending": "Cancel All Pending",
-  "cancelTask": "Cancel Task",
-  "removeFromList": "Remove from list",
-  "model": "Model",
-  "images": "Images",
-  "filesCount": "{count} files",
-  "@filesCount": {
+  "downloader": "Downloader",
+  "imageDownloader": "Image Downloader",
+  "url": "URL",
+  "prefix": "Prefix",
+  "websiteUrl": "Website URL",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "What to find?",
+  "whatToFindHint": "e.g. all product gallery images",
+  "analysisModel": "Analysis Model",
+  "advancedOptions": "Advanced Options",
+  "analyzing": "Analyzing...",
+  "findImages": "Find Images",
+  "noImagesDiscovered": "No images discovered yet.",
+  "enterUrlToStart": "Enter a URL and requirement to start.",
+  "addToQueue": "Add to Queue",
+  "addedToQueue": "Added {count} images to download queue.",
+  "@addedToQueue": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "started": "Started",
-  "finished": "Finished",
-  "config": "Config",
-  "latestLog": "Latest Log:",
-  "promptLibrary": "Prompt Library",
-  "newPrompt": "New Prompt",
-  "editPrompt": "Edit Prompt",
-  "noPromptsSaved": "No prompts saved",
-  "saveFavoritePrompts": "Save your favorite prompts or Refiner system prompts here",
-  "createFirstPrompt": "Create First Prompt",
-  "deletePromptConfirmTitle": "Delete Prompt?",
-  "deletePromptConfirmMessage": "Are you sure you want to delete \"{title}\"?",
-  "@deletePromptConfirmMessage": {
+  "setOutputDirFirst": "Please set output directory in settings first.",
+  "cookiesHint": "Cookies (Raw or Netscape format)",
+  "selectImagesToDownload": "Select images to download",
+  "importCookieFile": "Import Cookie File",
+  "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
+  "cookieImportSuccess": "Successfully imported {count} cookies.",
+  "@cookieImportSuccess": {
     "placeholders": {
-      "title": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveOriginHtml": "Save Origin HTML",
+  "htmlSavedTo": "HTML saved to: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
         "type": "String"
       }
     }
   },
-  "delete": "Delete",
-  "deleteModel": "Delete Model",
-  "title": "Title",
-  "tagCategory": "Tag (Category)",
-  "setAsRefiner": "Set as Refiner",
-  "promptContent": "Prompt Content",
-  "save": "Save",
-  "update": "Update",
+  "manualHtmlMode": "Manual HTML Mode",
+  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
+  "cookieHistory": "Cookie History",
+  "noCookieHistory": "No cookie history saved",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "openRawImage": "Open Raw Image",
+  "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
   "clearUsageWarning": "This will permanently delete all token usage records from the database.",
-  "clearAll": "Clear All",
   "modelsLabel": "Models: ",
   "rangeLabel": "Range: ",
   "today": "Today",
@@ -259,19 +189,22 @@
     }
   },
   "clearModelData": "Clear Model Data",
+  "usageByGroup": "Usage by Group",
+  "clearAll": "Clear All",
+  "models": "Models",
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
   "modelsTab": "Models",
   "channelsTab": "Channels",
-  "categoriesTab": "Categories",
-  "addCategory": "Add Category",
-  "editCategory": "Edit Category",
   "addChannel": "Add Channel",
   "editChannel": "Edit Channel",
+  "basicInfo": "Basic Info",
+  "configuration": "Configuration",
+  "tagAndAppearance": "Tag & Appearance",
+  "billing": "Billing",
   "channelType": "Channel Type",
   "enableDiscovery": "Enable Model Discovery",
   "filterModels": "Filter models...",
-  "filterPrompts": "Filter prompts...",
   "tagColor": "Tag Color",
   "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.",
   "@deleteChannelConfirm": {
@@ -286,8 +219,17 @@
   "addModel": "Add Model",
   "editModel": "Edit Model",
   "noModelsConfigured": "No models configured",
+  "countModels": "{count} models",
+  "@countModels": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addFirstModel": "Add your first LLM model to get started",
   "addNewModel": "Add New Model",
+  "deleteModel": "Delete Model",
   "deleteModelConfirmTitle": "Delete Model?",
   "deleteModelConfirmMessage": "Are you sure you want to delete \"{name}\"?",
   "@deleteModelConfirmMessage": {
@@ -306,80 +248,13 @@
   "inputFeeLabel": "Input Fee ($/M Tokens)",
   "outputFeeLabel": "Output Fee ($/M Tokens)",
   "paidModel": "Paid Model",
+  "freeModel": "Free Model",
   "billingMode": "Billing Mode",
   "perToken": "Per Million Tokens",
   "perRequest": "Per Request",
   "requestFeeLabel": "Request Fee ($/Request)",
   "requestCount": "Request Count",
   "requests": "Requests",
-  "add": "Add",
-  "executionLogs": "EXECUTION LOGS",
-  "clickToExpand": "Click to expand",
-  "rename": "Rename",
-  "renameFile": "Rename File",
-  "newFilename": "New Filename",
-  "renameSuccess": "Renamed successfully",
-  "renameFailed": "Failed to rename: {error}",
-  "@renameFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "fileAlreadyExists": "A file with this name already exists",
-  "thumbnailSize": "Thumbnail Size",
-  "deleteFile": "Delete File",
-  "deleteFileConfirmTitle": "Delete File?",
-  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "moveToTrash": "Move to Trash",
-  "permanentlyDelete": "Permanently Delete",
-  "aiBatchRename": "AI Batch Rename",
-  "switchViewMode": "Switch View Mode",
-  "noFilesFound": "No files found",
-  "rulesInstructions": "Renaming Rules / Instructions",
-  "generateSuggestions": "Generate Suggestions",
-  "noSuggestions": "No suggestions generated yet",
-  "applyRenames": "Apply Renames",
-  "originalName": "Original Name",
-  "newName": "New Name",
-  "status": "Status",
-  "sortBy": "Sort by",
-  "sortName": "Name",
-  "sortDate": "Modify Date",
-  "sortType": "File Type",
-  "sortAsc": "ASC",
-  "sortDesc": "DESC",
-  "catAll": "All",
-  "catImages": "Images",
-  "catVideos": "Videos",
-  "catAudio": "Audio",
-  "catText": "Text",
-  "catOthers": "Others",
-  "deleteSuccess": "Deleted successfully",
-  "deleteFailed": "Failed to delete: {error}",
-  "@deleteFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "userPrompts": "User Prompts",
-  "refinerPrompts": "Refiner Prompts",
-  "systemTemplates": "System Templates",
-  "templateType": "Template Type",
-  "typeRename": "Batch Rename",
-  "typeRefiner": "Prompt Refiner",
-  "selectRenameTemplate": "Select Rename Template",
-  "selectCategory": "Select Category",
   "feeGroups": "Fee Groups",
   "feeGroup": "Fee Group",
   "channels": "Channels",
@@ -389,11 +264,6 @@
   "outputPrice": "Output Price ($/M Tokens)",
   "requestPrice": "Request Price ($/Req)",
   "priceConfig": "Price Config",
-  "portableMode": "Portable Mode",
-  "portableModeDesc": "Store database and cache in the application folder (requires restart)",
-  "restartRequired": "Restart Required",
-  "restartMessage": "The application must be restarted to apply changes to the data storage location.",
-  "usageByGroup": "Usage by Group",
   "addFeeGroup": "Add Fee Group",
   "editFeeGroup": "Edit Fee Group",
   "deleteFeeGroupConfirm": "Delete Fee Group \"{name}\"?",
@@ -405,67 +275,162 @@
     }
   },
   "groupName": "Group Name",
-  "googleGenAiFree": "Google GenAI (Free)",
-  "googleGenAiPaid": "Google GenAI (Paid)",
-  "openaiApi": "OpenAI API",
-  "filenamePrefix": "Filename Prefix",
-  "setupWizardTitle": "Welcome Setup",
-  "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
-  "getStarted": "Get Started",
-  "stepAppearance": "Appearance",
-  "stepStorage": "Storage",
-  "stepApi": "Intelligence (API)",
-  "finish": "Finish",
-  "setupCompleteMessage": "You are all set! Enjoy creating.",
-  "runSetupWizard": "Run Setup Wizard",
-  "clearDownloaderCache": "Clear Downloader Cache",
-  "skip": "Skip",
   "fetchModels": "Fetch Models",
   "discoveringModels": "Discovering Models...",
   "selectModelsToAdd": "Select models to add",
   "addSelected": "Add Selected ({count})",
+  "@addSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "alreadyAdded": "Already Added",
   "noNewModelsFound": "No new models found.",
   "fetchFailed": "Failed to fetch models: {error}",
-  "edit": "Edit",
-  "preview": "Preview",
-  "openRawImage": "Open Raw Image",
-  "pasteFromClipboard": "Paste from Clipboard",
-  "saveOriginHtml": "Save Origin HTML",
-  "htmlSavedTo": "HTML saved to: {path}",
-  "@htmlSavedTo": {
+  "@fetchFailed": {
     "placeholders": {
-      "path": {
+      "error": {
         "type": "String"
       }
     }
   },
-  "manualHtmlMode": "Manual HTML Mode",
-  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
-  "cookieHistory": "Cookie History",
-  "noCookieHistory": "No cookie history saved",
-  "openInPreview": "Open in Preview",
-  "openWithSystemDefault": "Open with System Default",
-  "drawMask": "Draw Mask",
-  "maskEditor": "Mask Editor",
-  "brushSize": "Brush Size",
-  "maskColor": "Mask Color",
-  "undo": "Undo",
-  "saveAndSelect": "Save & Select",
-  "black": "Black",
-  "white": "White",
-  "red": "Red",
-  "green": "Green",
-  "sendToSelection": "Send to Selection",
-  "sendToComparator": "Send to Comparator",
-  "sendToComparatorRaw": "Send to Comparator (Raw)",
-  "sendToComparatorAfter": "Send to Comparator (After)",
-  "compareModeSync": "Sync Mode",
-  "compareModeSwap": "Swap Mode",
-  "tempWorkspace": "Temp Workspace",
-  "clearTempWorkspace": "Clear Workspace",
-  "dropFilesHere": "Drop images here to add them to temporary workspace",
+  "model": "Model",
+  "prompts": "Prompts",
+  "promptLibrary": "Prompt Library",
+  "newPrompt": "New Prompt",
+  "editPrompt": "Edit Prompt",
+  "noPromptsSaved": "No prompts saved",
+  "saveFavoritePrompts": "Save your favorite prompts or Refiner system prompts here",
+  "createFirstPrompt": "Create First Prompt",
+  "deletePromptConfirmTitle": "Delete Prompt?",
+  "deletePromptConfirmMessage": "Are you sure you want to delete \"{title}\"?",
+  "@deletePromptConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "title": "Title",
+  "tagCategory": "Tag (Category)",
+  "setAsRefiner": "Set as Refiner",
+  "promptContent": "Prompt Content",
+  "userPrompts": "User Prompts",
+  "refinerPrompts": "Refiner Prompts",
+  "systemTemplates": "System Templates",
+  "templateType": "Template Type",
+  "typeRename": "Batch Rename",
+  "typeRefiner": "Prompt Refiner",
+  "selectRenameTemplate": "Select Rename Template",
+  "selectCategory": "Select Category",
+  "categoriesTab": "Categories",
+  "addCategory": "Add Category",
+  "editCategory": "Edit Category",
+  "library": "Library",
+  "refiner": "Refiner",
+  "settings": "Settings",
+  "appearance": "Appearance",
+  "connectivity": "Connectivity",
+  "application": "Application",
+  "proxySettings": "Proxy Settings",
+  "enableProxy": "Enable Global Proxy",
+  "proxyUrl": "Proxy URL (host:port)",
+  "proxyUsername": "Proxy Username (Optional)",
+  "proxyPassword": "Proxy Password (Optional)",
+  "language": "Language",
+  "themeAuto": "Auto",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "googleGenAiSettings": "Google GenAI REST Settings",
+  "openAiApiSettings": "OpenAI API REST Settings",
+  "standardConfig": "Standard Config",
+  "endpointUrl": "Endpoint URL",
+  "apiKey": "API Key",
+  "outputDirectory": "Output Directory",
+  "notSet": "Not set",
+  "dataManagement": "Data Management",
+  "exportSettings": "Export Settings",
+  "importSettings": "Import Settings",
+  "openAppDataDirectory": "Open App Data Directory",
+  "mcpServerSettings": "MCP Server Settings",
+  "enableMcpServer": "Enable MCP Server",
+  "port": "Port",
+  "resetAllSettings": "Reset All Settings",
+  "confirmReset": "Reset All Settings?",
+  "resetWarning": "This will delete all configurations, models, and added folders. This action cannot be undone.",
+  "resetEverything": "Reset Everything",
+  "settingsExported": "Settings exported successfully",
+  "settingsImported": "Settings imported successfully",
+  "importSettingsTitle": "Import Settings?",
+  "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
+  "importAndReplace": "Import & Replace",
+  "importMode": "Import Mode",
+  "importModeDesc": "Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.",
+  "merge": "Merge",
+  "replaceAll": "Replace All",
+  "applyOverwrite": "Apply (Overwrite)",
+  "applyAppend": "Apply (Append)",
+  "portableMode": "Portable Mode",
+  "portableModeDesc": "Store database and cache in the application folder (requires restart)",
+  "restartRequired": "Restart Required",
+  "restartMessage": "The application must be restarted to apply changes to the data storage location.",
   "enableNotifications": "Enable System Notifications",
+  "runSetupWizard": "Run Setup Wizard",
+  "clearDownloaderCache": "Clear Downloader Cache",
+  "enableApiDebug": "Enable API Debug Logging",
+  "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
+  "openLogFolder": "Open Log Folder",
+  "iosOutputRecommend": "Recommended: Leave as default on iOS. The app's folder is visible in the 'Files' app.",
+  "downloaderCacheCleared": "Downloader cache cleared.",
+  "tasks": "Tasks",
+  "taskQueueManager": "Task Queue Manager",
+  "noTasksInQueue": "No tasks in queue",
+  "submitTaskFromWorkbench": "Submit a task from the Workbench to see it here.",
+  "taskId": "Task ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskSummary": "Task Summary",
+  "pendingTasks": "Pending",
+  "processingTasks": "Processing",
+  "completedTasks": "Completed",
+  "failedTasks": "Failed",
+  "clearCompleted": "Clear Completed",
+  "cancelAllPending": "Cancel All Pending",
+  "cancelTask": "Cancel Task",
+  "removeFromList": "Remove from list",
+  "images": "Images",
+  "filesCount": "{count} files",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runningCount": "{count} running",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} planned",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "latestLog": "Latest Log:",
   "taskCompletedNotification": "Task Completed",
   "taskFailedNotification": "Task Failed",
   "taskCompletedBody": "Task {id} has finished successfully.",
@@ -484,55 +449,185 @@
       }
     }
   },
-  "imageDownloader": "Image Downloader",
-  "websiteUrl": "Website URL",
-  "websiteUrlHint": "https://example.com",
-  "whatToFind": "What to find?",
-  "whatToFindHint": "e.g. all product gallery images",
-  "analysisModel": "Analysis Model",
-  "advancedOptions": "Advanced Options",
-  "analyzing": "Analyzing...",
-  "findImages": "Find Images",
-  "noImagesDiscovered": "No images discovered yet.",
-  "enterUrlToStart": "Enter a URL and requirement to start.",
-  "addToQueue": "Add to Queue",
-  "imagesSelected": "{count} selected",
-  "@imagesSelected": {
+  "queueSettings": "Queue Settings",
+  "concurrencyLimit": "Concurrency Limit: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "retryCount": "Retry Count: {count}",
+  "@retryCount": {
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "addedToQueue": "Added {count} images to download queue.",
-  "@addedToQueue": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "setOutputDirFirst": "Please set output directory in settings first.",
-  "cookiesHint": "Cookies (Raw or Netscape format)",
-  "logs": "Logs",
-  "selectImagesToDownload": "Select images to download",
+  "setupWizardTitle": "Welcome Setup",
+  "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
+  "getStarted": "Get Started",
+  "stepAppearance": "Appearance",
+  "stepStorage": "Storage",
+  "stepApi": "Intelligence (API)",
+  "setupCompleteMessage": "You are all set! Enjoy creating.",
+  "skip": "Skip",
+  "storageLocationDesc": "Select where generated images will be saved.",
+  "addChannelOptional": "Add your first AI provider channel (Optional).",
+  "configureModelOptional": "Configure a model for your new channel (Optional).",
+  "googleGenAiFree": "Google GenAI (Free)",
+  "googleGenAiPaid": "Google GenAI (Paid)",
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "Filename Prefix",
   "openaiEndpointHint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
   "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
-  "importCookieFile": "Import Cookie File",
-  "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
-    "cookieImportSuccess": "Successfully imported {count} cookies.",
-    "share": "Share",
-    "shareFiles": "Share selected items ({count})",
-    "@shareFiles": {
-      "placeholders": {
-        "count": {
-          "type": "int"
-        }
+  "workbench": "Workbench",
+  "imageProcessing": "Image Processing",
+  "sourceGallery": "Source Gallery",
+  "sourceExplorer": "Source Explorer",
+  "tempWorkspace": "Temp Workspace",
+  "processResults": "Process Results",
+  "resultCache": "Result Cache",
+  "directories": "DIRECTORIES",
+  "addFolder": "Add Folder",
+  "noFolders": "No folders added",
+  "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
+  "noImagesFound": "No images found",
+  "noResultsYet": "No results yet",
+  "selectAll": "Select All",
+  "importFromGallery": "Import from Gallery",
+  "clearTempWorkspace": "Clear Workspace",
+  "dropFilesHere": "Drop images here to add them to temporary workspace",
+  "noImagesSelected": "No images selected",
+  "selectSourceDirectory": "Select Source Directory",
+  "removeFolderTooltip": "Remove folder",
+  "removeFolderConfirmTitle": "Remove Folder?",
+  "removeFolderConfirmMessage": "Are you sure you want to remove \"{folderName}\" from the list?",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
       }
-    },
-      "importFromGallery": "Import from Gallery",
-      "enableApiDebug": "Enable API Debug Logging",
-      "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
-      "openLogFolder": "Open Log Folder"
     }
-    
+  },
+  "thumbnailSize": "Thumbnail Size",
+  "deleteFile": "Delete File",
+  "deleteFileConfirmTitle": "Delete File?",
+  "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "Move to Trash",
+  "permanentlyDelete": "Permanently Delete",
+  "deleteSuccess": "Deleted successfully",
+  "deleteFailed": "Failed to delete: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "Model Selection",
+  "selectAModel": "Select a model",
+  "aspectRatio": "Aspect Ratio",
+  "resolution": "Resolution",
+  "prompt": "Prompt",
+  "promptHint": "Enter prompt here...",
+  "prefixHint": "e.g. result",
+  "processPrompt": "Process Prompt",
+  "processImages": "Process {count} Images",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSubmitted": "Task submitted to queue",
+  "comparator": "Comparator",
+  "compareModeSync": "Sync Mode",
+  "compareModeSwap": "Swap Mode",
+  "sendToComparator": "Send to Comparator",
+  "sendToComparatorRaw": "Send to Comparator (Raw)",
+  "sendToComparatorAfter": "Send to Comparator (After)",
+  "sendToSelection": "Send to Selection",
+  "selectFromLibrary": "Select from Library",
+  "metadataSelectedNone": "No image metadata selected",
+  "labelRaw": "RAW",
+  "labelAfter": "AFTER",
+  "drawMask": "Draw Mask",
+  "maskEditor": "Mask Editor",
+  "brushSize": "Brush Size",
+  "maskColor": "Mask Color",
+  "undo": "Undo",
+  "saveAndSelect": "Save & Select",
+  "aiSmartMask": "AI Smart Mask",
+  "binaryMode": "Binary Mode",
+  "maskModel": "Model",
+  "maskDetail": "Detail: {count}",
+  "@maskDetail": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maskPromptLabel": "What to mask?",
+  "generating": "Generating...",
+  "generate": "Generate",
+  "maskSaved": "Mask saved and selected",
+  "maskSaveError": "Error saving mask: {error}",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "maskGenError": "AI Mask generation failed: {error}",
+  "@maskGenError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "promptOptimizer": "Prompt Optimizer",
+  "refinerModel": "Refiner Model",
+  "systemPrompt": "System Prompt",
+  "refinerIntro": "Use AI to analyze images and refine your prompt.",
+  "roughPrompt": "Rough Prompt / Ideas",
+  "optimizedPrompt": "Optimized Prompt",
+  "applyToWorkbench": "Apply to Workbench",
+  "promptApplied": "Prompt applied to workbench",
+  "refineFailed": "Refine failed: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "executionLogs": "EXECUTION LOGS",
+  "saveToPhotos": "Save to Photos",
+  "saveToGallery": "Save to Gallery",
+  "savedToPhotos": "Saved to Photos",
+  "saveFailed": "Save failed: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iosSandboxActive": "iOS Sandbox Active",
+  "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "filesAppSuffix": " (Files App)"
+}

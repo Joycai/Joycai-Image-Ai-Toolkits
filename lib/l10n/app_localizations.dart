@@ -98,269 +98,203 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
-  /// No description provided for @appTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Joycai Image AI Toolkits'**
-  String get appTitle;
-
-  /// No description provided for @workbench.
-  ///
-  /// In en, this message translates to:
-  /// **'Workbench'**
-  String get workbench;
-
-  /// No description provided for @tasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks'**
-  String get tasks;
-
-  /// No description provided for @prompts.
-  ///
-  /// In en, this message translates to:
-  /// **'Prompts'**
-  String get prompts;
-
-  /// No description provided for @usage.
-  ///
-  /// In en, this message translates to:
-  /// **'Usage'**
-  String get usage;
-
   /// No description provided for @fileBrowser.
   ///
   /// In en, this message translates to:
   /// **'File Browser'**
   String get fileBrowser;
 
-  /// No description provided for @downloader.
+  /// No description provided for @rename.
   ///
   /// In en, this message translates to:
-  /// **'Downloader'**
-  String get downloader;
+  /// **'Rename'**
+  String get rename;
 
-  /// No description provided for @url.
+  /// No description provided for @renameFile.
   ///
   /// In en, this message translates to:
-  /// **'URL'**
-  String get url;
+  /// **'Rename File'**
+  String get renameFile;
 
-  /// No description provided for @prefix.
+  /// No description provided for @newFilename.
   ///
   /// In en, this message translates to:
-  /// **'Prefix'**
-  String get prefix;
+  /// **'New Filename'**
+  String get newFilename;
 
-  /// No description provided for @models.
+  /// No description provided for @renameSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Models'**
-  String get models;
+  /// **'Renamed successfully'**
+  String get renameSuccess;
 
-  /// No description provided for @settings.
+  /// No description provided for @renameFailed.
   ///
   /// In en, this message translates to:
-  /// **'Settings'**
-  String get settings;
+  /// **'Failed to rename: {error}'**
+  String renameFailed(String error);
 
-  /// No description provided for @addFolder.
+  /// No description provided for @fileAlreadyExists.
   ///
   /// In en, this message translates to:
-  /// **'Add Folder'**
-  String get addFolder;
+  /// **'A file with this name already exists'**
+  String get fileAlreadyExists;
 
-  /// No description provided for @directories.
+  /// No description provided for @noFilesFound.
   ///
   /// In en, this message translates to:
-  /// **'DIRECTORIES'**
-  String get directories;
+  /// **'No files found'**
+  String get noFilesFound;
 
-  /// No description provided for @noFolders.
+  /// No description provided for @switchViewMode.
   ///
   /// In en, this message translates to:
-  /// **'No folders added'**
-  String get noFolders;
+  /// **'Switch View Mode'**
+  String get switchViewMode;
 
-  /// No description provided for @clickAddFolder.
+  /// No description provided for @sortBy.
   ///
   /// In en, this message translates to:
-  /// **'Click \"Add Folder\" to start scanning for images.'**
-  String get clickAddFolder;
+  /// **'Sort by'**
+  String get sortBy;
 
-  /// No description provided for @sourceGallery.
+  /// No description provided for @sortName.
   ///
   /// In en, this message translates to:
-  /// **'Source Gallery'**
-  String get sourceGallery;
+  /// **'Name'**
+  String get sortName;
 
-  /// No description provided for @sourceExplorer.
+  /// No description provided for @sortDate.
   ///
   /// In en, this message translates to:
-  /// **'Source Explorer'**
-  String get sourceExplorer;
+  /// **'Modify Date'**
+  String get sortDate;
 
-  /// No description provided for @processResults.
+  /// No description provided for @sortType.
   ///
   /// In en, this message translates to:
-  /// **'Process Results'**
-  String get processResults;
+  /// **'File Type'**
+  String get sortType;
 
-  /// No description provided for @noImagesFound.
+  /// No description provided for @sortAsc.
   ///
   /// In en, this message translates to:
-  /// **'No images found'**
-  String get noImagesFound;
+  /// **'ASC'**
+  String get sortAsc;
 
-  /// No description provided for @noResultsYet.
+  /// No description provided for @sortDesc.
   ///
   /// In en, this message translates to:
-  /// **'No results yet'**
-  String get noResultsYet;
+  /// **'DESC'**
+  String get sortDesc;
 
-  /// No description provided for @selectAll.
+  /// No description provided for @catAll.
   ///
   /// In en, this message translates to:
-  /// **'Select All'**
-  String get selectAll;
+  /// **'All'**
+  String get catAll;
 
-  /// No description provided for @clear.
+  /// No description provided for @catImages.
   ///
   /// In en, this message translates to:
-  /// **'Clear'**
-  String get clear;
+  /// **'Images'**
+  String get catImages;
 
-  /// No description provided for @selectedCount.
+  /// No description provided for @catVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get catVideos;
+
+  /// No description provided for @catAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get catAudio;
+
+  /// No description provided for @catText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get catText;
+
+  /// No description provided for @catOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get catOthers;
+
+  /// No description provided for @openWithSystemDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Open with System Default'**
+  String get openWithSystemDefault;
+
+  /// No description provided for @aiBatchRename.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Batch Rename'**
+  String get aiBatchRename;
+
+  /// No description provided for @rulesInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming Rules / Instructions'**
+  String get rulesInstructions;
+
+  /// No description provided for @generateSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Suggestions'**
+  String get generateSuggestions;
+
+  /// No description provided for @noSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'No suggestions generated yet'**
+  String get noSuggestions;
+
+  /// No description provided for @applyRenames.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Renames'**
+  String get applyRenames;
+
+  /// No description provided for @imagesSelected.
   ///
   /// In en, this message translates to:
   /// **'{count} selected'**
-  String selectedCount(int count);
+  String imagesSelected(int count);
 
-  /// No description provided for @copyFilename.
+  /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Copy Filename'**
-  String get copyFilename;
+  /// **'Joycai Image AI Toolkits'**
+  String get appTitle;
 
-  /// No description provided for @openInFolder.
+  /// No description provided for @save.
   ///
   /// In en, this message translates to:
-  /// **'Open in Folder'**
-  String get openInFolder;
+  /// **'Save'**
+  String get save;
 
-  /// No description provided for @copiedToClipboard.
+  /// No description provided for @update.
   ///
   /// In en, this message translates to:
-  /// **'Copied: {text}'**
-  String copiedToClipboard(String text);
+  /// **'Update'**
+  String get update;
 
-  /// No description provided for @modelSelection.
+  /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
-  /// **'Model Selection'**
-  String get modelSelection;
-
-  /// No description provided for @selectAModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a model'**
-  String get selectAModel;
-
-  /// No description provided for @aspectRatio.
-  ///
-  /// In en, this message translates to:
-  /// **'Aspect Ratio'**
-  String get aspectRatio;
-
-  /// No description provided for @resolution.
-  ///
-  /// In en, this message translates to:
-  /// **'Resolution'**
-  String get resolution;
-
-  /// No description provided for @prompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Prompt'**
-  String get prompt;
-
-  /// No description provided for @library.
-  ///
-  /// In en, this message translates to:
-  /// **'Library'**
-  String get library;
-
-  /// No description provided for @refiner.
-  ///
-  /// In en, this message translates to:
-  /// **'Refiner'**
-  String get refiner;
-
-  /// No description provided for @processPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Process Prompt'**
-  String get processPrompt;
-
-  /// No description provided for @processImages.
-  ///
-  /// In en, this message translates to:
-  /// **'Process {count} Images'**
-  String processImages(int count);
-
-  /// No description provided for @promptHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter prompt here...'**
-  String get promptHint;
-
-  /// No description provided for @taskSubmitted.
-  ///
-  /// In en, this message translates to:
-  /// **'Task submitted to queue'**
-  String get taskSubmitted;
-
-  /// No description provided for @runningCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} running'**
-  String runningCount(int count);
-
-  /// No description provided for @plannedCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} planned'**
-  String plannedCount(int count);
-
-  /// No description provided for @selectFromLibrary.
-  ///
-  /// In en, this message translates to:
-  /// **'Select from Library'**
-  String get selectFromLibrary;
+  /// **'Cancel'**
+  String get cancel;
 
   /// No description provided for @close.
   ///
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
-
-  /// No description provided for @queueSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Queue Settings'**
-  String get queueSettings;
-
-  /// No description provided for @concurrencyLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Concurrency Limit: {limit}'**
-  String concurrencyLimit(int limit);
-
-  /// No description provided for @retryCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry Count: {count}'**
-  String retryCount(int count);
 
   /// No description provided for @back.
   ///
@@ -374,65 +308,11 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get next;
 
-  /// No description provided for @storageLocationDesc.
+  /// No description provided for @finish.
   ///
   /// In en, this message translates to:
-  /// **'Select where generated images will be saved.'**
-  String get storageLocationDesc;
-
-  /// No description provided for @addChannelOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Add your first AI provider channel (Optional).'**
-  String get addChannelOptional;
-
-  /// No description provided for @configureModelOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure a model for your new channel (Optional).'**
-  String get configureModelOptional;
-
-  /// No description provided for @importSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Settings?'**
-  String get importSettingsTitle;
-
-  /// No description provided for @importSettingsConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.'**
-  String get importSettingsConfirm;
-
-  /// No description provided for @importAndReplace.
-  ///
-  /// In en, this message translates to:
-  /// **'Import & Replace'**
-  String get importAndReplace;
-
-  /// No description provided for @importMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Mode'**
-  String get importMode;
-
-  /// No description provided for @importModeDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.'**
-  String get importModeDesc;
-
-  /// No description provided for @merge.
-  ///
-  /// In en, this message translates to:
-  /// **'Merge'**
-  String get merge;
-
-  /// No description provided for @replaceAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace All'**
-  String get replaceAll;
+  /// **'Finish'**
+  String get finish;
 
   /// No description provided for @exit.
   ///
@@ -440,95 +320,23 @@ abstract class AppLocalizations {
   /// **'Exit'**
   String get exit;
 
-  /// No description provided for @applyOverwrite.
+  /// No description provided for @add.
   ///
   /// In en, this message translates to:
-  /// **'Apply (Overwrite)'**
-  String get applyOverwrite;
+  /// **'Add'**
+  String get add;
 
-  /// No description provided for @applyAppend.
+  /// No description provided for @edit.
   ///
   /// In en, this message translates to:
-  /// **'Apply (Append)'**
-  String get applyAppend;
+  /// **'Edit'**
+  String get edit;
 
-  /// No description provided for @aiPromptRefiner.
+  /// No description provided for @delete.
   ///
   /// In en, this message translates to:
-  /// **'AI Prompt Refiner'**
-  String get aiPromptRefiner;
-
-  /// No description provided for @refinerModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Refiner Model'**
-  String get refinerModel;
-
-  /// No description provided for @systemPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'System Prompt'**
-  String get systemPrompt;
-
-  /// No description provided for @currentPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Prompt'**
-  String get currentPrompt;
-
-  /// No description provided for @refinedPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Refined Prompt'**
-  String get refinedPrompt;
-
-  /// No description provided for @refine.
-  ///
-  /// In en, this message translates to:
-  /// **'Refine'**
-  String get refine;
-
-  /// No description provided for @apply.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply'**
-  String get apply;
-
-  /// No description provided for @refineFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Refine failed: {error}'**
-  String refineFailed(String error);
-
-  /// No description provided for @noImagesSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'No images selected'**
-  String get noImagesSelected;
-
-  /// No description provided for @selectSourceDirectory.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Source Directory'**
-  String get selectSourceDirectory;
-
-  /// No description provided for @removeFolderTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove folder'**
-  String get removeFolderTooltip;
-
-  /// No description provided for @removeFolderConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove Folder?'**
-  String get removeFolderConfirmTitle;
-
-  /// No description provided for @removeFolderConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to remove \"{folderName}\" from the list?'**
-  String removeFolderConfirmMessage(String folderName);
+  /// **'Delete'**
+  String get delete;
 
   /// No description provided for @remove.
   ///
@@ -536,221 +344,11 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get remove;
 
-  /// No description provided for @appearance.
+  /// No description provided for @clear.
   ///
   /// In en, this message translates to:
-  /// **'Appearance'**
-  String get appearance;
-
-  /// No description provided for @connectivity.
-  ///
-  /// In en, this message translates to:
-  /// **'Connectivity'**
-  String get connectivity;
-
-  /// No description provided for @application.
-  ///
-  /// In en, this message translates to:
-  /// **'Application'**
-  String get application;
-
-  /// No description provided for @proxySettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Proxy Settings'**
-  String get proxySettings;
-
-  /// No description provided for @enableProxy.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Global Proxy'**
-  String get enableProxy;
-
-  /// No description provided for @proxyUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Proxy URL (host:port)'**
-  String get proxyUrl;
-
-  /// No description provided for @proxyUsername.
-  ///
-  /// In en, this message translates to:
-  /// **'Proxy Username (Optional)'**
-  String get proxyUsername;
-
-  /// No description provided for @proxyPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Proxy Password (Optional)'**
-  String get proxyPassword;
-
-  /// No description provided for @language.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
-
-  /// No description provided for @themeAuto.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto'**
-  String get themeAuto;
-
-  /// No description provided for @themeLight.
-  ///
-  /// In en, this message translates to:
-  /// **'Light'**
-  String get themeLight;
-
-  /// No description provided for @themeDark.
-  ///
-  /// In en, this message translates to:
-  /// **'Dark'**
-  String get themeDark;
-
-  /// No description provided for @googleGenAiSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Google GenAI REST Settings'**
-  String get googleGenAiSettings;
-
-  /// No description provided for @openAiApiSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'OpenAI API REST Settings'**
-  String get openAiApiSettings;
-
-  /// No description provided for @freeModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Free Model'**
-  String get freeModel;
-
-  /// No description provided for @paidModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Paid Model'**
-  String get paidModel;
-
-  /// No description provided for @standardConfig.
-  ///
-  /// In en, this message translates to:
-  /// **'Standard Config'**
-  String get standardConfig;
-
-  /// No description provided for @endpointUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Endpoint URL'**
-  String get endpointUrl;
-
-  /// No description provided for @apiKey.
-  ///
-  /// In en, this message translates to:
-  /// **'API Key'**
-  String get apiKey;
-
-  /// No description provided for @outputDirectory.
-  ///
-  /// In en, this message translates to:
-  /// **'Output Directory'**
-  String get outputDirectory;
-
-  /// No description provided for @notSet.
-  ///
-  /// In en, this message translates to:
-  /// **'Not set'**
-  String get notSet;
-
-  /// No description provided for @dataManagement.
-  ///
-  /// In en, this message translates to:
-  /// **'Data Management'**
-  String get dataManagement;
-
-  /// No description provided for @exportSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Export Settings'**
-  String get exportSettings;
-
-  /// No description provided for @importSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Settings'**
-  String get importSettings;
-
-  /// No description provided for @openAppDataDirectory.
-  ///
-  /// In en, this message translates to:
-  /// **'Open App Data Directory'**
-  String get openAppDataDirectory;
-
-  /// No description provided for @mcpServerSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'MCP Server Settings'**
-  String get mcpServerSettings;
-
-  /// No description provided for @enableMcpServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable MCP Server'**
-  String get enableMcpServer;
-
-  /// No description provided for @port.
-  ///
-  /// In en, this message translates to:
-  /// **'Port'**
-  String get port;
-
-  /// No description provided for @resetAllSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset All Settings'**
-  String get resetAllSettings;
-
-  /// No description provided for @confirmReset.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset All Settings?'**
-  String get confirmReset;
-
-  /// No description provided for @resetWarning.
-  ///
-  /// In en, this message translates to:
-  /// **'This will delete all configurations, models, and added folders. This action cannot be undone.'**
-  String get resetWarning;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
-
-  /// No description provided for @resetEverything.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset Everything'**
-  String get resetEverything;
-
-  /// No description provided for @settingsExported.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings exported successfully'**
-  String get settingsExported;
-
-  /// No description provided for @settingsImported.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings imported successfully'**
-  String get settingsImported;
-
-  /// No description provided for @taskQueueManager.
-  ///
-  /// In en, this message translates to:
-  /// **'Task Queue Manager'**
-  String get taskQueueManager;
+  /// **'Clear'**
+  String get clear;
 
   /// No description provided for @refresh.
   ///
@@ -758,101 +356,23 @@ abstract class AppLocalizations {
   /// **'Refresh'**
   String get refresh;
 
-  /// No description provided for @noTasksInQueue.
+  /// No description provided for @preview.
   ///
   /// In en, this message translates to:
-  /// **'No tasks in queue'**
-  String get noTasksInQueue;
+  /// **'Preview'**
+  String get preview;
 
-  /// No description provided for @submitTaskFromWorkbench.
+  /// No description provided for @share.
   ///
   /// In en, this message translates to:
-  /// **'Submit a task from the Workbench to see it here.'**
-  String get submitTaskFromWorkbench;
+  /// **'Share'**
+  String get share;
 
-  /// No description provided for @taskId.
+  /// No description provided for @status.
   ///
   /// In en, this message translates to:
-  /// **'Task ID: {id}'**
-  String taskId(String id);
-
-  /// No description provided for @taskSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'Task Summary'**
-  String get taskSummary;
-
-  /// No description provided for @pendingTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Pending'**
-  String get pendingTasks;
-
-  /// No description provided for @processingTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Processing'**
-  String get processingTasks;
-
-  /// No description provided for @completedTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Completed'**
-  String get completedTasks;
-
-  /// No description provided for @failedTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed'**
-  String get failedTasks;
-
-  /// No description provided for @clearCompleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Completed'**
-  String get clearCompleted;
-
-  /// No description provided for @clearAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get clearAll;
-
-  /// No description provided for @cancelAllPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel All Pending'**
-  String get cancelAllPending;
-
-  /// No description provided for @cancelTask.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel Task'**
-  String get cancelTask;
-
-  /// No description provided for @removeFromList.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from list'**
-  String get removeFromList;
-
-  /// No description provided for @model.
-  ///
-  /// In en, this message translates to:
-  /// **'Model'**
-  String get model;
-
-  /// No description provided for @images.
-  ///
-  /// In en, this message translates to:
-  /// **'Images'**
-  String get images;
-
-  /// No description provided for @filesCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} files'**
-  String filesCount(int count);
+  /// **'Status'**
+  String get status;
 
   /// No description provided for @started.
   ///
@@ -872,107 +392,299 @@ abstract class AppLocalizations {
   /// **'Config'**
   String get config;
 
-  /// No description provided for @latestLog.
+  /// No description provided for @logs.
   ///
   /// In en, this message translates to:
-  /// **'Latest Log:'**
-  String get latestLog;
+  /// **'Logs'**
+  String get logs;
 
-  /// No description provided for @promptLibrary.
+  /// No description provided for @copyFilename.
   ///
   /// In en, this message translates to:
-  /// **'Prompt Library'**
-  String get promptLibrary;
+  /// **'Copy Filename'**
+  String get copyFilename;
 
-  /// No description provided for @newPrompt.
+  /// No description provided for @openInFolder.
   ///
   /// In en, this message translates to:
-  /// **'New Prompt'**
-  String get newPrompt;
+  /// **'Open in Folder'**
+  String get openInFolder;
 
-  /// No description provided for @editPrompt.
+  /// No description provided for @openInPreview.
   ///
   /// In en, this message translates to:
-  /// **'Edit Prompt'**
-  String get editPrompt;
+  /// **'Open in Preview'**
+  String get openInPreview;
 
-  /// No description provided for @noPromptsSaved.
+  /// No description provided for @copiedToClipboard.
   ///
   /// In en, this message translates to:
-  /// **'No prompts saved'**
-  String get noPromptsSaved;
+  /// **'Copied: {text}'**
+  String copiedToClipboard(String text);
 
-  /// No description provided for @saveFavoritePrompts.
+  /// No description provided for @selectedCount.
   ///
   /// In en, this message translates to:
-  /// **'Save your favorite prompts or Refiner system prompts here'**
-  String get saveFavoritePrompts;
+  /// **'{count} selected'**
+  String selectedCount(int count);
 
-  /// No description provided for @createFirstPrompt.
+  /// No description provided for @shareFiles.
   ///
   /// In en, this message translates to:
-  /// **'Create First Prompt'**
-  String get createFirstPrompt;
+  /// **'Share selected items ({count})'**
+  String shareFiles(int count);
 
-  /// No description provided for @deletePromptConfirmTitle.
+  /// No description provided for @comingSoon.
   ///
   /// In en, this message translates to:
-  /// **'Delete Prompt?'**
-  String get deletePromptConfirmTitle;
+  /// **'Coming Soon'**
+  String get comingSoon;
 
-  /// No description provided for @deletePromptConfirmMessage.
+  /// No description provided for @sidebar.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{title}\"?'**
-  String deletePromptConfirmMessage(String title);
+  /// **'Sidebar'**
+  String get sidebar;
 
-  /// No description provided for @delete.
+  /// No description provided for @white.
   ///
   /// In en, this message translates to:
-  /// **'Delete'**
-  String get delete;
+  /// **'White'**
+  String get white;
 
-  /// No description provided for @deleteModel.
+  /// No description provided for @black.
   ///
   /// In en, this message translates to:
-  /// **'Delete Model'**
-  String get deleteModel;
+  /// **'Black'**
+  String get black;
 
-  /// No description provided for @title.
+  /// No description provided for @red.
   ///
   /// In en, this message translates to:
-  /// **'Title'**
-  String get title;
+  /// **'Red'**
+  String get red;
 
-  /// No description provided for @tagCategory.
+  /// No description provided for @green.
   ///
   /// In en, this message translates to:
-  /// **'Tag (Category)'**
-  String get tagCategory;
+  /// **'Green'**
+  String get green;
 
-  /// No description provided for @setAsRefiner.
+  /// No description provided for @refine.
   ///
   /// In en, this message translates to:
-  /// **'Set as Refiner'**
-  String get setAsRefiner;
+  /// **'Refine'**
+  String get refine;
 
-  /// No description provided for @promptContent.
+  /// No description provided for @apply.
   ///
   /// In en, this message translates to:
-  /// **'Prompt Content'**
-  String get promptContent;
+  /// **'Apply'**
+  String get apply;
 
-  /// No description provided for @save.
+  /// No description provided for @metadata.
   ///
   /// In en, this message translates to:
-  /// **'Save'**
-  String get save;
+  /// **'Metadata'**
+  String get metadata;
 
-  /// No description provided for @update.
+  /// No description provided for @filterPrompts.
   ///
   /// In en, this message translates to:
-  /// **'Update'**
-  String get update;
+  /// **'Filter prompts...'**
+  String get filterPrompts;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share failed: {error}'**
+  String shareFailed(String error);
+
+  /// No description provided for @downloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader'**
+  String get downloader;
+
+  /// No description provided for @imageDownloader.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Downloader'**
+  String get imageDownloader;
+
+  /// No description provided for @url.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get url;
+
+  /// No description provided for @prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get prefix;
+
+  /// No description provided for @websiteUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Website URL'**
+  String get websiteUrl;
+
+  /// No description provided for @websiteUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com'**
+  String get websiteUrlHint;
+
+  /// No description provided for @whatToFind.
+  ///
+  /// In en, this message translates to:
+  /// **'What to find?'**
+  String get whatToFind;
+
+  /// No description provided for @whatToFindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. all product gallery images'**
+  String get whatToFindHint;
+
+  /// No description provided for @analysisModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis Model'**
+  String get analysisModel;
+
+  /// No description provided for @advancedOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Options'**
+  String get advancedOptions;
+
+  /// No description provided for @analyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get analyzing;
+
+  /// No description provided for @findImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Images'**
+  String get findImages;
+
+  /// No description provided for @noImagesDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'No images discovered yet.'**
+  String get noImagesDiscovered;
+
+  /// No description provided for @enterUrlToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a URL and requirement to start.'**
+  String get enterUrlToStart;
+
+  /// No description provided for @addToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Queue'**
+  String get addToQueue;
+
+  /// No description provided for @addedToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} images to download queue.'**
+  String addedToQueue(int count);
+
+  /// No description provided for @setOutputDirFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set output directory in settings first.'**
+  String get setOutputDirFirst;
+
+  /// No description provided for @cookiesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookies (Raw or Netscape format)'**
+  String get cookiesHint;
+
+  /// No description provided for @selectImagesToDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Select images to download'**
+  String get selectImagesToDownload;
+
+  /// No description provided for @importCookieFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Cookie File'**
+  String get importCookieFile;
+
+  /// No description provided for @cookieFileInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported cookie file format. Please use Netscape format or raw text.'**
+  String get cookieFileInvalid;
+
+  /// No description provided for @cookieImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully imported {count} cookies.'**
+  String cookieImportSuccess(int count);
+
+  /// No description provided for @saveOriginHtml.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Origin HTML'**
+  String get saveOriginHtml;
+
+  /// No description provided for @htmlSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'HTML saved to: {path}'**
+  String htmlSavedTo(String path);
+
+  /// No description provided for @manualHtmlMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual HTML Mode'**
+  String get manualHtmlMode;
+
+  /// No description provided for @manualHtmlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste rendered HTML here (F12 -> Copy Outer HTML)'**
+  String get manualHtmlHint;
+
+  /// No description provided for @cookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Cookie History'**
+  String get cookieHistory;
+
+  /// No description provided for @noCookieHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No cookie history saved'**
+  String get noCookieHistory;
+
+  /// No description provided for @pasteFromClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from Clipboard'**
+  String get pasteFromClipboard;
+
+  /// No description provided for @openRawImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Raw Image'**
+  String get openRawImage;
+
+  /// No description provided for @usage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get usage;
 
   /// No description provided for @tokenUsageMetrics.
   ///
@@ -1064,6 +776,24 @@ abstract class AppLocalizations {
   /// **'Clear Model Data'**
   String get clearModelData;
 
+  /// No description provided for @usageByGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage by Group'**
+  String get usageByGroup;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
+  /// No description provided for @models.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get models;
+
   /// No description provided for @modelManagement.
   ///
   /// In en, this message translates to:
@@ -1088,24 +818,6 @@ abstract class AppLocalizations {
   /// **'Channels'**
   String get channelsTab;
 
-  /// No description provided for @categoriesTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Categories'**
-  String get categoriesTab;
-
-  /// No description provided for @addCategory.
-  ///
-  /// In en, this message translates to:
-  /// **'Add Category'**
-  String get addCategory;
-
-  /// No description provided for @editCategory.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit Category'**
-  String get editCategory;
-
   /// No description provided for @addChannel.
   ///
   /// In en, this message translates to:
@@ -1117,6 +829,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit Channel'**
   String get editChannel;
+
+  /// No description provided for @basicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Info'**
+  String get basicInfo;
+
+  /// No description provided for @configuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration'**
+  String get configuration;
+
+  /// No description provided for @tagAndAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag & Appearance'**
+  String get tagAndAppearance;
+
+  /// No description provided for @billing.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing'**
+  String get billing;
 
   /// No description provided for @channelType.
   ///
@@ -1135,12 +871,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filter models...'**
   String get filterModels;
-
-  /// No description provided for @filterPrompts.
-  ///
-  /// In en, this message translates to:
-  /// **'Filter prompts...'**
-  String get filterPrompts;
 
   /// No description provided for @tagColor.
   ///
@@ -1184,6 +914,12 @@ abstract class AppLocalizations {
   /// **'No models configured'**
   String get noModelsConfigured;
 
+  /// No description provided for @countModels.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models'**
+  String countModels(int count);
+
   /// No description provided for @addFirstModel.
   ///
   /// In en, this message translates to:
@@ -1195,6 +931,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add New Model'**
   String get addNewModel;
+
+  /// No description provided for @deleteModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Model'**
+  String get deleteModel;
 
   /// No description provided for @deleteModelConfirmTitle.
   ///
@@ -1256,6 +998,18 @@ abstract class AppLocalizations {
   /// **'Output Fee (\$/M Tokens)'**
   String get outputFeeLabel;
 
+  /// No description provided for @paidModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid Model'**
+  String get paidModel;
+
+  /// No description provided for @freeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Free Model'**
+  String get freeModel;
+
   /// No description provided for @billingMode.
   ///
   /// In en, this message translates to:
@@ -1291,288 +1045,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Requests'**
   String get requests;
-
-  /// No description provided for @add.
-  ///
-  /// In en, this message translates to:
-  /// **'Add'**
-  String get add;
-
-  /// No description provided for @executionLogs.
-  ///
-  /// In en, this message translates to:
-  /// **'EXECUTION LOGS'**
-  String get executionLogs;
-
-  /// No description provided for @clickToExpand.
-  ///
-  /// In en, this message translates to:
-  /// **'Click to expand'**
-  String get clickToExpand;
-
-  /// No description provided for @rename.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename'**
-  String get rename;
-
-  /// No description provided for @renameFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename File'**
-  String get renameFile;
-
-  /// No description provided for @newFilename.
-  ///
-  /// In en, this message translates to:
-  /// **'New Filename'**
-  String get newFilename;
-
-  /// No description provided for @renameSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Renamed successfully'**
-  String get renameSuccess;
-
-  /// No description provided for @renameFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to rename: {error}'**
-  String renameFailed(String error);
-
-  /// No description provided for @fileAlreadyExists.
-  ///
-  /// In en, this message translates to:
-  /// **'A file with this name already exists'**
-  String get fileAlreadyExists;
-
-  /// No description provided for @thumbnailSize.
-  ///
-  /// In en, this message translates to:
-  /// **'Thumbnail Size'**
-  String get thumbnailSize;
-
-  /// No description provided for @deleteFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete File'**
-  String get deleteFile;
-
-  /// No description provided for @deleteFileConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete File?'**
-  String get deleteFileConfirmTitle;
-
-  /// No description provided for @deleteFileConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{filename}\"?'**
-  String deleteFileConfirmMessage(String filename);
-
-  /// No description provided for @moveToTrash.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to Trash'**
-  String get moveToTrash;
-
-  /// No description provided for @permanentlyDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Permanently Delete'**
-  String get permanentlyDelete;
-
-  /// No description provided for @aiBatchRename.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Batch Rename'**
-  String get aiBatchRename;
-
-  /// No description provided for @switchViewMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch View Mode'**
-  String get switchViewMode;
-
-  /// No description provided for @noFilesFound.
-  ///
-  /// In en, this message translates to:
-  /// **'No files found'**
-  String get noFilesFound;
-
-  /// No description provided for @rulesInstructions.
-  ///
-  /// In en, this message translates to:
-  /// **'Renaming Rules / Instructions'**
-  String get rulesInstructions;
-
-  /// No description provided for @generateSuggestions.
-  ///
-  /// In en, this message translates to:
-  /// **'Generate Suggestions'**
-  String get generateSuggestions;
-
-  /// No description provided for @noSuggestions.
-  ///
-  /// In en, this message translates to:
-  /// **'No suggestions generated yet'**
-  String get noSuggestions;
-
-  /// No description provided for @applyRenames.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply Renames'**
-  String get applyRenames;
-
-  /// No description provided for @originalName.
-  ///
-  /// In en, this message translates to:
-  /// **'Original Name'**
-  String get originalName;
-
-  /// No description provided for @newName.
-  ///
-  /// In en, this message translates to:
-  /// **'New Name'**
-  String get newName;
-
-  /// No description provided for @status.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get status;
-
-  /// No description provided for @sortBy.
-  ///
-  /// In en, this message translates to:
-  /// **'Sort by'**
-  String get sortBy;
-
-  /// No description provided for @sortName.
-  ///
-  /// In en, this message translates to:
-  /// **'Name'**
-  String get sortName;
-
-  /// No description provided for @sortDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Modify Date'**
-  String get sortDate;
-
-  /// No description provided for @sortType.
-  ///
-  /// In en, this message translates to:
-  /// **'File Type'**
-  String get sortType;
-
-  /// No description provided for @sortAsc.
-  ///
-  /// In en, this message translates to:
-  /// **'ASC'**
-  String get sortAsc;
-
-  /// No description provided for @sortDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'DESC'**
-  String get sortDesc;
-
-  /// No description provided for @catAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get catAll;
-
-  /// No description provided for @catImages.
-  ///
-  /// In en, this message translates to:
-  /// **'Images'**
-  String get catImages;
-
-  /// No description provided for @catVideos.
-  ///
-  /// In en, this message translates to:
-  /// **'Videos'**
-  String get catVideos;
-
-  /// No description provided for @catAudio.
-  ///
-  /// In en, this message translates to:
-  /// **'Audio'**
-  String get catAudio;
-
-  /// No description provided for @catText.
-  ///
-  /// In en, this message translates to:
-  /// **'Text'**
-  String get catText;
-
-  /// No description provided for @catOthers.
-  ///
-  /// In en, this message translates to:
-  /// **'Others'**
-  String get catOthers;
-
-  /// No description provided for @deleteSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Deleted successfully'**
-  String get deleteSuccess;
-
-  /// No description provided for @deleteFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to delete: {error}'**
-  String deleteFailed(String error);
-
-  /// No description provided for @userPrompts.
-  ///
-  /// In en, this message translates to:
-  /// **'User Prompts'**
-  String get userPrompts;
-
-  /// No description provided for @refinerPrompts.
-  ///
-  /// In en, this message translates to:
-  /// **'Refiner Prompts'**
-  String get refinerPrompts;
-
-  /// No description provided for @systemTemplates.
-  ///
-  /// In en, this message translates to:
-  /// **'System Templates'**
-  String get systemTemplates;
-
-  /// No description provided for @templateType.
-  ///
-  /// In en, this message translates to:
-  /// **'Template Type'**
-  String get templateType;
-
-  /// No description provided for @typeRename.
-  ///
-  /// In en, this message translates to:
-  /// **'Batch Rename'**
-  String get typeRename;
-
-  /// No description provided for @typeRefiner.
-  ///
-  /// In en, this message translates to:
-  /// **'Prompt Refiner'**
-  String get typeRefiner;
-
-  /// No description provided for @selectRenameTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Rename Template'**
-  String get selectRenameTemplate;
-
-  /// No description provided for @selectCategory.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Category'**
-  String get selectCategory;
 
   /// No description provided for @feeGroups.
   ///
@@ -1628,36 +1100,6 @@ abstract class AppLocalizations {
   /// **'Price Config'**
   String get priceConfig;
 
-  /// No description provided for @portableMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Portable Mode'**
-  String get portableMode;
-
-  /// No description provided for @portableModeDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Store database and cache in the application folder (requires restart)'**
-  String get portableModeDesc;
-
-  /// No description provided for @restartRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Restart Required'**
-  String get restartRequired;
-
-  /// No description provided for @restartMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'The application must be restarted to apply changes to the data storage location.'**
-  String get restartMessage;
-
-  /// No description provided for @usageByGroup.
-  ///
-  /// In en, this message translates to:
-  /// **'Usage by Group'**
-  String get usageByGroup;
-
   /// No description provided for @addFeeGroup.
   ///
   /// In en, this message translates to:
@@ -1682,29 +1124,689 @@ abstract class AppLocalizations {
   /// **'Group Name'**
   String get groupName;
 
-  /// No description provided for @googleGenAiFree.
+  /// No description provided for @fetchModels.
   ///
   /// In en, this message translates to:
-  /// **'Google GenAI (Free)'**
-  String get googleGenAiFree;
+  /// **'Fetch Models'**
+  String get fetchModels;
 
-  /// No description provided for @googleGenAiPaid.
+  /// No description provided for @discoveringModels.
   ///
   /// In en, this message translates to:
-  /// **'Google GenAI (Paid)'**
-  String get googleGenAiPaid;
+  /// **'Discovering Models...'**
+  String get discoveringModels;
 
-  /// No description provided for @openaiApi.
+  /// No description provided for @selectModelsToAdd.
   ///
   /// In en, this message translates to:
-  /// **'OpenAI API'**
-  String get openaiApi;
+  /// **'Select models to add'**
+  String get selectModelsToAdd;
 
-  /// No description provided for @filenamePrefix.
+  /// No description provided for @addSelected.
   ///
   /// In en, this message translates to:
-  /// **'Filename Prefix'**
-  String get filenamePrefix;
+  /// **'Add Selected ({count})'**
+  String addSelected(int count);
+
+  /// No description provided for @alreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Added'**
+  String get alreadyAdded;
+
+  /// No description provided for @noNewModelsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No new models found.'**
+  String get noNewModelsFound;
+
+  /// No description provided for @fetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch models: {error}'**
+  String fetchFailed(String error);
+
+  /// No description provided for @model.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get model;
+
+  /// No description provided for @prompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts'**
+  String get prompts;
+
+  /// No description provided for @promptLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Library'**
+  String get promptLibrary;
+
+  /// No description provided for @newPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'New Prompt'**
+  String get newPrompt;
+
+  /// No description provided for @editPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Prompt'**
+  String get editPrompt;
+
+  /// No description provided for @noPromptsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No prompts saved'**
+  String get noPromptsSaved;
+
+  /// No description provided for @saveFavoritePrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your favorite prompts or Refiner system prompts here'**
+  String get saveFavoritePrompts;
+
+  /// No description provided for @createFirstPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Create First Prompt'**
+  String get createFirstPrompt;
+
+  /// No description provided for @deletePromptConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Prompt?'**
+  String get deletePromptConfirmTitle;
+
+  /// No description provided for @deletePromptConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{title}\"?'**
+  String deletePromptConfirmMessage(String title);
+
+  /// No description provided for @title.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get title;
+
+  /// No description provided for @tagCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag (Category)'**
+  String get tagCategory;
+
+  /// No description provided for @setAsRefiner.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Refiner'**
+  String get setAsRefiner;
+
+  /// No description provided for @promptContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Content'**
+  String get promptContent;
+
+  /// No description provided for @userPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'User Prompts'**
+  String get userPrompts;
+
+  /// No description provided for @refinerPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Refiner Prompts'**
+  String get refinerPrompts;
+
+  /// No description provided for @systemTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'System Templates'**
+  String get systemTemplates;
+
+  /// No description provided for @templateType.
+  ///
+  /// In en, this message translates to:
+  /// **'Template Type'**
+  String get templateType;
+
+  /// No description provided for @typeRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Rename'**
+  String get typeRename;
+
+  /// No description provided for @typeRefiner.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt Refiner'**
+  String get typeRefiner;
+
+  /// No description provided for @selectRenameTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Rename Template'**
+  String get selectRenameTemplate;
+
+  /// No description provided for @selectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Category'**
+  String get selectCategory;
+
+  /// No description provided for @categoriesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categoriesTab;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Category'**
+  String get addCategory;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Category'**
+  String get editCategory;
+
+  /// No description provided for @library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get library;
+
+  /// No description provided for @refiner.
+  ///
+  /// In en, this message translates to:
+  /// **'Refiner'**
+  String get refiner;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @connectivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connectivity'**
+  String get connectivity;
+
+  /// No description provided for @application.
+  ///
+  /// In en, this message translates to:
+  /// **'Application'**
+  String get application;
+
+  /// No description provided for @proxySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Settings'**
+  String get proxySettings;
+
+  /// No description provided for @enableProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Global Proxy'**
+  String get enableProxy;
+
+  /// No description provided for @proxyUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy URL (host:port)'**
+  String get proxyUrl;
+
+  /// No description provided for @proxyUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Username (Optional)'**
+  String get proxyUsername;
+
+  /// No description provided for @proxyPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy Password (Optional)'**
+  String get proxyPassword;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @themeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get themeAuto;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @googleGenAiSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI REST Settings'**
+  String get googleGenAiSettings;
+
+  /// No description provided for @openAiApiSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI API REST Settings'**
+  String get openAiApiSettings;
+
+  /// No description provided for @standardConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard Config'**
+  String get standardConfig;
+
+  /// No description provided for @endpointUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint URL'**
+  String get endpointUrl;
+
+  /// No description provided for @apiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get apiKey;
+
+  /// No description provided for @outputDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Directory'**
+  String get outputDirectory;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @dataManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Management'**
+  String get dataManagement;
+
+  /// No description provided for @exportSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Settings'**
+  String get exportSettings;
+
+  /// No description provided for @importSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Settings'**
+  String get importSettings;
+
+  /// No description provided for @openAppDataDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Open App Data Directory'**
+  String get openAppDataDirectory;
+
+  /// No description provided for @mcpServerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP Server Settings'**
+  String get mcpServerSettings;
+
+  /// No description provided for @enableMcpServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable MCP Server'**
+  String get enableMcpServer;
+
+  /// No description provided for @port.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get port;
+
+  /// No description provided for @resetAllSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset All Settings'**
+  String get resetAllSettings;
+
+  /// No description provided for @confirmReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset All Settings?'**
+  String get confirmReset;
+
+  /// No description provided for @resetWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will delete all configurations, models, and added folders. This action cannot be undone.'**
+  String get resetWarning;
+
+  /// No description provided for @resetEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Everything'**
+  String get resetEverything;
+
+  /// No description provided for @settingsExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings exported successfully'**
+  String get settingsExported;
+
+  /// No description provided for @settingsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings imported successfully'**
+  String get settingsImported;
+
+  /// No description provided for @importSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Settings?'**
+  String get importSettingsTitle;
+
+  /// No description provided for @importSettingsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.'**
+  String get importSettingsConfirm;
+
+  /// No description provided for @importAndReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Import & Replace'**
+  String get importAndReplace;
+
+  /// No description provided for @importMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Mode'**
+  String get importMode;
+
+  /// No description provided for @importModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you want to import prompts:\n\nMerge: Add new items to your library.\nReplace: Delete current library and use imported data.'**
+  String get importModeDesc;
+
+  /// No description provided for @merge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// No description provided for @replaceAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace All'**
+  String get replaceAll;
+
+  /// No description provided for @applyOverwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Overwrite)'**
+  String get applyOverwrite;
+
+  /// No description provided for @applyAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply (Append)'**
+  String get applyAppend;
+
+  /// No description provided for @portableMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Portable Mode'**
+  String get portableMode;
+
+  /// No description provided for @portableModeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Store database and cache in the application folder (requires restart)'**
+  String get portableModeDesc;
+
+  /// No description provided for @restartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart Required'**
+  String get restartRequired;
+
+  /// No description provided for @restartMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The application must be restarted to apply changes to the data storage location.'**
+  String get restartMessage;
+
+  /// No description provided for @enableNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable System Notifications'**
+  String get enableNotifications;
+
+  /// No description provided for @runSetupWizard.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Setup Wizard'**
+  String get runSetupWizard;
+
+  /// No description provided for @clearDownloaderCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Downloader Cache'**
+  String get clearDownloaderCache;
+
+  /// No description provided for @enableApiDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable API Debug Logging'**
+  String get enableApiDebug;
+
+  /// No description provided for @apiDebugDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.'**
+  String get apiDebugDesc;
+
+  /// No description provided for @openLogFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Log Folder'**
+  String get openLogFolder;
+
+  /// No description provided for @iosOutputRecommend.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: Leave as default on iOS. The app\'s folder is visible in the \'Files\' app.'**
+  String get iosOutputRecommend;
+
+  /// No description provided for @downloaderCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader cache cleared.'**
+  String get downloaderCacheCleared;
+
+  /// No description provided for @tasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get tasks;
+
+  /// No description provided for @taskQueueManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Queue Manager'**
+  String get taskQueueManager;
+
+  /// No description provided for @noTasksInQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks in queue'**
+  String get noTasksInQueue;
+
+  /// No description provided for @submitTaskFromWorkbench.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit a task from the Workbench to see it here.'**
+  String get submitTaskFromWorkbench;
+
+  /// No description provided for @taskId.
+  ///
+  /// In en, this message translates to:
+  /// **'Task ID: {id}'**
+  String taskId(String id);
+
+  /// No description provided for @taskSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Summary'**
+  String get taskSummary;
+
+  /// No description provided for @pendingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingTasks;
+
+  /// No description provided for @processingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processingTasks;
+
+  /// No description provided for @completedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedTasks;
+
+  /// No description provided for @failedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failedTasks;
+
+  /// No description provided for @clearCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Completed'**
+  String get clearCompleted;
+
+  /// No description provided for @cancelAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel All Pending'**
+  String get cancelAllPending;
+
+  /// No description provided for @cancelTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Task'**
+  String get cancelTask;
+
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
+  /// No description provided for @images.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get images;
+
+  /// No description provided for @filesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files'**
+  String filesCount(int count);
+
+  /// No description provided for @runningCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} running'**
+  String runningCount(int count);
+
+  /// No description provided for @plannedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} planned'**
+  String plannedCount(int count);
+
+  /// No description provided for @latestLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Log:'**
+  String get latestLog;
+
+  /// No description provided for @taskCompletedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Completed'**
+  String get taskCompletedNotification;
+
+  /// No description provided for @taskFailedNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Failed'**
+  String get taskFailedNotification;
+
+  /// No description provided for @taskCompletedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has finished successfully.'**
+  String taskCompletedBody(String id);
+
+  /// No description provided for @taskFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Task {id} has failed.'**
+  String taskFailedBody(String id);
+
+  /// No description provided for @queueSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue Settings'**
+  String get queueSettings;
+
+  /// No description provided for @concurrencyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrency Limit: {limit}'**
+  String concurrencyLimit(int limit);
+
+  /// No description provided for @retryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Count: {count}'**
+  String retryCount(int count);
 
   /// No description provided for @setupWizardTitle.
   ///
@@ -1742,29 +1844,11 @@ abstract class AppLocalizations {
   /// **'Intelligence (API)'**
   String get stepApi;
 
-  /// No description provided for @finish.
-  ///
-  /// In en, this message translates to:
-  /// **'Finish'**
-  String get finish;
-
   /// No description provided for @setupCompleteMessage.
   ///
   /// In en, this message translates to:
   /// **'You are all set! Enjoy creating.'**
   String get setupCompleteMessage;
-
-  /// No description provided for @runSetupWizard.
-  ///
-  /// In en, this message translates to:
-  /// **'Run Setup Wizard'**
-  String get runSetupWizard;
-
-  /// No description provided for @clearDownloaderCache.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear Downloader Cache'**
-  String get clearDownloaderCache;
 
   /// No description provided for @skip.
   ///
@@ -1772,119 +1856,365 @@ abstract class AppLocalizations {
   /// **'Skip'**
   String get skip;
 
-  /// No description provided for @fetchModels.
+  /// No description provided for @storageLocationDesc.
   ///
   /// In en, this message translates to:
-  /// **'Fetch Models'**
-  String get fetchModels;
+  /// **'Select where generated images will be saved.'**
+  String get storageLocationDesc;
 
-  /// No description provided for @discoveringModels.
+  /// No description provided for @addChannelOptional.
   ///
   /// In en, this message translates to:
-  /// **'Discovering Models...'**
-  String get discoveringModels;
+  /// **'Add your first AI provider channel (Optional).'**
+  String get addChannelOptional;
 
-  /// No description provided for @selectModelsToAdd.
+  /// No description provided for @configureModelOptional.
   ///
   /// In en, this message translates to:
-  /// **'Select models to add'**
-  String get selectModelsToAdd;
+  /// **'Configure a model for your new channel (Optional).'**
+  String get configureModelOptional;
 
-  /// No description provided for @addSelected.
+  /// No description provided for @googleGenAiFree.
   ///
   /// In en, this message translates to:
-  /// **'Add Selected ({count})'**
-  String addSelected(Object count);
+  /// **'Google GenAI (Free)'**
+  String get googleGenAiFree;
 
-  /// No description provided for @alreadyAdded.
+  /// No description provided for @googleGenAiPaid.
   ///
   /// In en, this message translates to:
-  /// **'Already Added'**
-  String get alreadyAdded;
+  /// **'Google GenAI (Paid)'**
+  String get googleGenAiPaid;
 
-  /// No description provided for @noNewModelsFound.
+  /// No description provided for @openaiApi.
   ///
   /// In en, this message translates to:
-  /// **'No new models found.'**
-  String get noNewModelsFound;
+  /// **'OpenAI API'**
+  String get openaiApi;
 
-  /// No description provided for @fetchFailed.
+  /// No description provided for @filenamePrefix.
   ///
   /// In en, this message translates to:
-  /// **'Failed to fetch models: {error}'**
-  String fetchFailed(Object error);
+  /// **'Filename Prefix'**
+  String get filenamePrefix;
 
-  /// No description provided for @edit.
+  /// No description provided for @openaiEndpointHint.
   ///
   /// In en, this message translates to:
-  /// **'Edit'**
-  String get edit;
+  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
+  String get openaiEndpointHint;
 
-  /// No description provided for @preview.
+  /// No description provided for @googleEndpointHint.
   ///
   /// In en, this message translates to:
-  /// **'Preview'**
-  String get preview;
+  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)'**
+  String get googleEndpointHint;
 
-  /// No description provided for @openRawImage.
+  /// No description provided for @workbench.
   ///
   /// In en, this message translates to:
-  /// **'Open Raw Image'**
-  String get openRawImage;
+  /// **'Workbench'**
+  String get workbench;
 
-  /// No description provided for @pasteFromClipboard.
+  /// No description provided for @imageProcessing.
   ///
   /// In en, this message translates to:
-  /// **'Paste from Clipboard'**
-  String get pasteFromClipboard;
+  /// **'Image Processing'**
+  String get imageProcessing;
 
-  /// No description provided for @saveOriginHtml.
+  /// No description provided for @sourceGallery.
   ///
   /// In en, this message translates to:
-  /// **'Save Origin HTML'**
-  String get saveOriginHtml;
+  /// **'Source Gallery'**
+  String get sourceGallery;
 
-  /// No description provided for @htmlSavedTo.
+  /// No description provided for @sourceExplorer.
   ///
   /// In en, this message translates to:
-  /// **'HTML saved to: {path}'**
-  String htmlSavedTo(String path);
+  /// **'Source Explorer'**
+  String get sourceExplorer;
 
-  /// No description provided for @manualHtmlMode.
+  /// No description provided for @tempWorkspace.
   ///
   /// In en, this message translates to:
-  /// **'Manual HTML Mode'**
-  String get manualHtmlMode;
+  /// **'Temp Workspace'**
+  String get tempWorkspace;
 
-  /// No description provided for @manualHtmlHint.
+  /// No description provided for @processResults.
   ///
   /// In en, this message translates to:
-  /// **'Paste rendered HTML here (F12 -> Copy Outer HTML)'**
-  String get manualHtmlHint;
+  /// **'Process Results'**
+  String get processResults;
 
-  /// No description provided for @cookieHistory.
+  /// No description provided for @resultCache.
   ///
   /// In en, this message translates to:
-  /// **'Cookie History'**
-  String get cookieHistory;
+  /// **'Result Cache'**
+  String get resultCache;
 
-  /// No description provided for @noCookieHistory.
+  /// No description provided for @directories.
   ///
   /// In en, this message translates to:
-  /// **'No cookie history saved'**
-  String get noCookieHistory;
+  /// **'DIRECTORIES'**
+  String get directories;
 
-  /// No description provided for @openInPreview.
+  /// No description provided for @addFolder.
   ///
   /// In en, this message translates to:
-  /// **'Open in Preview'**
-  String get openInPreview;
+  /// **'Add Folder'**
+  String get addFolder;
 
-  /// No description provided for @openWithSystemDefault.
+  /// No description provided for @noFolders.
   ///
   /// In en, this message translates to:
-  /// **'Open with System Default'**
-  String get openWithSystemDefault;
+  /// **'No folders added'**
+  String get noFolders;
+
+  /// No description provided for @clickAddFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Click \"Add Folder\" to start scanning for images.'**
+  String get clickAddFolder;
+
+  /// No description provided for @noImagesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No images found'**
+  String get noImagesFound;
+
+  /// No description provided for @noResultsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No results yet'**
+  String get noResultsYet;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @importFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Gallery'**
+  String get importFromGallery;
+
+  /// No description provided for @clearTempWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Workspace'**
+  String get clearTempWorkspace;
+
+  /// No description provided for @dropFilesHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here to add them to temporary workspace'**
+  String get dropFilesHere;
+
+  /// No description provided for @noImagesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No images selected'**
+  String get noImagesSelected;
+
+  /// No description provided for @selectSourceDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Source Directory'**
+  String get selectSourceDirectory;
+
+  /// No description provided for @removeFolderTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove folder'**
+  String get removeFolderTooltip;
+
+  /// No description provided for @removeFolderConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Folder?'**
+  String get removeFolderConfirmTitle;
+
+  /// No description provided for @removeFolderConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove \"{folderName}\" from the list?'**
+  String removeFolderConfirmMessage(String folderName);
+
+  /// No description provided for @thumbnailSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail Size'**
+  String get thumbnailSize;
+
+  /// No description provided for @deleteFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete File'**
+  String get deleteFile;
+
+  /// No description provided for @deleteFileConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete File?'**
+  String get deleteFileConfirmTitle;
+
+  /// No description provided for @deleteFileConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{filename}\"?'**
+  String deleteFileConfirmMessage(String filename);
+
+  /// No description provided for @moveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
+
+  /// No description provided for @permanentlyDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently Delete'**
+  String get permanentlyDelete;
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted successfully'**
+  String get deleteSuccess;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete: {error}'**
+  String deleteFailed(String error);
+
+  /// No description provided for @modelSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Selection'**
+  String get modelSelection;
+
+  /// No description provided for @selectAModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a model'**
+  String get selectAModel;
+
+  /// No description provided for @aspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect Ratio'**
+  String get aspectRatio;
+
+  /// No description provided for @resolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get resolution;
+
+  /// No description provided for @prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get prompt;
+
+  /// No description provided for @promptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter prompt here...'**
+  String get promptHint;
+
+  /// No description provided for @prefixHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. result'**
+  String get prefixHint;
+
+  /// No description provided for @processPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Prompt'**
+  String get processPrompt;
+
+  /// No description provided for @processImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Process {count} Images'**
+  String processImages(int count);
+
+  /// No description provided for @taskSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task submitted to queue'**
+  String get taskSubmitted;
+
+  /// No description provided for @comparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparator'**
+  String get comparator;
+
+  /// No description provided for @compareModeSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Mode'**
+  String get compareModeSync;
+
+  /// No description provided for @compareModeSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap Mode'**
+  String get compareModeSwap;
+
+  /// No description provided for @sendToComparator.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator'**
+  String get sendToComparator;
+
+  /// No description provided for @sendToComparatorRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (Raw)'**
+  String get sendToComparatorRaw;
+
+  /// No description provided for @sendToComparatorAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Comparator (After)'**
+  String get sendToComparatorAfter;
+
+  /// No description provided for @sendToSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Selection'**
+  String get sendToSelection;
+
+  /// No description provided for @selectFromLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from Library'**
+  String get selectFromLibrary;
+
+  /// No description provided for @metadataSelectedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No image metadata selected'**
+  String get metadataSelectedNone;
+
+  /// No description provided for @labelRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'RAW'**
+  String get labelRaw;
+
+  /// No description provided for @labelAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'AFTER'**
+  String get labelAfter;
 
   /// No description provided for @drawMask.
   ///
@@ -1922,287 +2252,167 @@ abstract class AppLocalizations {
   /// **'Save & Select'**
   String get saveAndSelect;
 
-  /// No description provided for @black.
+  /// No description provided for @aiSmartMask.
   ///
   /// In en, this message translates to:
-  /// **'Black'**
-  String get black;
+  /// **'AI Smart Mask'**
+  String get aiSmartMask;
 
-  /// No description provided for @white.
+  /// No description provided for @binaryMode.
   ///
   /// In en, this message translates to:
-  /// **'White'**
-  String get white;
+  /// **'Binary Mode'**
+  String get binaryMode;
 
-  /// No description provided for @red.
+  /// No description provided for @maskModel.
   ///
   /// In en, this message translates to:
-  /// **'Red'**
-  String get red;
+  /// **'Model'**
+  String get maskModel;
 
-  /// No description provided for @green.
+  /// No description provided for @maskDetail.
   ///
   /// In en, this message translates to:
-  /// **'Green'**
-  String get green;
+  /// **'Detail: {count}'**
+  String maskDetail(int count);
 
-  /// No description provided for @sendToSelection.
+  /// No description provided for @maskPromptLabel.
   ///
   /// In en, this message translates to:
-  /// **'Send to Selection'**
-  String get sendToSelection;
+  /// **'What to mask?'**
+  String get maskPromptLabel;
 
-  /// No description provided for @sendToComparator.
+  /// No description provided for @generating.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator'**
-  String get sendToComparator;
+  /// **'Generating...'**
+  String get generating;
 
-  /// No description provided for @sendToComparatorRaw.
+  /// No description provided for @generate.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (Raw)'**
-  String get sendToComparatorRaw;
+  /// **'Generate'**
+  String get generate;
 
-  /// No description provided for @sendToComparatorAfter.
+  /// No description provided for @maskSaved.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (After)'**
-  String get sendToComparatorAfter;
+  /// **'Mask saved and selected'**
+  String get maskSaved;
 
-  /// No description provided for @compareModeSync.
+  /// No description provided for @maskSaveError.
   ///
   /// In en, this message translates to:
-  /// **'Sync Mode'**
-  String get compareModeSync;
+  /// **'Error saving mask: {error}'**
+  String maskSaveError(String error);
 
-  /// No description provided for @compareModeSwap.
+  /// No description provided for @maskGenError.
   ///
   /// In en, this message translates to:
-  /// **'Swap Mode'**
-  String get compareModeSwap;
+  /// **'AI Mask generation failed: {error}'**
+  String maskGenError(String error);
 
-  /// No description provided for @tempWorkspace.
+  /// No description provided for @promptOptimizer.
   ///
   /// In en, this message translates to:
-  /// **'Temp Workspace'**
-  String get tempWorkspace;
+  /// **'Prompt Optimizer'**
+  String get promptOptimizer;
 
-  /// No description provided for @clearTempWorkspace.
+  /// No description provided for @refinerModel.
   ///
   /// In en, this message translates to:
-  /// **'Clear Workspace'**
-  String get clearTempWorkspace;
+  /// **'Refiner Model'**
+  String get refinerModel;
 
-  /// No description provided for @dropFilesHere.
+  /// No description provided for @systemPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Drop images here to add them to temporary workspace'**
-  String get dropFilesHere;
+  /// **'System Prompt'**
+  String get systemPrompt;
 
-  /// No description provided for @enableNotifications.
+  /// No description provided for @refinerIntro.
   ///
   /// In en, this message translates to:
-  /// **'Enable System Notifications'**
-  String get enableNotifications;
+  /// **'Use AI to analyze images and refine your prompt.'**
+  String get refinerIntro;
 
-  /// No description provided for @taskCompletedNotification.
+  /// No description provided for @roughPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Task Completed'**
-  String get taskCompletedNotification;
+  /// **'Rough Prompt / Ideas'**
+  String get roughPrompt;
 
-  /// No description provided for @taskFailedNotification.
+  /// No description provided for @optimizedPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Task Failed'**
-  String get taskFailedNotification;
+  /// **'Optimized Prompt'**
+  String get optimizedPrompt;
 
-  /// No description provided for @taskCompletedBody.
+  /// No description provided for @applyToWorkbench.
   ///
   /// In en, this message translates to:
-  /// **'Task {id} has finished successfully.'**
-  String taskCompletedBody(String id);
+  /// **'Apply to Workbench'**
+  String get applyToWorkbench;
 
-  /// No description provided for @taskFailedBody.
+  /// No description provided for @promptApplied.
   ///
   /// In en, this message translates to:
-  /// **'Task {id} has failed.'**
-  String taskFailedBody(String id);
+  /// **'Prompt applied to workbench'**
+  String get promptApplied;
 
-  /// No description provided for @imageDownloader.
+  /// No description provided for @refineFailed.
   ///
   /// In en, this message translates to:
-  /// **'Image Downloader'**
-  String get imageDownloader;
+  /// **'Refine failed: {error}'**
+  String refineFailed(String error);
 
-  /// No description provided for @websiteUrl.
+  /// No description provided for @executionLogs.
   ///
   /// In en, this message translates to:
-  /// **'Website URL'**
-  String get websiteUrl;
+  /// **'EXECUTION LOGS'**
+  String get executionLogs;
 
-  /// No description provided for @websiteUrlHint.
+  /// No description provided for @saveToPhotos.
   ///
   /// In en, this message translates to:
-  /// **'https://example.com'**
-  String get websiteUrlHint;
+  /// **'Save to Photos'**
+  String get saveToPhotos;
 
-  /// No description provided for @whatToFind.
+  /// No description provided for @saveToGallery.
   ///
   /// In en, this message translates to:
-  /// **'What to find?'**
-  String get whatToFind;
+  /// **'Save to Gallery'**
+  String get saveToGallery;
 
-  /// No description provided for @whatToFindHint.
+  /// No description provided for @savedToPhotos.
   ///
   /// In en, this message translates to:
-  /// **'e.g. all product gallery images'**
-  String get whatToFindHint;
+  /// **'Saved to Photos'**
+  String get savedToPhotos;
 
-  /// No description provided for @analysisModel.
+  /// No description provided for @saveFailed.
   ///
   /// In en, this message translates to:
-  /// **'Analysis Model'**
-  String get analysisModel;
+  /// **'Save failed: {error}'**
+  String saveFailed(String error);
 
-  /// No description provided for @advancedOptions.
+  /// No description provided for @iosSandboxActive.
   ///
   /// In en, this message translates to:
-  /// **'Advanced Options'**
-  String get advancedOptions;
+  /// **'iOS Sandbox Active'**
+  String get iosSandboxActive;
 
-  /// No description provided for @analyzing.
+  /// No description provided for @iosSandboxDesc.
   ///
   /// In en, this message translates to:
-  /// **'Analyzing...'**
-  String get analyzing;
+  /// **'On iOS, please use the \'Import from Gallery\' button in the top toolbar to add images to your Temporary Workspace.'**
+  String get iosSandboxDesc;
 
-  /// No description provided for @findImages.
+  /// No description provided for @filesAppSuffix.
   ///
   /// In en, this message translates to:
-  /// **'Find Images'**
-  String get findImages;
-
-  /// No description provided for @noImagesDiscovered.
-  ///
-  /// In en, this message translates to:
-  /// **'No images discovered yet.'**
-  String get noImagesDiscovered;
-
-  /// No description provided for @enterUrlToStart.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a URL and requirement to start.'**
-  String get enterUrlToStart;
-
-  /// No description provided for @addToQueue.
-  ///
-  /// In en, this message translates to:
-  /// **'Add to Queue'**
-  String get addToQueue;
-
-  /// No description provided for @imagesSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} selected'**
-  String imagesSelected(int count);
-
-  /// No description provided for @addedToQueue.
-  ///
-  /// In en, this message translates to:
-  /// **'Added {count} images to download queue.'**
-  String addedToQueue(int count);
-
-  /// No description provided for @setOutputDirFirst.
-  ///
-  /// In en, this message translates to:
-  /// **'Please set output directory in settings first.'**
-  String get setOutputDirFirst;
-
-  /// No description provided for @cookiesHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Cookies (Raw or Netscape format)'**
-  String get cookiesHint;
-
-  /// No description provided for @logs.
-  ///
-  /// In en, this message translates to:
-  /// **'Logs'**
-  String get logs;
-
-  /// No description provided for @selectImagesToDownload.
-  ///
-  /// In en, this message translates to:
-  /// **'Select images to download'**
-  String get selectImagesToDownload;
-
-  /// No description provided for @openaiEndpointHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
-  String get openaiEndpointHint;
-
-  /// No description provided for @googleEndpointHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\' (internal handling)'**
-  String get googleEndpointHint;
-
-  /// No description provided for @importCookieFile.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Cookie File'**
-  String get importCookieFile;
-
-  /// No description provided for @cookieFileInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Unsupported cookie file format. Please use Netscape format or raw text.'**
-  String get cookieFileInvalid;
-
-  /// No description provided for @cookieImportSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'Successfully imported {count} cookies.'**
-  String cookieImportSuccess(Object count);
-
-  /// No description provided for @share.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get share;
-
-  /// No description provided for @shareFiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Share selected items ({count})'**
-  String shareFiles(int count);
-
-  /// No description provided for @importFromGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Import from Gallery'**
-  String get importFromGallery;
-
-  /// No description provided for @enableApiDebug.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable API Debug Logging'**
-  String get enableApiDebug;
-
-  /// No description provided for @apiDebugDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.'**
-  String get apiDebugDesc;
-
-  /// No description provided for @openLogFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Log Folder'**
-  String get openLogFolder;
+  /// **' (Files App)'**
+  String get filesAppSuffix;
 }
 
 class _AppLocalizationsDelegate

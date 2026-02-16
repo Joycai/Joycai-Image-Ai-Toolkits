@@ -1,0 +1,20 @@
+{
+  "setupWizardTitle": "Welcome Setup",
+  "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
+  "getStarted": "Get Started",
+  "stepAppearance": "Appearance",
+  "stepStorage": "Storage",
+  "stepApi": "Intelligence (API)",
+  "finish": "Finish",
+  "setupCompleteMessage": "You are all set! Enjoy creating.",
+  "skip": "Skip",
+  "storageLocationDesc": "Select where generated images will be saved.",
+  "addChannelOptional": "Add your first AI provider channel (Optional).",
+  "configureModelOptional": "Configure a model for your new channel (Optional).",
+  "googleGenAiFree": "Google GenAI (Free)",
+  "googleGenAiPaid": "Google GenAI (Paid)",
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "Filename Prefix",
+  "openaiEndpointHint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
+  "googleEndpointHint": "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)"
+}

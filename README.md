@@ -13,24 +13,25 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop application built
 
 ### 🛠️ AI Workbench & Dynamic Channels
 *   **Dynamic AI Channels**: Add any number of AI provider channels (OpenAI, Google GenAI, or 3rd-party REST proxies) with custom endpoints and visual tags.
+*   **Unified Sidebar**: A new, resizable overlay sidebar providing quick access to **Directories**, **Preview**, **Comparator**, and **Mask Editor** tools without leaving your current context.
 *   **Source Explorer**: Easily manage local image directories with built-in directory watching and **Background Isolate Scanning** for zero-stutter performance.
 *   **Unified Gallery**: Seamlessly switch between source images and processed results.
 *   **Control Panel**: Fine-tune your AI requests with model selection, aspect ratio, and resolution settings.
 *   **AI Prompt Refiner**: Leverage specialized models to optimize and "polish" your prompts before submission.
 
-### 📝 Staging Prompt Workbench
-*   **Drafting Pane**: Build complex prompts by iteratively adding or replacing snippets from your library in a professional three-pane layout.
-*   **Manual Staging**: Edit your combined prompt in a dedicated area before committing it to your work.
-*   **Append/Overwrite**: Choose exactly how to apply your drafted prompt to the workbench.
+### 🎨 Advanced Editing & Acquisition
+*   **Smart Image Downloader**: A new specialized tool to extract and download images from URLs or bulk lists with cookie support for protected sites.
+*   **Smart Mask Editor**: Integrated directly into the sidebar, this tool allows for precise mask creation using manual brushes or AI-powered object segmentation.
+*   **Image Comparator**: Compare raw and processed images side-by-side or with a sliding swap view.
 
-### 🔌 Ecosystem & Interoperability
-*   **MCP Server**: Built-in **Model Context Protocol (MCP)** server allows external clients (like Claude Desktop) to interact with your image gallery and tasks.
-*   **Multi-Platform**: Professional installers and portable bundles for **Windows (MSIX/ZIP)**, **macOS (DMG)**, and **Linux (TAR.GZ)**.
+### 🔌 Ecosystem & Onboarding
+*   **Setup Wizard**: A new guided onboarding experience to help you configure channels and discover models instantly.
+*   **MCP Server**: Built-in **Model Context Protocol (MCP)** server for external client integration (like Claude Desktop).
 
-### 📋 Task Queue Manager
-*   **Batch Processing**: Submit multiple images for processing in a single click.
-*   **Concurrency Control**: Manage system resources by limiting the number of simultaneous AI tasks.
-*   **Persistence**: All tasks are saved to a local database (SQLite), ensuring progress is kept even after an app restart.
+### 📋 Task Queue & Prompt Management
+*   **Multi-Tag Prompts**: Organise your prompt library with a flexible multi-tag system.
+*   **Markdown Support**: Full Markdown editing for both user and system prompts.
+*   **Batch Processing**: High-performance batch processing with background isolate scanning.
 
 ### 📊 Token Usage & Cost Tracking
 *   **Detailed Metrics**: Monitor input and output token consumption with **Model-Based Billing** support.

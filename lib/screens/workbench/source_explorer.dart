@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
+import '../../state/gallery_state.dart';
 import 'directory_tree_item.dart';
 
 class SourceExplorerWidget extends StatelessWidget {
@@ -38,29 +40,77 @@ class SourceExplorerWidget extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
+    final galleryState = appState.galleryState;
 
     final sourceDirectories = useBrowserState 
         ? appState.browserState.sourceDirectories 
         : appState.sourceDirectories;
 
-    return Container(
-      width: 250,
-      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.3).round()),
-      child: Column(
+    return Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: FilledButton.icon(
-              onPressed: () => _pickDirectory(context, appState),
-              icon: const Icon(Icons.create_new_folder_outlined),
-              label: Text(l10n.addFolder),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(45),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          if (Platform.isIOS)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withAlpha(100),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.photo_library_outlined, color: colorScheme.primary, size: 32),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.iosSandboxActive,
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.iosSandboxDesc,
+                      style: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FilledButton.icon(
+                onPressed: () => _pickDirectory(context, appState),
+                icon: const Icon(Icons.create_new_folder_outlined),
+                label: Text(l10n.addFolder),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(45),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
             ),
-          ),
           const Divider(height: 1),
+          
+          // Fixed Nodes
+          if (!useBrowserState) ...[
+            _buildFixedNode(
+              context,
+              icon: Icons.workspaces_outline,
+              label: l10n.tempWorkspace,
+              isSelected: galleryState.viewMode == GalleryViewMode.temp,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
+              colorScheme: colorScheme,
+            ),
+            _buildFixedNode(
+              context,
+              icon: Icons.auto_awesome_motion,
+              label: Platform.isIOS ? l10n.resultCache : l10n.processResults,
+              isSelected: galleryState.viewMode == GalleryViewMode.processed,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
+              colorScheme: colorScheme,
+            ),
+            const Divider(height: 1),
+          ],
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -100,7 +150,32 @@ class SourceExplorerWidget extends StatelessWidget {
                   ),
           ),
         ],
+    );
+  }
+
+  Widget _buildFixedNode(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+        ),
       ),
+      selected: isSelected,
+      dense: true,
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      visualDensity: VisualDensity.compact,
     );
   }
 

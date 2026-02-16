@@ -1,18 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
-import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
 import '../../models/browser_file.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/browser_state.dart';
 import '../../state/window_state.dart';
-import '../../widgets/dialogs/image_preview_dialog.dart';
-import '../workbench/source_explorer.dart';
+import '../../widgets/unified_sidebar.dart';
+import '../workbench/widgets/image_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_toolbar.dart';
@@ -27,64 +27,123 @@ class FileBrowserScreen extends StatefulWidget {
 }
 
 class _FileBrowserScreenState extends State<FileBrowserScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bool isMobile = Platform.isIOS || Platform.isAndroid;
+
+    if (isMobile) {
+      return _buildMobileRestrictedView(l10n);
+    }
+
+    return _buildDesktopLayout(l10n);
+  }
+
+  Widget _buildMobileRestrictedView(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.fileBrowser),
+        backgroundColor: colorScheme.surface,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.desktop_access_disabled_outlined, size: 80, color: colorScheme.outline.withAlpha(100)),
+              const SizedBox(height: 24),
+              Text(
+                "Feature Limited on Mobile",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                Platform.isIOS 
+                  ? "Please use the system 'Files' app to manage your generated images."
+                  : "Please use your device's file manager to organize files.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: colorScheme.primary, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
     final browserState = appState.browserState;
-    final l10n = AppLocalizations.of(context)!;
-    final isNarrow = Responsive.isNarrow(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      key: _scaffoldKey,
-      appBar: isNarrow ? AppBar(
-        title: Text(l10n.fileBrowser),
-        leading: IconButton(
-          icon: const Icon(Icons.folder_open),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          tooltip: l10n.sourceExplorer,
-        ),
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.fileBrowser, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: colorScheme.surface,
+        centerTitle: false,
         actions: [
-          IconButton(
-            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view),
+          IconButton.filledTonal(
+            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view, size: 20),
             onPressed: () => browserState.setViewMode(
               browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
             ),
             tooltip: l10n.switchViewMode,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.refresh, size: 20),
             onPressed: () => browserState.refresh(),
             tooltip: l10n.refresh,
           ),
+          const SizedBox(width: 16),
         ],
-      ) : null,
-      drawer: isNarrow ? const Drawer(width: 300, child: SourceExplorerWidget(useBrowserState: true)) : null,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+        ),
+      ),
       body: Row(
         children: [
-          if (!isNarrow) ...[
-            const SizedBox(width: 280, child: SourceExplorerWidget(useBrowserState: true)),
-            const VerticalDivider(width: 1, thickness: 1),
-          ],
+          // Sidebar
+          Container(
+            width: 300,
+            color: colorScheme.surfaceContainerLow,
+            child: const UnifiedSidebar(useBrowserState: true),
+          ),
+          const VerticalDivider(width: 1),
+          // Main Content
           Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1600),
-                child: Column(
-                  children: [
-                    BrowserToolbar(
+            child: Container(
+              color: colorScheme.surface,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: BrowserToolbar(
                       state: browserState,
                       onAiRename: () => _showAiRenameDialog(context),
                     ),
-                    BrowserFilterBar(state: browserState),
-                    Expanded(
-                      child: browserState.viewMode == BrowserViewMode.grid
-                          ? _buildFileGrid(context, browserState)
-                          : _buildFileListView(context, browserState),
-                    ),
-                  ],
-                ),
+                  ),
+                  BrowserFilterBar(state: browserState),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: browserState.viewMode == BrowserViewMode.grid
+                        ? _buildFileGrid(context, browserState)
+                        : _buildFileListView(context, browserState),
+                  ),
+                ],
               ),
             ),
           ),
@@ -96,32 +155,38 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget _buildFileGrid(BuildContext context, BrowserState state) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: state.thumbnailSize,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: state.filteredFiles.length,
-      itemBuilder: (context, index) {
-        final file = state.filteredFiles[index];
-        return FileCard(
-          file: file,
-          isSelected: state.selectedFiles.contains(file),
-          thumbnailSize: state.thumbnailSize,
-          onTap: () => state.toggleSelection(file),
-          onDoubleTap: () {
-            if (file.category == FileCategory.image) {
-              _showPreviewDialog(context, state.filteredFiles, index);
-            } else {
-              _handleOpenFile(file);
-            }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth <= 0) return const SizedBox.shrink();
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: state.thumbnailSize,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.85,
+          ),
+          itemCount: state.filteredFiles.length,
+          itemBuilder: (context, index) {
+            final file = state.filteredFiles[index];
+            return FileCard(
+              file: file,
+              isSelected: state.selectedFiles.contains(file),
+              thumbnailSize: state.thumbnailSize,
+              onTap: () => state.toggleSelection(file),
+              onDoubleTap: () {
+                if (file.category == FileCategory.image) {
+                  showImagePreview(context, file.path);
+                } else {
+                  _handleOpenFile(file);
+                }
+              },
+              onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
+            );
           },
-          onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
         );
-      },
+      }
     );
   }
 
@@ -139,7 +204,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              _showPreviewDialog(context, state.filteredFiles, index);
+              showImagePreview(context, file.path);
             } else {
               _handleOpenFile(file);
             }
@@ -166,23 +231,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(child: Text(AppLocalizations.of(context)!.noFilesFound));
-  }
-
-  void _showPreviewDialog(BuildContext context, List<BrowserFile> allFiles, int initialIndex) {
-    // Filter only images for the multi-image preview
-    final images = allFiles.where((f) => f.category == FileCategory.image).toList();
-    final currentFile = allFiles[initialIndex];
-    final imageIndex = images.indexOf(currentFile);
-
-    if (imageIndex == -1) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => ImagePreviewDialog(
-        images: images.map((f) => AppFile(path: f.path, name: f.name)).toList(),
-        initialIndex: imageIndex,
-      ),
-    );
   }
 
   void _showAiRenameDialog(BuildContext context) {

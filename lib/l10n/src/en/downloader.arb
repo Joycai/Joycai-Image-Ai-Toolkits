@@ -1,0 +1,53 @@
+{
+  "downloader": "Downloader",
+  "imageDownloader": "Image Downloader",
+  "url": "URL",
+  "prefix": "Prefix",
+  "websiteUrl": "Website URL",
+  "websiteUrlHint": "https://example.com",
+  "whatToFind": "What to find?",
+  "whatToFindHint": "e.g. all product gallery images",
+  "analysisModel": "Analysis Model",
+  "advancedOptions": "Advanced Options",
+  "analyzing": "Analyzing...",
+  "findImages": "Find Images",
+  "noImagesDiscovered": "No images discovered yet.",
+  "enterUrlToStart": "Enter a URL and requirement to start.",
+  "addToQueue": "Add to Queue",
+  "addedToQueue": "Added {count} images to download queue.",
+  "@addedToQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setOutputDirFirst": "Please set output directory in settings first.",
+  "cookiesHint": "Cookies (Raw or Netscape format)",
+  "selectImagesToDownload": "Select images to download",
+  "importCookieFile": "Import Cookie File",
+  "cookieFileInvalid": "Unsupported cookie file format. Please use Netscape format or raw text.",
+  "cookieImportSuccess": "Successfully imported {count} cookies.",
+  "@cookieImportSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saveOriginHtml": "Save Origin HTML",
+  "htmlSavedTo": "HTML saved to: {path}",
+  "@htmlSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "manualHtmlMode": "Manual HTML Mode",
+  "manualHtmlHint": "Paste rendered HTML here (F12 -> Copy Outer HTML)",
+  "cookieHistory": "Cookie History",
+  "noCookieHistory": "No cookie history saved",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "openRawImage": "Open Raw Image"
+}

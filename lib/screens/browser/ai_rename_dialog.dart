@@ -12,6 +12,7 @@ import '../../services/database_service.dart';
 import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/chat_model_selector.dart';
 
 class AiRenameDialog extends StatefulWidget {
   const AiRenameDialog({super.key});
@@ -94,8 +95,25 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final appState = Provider.of<AppState>(context, listen: false);
     final browserState = appState.browserState;
     final selectedFiles = browserState.selectedFiles.toList();
+    final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedModelPk == null || _instructionController.text.isEmpty) return;
+    if (_selectedModelPk == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.noModelsConfigured),
+          action: SnackBarAction(
+            label: l10n.settings,
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              appState.navigateToScreen(6); // Settings screen index
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_instructionController.text.isEmpty) return;
 
     // Save current settings as last used
     final db = DatabaseService();
@@ -153,25 +171,33 @@ Do not include any other text or markdown formatting.
         });
       }
 
-      _detectConflicts(proposed);
+      await _detectConflicts(proposed);
 
       if (mounted) {
-        setState(() {
-          _proposedRenames = proposed;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _proposedRenames = proposed;
+              _isProcessing = false;
+            });
+          }
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() => _isProcessing = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+            );
+          }
+        });
       }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  void _detectConflicts(List<Map<String, String>> proposed) {
+  Future<void> _detectConflicts(List<Map<String, String>> proposed) async {
     final Map<String, String> conflicts = {};
     final Set<String> targetNames = {};
     
@@ -188,7 +214,7 @@ Do not include any other text or markdown formatting.
       targetNames.add(newPath);
 
       // Conflict 2: Target name already exists on disk and is not one of our source files
-      if (File(newPath).existsSync() && !proposed.any((p) => p['path'] == newPath)) {
+      if (await File(newPath).exists() && !proposed.any((p) => p['path'] == newPath)) {
         conflicts[oldPath] = "File already exists on disk";
       }
     }
@@ -200,20 +226,21 @@ Do not include any other text or markdown formatting.
 
     final l10n = AppLocalizations.of(context)!;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final appState = Provider.of<AppState>(context, listen: false);
     
     setState(() => _isProcessing = true);
     try {
       for (var item in _proposedRenames) {
         final oldFile = File(item['path']!);
         final newPath = p.join(p.dirname(item['path']!), item['new_name']!);
-        if (oldFile.existsSync()) {
+        if (await oldFile.exists()) {
           await oldFile.rename(newPath);
         }
       }
       
       if (mounted) {
         Navigator.pop(context);
-        Provider.of<AppState>(context, listen: false).browserState.refresh();
+        appState.browserState.refresh();
         scaffoldMessenger.showSnackBar(
           SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
         );
@@ -223,9 +250,8 @@ Do not include any other text or markdown formatting.
         scaffoldMessenger.showSnackBar(
           SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
         );
+        setState(() => _isProcessing = false);
       }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
@@ -258,13 +284,9 @@ Do not include any other text or markdown formatting.
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<int>(
-                initialValue: effectiveModelPk,
-                decoration: InputDecoration(labelText: l10n.model, border: const OutlineInputBorder()),
-                items: chatModels.map((m) => DropdownMenuItem(
-                  value: m.id,
-                  child: Text(m.modelName),
-                )).toList(),
+              ChatModelSelector(
+                selectedModelId: effectiveModelPk,
+                label: l10n.model,
                 onChanged: (v) => setState(() => _selectedModelPk = v),
               ),
               const SizedBox(height: 12),
@@ -323,45 +345,48 @@ Do not include any other text or markdown formatting.
   }
 
   Widget _buildPreviewList(ColorScheme colorScheme, AppLocalizations l10n) {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _proposedRenames.length,
-      separatorBuilder: (context, index) => const Divider(),
-      itemBuilder: (context, index) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(_proposedRenames.length, (index) {
         final item = _proposedRenames[index];
         final hasConflict = _conflicts.containsKey(item['path']);
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(item['old_name']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              const SizedBox(height: 2),
-              Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (index > 0) const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.arrow_forward, size: 12, color: Colors.blue),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      item['new_name']!, 
-                      style: TextStyle(
-                        fontSize: 13, 
-                        fontWeight: FontWeight.bold,
-                        color: hasConflict ? Colors.red : Colors.green,
+                  Text(item['old_name']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.arrow_forward, size: 12, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item['new_name']!, 
+                          style: TextStyle(
+                            fontSize: 13, 
+                            fontWeight: FontWeight.bold,
+                            color: hasConflict ? Colors.red : Colors.green,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (hasConflict) 
+                        Tooltip(message: _conflicts[item['path']], child: const Icon(Icons.error_outline, color: Colors.red, size: 16))
+                      else
+                        const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                    ],
                   ),
-                  if (hasConflict) 
-                    Tooltip(message: _conflicts[item['path']], child: const Icon(Icons.error_outline, color: Colors.red, size: 16))
-                  else
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         );
-      },
+      }),
     );
   }
 }

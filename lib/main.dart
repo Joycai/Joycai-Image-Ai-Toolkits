@@ -20,8 +20,6 @@ import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
-import 'widgets/floating_comparator.dart';
-import 'widgets/floating_preview.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -99,7 +97,6 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
   bool _isRailExtended = false;
   bool _wizardShown = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -108,14 +105,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkFirstRun();
-
-    // Update window state with current screen size
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final size = MediaQuery.of(context).size;
-        Provider.of<AppState>(context, listen: false).windowState.updateScreenSize(size);
-      }
-    });
   }
 
   void _checkFirstRun() {
@@ -143,6 +132,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
@@ -201,45 +191,43 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       children: [
         Scaffold(
           key: _scaffoldKey,
-          drawer: isMobile ? _buildMobileDrawer(secondaryItems, l10n) : null,
-          body: Row(
-            children: [
-              if (!isMobile)
-                NavigationRail(
-                  extended: _isRailExtended,
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: (int index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                  },
-                  leading: IconButton(
-                    icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
-                    onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+          drawer: isMobile ? _buildMobileDrawer(secondaryItems, l10n, appState) : null,
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (!isMobile)
+                  NavigationRail(
+                    extended: _isRailExtended,
+                    selectedIndex: appState.activeScreenIndex,
+                    onDestinationSelected: (int index) {
+                      appState.navigateToScreen(index);
+                    },
+                    leading: IconButton(
+                      icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
+                      onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+                    ),
+                    labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                    destinations: allNavItems
+                        .map((d) => NavigationRailDestination(
+                              icon: d.icon,
+                              selectedIcon: d.selectedIcon,
+                              label: Text(d.label),
+                            ))
+                        .toList(),
                   ),
-                  labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-                  destinations: allNavItems
-                      .map((d) => NavigationRailDestination(
-                            icon: d.icon,
-                            selectedIcon: d.selectedIcon,
-                            label: Text(d.label),
-                          ))
-                      .toList(),
+                if (!isMobile) const VerticalDivider(thickness: 1, width: 1),
+                Expanded(
+                  child: _screens[appState.activeScreenIndex],
                 ),
-              if (!isMobile) const VerticalDivider(thickness: 1, width: 1),
-              Expanded(
-                child: _screens[_selectedIndex],
-              ),
-            ],
+              ],
+            ),
           ),
           bottomNavigationBar: isMobile
               ? NavigationBar(
-                  selectedIndex: _selectedIndex < 4 ? _selectedIndex : 4,
+                  selectedIndex: appState.activeScreenIndex < 4 ? appState.activeScreenIndex : 4,
                   onDestinationSelected: (int index) {
                     if (index < 4) {
-                      setState(() {
-                        _selectedIndex = index;
-                      });
+                      appState.navigateToScreen(index);
                     } else {
                       _scaffoldKey.currentState?.openDrawer();
                     }
@@ -259,13 +247,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : null,
         ),
-        const FloatingPreviewHost(),
-        const FloatingComparatorHost(),
       ],
     );
   }
 
-  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n) {
+  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n, AppState appState) {
     return Drawer(
       child: Column(
         children: [
@@ -293,15 +279,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ...items.asMap().entries.map((entry) {
             final index = entry.key + 4; // Skip first 4
             final d = entry.value;
-            final isSelected = _selectedIndex == index;
+            final isSelected = appState.activeScreenIndex == index;
             return ListTile(
               leading: isSelected ? d.selectedIcon : d.icon,
               title: Text(d.label),
               selected: isSelected,
               onTap: () {
-                setState(() {
-                  _selectedIndex = index;
-                });
+                appState.navigateToScreen(index);
                 Navigator.pop(context);
               },
             );
@@ -320,3 +304,4 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
+

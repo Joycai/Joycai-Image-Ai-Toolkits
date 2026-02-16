@@ -1,0 +1,149 @@
+{
+  "workbench": "工作台",
+  "imageProcessing": "图片处理",
+  "sourceGallery": "源图库",
+  "sourceExplorer": "源目录浏览器",
+  "tempWorkspace": "临时工作区",
+  "processResults": "处理结果",
+  "resultCache": "结果缓存区",
+  "directories": "目录列表",
+  "addFolder": "添加文件夹",
+  "noFolders": "未添加文件夹",
+  "clickAddFolder": "点击“添加文件夹”开始扫描图像。",
+  "noImagesFound": "未找到图像",
+  "noResultsYet": "暂无结果",
+  "selectAll": "全选",
+  "importFromGallery": "从系统图库导入",
+  "clearTempWorkspace": "清空工作区",
+  "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
+  "noImagesSelected": "未选择图像",
+  "selectSourceDirectory": "选择源目录",
+  "removeFolderTooltip": "移除文件夹",
+  "removeFolderConfirmTitle": "移除文件夹？",
+  "removeFolderConfirmMessage": "确定要从列表中移除“{folderName}”吗？",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "缩略图大小",
+  "deleteFile": "删除文件",
+  "deleteFileConfirmTitle": "删除文件？",
+  "deleteFileConfirmMessage": "确定要删除“{filename}”吗？",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "移至回收站",
+  "permanentlyDelete": "永久删除",
+  "deleteSuccess": "删除成功",
+  "deleteFailed": "删除失败: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "模型选择",
+  "selectAModel": "选择一个模型",
+  "aspectRatio": "宽高比",
+  "resolution": "分辨率",
+  "prompt": "提示词",
+  "promptHint": "在此输入提示词...",
+  "prefixHint": "例如：result",
+  "processPrompt": "处理提示词",
+  "processImages": "处理 {count} 张图像",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSubmitted": "任务已提交至队列",
+  "comparator": "对比器",
+  "compareModeSync": "同步模式",
+  "compareModeSwap": "切换模式",
+  "sendToComparator": "发送至对比器",
+  "sendToComparatorRaw": "发送至对比器 (原图)",
+  "sendToComparatorAfter": "发送至对比器 (后图)",
+  "sendToSelection": "发送到选中列表",
+  "selectFromLibrary": "从库中选择",
+  "metadataSelectedNone": "未选中图像元数据",
+  "labelRaw": "原图",
+  "labelAfter": "效果图",
+  "drawMask": "绘制蒙版",
+  "maskEditor": "蒙版编辑器",
+  "brushSize": "画笔大小",
+  "maskColor": "蒙版颜色",
+  "undo": "撤销",
+  "saveAndSelect": "保存并选中",
+  "aiSmartMask": "AI 智能蒙版",
+  "binaryMode": "二值化模式",
+  "maskModel": "分析模型",
+  "maskDetail": "详情度: {count}",
+  "@maskDetail": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maskPromptLabel": "要遮罩的内容？",
+  "generating": "正在生成...",
+  "generate": "生成",
+  "maskSaved": "蒙版已保存并选中",
+  "maskSaveError": "保存蒙版失败: {error}",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "maskGenError": "AI 蒙版生成失败: {error}",
+  "@maskGenError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "promptOptimizer": "提示词优化器",
+  "refinerModel": "优化模型",
+  "systemPrompt": "系统提示词",
+  "refinerIntro": "使用 AI 分析图像并优化您的提示词。",
+  "roughPrompt": "初步想法 / 提示词",
+  "optimizedPrompt": "优化后的提示词",
+  "applyToWorkbench": "应用到工作台",
+  "promptApplied": "提示词已应用到工作台",
+  "refineFailed": "优化失败: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "executionLogs": "执行日志",
+  "saveToPhotos": "保存到系统相册",
+  "saveToGallery": "保存到相册",
+  "savedToPhotos": "已保存到系统相册",
+  "saveFailed": "保存失败: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iosSandboxActive": "iOS 沙盒模式生效",
+  "iosSandboxDesc": "在 iOS 上，请使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
+  "filesAppSuffix": " (文件 App)"
+}

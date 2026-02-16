@@ -49,74 +49,99 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+    final header = Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Row(
-                children: [
-                  if (!widget.isRefined) ...[
-                    Checkbox(
-                      value: widget.isMarkdown,
-                      onChanged: (v) {
-                        widget.onMarkdownChanged(v ?? false);
-                        if (!(v ?? false)) {
-                          setState(() => _isPreview = false);
-                        }
-                      },
-                    ),
-                    const Flexible(
-                      child: Text(
-                        "Markdown",
-                        style: TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ] else
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
+            if (!widget.isRefined) ...[
+              Checkbox(
+                value: widget.isMarkdown,
+                onChanged: (v) {
+                  widget.onMarkdownChanged(v ?? false);
+                  if (!(v ?? false)) {
+                    setState(() => _isPreview = false);
+                  }
+                },
               ),
-            ),
-            if (widget.isMarkdown || widget.isRefined)
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    label: Text(l10n.edit),
-                    icon: const Icon(Icons.edit, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text(l10n.preview),
-                    icon: const Icon(Icons.visibility, size: 16),
-                  ),
-                ],
-                selected: {_isPreview},
-                onSelectionChanged: (v) => setState(() => _isPreview = v.first),
-                style: SegmentedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 11),
-                ),
+              const Text(
+                "Markdown",
+                style: TextStyle(fontSize: 12),
+              ),
+            ] else
+              Text(
+                widget.label,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
           ],
         ),
-        const SizedBox(height: 8),
-        _buildEditorContent(colorScheme),
+        if (widget.isMarkdown || widget.isRefined)
+          SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: Text(l10n.edit),
+                icon: const Icon(Icons.edit, size: 16),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text(l10n.preview),
+                icon: const Icon(Icons.visibility, size: 16),
+              ),
+            ],
+            selected: {_isPreview},
+            onSelectionChanged: (v) => setState(() => _isPreview = v.first),
+            style: SegmentedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+          ),
       ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // If height is extremely limited (e.g. log console expanded on small screen),
+        // fallback to a scrollable Column instead of using Expanded/Flexible
+        // to prevent RenderFlex overflow errors.
+        final bool isSpaceTooTight = widget.expand && constraints.maxHeight < 120;
+
+        if (isSpaceTooTight) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                header,
+                const SizedBox(height: 8),
+                _buildEditorContent(colorScheme, forceDisableExpand: true),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            header,
+            const SizedBox(height: 8),
+            if (widget.expand)
+              Expanded(child: _buildEditorContent(colorScheme))
+            else
+              Flexible(child: _buildEditorContent(colorScheme)),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildEditorContent(ColorScheme colorScheme) {
+  Widget _buildEditorContent(ColorScheme colorScheme, {bool forceDisableExpand = false}) {
+    final bool shouldExpand = widget.expand && !forceDisableExpand;
     Widget inner;
     if (_isPreview) {
       inner = MarkdownBody(
@@ -135,8 +160,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     } else {
       inner = TextField(
         controller: widget.controller,
-        maxLines: widget.expand ? null : widget.maxLines,
-        expands: widget.expand,
+        maxLines: shouldExpand ? null : widget.maxLines,
+        expands: shouldExpand,
         onChanged: widget.onChanged,
         readOnly: widget.isRefined,
         textAlignVertical: TextAlignVertical.top,
@@ -151,9 +176,11 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       );
     }
 
-    final content = Container(
+    return Container(
       width: double.infinity,
-      height: widget.expand ? null : widget.maxLines * 24.0,
+      constraints: shouldExpand ? null : BoxConstraints(
+        maxHeight: widget.maxLines * 24.0,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(8),
@@ -161,10 +188,5 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       ),
       child: inner,
     );
-
-    if (widget.expand) {
-      return Expanded(child: content);
-    }
-    return content;
   }
 }

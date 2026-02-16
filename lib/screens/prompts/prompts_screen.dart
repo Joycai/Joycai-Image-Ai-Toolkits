@@ -13,6 +13,8 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../state/app_state.dart';
 import '../../widgets/markdown_editor.dart';
+import 'widgets/color_hue_picker.dart';
+import 'widgets/prompts_sidebar.dart';
 import 'widgets/system_template_list.dart';
 import 'widgets/tag_management_list.dart';
 import 'widgets/user_prompt_list.dart';
@@ -74,19 +76,151 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isNarrow = Responsive.isNarrow(context);
     
+    return ResponsiveBuilder(
+      mobile: _buildMobileLayout(l10n),
+      tablet: _buildDesktopLayout(l10n, isTablet: true),
+      desktop: _buildDesktopLayout(l10n),
+    );
+  }
+
+  // --- Mobile Layout ---
+  Widget _buildMobileLayout(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            title: Text(l10n.promptLibrary),
+            pinned: true,
+            floating: true,
+            snap: true,
+            actions: [
+              _buildImportExportMenu(l10n),
+              IconButton(onPressed: _handleAddAction, icon: const Icon(Icons.add)),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(108),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: _buildSearchField(l10n, isMobile: true),
+                  ),
+                  TabBar(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: l10n.userPrompts),
+                      Tab(text: l10n.systemTemplates),
+                      Tab(text: l10n.categoriesTab),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        body: Column(
+          children: [
+            if (_tabController.index == 0 && _tags.isNotEmpty)
+              _buildMobileFilterBar(colorScheme),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: _buildTabViews(l10n),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Desktop/Tablet Layout ---
+  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: Text(l10n.promptLibrary, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: colorScheme.surface,
+        centerTitle: false,
+        actions: [
+          _buildSearchField(l10n),
+          const SizedBox(width: 8),
+          _buildImportExportActions(l10n),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton.icon(
+              onPressed: _handleAddAction,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.add),
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+        ),
+      ),
+      body: Row(
+        children: [
+          // Navigation Rail / Sidebar
+          NavigationRail(
+            selectedIndex: _tabController.index,
+            onDestinationSelected: (index) => setState(() => _tabController.index = index),
+            labelType: NavigationRailLabelType.all,
+            backgroundColor: colorScheme.surfaceContainerLow,
+            destinations: [
+              NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.userPrompts)),
+              NavigationRailDestination(icon: const Icon(Icons.auto_fix_high_outlined), selectedIcon: const Icon(Icons.auto_fix_high), label: Text(l10n.systemTemplates)),
+              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          // Tag Sidebar (Only for Prompts)
+          if (_tabController.index != 2) ...[
+            SizedBox(
+              width: isTablet ? 200 : 260,
+              child: PromptsSidebar(
+                tags: _tags,
+                selectedFilterTagIds: _selectedFilterTagIds,
+                onTagToggle: (id) {
+                  setState(() {
+                    if (_selectedFilterTagIds.contains(id)) {
+                      _selectedFilterTagIds.remove(id);
+                    } else {
+                      _selectedFilterTagIds.add(id);
+                    }
+                  });
+                },
+                onClear: () => setState(() => _selectedFilterTagIds.clear()),
+              ),
+            ),
+            const VerticalDivider(width: 1),
+          ],
+          // Main Content
+          Expanded(
+            child: Container(
+              color: colorScheme.surface,
+              child: _buildTabViews(l10n)[_tabController.index],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildTabViews(AppLocalizations l10n) {
     final filteredUser = _userPrompts.where((p) {
       final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
                             p.content.toLowerCase().contains(_searchQuery);
-      
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
-      
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      final matchesTags = _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
-      
-      return matchesSearch && matchesTags;
+      return matchesSearch && _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
     }).toList();
 
     final filteredSystem = _systemPrompts.where((p) {
@@ -96,131 +230,78 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       return matchesType && matchesSearch;
     }).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.promptLibrary),
-        actions: isNarrow 
-          ? [
-              _buildImportExportMenu(l10n),
-              IconButton(
-                onPressed: _handleAddAction,
-                icon: const Icon(Icons.add),
-              ),
-            ]
-          : [
-              Container(
-                width: 250,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: l10n.filterPrompts,
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.upload_file_outlined),
-                tooltip: l10n.importSettings,
-                onPressed: () => _importPrompts(l10n),
-              ),
-              IconButton(
-                icon: const Icon(Icons.download_for_offline_outlined),
-                tooltip: l10n.exportSettings,
-                onPressed: () => _exportPrompts(l10n),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: FilledButton.icon(
-                  onPressed: _handleAddAction,
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.add),
-                ),
-              ),
-            ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(isNarrow ? 100 : 50),
-          child: Column(
-            children: [
-              if (isNarrow)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: l10n.filterPrompts,
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      isDense: true,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ),
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(text: l10n.userPrompts),
-                  Tab(text: l10n.systemTemplates),
-                  Tab(text: l10n.categoriesTab),
-                ],
-              ),
-            ],
-          ),
-        ),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return [
+      UserPromptList(
+        prompts: filteredUser, 
+        searchQuery: _searchQuery, 
+        selectedFilterTagIds: _selectedFilterTagIds,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
+        onConfirmDelete: _confirmDelete,
       ),
-      body: Row(
-        children: [
-          if (!isNarrow && _tabController.index != 2) ...[
-            _buildSidebar(colorScheme, l10n),
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Column(
-              children: [
-                if (isNarrow && _tabController.index == 0 && _tags.isNotEmpty)
-                  _buildMobileFilterBar(colorScheme),
-                if (_tabController.index == 1)
-                  _buildSystemTypeToggle(colorScheme, l10n),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      UserPromptList(
-                        prompts: filteredUser, 
-                        searchQuery: _searchQuery, 
-                        selectedFilterTagIds: _selectedFilterTagIds,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {prompt}) => _showPromptDialog(l10n, prompt: prompt),
-                        onConfirmDelete: _confirmDelete,
-                      ),
-                      SystemTemplateList(
-                        prompts: filteredSystem, 
-                        searchQuery: _searchQuery,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {prompt}) => _showSystemPromptDialog(l10n, prompt: prompt),
-                        onConfirmDelete: _confirmDelete,
-                      ),
-                      TagManagementList(
-                        tags: _tags,
-                        onRefresh: _loadData,
-                        onShowEditDialog: (l10n, {tag}) => _showTagDialog(l10n, tag: tag),
-                        onConfirmDelete: _confirmDeleteTag,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      SystemTemplateList(
+        prompts: filteredSystem, 
+        searchQuery: _searchQuery,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
+        onConfirmDelete: _confirmDelete,
+        header: _buildSystemTypeToggle(colorScheme, l10n),
+      ),
+      TagManagementList(
+        tags: _tags,
+        onRefresh: _loadData,
+        onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
+        onConfirmDelete: _confirmDeleteTag,
+      ),
+    ];
+  }
+
+  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false}) {
+    return Container(
+      width: isMobile ? double.infinity : 300,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: TextField(
+        controller: _searchCtrl,
+        textAlignVertical: TextAlignVertical.center,
+        decoration: InputDecoration(
+          hintText: l10n.filterPrompts,
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty 
+              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear()) 
+              : null,
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
       ),
     );
   }
+
+  Widget _buildImportExportActions(AppLocalizations l10n) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.upload_file_outlined, size: 20),
+          tooltip: l10n.importSettings,
+          onPressed: () => _importPrompts(l10n),
+        ),
+        const SizedBox(width: 4),
+        IconButton.filledTonal(
+          icon: const Icon(Icons.download_for_offline_outlined, size: 20),
+          tooltip: l10n.exportSettings,
+          onPressed: () => _exportPrompts(l10n),
+        ),
+      ],
+    );
+  }
+
 
   void _handleAddAction() {
     final l10n = AppLocalizations.of(context)!;
@@ -243,67 +324,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
         PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
       ],
-    );
-  }
-
-  Widget _buildSidebar(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Container(
-      width: 250,
-      color: colorScheme.surfaceContainerLow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              l10n.categoriesTab,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-                fontSize: 12,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _tags.length,
-              itemBuilder: (context, index) {
-                final tag = _tags[index];
-                final isSelected = _selectedFilterTagIds.contains(tag.id);
-                return ListTile(
-                  dense: true,
-                  leading: Icon(
-                    isSelected ? Icons.label : Icons.label_outline,
-                    color: Color(tag.color),
-                    size: 18,
-                  ),
-                  title: Text(tag.name),
-                  selected: isSelected,
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedFilterTagIds.remove(tag.id);
-                      } else {
-                        _selectedFilterTagIds.add(tag.id!);
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          if (_selectedFilterTagIds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextButton.icon(
-                onPressed: () => setState(() => _selectedFilterTagIds.clear()),
-                icon: const Icon(Icons.clear_all, size: 16),
-                label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -453,64 +473,67 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
           return AlertDialog(
             title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
-                  const SizedBox(height: 24),
-                  
-                  // Color Picker Section
-                  _ColorHuePicker(
-                    initialColor: Color(selectedColor),
-                    onColorChanged: updateColor,
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: hexCtrl, 
-                    decoration: const InputDecoration(
-                      labelText: 'HEX Color', 
-                      prefixIcon: Icon(Icons.colorize),
-                      isDense: true,
-                      border: OutlineInputBorder(),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
+                    const SizedBox(height: 24),
+                    
+                    // Color Picker Section
+                    ColorHuePicker(
+                      initialColor: Color(selectedColor),
+                      onColorChanged: updateColor,
                     ),
-                    onChanged: (v) {
-                      if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
-                        try {
-                          final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
-                          final color = int.parse(colorStr, radix: 16);
-                          setDialogState(() => selectedColor = color);
-                        } catch (_) {}
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: AppConstants.tagColors.map((color) => InkWell(
-                      onTap: () => updateColor(color.toARGB32()),
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
-                            width: 2,
+                    
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: hexCtrl, 
+                      decoration: const InputDecoration(
+                        labelText: 'HEX Color', 
+                        prefixIcon: Icon(Icons.colorize),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (v) {
+                        if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
+                          try {
+                            final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
+                            final color = int.parse(colorStr, radix: 16);
+                            setDialogState(() => selectedColor = color);
+                          } catch (_) {}
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: AppConstants.tagColors.map((color) => InkWell(
+                        onTap: () => updateColor(color.toARGB32()),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
+                              width: 2,
+                            ),
                           ),
                         ),
-                      ),
-                    )).toList(),
-                  ),
-                ],
+                      )).toList(),
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -566,11 +589,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.add : l10n.editPrompt),
             ],
           ),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 800,
-              minWidth: Responsive.isMobile(context) ? 0 : 500,
-            ),
+          content: SizedBox(
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -696,11 +716,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
             ],
           ),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 800,
-              minWidth: Responsive.isMobile(context) ? 0 : 500,
-            ),
+          content: SizedBox(
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -791,23 +808,30 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         ...p.toMap(),
         'tags': p.tags.map((t) => t.toMap()).toList()
       }).toList(),
-      'system_prompts': _systemPrompts.map((p) => p.toMap()).toList(),
+      'system_prompts': _systemPrompts.map((p) => {
+        ...p.toMap(),
+        'tags': p.tags.map((t) => t.toMap()).toList()
+      }).toList(),
       'export_type': 'prompts_only',
       'version': 1
     };
     
     final json = jsonEncode(data);
+    final bytes = utf8.encode(json);
+
     String? path = await FilePicker.platform.saveFile(
       fileName: 'joycai_prompts.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
+      bytes: bytes,
     );
     
-    if (path != null) {
+    if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
       await File(path).writeAsString(json);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
-      }
+    }
+
+    if (path != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
     }
   }
 
@@ -863,128 +887,4 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       }
     }
   }
-}
-
-/// A simple Hue color picker wheel implementation
-class _ColorHuePicker extends StatefulWidget {
-  final Color initialColor;
-  final ValueChanged<int> onColorChanged;
-
-  const _ColorHuePicker({
-    required this.initialColor,
-    required this.onColorChanged,
-  });
-
-  @override
-  State<_ColorHuePicker> createState() => _ColorHuePickerState();
-}
-
-class _ColorHuePickerState extends State<_ColorHuePicker> {
-  late double _hue;
-
-  @override
-  void initState() {
-    super.initState();
-    _hue = HSVColor.fromColor(widget.initialColor).hue;
-  }
-
-  @override
-  void didUpdateWidget(_ColorHuePicker oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final newHue = HSVColor.fromColor(widget.initialColor).hue;
-    if ((newHue - _hue).abs() > 1.0) {
-      setState(() => _hue = newHue);
-    }
-  }
-
-  void _handleGesture(Offset localPosition, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    
-    double rad = (localPosition - center).direction; // -pi to pi
-    double deg = (rad * 180 / 3.1415926535) + 90;
-    if (deg < 0) deg += 360;
-
-    setState(() {
-      _hue = deg % 360;
-    });
-    
-    final color = HSVColor.fromAHSV(1.0, _hue, 0.8, 0.9).toColor();
-    widget.onColorChanged(color.toARGB32());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const size = Size(160, 160);
-    return GestureDetector(
-      onPanUpdate: (details) => _handleGesture(details.localPosition, size),
-      onPanDown: (details) => _handleGesture(details.localPosition, size),
-      child: CustomPaint(
-        size: size,
-        painter: _ColorWheelPainter(hue: _hue),
-      ),
-    );
-  }
-}
-
-class _ColorWheelPainter extends CustomPainter {
-  final double hue;
-  _ColorWheelPainter({required this.hue});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    const strokeWidth = 20.0;
-
-    for (double i = 0; i < 360; i += 1) {
-      final paint = Paint()
-        ..color = HSVColor.fromAHSV(1.0, i, 1.0, 1.0).toColor()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth + 1;
-      
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius - (strokeWidth / 2)),
-        (i - 90) * 3.1415926535 / 180,
-        1.5 * 3.1415926535 / 180,
-        false,
-        paint,
-      );
-    }
-
-    final indicatorAngle = (hue - 90) * 3.1415926535 / 180;
-    final indicatorOffset = Offset(
-      center.dx + (radius - (strokeWidth / 2)) * math.cos(indicatorAngle),
-      center.dy + (radius - (strokeWidth / 2)) * math.sin(indicatorAngle),
-    );
-
-    canvas.drawCircle(
-      indicatorOffset, 
-      12, 
-      Paint()..color = Colors.black26..style = PaintingStyle.fill..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
-    );
-    canvas.drawCircle(
-      indicatorOffset, 
-      10, 
-      Paint()..color = Colors.white..style = PaintingStyle.fill
-    );
-    canvas.drawCircle(
-      indicatorOffset, 
-      7, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor()..style = PaintingStyle.fill
-    );
-
-    canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = HSVColor.fromAHSV(1.0, hue, 0.8, 0.9).toColor()..style = PaintingStyle.fill
-    );
-    canvas.drawCircle(
-      center, 
-      radius - strokeWidth - 12, 
-      Paint()..color = Colors.white24..style = PaintingStyle.stroke..strokeWidth = 2
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ColorWheelPainter oldDelegate) => oldDelegate.hue != hue;
 }
