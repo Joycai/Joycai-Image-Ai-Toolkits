@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
@@ -85,6 +86,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final appState = Provider.of<AppState>(context);
     final fileBrowserState = appState.fileBrowserState;
     final colorScheme = Theme.of(context).colorScheme;
+    final isNarrow = Responsive.isNarrow(context);
+
+    final sidebar = Container(
+      width: isNarrow ? null : 300,
+      color: colorScheme.surfaceContainerLow,
+      child: const UnifiedSidebar(useFileBrowserState: true),
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -94,20 +102,25 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: colorScheme.surface,
         centerTitle: false,
+        leading: isNarrow ? Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ) : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
         ),
       ),
+      drawer: isNarrow ? Drawer(child: sidebar) : null,
       body: Row(
         children: [
-          // Sidebar
-          Container(
-            width: 300,
-            color: colorScheme.surfaceContainerLow,
-            child: const UnifiedSidebar(useFileBrowserState: true),
-          ),
-          const VerticalDivider(width: 1),
+          // Sidebar (Fixed for desktop wide)
+          if (!isNarrow) ...[
+            sidebar,
+            const VerticalDivider(width: 1),
+          ],
           // Main Content
           Expanded(
             child: Container(

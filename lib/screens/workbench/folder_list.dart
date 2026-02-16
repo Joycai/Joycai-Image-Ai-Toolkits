@@ -94,6 +94,14 @@ class FolderList extends StatelessWidget {
           if (!useFileBrowserState) ...[
             _buildFixedNode(
               context,
+              icon: Icons.photo_library_outlined,
+              label: l10n.sourceGallery,
+              isSelected: galleryState.viewMode == GalleryViewMode.all,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.all),
+              colorScheme: colorScheme,
+            ),
+            _buildFixedNode(
+              context,
               icon: Icons.workspaces_outline,
               label: l10n.tempWorkspace,
               isSelected: galleryState.viewMode == GalleryViewMode.temp,

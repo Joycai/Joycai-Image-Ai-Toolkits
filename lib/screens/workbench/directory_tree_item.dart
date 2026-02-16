@@ -163,11 +163,14 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               else
                 Checkbox(
                   value: isSelected,
-                  onChanged: (_) {
+                  onChanged: (val) {
                     if (widget.useFileBrowserState) {
                       appState.fileBrowserState.toggleDirectory(widget.path);
                     } else {
-                      appState.toggleDirectory(widget.path);
+                      appState.galleryState.toggleDirectory(widget.path);
+                      if (val == true) {
+                        appState.galleryState.setViewMode(GalleryViewMode.all);
+                      }
                     }
                   },
                   visualDensity: VisualDensity.compact,
