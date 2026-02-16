@@ -279,11 +279,7 @@ class TaskQueueService extends ChangeNotifier {
   Future<void> _executeImageProcessTask(TaskItem task) async {
     task.addLog('Start processing with model: ${task.modelDbId ?? task.modelId}');
     
-    final db = DatabaseService();
-    final outputDir = await db.getSetting('output_directory');
-    if (outputDir == null || outputDir.isEmpty) {
-      throw Exception('Output directory not set in settings!');
-    }
+    final outputDir = await _getEffectiveOutputDir(task);
 
     final attachments = task.imagePaths.map((path) => 
       LLMAttachment.fromFile(File(path), _getMimeType(path))
@@ -342,11 +338,7 @@ class TaskQueueService extends ChangeNotifier {
   Future<void> _executeDownloadTask(TaskItem task) async {
     task.addLog('Start downloading ${task.imagePaths.length} images.');
     
-    final db = DatabaseService();
-    final outputDir = await db.getSetting('output_directory');
-    if (outputDir == null || outputDir.isEmpty) {
-      throw Exception('Output directory not set in settings!');
-    }
+    final outputDir = await _getEffectiveOutputDir(task);
 
     final cookies = task.parameters['cookies'] as String?;
     final formattedCookies = WebScraperService().parseCookies(cookies ?? '');
@@ -467,6 +459,47 @@ class TaskQueueService extends ChangeNotifier {
       final sd = math.sqrt(variance);
       
       await db.updateModelEstimation(modelDbId, mean, sd, 0);
+    }
+  }
+
+  /// Checks if primary output is writable, returns it or falls back to Result Cache.
+  Future<String> _getEffectiveOutputDir(TaskItem task) async {
+    final db = DatabaseService();
+    String? primary = await db.getSetting('output_directory');
+    
+    // Result Cache is always initialized in GalleryState for iOS/macOS
+    // We can re-fetch or use a placeholder logic here.
+    // For safety, let's re-calculate the app cache path.
+    String? fallback;
+    try {
+      if (Platform.isIOS || Platform.isMacOS) {
+        // Actually, we should use the one from GalleryState if possible, 
+        // but TaskQueueService doesn't have direct access to GalleryState.
+        // We'll trust the setting 'result_cache_directory' initialized by GalleryState.
+        final appCache = (await db.getSetting('result_cache_directory')) ?? '';
+        if (appCache.isNotEmpty) fallback = appCache;
+      }
+    } catch (_) {}
+
+    if (primary == null || primary.isEmpty) {
+      if (fallback != null) return fallback;
+      throw Exception('Output directory not set!');
+    }
+
+    try {
+      final dir = Directory(primary);
+      if (!dir.existsSync()) {
+        await dir.create(recursive: true);
+      }
+      // Test writability
+      final testFile = File(p.join(primary, '.write_test'));
+      await testFile.writeAsString('test');
+      await testFile.delete();
+      return primary;
+    } catch (e) {
+      task.addLog('Warning: Primary output directory is unwritable ($e). Falling back to Result Cache.');
+      if (fallback != null) return fallback;
+      rethrow;
     }
   }
 }

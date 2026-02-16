@@ -111,7 +111,7 @@ class FolderList extends StatelessWidget {
             _buildFixedNode(
               context,
               icon: Icons.auto_awesome_motion,
-              label: Platform.isIOS ? l10n.resultCache : l10n.processResults,
+              label: (Platform.isIOS || Platform.isMacOS) ? l10n.resultCache : l10n.processResults,
               isSelected: galleryState.viewMode == GalleryViewMode.processed,
               onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
               colorScheme: colorScheme,

@@ -8,8 +8,8 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
@@ -203,89 +203,120 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             const SizedBox(height: 16),
             
             const Divider(),
-            Selector<AppState, (int, int, double?)>(
-              selector: (_, state) {
-                final pendingCount = state.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-                final runningCount = state.taskQueue.runningCount;
-                final activeTasks = state.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
-                
-                double? avgProgress;
-                if (activeTasks.isNotEmpty) {
-                  double total = 0;
-                  int count = 0;
-                  for (var t in activeTasks) {
-                    if (t.progress != null) {
-                      total += t.progress!;
-                      count++;
-                    }
-                  }
-                  if (count > 0) avgProgress = total / count;
-                }
-                return (pendingCount, runningCount, avgProgress);
-              },
-              builder: (context, data, _) {
-                return _buildQueueStatus(data.$1, data.$2, data.$3, colorScheme, l10n);
-              },
-            ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () => _showQueueSettings(context, l10n),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Selector<AppState, int>(
-                    selector: (_, s) => s.selectedImages.length,
-                    builder: (context, selectedCount, _) => FilledButton.icon(
-                      onPressed: _promptController.text.isEmpty 
-                          ? null 
-                          : () {
-                              final appState = Provider.of<AppState>(context, listen: false);
-                              if (selectedModelDbId == null) {
+            // Action Zone Container
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      // Send to Optimizer
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final appState = Provider.of<AppState>(context, listen: false);
+                            final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+                            
+                            workbenchUIState.sendToOptimizer(
+                              _promptController.text,
+                              appState.selectedImages,
+                            );
+                            
+                            appState.setWorkbenchTab(3);
+                            
+                            if (widget.scrollController != null) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          icon: const Icon(Icons.auto_fix_high, size: 18),
+                          label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Queue Settings
+                      IconButton.filledTonal(
+                        onPressed: () => _showQueueSettings(context, l10n),
+                        icon: const Icon(Icons.settings_outlined, size: 20),
+                        tooltip: l10n.queueSettings,
+                        style: IconButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Primary Execution Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: Selector<AppState, int>(
+                      selector: (_, s) => s.selectedImages.length,
+                      builder: (context, selectedCount, _) => FilledButton.icon(
+                        onPressed: _promptController.text.isEmpty 
+                            ? null 
+                            : () {
+                                final appState = Provider.of<AppState>(context, listen: false);
+                                if (selectedModelDbId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.noModelsConfigured),
+                                      action: SnackBarAction(
+                                        label: l10n.settings,
+                                        onPressed: () => appState.navigateToScreen(6),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
+                                final modelName = selectedModel.modelName;
+                                
+                                appState.submitTask(selectedModelDbId, {
+                                  'prompt': _promptController.text,
+                                  'aspectRatio': lastAspectRatio.value,
+                                  'imageSize': lastResolution.value,
+                                }, modelIdDisplay: modelName);
+                                
+                                if (widget.scrollController != null) {
+                                  Navigator.pop(context);
+                                }
+
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(l10n.noModelsConfigured),
-                                    action: SnackBarAction(
-                                      label: l10n.settings,
-                                      onPressed: () => appState.navigateToScreen(6),
-                                    ),
+                                    content: Text(l10n.taskSubmitted),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                    width: 250,
                                   ),
                                 );
-                                return;
-                              }
-
-                              final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
-                              final modelName = selectedModel.modelName;
-                              
-                              appState.submitTask(selectedModelDbId, {
-                                'prompt': _promptController.text,
-                                'aspectRatio': lastAspectRatio.value,
-                                'imageSize': lastResolution.value,
-                              }, modelIdDisplay: modelName);
-                              
-                              if (widget.scrollController != null) {
-                                Navigator.pop(context); // Close bottom sheet on mobile
-                              }
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.taskSubmitted),
-                                  duration: const Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  width: 250,
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.play_arrow),
-                      label: Text(selectedCount == 0 
-                          ? l10n.processPrompt 
-                          : l10n.processImages(selectedCount)),
+                              },
+                        icon: const Icon(Icons.play_arrow_rounded, size: 24),
+                        label: Text(
+                          selectedCount == 0 
+                              ? l10n.processPrompt 
+                              : l10n.processImages(selectedCount),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );
@@ -307,59 +338,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       },
     );
   }
-
-  Widget _buildQueueStatus(int pendingCount, int runningCount, double? avgProgress, ColorScheme colorScheme, AppLocalizations l10n) {
-    if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (avgProgress != null) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: avgProgress,
-              minHeight: 4,
-              backgroundColor: colorScheme.secondaryContainer,
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: colorScheme.secondaryContainer.withAlpha((255 * 0.5).round()),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (runningCount > 0) ...[
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    value: avgProgress,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(l10n.runningCount(runningCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 12),
-              ],
-              Icon(Icons.layers_outlined, size: 14, color: colorScheme.onSecondaryContainer),
-              const SizedBox(width: 4),
-              Text(l10n.plannedCount(pendingCount), style: TextStyle(fontSize: 11, color: colorScheme.onSecondaryContainer)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-
 
   Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
     return TextButton.icon(

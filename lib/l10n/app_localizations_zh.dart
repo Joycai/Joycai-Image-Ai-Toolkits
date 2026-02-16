@@ -196,6 +196,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get comingSoon => '敬请期待';
 
   @override
+  String get viewAll => '查看全部';
+
+  @override
   String get sidebar => '侧边栏';
 
   @override
@@ -1263,6 +1266,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sendToSelection => '添加到选中列表';
+
+  @override
+  String get sendToOptimizer => '发送到提示词优化器';
 
   @override
   String get optimizePromptWithImage => '以此图优化提示词';

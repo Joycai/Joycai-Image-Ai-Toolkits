@@ -22,6 +22,7 @@ import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
+import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -301,6 +302,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : null,
         ),
+        const TaskCapsuleMonitor(),
       ],
     );
   }

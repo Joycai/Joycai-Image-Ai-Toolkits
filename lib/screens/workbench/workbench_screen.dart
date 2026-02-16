@@ -95,11 +95,30 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       
       _appState!.addListener(_onAppStateChanged);
       
+      // Listen for manual data send from UI State
+      final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+      workbenchUIState.addListener(_onWorkbenchUIChanged);
+      
       if (_appState!.imageModels.isNotEmpty) {
         _maskSelectedModelId = _appState!.imageModels.first.modelId;
       }
       
       _loadOptimizerData();
+    }
+  }
+
+  void _onWorkbenchUIChanged() {
+    if (!mounted) return;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    
+    // If we have a fresh manual data transfer
+    if (workbenchUIState.optimizerRoughPrompt.isNotEmpty || workbenchUIState.optimizerReferenceImages.isNotEmpty) {
+      setState(() {
+        _optCurrentPromptCtrl.text = workbenchUIState.optimizerRoughPrompt;
+        // The images are used by the sidebar reference panel via Provider
+      });
+      // Optionally reset the trigger in UI State if needed, 
+      // but keeping it as is allows the optimizer to hold the "last sent" data.
     }
   }
 
@@ -141,6 +160,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   Future<void> _handleRefine() async {
     final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    
     if (_optSelectedModelDbId == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
@@ -152,7 +173,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     });
 
     try {
-      final attachments = _appState!.selectedImages.map((f) => 
+      final attachments = workbenchUIState.optimizerReferenceImages.map((f) => 
         LLMAttachment.fromFile(File(f.path), 'image/jpeg')
       ).toList();
 

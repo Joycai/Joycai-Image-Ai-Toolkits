@@ -196,6 +196,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming Soon';
 
   @override
+  String get viewAll => 'View All';
+
+  @override
   String get sidebar => 'Sidebar';
 
   @override
@@ -1288,6 +1291,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendToSelection => 'Add to Selection';
+
+  @override
+  String get sendToOptimizer => 'Send to Prompt Optimizer';
 
   @override
   String get optimizePromptWithImage => 'Optimize Prompt with Image';

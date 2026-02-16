@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../state/app_state.dart';
+import '../../../state/workbench_ui_state.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
-    final images = appState.selectedImages;
+    final images = workbenchUIState.optimizerReferenceImages;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

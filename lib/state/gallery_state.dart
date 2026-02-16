@@ -17,15 +17,21 @@ List<String> _scanImagesIsolate(List<String> paths) {
   for (var path in paths) {
     try {
       final dir = Directory(path);
-      // On iOS, listing arbitrary external directories might throw even if exists() is true
       if (dir.existsSync()) {
-        for (var file in dir.listSync(recursive: false)) {
-          if (file is File && AppConstants.isImageFile(file.path)) {
-            results.add(file.path);
+        final entities = dir.listSync(recursive: false);
+        for (var entity in entities) {
+          try {
+            if (entity is File && AppConstants.isImageFile(entity.path)) {
+              results.add(entity.path);
+            }
+          } catch (_) {
+            // Ignore individual file access errors
           }
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      // Ignore directory access errors
+    }
   }
   return results;
 }
@@ -56,6 +62,7 @@ class GalleryState extends ChangeNotifier {
   List<AppImage> droppedImages = []; // Transient workspace
   
   String? outputDirectory;
+  String? resultCacheDirectory;
   double thumbnailSize = 150.0;
   String imagePrefix = "result";
 
@@ -95,13 +102,20 @@ class GalleryState extends ChangeNotifier {
     imagePrefix = await _db.getSetting('image_prefix') ?? "result";
     outputDirectory = await _db.getSetting('output_directory');
 
-    // On iOS, we use the System Cache folder as a "Result Cache"
-    if (Platform.isIOS) {
+    // Result Cache initialization (Fallback for sandboxed environments like iOS/macOS)
+    if (Platform.isIOS || Platform.isMacOS) {
       final cacheDir = await getTemporaryDirectory();
-      outputDirectory = p.join(cacheDir.path, 'result_cache');
-      final dir = Directory(outputDirectory!);
+      resultCacheDirectory = p.join(cacheDir.path, 'result_cache');
+      final dir = Directory(resultCacheDirectory!);
       if (!dir.existsSync()) dir.createSync(recursive: true);
-      await _db.saveSetting('output_directory', outputDirectory!);
+      
+      await _db.saveSetting('result_cache_directory', resultCacheDirectory!);
+      
+      // On iOS, we also treat this as the primary output if not set
+      if (Platform.isIOS && (outputDirectory == null || outputDirectory!.isEmpty)) {
+        outputDirectory = resultCacheDirectory;
+        await _db.saveSetting('output_directory', outputDirectory!);
+      }
     }
     
     final dirs = await _db.getSourceDirectories();
@@ -275,16 +289,25 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> _scanProcessedImages() async {
-    if (outputDirectory == null || outputDirectory!.isEmpty) {
+    final List<String> scanPaths = [];
+    if (outputDirectory != null && outputDirectory!.isNotEmpty) scanPaths.add(outputDirectory!);
+    if (resultCacheDirectory != null && resultCacheDirectory!.isNotEmpty && resultCacheDirectory != outputDirectory) {
+      scanPaths.add(resultCacheDirectory!);
+    }
+
+    if (scanPaths.isEmpty) {
       processedImages = [];
       notifyListeners();
       return;
     }
 
     try {
-      final List<String> paths = await compute(_scanImagesIsolate, [outputDirectory!]);
+      final List<String> paths = await compute(_scanImagesIsolate, scanPaths);
       _evictImages(paths);
-      List<File> files = paths.map((p) => File(p)).toList();
+      
+      // Use a set to avoid duplicates if directories overlap
+      final uniquePaths = paths.toSet().toList();
+      List<File> files = uniquePaths.map((p) => File(p)).toList();
       
       files.sort((a, b) {
         try {

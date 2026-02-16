@@ -93,6 +93,7 @@
     }
   },
   "comingSoon": "敬请期待",
+  "viewAll": "查看全部",
   "sidebar": "侧边栏",
   "white": "白色",
   "black": "黑色",
@@ -613,6 +614,7 @@
   "sendToComparatorRaw": "设置为对比原图",
   "sendToComparatorAfter": "设置为对比效果图",
   "sendToSelection": "添加到选中列表",
+  "sendToOptimizer": "发送到提示词优化器",
   "optimizePromptWithImage": "以此图优化提示词",
   "selectFromLibrary": "从库中选择",
   "metadataSelectedNone": "未选中图像元数据",

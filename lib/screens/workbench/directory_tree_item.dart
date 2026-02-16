@@ -128,7 +128,11 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     });
 
     final isViewing = context.select<AppState, bool>((state) {
-      if (widget.useFileBrowserState) return false;
+      if (widget.useFileBrowserState) {
+        // In browser, highlight if it's the exclusive active directory
+        return state.fileBrowserState.activeDirectories.length == 1 && 
+               state.fileBrowserState.activeDirectories.first == widget.path;
+      }
       return state.galleryState.viewMode == GalleryViewMode.folder && state.galleryState.viewSourcePath == widget.path;
     });
     
@@ -191,6 +195,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 _reAuthorize(context, appState);
               } else if (!widget.useFileBrowserState) {
                 appState.galleryState.setViewFolder(widget.path);
+              } else {
+                appState.fileBrowserState.setExclusiveDirectory(widget.path);
               }
             },
             child: Row(

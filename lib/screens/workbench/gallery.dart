@@ -327,12 +327,6 @@ class _ImageCardState extends State<_ImageCard> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildOverlayButton(
-                            icon: Icons.auto_fix_high,
-                            onPressed: () => _handleOptimize(context),
-                            tooltip: 'Optimize',
-                          ),
-                          const SizedBox(width: 4),
-                          _buildOverlayButton(
                             icon: Icons.compare,
                             onPressed: () => _handleCompare(context),
                             tooltip: 'Compare',
@@ -391,15 +385,6 @@ class _ImageCardState extends State<_ImageCard> {
         visualDensity: VisualDensity.compact,
       ),
     );
-  }
-
-  void _handleOptimize(BuildContext context) {
-    final appState = Provider.of<AppState>(context, listen: false);
-    // Ensure image is selected or at least used for optimization
-    if (!appState.selectedImages.any((img) => img.path == widget.imageFile.path)) {
-      appState.galleryState.toggleImageSelection(widget.imageFile);
-    }
-    appState.setWorkbenchTab(3); // Prompt Optimizer
   }
 
   void _handleCompare(BuildContext context) {
@@ -490,14 +475,6 @@ class _ImageCardState extends State<_ImageCard> {
             workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
             appState.setWorkbenchTab(2); // Mask Editor
           },
-        ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.auto_fix_high, size: 18),
-            title: Text(l10n.optimizePromptWithImage),
-            dense: true,
-          ),
-          onTap: () => _handleOptimize(context),
         ),
 
         const PopupMenuDivider(),

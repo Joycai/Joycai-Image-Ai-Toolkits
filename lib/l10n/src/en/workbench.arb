@@ -76,6 +76,7 @@
   "sendToComparatorAfter": "Set as After (Result)",
   "sendToSelection": "Add to Selection",
   "removeFromSelection": "Remove from Selection",
+  "sendToOptimizer": "Send to Prompt Optimizer",
   "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",

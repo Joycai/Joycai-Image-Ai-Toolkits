@@ -158,6 +158,12 @@ class FileBrowserState extends ChangeNotifier {
     refresh();
   }
 
+  Future<void> setExclusiveDirectory(String path) async {
+    activeDirectories = [path];
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    refresh();
+  }
+
   void updateDirectories(List<String> dirs) {
     // This method was previously used for syncing, but we'll remove the sync in AppState.
     // For now, we can keep it as a setter if needed, but the primary way will be toggleDirectory.

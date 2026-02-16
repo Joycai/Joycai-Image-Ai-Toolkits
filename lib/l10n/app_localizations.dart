@@ -452,6 +452,12 @@ abstract class AppLocalizations {
   /// **'Coming Soon'**
   String get comingSoon;
 
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
   /// No description provided for @sidebar.
   ///
   /// In en, this message translates to:
@@ -2479,6 +2485,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Selection'**
   String get sendToSelection;
+
+  /// No description provided for @sendToOptimizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Prompt Optimizer'**
+  String get sendToOptimizer;
 
   /// No description provided for @optimizePromptWithImage.
   ///

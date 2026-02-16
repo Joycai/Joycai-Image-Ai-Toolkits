@@ -93,6 +93,7 @@
     }
   },
   "comingSoon": "Coming Soon",
+  "viewAll": "View All",
   "sidebar": "Sidebar",
   "white": "White",
   "black": "Black",
@@ -613,6 +614,7 @@
   "sendToComparatorRaw": "Set as Before (RAW)",
   "sendToComparatorAfter": "Set as After (Result)",
   "sendToSelection": "Add to Selection",
+  "sendToOptimizer": "Send to Prompt Optimizer",
   "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",

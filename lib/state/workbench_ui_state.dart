@@ -16,6 +16,10 @@ class WorkbenchUIState extends ChangeNotifier {
   // Mask Editor State
   AppImage? maskEditorSourceImage;
 
+  // Prompt Optimizer State
+  String optimizerRoughPrompt = "";
+  List<AppImage> optimizerReferenceImages = [];
+
   // Preview Methods
   void setPreviewList(List<AppImage> images, int initialIndex) {
     previewImages = List.from(images);
@@ -32,6 +36,13 @@ class WorkbenchUIState extends ChangeNotifier {
 
   void clearAllPreviews() {
     activePreviewIndex = 0;
+    notifyListeners();
+  }
+
+  // Optimizer Methods
+  void sendToOptimizer(String prompt, List<AppImage> images) {
+    optimizerRoughPrompt = prompt;
+    optimizerReferenceImages = List.from(images);
     notifyListeners();
   }
 

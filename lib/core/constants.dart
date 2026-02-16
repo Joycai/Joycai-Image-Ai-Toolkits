@@ -109,8 +109,10 @@ class AppConstants {
     return ext.endsWith('.jpg') || 
            ext.endsWith('.jpeg') || 
            ext.endsWith('.png') || 
+           ext.endsWith('.gif') || 
            ext.endsWith('.webp') || 
-           ext.endsWith('.bmp');
+           ext.endsWith('.bmp') ||
+           ext.endsWith('.avif');
   }
 
   static String formatAspectRatio(int width, int height) {
