@@ -388,10 +388,9 @@ class _ImageCardState extends State<_ImageCard> {
   }
 
   void _handleCompare(BuildContext context) {
-    final appState = Provider.of<AppState>(context, listen: false);
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     workbenchUIState.sendToComparator(widget.imageFile.path);
-    appState.setWorkbenchTab(1); // Comparator
+    // Removed automatic tab switch
   }
 
   void _handleMask(BuildContext context) {
@@ -496,7 +495,6 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: false);
-            appState.setWorkbenchTab(1); // Comparator
           },
         ),
         PopupMenuItem(
@@ -507,7 +505,6 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () {
             workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: true);
-            appState.setWorkbenchTab(1); // Comparator
           },
         ),
 
