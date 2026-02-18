@@ -1298,10 +1298,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get maskColor => '蒙版颜色';
 
   @override
+  String get maskOpacity => '蒙版透明度';
+
+  @override
   String get undo => '撤销';
 
   @override
-  String get saveAndSelect => '保存并选中';
+  String get saveToTemp => '保存至工作区';
+
+  @override
+  String get saveMaskToTemp => '保存遮罩至工作区';
 
   @override
   String get aiSmartMask => 'AI 智能蒙版';
@@ -1327,7 +1333,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generate => '生成';
 
   @override
-  String get maskSaved => '蒙版已保存并选中';
+  String get maskSaved => '蒙版已保存至工作区';
 
   @override
   String maskSaveError(String error) {

@@ -55,6 +55,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   final List<DrawingPath> _maskPaths = [];
   Color _maskSelectedColor = Colors.white;
   double _maskBrushSize = 20.0;
+  double _maskOpacity = 1.0;
   bool _maskIsBinaryMode = false;
   bool _maskShowAIPanel = false;
   final GlobalKey _maskRepaintKey = GlobalKey();
@@ -218,13 +219,21 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   void _handleMaskUndo() => setState(() { if (_maskPaths.isNotEmpty) _maskPaths.removeLast(); });
   void _handleMaskClear() => setState(() => _maskPaths.clear());
   
-  Future<void> _handleMaskSave() async {
+  Future<void> _handleMaskSave({bool binary = false, bool selectAfterSave = true}) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final sourceImage = workbenchUIState.maskEditorSourceImage;
     if (sourceImage == null || _appState == null) return;
 
+    final originalBinaryMode = _maskIsBinaryMode;
+    if (binary != _maskIsBinaryMode) {
+      setState(() => _maskIsBinaryMode = binary);
+      // Wait for the next frame to ensure the UI has updated to show/hide the image
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
     try {
-      RenderRepaintBoundary boundary = _maskRepaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      RenderRepaintBoundary? boundary = _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
       
       // Get image dimensions to maintain resolution
       final bytes = await File(sourceImage.path).readAsBytes();
@@ -242,7 +251,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       if (!maskDir.existsSync()) maskDir.createSync(recursive: true);
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'mask_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
+      final prefix = binary ? 'mask_only' : 'mask';
+      final fileName = '${prefix}_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
       final filePath = p.join(maskDir.path, fileName);
       
       await File(filePath).writeAsBytes(pngBytes);
@@ -255,9 +265,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
       final maskFile = AppImage(path: filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
-      _appState!.galleryState.toggleImageSelection(maskFile);
-      _appState!.galleryState.setViewMode(GalleryViewMode.temp);
-      _appState!.setWorkbenchTab(0); // Return to gallery
+      
+      if (selectAfterSave) {
+        _appState!.galleryState.toggleImageSelection(maskFile);
+        _appState!.galleryState.setViewMode(GalleryViewMode.temp);
+        _appState!.setWorkbenchTab(0); // Return to gallery
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -269,6 +282,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.maskSaveError(e.toString())), backgroundColor: Colors.red),
         );
+      }
+    } finally {
+      if (binary != originalBinaryMode && mounted) {
+        setState(() => _maskIsBinaryMode = originalBinaryMode);
       }
     }
   }
@@ -318,7 +335,7 @@ Coordinates are 0-1000. Form a closed loop.
         setState(() {
           _maskPaths.add(DrawingPath(
             points: points,
-            color: _maskSelectedColor,
+            color: _maskSelectedColor.withValues(alpha: _maskOpacity),
             strokeWidth: _maskBrushSize,
             isPolygon: true,
           ));
@@ -401,13 +418,16 @@ Coordinates are 0-1000. Form a closed loop.
             MaskEditorToolbar(
               onUndo: _handleMaskUndo,
               onClear: _handleMaskClear,
-              onSave: _handleMaskSave,
+              onSave: () => _handleMaskSave(selectAfterSave: false),
+              onSaveMask: () => _handleMaskSave(binary: true, selectAfterSave: false),
               onColorChanged: (c) => setState(() => _maskSelectedColor = c),
               onBrushSizeChanged: (s) => setState(() => _maskBrushSize = s),
+              onOpacityChanged: (o) => setState(() => _maskOpacity = o),
               onToggleBinary: () => setState(() => _maskIsBinaryMode = !_maskIsBinaryMode),
               onToggleAI: () => setState(() => _maskShowAIPanel = !_maskShowAIPanel),
               selectedColor: _maskSelectedColor,
               brushSize: _maskBrushSize,
+              opacity: _maskOpacity,
               isBinaryMode: _maskIsBinaryMode,
               showAIPanel: _maskShowAIPanel,
               hasPaths: _maskPaths.isNotEmpty,
@@ -425,14 +445,18 @@ Coordinates are 0-1000. Form a closed loop.
             Expanded(
               child: MaskEditorView(
                 paths: _maskPaths,
-                selectedColor: _maskSelectedColor,
+                selectedColor: _maskSelectedColor.withValues(alpha: _maskOpacity),
                 brushSize: _maskBrushSize,
                 isBinaryMode: _maskIsBinaryMode,
                 repaintKey: _maskRepaintKey,
                 mousePosition: _maskMousePosition,
                 onHover: (pos) => setState(() => _maskMousePosition = pos),
                 onPanStart: (pos) => setState(() {
-                  _maskPaths.add(DrawingPath(points: [pos], color: _maskSelectedColor, strokeWidth: _maskBrushSize));
+                  _maskPaths.add(DrawingPath(
+                    points: [pos], 
+                    color: _maskSelectedColor.withValues(alpha: _maskOpacity), 
+                    strokeWidth: _maskBrushSize
+                  ));
                 }),
                 onPanUpdate: (pos) => setState(() {
                   _maskPaths.last.points.add(pos);

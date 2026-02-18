@@ -1323,10 +1323,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get maskColor => 'Mask Color';
 
   @override
+  String get maskOpacity => 'Mask Opacity';
+
+  @override
   String get undo => 'Undo';
 
   @override
-  String get saveAndSelect => 'Save & Select';
+  String get saveToTemp => 'Save to Workspace';
+
+  @override
+  String get saveMaskToTemp => 'Save Mask to Workspace';
 
   @override
   String get aiSmartMask => 'AI Smart Mask';
@@ -1352,7 +1358,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generate => 'Generate';
 
   @override
-  String get maskSaved => 'Mask saved and selected';
+  String get maskSaved => 'Mask saved to workspace';
 
   @override
   String maskSaveError(String error) {

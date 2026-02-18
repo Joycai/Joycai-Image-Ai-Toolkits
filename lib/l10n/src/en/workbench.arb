@@ -86,8 +86,10 @@
   "maskEditor": "Mask Editor",
   "brushSize": "Brush Size",
   "maskColor": "Mask Color",
+  "maskOpacity": "Mask Opacity",
   "undo": "Undo",
-  "saveAndSelect": "Save & Select",
+  "saveToTemp": "Save to Workspace",
+  "saveMaskToTemp": "Save Mask to Workspace",
   "aiSmartMask": "AI Smart Mask",
   "binaryMode": "Binary Mode",
   "maskModel": "Model",
@@ -102,7 +104,7 @@
   "maskPromptLabel": "What to mask?",
   "generating": "Generating...",
   "generate": "Generate",
-  "maskSaved": "Mask saved and selected",
+  "maskSaved": "Mask saved to workspace",
   "maskSaveError": "Error saving mask: {error}",
   "@maskSaveError": {
     "placeholders": {

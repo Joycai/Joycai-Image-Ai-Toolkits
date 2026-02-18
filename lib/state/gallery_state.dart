@@ -238,10 +238,37 @@ class GalleryState extends ChangeNotifier {
     _refreshCounter++;
     await _scanImages();
     await _scanProcessedImages();
+    
+    // Verify droppedImages (Temporary Workspace)
+    final List<AppImage> existingDropped = [];
+    for (var img in droppedImages) {
+      if (await File(img.path).exists()) {
+        existingDropped.add(img);
+      }
+    }
+    if (existingDropped.length != droppedImages.length) {
+      droppedImages = existingDropped;
+    }
+
     if (viewMode == GalleryViewMode.folder && viewSourcePath != null) {
       await _scanFolder(viewSourcePath!);
     }
+
+    _cleanupSelection();
     notifyListeners();
+  }
+
+  void _cleanupSelection() {
+    final validSelection = selectedImages.where((selected) => 
+      galleryImages.any((img) => img.path == selected.path) ||
+      processedImages.any((img) => img.path == selected.path) ||
+      droppedImages.any((img) => img.path == selected.path) ||
+      folderImages.any((img) => img.path == selected.path)
+    ).toList();
+    
+    if (validSelection.length != selectedImages.length) {
+      selectedImages = validSelection;
+    }
   }
 
   void _evictImages(List<String> paths) {
@@ -275,16 +302,6 @@ class GalleryState extends ChangeNotifier {
     final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
     _evictImages(paths);
     galleryImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
-    
-    final validSelection = selectedImages.where((selected) => 
-      galleryImages.any((img) => img.path == selected.path) ||
-      processedImages.any((img) => img.path == selected.path) ||
-      droppedImages.any((img) => img.path == selected.path)
-    ).toList();
-    
-    if (validSelection.length != selectedImages.length) {
-      selectedImages = validSelection;
-    }
     notifyListeners();
   }
 
@@ -317,17 +334,6 @@ class GalleryState extends ChangeNotifier {
         }
       });
       processedImages = files.map((f) => AppImage.fromFile(f)).toList();
-      
-      // Also clean up selection if images were deleted from disk
-      final validSelection = selectedImages.where((selected) => 
-        galleryImages.any((img) => img.path == selected.path) ||
-        processedImages.any((img) => img.path == selected.path) ||
-        droppedImages.any((img) => img.path == selected.path)
-      ).toList();
-      
-      if (validSelection.length != selectedImages.length) {
-        selectedImages = validSelection;
-      }
     } catch (e) {
       processedImages = [];
     }
@@ -345,15 +351,7 @@ class GalleryState extends ChangeNotifier {
 
   void clearDroppedImages() {
     droppedImages.clear();
-    // Also remove from selection if they were selected and are not in other collections
-    final validSelection = selectedImages.where((s) => 
-      galleryImages.any((g) => g.path == s.path) ||
-      processedImages.any((p) => p.path == s.path)
-    ).toList();
-    
-    if (validSelection.length != selectedImages.length) {
-      selectedImages = validSelection;
-    }
+    _cleanupSelection();
     notifyListeners();
   }
 

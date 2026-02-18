@@ -2546,17 +2546,29 @@ abstract class AppLocalizations {
   /// **'Mask Color'**
   String get maskColor;
 
+  /// No description provided for @maskOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask Opacity'**
+  String get maskOpacity;
+
   /// No description provided for @undo.
   ///
   /// In en, this message translates to:
   /// **'Undo'**
   String get undo;
 
-  /// No description provided for @saveAndSelect.
+  /// No description provided for @saveToTemp.
   ///
   /// In en, this message translates to:
-  /// **'Save & Select'**
-  String get saveAndSelect;
+  /// **'Save to Workspace'**
+  String get saveToTemp;
+
+  /// No description provided for @saveMaskToTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Mask to Workspace'**
+  String get saveMaskToTemp;
 
   /// No description provided for @aiSmartMask.
   ///
@@ -2603,7 +2615,7 @@ abstract class AppLocalizations {
   /// No description provided for @maskSaved.
   ///
   /// In en, this message translates to:
-  /// **'Mask saved and selected'**
+  /// **'Mask saved to workspace'**
   String get maskSaved;
 
   /// No description provided for @maskSaveError.

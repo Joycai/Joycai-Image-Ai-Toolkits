@@ -7,12 +7,15 @@ class MaskEditorToolbar extends StatelessWidget {
   final VoidCallback onUndo;
   final VoidCallback onClear;
   final VoidCallback onSave;
+  final VoidCallback onSaveMask;
   final Function(Color) onColorChanged;
   final Function(double) onBrushSizeChanged;
+  final Function(double) onOpacityChanged;
   final VoidCallback onToggleBinary;
   final VoidCallback onToggleAI;
   final Color selectedColor;
   final double brushSize;
+  final double opacity;
   final bool isBinaryMode;
   final bool showAIPanel;
   final bool hasPaths;
@@ -22,12 +25,15 @@ class MaskEditorToolbar extends StatelessWidget {
     required this.onUndo,
     required this.onClear,
     required this.onSave,
+    required this.onSaveMask,
     required this.onColorChanged,
     required this.onBrushSizeChanged,
+    required this.onOpacityChanged,
     required this.onToggleBinary,
     required this.onToggleAI,
     required this.selectedColor,
     required this.brushSize,
+    required this.opacity,
     required this.isBinaryMode,
     required this.showAIPanel,
     required this.hasPaths,
@@ -65,14 +71,34 @@ class MaskEditorToolbar extends StatelessWidget {
           
           const SizedBox(width: 8),
           Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 150),
-              child: Slider(
-                value: brushSize,
-                min: 1,
-                max: 100,
-                onChanged: onBrushSizeChanged,
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.line_weight, size: 16, color: Colors.grey),
+                Expanded(
+                  flex: 2,
+                  child: Slider(
+                    value: brushSize,
+                    min: 1,
+                    max: 100,
+                    onChanged: onBrushSizeChanged,
+                    label: l10n.brushSize,
+                  ),
+                ),
+                if (!isMobile) ...[
+                  const SizedBox(width: 16),
+                  const Icon(Icons.opacity, size: 16, color: Colors.grey),
+                  Expanded(
+                    flex: 1,
+                    child: Slider(
+                      value: opacity,
+                      min: 0.1,
+                      max: 1.0,
+                      onChanged: onOpacityChanged,
+                      label: l10n.maskOpacity,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           
@@ -104,6 +130,12 @@ class MaskEditorToolbar extends StatelessWidget {
                 if (value == 'ai') onToggleAI();
                 if (value == 'binary') onToggleBinary();
                 if (value == 'clear') onClear();
+                if (value == 'save_temp') onSave();
+                if (value == 'save_mask') onSaveMask();
+                if (value == 'opacity') {
+                  // Show opacity dialog on mobile
+                  _showOpacityDialog(context);
+                }
               },
               itemBuilder: (context) => [
                 PopupMenuItem(
@@ -115,6 +147,14 @@ class MaskEditorToolbar extends StatelessWidget {
                   ),
                 ),
                 PopupMenuItem(
+                  value: 'opacity',
+                  child: ListTile(
+                    leading: const Icon(Icons.opacity),
+                    title: Text(l10n.maskOpacity),
+                    dense: true,
+                  ),
+                ),
+                PopupMenuItem(
                   value: 'binary',
                   child: ListTile(
                     leading: Icon(isBinaryMode ? Icons.contrast : Icons.image),
@@ -122,6 +162,24 @@ class MaskEditorToolbar extends StatelessWidget {
                     dense: true,
                   ),
                 ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'save_temp',
+                  child: ListTile(
+                    leading: const Icon(Icons.save_outlined),
+                    title: Text(l10n.saveToTemp),
+                    dense: true,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'save_mask',
+                  child: ListTile(
+                    leading: const Icon(Icons.layers_outlined),
+                    title: Text(l10n.saveMaskToTemp),
+                    dense: true,
+                  ),
+                ),
+                const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'clear',
                   child: ListTile(
@@ -135,14 +193,63 @@ class MaskEditorToolbar extends StatelessWidget {
 
           const VerticalDivider(width: 16, indent: 12, endIndent: 12),
           
-          FilledButton(
-            onPressed: onSave,
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+          if (!isMobile) ...[
+            OutlinedButton(
+              onPressed: onSave,
+              style: OutlinedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: Text(l10n.saveToTemp, style: const TextStyle(fontSize: 12)),
             ),
-            child: Text(isMobile ? l10n.save : l10n.saveAndSelect, style: const TextStyle(fontSize: 12)),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: onSaveMask,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: Text(l10n.saveMaskToTemp, style: const TextStyle(fontSize: 12)),
+            ),
+          ] else
+            FilledButton(
+              onPressed: onSaveMask,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: Text(l10n.saveMaskToTemp, style: const TextStyle(fontSize: 12)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showOpacityDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.maskOpacity),
+        content: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Slider(
+                value: opacity,
+                min: 0.1,
+                max: 1.0,
+                onChanged: (val) {
+                  onOpacityChanged(val);
+                  setState(() {});
+                },
+              ),
+              Text("${(opacity * 100).toInt()}%"),
+            ],
           ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
