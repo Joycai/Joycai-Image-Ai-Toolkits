@@ -47,6 +47,7 @@ Joycai Image AI Toolkits is a powerful, cross-platform desktop application built
 ## 🛠️ Technical Stack
 
 *   **Framework**: [Flutter](https://flutter.dev) (Material 3)
+*   **Version**: 2.1.0
 *   **State Management**: [Provider](https://pub.dev/packages/provider)
 *   **Database**: [SQLite](https://pub.dev/packages/sqflite) (via `sqflite_common_ffi` for Desktop support)
 *   **Localization**: `flutter_localizations` (ARB files)

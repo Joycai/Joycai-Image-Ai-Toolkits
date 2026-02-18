@@ -235,7 +235,12 @@ class AppState extends ChangeNotifier {
     // Load locale
     final savedLocale = await _db.getSetting('locale');
     if (savedLocale != null && savedLocale.isNotEmpty) {
-      locale = Locale(savedLocale);
+      if (savedLocale.contains('_')) {
+        final parts = savedLocale.split('_');
+        locale = Locale.fromSubtags(languageCode: parts[0], scriptCode: parts[1]);
+      } else {
+        locale = Locale(savedLocale);
+      }
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
@@ -374,7 +379,14 @@ class AppState extends ChangeNotifier {
   
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
-    await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    String localeStr = '';
+    if (newLocale != null) {
+      localeStr = newLocale.languageCode;
+      if (newLocale.scriptCode != null) {
+        localeStr += '_${newLocale.scriptCode}';
+      }
+    }
+    await _db.saveSetting('locale', localeStr);
     notifyListeners();
   }
 

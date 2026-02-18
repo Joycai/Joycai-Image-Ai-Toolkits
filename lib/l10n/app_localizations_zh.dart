@@ -1418,3 +1418,1400 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get filesAppSuffix => ' (文件 App)';
 }
+
+/// The translations for Chinese, using the Han script (`zh_Hant`).
+class AppLocalizationsZhHant extends AppLocalizationsZh {
+  AppLocalizationsZhHant() : super('zh_Hant');
+
+  @override
+  String get fileBrowser => '檔案瀏覽器';
+
+  @override
+  String get rename => '重新命名';
+
+  @override
+  String get renameFile => '重新命名檔案';
+
+  @override
+  String get newFilename => '新檔案名稱';
+
+  @override
+  String get renameSuccess => '重新命名成功';
+
+  @override
+  String renameFailed(String error) {
+    return '重新命名失敗: $error';
+  }
+
+  @override
+  String get fileAlreadyExists => '已存在同名檔案';
+
+  @override
+  String get noFilesFound => '未找到任何檔案';
+
+  @override
+  String get switchViewMode => '切換視圖模式';
+
+  @override
+  String get sortBy => '排序方式';
+
+  @override
+  String get sortName => '名稱';
+
+  @override
+  String get sortDate => '修改日期';
+
+  @override
+  String get sortType => '檔案類型';
+
+  @override
+  String get sortAsc => '升序';
+
+  @override
+  String get sortDesc => '降序';
+
+  @override
+  String get catAll => '全部';
+
+  @override
+  String get catImages => '圖片';
+
+  @override
+  String get catVideos => '影片';
+
+  @override
+  String get catAudio => '音訊';
+
+  @override
+  String get catText => '文字';
+
+  @override
+  String get catOthers => '其他';
+
+  @override
+  String get openWithSystemDefault => '使用系統預設值開啟';
+
+  @override
+  String get aiBatchRename => 'AI 批量重新命名';
+
+  @override
+  String get rulesInstructions => '重新命名規則/說明';
+
+  @override
+  String get generateSuggestions => '產生建議';
+
+  @override
+  String get noSuggestions => '尚未產生建議';
+
+  @override
+  String get applyRenames => '套用重新命名';
+
+  @override
+  String get addToSelection => '新增至選取項目';
+
+  @override
+  String get removeFromSelection => '從選取項目中移除';
+
+  @override
+  String imagesSelected(int count) {
+    return '已選取 $count 個';
+  }
+
+  @override
+  String get appTitle => 'Joycai Image AI Toolkits';
+
+  @override
+  String get save => '儲存';
+
+  @override
+  String get update => '更新';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get close => '關閉';
+
+  @override
+  String get back => '返回';
+
+  @override
+  String get next => '下一步';
+
+  @override
+  String get finish => '完成';
+
+  @override
+  String get exit => '結束';
+
+  @override
+  String get add => '新增';
+
+  @override
+  String get edit => '編輯';
+
+  @override
+  String get delete => '刪除';
+
+  @override
+  String get remove => '移除';
+
+  @override
+  String get clear => '清除';
+
+  @override
+  String get refresh => '重新整理';
+
+  @override
+  String get preview => '預覽';
+
+  @override
+  String get share => '分享';
+
+  @override
+  String get status => '狀態';
+
+  @override
+  String get started => '已開始';
+
+  @override
+  String get finished => '已完成';
+
+  @override
+  String get config => '設定';
+
+  @override
+  String get logs => '日誌';
+
+  @override
+  String get copyFilename => '複製檔案名稱';
+
+  @override
+  String get openInFolder => '在資料夾中開啟';
+
+  @override
+  String get openInPreview => '在預覽中開啟';
+
+  @override
+  String copiedToClipboard(String text) {
+    return '已複製: $text';
+  }
+
+  @override
+  String selectedCount(int count) {
+    return '已選取 $count 個';
+  }
+
+  @override
+  String shareFiles(int count) {
+    return '分享選取的 $count 個項目';
+  }
+
+  @override
+  String get comingSoon => '即將推出';
+
+  @override
+  String get viewAll => '檢視全部';
+
+  @override
+  String get sidebar => '側邊欄';
+
+  @override
+  String get white => '白色';
+
+  @override
+  String get black => '黑色';
+
+  @override
+  String get red => '紅色';
+
+  @override
+  String get green => '綠色';
+
+  @override
+  String get refine => '優化';
+
+  @override
+  String get apply => '套用';
+
+  @override
+  String get metadata => '元資料';
+
+  @override
+  String get filterPrompts => '篩選提示...';
+
+  @override
+  String shareFailed(String error) {
+    return '分享失敗: $error';
+  }
+
+  @override
+  String get downloader => '下載器';
+
+  @override
+  String get imageDownloader => '圖片下載器';
+
+  @override
+  String get url => '網址';
+
+  @override
+  String get prefix => '前綴';
+
+  @override
+  String get websiteUrl => '網站網址';
+
+  @override
+  String get websiteUrlHint => 'https://example.com';
+
+  @override
+  String get whatToFind => '要尋找什麼？';
+
+  @override
+  String get whatToFindHint => '例如：所有產品圖庫圖片';
+
+  @override
+  String get analysisModel => '分析模型';
+
+  @override
+  String get advancedOptions => '進階選項';
+
+  @override
+  String get analyzing => '分析中...';
+
+  @override
+  String get findImages => '尋找圖片';
+
+  @override
+  String get noImagesDiscovered => '尚未發現任何圖片。';
+
+  @override
+  String get enterUrlToStart => '請輸入網址和需求以開始。';
+
+  @override
+  String get addToQueue => '新增至佇列';
+
+  @override
+  String addedToQueue(int count) {
+    return '已將 $count 張圖片新增至下載佇列。';
+  }
+
+  @override
+  String get setOutputDirFirst => '請先在設定中設定輸出目錄。';
+
+  @override
+  String get cookiesHint => 'Cookie（Raw 或 Netscape 格式）';
+
+  @override
+  String get selectImagesToDownload => '選取要下載的圖片';
+
+  @override
+  String get importCookieFile => '匯入 Cookie 檔案';
+
+  @override
+  String get cookieFileInvalid => '不支援的 Cookie 檔案格式。請使用 Netscape 格式或純文字。';
+
+  @override
+  String cookieImportSuccess(int count) {
+    return '成功匯入 $count 個 Cookie。';
+  }
+
+  @override
+  String get saveOriginHtml => '儲存原始 HTML';
+
+  @override
+  String htmlSavedTo(String path) {
+    return 'HTML 已儲存至: $path';
+  }
+
+  @override
+  String get manualHtmlMode => '手動 HTML 模式';
+
+  @override
+  String get manualHtmlHint => '在此貼上呈現的 HTML（F12 -> 複製外部 HTML）';
+
+  @override
+  String get cookieHistory => 'Cookie 歷史記錄';
+
+  @override
+  String get noCookieHistory => '未儲存任何 Cookie 歷史記錄';
+
+  @override
+  String get pasteFromClipboard => '從剪貼簿貼上';
+
+  @override
+  String get openRawImage => '開啟原始圖片';
+
+  @override
+  String get usage => '用量';
+
+  @override
+  String get tokenUsageMetrics => 'Token 用量指標';
+
+  @override
+  String get clearAllUsage => '要清除所有用量資料嗎？';
+
+  @override
+  String get clearUsageWarning => '這將永久刪除資料庫中的所有 Token 用量記錄。';
+
+  @override
+  String get modelsLabel => '模型：';
+
+  @override
+  String get rangeLabel => '範圍：';
+
+  @override
+  String get today => '今天';
+
+  @override
+  String get lastWeek => '上週';
+
+  @override
+  String get lastMonth => '上個月';
+
+  @override
+  String get thisYear => '今年';
+
+  @override
+  String get inputTokens => '輸入 Token';
+
+  @override
+  String get outputTokens => '輸出 Token';
+
+  @override
+  String get estimatedCost => '預估成本';
+
+  @override
+  String clearDataForModel(String modelId) {
+    return '要清除 $modelId 的資料嗎？';
+  }
+
+  @override
+  String clearModelDataWarning(String modelId) {
+    return '這將刪除與模型「$modelId」相關的所有用量記錄。';
+  }
+
+  @override
+  String get clearModelData => '清除模型資料';
+
+  @override
+  String get usageByGroup => '按群組分類的用量';
+
+  @override
+  String get clearAll => '全部清除';
+
+  @override
+  String get models => '模型';
+
+  @override
+  String get modelManagement => '模型管理';
+
+  @override
+  String get feeManagement => '費用管理';
+
+  @override
+  String get modelsTab => '模型';
+
+  @override
+  String get channelsTab => '通道';
+
+  @override
+  String get addChannel => '新增通道';
+
+  @override
+  String get editChannel => '編輯通道';
+
+  @override
+  String get basicInfo => '基本資訊';
+
+  @override
+  String get configuration => '設定';
+
+  @override
+  String get tagAndAppearance => '標籤與外觀';
+
+  @override
+  String get billing => '計費';
+
+  @override
+  String get channelType => '通道類型';
+
+  @override
+  String get enableDiscovery => '啟用模型探索';
+
+  @override
+  String get filterModels => '篩選模型...';
+
+  @override
+  String get tagColor => '標籤顏色';
+
+  @override
+  String deleteChannelConfirm(String name) {
+    return '您確定要刪除通道「$name」嗎？這將會取消所有關聯模型的連結。';
+  }
+
+  @override
+  String get modelManager => '模型管理員';
+
+  @override
+  String get name => '名稱';
+
+  @override
+  String get addModel => '新增模型';
+
+  @override
+  String get editModel => '編輯模型';
+
+  @override
+  String get noModelsConfigured => '未設定模型';
+
+  @override
+  String countModels(int count) {
+    return '$count 個模型';
+  }
+
+  @override
+  String get addFirstModel => '新增您的第一個 LLM 模型以開始';
+
+  @override
+  String get addNewModel => '新增模型';
+
+  @override
+  String get deleteModel => '刪除模型';
+
+  @override
+  String get deleteModelConfirmTitle => '刪除模型？';
+
+  @override
+  String deleteModelConfirmMessage(String name) {
+    return '您確定要刪除「$name」嗎？';
+  }
+
+  @override
+  String get addLlmModel => '新增 LLM 模型';
+
+  @override
+  String get editLlmModel => '編輯 LLM 模型';
+
+  @override
+  String get modelIdLabel => '模型 ID（例如 gemini-pro）';
+
+  @override
+  String get displayName => '顯示名稱';
+
+  @override
+  String get type => '類型';
+
+  @override
+  String get tag => '標籤';
+
+  @override
+  String get inputFeeLabel => '輸入費用（美元/百萬 Token）';
+
+  @override
+  String get outputFeeLabel => '輸出費用（美元/百萬 Token）';
+
+  @override
+  String get paidModel => '付費模型';
+
+  @override
+  String get freeModel => '免費模型';
+
+  @override
+  String get billingMode => '計費模式';
+
+  @override
+  String get perToken => '每百萬 Token';
+
+  @override
+  String get perRequest => '每次請求';
+
+  @override
+  String get requestFeeLabel => '請求費用（美元/次）';
+
+  @override
+  String get requestCount => '請求次數';
+
+  @override
+  String get requests => '請求';
+
+  @override
+  String get feeGroups => '費用群組';
+
+  @override
+  String get feeGroup => '費用群組';
+
+  @override
+  String get channels => '通道';
+
+  @override
+  String get channel => '通道';
+
+  @override
+  String get noFeeGroup => '無費用群組';
+
+  @override
+  String get inputPrice => '輸入價格（美元/百萬 Token）';
+
+  @override
+  String get outputPrice => '輸出價格（美元/百萬 Token）';
+
+  @override
+  String get requestPrice => '請求價格（美元/次）';
+
+  @override
+  String get priceConfig => '價格設定';
+
+  @override
+  String get addFeeGroup => '新增費用群組';
+
+  @override
+  String get editFeeGroup => '編輯費用群組';
+
+  @override
+  String deleteFeeGroupConfirm(String name) {
+    return '刪除費用群組「$name」？';
+  }
+
+  @override
+  String get groupName => '群組名稱';
+
+  @override
+  String get fetchModels => '擷取模型';
+
+  @override
+  String get discoveringModels => '正在探索模型...';
+
+  @override
+  String get selectModelsToAdd => '選取要新增的模型';
+
+  @override
+  String get searchModels => '搜尋模型名稱或 ID...';
+
+  @override
+  String get selectAll => '全選';
+
+  @override
+  String get deselectAll => '取消全選';
+
+  @override
+  String modelsDiscovered(int count) {
+    return '已探索 $count 個模型';
+  }
+
+  @override
+  String addSelected(int count) {
+    return '新增選取的 ($count)';
+  }
+
+  @override
+  String get alreadyAdded => '已新增';
+
+  @override
+  String get noNewModelsFound => '未找到新模型。';
+
+  @override
+  String fetchFailed(String error) {
+    return '擷取模型失敗：$error';
+  }
+
+  @override
+  String get stepProtocol => '選擇協議';
+
+  @override
+  String get stepProvider => '選擇供應商';
+
+  @override
+  String get stepApiKey => 'API 金鑰';
+
+  @override
+  String get stepConfig => '額外設定';
+
+  @override
+  String get stepPreview => '預覽';
+
+  @override
+  String get protocolOpenAI => 'OpenAI 相容 (REST)';
+
+  @override
+  String get protocolOpenAIDesc => '標準 OpenAI REST API 相容性';
+
+  @override
+  String get protocolGoogle => 'Google GenAI (REST)';
+
+  @override
+  String get protocolGoogleDesc => '官方 Google Gemini REST API';
+
+  @override
+  String get providerOpenAIOfficial => 'OpenAI 官方';
+
+  @override
+  String get providerGoogleOfficial => 'Google GenAI 官方';
+
+  @override
+  String get providerGoogleCompatible => 'Google GenAI (OpenAI 相容)';
+
+  @override
+  String get providerGoogleCompatibleDesc => '透過 OpenAI 端點的 Google Gemini';
+
+  @override
+  String get providerCustom => '自訂供應商';
+
+  @override
+  String get providerCustomDesc => '自行託管或第三方供應商';
+
+  @override
+  String get customEndpointHint => '輸入您的自訂端點 URL';
+
+  @override
+  String get openaiV1Hint => '提示：OpenAI 相容端點通常以「/v1」結尾';
+
+  @override
+  String get googleV1BetaHint => '提示：Google GenAI 端點通常以「/v1beta」結尾';
+
+  @override
+  String get enterApiKey => '輸入您的 API 金鑰';
+
+  @override
+  String get apiKeyStorageNotice => '您的金鑰會儲存在本機，絕不會傳送至我們的伺服器。';
+
+  @override
+  String get nameHint => '例如：我的正式版 API';
+
+  @override
+  String get enableDiscoveryDesc => '從此端點自動列出可用的模型';
+
+  @override
+  String get tagHint => '例如：GPT4、Local 等。';
+
+  @override
+  String get bindTag => '綁定標籤';
+
+  @override
+  String get previewReady => '準備好新增此通道了嗎？';
+
+  @override
+  String get feeGroupDesc => '定義模型的計費標準，以準確計算使用成本。';
+
+  @override
+  String get noFeeGroups => '尚未建立費用群組';
+
+  @override
+  String get pricePerMillion => '每百萬 Token 價格';
+
+  @override
+  String get pricePerRequest => '每次請求價格';
+
+  @override
+  String get tokenBilling => 'Token 計費';
+
+  @override
+  String get requestBilling => '請求計費';
+
+  @override
+  String get model => '模型';
+
+  @override
+  String get prompts => '提示';
+
+  @override
+  String get promptLibrary => '提示庫';
+
+  @override
+  String get newPrompt => '新提示';
+
+  @override
+  String get editPrompt => '編輯提示';
+
+  @override
+  String get noPromptsSaved => '未儲存任何提示';
+
+  @override
+  String get saveFavoritePrompts => '在此儲存您最愛的提示或 Refiner 系統提示';
+
+  @override
+  String get createFirstPrompt => '建立第一個提示';
+
+  @override
+  String get deletePromptConfirmTitle => '刪除提示？';
+
+  @override
+  String deletePromptConfirmMessage(String title) {
+    return '您確定要刪除「$title」嗎？';
+  }
+
+  @override
+  String get title => '標題';
+
+  @override
+  String get tagCategory => '標籤（類別）';
+
+  @override
+  String get setAsRefiner => '設為 Refiner';
+
+  @override
+  String get promptContent => '提示內容';
+
+  @override
+  String get userPrompts => '使用者提示';
+
+  @override
+  String get refinerPrompts => 'Refiner 提示';
+
+  @override
+  String get systemTemplates => '系統範本';
+
+  @override
+  String get templateType => '範本類型';
+
+  @override
+  String get typeRename => '批次重新命名';
+
+  @override
+  String get typeRefiner => '提示 Refiner';
+
+  @override
+  String get selectRenameTemplate => '選取重新命名範本';
+
+  @override
+  String get selectCategory => '選取類別';
+
+  @override
+  String get categoriesTab => '類別';
+
+  @override
+  String get addCategory => '新增類別';
+
+  @override
+  String get editCategory => '編輯類別';
+
+  @override
+  String get library => '媒體庫';
+
+  @override
+  String get refiner => 'Refiner';
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get appearance => '外觀';
+
+  @override
+  String get connectivity => '連線';
+
+  @override
+  String get application => '應用程式';
+
+  @override
+  String get proxySettings => '代理伺服器設定';
+
+  @override
+  String get enableProxy => '啟用全域代理伺服器';
+
+  @override
+  String get proxyUrl => '代理伺服器 URL (主機:連接埠)';
+
+  @override
+  String get proxyUsername => '代理伺服器使用者名稱 (選用)';
+
+  @override
+  String get proxyPassword => '代理伺服器密碼 (選用)';
+
+  @override
+  String get language => '語言';
+
+  @override
+  String get themeAuto => '自動';
+
+  @override
+  String get themeLight => '淺色';
+
+  @override
+  String get themeDark => '深色';
+
+  @override
+  String get googleGenAiSettings => 'Google GenAI REST 設定';
+
+  @override
+  String get openAiApiSettings => 'OpenAI API REST 設定';
+
+  @override
+  String get standardConfig => '標準設定';
+
+  @override
+  String get endpointUrl => '端點 URL';
+
+  @override
+  String get apiKey => 'API 金鑰';
+
+  @override
+  String get outputDirectory => '輸出目錄';
+
+  @override
+  String get notSet => '未設定';
+
+  @override
+  String get dataManagement => '資料管理';
+
+  @override
+  String get exportSettings => '匯出設定';
+
+  @override
+  String get importSettings => '匯入設定';
+
+  @override
+  String get openAppDataDirectory => '開啟應用程式資料目錄';
+
+  @override
+  String get mcpServerSettings => 'MCP 伺服器設定';
+
+  @override
+  String get enableMcpServer => '啟用 MCP 伺服器';
+
+  @override
+  String get port => '連接埠';
+
+  @override
+  String get resetAllSettings => '重設所有設定';
+
+  @override
+  String get confirmReset => '要重設所有設定嗎？';
+
+  @override
+  String get resetWarning => '這將會刪除所有設定、模型和新增的資料夾。此動作無法復原。';
+
+  @override
+  String get resetEverything => '全部重設';
+
+  @override
+  String get settingsExported => '設定已成功匯出';
+
+  @override
+  String get settingsImported => '設定已成功匯入';
+
+  @override
+  String get exportOptions => '匯出選項';
+
+  @override
+  String get includeDirectories => '包含目錄設定';
+
+  @override
+  String get includeDirectoriesDesc => '工作台/瀏覽器目錄和輸出路徑';
+
+  @override
+  String get includePrompts => '包含提示';
+
+  @override
+  String get includePromptsDesc => '使用者和系統提示庫';
+
+  @override
+  String get includeUsage => '包含用量指標';
+
+  @override
+  String get includeUsageDesc => 'API Token 消耗歷史記錄';
+
+  @override
+  String get exportNow => '立即匯出';
+
+  @override
+  String get importNow => '立即匯入';
+
+  @override
+  String get importOptions => '匯入選項';
+
+  @override
+  String get notInBackup => '備份檔案中不可用';
+
+  @override
+  String get importSettingsTitle => '匯入設定？';
+
+  @override
+  String get importSettingsConfirm =>
+      '這將會取代您目前所有的模型、通道和類別。\n\n注意：獨立的提示庫不受此匯入影響。請使用「提示」畫面進行提示資料管理。';
+
+  @override
+  String get importAndReplace => '匯入並取代';
+
+  @override
+  String get importMode => '匯入模式';
+
+  @override
+  String get importModeDesc =>
+      '選擇您要如何匯入提示：\n\n合併：將新項目新增至您的媒體庫。\n取代：刪除目前的媒體庫並使用匯入的資料。';
+
+  @override
+  String get merge => '合併';
+
+  @override
+  String get replaceAll => '全部取代';
+
+  @override
+  String get applyOverwrite => '套用 (覆寫)';
+
+  @override
+  String get applyAppend => '套用 (附加)';
+
+  @override
+  String get portableMode => '可攜式模式';
+
+  @override
+  String get portableModeDesc => '將資料庫和快取儲存在應用程式資料夾中 (需要重新啟動)';
+
+  @override
+  String get restartRequired => '需要重新啟動';
+
+  @override
+  String get restartMessage => '必須重新啟動應用程式才能套用資料儲存位置的變更。';
+
+  @override
+  String get enableNotifications => '啟用系統通知';
+
+  @override
+  String get runSetupWizard => '執行設定精靈';
+
+  @override
+  String get clearDownloaderCache => '清除下載器快取';
+
+  @override
+  String get enableApiDebug => '啟用 API 偵錯記錄';
+
+  @override
+  String get apiDebugDesc =>
+      '將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。';
+
+  @override
+  String get openLogFolder => '開啟記錄資料夾';
+
+  @override
+  String get iosOutputRecommend => '建議：在 iOS 上保留預設值。應用程式的資料夾可在「檔案」應用程式中看到。';
+
+  @override
+  String get downloaderCacheCleared => '下載器快取已清除。';
+
+  @override
+  String get tasks => '任務';
+
+  @override
+  String get taskQueueManager => '任務佇列管理員';
+
+  @override
+  String get noTasksInQueue => '佇列中沒有任務';
+
+  @override
+  String get submitTaskFromWorkbench => '從工作台提交任務以在此處查看。';
+
+  @override
+  String taskId(String id) {
+    return '任務 ID: $id';
+  }
+
+  @override
+  String get taskSummary => '任務摘要';
+
+  @override
+  String get pendingTasks => '待處理';
+
+  @override
+  String get processingTasks => '處理中';
+
+  @override
+  String get completedTasks => '已完成';
+
+  @override
+  String get failedTasks => '已失敗';
+
+  @override
+  String get clearCompleted => '清除已完成';
+
+  @override
+  String get cancelAllPending => '全部取消待辦';
+
+  @override
+  String get cancelTask => '取消任務';
+
+  @override
+  String get removeFromList => '從清單中移除';
+
+  @override
+  String get images => '圖片';
+
+  @override
+  String filesCount(int count) {
+    return '$count 個檔案';
+  }
+
+  @override
+  String runningCount(int count) {
+    return '$count 個執行中';
+  }
+
+  @override
+  String plannedCount(int count) {
+    return '$count 個計畫中';
+  }
+
+  @override
+  String get latestLog => '最新日誌：';
+
+  @override
+  String get taskCompletedNotification => '任務完成';
+
+  @override
+  String get taskFailedNotification => '任務失敗';
+
+  @override
+  String taskCompletedBody(String id) {
+    return '任務 $id 已成功完成。';
+  }
+
+  @override
+  String taskFailedBody(String id) {
+    return '處理任務 $id 失敗。';
+  }
+
+  @override
+  String get queueSettings => '佇列設定';
+
+  @override
+  String concurrencyLimit(int limit) {
+    return '並行限制：$limit';
+  }
+
+  @override
+  String retryCount(int count) {
+    return '重試次數：$count';
+  }
+
+  @override
+  String get setupWizardTitle => '歡迎設定';
+
+  @override
+  String get welcomeMessage => '歡迎使用 Joycai Image AI Toolkits！讓我們開始設定。';
+
+  @override
+  String get getStarted => '開始使用';
+
+  @override
+  String get stepAppearance => '外觀';
+
+  @override
+  String get stepStorage => '儲存空間';
+
+  @override
+  String get stepApi => '智慧（API）';
+
+  @override
+  String get setupCompleteMessage => '您已全部設定完成！享受創作的樂趣。';
+
+  @override
+  String get skip => '略過';
+
+  @override
+  String get storageLocationDesc => '選取要儲存產生的圖片的位置。';
+
+  @override
+  String get addChannelOptional => '新增您的第一個 AI 供應商通道（選用）。';
+
+  @override
+  String get configureModelOptional => '為您的新通道設定模型（選用）。';
+
+  @override
+  String get googleGenAiFree => 'Google GenAI（免費）';
+
+  @override
+  String get googleGenAiPaid => 'Google GenAI（付費）';
+
+  @override
+  String get openaiApi => 'OpenAI API';
+
+  @override
+  String get filenamePrefix => '檔案名前綴';
+
+  @override
+  String get openaiEndpointHint => '提示：與 OpenAI 相容的端點通常以「/v1」結尾';
+
+  @override
+  String get googleEndpointHint => '提示：Google GenAI 端點通常以「/v1beta」結尾（內部處理）';
+
+  @override
+  String get workbench => '工作台';
+
+  @override
+  String get imageProcessing => '影像處理';
+
+  @override
+  String get sourceGallery => '來源媒體櫃';
+
+  @override
+  String get sourceExplorer => '來源總管';
+
+  @override
+  String get tempWorkspace => '暫存工作區';
+
+  @override
+  String get processResults => '處理結果';
+
+  @override
+  String get resultCache => '結果快取';
+
+  @override
+  String get directories => '目錄';
+
+  @override
+  String get addFolder => '新增資料夾';
+
+  @override
+  String get noFolders => '未新增任何資料夾';
+
+  @override
+  String get clickAddFolder => '按一下「新增資料夾」以開始掃描影像。';
+
+  @override
+  String get noImagesFound => '找不到影像';
+
+  @override
+  String get noResultsYet => '尚無結果';
+
+  @override
+  String get importFromGallery => '從媒體櫃匯入';
+
+  @override
+  String get takePhoto => '拍照';
+
+  @override
+  String get clearTempWorkspace => '清除工作區';
+
+  @override
+  String get dropFilesHere => '將影像拖放到此處以新增至暫存工作區';
+
+  @override
+  String get selectSourceDirectory => '選取來源目錄';
+
+  @override
+  String get removeFolderTooltip => '移除資料夾';
+
+  @override
+  String get removeFolderConfirmTitle => '移除資料夾？';
+
+  @override
+  String removeFolderConfirmMessage(String folderName) {
+    return '您確定要從清單中移除「$folderName」嗎？';
+  }
+
+  @override
+  String get thumbnailSize => '縮圖大小';
+
+  @override
+  String get deleteFileConfirmTitle => '刪除檔案？';
+
+  @override
+  String deleteFileConfirmMessage(String filename) {
+    return '您確定要刪除「$filename」嗎？';
+  }
+
+  @override
+  String get moveToTrash => '移至垃圾桶';
+
+  @override
+  String get permanentlyDelete => '永久刪除';
+
+  @override
+  String get deleteSuccess => '已成功刪除';
+
+  @override
+  String deleteFailed(String error) {
+    return '刪除失敗：$error';
+  }
+
+  @override
+  String get modelSelection => '模型選取';
+
+  @override
+  String get selectAModel => '提交任務前請先選取一個模型';
+
+  @override
+  String get aspectRatio => '長寬比';
+
+  @override
+  String get resolution => '解析度';
+
+  @override
+  String get prompt => '提示';
+
+  @override
+  String get promptHint => '在此輸入提示...';
+
+  @override
+  String get prefixHint => '選用的檔名前綴';
+
+  @override
+  String get processPrompt => '處理提示';
+
+  @override
+  String processImages(int count) {
+    return '處理 $count 張影像';
+  }
+
+  @override
+  String get taskSubmitted => '已將任務提交至佇列';
+
+  @override
+  String get comparator => '比較器';
+
+  @override
+  String get compareModeSync => '同步模式';
+
+  @override
+  String get compareModeSwap => '交換模式';
+
+  @override
+  String get sendToComparatorRaw => '設為之前（原始）';
+
+  @override
+  String get sendToComparatorAfter => '設為之後（結果）';
+
+  @override
+  String get optimizePromptWithImage => '使用影像最佳化提示';
+
+  @override
+  String get selectFromLibrary => '從媒體櫃選取';
+
+  @override
+  String get metadataSelectedNone => '未選取影像中繼資料';
+
+  @override
+  String get labelRaw => '原始';
+
+  @override
+  String get labelAfter => '之後';
+
+  @override
+  String get cropAndResize => '裁剪並調整大小';
+
+  @override
+  String get overwriteSource => '覆寫原始檔案';
+
+  @override
+  String get overwriteConfirmTitle => '覆寫原始檔案？';
+
+  @override
+  String get overwriteConfirmMessage => '此動作將永久取代原始檔案。您確定嗎？';
+
+  @override
+  String get saveToTempSuccess => '已將影像儲存至暫存工作區';
+
+  @override
+  String get overwriteSuccess => '已更新原始檔案';
+
+  @override
+  String get custom => '自訂';
+
+  @override
+  String get resize => '調整大小';
+
+  @override
+  String get maintainAspectRatio => '維持長寬比';
+
+  @override
+  String get width => '寬度';
+
+  @override
+  String get height => '高度';
+
+  @override
+  String get sampling => '取樣';
+
+  @override
+  String get drawMask => '繪製遮罩';
+
+  @override
+  String get maskEditor => '遮罩編輯器';
+
+  @override
+  String get brushSize => '筆刷大小';
+
+  @override
+  String get maskColor => '遮罩顏色';
+
+  @override
+  String get maskOpacity => '遮罩不透明度';
+
+  @override
+  String get saveToTemp => '儲存至工作區';
+
+  @override
+  String get saveMaskToTemp => '將遮罩儲存至工作区';
+
+  @override
+  String get binaryMode => '二元模式';
+
+  @override
+  String get maskSaved => '已將遮罩儲存至工作區';
+
+  @override
+  String maskSaveError(String error) {
+    return '儲存遮罩時發生錯誤：$error';
+  }
+
+  @override
+  String get promptOptimizer => '提示最佳化工具';
+
+  @override
+  String get refinerModel => 'Refiner 模型';
+
+  @override
+  String get systemPrompt => '系統提示';
+
+  @override
+  String get refinerIntro => '使用 AI 分析影像並調整您的提示。';
+
+  @override
+  String get roughPrompt => '粗略的提示/想法';
+
+  @override
+  String get optimizedPrompt => '最佳化提示';
+
+  @override
+  String get applyToWorkbench => '套用至工作台';
+
+  @override
+  String get promptApplied => '已將提示套用至工作台';
+
+  @override
+  String refineFailed(String error) {
+    return '調整失敗：$error';
+  }
+
+  @override
+  String get executionLogs => '執行記錄';
+
+  @override
+  String get saveToPhotos => '儲存至相片';
+
+  @override
+  String get saveToGallery => '儲存至圖庫';
+
+  @override
+  String get savedToPhotos => '已儲存至相片';
+
+  @override
+  String saveFailed(String error) {
+    return '儲存失敗：$error';
+  }
+
+  @override
+  String get iosSandboxActive => 'iOS 沙箱作用中';
+
+  @override
+  String get iosSandboxDesc => '在 iOS 上，請使用頂端工具列中的「從圖庫匯入」按鈕，將影像新增至您的暫存工作區。';
+
+  @override
+  String get mobileSandboxActive => '行動儲存空間限制';
+
+  @override
+  String get mobileSandboxDesc =>
+      '在行動裝置上，作業系統可能會限制直接存取資料夾。建議使用頂端工具列中的「從圖庫匯入」按鈕。';
+
+  @override
+  String get filesAppSuffix => '（檔案應用程式）';
+}

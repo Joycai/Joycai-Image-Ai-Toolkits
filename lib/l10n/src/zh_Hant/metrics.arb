@@ -1,0 +1,20 @@
+{
+  "usage": "用量",
+  "tokenUsageMetrics": "Token 用量指標",
+  "clearAllUsage": "要清除所有用量資料嗎？",
+  "clearUsageWarning": "這將永久刪除資料庫中的所有 Token 用量記錄。",
+  "modelsLabel": "模型：",
+  "rangeLabel": "範圍：",
+  "today": "今天",
+  "lastWeek": "上週",
+  "lastMonth": "上個月",
+  "thisYear": "今年",
+  "inputTokens": "輸入 Token",
+  "outputTokens": "輸出 Token",
+  "estimatedCost": "預估成本",
+  "clearDataForModel": "要清除 {modelId} 的資料嗎？",
+  "clearModelDataWarning": "這將刪除與模型「{modelId}」相關的所有用量記錄。",
+  "clearModelData": "清除模型資料",
+  "usageByGroup": "按群組分類的用量",
+  "clearAll": "全部清除"
+}

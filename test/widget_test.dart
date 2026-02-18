@@ -23,9 +23,13 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: appState),
+          ChangeNotifierProvider.value(value: appState.taskQueue),
           ChangeNotifierProvider.value(value: appState.workbenchUIState),
+          ChangeNotifierProvider.value(value: appState.fileBrowserState),
+          ChangeNotifierProvider.value(value: appState.galleryState),
+          ChangeNotifierProvider.value(value: appState.downloaderState),
         ],
-        child: const MyApp(version: '2.0.0'),
+        child: const MyApp(version: '2.1.0'),
       ),
     );
 
