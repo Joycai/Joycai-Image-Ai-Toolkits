@@ -50,6 +50,7 @@ flutter:
   assets:
     - assets/icon/icon.png
     - assets/fonts/
+    - assets/presets/prompts/
 
   fonts:
     - family: NotoSansSC

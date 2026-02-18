@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -27,6 +29,7 @@ class DatabaseService {
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
+    await syncPresets();
     return _database!;
   }
 
@@ -59,7 +62,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 22,
+          version: 23,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -69,7 +72,7 @@ class DatabaseService {
       // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
       return await openDatabase(
         dbPath,
-        version: 22,
+        version: 23,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -86,6 +89,50 @@ class DatabaseService {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     await DatabaseMigration.migrate(db, oldVersion, newVersion);
+  }
+
+  /// Synchronize preset prompts from asset files into the database.
+  /// This checks for missing presets and inserts them if they don't exist by title.
+  Future<void> syncPresets() async {
+    final db = await database;
+    
+    // 1. Sync System Prompts
+    try {
+      final String systemJsonString = await rootBundle.loadString('assets/presets/prompts/system_prompts.json');
+      final List<dynamic> systemPresets = jsonDecode(systemJsonString);
+      
+      for (var preset in systemPresets) {
+        final existing = await db.query(
+          'system_prompts', 
+          where: 'title = ? AND type = ?', 
+          whereArgs: [preset['title'], preset['type']]
+        );
+        if (existing.isEmpty) {
+          await db.insert('system_prompts', preset);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // 2. Sync User Prompts
+    try {
+      final String userJsonString = await rootBundle.loadString('assets/presets/prompts/user_prompts.json');
+      final List<dynamic> userPresets = jsonDecode(userJsonString);
+      
+      for (var preset in userPresets) {
+        final existing = await db.query(
+          'prompts', 
+          where: 'title = ?', 
+          whereArgs: [preset['title']]
+        );
+        if (existing.isEmpty) {
+          await db.insert('prompts', preset);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   // Task History Methods

@@ -36,14 +36,19 @@ class DatabaseMigration {
     if (oldVersion < 18) await _createV18Tables(db);
     if (oldVersion < 19) await _createV19Tables(db);
     if (oldVersion < 20) await _createV20Tables(db);
-    if (oldVersion < 21) await _insertPresetTemplates(db);
+    if (oldVersion < 21) {
+       // Handled by DatabaseService.syncPresets()
+    }
     if (oldVersion < 22) await _createV22Tables(db);
+    if (oldVersion < 23) {
+       // Handled by DatabaseService.syncPresets()
+    }
   }
 
   static Future<void> onCreate(Database db) async {
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT \'imageProcess\')');
+    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT "imageProcess")');
     
     await _createV2Tables(db);
     await _createV3Tables(db);
@@ -62,7 +67,7 @@ class DatabaseMigration {
     await _createV19Tables(db);
     await _createV20Tables(db);
     await _createV22Tables(db);
-    await _insertPresetTemplates(db);
+    // Presets are synchronized in DatabaseService
   }
 
   static Future<void> _createV22Tables(Database db) async {
@@ -77,28 +82,6 @@ class DatabaseMigration {
         metadata TEXT -- JSON for group-based breakdown
       )
     ''');
-  }
-
-  static Future<void> _insertPresetTemplates(Database db) async {
-    // Check if they already exist to avoid duplicates
-    final existing = await db.query('system_prompts', where: 'type = ?', whereArgs: ['rename']);
-    if (existing.isNotEmpty) return;
-
-    await db.insert('system_prompts', {
-      'title': 'Jellyfin Movie Standard',
-      'content': 'Normalize movie filenames to "Movie Name (Year).ext" format. Remove all noise like quality (1080p, 4K), codec (x264, h265), and release group names. Example: "Inception.2010.1080p.Bluray.x264.mp4" -> "Inception (2010).mp4"',
-      'type': 'rename',
-      'is_markdown': 0,
-      'sort_order': 0,
-    });
-
-    await db.insert('system_prompts', {
-      'title': 'Jellyfin TV Show Standard',
-      'content': 'Normalize TV show filenames to "Show Name - S01E01 - Episode Name.ext" format. Ensure season and episode numbers are zero-padded (e.g., S01E01 instead of S1E1). Keep the original file extension.',
-      'type': 'rename',
-      'is_markdown': 0,
-      'sort_order': 1,
-    });
   }
 
   static Future<void> _createV20Tables(Database db) async {

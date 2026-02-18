@@ -134,9 +134,23 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         'category': f.category.name,
       }).toList();
 
-      final prompt = """
+      final String instructions = _instructionController.text.trim();
+      String prompt;
+
+      // Intelligent prompt wrapping: 
+      // If the instruction already looks like a "Pro" prompt (contains # Role or # Task),
+      // we inject context but avoid double wrapping the persona.
+      if (instructions.contains('# Role') || instructions.contains('# Task')) {
+        prompt = """
+$instructions
+
+Files to rename (Context):
+${jsonEncode(filesData)}
+""";
+      } else {
+        prompt = """
 You are a professional file renaming assistant. 
-Instructions: ${_instructionController.text}
+Instructions: $instructions
 
 Files to rename:
 ${jsonEncode(filesData)}
@@ -145,6 +159,7 @@ Output ONLY a valid JSON array of objects, where each object has 'path' and 'new
 Example: [{"path": "...", "new_name": "..."}]
 Do not include any other text or markdown formatting.
 """;
+      }
 
       final response = await LLMService().request(
         modelIdentifier: _selectedModelDbId,
@@ -289,19 +304,44 @@ Do not include any other text or markdown formatting.
                 label: l10n.model,
                 onChanged: (v) => setState(() => _selectedModelDbId = v),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold))),
-                  TextButton.icon(
-                    onPressed: _showTemplatePicker,
-                    icon: const Icon(Icons.library_books, size: 16),
-                    label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                  ),
-                ],
-              ),
+              const SizedBox(height: 16),
+              // Quick Templates Row
+              Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildQuickTemplateButton(
+                      label: "General Smart", 
+                      icon: Icons.auto_awesome, 
+                      onTap: () async {
+                        final templates = await _db.getSystemPrompts(type: 'rename');
+                        final t = templates.firstWhere((e) => e.title.contains('General'), orElse: () => templates.first);
+                        setState(() => _instructionController.text = t.content);
+                      }
+                    ),
+                    const SizedBox(width: 8),
+                    _buildQuickTemplateButton(
+                      label: "Jellyfin TV Pro", 
+                      icon: Icons.tv,
+                      onTap: () async {
+                        final templates = await _db.getSystemPrompts(type: 'rename');
+                        final t = templates.firstWhere((e) => e.title.contains('Jellyfin TV Show Pro'), orElse: () => templates.first);
+                        setState(() => _instructionController.text = t.content);
+                      }
+                    ),
+                    const SizedBox(width: 8),
+                    _buildQuickTemplateButton(
+                      label: l10n.library, 
+                      icon: Icons.library_books,
+                      isLibrary: true,
+                      onTap: _showTemplatePicker,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _instructionController,
                 decoration: const InputDecoration(
@@ -341,6 +381,23 @@ Do not include any other text or markdown formatting.
           child: Text(l10n.applyRenames),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuickTemplateButton({
+    required String label, 
+    required IconData icon, 
+    required VoidCallback onTap,
+    bool isLibrary = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ActionChip(
+      avatar: Icon(icon, size: 16, color: isLibrary ? colorScheme.secondary : colorScheme.primary),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      onPressed: onTap,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
