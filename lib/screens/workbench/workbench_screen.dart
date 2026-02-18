@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -15,28 +14,27 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/llm/llm_types.dart';
 import '../../services/llm/llm_service.dart';
+import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
-import 'widgets/comparator_toolbar.dart';
-import 'widgets/mask_editor_toolbar.dart';
-import 'widgets/prompt_optimizer_toolbar.dart';
-import 'workbench_config_panel.dart';
 import 'gallery.dart';
+import 'widgets/comparator_toolbar.dart';
 import 'widgets/comparator_view.dart';
-import 'widgets/mask_editor_view.dart';
-import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/gallery_toolbar.dart';
-import 'widgets/mask_editor_ai_panel.dart';
+import 'widgets/mask_editor_toolbar.dart';
+import 'widgets/mask_editor_view.dart';
 import 'widgets/metadata_inspector.dart';
 import 'widgets/optimizer_config_panel.dart';
 import 'widgets/optimizer_reference_panel.dart';
+import 'widgets/prompt_optimizer_toolbar.dart';
+import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/workbench_bottom_console.dart';
 import 'widgets/workbench_top_bar.dart';
+import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
 
 class WorkbenchScreen extends StatefulWidget {
@@ -57,16 +55,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   double _maskBrushSize = 20.0;
   double _maskOpacity = 1.0;
   bool _maskIsBinaryMode = false;
-  bool _maskShowAIPanel = false;
   final GlobalKey _maskRepaintKey = GlobalKey();
   Offset? _maskMousePosition;
   
-  // AI Mask State
-  final TextEditingController _maskAiPromptController = TextEditingController();
-  bool _maskIsGeneratingAI = false;
-  String? _maskSelectedModelId;
-  double _maskPointCount = 200.0;
-
   // Prompt Optimizer State
   late TextEditingController _optCurrentPromptCtrl;
   final TextEditingController _optRefinedPromptCtrl = TextEditingController();
@@ -99,10 +90,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       // Listen for manual data send from UI State
       final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
       workbenchUIState.addListener(_onWorkbenchUIChanged);
-      
-      if (_appState!.imageModels.isNotEmpty) {
-        _maskSelectedModelId = _appState!.imageModels.first.modelId;
-      }
       
       _loadOptimizerData();
     }
@@ -290,69 +277,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
   }
 
-  Future<void> _generateAIMask() async {
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    final sourceImage = workbenchUIState.maskEditorSourceImage;
-    if (sourceImage == null || _maskAiPromptController.text.trim().isEmpty) return;
-
-    setState(() => _maskIsGeneratingAI = true);
-
-    try {
-      final imageBytes = await File(sourceImage.path).readAsBytes();
-      final mimeType = p.extension(sourceImage.path).toLowerCase().replaceAll('.', 'image/');
-
-      final systemPrompt = """
-Outline the object described by the user.
-Return JSON { "points": [[x1, y1], [x2, y2], ...] }
-Coordinates are 0-1000. Form a closed loop.
-""";
-
-      final response = await LLMService().request(
-        modelIdentifier: _maskSelectedModelId,
-        messages: [
-          LLMMessage(role: LLMRole.system, content: systemPrompt),
-          LLMMessage(role: LLMRole.user, content: _maskAiPromptController.text.trim(), attachments: [
-            LLMAttachment.fromBytes(imageBytes, mimeType == 'image/jpg' ? 'image/jpeg' : mimeType),
-          ]),
-        ],
-        useStream: false,
-      );
-
-      final jsonStr = response.text.replaceAll('```json', '').replaceAll('```', '').trim();
-      final data = jsonDecode(jsonStr);
-      final List pointsData = data['points'];
-
-      if (pointsData.isNotEmpty) {
-        final RenderBox renderBox = _maskRepaintKey.currentContext!.findRenderObject() as RenderBox;
-        final double width = renderBox.size.width;
-        final double height = renderBox.size.height;
-
-        final List<Offset> points = pointsData.map((pt) {
-          return Offset((pt[0] as num) / 1000 * width, (pt[1] as num) / 1000 * height);
-        }).toList();
-        if (points.first != points.last) points.add(points.first);
-
-        setState(() {
-          _maskPaths.add(DrawingPath(
-            points: points,
-            color: _maskSelectedColor.withValues(alpha: _maskOpacity),
-            strokeWidth: _maskBrushSize,
-            isPolygon: true,
-          ));
-          _maskShowAIPanel = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.maskGenError(e.toString())), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _maskIsGeneratingAI = false);
-    }
-  }
-
   void _initTabController() {
     if (_appState == null) return;
     _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 3);
@@ -424,24 +348,12 @@ Coordinates are 0-1000. Form a closed loop.
               onBrushSizeChanged: (s) => setState(() => _maskBrushSize = s),
               onOpacityChanged: (o) => setState(() => _maskOpacity = o),
               onToggleBinary: () => setState(() => _maskIsBinaryMode = !_maskIsBinaryMode),
-              onToggleAI: () => setState(() => _maskShowAIPanel = !_maskShowAIPanel),
               selectedColor: _maskSelectedColor,
               brushSize: _maskBrushSize,
               opacity: _maskOpacity,
               isBinaryMode: _maskIsBinaryMode,
-              showAIPanel: _maskShowAIPanel,
               hasPaths: _maskPaths.isNotEmpty,
             ),
-            if (_maskShowAIPanel)
-              MaskEditorAIPanel(
-                selectedModelId: _maskSelectedModelId,
-                pointCount: _maskPointCount,
-                promptController: _maskAiPromptController,
-                isGenerating: _maskIsGeneratingAI,
-                onModelChanged: (val) => setState(() => _maskSelectedModelId = val),
-                onPointCountChanged: (val) => setState(() => _maskPointCount = val),
-                onGenerate: _generateAIMask,
-              ),
             Expanded(
               child: MaskEditorView(
                 paths: _maskPaths,

@@ -9,8 +9,8 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_types.dart';
 import '../../services/llm/llm_service.dart';
+import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/chat_model_selector.dart';
 

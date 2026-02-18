@@ -19,8 +19,8 @@ class GalleryToolbar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
     final galleryState = appState.galleryState;
-    final isMobile = Responsive.isMobile(context);
     final isDesktop = Responsive.isDesktop(context);
+    final isNarrow = Responsive.isNarrow(context);
     
     final selectedCount = appState.selectedImages.length;
     final thumbnailSize = appState.thumbnailSize;
@@ -39,7 +39,7 @@ class GalleryToolbar extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    isMobile ? '$selectedCount' : l10n.selectedCount(selectedCount),
+                    isNarrow ? '$selectedCount' : l10n.selectedCount(selectedCount),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(width: 8),
@@ -68,22 +68,24 @@ class GalleryToolbar extends StatelessWidget {
                   ],
 
                   // Thumbnail Size Slider
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                      SizedBox(
-                        width: 100,
-                        child: Slider(
-                          value: thumbnailSize,
-                          min: 80,
-                          max: 400,
-                          onChanged: (v) => galleryState.setThumbnailSize(v),
-                        ),
+                  if (!isNarrow) ...[
+                    Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
+                    SizedBox(
+                      width: 100,
+                      child: Slider(
+                        value: thumbnailSize,
+                        min: 80,
+                        max: 400,
+                        onChanged: (v) => galleryState.setThumbnailSize(v),
                       ),
-                      Icon(Icons.image, size: 20, color: colorScheme.outline),
-                    ],
-                  ),
+                    ),
+                    Icon(Icons.image, size: 20, color: colorScheme.outline),
+                  ] else
+                    IconButton(
+                      icon: const Icon(Icons.grid_view, size: 20),
+                      onPressed: () => _showThumbnailSizeDialog(context, galleryState, thumbnailSize, l10n),
+                      tooltip: l10n.thumbnailSize,
+                    ),
                 ],
               ),
             ),
@@ -196,6 +198,38 @@ class GalleryToolbar extends StatelessWidget {
               label: Text(l10n.importFromGallery),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showThumbnailSizeDialog(BuildContext context, GalleryState state, double current, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.thumbnailSize),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            double val = current;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: val,
+                  min: 80,
+                  max: 400,
+                  onChanged: (v) {
+                    state.setThumbnailSize(v);
+                    setState(() => val = v);
+                  },
+                ),
+                Text("${val.toInt()}px"),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );

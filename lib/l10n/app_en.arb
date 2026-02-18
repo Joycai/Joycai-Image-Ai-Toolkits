@@ -628,31 +628,10 @@
   "undo": "Undo",
   "saveToTemp": "Save to Workspace",
   "saveMaskToTemp": "Save Mask to Workspace",
-  "aiSmartMask": "AI Smart Mask",
   "binaryMode": "Binary Mode",
-  "maskModel": "Model",
-  "maskDetail": "Detail: {count}",
-  "@maskDetail": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maskPromptLabel": "What to mask?",
-  "generating": "Generating...",
-  "generate": "Generate",
   "maskSaved": "Mask saved to workspace",
   "maskSaveError": "Error saving mask: {error}",
   "@maskSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "maskGenError": "AI Mask generation failed: {error}",
-  "@maskGenError": {
     "placeholders": {
       "error": {
         "type": "String"

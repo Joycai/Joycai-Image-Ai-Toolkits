@@ -5,9 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../core/app_paths.dart';
-import '../models/pricing_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
+import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/tag.dart';
 import 'database_migrations.dart';

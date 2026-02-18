@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
-import '../llm_types.dart';
 import '../llm_provider_interface.dart';
+import '../llm_types.dart';
 import '../model_discovery_service.dart';
 
 class GoogleDiscoveryProvider implements IModelDiscoveryProvider {

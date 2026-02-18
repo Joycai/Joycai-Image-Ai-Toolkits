@@ -54,22 +54,29 @@ class BrowserToolbar extends StatelessWidget {
                   if (state.viewMode == BrowserViewMode.grid) ...[
                     const VerticalDivider(width: 24, indent: 8, endIndent: 8),
                     // Thumbnail Size Slider
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                        SizedBox(
-                          width: 100,
-                          child: Slider(
-                            value: state.thumbnailSize,
-                            min: 80,
-                            max: 400,
-                            onChanged: (v) => state.setThumbnailSize(v),
+                    if (!isNarrow) ...[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
+                          SizedBox(
+                            width: 100,
+                            child: Slider(
+                              value: state.thumbnailSize,
+                              min: 80,
+                              max: 400,
+                              onChanged: (v) => state.setThumbnailSize(v),
+                            ),
                           ),
-                        ),
-                        Icon(Icons.image, size: 20, color: colorScheme.outline),
-                      ],
-                    ),
+                          Icon(Icons.image, size: 20, color: colorScheme.outline),
+                        ],
+                      ),
+                    ] else
+                      IconButton(
+                        icon: const Icon(Icons.grid_view, size: 20),
+                        onPressed: () => _showThumbnailSizeDialog(context, state, l10n),
+                        tooltip: l10n.thumbnailSize,
+                      ),
                   ],
                 ],
               ),
@@ -133,6 +140,38 @@ class BrowserToolbar extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showThumbnailSizeDialog(BuildContext context, FileBrowserState state, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.thumbnailSize),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            double val = state.thumbnailSize;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: val,
+                  min: 80,
+                  max: 400,
+                  onChanged: (v) {
+                    state.setThumbnailSize(v);
+                    setState(() => val = v);
+                  },
+                ),
+                Text("${val.toInt()}px"),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );

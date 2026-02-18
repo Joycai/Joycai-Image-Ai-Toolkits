@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
-import 'llm_types.dart';
 import 'llm_provider_interface.dart';
+import 'llm_types.dart';
 
 class LLMService {
   static final LLMService _instance = LLMService._internal();

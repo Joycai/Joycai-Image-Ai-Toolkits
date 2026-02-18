@@ -12,12 +12,10 @@ class MaskEditorToolbar extends StatelessWidget {
   final Function(double) onBrushSizeChanged;
   final Function(double) onOpacityChanged;
   final VoidCallback onToggleBinary;
-  final VoidCallback onToggleAI;
   final Color selectedColor;
   final double brushSize;
   final double opacity;
   final bool isBinaryMode;
-  final bool showAIPanel;
   final bool hasPaths;
 
   const MaskEditorToolbar({
@@ -30,12 +28,10 @@ class MaskEditorToolbar extends StatelessWidget {
     required this.onBrushSizeChanged,
     required this.onOpacityChanged,
     required this.onToggleBinary,
-    required this.onToggleAI,
     required this.selectedColor,
     required this.brushSize,
     required this.opacity,
     required this.isBinaryMode,
-    required this.showAIPanel,
     required this.hasPaths,
   });
 
@@ -43,7 +39,7 @@ class MaskEditorToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = Responsive.isMobile(context);
+    final isNarrow = Responsive.isNarrow(context);
 
     return Container(
       height: 52,
@@ -52,15 +48,6 @@ class MaskEditorToolbar extends StatelessWidget {
       child: Row(
         children: [
           // Primary High-Frequency Actions
-          if (!isMobile) ...[
-            IconButton(
-              icon: Icon(Icons.auto_awesome, color: showAIPanel ? colorScheme.primary : null),
-              onPressed: onToggleAI,
-              tooltip: l10n.aiSmartMask,
-              visualDensity: VisualDensity.compact,
-            ),
-            const VerticalDivider(width: 16, indent: 12, endIndent: 12),
-          ],
           
           _buildColorCircle(context, Colors.white, l10n.white),
           _buildColorCircle(context, Colors.black, l10n.black),
@@ -73,18 +60,18 @@ class MaskEditorToolbar extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                const Icon(Icons.line_weight, size: 16, color: Colors.grey),
-                Expanded(
-                  flex: 2,
-                  child: Slider(
-                    value: brushSize,
-                    min: 1,
-                    max: 100,
-                    onChanged: onBrushSizeChanged,
-                    label: l10n.brushSize,
+                if (!isNarrow) ...[
+                  const Icon(Icons.line_weight, size: 16, color: Colors.grey),
+                  Expanded(
+                    flex: 2,
+                    child: Slider(
+                      value: brushSize,
+                      min: 1,
+                      max: 100,
+                      onChanged: onBrushSizeChanged,
+                      label: l10n.brushSize,
+                    ),
                   ),
-                ),
-                if (!isMobile) ...[
                   const SizedBox(width: 16),
                   const Icon(Icons.opacity, size: 16, color: Colors.grey),
                   Expanded(
@@ -96,6 +83,30 @@ class MaskEditorToolbar extends StatelessWidget {
                       onChanged: onOpacityChanged,
                       label: l10n.maskOpacity,
                     ),
+                  ),
+                ] else ...[
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.line_weight),
+                    onPressed: () => _showSliderDialog(
+                      context, 
+                      l10n.brushSize, 
+                      brushSize, 1, 100, 
+                      onBrushSizeChanged,
+                      (val) => "${val.toInt()}px"
+                    ),
+                    tooltip: l10n.brushSize,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.opacity),
+                    onPressed: () => _showSliderDialog(
+                      context, 
+                      l10n.maskOpacity, 
+                      opacity, 0.1, 1.0, 
+                      onOpacityChanged,
+                      (val) => "${(val * 100).toInt()}%"
+                    ),
+                    tooltip: l10n.maskOpacity,
                   ),
                 ],
               ],
@@ -109,7 +120,7 @@ class MaskEditorToolbar extends StatelessWidget {
             visualDensity: VisualDensity.compact,
           ),
 
-          if (!isMobile) ...[
+          if (!isNarrow) ...[
             IconButton(
               icon: Icon(isBinaryMode ? Icons.contrast : Icons.image, size: 20),
               onPressed: onToggleBinary,
@@ -123,37 +134,16 @@ class MaskEditorToolbar extends StatelessWidget {
           ],
 
           // Overflow Menu for Mobile
-          if (isMobile) 
+          if (isNarrow) 
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz),
               onSelected: (value) {
-                if (value == 'ai') onToggleAI();
                 if (value == 'binary') onToggleBinary();
                 if (value == 'clear') onClear();
                 if (value == 'save_temp') onSave();
                 if (value == 'save_mask') onSaveMask();
-                if (value == 'opacity') {
-                  // Show opacity dialog on mobile
-                  _showOpacityDialog(context);
-                }
               },
               itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'ai',
-                  child: ListTile(
-                    leading: Icon(Icons.auto_awesome, color: showAIPanel ? colorScheme.primary : null),
-                    title: Text(l10n.aiSmartMask),
-                    dense: true,
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'opacity',
-                  child: ListTile(
-                    leading: const Icon(Icons.opacity),
-                    title: Text(l10n.maskOpacity),
-                    dense: true,
-                  ),
-                ),
                 PopupMenuItem(
                   value: 'binary',
                   child: ListTile(
@@ -193,7 +183,7 @@ class MaskEditorToolbar extends StatelessWidget {
 
           const VerticalDivider(width: 16, indent: 12, endIndent: 12),
           
-          if (!isMobile) ...[
+          if (!isNarrow) ...[
             OutlinedButton(
               onPressed: onSave,
               style: OutlinedButton.styleFrom(
@@ -225,28 +215,39 @@ class MaskEditorToolbar extends StatelessWidget {
     );
   }
 
-  void _showOpacityDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+  void _showSliderDialog(
+    BuildContext context, 
+    String title, 
+    double currentValue, 
+    double min, 
+    double max, 
+    Function(double) onChanged,
+    String Function(double) displayConverter
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.maskOpacity),
+        title: Text(title),
         content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Slider(
-                value: opacity,
-                min: 0.1,
-                max: 1.0,
-                onChanged: (val) {
-                  onOpacityChanged(val);
-                  setState(() {});
-                },
-              ),
-              Text("${(opacity * 100).toInt()}%"),
-            ],
-          ),
+          builder: (context, setState) {
+            // Find current value in the slider range
+            double val = currentValue;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: val,
+                  min: min,
+                  max: max,
+                  onChanged: (newVal) {
+                    onChanged(newVal);
+                    setState(() => val = newVal);
+                  },
+                ),
+                Text(displayConverter(val)),
+              ],
+            );
+          },
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),

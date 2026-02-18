@@ -10,8 +10,8 @@ import 'package:uuid/uuid.dart';
 
 import '../models/llm_model.dart';
 import 'database_service.dart';
-import 'llm/llm_types.dart';
 import 'llm/llm_service.dart';
+import 'llm/llm_types.dart';
 import 'web_scraper_service.dart';
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }

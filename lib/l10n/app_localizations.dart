@@ -2570,47 +2570,11 @@ abstract class AppLocalizations {
   /// **'Save Mask to Workspace'**
   String get saveMaskToTemp;
 
-  /// No description provided for @aiSmartMask.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Smart Mask'**
-  String get aiSmartMask;
-
   /// No description provided for @binaryMode.
   ///
   /// In en, this message translates to:
   /// **'Binary Mode'**
   String get binaryMode;
-
-  /// No description provided for @maskModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Model'**
-  String get maskModel;
-
-  /// No description provided for @maskDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Detail: {count}'**
-  String maskDetail(int count);
-
-  /// No description provided for @maskPromptLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'What to mask?'**
-  String get maskPromptLabel;
-
-  /// No description provided for @generating.
-  ///
-  /// In en, this message translates to:
-  /// **'Generating...'**
-  String get generating;
-
-  /// No description provided for @generate.
-  ///
-  /// In en, this message translates to:
-  /// **'Generate'**
-  String get generate;
 
   /// No description provided for @maskSaved.
   ///
@@ -2623,12 +2587,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error saving mask: {error}'**
   String maskSaveError(String error);
-
-  /// No description provided for @maskGenError.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Mask generation failed: {error}'**
-  String maskGenError(String error);
 
   /// No description provided for @promptOptimizer.
   ///

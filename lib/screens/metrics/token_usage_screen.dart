@@ -6,8 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/pricing_group.dart';
 import '../../models/llm_model.dart';
+import '../../models/pricing_group.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/pricing_group_manager.dart';

@@ -1,10 +1,12 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
-import '../state/app_state.dart';
 import '../services/task_queue_service.dart';
+import '../state/app_state.dart';
 
 class TaskCapsuleMonitor extends StatefulWidget {
   const TaskCapsuleMonitor({super.key});

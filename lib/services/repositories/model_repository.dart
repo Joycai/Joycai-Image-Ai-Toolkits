@@ -1,8 +1,8 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../models/pricing_group.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../models/pricing_group.dart';
 import '../database_service.dart';
 
 class ModelRepository {

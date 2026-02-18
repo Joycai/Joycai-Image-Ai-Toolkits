@@ -8,8 +8,8 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 
 import '../core/app_paths.dart';
-import 'llm/llm_types.dart';
 import 'llm/llm_service.dart';
+import 'llm/llm_types.dart';
 
 class DiscoveredImage {
   final String url;

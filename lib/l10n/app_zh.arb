@@ -628,31 +628,10 @@
   "undo": "撤销",
   "saveToTemp": "保存至工作区",
   "saveMaskToTemp": "保存遮罩至工作区",
-  "aiSmartMask": "AI 智能蒙版",
   "binaryMode": "二值化模式",
-  "maskModel": "分析模型",
-  "maskDetail": "详情度: {count}",
-  "@maskDetail": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maskPromptLabel": "要遮罩的内容？",
-  "generating": "正在生成...",
-  "generate": "生成",
   "maskSaved": "蒙版已保存至工作区",
   "maskSaveError": "保存蒙版失败: {error}",
   "@maskSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "maskGenError": "AI 蒙版生成失败: {error}",
-  "@maskGenError": {
     "placeholders": {
       "error": {
         "type": "String"

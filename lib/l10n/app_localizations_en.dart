@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1335,27 +1336,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveMaskToTemp => 'Save Mask to Workspace';
 
   @override
-  String get aiSmartMask => 'AI Smart Mask';
-
-  @override
   String get binaryMode => 'Binary Mode';
-
-  @override
-  String get maskModel => 'Model';
-
-  @override
-  String maskDetail(int count) {
-    return 'Detail: $count';
-  }
-
-  @override
-  String get maskPromptLabel => 'What to mask?';
-
-  @override
-  String get generating => 'Generating...';
-
-  @override
-  String get generate => 'Generate';
 
   @override
   String get maskSaved => 'Mask saved to workspace';
@@ -1363,11 +1344,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String maskSaveError(String error) {
     return 'Error saving mask: $error';
-  }
-
-  @override
-  String maskGenError(String error) {
-    return 'AI Mask generation failed: $error';
   }
 
   @override

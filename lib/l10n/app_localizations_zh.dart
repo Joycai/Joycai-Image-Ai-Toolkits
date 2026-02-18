@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1310,27 +1311,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saveMaskToTemp => '保存遮罩至工作区';
 
   @override
-  String get aiSmartMask => 'AI 智能蒙版';
-
-  @override
   String get binaryMode => '二值化模式';
-
-  @override
-  String get maskModel => '分析模型';
-
-  @override
-  String maskDetail(int count) {
-    return '详情度: $count';
-  }
-
-  @override
-  String get maskPromptLabel => '要遮罩的内容？';
-
-  @override
-  String get generating => '正在生成...';
-
-  @override
-  String get generate => '生成';
 
   @override
   String get maskSaved => '蒙版已保存至工作区';
@@ -1338,11 +1319,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String maskSaveError(String error) {
     return '保存蒙版失败: $error';
-  }
-
-  @override
-  String maskGenError(String error) {
-    return 'AI 蒙版生成失败: $error';
   }
 
   @override
