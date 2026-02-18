@@ -49,6 +49,10 @@ class AppState extends ChangeNotifier {
     };
 
     taskQueue.onTaskFinished = (task) {
+      if (task.type == TaskType.aiRename && task.status == TaskStatus.completed) {
+        fileBrowserState.refresh();
+      }
+
       if (!notificationsEnabled) return;
       
       final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
@@ -109,6 +113,7 @@ class AppState extends ChangeNotifier {
   AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
   AppResolution lastResolution = AppResolution.r1K;
   String lastPrompt = "";
+  bool useStream = true;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
   bool isMarkdownRefinerTarget = true;
@@ -237,6 +242,7 @@ class AppState extends ChangeNotifier {
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
@@ -525,6 +531,7 @@ class AppState extends ChangeNotifier {
     AppAspectRatio? aspectRatio,
     AppResolution? resolution,
     String? prompt,
+    bool? useStream,
   }) async {
     if (modelId != null) {
       lastSelectedModelId = modelId;
@@ -542,6 +549,10 @@ class AppState extends ChangeNotifier {
       lastPrompt = prompt;
       await _db.saveSetting('last_prompt', prompt);
     }
+    if (useStream != null) {
+      this.useStream = useStream;
+      await _db.saveSetting('workbench_use_stream', useStream.toString());
+    }
     notifyListeners();
   }
 
@@ -553,7 +564,13 @@ class AppState extends ChangeNotifier {
     params['retryCount'] = retryCount;
     
     final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
-    await taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
+    await taskQueue.addTask(
+      imagePaths, 
+      modelIdentifier, 
+      params, 
+      modelIdDisplay: modelIdDisplay,
+      useStream: params['useStream'] ?? useStream,
+    );
     
     addLog('Task submitted for ${imagePaths.length} images.');
   }

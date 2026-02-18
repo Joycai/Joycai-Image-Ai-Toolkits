@@ -61,7 +61,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     }
   }
 
-  void _updateConfig({int? modelDbId, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt}) {
+  void _updateConfig({int? modelDbId, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt, bool? useStream}) {
     final appState = Provider.of<AppState>(context, listen: false);
     
     String? idToSave;
@@ -74,6 +74,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       aspectRatio: ar,
       resolution: res,
       prompt: prompt,
+      useStream: useStream,
     );
   }
 
@@ -85,6 +86,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
+    final useStream = context.select<AppState, bool>((s) => s.useStream);
     final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
     final lastAspectRatio = context.select<AppState, AppAspectRatio>((s) => s.lastAspectRatio);
     final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
@@ -169,6 +171,17 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               onResolutionChanged: (v) {
                 _updateConfig(res: v);
               },
+            ),
+
+            const SizedBox(height: 12),
+            SwitchListTile(
+              title: const Text("Use Streaming", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              subtitle: const Text("Real-time AI response (if supported)", style: TextStyle(fontSize: 11)),
+              value: useStream, 
+              onChanged: (v) => _updateConfig(useStream: v),
+              secondary: const Icon(Icons.stream, size: 20),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
             ),
 
             const Divider(height: 24),

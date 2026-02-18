@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/app_paths.dart';
 import '../../core/responsive.dart';
@@ -14,8 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/llm/llm_service.dart';
-import '../../services/llm/llm_types.dart';
+import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
@@ -48,6 +49,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   late TabController _tabController;
   AppState? _appState;
   int _lastKnownTabIndex = 0;
+  StreamSubscription? _taskSubscription;
+  String? _activeRefineTaskId;
 
   // Mask Editor State
   final List<DrawingPath> _maskPaths = [];
@@ -67,7 +70,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   int? _optSelectedModelDbId;
   int? _optSelectedTagId;
   String? _optSelectedSysPrompt;
-  bool _optIsRefining = false;
   bool _optIsLoadingData = true;
 
   @override
@@ -91,7 +93,23 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
       workbenchUIState.addListener(_onWorkbenchUIChanged);
       
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      _taskSubscription?.cancel();
+      _taskSubscription = taskService.eventStream.listen(_onTaskEvent);
+      
       _loadOptimizerData();
+    }
+  }
+
+  void _onTaskEvent(TaskEvent event) {
+    if (_activeRefineTaskId == null || event.taskId != _activeRefineTaskId) return;
+
+    if (event.type == TaskEventType.textChunk) {
+      if (mounted) {
+        setState(() {
+          _optRefinedPromptCtrl.text += (event.data as String);
+        });
+      }
     }
   }
 
@@ -155,31 +173,35 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       return;
     }
 
-    setState(() {
-      _optIsRefining = true;
-      _optRefinedPromptCtrl.clear();
-    });
-
     try {
-      final attachments = workbenchUIState.optimizerReferenceImages.map((f) => 
-        LLMAttachment.fromFile(File(f.path), 'image/jpeg')
-      ).toList();
-
-      final response = await LLMService().request(
-        modelIdentifier: _optSelectedModelDbId!,
-        useStream: false,
-        messages: [
-          if (_optSelectedSysPrompt != null)
-            LLMMessage(role: LLMRole.system, content: _optSelectedSysPrompt!),
-          LLMMessage(role: LLMRole.user, content: _optCurrentPromptCtrl.text, attachments: attachments),
-        ],
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      final taskId = const Uuid().v4();
+      
+      setState(() {
+        _activeRefineTaskId = taskId;
+        _optRefinedPromptCtrl.clear();
+      });
+      
+      await taskService.addTask(
+        workbenchUIState.optimizerReferenceImages.map((f) => f.path).toList(),
+        _optSelectedModelDbId!,
+        {
+          'systemPrompt': _optSelectedSysPrompt,
+          'roughPrompt': _optCurrentPromptCtrl.text,
+        },
+        type: TaskType.promptRefine,
+        useStream: true,
+        id: taskId,
       );
 
-      if (mounted) setState(() => _optRefinedPromptCtrl.text = response.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.taskSubmitted),
+          backgroundColor: Colors.blue,
+        ));
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
-    } finally {
-      if (mounted) setState(() => _optIsRefining = false);
     }
   }
 
@@ -296,6 +318,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   void dispose() {
     _appState?.removeListener(_onAppStateChanged);
+    _taskSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -382,13 +405,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
         break;
       case 3: // Prompt Optimizer
+        final taskService = Provider.of<TaskQueueService>(context);
+        final isRefining = taskService.queue.any((t) => t.type == TaskType.promptRefine && t.status == TaskStatus.processing);
+
         centerContent = Column(
           children: [
             PromptOptimizerToolbar(
               onRefine: _handleRefine,
               onApply: _handleOptimizerApply,
               onClear: () => setState(() { _optCurrentPromptCtrl.clear(); _optRefinedPromptCtrl.clear(); }),
-              isRefining: _optIsRefining,
+              isRefining: isRefining,
               canApply: _optRefinedPromptCtrl.text.isNotEmpty,
             ),
             Expanded(

@@ -15,7 +15,22 @@ import 'llm/llm_types.dart';
 import 'web_scraper_service.dart';
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }
-enum TaskType { imageProcess, imageDownload }
+enum TaskType { imageProcess, imageDownload, promptRefine, aiRename }
+
+enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
+
+class TaskEvent {
+  final String taskId;
+  final TaskEventType type;
+  final dynamic data;
+  final DateTime timestamp;
+
+  TaskEvent({
+    required this.taskId,
+    required this.type,
+    this.data,
+  }) : timestamp = DateTime.now();
+}
 
 class TaskItem {
   final String id;
@@ -26,6 +41,7 @@ class TaskItem {
   final int? modelDbId;   // New internal ID
   final String? channelTag;
   final int? channelColor;
+  final bool useStream;
   TaskStatus status;
   List<String> logs;
   List<String> resultPaths;
@@ -42,6 +58,7 @@ class TaskItem {
     this.channelTag,
     this.channelColor,
     required this.parameters,
+    this.useStream = true,
     this.status = TaskStatus.pending,
     List<String>? logs,
     List<String>? resultPaths,
@@ -64,6 +81,7 @@ class TaskItem {
       'model_pk': modelDbId,
       'channel_tag': channelTag,
       'channel_color': channelColor,
+      'use_stream': useStream ? 1 : 0,
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
@@ -81,6 +99,7 @@ class TaskItem {
       modelDbId: map['model_pk'] as int?,
       channelTag: map['channel_tag'] as String?,
       channelColor: map['channel_color'] as int?,
+      useStream: (map['use_stream'] ?? 1) == 1,
       status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
       parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
       resultPaths: List<String>.from(jsonDecode(map['result_path'])),
@@ -96,6 +115,19 @@ class TaskQueueService extends ChangeNotifier {
   int _runningCount = 0;
   final _uuid = const Uuid();
   Timer? _progressTimer;
+  
+  // Event stream for real-time subscriptions
+  final _eventController = StreamController<TaskEvent>.broadcast();
+  Stream<TaskEvent> get eventStream => _eventController.stream;
+
+  /// Returns a stream of events filtered by a specific task ID
+  Stream<TaskEvent> subscribeToTask(String taskId) {
+    return eventStream.where((event) => event.taskId == taskId);
+  }
+
+  void _emit(String taskId, TaskEventType type, [dynamic data]) {
+    _eventController.add(TaskEvent(taskId: taskId, type: type, data: data));
+  }
   
   Function(File)? onTaskCompleted;
   Function(TaskItem)? onTaskFinished;
@@ -117,7 +149,15 @@ class TaskQueueService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addTask(List<String> imagePaths, dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay, TaskType type = TaskType.imageProcess}) async {
+  Future<void> addTask(
+    List<String> imagePaths, 
+    dynamic modelIdentifier, 
+    Map<String, dynamic> params, {
+    String? modelIdDisplay, 
+    TaskType type = TaskType.imageProcess,
+    bool useStream = true,
+    String? id,
+  }) async {
     String modelIdStr = modelIdDisplay ?? modelIdentifier.toString();
     int? modelDbId;
     String? channelTag;
@@ -143,7 +183,7 @@ class TaskQueueService extends ChangeNotifier {
     }
 
     final task = TaskItem(
-      id: _uuid.v4(),
+      id: id ?? _uuid.v4(),
       type: type,
       imagePaths: imagePaths,
       modelId: modelIdStr,
@@ -151,12 +191,18 @@ class TaskQueueService extends ChangeNotifier {
       channelTag: channelTag,
       channelColor: channelColor,
       parameters: params,
+      useStream: useStream,
     );
     if (type == TaskType.imageProcess) {
       task.addLog('Task created for ${imagePaths.length} images using $modelIdStr.');
-    } else {
+    } else if (type == TaskType.imageDownload) {
       task.addLog('Download task created for ${imagePaths.length} URLs.');
+    } else if (type == TaskType.promptRefine) {
+      task.addLog('Prompt refinement task created using $modelIdStr.');
+    } else if (type == TaskType.aiRename) {
+      task.addLog('AI Batch Rename task created for ${imagePaths.length} files using $modelIdStr.');
     }
+    
     _queue.add(task);
     
     // Persist task immediately
@@ -221,6 +267,7 @@ class TaskQueueService extends ChangeNotifier {
 
     task.status = TaskStatus.processing;
     task.startTime = DateTime.now();
+    _emit(task.id, TaskEventType.statusChanged, task.status);
     onLogAdded?.call('Processing task ${task.id.substring(0,8)}...', level: 'RUNNING', taskId: task.id);
     DatabaseService().saveTask(task.toMap());
     notifyListeners();
@@ -230,16 +277,23 @@ class TaskQueueService extends ChangeNotifier {
         await _executeImageProcessTask(task);
       } else if (task.type == TaskType.imageDownload) {
         await _executeDownloadTask(task);
+      } else if (task.type == TaskType.promptRefine) {
+        await _executePromptRefineTask(task);
+      } else if (task.type == TaskType.aiRename) {
+        await _executeAiRenameTask(task);
       }
       
       if (task.status != TaskStatus.cancelled) {
         task.status = TaskStatus.completed;
+        _emit(task.id, TaskEventType.statusChanged, task.status);
         task.addLog('Task completed successfully.');
         onLogAdded?.call('Task ${task.id.substring(0,8)} finished.', level: 'SUCCESS', taskId: task.id);
       }
     } catch (e) {
       if (task.status != TaskStatus.cancelled) {
         task.status = TaskStatus.failed;
+        _emit(task.id, TaskEventType.statusChanged, task.status);
+        _emit(task.id, TaskEventType.error, e.toString());
         task.addLog('Error: ${e.toString()}');
         onLogAdded?.call('Task ${task.id.substring(0,8)} failed: $e', level: 'ERROR', taskId: task.id);
       }
@@ -276,6 +330,23 @@ class TaskQueueService extends ChangeNotifier {
     }
   }
 
+  Future<bool> _shouldUseStream(TaskItem task) async {
+    if (!task.useStream) return false;
+    if (task.modelDbId == null) return true; // Fallback for legacy
+
+    final db = DatabaseService();
+    final models = await db.getModels();
+    final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
+    
+    if (model != null) {
+      if (!model.supportsStream) {
+        task.addLog('Model does not support streaming. Falling back to standard request.');
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> _executeImageProcessTask(TaskItem task) async {
     task.addLog('Start processing with model: ${task.modelDbId ?? task.modelId}');
     
@@ -285,37 +356,54 @@ class TaskQueueService extends ChangeNotifier {
       LLMAttachment.fromFile(File(path), _getMimeType(path))
     ).toList();
 
-    final stream = LLMService().requestStream(
-      modelIdentifier: task.modelDbId ?? task.modelId,
-      messages: [
-        LLMMessage(
-          role: LLMRole.user,
-          content: task.parameters['prompt'] ?? '',
-          attachments: attachments,
-        )
-      ],
-      contextId: task.id,
-      options: task.parameters,
-    );
+    final messages = [
+      LLMMessage(
+        role: LLMRole.user,
+        content: task.parameters['prompt'] ?? '',
+        attachments: attachments,
+      )
+    ];
 
     List<Uint8List> generatedImages = [];
+    final actualUseStream = await _shouldUseStream(task);
 
-    await for (final chunk in stream) {
-      if (task.status == TaskStatus.cancelled) break;
+    if (actualUseStream) {
+      final stream = LLMService().requestStream(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        contextId: task.id,
+        options: task.parameters,
+      );
 
-      if (chunk.textPart != null) {
-        task.addLog('AI: ${chunk.textPart}');
-        notifyListeners();
+      await for (final chunk in stream) {
+        if (task.status == TaskStatus.cancelled) break;
+
+        if (chunk.textPart != null) {
+          _emit(task.id, TaskEventType.textChunk, chunk.textPart);
+          task.addLog('AI: ${chunk.textPart}');
+          notifyListeners();
+        }
+
+        if (chunk.imagePart != null) {
+          generatedImages.add(chunk.imagePart!);
+          task.addLog('Received image chunk.');
+          notifyListeners();
+        }
       }
-
-      if (chunk.imagePart != null) {
-        generatedImages.add(chunk.imagePart!);
-        task.addLog('Received image chunk.');
-        notifyListeners();
+    } else {
+      final response = await LLMService().request(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        useStream: false,
+      );
+      
+      if (response.text.isNotEmpty) {
+        _emit(task.id, TaskEventType.textChunk, response.text);
+        task.addLog('AI: ${response.text}');
       }
     }
 
-    task.addLog('LLM Stream finished.');
+    task.addLog('LLM Task finished.');
 
     if (task.status == TaskStatus.cancelled) return;
 
@@ -329,10 +417,140 @@ class TaskQueueService extends ChangeNotifier {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
       task.resultPaths.add(filePath);
+      _emit(task.id, TaskEventType.imageResult, filePath);
       task.addLog('Saved result image to: $filePath');
       
       onTaskCompleted?.call(file);
     }
+  }
+
+  Future<void> _executePromptRefineTask(TaskItem task) async {
+    task.addLog('Start prompt refinement.');
+    
+    final messages = <LLMMessage>[];
+    if (task.parameters['systemPrompt'] != null) {
+      messages.add(LLMMessage(role: LLMRole.system, content: task.parameters['systemPrompt']));
+    }
+    
+    final attachments = task.imagePaths.map((path) => 
+      LLMAttachment.fromFile(File(path), _getMimeType(path))
+    ).toList();
+
+    messages.add(LLMMessage(
+      role: LLMRole.user, 
+      content: task.parameters['roughPrompt'] ?? '',
+      attachments: attachments,
+    ));
+
+    String resultText = "";
+    final actualUseStream = await _shouldUseStream(task);
+
+    if (actualUseStream) {
+      final stream = LLMService().requestStream(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        contextId: task.id,
+      );
+
+      await for (final chunk in stream) {
+        if (task.status == TaskStatus.cancelled) break;
+        if (chunk.textPart != null) {
+          resultText += chunk.textPart!;
+          _emit(task.id, TaskEventType.textChunk, chunk.textPart);
+          notifyListeners();
+        }
+      }
+    } else {
+      final response = await LLMService().request(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: messages,
+        useStream: false,
+      );
+      resultText = response.text;
+      _emit(task.id, TaskEventType.textChunk, resultText);
+    }
+
+    if (task.status == TaskStatus.cancelled) return;
+
+    task.parameters['refinedPrompt'] = resultText;
+    task.addLog('Refinement complete.');
+  }
+
+  Future<void> _executeAiRenameTask(TaskItem task) async {
+    task.addLog('Start AI Batch Rename for ${task.imagePaths.length} files.');
+    
+    final instructions = task.parameters['instructions'] ?? '';
+    final filesData = task.parameters['filesData'] as List<dynamic>;
+
+    String prompt;
+    if (instructions.contains('# Role') || instructions.contains('# Task')) {
+      prompt = "$instructions\n\nFiles to rename (Context):\n${jsonEncode(filesData)}";
+    } else {
+      prompt = """
+You are a professional file renaming assistant. 
+Instructions: $instructions
+
+Files to rename:
+${jsonEncode(filesData)}
+
+Output ONLY a valid JSON array of objects, where each object has 'path' and 'new_name' keys.
+Example: [{"path": "...", "new_name": "..."}]
+Do not include any other text or markdown formatting.
+""";
+    }
+
+    String jsonText = "";
+    final actualUseStream = await _shouldUseStream(task);
+
+    if (actualUseStream) {
+      final stream = LLMService().requestStream(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: [LLMMessage(role: LLMRole.user, content: prompt)],
+        contextId: task.id,
+      );
+
+      await for (final chunk in stream) {
+        if (task.status == TaskStatus.cancelled) break;
+        if (chunk.textPart != null) {
+          jsonText += chunk.textPart!;
+        }
+      }
+    } else {
+      final response = await LLMService().request(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        messages: [LLMMessage(role: LLMRole.user, content: prompt)],
+        useStream: false,
+      );
+      jsonText = response.text;
+    }
+
+    if (task.status == TaskStatus.cancelled) return;
+
+    _emit(task.id, TaskEventType.textChunk, jsonText);
+
+    // Parse and apply renames
+    jsonText = jsonText.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.substring(7, jsonText.length - 3).trim();
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.substring(3, jsonText.length - 3).trim();
+    }
+
+    final List<dynamic> suggestions = jsonDecode(jsonText);
+    
+    for (var s in suggestions) {
+      final oldPath = s['path'] as String;
+      final newName = s['new_name'] as String;
+      final oldFile = File(oldPath);
+      final newPath = p.join(p.dirname(oldPath), newName);
+
+      if (await oldFile.exists()) {
+        await oldFile.rename(newPath);
+        task.addLog('Renamed: ${p.basename(oldPath)} -> $newName');
+      }
+    }
+    
+    task.addLog('AI Rename complete.');
   }
 
   Future<void> _executeDownloadTask(TaskItem task) async {
@@ -375,6 +593,8 @@ class TaskQueueService extends ChangeNotifier {
         final file = File(filePath);
         await file.writeAsBytes(bytes);
         task.resultPaths.add(filePath);
+        _emit(task.id, TaskEventType.imageResult, filePath);
+        _emit(task.id, TaskEventType.progress, (i + 1) / task.imagePaths.length);
         task.addLog('Saved to: $filePath');
         
         onTaskCompleted?.call(file);

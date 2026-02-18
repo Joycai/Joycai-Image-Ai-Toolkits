@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -11,6 +13,7 @@ import '../../models/prompt.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_service.dart';
 import '../../services/llm/llm_types.dart';
+import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/chat_model_selector.dart';
 
@@ -28,11 +31,68 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   int? _selectedModelDbId;
   List<Map<String, String>> _proposedRenames = [];
   Map<String, String> _conflicts = {};
+  StreamSubscription? _taskSubscription;
+  String? _currentTaskId;
 
   @override
   void initState() {
     super.initState();
     _loadLastSettings();
+    
+    // Setup task subscription
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      _taskSubscription = taskService.eventStream.listen((event) {
+        if (_currentTaskId == null || event.taskId != _currentTaskId) return;
+
+        if (event.type == TaskEventType.textChunk) {
+          _handleTaskJsonUpdate(event.data as String);
+        } else if (event.type == TaskEventType.statusChanged) {
+          if (event.data == TaskStatus.completed || event.data == TaskStatus.failed || event.data == TaskStatus.cancelled) {
+            if (mounted) setState(() => _isProcessing = false);
+          }
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _taskSubscription?.cancel();
+    _instructionController.dispose();
+    super.dispose();
+  }
+
+  void _handleTaskJsonUpdate(String jsonText) {
+    try {
+      String cleanJson = jsonText.trim();
+      if (cleanJson.startsWith('```json')) {
+        cleanJson = cleanJson.substring(7, cleanJson.length - 3).trim();
+      } else if (cleanJson.startsWith('```')) {
+        cleanJson = cleanJson.substring(3, cleanJson.length - 3).trim();
+      }
+
+      final List<dynamic> suggestions = jsonDecode(cleanJson);
+      final List<Map<String, String>> proposed = [];
+
+      for (var s in suggestions) {
+        proposed.add({
+          'path': s['path'] as String,
+          'old_name': p.basename(s['path'] as String),
+          'new_name': s['new_name'] as String,
+        });
+      }
+
+      _detectConflicts(proposed).then((_) {
+        if (mounted) {
+          setState(() {
+            _proposedRenames = proposed;
+          });
+        }
+      });
+    } catch (_) {
+      // JSON might be partial or invalid during streaming, ignore
+    }
   }
 
   Future<void> _loadLastSettings() async {
@@ -245,25 +305,43 @@ Do not include any other text or markdown formatting.
     
     setState(() => _isProcessing = true);
     try {
-      for (var item in _proposedRenames) {
-        final oldFile = File(item['path']!);
-        final newPath = p.join(p.dirname(item['path']!), item['new_name']!);
-        if (await oldFile.exists()) {
-          await oldFile.rename(newPath);
-        }
-      }
+      final List<Map<String, String>> filesData = appState.fileBrowserState.selectedFiles.map((f) => {
+        'original_name': f.name,
+        'path': f.path,
+        'category': f.category.name,
+      }).toList();
+
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      final taskId = const Uuid().v4();
+      
+      setState(() {
+        _currentTaskId = taskId;
+        _isProcessing = true; // Ensure UI reflects processing immediately
+      });
+
+      // Submit to queue
+      await taskService.addTask(
+        appState.fileBrowserState.selectedFiles.map((f) => f.path).toList(),
+        _selectedModelDbId,
+        {
+          'instructions': _instructionController.text,
+          'filesData': filesData,
+        },
+        type: TaskType.aiRename,
+        useStream: false, 
+        id: taskId,
+      );
       
       if (mounted) {
         Navigator.pop(context);
-        appState.fileBrowserState.refresh();
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
+          SnackBar(content: Text(l10n.taskSubmitted), backgroundColor: Colors.blue),
         );
       }
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
+          SnackBar(content: Text("Failed to start task: $e"), backgroundColor: Colors.red),
         );
         setState(() => _isProcessing = false);
       }

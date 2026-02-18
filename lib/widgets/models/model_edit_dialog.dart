@@ -30,6 +30,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   int? channelId;
   late String tag;
   int? feeGroupId;
+  late bool supportsStream;
+  late bool supportsStandard;
 
   @override
   void initState() {
@@ -41,6 +43,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     channelId = model?.channelId ?? widget.preChannelId ?? (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
     tag = model?.tag ?? 'chat';
     feeGroupId = model?.feeGroupId;
+    supportsStream = model?.supportsStream ?? true;
+    supportsStandard = model?.supportsStandard ?? true;
   }
 
   @override
@@ -121,6 +125,26 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           ),
           
           const SizedBox(height: 24),
+          _buildSectionHeader("Capabilities"),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            title: const Text("Supports Streaming", style: TextStyle(fontSize: 13)),
+            subtitle: const Text("Enable if the model supports server-sent events", style: TextStyle(fontSize: 11)),
+            value: supportsStream, 
+            onChanged: (v) => setState(() => supportsStream = v),
+            secondary: const Icon(Icons.stream),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: const Text("Supports Standard Request", style: TextStyle(fontSize: 13)),
+            subtitle: const Text("Enable for standard JSON/REST requests", style: TextStyle(fontSize: 11)),
+            value: supportsStandard, 
+            onChanged: (v) => setState(() => supportsStandard = v),
+            secondary: const Icon(Icons.http),
+            contentPadding: EdgeInsets.zero,
+          ),
+
+          const SizedBox(height: 24),
           _buildSectionHeader(l10n.billing),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
@@ -173,6 +197,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               'type': channel.type.contains('google') ? 'google-genai' : 'openai-api',
               'tag': tag,
               'is_paid': 1,
+              'supports_stream': supportsStream ? 1 : 0,
+              'supports_standard': supportsStandard ? 1 : 0,
               'fee_group_id': feeGroupId,
               'channel_id': channelId,
             };

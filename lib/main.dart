@@ -21,6 +21,7 @@ import 'services/llm/model_discovery_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
+import 'services/task_queue_service.dart';
 import 'state/app_state.dart';
 import 'widgets/task_capsule_monitor.dart';
 
@@ -44,6 +45,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider<TaskQueueService>.value(value: appState.taskQueue),
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.fileBrowserState),
         ChangeNotifierProvider.value(value: appState.downloaderState),

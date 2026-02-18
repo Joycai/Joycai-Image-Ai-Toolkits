@@ -389,6 +389,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         'type': widget.config.type,
         'tag': _inferTag(m),
         'is_paid': 1,
+        'supports_stream': 1,
+        'supports_standard': 1,
         'sort_order': widget.appState.allModels.length,
         'channel_id': widget.channel.id,
       });

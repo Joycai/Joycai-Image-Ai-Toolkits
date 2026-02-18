@@ -43,12 +43,13 @@ class DatabaseMigration {
     if (oldVersion < 23) {
        // Handled by DatabaseService.syncPresets()
     }
+    if (oldVersion < 24) await _createV24Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
     await db.execute('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
     await db.execute('CREATE TABLE source_directories (path TEXT PRIMARY KEY, is_selected INTEGER DEFAULT 1)');
-    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT "imageProcess")');
+    await db.execute('CREATE TABLE tasks (id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT, result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT, type TEXT DEFAULT "imageProcess", use_stream INTEGER DEFAULT 1)');
     
     await _createV2Tables(db);
     await _createV3Tables(db);
@@ -67,7 +68,14 @@ class DatabaseMigration {
     await _createV19Tables(db);
     await _createV20Tables(db);
     await _createV22Tables(db);
+    await _createV24Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV24Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'supports_stream', 'INTEGER DEFAULT 1');
+    await _addColumnIfNotExists(db, 'llm_models', 'supports_standard', 'INTEGER DEFAULT 1');
+    await _addColumnIfNotExists(db, 'tasks', 'use_stream', 'INTEGER DEFAULT 1');
   }
 
   static Future<void> _createV22Tables(Database db) async {
