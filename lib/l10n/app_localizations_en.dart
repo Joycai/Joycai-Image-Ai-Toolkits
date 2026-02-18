@@ -1311,6 +1311,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelAfter => 'AFTER';
 
   @override
+  String get cropAndResize => 'Crop & Resize';
+
+  @override
+  String get overwriteSource => 'Overwrite Original';
+
+  @override
+  String get overwriteConfirmTitle => 'Overwrite Original File?';
+
+  @override
+  String get overwriteConfirmMessage =>
+      'This action will permanently replace the original file. Are you sure?';
+
+  @override
+  String get saveToTempSuccess => 'Image saved to temporary workspace';
+
+  @override
+  String get overwriteSuccess => 'Original file updated';
+
+  @override
+  String get custom => 'Custom';
+
+  @override
+  String get resize => 'Resize';
+
+  @override
+  String get maintainAspectRatio => 'Maintain Aspect Ratio';
+
+  @override
+  String get width => 'Width';
+
+  @override
+  String get height => 'Height';
+
+  @override
+  String get sampling => 'Sampling';
+
+  @override
   String get drawMask => 'Draw Mask';
 
   @override

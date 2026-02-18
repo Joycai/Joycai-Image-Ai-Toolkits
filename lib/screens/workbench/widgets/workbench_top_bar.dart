@@ -49,6 +49,7 @@ class WorkbenchTopBar extends StatelessWidget {
                     Tab(child: _buildTabLabel(Icons.image, l10n.imageProcessing, isNarrow)),
                     Tab(child: _buildTabLabel(Icons.compare, l10n.comparator, isNarrow)),
                     Tab(child: _buildTabLabel(Icons.brush, l10n.maskEditor, isNarrow)),
+                    Tab(child: _buildTabLabel(Icons.crop, l10n.cropAndResize, isNarrow)),
                     Tab(child: _buildTabLabel(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow)),
                   ],
                 ),

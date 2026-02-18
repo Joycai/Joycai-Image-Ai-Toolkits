@@ -72,4 +72,39 @@ class WorkbenchUIState extends ChangeNotifier {
     maskEditorSourceImage = image;
     notifyListeners();
   }
+
+  void setCropResizeSourceImage(AppImage? image) {
+    cropResizeSourceImage = image;
+    notifyListeners();
+  }
+
+  // Crop & Resize State
+  AppImage? cropResizeSourceImage;
+  double? cropAspectRatio; 
+  int? targetWidth;
+  int? targetHeight;
+  bool maintainAspectRatio = true;
+  String samplingMethod = 'lanczos';
+  final GlobalKey<State> cropKey = GlobalKey<State>();
+
+  void setCropAspectRatio(double? ratio) {
+    cropAspectRatio = ratio;
+    notifyListeners();
+  }
+
+  void setTargetDimensions(int? width, int? height) {
+    targetWidth = width;
+    targetHeight = height;
+    notifyListeners();
+  }
+
+  void setMaintainAspectRatio(bool maintain) {
+    maintainAspectRatio = maintain;
+    notifyListeners();
+  }
+
+  void setSamplingMethod(String method) {
+    samplingMethod = method;
+    notifyListeners();
+  }
 }

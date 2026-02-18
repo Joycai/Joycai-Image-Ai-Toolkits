@@ -2522,6 +2522,78 @@ abstract class AppLocalizations {
   /// **'AFTER'**
   String get labelAfter;
 
+  /// No description provided for @cropAndResize.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop & Resize'**
+  String get cropAndResize;
+
+  /// No description provided for @overwriteSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite Original'**
+  String get overwriteSource;
+
+  /// No description provided for @overwriteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite Original File?'**
+  String get overwriteConfirmTitle;
+
+  /// No description provided for @overwriteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will permanently replace the original file. Are you sure?'**
+  String get overwriteConfirmMessage;
+
+  /// No description provided for @saveToTempSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image saved to temporary workspace'**
+  String get saveToTempSuccess;
+
+  /// No description provided for @overwriteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Original file updated'**
+  String get overwriteSuccess;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
+
+  /// No description provided for @resize.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize'**
+  String get resize;
+
+  /// No description provided for @maintainAspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain Aspect Ratio'**
+  String get maintainAspectRatio;
+
+  /// No description provided for @width.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get width;
+
+  /// No description provided for @height.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get height;
+
+  /// No description provided for @sampling.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling'**
+  String get sampling;
+
   /// No description provided for @drawMask.
   ///
   /// In en, this message translates to:

@@ -36,6 +36,8 @@ dependencies:
   image_size_getter: ^2.4.1
   google_fonts: ^8.0.1
   gal: ^2.3.2
+  image: ^4.2.0
+  extended_image: ^10.0.1
 
 dev_dependencies:
   flutter_test:

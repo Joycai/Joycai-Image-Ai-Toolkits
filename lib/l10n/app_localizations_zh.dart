@@ -1221,7 +1221,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectAModel => '选择一个模型';
 
   @override
-  String get aspectRatio => '宽高比';
+  String get aspectRatio => '比例';
 
   @override
   String get resolution => '分辨率';
@@ -1284,6 +1284,42 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get labelAfter => '效果图';
+
+  @override
+  String get cropAndResize => '裁剪与缩放';
+
+  @override
+  String get overwriteSource => '覆盖原图';
+
+  @override
+  String get overwriteConfirmTitle => '确定覆盖原图？';
+
+  @override
+  String get overwriteConfirmMessage => '此操作将永久修改原始文件，确定要继续吗？';
+
+  @override
+  String get saveToTempSuccess => '已保存至临时工作区';
+
+  @override
+  String get overwriteSuccess => '原图已更新';
+
+  @override
+  String get custom => '自定义';
+
+  @override
+  String get resize => '缩放';
+
+  @override
+  String get maintainAspectRatio => '保持纵横比';
+
+  @override
+  String get width => '宽度';
+
+  @override
+  String get height => '高度';
+
+  @override
+  String get sampling => '采样方式';
 
   @override
   String get drawMask => '绘制蒙版';

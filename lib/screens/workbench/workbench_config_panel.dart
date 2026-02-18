@@ -115,9 +115,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
     final appState = Provider.of<AppState>(context);
     
-    // Keep controllers in sync if state changes externally (e.g. prompt refiner apply)
-    // BUT only if we are NOT currently on the refiner tab to avoid overriding work-in-progress
-    if (appState.workbenchTabIndex != 1 && _promptController.text != lastPrompt) {
+    // BUT only if we are NOT currently on the optimizer tab to avoid overriding work-in-progress
+    if (appState.workbenchTabIndex != 4 && _promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
         text: lastPrompt,
         selection: TextSelection.collapsed(offset: lastPrompt.length),
@@ -241,7 +240,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                               appState.selectedImages,
                             );
                             
-                            appState.setWorkbenchTab(3);
+                            appState.setWorkbenchTab(4);
                             
                             if (widget.scrollController != null) {
                               Navigator.pop(context);

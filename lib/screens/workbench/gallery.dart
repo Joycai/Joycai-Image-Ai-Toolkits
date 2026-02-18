@@ -337,6 +337,12 @@ class _ImageCardState extends State<_ImageCard> {
                             onPressed: () => _handleMask(context),
                             tooltip: 'Mask',
                           ),
+                          const SizedBox(width: 4),
+                          _buildOverlayButton(
+                            icon: Icons.crop,
+                            onPressed: () => _handleCrop(context),
+                            tooltip: 'Crop',
+                          ),
                         ],
                       ),
                     ),
@@ -398,6 +404,13 @@ class _ImageCardState extends State<_ImageCard> {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
     appState.setWorkbenchTab(2); // Mask Editor
+  }
+
+  void _handleCrop(BuildContext context) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    workbenchUIState.setCropResizeSourceImage(widget.imageFile);
+    appState.setWorkbenchTab(3); // Crop Tab
   }
 
   Future<void> _saveFile(BuildContext context, String sourcePath, String fileName, AppLocalizations l10n) async {
@@ -473,6 +486,17 @@ class _ImageCardState extends State<_ImageCard> {
           onTap: () {
             workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
             appState.setWorkbenchTab(2); // Mask Editor
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.crop_outlined, size: 18),
+            title: Text(l10n.cropAndResize),
+            dense: true,
+          ),
+          onTap: () {
+            workbenchUIState.setCropResizeSourceImage(widget.imageFile);
+            appState.setWorkbenchTab(3); // Crop & Resize Tab
           },
         ),
 

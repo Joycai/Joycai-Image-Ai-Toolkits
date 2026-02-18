@@ -25,6 +25,8 @@ import '../../widgets/unified_sidebar.dart';
 import 'gallery.dart';
 import 'widgets/comparator_toolbar.dart';
 import 'widgets/comparator_view.dart';
+import 'widgets/crop_resize_toolbar.dart';
+import 'widgets/crop_resize_view.dart';
 import 'widgets/gallery_toolbar.dart';
 import 'widgets/mask_editor_toolbar.dart';
 import 'widgets/mask_editor_view.dart';
@@ -301,9 +303,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _initTabController() {
     if (_appState == null) return;
-    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 3);
+    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 4);
     
-    _tabController = TabController(length: 4, vsync: this, initialIndex: _lastKnownTabIndex);
+    _tabController = TabController(length: 5, vsync: this, initialIndex: _lastKnownTabIndex);
     
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -325,7 +327,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.length != 4) {
+    if (_tabController.length != 5) {
        _tabController.dispose();
        _initTabController();
     }
@@ -404,7 +406,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showRightPanel = false;
         showLeftPanel = false;
         break;
-      case 3: // Prompt Optimizer
+      case 3: // Crop & Resize
+        centerContent = const Column(
+          children: [
+            CropResizeToolbar(),
+            Expanded(child: CropResizeView()),
+          ],
+        );
+        showRightPanel = false;
+        showLeftPanel = false;
+        break;
+      case 4: // Prompt Optimizer
         final taskService = Provider.of<TaskQueueService>(context);
         final isRefining = taskService.queue.any((t) => t.type == TaskType.promptRefine && t.status == TaskStatus.processing);
 
