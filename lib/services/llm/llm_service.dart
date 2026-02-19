@@ -53,12 +53,14 @@ class LLMService {
           List<Uint8List> accumulatedImages = [];
           Map<String, dynamic>? finalMetadata;
 
-          await for (final chunk in provider.generateStream(
+          final stream = provider.generateStream(
             config, 
             fullHistory, 
             options: options, 
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          )) {
+          );
+
+          await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
             if (chunk.textPart != null) {
               accumulatedText += chunk.textPart!;
               onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
@@ -96,7 +98,7 @@ class LLMService {
             fullHistory,
             options: options,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          );
+          ).timeout(const Duration(seconds: 120));
           if (response.text.isNotEmpty) {
             onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
           }
@@ -181,7 +183,14 @@ class LLMService {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
         
-        await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId))) {
+        final stream = provider.generateStream(
+          config, 
+          fullHistory, 
+          options: options, 
+          logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+        );
+
+        await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
           if (chunk.textPart != null) {
             accumulatedText += chunk.textPart!;
             onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);

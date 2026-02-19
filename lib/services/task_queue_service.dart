@@ -143,6 +143,7 @@ class TaskQueueService extends ChangeNotifier {
 
   Future<void> _loadRecentTasks() async {
     final db = DatabaseService();
+    await db.cleanupStuckTasks();
     final tasks = await db.getRecentTasks(10);
     _queue.clear();
     _queue.addAll(tasks.map((t) => TaskItem.fromMap(t)).toList().reversed);
@@ -563,7 +564,7 @@ Do not include any other text or markdown formatting.
     final prefix = task.parameters['prefix'] ?? 'download';
     
     final client = HttpClient();
-    // Configure client if needed (e.g. proxy)
+    client.connectionTimeout = const Duration(seconds: 30);
 
     for (int i = 0; i < task.imagePaths.length; i++) {
       if (task.status == TaskStatus.cancelled) break;
@@ -573,17 +574,17 @@ Do not include any other text or markdown formatting.
       notifyListeners();
 
       try {
-        final request = await client.getUrl(Uri.parse(url));
+        final request = await client.getUrl(Uri.parse(url)).timeout(const Duration(seconds: 30));
         if (formattedCookies.isNotEmpty) {
           request.headers.add(HttpHeaders.cookieHeader, formattedCookies);
         }
         
-        final response = await request.close();
+        final response = await request.close().timeout(const Duration(seconds: 30));
         if (response.statusCode != 200) {
           throw Exception('Failed to download image: ${response.statusCode}');
         }
 
-        final bytes = await response.fold<List<int>>([], (p, e) => p..addAll(e));
+        final bytes = await response.timeout(const Duration(seconds: 60)).fold<List<int>>([], (p, e) => p..addAll(e));
         
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final extension = _getExtensionFromUrl(url);

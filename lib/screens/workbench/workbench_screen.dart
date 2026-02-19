@@ -459,7 +459,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             return WorkbenchConfigPanel(scrollController: scrollController);
           case 1:
             return MetadataInspector(scrollController: scrollController);
-          case 3:
+          case 4:
             return OptimizerConfigPanel(
               scrollController: scrollController,
               selectedModelDbId: _optSelectedModelDbId,

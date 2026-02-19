@@ -25,16 +25,16 @@ class PromptOptimizerView extends StatelessWidget {
         final isNarrow = constraints.maxWidth < 600;
         
         if (isNarrow) {
-          return SingleChildScrollView(
+          return Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildInputSection(l10n, appState, true),
+                Expanded(flex: 2, child: _buildInputSection(l10n, appState, true)),
                 const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Icon(Icons.arrow_downward_rounded, color: Colors.grey),
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Icon(Icons.arrow_downward_rounded, color: Colors.grey, size: 20),
                 ),
-                _buildOutputSection(l10n, appState, true),
+                Expanded(flex: 3, child: _buildOutputSection(l10n, appState, true)),
               ],
             ),
           );
@@ -66,7 +66,7 @@ class PromptOptimizerView extends StatelessWidget {
       onMarkdownChanged: (v) => appState.setIsMarkdownRefinerSource(v),
       maxLines: isNarrow ? 8 : 25,
       initiallyPreview: false,
-      expand: !isNarrow,
+      expand: true,
     );
   }
 
@@ -79,7 +79,7 @@ class PromptOptimizerView extends StatelessWidget {
       maxLines: isNarrow ? 12 : 25,
       initiallyPreview: true,
       isRefined: true,
-      expand: !isNarrow,
+      expand: true,
     );
   }
 }

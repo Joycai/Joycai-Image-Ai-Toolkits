@@ -139,6 +139,7 @@ class DatabaseService {
   Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
   Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);
+  Future<void> cleanupStuckTasks() => TaskRepository().cleanupStuckTasks();
   Future<List<double>> getTaskDurations(int modelDbId, int limit) => TaskRepository().getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
