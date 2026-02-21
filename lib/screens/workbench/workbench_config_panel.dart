@@ -23,7 +23,7 @@ class WorkbenchConfigPanel extends StatefulWidget {
 }
 
 class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
-  late TextEditingController _promptController;
+  late MarkdownTextEditingController _promptController;
   late TextEditingController _prefixController;
   
   bool _isModelSettingsExpanded = false;
@@ -35,7 +35,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   void initState() {
     super.initState();
     final appState = Provider.of<AppState>(context, listen: false);
-    _promptController = TextEditingController(text: appState.lastPrompt);
+    _promptController = MarkdownTextEditingController(text: appState.lastPrompt);
     _prefixController = TextEditingController(text: appState.imagePrefix);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrompts());
   }

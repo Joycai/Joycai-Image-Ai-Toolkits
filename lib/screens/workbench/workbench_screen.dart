@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../widgets/markdown_editor.dart';
 import '../../core/app_paths.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -64,8 +65,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   Offset? _maskMousePosition;
   
   // Prompt Optimizer State
-  late TextEditingController _optCurrentPromptCtrl;
-  final TextEditingController _optRefinedPromptCtrl = TextEditingController();
+  late MarkdownTextEditingController _optCurrentPromptCtrl;
+  final MarkdownTextEditingController _optRefinedPromptCtrl = MarkdownTextEditingController();
   List<SystemPrompt> _optAllSysPrompts = [];
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
@@ -78,7 +79,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   void initState() {
     super.initState();
     // We'll initialize _appState in didChangeDependencies
-    _optCurrentPromptCtrl = TextEditingController();
+    _optCurrentPromptCtrl = MarkdownTextEditingController();
   }
 
   @override

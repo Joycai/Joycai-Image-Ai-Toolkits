@@ -449,11 +449,15 @@ class DatabaseService {
           final List<dynamic>? tags = row['tags'];
           row.remove('tags');
 
-          if (!replace) {
-            final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
-            if (existing.isNotEmpty) continue;
+          final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
+          if (existing.isNotEmpty) {
+            if (!replace) continue;
+            // Delete existing prompt and its tag refs when replacing
+            final existingId = existing.first['id'] as int;
+            await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [existingId]);
+            await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
           }
-          
+
           final newPromptId = await txn.insert('system_prompts', row);
           if (tags != null) {
             for (var t in tags) {

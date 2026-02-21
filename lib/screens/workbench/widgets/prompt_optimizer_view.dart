@@ -6,8 +6,8 @@ import '../../../state/app_state.dart';
 import '../../../widgets/markdown_editor.dart';
 
 class PromptOptimizerView extends StatelessWidget {
-  final TextEditingController currentPromptCtrl;
-  final TextEditingController refinedPromptCtrl;
+  final MarkdownTextEditingController currentPromptCtrl;
+  final MarkdownTextEditingController refinedPromptCtrl;
 
   const PromptOptimizerView({
     super.key,

@@ -567,7 +567,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
     String selectedType = prompt?.type ?? _selectedSystemType;
 
@@ -650,7 +650,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     label: l10n.promptContent,
                     isMarkdown: isMarkdown,
                     onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                    initiallyPreview: true,
+                    initiallyPreview: false,
                   ),
                 ],
               ),
@@ -689,7 +689,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
 
     final Set<int> selectedTagIds = {};
@@ -764,7 +764,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     label: l10n.promptContent,
                     isMarkdown: isMarkdown,
                     onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                    initiallyPreview: true,
+                    initiallyPreview: false,
                   ),
                 ],
               ),
