@@ -46,6 +46,13 @@ class WorkbenchUIState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearOptimizerTransfer() {
+    optimizerRoughPrompt = "";
+    // Note: We might want to keep the images as reference in the sidebar
+    // so we only clear the prompt "signal" that triggers the overwrite.
+    notifyListeners();
+  }
+
   // Comparator Methods
   void sendToComparator(String path, {bool isAfter = false}) {
     if (isAfter) {

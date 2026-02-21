@@ -51,6 +51,7 @@ class WorkbenchScreen extends StatefulWidget {
 class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   AppState? _appState;
+  WorkbenchUIState? _workbenchUIState;
   int _lastKnownTabIndex = 0;
   StreamSubscription? _taskSubscription;
   String? _activeRefineTaskId;
@@ -80,6 +81,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.initState();
     // We'll initialize _appState in didChangeDependencies
     _optCurrentPromptCtrl = MarkdownTextEditingController();
+    _optCurrentPromptCtrl.addListener(_onOptCurrentPromptChanged);
+  }
+
+  void _onOptCurrentPromptChanged() {
+    if (_appState != null && _optCurrentPromptCtrl.text != _appState!.lastPrompt) {
+      _appState!.updateWorkbenchConfig(prompt: _optCurrentPromptCtrl.text);
+    }
   }
 
   @override
@@ -93,8 +101,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       _appState!.addListener(_onAppStateChanged);
       
       // Listen for manual data send from UI State
-      final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-      workbenchUIState.addListener(_onWorkbenchUIChanged);
+      _workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+      _workbenchUIState!.addListener(_onWorkbenchUIChanged);
       
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       _taskSubscription?.cancel();
@@ -121,13 +129,13 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     
     // If we have a fresh manual data transfer
-    if (workbenchUIState.optimizerRoughPrompt.isNotEmpty || workbenchUIState.optimizerReferenceImages.isNotEmpty) {
+    if (workbenchUIState.optimizerRoughPrompt.isNotEmpty) {
       setState(() {
         _optCurrentPromptCtrl.text = workbenchUIState.optimizerRoughPrompt;
         // The images are used by the sidebar reference panel via Provider
       });
-      // Optionally reset the trigger in UI State if needed, 
-      // but keeping it as is allows the optimizer to hold the "last sent" data.
+      // Reset the trigger in UI State to prevent overwriting on subsequent refreshes
+      workbenchUIState.clearOptimizerTransfer();
     }
   }
 
@@ -320,7 +328,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    _optCurrentPromptCtrl.removeListener(_onOptCurrentPromptChanged);
+    _optCurrentPromptCtrl.dispose();
+    _optRefinedPromptCtrl.dispose();
     _appState?.removeListener(_onAppStateChanged);
+    _workbenchUIState?.removeListener(_onWorkbenchUIChanged);
     _taskSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
