@@ -5,6 +5,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../color_picker_widget.dart';
 
 class ChannelWizardDialog extends StatefulWidget {
   final AppLocalizations l10n;
@@ -335,7 +336,6 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   Widget _buildConfigStep(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
     return _buildStepContainer(
       children: [
         TextField(
@@ -366,29 +366,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           ),
         ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: AppConstants.tagColors.map((color) {
-            final isSelected = _tagColor == color.toARGB32();
-            return InkWell(
-              onTap: () => setState(() => _tagColor = color.toARGB32()),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? colorScheme.onSurface : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-                child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-              ),
-            );
-          }).toList(),
+        ColorPickerWidget(
+          selectedColor: _tagColor,
+          onColorChanged: (color) {
+            setState(() => _tagColor = color);
+          },
+          showHexInput: true,
+          showColorWheel: true,
         ),
       ],
     );

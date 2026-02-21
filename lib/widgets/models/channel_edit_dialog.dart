@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../color_picker_widget.dart';
 
 class ChannelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
@@ -218,29 +219,13 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
                   const SizedBox(height: 16),
                   Text(l10n.tagColor, style: TextStyle(fontSize: 12, color: colorScheme.outline, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: AppConstants.tagColors.map((color) {
-                      final isSelected = tagColor == color.toARGB32();
-                      return InkWell(
-                        onTap: () => setState(() => tagColor = color.toARGB32()),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? colorScheme.onSurface : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-                        ),
-                      );
-                    }).toList(),
+                  ColorPickerWidget(
+                    selectedColor: tagColor,
+                    onColorChanged: (color) {
+                      setState(() => tagColor = color);
+                    },
+                    showHexInput: true,
+                    showColorWheel: true,
                   ),
                 ],
               ),

@@ -112,7 +112,7 @@ class PromptCard extends StatelessWidget {
               _buildTagsList(),
               const SizedBox(width: 8),
             ],
-            
+
             // Reordering actions
             if (onMoveToTop != null || onMoveToBottom != null)
               _buildSortActions(colorScheme),
