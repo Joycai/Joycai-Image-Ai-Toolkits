@@ -1,0 +1,20 @@
+{
+  "setupWizardTitle": "ようこそセットアップ",
+  "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
+  "getStarted": "始める",
+  "stepAppearance": "外観",
+  "stepStorage": "ストレージ",
+  "stepApi": "インテリジェンス (API)",
+  "finish": "完了",
+  "setupCompleteMessage": "すべての準備が整いました！創作をお楽しみください。",
+  "skip": "スキップ",
+  "storageLocationDesc": "生成された画像が保存される場所を選択します。",
+  "addChannelOptional": "最初のAIプロバイダーチャネルを追加します（オプション）。",
+  "configureModelOptional": "新しいチャネルのモデルを設定します（オプション）。",
+  "googleGenAiFree": "Google GenAI (無料)",
+  "googleGenAiPaid": "Google GenAI (有料)",
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "ファイル名のプレフィックス",
+  "openaiEndpointHint": "ヒント: OpenAI互換のエンドポイントは通常「/v1」で終わります",
+  "googleEndpointHint": "ヒント: Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）"
+}

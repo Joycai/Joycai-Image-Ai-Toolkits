@@ -6,11 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/fee_group.dart';
 import '../../models/llm_model.dart';
+import '../../models/pricing_group.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
-import '../../widgets/fee_group_manager.dart';
+import '../../widgets/pricing_group_manager.dart';
 
 class TokenUsageScreen extends StatefulWidget {
   const TokenUsageScreen({super.key});
@@ -43,7 +43,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1000),
-                child: const FeeGroupManager(mode: FeeGroupManagerMode.section),
+                child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
               ),
             ),
           ],
@@ -163,6 +163,31 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
     _loadData(reset: true);
   }
 
+  void _confirmClearAll() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.clearAllUsage),
+        content: Text(l10n.clearUsageWarning),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              await _db.clearTokenUsage();
+              if (context.mounted) {
+                Navigator.pop(context);
+                _loadData(reset: true);
+              }
+            },
+            child: Text(l10n.clearAll),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -191,6 +216,11 @@ class _UsageViewMobileState extends State<_UsageViewMobile> {
                 ),
               ),
               IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: () => _loadData(reset: true)),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined, size: 20, color: Colors.red), 
+                onPressed: _confirmClearAll,
+                tooltip: l10n.clearAll,
+              ),
             ],
           ),
         ),
@@ -469,7 +499,7 @@ class _UsageViewDesktopState extends State<_UsageViewDesktop> {
                               spacing: 12,
                               runSpacing: 12,
                               children: _stats.groupCosts.entries.map((e) {
-                                final group = appState.allFeeGroups.cast<FeeGroup?>().firstWhere(
+                                final group = appState.allPricingGroups.cast<PricingGroup?>().firstWhere(
                                   (g) => g?.id == e.key, 
                                   orElse: () => null
                                 );
@@ -771,8 +801,8 @@ _UsageStats _calculateStats(List<Map<String, dynamic>> usageData, List<LLMModel>
     totalRequestCount += reqCount;
     totalCost += cost;
 
-    final modelPk = row['model_pk'] as int?;
-    final groupId = modelPk != null ? modelToGroup[modelPk] : null;
+    final modelDbId = row['model_pk'] as int?;
+    final groupId = modelDbId != null ? modelToGroup[modelDbId] : null;
 
     if (groupId != null) {
       groupCosts[groupId] = (groupCosts[groupId] ?? 0) + cost;

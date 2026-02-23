@@ -1,4 +1,4 @@
-import 'llm_models.dart';
+import 'llm_types.dart';
 
 class DiscoveredModel {
   final String modelId;

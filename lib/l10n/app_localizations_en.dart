@@ -92,6 +92,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applyRenames => 'Apply Renames';
 
   @override
+  String get addToSelection => 'Add to Selection';
+
+  @override
+  String get removeFromSelection => 'Remove from Selection';
+
+  @override
   String imagesSelected(int count) {
     return '$count selected';
   }
@@ -190,6 +196,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming Soon';
 
   @override
+  String get viewAll => 'View All';
+
+  @override
   String get sidebar => 'Sidebar';
 
   @override
@@ -253,6 +262,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyzing => 'Analyzing...';
+
+  @override
+  String get urlRequired => 'Please enter a valid Website URL.';
+
+  @override
+  String get requirementRequired =>
+      'Please enter what images you want to find (Requirements).';
+
+  @override
+  String get manualHtmlRequired =>
+      'Please paste the HTML content in Manual Mode.';
 
   @override
   String get findImages => 'Find Images';
@@ -446,7 +466,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String countModels(int count) {
-    return '$count models';
+    return '$count Models';
   }
 
   @override
@@ -565,6 +585,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectModelsToAdd => 'Select models to add';
 
   @override
+  String get searchModels => 'Search model name or ID...';
+
+  @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get deselectAll => 'Deselect All';
+
+  @override
+  String modelsDiscovered(int count) {
+    return '$count models discovered';
+  }
+
+  @override
   String addSelected(int count) {
     return 'Add Selected ($count)';
   }
@@ -579,6 +613,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String fetchFailed(String error) {
     return 'Failed to fetch models: $error';
   }
+
+  @override
+  String get stepProtocol => 'Choose Protocol';
+
+  @override
+  String get stepProvider => 'Choose Provider';
+
+  @override
+  String get stepApiKey => 'API Key';
+
+  @override
+  String get stepConfig => 'Extra Config';
+
+  @override
+  String get stepPreview => 'Preview';
+
+  @override
+  String get protocolOpenAI => 'OpenAI Compatible (REST)';
+
+  @override
+  String get protocolOpenAIDesc => 'Standard OpenAI REST API compatibility';
+
+  @override
+  String get protocolGoogle => 'Google GenAI (REST)';
+
+  @override
+  String get protocolGoogleDesc => 'Official Google Gemini REST API';
+
+  @override
+  String get providerOpenAIOfficial => 'OpenAI Official';
+
+  @override
+  String get providerGoogleOfficial => 'Google GenAI Official';
+
+  @override
+  String get providerGoogleCompatible => 'Google GenAI (OpenAI Compatible)';
+
+  @override
+  String get providerGoogleCompatibleDesc =>
+      'Google Gemini via OpenAI endpoint';
+
+  @override
+  String get providerCustom => 'Custom Provider';
+
+  @override
+  String get providerCustomDesc => 'Self-hosted or 3rd party provider';
+
+  @override
+  String get customEndpointHint => 'Enter your custom endpoint URL';
+
+  @override
+  String get openaiV1Hint =>
+      'Hint: OpenAI compatible endpoints usually end with \'/v1\'';
+
+  @override
+  String get googleV1BetaHint =>
+      'Hint: Google GenAI endpoints usually end with \'/v1beta\'';
+
+  @override
+  String get enterApiKey => 'Enter your API Key';
+
+  @override
+  String get apiKeyStorageNotice =>
+      'Your key is stored locally and never sent to our servers.';
+
+  @override
+  String get nameHint => 'e.g. My Production API';
+
+  @override
+  String get enableDiscoveryDesc =>
+      'Automatically list available models from this endpoint';
+
+  @override
+  String get tagHint => 'e.g. GPT4, Local, etc.';
+
+  @override
+  String get bindTag => 'Bind Tag';
+
+  @override
+  String get previewReady => 'Ready to add this channel?';
+
+  @override
+  String get feeGroupDesc =>
+      'Define billing standards for models to accurately calculate usage costs.';
+
+  @override
+  String get noFeeGroups => 'No fee groups created yet';
+
+  @override
+  String get pricePerMillion => 'Price per Million Tokens';
+
+  @override
+  String get pricePerRequest => 'Price per Request';
+
+  @override
+  String get tokenBilling => 'Token Billing';
+
+  @override
+  String get requestBilling => 'Request Billing';
 
   @override
   String get model => 'Model';
@@ -763,6 +896,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsImported => 'Settings imported successfully';
+
+  @override
+  String get exportOptions => 'Export Options';
+
+  @override
+  String get includeDirectories => 'Include Directory Config';
+
+  @override
+  String get includeDirectoriesDesc =>
+      'Workbench/Browser directories and output path';
+
+  @override
+  String get includePrompts => 'Include Prompts';
+
+  @override
+  String get includePromptsDesc => 'User and system prompt library';
+
+  @override
+  String get includeUsage => 'Include Usage Metrics';
+
+  @override
+  String get includeUsageDesc => 'API token consumption history';
+
+  @override
+  String get exportNow => 'Export Now';
+
+  @override
+  String get importNow => 'Import Now';
+
+  @override
+  String get importOptions => 'Import Options';
+
+  @override
+  String get notInBackup => 'Not available in backup file';
 
   @override
   String get importSettingsTitle => 'Import Settings?';
@@ -1026,10 +1193,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noResultsYet => 'No results yet';
 
   @override
-  String get selectAll => 'Select All';
+  String get importFromGallery => 'Import from Gallery';
 
   @override
-  String get importFromGallery => 'Import from Gallery';
+  String get takePhoto => 'Take Photo';
 
   @override
   String get clearTempWorkspace => 'Clear Workspace';
@@ -1128,13 +1295,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendToComparator => 'Send to Comparator';
 
   @override
-  String get sendToComparatorRaw => 'Send to Comparator (Raw)';
+  String get sendToComparatorRaw => 'Set as Before (RAW)';
 
   @override
-  String get sendToComparatorAfter => 'Send to Comparator (After)';
+  String get sendToComparatorAfter => 'Set as After (Result)';
 
   @override
-  String get sendToSelection => 'Send to Selection';
+  String get sendToSelection => 'Add to Selection';
+
+  @override
+  String get sendToOptimizer => 'Send to Prompt Optimizer';
+
+  @override
+  String get optimizePromptWithImage => 'Optimize Prompt with Image';
 
   @override
   String get selectFromLibrary => 'Select from Library';
@@ -1149,6 +1322,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelAfter => 'AFTER';
 
   @override
+  String get cropAndResize => 'Crop & Resize';
+
+  @override
+  String get overwriteSource => 'Overwrite Original';
+
+  @override
+  String get overwriteConfirmTitle => 'Overwrite Original File?';
+
+  @override
+  String get overwriteConfirmMessage =>
+      'This action will permanently replace the original file. Are you sure?';
+
+  @override
+  String get saveToTempSuccess => 'Image saved to temporary workspace';
+
+  @override
+  String get overwriteSuccess => 'Original file updated';
+
+  @override
+  String get custom => 'Custom';
+
+  @override
+  String get resize => 'Resize';
+
+  @override
+  String get maintainAspectRatio => 'Maintain Aspect Ratio';
+
+  @override
+  String get width => 'Width';
+
+  @override
+  String get height => 'Height';
+
+  @override
+  String get sampling => 'Sampling';
+
+  @override
   String get drawMask => 'Draw Mask';
 
   @override
@@ -1161,45 +1371,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get maskColor => 'Mask Color';
 
   @override
+  String get maskOpacity => 'Mask Opacity';
+
+  @override
   String get undo => 'Undo';
 
   @override
-  String get saveAndSelect => 'Save & Select';
+  String get saveToTemp => 'Save to Workspace';
 
   @override
-  String get aiSmartMask => 'AI Smart Mask';
+  String get saveMaskToTemp => 'Save Mask to Workspace';
 
   @override
   String get binaryMode => 'Binary Mode';
 
   @override
-  String get maskModel => 'Model';
-
-  @override
-  String maskDetail(int count) {
-    return 'Detail: $count';
-  }
-
-  @override
-  String get maskPromptLabel => 'What to mask?';
-
-  @override
-  String get generating => 'Generating...';
-
-  @override
-  String get generate => 'Generate';
-
-  @override
-  String get maskSaved => 'Mask saved and selected';
+  String get maskSaved => 'Mask saved to workspace';
 
   @override
   String maskSaveError(String error) {
     return 'Error saving mask: $error';
-  }
-
-  @override
-  String maskGenError(String error) {
-    return 'AI Mask generation failed: $error';
   }
 
   @override
@@ -1254,6 +1445,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get iosSandboxDesc =>
       'On iOS, please use the \'Import from Gallery\' button in the top toolbar to add images to your Temporary Workspace.';
+
+  @override
+  String get mobileSandboxActive => 'Mobile Storage Restriction';
+
+  @override
+  String get mobileSandboxDesc =>
+      'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.';
 
   @override
   String get filesAppSuffix => ' (Files App)';

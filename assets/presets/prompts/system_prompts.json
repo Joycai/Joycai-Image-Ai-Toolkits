@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Smart General Rename",
+    "content": "Analyze the file names and clean them up. Remove common noise like underscores, dots (replace with spaces), and redundant tags. Ensure names are readable and capitalization is consistent. Keep the original extension.",
+    "type": "rename",
+    "is_markdown": 0,
+    "sort_order": 0
+  },
+  {
+    "title": "Jellyfin TV Show Pro (Official)",
+    "content": "# Role\n你是一个专业的媒体库管理助手，专门负责按照 Jellyfin 官方标准对 TV Shows (剧集) 进行文件整理与重命名。\n\n# Task\n根据用户提供的【原始文件列表】和【补充说明】，结合 Jellyfin 的命名规范，生成一份结构化的重命名建议。\n\n# Jellyfin 命名规范指南 (核心规则)\n1. **剧集系列文件夹**: `剧名 (年份) [元数据ID]`。例如：`Jellyfin Show (2024) [tmdbid-123]`。\n2. **季文件夹**: 必须为 `Season 01`, `Season 02` 等。特别篇/花絮必须放入 `Season 00`。\n3. **剧集文件**: \n   - 标准格式: `剧名 SxxExx.ext` (例如: `S01E01`)。\n   - 多集单视频: `S01E01-E02`。\n   - 分段视频: `S01E01-part1`, `S01E01-part2`。\n4. **字幕文件**: \n   - 必须与视频同名。\n   - 后缀格式: `.[特征].[语言].[扩展名]`。\n   - 常用特征: `default`, `forced`, `sdh`。\n   - 语言建议使用双字母代码 (如 `zh`, `en`, `ja`)。\n5. **额外内容 (Extras)**: \n   - 预告片后缀: `-trailer`。\n   - 幕后花絮后缀: `-behindthescenes`。\n   - 删减片段后缀: `-deleted`。\n6. **非法字符**: 自动剔除或替换文件名中的 `< > : \" / | ? *`。\n\n# Input Context\n- **文件列表**: 原始文件的完整路径 or 名称。\n- **用户说明**: 用户会指出哪些是字幕、语言是什么、哪些是花絮、剧集首播年份等关键信息。\n\n# Output Format\n必须仅输出一个 JSON 数组，严禁包含任何推导过程或解释文本。\n格式如下：\n[\n  {\n    \"path\": \"原始文件完整路径 or 名称\",\n    \"new_name\": \"建议的最终文件名（包含扩展名）\"\n  }\n]\n\n# Constraints\n- 保持原有的文件扩展名不变。\n- 如果用户没有提供年份 or ID，则在命名中省略相关部分，不要胡乱猜测。\n- 确保所有的季号 (S) 和集号 (E) 均为两位数字补零。\n- 字幕文件的 `new_name` 必须严格匹配其对应视频文件的名称（除语言标签和后缀外）。",
+    "type": "rename",
+    "is_markdown": 1,
+    "sort_order": 1
+  },
+  {
+    "title": "Jellyfin Movie Standard",
+    "content": "Normalize movie filenames to \"Movie Name (Year).ext\" format. Remove all noise like quality (1080p, 4K), codec (x264, h265), and release group names. Example: \"Inception.2010.1080p.Bluray.x264.mp4\" -> \"Inception (2010).mp4\"",
+    "type": "rename",
+    "is_markdown": 0,
+    "sort_order": 2
+  }
+]

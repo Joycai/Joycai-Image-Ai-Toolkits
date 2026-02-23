@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/app_paths.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
@@ -70,19 +72,21 @@ class _ApplicationSectionState extends State<ApplicationSection> {
           ],
         ),
         const SizedBox(height: 8),
-        SwitchListTile(
-          title: Text(l10n.portableMode),
-          subtitle: Text(l10n.portableModeDesc),
-          value: _isPortable,
-          onChanged: (v) async {
-            await AppPaths.setPortableMode(v);
-            setState(() => _isPortable = v);
-            if (mounted) {
-              _showRestartDialog(l10n);
-            }
-          },
-        ),
-        const SizedBox(height: 8),
+        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+          SwitchListTile(
+            title: Text(l10n.portableMode),
+            subtitle: Text(l10n.portableModeDesc),
+            value: _isPortable,
+            onChanged: (v) async {
+              await AppPaths.setPortableMode(v);
+              setState(() => _isPortable = v);
+              if (mounted) {
+                _showRestartDialog(l10n);
+              }
+            },
+          ),
+        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+          const SizedBox(height: 8),
         if (!Platform.isIOS)
           _buildOutputDirectoryTile(appState, l10n),
       ],

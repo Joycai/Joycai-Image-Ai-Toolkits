@@ -1,0 +1,20 @@
+{
+  "setupWizardTitle": "歡迎設定",
+  "welcomeMessage": "歡迎使用 Joycai Image AI Toolkits！讓我們為您完成設定。",
+  "getStarted": "開始使用",
+  "stepAppearance": "外觀",
+  "stepStorage": "儲存",
+  "stepApi": "智慧 (API)",
+  "finish": "完成",
+  "setupCompleteMessage": "您已全部設定完成！盡情享受創作吧。",
+  "skip": "略過",
+  "storageLocationDesc": "選取產生的圖片將儲存的位置。",
+  "addChannelOptional": "新增您的第一個 AI 供應商通道 (選用)。",
+  "configureModelOptional": "為您的新通道設定模型 (選用)。",
+  "googleGenAiFree": "Google GenAI (免費)",
+  "googleGenAiPaid": "Google GenAI (付費)",
+  "openaiApi": "OpenAI API",
+  "filenamePrefix": "檔案名稱前綴詞",
+  "openaiEndpointHint": "提示：OpenAI 相容端點通常以「/v1」結尾",
+  "googleEndpointHint": "提示：Google GenAI 端點通常以「/v1beta」結尾 (內部處理)"
+}

@@ -1,16 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_models.dart';
 import '../../services/llm/llm_service.dart';
+import '../../services/llm/llm_types.dart';
+import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/chat_model_selector.dart';
 
@@ -25,24 +28,95 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
-  int? _selectedModelPk;
+  int? _selectedModelDbId;
+  SystemPrompt? _selectedSystemPrompt;
   List<Map<String, String>> _proposedRenames = [];
   Map<String, String> _conflicts = {};
+  StreamSubscription? _taskSubscription;
+  String? _currentTaskId;
 
   @override
   void initState() {
     super.initState();
     _loadLastSettings();
+    
+    // Setup task subscription
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      _taskSubscription = taskService.eventStream.listen((event) {
+        if (_currentTaskId == null || event.taskId != _currentTaskId) return;
+
+        if (event.type == TaskEventType.textChunk) {
+          _handleTaskJsonUpdate(event.data as String);
+        } else if (event.type == TaskEventType.statusChanged) {
+          if (event.data == TaskStatus.completed || event.data == TaskStatus.failed || event.data == TaskStatus.cancelled) {
+            if (mounted) setState(() => _isProcessing = false);
+          }
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _taskSubscription?.cancel();
+    _instructionController.dispose();
+    super.dispose();
+  }
+
+  void _handleTaskJsonUpdate(String jsonText) {
+    try {
+      String cleanJson = jsonText.trim();
+      if (cleanJson.startsWith('```json')) {
+        cleanJson = cleanJson.substring(7, cleanJson.length - 3).trim();
+      } else if (cleanJson.startsWith('```')) {
+        cleanJson = cleanJson.substring(3, cleanJson.length - 3).trim();
+      }
+
+      final List<dynamic> suggestions = jsonDecode(cleanJson);
+      final List<Map<String, String>> proposed = [];
+
+      for (var s in suggestions) {
+        proposed.add({
+          'path': s['path'] as String,
+          'old_name': p.basename(s['path'] as String),
+          'new_name': s['new_name'] as String,
+        });
+      }
+
+      _detectConflicts(proposed).then((_) {
+        if (mounted) {
+          setState(() {
+            _proposedRenames = proposed;
+          });
+        }
+      });
+    } catch (_) {
+      // JSON might be partial or invalid during streaming, ignore
+    }
   }
 
   Future<void> _loadLastSettings() async {
     final appState = Provider.of<AppState>(context, listen: false);
     final lastModelId = await appState.getSetting('last_ai_rename_model_id');
+    final lastSystemPromptIdStr = await appState.getSetting('last_ai_rename_system_prompt_id');
     final lastInstructions = await appState.getSetting('last_ai_rename_instructions');
     
+    final templates = await _db.getSystemPrompts(type: 'rename');
+    SystemPrompt? initialSystemPrompt;
+    
+    if (lastSystemPromptIdStr != null) {
+      final id = int.tryParse(lastSystemPromptIdStr);
+      initialSystemPrompt = templates.cast<SystemPrompt?>().firstWhere((e) => e?.id == id, orElse: () => null);
+    }
+    
+    // Fallback to first template if none selected or found
+    initialSystemPrompt ??= templates.isNotEmpty ? templates.first : null;
+
     if (mounted) {
       setState(() {
-        _selectedModelPk = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
+        _selectedModelDbId = int.tryParse(lastModelId ?? '') ?? int.tryParse(appState.lastSelectedModelId ?? '');
+        _selectedSystemPrompt = initialSystemPrompt;
         if (lastInstructions != null) {
           _instructionController.text = lastInstructions;
         }
@@ -86,18 +160,18 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
     if (selected != null) {
       setState(() {
-        _instructionController.text = selected.content;
+        _selectedSystemPrompt = selected;
       });
     }
   }
 
   Future<void> _generateSuggestions() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    final browserState = appState.browserState;
-    final selectedFiles = browserState.selectedFiles.toList();
+    final fileBrowserState = appState.fileBrowserState;
+    final selectedFiles = fileBrowserState.selectedFiles.toList();
     final l10n = AppLocalizations.of(context)!;
 
-    if (_selectedModelPk == null) {
+    if (_selectedModelDbId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.noModelsConfigured),
@@ -113,11 +187,17 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       return;
     }
 
-    if (_instructionController.text.isEmpty) return;
+    if (_selectedSystemPrompt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a system template first.")),
+      );
+      return;
+    }
 
     // Save current settings as last used
     final db = DatabaseService();
-    db.saveSetting('last_ai_rename_model_id', _selectedModelPk.toString());
+    db.saveSetting('last_ai_rename_model_id', _selectedModelDbId.toString());
+    db.saveSetting('last_ai_rename_system_prompt_id', _selectedSystemPrompt?.id?.toString() ?? '');
     db.saveSetting('last_ai_rename_instructions', _instructionController.text);
 
     setState(() {
@@ -134,21 +214,25 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         'category': f.category.name,
       }).toList();
 
-      final prompt = """
-You are a professional file renaming assistant. 
-Instructions: ${_instructionController.text}
+      final String userInstructions = _instructionController.text.trim();
+      
+      // Construct structured messages
+      final List<LLMMessage> messages = [
+        LLMMessage(role: LLMRole.system, content: _selectedSystemPrompt!.content),
+        LLMMessage(role: LLMRole.user, content: """
+User Specific Instructions: ${userInstructions.isEmpty ? "No additional instructions." : userInstructions}
 
-Files to rename:
+Files to rename (JSON format):
 ${jsonEncode(filesData)}
 
-Output ONLY a valid JSON array of objects, where each object has 'path' and 'new_name' keys.
+Output ONLY a valid JSON array of objects. Do not include markdown code blocks.
 Example: [{"path": "...", "new_name": "..."}]
-Do not include any other text or markdown formatting.
-""";
+"""),
+      ];
 
       final response = await LLMService().request(
-        modelIdentifier: _selectedModelPk,
-        messages: [LLMMessage(role: LLMRole.user, content: prompt)],
+        modelIdentifier: _selectedModelDbId,
+        messages: messages,
         useStream: false,
       );
 
@@ -230,25 +314,44 @@ Do not include any other text or markdown formatting.
     
     setState(() => _isProcessing = true);
     try {
-      for (var item in _proposedRenames) {
-        final oldFile = File(item['path']!);
-        final newPath = p.join(p.dirname(item['path']!), item['new_name']!);
-        if (await oldFile.exists()) {
-          await oldFile.rename(newPath);
-        }
-      }
+      final List<Map<String, String>> filesData = appState.fileBrowserState.selectedFiles.map((f) => {
+        'original_name': f.name,
+        'path': f.path,
+        'category': f.category.name,
+      }).toList();
+
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      final taskId = const Uuid().v4();
+      
+      setState(() {
+        _currentTaskId = taskId;
+        _isProcessing = true; // Ensure UI reflects processing immediately
+      });
+
+      // Submit to queue with full context
+      await taskService.addTask(
+        appState.fileBrowserState.selectedFiles.map((f) => f.path).toList(),
+        _selectedModelDbId,
+        {
+          'system_prompt': _selectedSystemPrompt?.content,
+          'instructions': _instructionController.text,
+          'filesData': filesData,
+        },
+        type: TaskType.aiRename,
+        useStream: false, 
+        id: taskId,
+      );
       
       if (mounted) {
         Navigator.pop(context);
-        appState.browserState.refresh();
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
+          SnackBar(content: Text(l10n.taskSubmitted), backgroundColor: Colors.blue),
         );
       }
     } catch (e) {
       if (mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
+          SnackBar(content: Text("Failed to start task: $e"), backgroundColor: Colors.red),
         );
         setState(() => _isProcessing = false);
       }
@@ -263,7 +366,7 @@ Do not include any other text or markdown formatting.
 
     final chatModels = appState.chatModels;
     // Safety check: ensure the selected PK actually exists in the current list of chat models
-    final effectiveModelPk = chatModels.any((m) => m.id == _selectedModelPk) ? _selectedModelPk : null;
+    final effectiveModelDbId = chatModels.any((m) => m.id == _selectedModelDbId) ? _selectedModelDbId : null;
 
     return AlertDialog(
       title: Row(
@@ -284,37 +387,82 @@ Do not include any other text or markdown formatting.
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ChatModelSelector(
-                selectedModelId: effectiveModelPk,
-                label: l10n.model,
-                onChanged: (v) => setState(() => _selectedModelPk = v),
-              ),
-              const SizedBox(height: 12),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold))),
-                  TextButton.icon(
-                    onPressed: _showTemplatePicker,
-                    icon: const Icon(Icons.library_books, size: 16),
-                    label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  Expanded(
+                    child: ChatModelSelector(
+                      selectedModelId: effectiveModelDbId,
+                      label: l10n.model,
+                      onChanged: (v) => setState(() => _selectedModelDbId = v),
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              
+              // NEW: System Template Selection View
+              Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withAlpha(100),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.psychology, size: 20, color: colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedSystemPrompt?.title ?? "No Template Selected",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          if (_selectedSystemPrompt != null)
+                            Text(
+                              _selectedSystemPrompt!.content,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                            ),
+                        ],
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _showTemplatePicker,
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: Text(l10n.edit, style: const TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              
+              // Specific Instructions
+              Text("Additional Instructions (Optional)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               TextField(
                 controller: _instructionController,
-                decoration: const InputDecoration(
-                  hintText: "e.g. Normalize to S01E01 format for Jellyfin",
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: "e.g. Keep original extensions, convert to Pinyin...",
+                  border: const OutlineInputBorder(),
+                  fillColor: colorScheme.surface,
+                  filled: true,
                 ),
-                maxLines: 3,
+                maxLines: 2,
               ),
-              const SizedBox(height: 16),
+              
+              const SizedBox(height: 20),
               Center(
                 child: FilledButton.icon(
                   onPressed: _isProcessing ? null : _generateSuggestions,
-                  icon: _isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.psychology),
+                  icon: _isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.bolt),
                   label: Text(l10n.generateSuggestions),
                 ),
               ),

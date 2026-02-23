@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -8,35 +8,37 @@ import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../widgets/markdown_editor.dart';
 import '../../core/app_paths.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/app_file.dart';
+import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
-import '../../services/llm/llm_models.dart';
-import '../../services/llm/llm_service.dart';
+import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
-import '../../state/window_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
-import 'bars/comparator_toolbar.dart';
-import 'bars/mask_editor_toolbar.dart';
-import 'bars/prompt_optimizer_toolbar.dart';
-import 'control_panel.dart';
 import 'gallery.dart';
-import 'views/comparator_view.dart';
-import 'views/mask_editor_view.dart';
-import 'views/prompt_optimizer_view.dart';
+import 'widgets/comparator_toolbar.dart';
+import 'widgets/comparator_view.dart';
+import 'widgets/crop_resize_toolbar.dart';
+import 'widgets/crop_resize_view.dart';
 import 'widgets/gallery_toolbar.dart';
-import 'widgets/mask_editor_ai_panel.dart';
+import 'widgets/mask_editor_toolbar.dart';
+import 'widgets/mask_editor_view.dart';
 import 'widgets/metadata_inspector.dart';
 import 'widgets/optimizer_config_panel.dart';
 import 'widgets/optimizer_reference_panel.dart';
+import 'widgets/prompt_optimizer_toolbar.dart';
+import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/workbench_bottom_console.dart';
 import 'widgets/workbench_top_bar.dart';
+import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
 
 class WorkbenchScreen extends StatefulWidget {
@@ -49,40 +51,43 @@ class WorkbenchScreen extends StatefulWidget {
 class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   AppState? _appState;
+  WorkbenchUIState? _workbenchUIState;
   int _lastKnownTabIndex = 0;
+  StreamSubscription? _taskSubscription;
+  String? _activeRefineTaskId;
 
   // Mask Editor State
   final List<DrawingPath> _maskPaths = [];
   Color _maskSelectedColor = Colors.white;
   double _maskBrushSize = 20.0;
+  double _maskOpacity = 1.0;
   bool _maskIsBinaryMode = false;
-  bool _maskShowAIPanel = false;
   final GlobalKey _maskRepaintKey = GlobalKey();
   Offset? _maskMousePosition;
   
-  // AI Mask State
-  final TextEditingController _maskAiPromptController = TextEditingController();
-  bool _maskIsGeneratingAI = false;
-  String? _maskSelectedModelId;
-  double _maskPointCount = 200.0;
-
   // Prompt Optimizer State
-  late TextEditingController _optCurrentPromptCtrl;
-  final TextEditingController _optRefinedPromptCtrl = TextEditingController();
+  late MarkdownTextEditingController _optCurrentPromptCtrl;
+  final MarkdownTextEditingController _optRefinedPromptCtrl = MarkdownTextEditingController();
   List<SystemPrompt> _optAllSysPrompts = [];
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
-  int? _optSelectedModelPk;
+  int? _optSelectedModelDbId;
   int? _optSelectedTagId;
   String? _optSelectedSysPrompt;
-  bool _optIsRefining = false;
   bool _optIsLoadingData = true;
 
   @override
   void initState() {
     super.initState();
     // We'll initialize _appState in didChangeDependencies
-    _optCurrentPromptCtrl = TextEditingController();
+    _optCurrentPromptCtrl = MarkdownTextEditingController();
+    _optCurrentPromptCtrl.addListener(_onOptCurrentPromptChanged);
+  }
+
+  void _onOptCurrentPromptChanged() {
+    if (_appState != null && _optCurrentPromptCtrl.text != _appState!.lastPrompt) {
+      _appState!.updateWorkbenchConfig(prompt: _optCurrentPromptCtrl.text);
+    }
   }
 
   @override
@@ -95,11 +100,42 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       
       _appState!.addListener(_onAppStateChanged);
       
-      if (_appState!.imageModels.isNotEmpty) {
-        _maskSelectedModelId = _appState!.imageModels.first.modelId;
-      }
+      // Listen for manual data send from UI State
+      _workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+      _workbenchUIState!.addListener(_onWorkbenchUIChanged);
+      
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      _taskSubscription?.cancel();
+      _taskSubscription = taskService.eventStream.listen(_onTaskEvent);
       
       _loadOptimizerData();
+    }
+  }
+
+  void _onTaskEvent(TaskEvent event) {
+    if (_activeRefineTaskId == null || event.taskId != _activeRefineTaskId) return;
+
+    if (event.type == TaskEventType.textChunk) {
+      if (mounted) {
+        setState(() {
+          _optRefinedPromptCtrl.text += (event.data as String);
+        });
+      }
+    }
+  }
+
+  void _onWorkbenchUIChanged() {
+    if (!mounted) return;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    
+    // If we have a fresh manual data transfer
+    if (workbenchUIState.optimizerRoughPrompt.isNotEmpty) {
+      setState(() {
+        _optCurrentPromptCtrl.text = workbenchUIState.optimizerRoughPrompt;
+        // The images are used by the sidebar reference panel via Provider
+      });
+      // Reset the trigger in UI State to prevent overwriting on subsequent refreshes
+      workbenchUIState.clearOptimizerTransfer();
     }
   }
 
@@ -117,7 +153,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           _applyOptimizerFilter();
           
           if (_appState!.chatModels.isNotEmpty) {
-            _optSelectedModelPk = _appState!.chatModels.first.id;
+            _optSelectedModelDbId = _appState!.chatModels.first.id;
           }
           if (_optFilteredSysPrompts.isNotEmpty) _optSelectedSysPrompt = _optFilteredSysPrompts.first.content;
           _optIsLoadingData = false;
@@ -141,36 +177,42 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   Future<void> _handleRefine() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_optSelectedModelPk == null || _appState == null) {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    
+    if (_optSelectedModelDbId == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
 
-    setState(() {
-      _optIsRefining = true;
-      _optRefinedPromptCtrl.clear();
-    });
-
     try {
-      final attachments = _appState!.selectedImages.map((f) => 
-        LLMAttachment.fromFile(File(f.path), 'image/jpeg')
-      ).toList();
-
-      final response = await LLMService().request(
-        modelIdentifier: _optSelectedModelPk!,
-        useStream: false,
-        messages: [
-          if (_optSelectedSysPrompt != null)
-            LLMMessage(role: LLMRole.system, content: _optSelectedSysPrompt!),
-          LLMMessage(role: LLMRole.user, content: _optCurrentPromptCtrl.text, attachments: attachments),
-        ],
+      final taskService = Provider.of<TaskQueueService>(context, listen: false);
+      final taskId = const Uuid().v4();
+      
+      setState(() {
+        _activeRefineTaskId = taskId;
+        _optRefinedPromptCtrl.clear();
+      });
+      
+      await taskService.addTask(
+        workbenchUIState.optimizerReferenceImages.map((f) => f.path).toList(),
+        _optSelectedModelDbId!,
+        {
+          'systemPrompt': _optSelectedSysPrompt,
+          'roughPrompt': _optCurrentPromptCtrl.text,
+        },
+        type: TaskType.promptRefine,
+        useStream: true,
+        id: taskId,
       );
 
-      if (mounted) setState(() => _optRefinedPromptCtrl.text = response.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.taskSubmitted),
+          backgroundColor: Colors.blue,
+        ));
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
-    } finally {
-      if (mounted) setState(() => _optIsRefining = false);
     }
   }
 
@@ -197,13 +239,21 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   void _handleMaskUndo() => setState(() { if (_maskPaths.isNotEmpty) _maskPaths.removeLast(); });
   void _handleMaskClear() => setState(() => _maskPaths.clear());
   
-  Future<void> _handleMaskSave() async {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    final sourceImage = windowState.maskEditorSourceImage;
+  Future<void> _handleMaskSave({bool binary = false, bool selectAfterSave = true}) async {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final sourceImage = workbenchUIState.maskEditorSourceImage;
     if (sourceImage == null || _appState == null) return;
 
+    final originalBinaryMode = _maskIsBinaryMode;
+    if (binary != _maskIsBinaryMode) {
+      setState(() => _maskIsBinaryMode = binary);
+      // Wait for the next frame to ensure the UI has updated to show/hide the image
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
     try {
-      RenderRepaintBoundary boundary = _maskRepaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      RenderRepaintBoundary? boundary = _maskRepaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
       
       // Get image dimensions to maintain resolution
       final bytes = await File(sourceImage.path).readAsBytes();
@@ -221,7 +271,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       if (!maskDir.existsSync()) maskDir.createSync(recursive: true);
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'mask_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
+      final prefix = binary ? 'mask_only' : 'mask';
+      final fileName = '${prefix}_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
       final filePath = p.join(maskDir.path, fileName);
       
       await File(filePath).writeAsBytes(pngBytes);
@@ -232,11 +283,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         } catch (_) {}
       }
 
-      final maskFile = AppFile(path: filePath, name: fileName);
+      final maskFile = AppImage(path: filePath, name: fileName);
       _appState!.galleryState.addDroppedFiles([maskFile]);
-      _appState!.galleryState.toggleImageSelection(maskFile);
-      _appState!.galleryState.setViewMode(GalleryViewMode.temp);
-      _appState!.setWorkbenchTab(0); // Return to gallery
+      
+      if (selectAfterSave) {
+        _appState!.galleryState.toggleImageSelection(maskFile);
+        _appState!.galleryState.setViewMode(GalleryViewMode.temp);
+        _appState!.setWorkbenchTab(0); // Return to gallery
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -249,77 +303,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           SnackBar(content: Text(AppLocalizations.of(context)!.maskSaveError(e.toString())), backgroundColor: Colors.red),
         );
       }
-    }
-  }
-
-  Future<void> _generateAIMask() async {
-    final windowState = Provider.of<WindowState>(context, listen: false);
-    final sourceImage = windowState.maskEditorSourceImage;
-    if (sourceImage == null || _maskAiPromptController.text.trim().isEmpty) return;
-
-    setState(() => _maskIsGeneratingAI = true);
-
-    try {
-      final imageBytes = await File(sourceImage.path).readAsBytes();
-      final mimeType = p.extension(sourceImage.path).toLowerCase().replaceAll('.', 'image/');
-
-      final systemPrompt = """
-Outline the object described by the user.
-Return JSON { "points": [[x1, y1], [x2, y2], ...] }
-Coordinates are 0-1000. Form a closed loop.
-""";
-
-      final response = await LLMService().request(
-        modelIdentifier: _maskSelectedModelId,
-        messages: [
-          LLMMessage(role: LLMRole.system, content: systemPrompt),
-          LLMMessage(role: LLMRole.user, content: _maskAiPromptController.text.trim(), attachments: [
-            LLMAttachment.fromBytes(imageBytes, mimeType == 'image/jpg' ? 'image/jpeg' : mimeType),
-          ]),
-        ],
-        useStream: false,
-      );
-
-      final jsonStr = response.text.replaceAll('```json', '').replaceAll('```', '').trim();
-      final data = jsonDecode(jsonStr);
-      final List pointsData = data['points'];
-
-      if (pointsData.isNotEmpty) {
-        final RenderBox renderBox = _maskRepaintKey.currentContext!.findRenderObject() as RenderBox;
-        final double width = renderBox.size.width;
-        final double height = renderBox.size.height;
-
-        final List<Offset> points = pointsData.map((pt) {
-          return Offset((pt[0] as num) / 1000 * width, (pt[1] as num) / 1000 * height);
-        }).toList();
-        if (points.first != points.last) points.add(points.first);
-
-        setState(() {
-          _maskPaths.add(DrawingPath(
-            points: points,
-            color: _maskSelectedColor,
-            strokeWidth: _maskBrushSize,
-            isPolygon: true,
-          ));
-          _maskShowAIPanel = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.maskGenError(e.toString())), backgroundColor: Colors.red),
-        );
-      }
     } finally {
-      if (mounted) setState(() => _maskIsGeneratingAI = false);
+      if (binary != originalBinaryMode && mounted) {
+        setState(() => _maskIsBinaryMode = originalBinaryMode);
+      }
     }
   }
 
   void _initTabController() {
     if (_appState == null) return;
-    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 3);
+    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 4);
     
-    _tabController = TabController(length: 4, vsync: this, initialIndex: _lastKnownTabIndex);
+    _tabController = TabController(length: 5, vsync: this, initialIndex: _lastKnownTabIndex);
     
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -333,14 +328,19 @@ Coordinates are 0-1000. Form a closed loop.
 
   @override
   void dispose() {
+    _optCurrentPromptCtrl.removeListener(_onOptCurrentPromptChanged);
+    _optCurrentPromptCtrl.dispose();
+    _optRefinedPromptCtrl.dispose();
     _appState?.removeListener(_onAppStateChanged);
+    _workbenchUIState?.removeListener(_onWorkbenchUIChanged);
+    _taskSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.length != 4) {
+    if (_tabController.length != 5) {
        _tabController.dispose();
        _initTabController();
     }
@@ -359,7 +359,7 @@ Coordinates are 0-1000. Form a closed loop.
         centerContent = const Column(
           children: [
             GalleryToolbar(),
-            Expanded(child: GalleryWidget()),
+            Expanded(child: Gallery()),
           ],
         );
         showRightPanel = !isNarrow; // Only show on desktop by default
@@ -380,38 +380,33 @@ Coordinates are 0-1000. Form a closed loop.
             MaskEditorToolbar(
               onUndo: _handleMaskUndo,
               onClear: _handleMaskClear,
-              onSave: _handleMaskSave,
+              onSave: () => _handleMaskSave(selectAfterSave: false),
+              onSaveMask: () => _handleMaskSave(binary: true, selectAfterSave: false),
               onColorChanged: (c) => setState(() => _maskSelectedColor = c),
               onBrushSizeChanged: (s) => setState(() => _maskBrushSize = s),
+              onOpacityChanged: (o) => setState(() => _maskOpacity = o),
               onToggleBinary: () => setState(() => _maskIsBinaryMode = !_maskIsBinaryMode),
-              onToggleAI: () => setState(() => _maskShowAIPanel = !_maskShowAIPanel),
               selectedColor: _maskSelectedColor,
               brushSize: _maskBrushSize,
+              opacity: _maskOpacity,
               isBinaryMode: _maskIsBinaryMode,
-              showAIPanel: _maskShowAIPanel,
               hasPaths: _maskPaths.isNotEmpty,
             ),
-            if (_maskShowAIPanel)
-              MaskEditorAIPanel(
-                selectedModelId: _maskSelectedModelId,
-                pointCount: _maskPointCount,
-                promptController: _maskAiPromptController,
-                isGenerating: _maskIsGeneratingAI,
-                onModelChanged: (val) => setState(() => _maskSelectedModelId = val),
-                onPointCountChanged: (val) => setState(() => _maskPointCount = val),
-                onGenerate: _generateAIMask,
-              ),
             Expanded(
               child: MaskEditorView(
                 paths: _maskPaths,
-                selectedColor: _maskSelectedColor,
+                selectedColor: _maskSelectedColor.withValues(alpha: _maskOpacity),
                 brushSize: _maskBrushSize,
                 isBinaryMode: _maskIsBinaryMode,
                 repaintKey: _maskRepaintKey,
                 mousePosition: _maskMousePosition,
                 onHover: (pos) => setState(() => _maskMousePosition = pos),
                 onPanStart: (pos) => setState(() {
-                  _maskPaths.add(DrawingPath(points: [pos], color: _maskSelectedColor, strokeWidth: _maskBrushSize));
+                  _maskPaths.add(DrawingPath(
+                    points: [pos], 
+                    color: _maskSelectedColor.withValues(alpha: _maskOpacity), 
+                    strokeWidth: _maskBrushSize
+                  ));
                 }),
                 onPanUpdate: (pos) => setState(() {
                   _maskPaths.last.points.add(pos);
@@ -424,14 +419,27 @@ Coordinates are 0-1000. Form a closed loop.
         showRightPanel = false;
         showLeftPanel = false;
         break;
-      case 3: // Prompt Optimizer
+      case 3: // Crop & Resize
+        centerContent = const Column(
+          children: [
+            CropResizeToolbar(),
+            Expanded(child: CropResizeView()),
+          ],
+        );
+        showRightPanel = false;
+        showLeftPanel = false;
+        break;
+      case 4: // Prompt Optimizer
+        final taskService = Provider.of<TaskQueueService>(context);
+        final isRefining = taskService.queue.any((t) => t.type == TaskType.promptRefine && t.status == TaskStatus.processing);
+
         centerContent = Column(
           children: [
             PromptOptimizerToolbar(
               onRefine: _handleRefine,
               onApply: _handleOptimizerApply,
               onClear: () => setState(() { _optCurrentPromptCtrl.clear(); _optRefinedPromptCtrl.clear(); }),
-              isRefining: _optIsRefining,
+              isRefining: isRefining,
               canApply: _optRefinedPromptCtrl.text.isNotEmpty,
             ),
             Expanded(
@@ -461,18 +469,18 @@ Coordinates are 0-1000. Form a closed loop.
       rightPanelBuilder: (scrollController) {
         switch (appState.workbenchTabIndex) {
           case 0:
-            return ControlPanelWidget(scrollController: scrollController);
+            return WorkbenchConfigPanel(scrollController: scrollController);
           case 1:
             return MetadataInspector(scrollController: scrollController);
-          case 3:
+          case 4:
             return OptimizerConfigPanel(
               scrollController: scrollController,
-              selectedModelPk: _optSelectedModelPk,
+              selectedModelDbId: _optSelectedModelDbId,
               selectedTagId: _optSelectedTagId,
               selectedSysPrompt: _optSelectedSysPrompt,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
-              onModelChanged: (v) => setState(() => _optSelectedModelPk = v),
+              onModelChanged: (v) => setState(() => _optSelectedModelDbId = v),
               onTagChanged: (v) => setState(() { _optSelectedTagId = v; _applyOptimizerFilter(); }),
               onSysPromptChanged: (v) => setState(() => _optSelectedSysPrompt = v),
             );

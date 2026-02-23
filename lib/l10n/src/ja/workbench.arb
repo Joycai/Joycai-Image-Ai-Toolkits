@@ -1,0 +1,148 @@
+{
+  "workbench": "ワークベンチ",
+  "imageProcessing": "画像処理",
+  "sourceGallery": "ソースギャラリー",
+  "sourceExplorer": "ソースエクスプローラー",
+  "tempWorkspace": "一時ワークスペース",
+  "processResults": "処理結果",
+  "resultCache": "結果キャッシュ",
+  "directories": "ディレクトリ",
+  "addFolder": "フォルダを追加",
+  "noFolders": "フォルダが追加されていません",
+  "clickAddFolder": "「フォルダを追加」をクリックして、画像のスキャンを開始します。",
+  "noImagesFound": "画像が見つかりません",
+  "noResultsYet": "結果がありません",
+  "selectAll": "すべて選択",
+  "importFromGallery": "ギャラリーからインポート",
+  "takePhoto": "写真を撮る",
+  "clearTempWorkspace": "ワークスペースをクリア",
+  "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
+  "noImagesSelected": "画像が選択されていません",
+  "selectSourceDirectory": "ソースディレクトリを選択",
+  "removeFolderTooltip": "フォルダを削除",
+  "removeFolderConfirmTitle": "フォルダを削除しますか？",
+  "removeFolderConfirmMessage": "リストから「{folderName}」を削除してもよろしいですか？",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "サムネイルサイズ",
+  "deleteFile": "ファイルを削除",
+  "deleteFileConfirmTitle": "ファイルを削除しますか？",
+  "deleteFileConfirmMessage": "「{filename}」を削除してもよろしいですか？",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "ゴミ箱に移動",
+  "permanentlyDelete": "完全に削除",
+  "deleteSuccess": "削除に成功しました",
+  "deleteFailed": "削除に失敗しました: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "モデル選択",
+  "selectAModel": "モデルを選択",
+  "aspectRatio": "アスペクト比",
+  "resolution": "解像度",
+  "prompt": "プロンプト",
+  "promptHint": "プロンプトをここに入力...",
+  "prefixHint": "例：result",
+  "processPrompt": "プロンプトを処理",
+  "processImages": "{count}枚の画像を処理",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSubmitted": "タスクがキューに送信されました",
+  "comparator": "比較ツール",
+  "compareModeSync": "同期モード",
+  "compareModeSwap": "スワップモード",
+  "sendToComparator": "比較ツールに送信",
+  "sendToComparatorRaw": "Before (RAW) として設定",
+  "sendToComparatorAfter": "After (結果) として設定",
+  "sendToSelection": "選択に追加",
+  "removeFromSelection": "選択から削除",
+  "sendToOptimizer": "プロンプト最適化に送信",
+  "optimizePromptWithImage": "画像からプロンプトを最適化",
+  "selectFromLibrary": "ライブラリから選択",
+  "metadataSelectedNone": "画像メタデータが選択されていません",
+  "labelRaw": "RAW",
+  "labelAfter": "AFTER",
+  "cropAndResize": "切り抜きとサイズ変更",
+  "overwriteSource": "元のファイルを上書き",
+  "overwriteConfirmTitle": "元のファイルを上書きしますか？",
+  "overwriteConfirmMessage": "この操作により、元のファイルが完全に置き換えられます。よろしいですか？",
+  "saveToTempSuccess": "画像が一時ワークスペースに保存されました",
+  "overwriteSuccess": "元のファイルが更新されました",
+  "custom": "カスタム",
+  "resize": "サイズ変更",
+  "maintainAspectRatio": "アスペクト比を維持",
+  "width": "幅",
+  "height": "高さ",
+  "sampling": "サンプリング",
+  "drawMask": "マスクを描画",
+  "maskEditor": "マスクエディタ",
+  "brushSize": "ブラシサイズ",
+  "maskColor": "マスクの色",
+  "maskOpacity": "マスクの不透明度",
+  "undo": "元に戻す",
+  "saveToTemp": "ワークスペースに保存",
+  "saveMaskToTemp": "マスクをワークスペースに保存",
+  "binaryMode": "バイナリモード",
+  "maskSaved": "マスクがワークスペースに保存されました",
+  "maskSaveError": "マスク保存エラー: {error}",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "promptOptimizer": "プロンプト最適化",
+  "refinerModel": "リファイナーモデル",
+  "systemPrompt": "システムプロンプト",
+  "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
+  "roughPrompt": "ラフなプロンプト / アイデア",
+  "optimizedPrompt": "最適化されたプロンプト",
+  "applyToWorkbench": "ワークベンチに適用",
+  "promptApplied": "プロンプトがワークベンチに適用されました",
+  "refineFailed": "洗練に失敗しました: {error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "executionLogs": "実行ログ",
+  "saveToPhotos": "写真に保存",
+  "saveToGallery": "ギャラリーに保存",
+  "savedToPhotos": "写真に保存されました",
+  "saveFailed": "保存に失敗しました: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iosSandboxActive": "iOSサンドボックス有効",
+  "iosSandboxDesc": "iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。",
+  "mobileSandboxActive": "モバイルストレージの制限",
+  "mobileSandboxDesc": "モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。",
+  "filesAppSuffix": " (ファイル App)"
+}

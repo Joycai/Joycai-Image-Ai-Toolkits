@@ -33,6 +33,8 @@
   "generateSuggestions": "Generate Suggestions",
   "noSuggestions": "No suggestions generated yet",
   "applyRenames": "Apply Renames",
+  "addToSelection": "Add to Selection",
+  "removeFromSelection": "Remove from Selection",
   "imagesSelected": "{count} selected",
   "@imagesSelected": {
     "placeholders": {
@@ -91,6 +93,7 @@
     }
   },
   "comingSoon": "Coming Soon",
+  "viewAll": "View All",
   "sidebar": "Sidebar",
   "white": "White",
   "black": "Black",
@@ -119,6 +122,9 @@
   "analysisModel": "Analysis Model",
   "advancedOptions": "Advanced Options",
   "analyzing": "Analyzing...",
+  "urlRequired": "Please enter a valid Website URL.",
+  "requirementRequired": "Please enter what images you want to find (Requirements).",
+  "manualHtmlRequired": "Please paste the HTML content in Manual Mode.",
   "findImages": "Find Images",
   "noImagesDiscovered": "No images discovered yet.",
   "enterUrlToStart": "Enter a URL and requirement to start.",
@@ -219,7 +225,7 @@
   "addModel": "Add Model",
   "editModel": "Edit Model",
   "noModelsConfigured": "No models configured",
-  "countModels": "{count} models",
+  "countModels": "{count} Models",
   "@countModels": {
     "placeholders": {
       "count": {
@@ -278,6 +284,17 @@
   "fetchModels": "Fetch Models",
   "discoveringModels": "Discovering Models...",
   "selectModelsToAdd": "Select models to add",
+  "searchModels": "Search model name or ID...",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "modelsDiscovered": "{count} models discovered",
+  "@modelsDiscovered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "addSelected": "Add Selected ({count})",
   "@addSelected": {
     "placeholders": {
@@ -296,6 +313,37 @@
       }
     }
   },
+  "stepProtocol": "Choose Protocol",
+  "stepProvider": "Choose Provider",
+  "stepApiKey": "API Key",
+  "stepConfig": "Extra Config",
+  "stepPreview": "Preview",
+  "protocolOpenAI": "OpenAI Compatible (REST)",
+  "protocolOpenAIDesc": "Standard OpenAI REST API compatibility",
+  "protocolGoogle": "Google GenAI (REST)",
+  "protocolGoogleDesc": "Official Google Gemini REST API",
+  "providerOpenAIOfficial": "OpenAI Official",
+  "providerGoogleOfficial": "Google GenAI Official",
+  "providerGoogleCompatible": "Google GenAI (OpenAI Compatible)",
+  "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
+  "providerCustom": "Custom Provider",
+  "providerCustomDesc": "Self-hosted or 3rd party provider",
+  "customEndpointHint": "Enter your custom endpoint URL",
+  "openaiV1Hint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
+  "googleV1BetaHint": "Hint: Google GenAI endpoints usually end with '/v1beta'",
+  "enterApiKey": "Enter your API Key",
+  "apiKeyStorageNotice": "Your key is stored locally and never sent to our servers.",
+  "nameHint": "e.g. My Production API",
+  "enableDiscoveryDesc": "Automatically list available models from this endpoint",
+  "tagHint": "e.g. GPT4, Local, etc.",
+  "bindTag": "Bind Tag",
+  "previewReady": "Ready to add this channel?",
+  "feeGroupDesc": "Define billing standards for models to accurately calculate usage costs.",
+  "noFeeGroups": "No fee groups created yet",
+  "pricePerMillion": "Price per Million Tokens",
+  "pricePerRequest": "Price per Request",
+  "tokenBilling": "Token Billing",
+  "requestBilling": "Request Billing",
   "model": "Model",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
@@ -363,6 +411,17 @@
   "resetEverything": "Reset Everything",
   "settingsExported": "Settings exported successfully",
   "settingsImported": "Settings imported successfully",
+  "exportOptions": "Export Options",
+  "includeDirectories": "Include Directory Config",
+  "includeDirectoriesDesc": "Workbench/Browser directories and output path",
+  "includePrompts": "Include Prompts",
+  "includePromptsDesc": "User and system prompt library",
+  "includeUsage": "Include Usage Metrics",
+  "includeUsageDesc": "API token consumption history",
+  "exportNow": "Export Now",
+  "importNow": "Import Now",
+  "importOptions": "Import Options",
+  "notInBackup": "Not available in backup file",
   "importSettingsTitle": "Import Settings?",
   "importSettingsConfirm": "This will replace all your current models, channels, and categories. \n\nNote: Standalone prompt library is NOT affected by this import. Use the Prompts screen for prompt data management.",
   "importAndReplace": "Import & Replace",
@@ -496,8 +555,8 @@
   "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
   "noImagesFound": "No images found",
   "noResultsYet": "No results yet",
-  "selectAll": "Select All",
   "importFromGallery": "Import from Gallery",
+  "takePhoto": "Take Photo",
   "clearTempWorkspace": "Clear Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
@@ -555,44 +614,39 @@
   "compareModeSync": "Sync Mode",
   "compareModeSwap": "Swap Mode",
   "sendToComparator": "Send to Comparator",
-  "sendToComparatorRaw": "Send to Comparator (Raw)",
-  "sendToComparatorAfter": "Send to Comparator (After)",
-  "sendToSelection": "Send to Selection",
+  "sendToComparatorRaw": "Set as Before (RAW)",
+  "sendToComparatorAfter": "Set as After (Result)",
+  "sendToSelection": "Add to Selection",
+  "sendToOptimizer": "Send to Prompt Optimizer",
+  "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",
   "labelRaw": "RAW",
   "labelAfter": "AFTER",
+  "cropAndResize": "Crop & Resize",
+  "overwriteSource": "Overwrite Original",
+  "overwriteConfirmTitle": "Overwrite Original File?",
+  "overwriteConfirmMessage": "This action will permanently replace the original file. Are you sure?",
+  "saveToTempSuccess": "Image saved to temporary workspace",
+  "overwriteSuccess": "Original file updated",
+  "custom": "Custom",
+  "resize": "Resize",
+  "maintainAspectRatio": "Maintain Aspect Ratio",
+  "width": "Width",
+  "height": "Height",
+  "sampling": "Sampling",
   "drawMask": "Draw Mask",
   "maskEditor": "Mask Editor",
   "brushSize": "Brush Size",
   "maskColor": "Mask Color",
+  "maskOpacity": "Mask Opacity",
   "undo": "Undo",
-  "saveAndSelect": "Save & Select",
-  "aiSmartMask": "AI Smart Mask",
+  "saveToTemp": "Save to Workspace",
+  "saveMaskToTemp": "Save Mask to Workspace",
   "binaryMode": "Binary Mode",
-  "maskModel": "Model",
-  "maskDetail": "Detail: {count}",
-  "@maskDetail": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maskPromptLabel": "What to mask?",
-  "generating": "Generating...",
-  "generate": "Generate",
-  "maskSaved": "Mask saved and selected",
+  "maskSaved": "Mask saved to workspace",
   "maskSaveError": "Error saving mask: {error}",
   "@maskSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "maskGenError": "AI Mask generation failed: {error}",
-  "@maskGenError": {
     "placeholders": {
       "error": {
         "type": "String"
@@ -629,5 +683,7 @@
   },
   "iosSandboxActive": "iOS Sandbox Active",
   "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "mobileSandboxActive": "Mobile Storage Restriction",
+  "mobileSandboxDesc": "On mobile devices, direct folder access may be limited by the OS. It is recommended to use the 'Import from Gallery' button in the top toolbar.",
   "filesAppSuffix": " (Files App)"
 }

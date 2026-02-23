@@ -1,7 +1,8 @@
 # Joycai Image AI Toolkits
 
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.41.1-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=flat&logo=dart&logoColor=white)](https://dart.dev)
+[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/Joycai/Joycai-Image-Ai-Toolkits/actions)
 
@@ -47,6 +48,7 @@ Joycai Image AI Toolkits 是一个功能强大的跨平台桌面应用程序，�
 ## 🛠️ 技术栈
 
 *   **框架**：[Flutter](https://flutter.dev) (Material 3)
+*   **版本**：2.1.1
 *   **状态管理**：[Provider](https://pub.dev/packages/provider)
 *   **数据库**：[SQLite](https://pub.dev/packages/sqflite) (通过 `sqflite_common_ffi` 支持桌面端)
 *   **本地化**：`flutter_localizations` (ARB 文件)

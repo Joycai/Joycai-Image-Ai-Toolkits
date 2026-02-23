@@ -33,6 +33,8 @@
   "generateSuggestions": "Generate Suggestions",
   "noSuggestions": "No suggestions generated yet",
   "applyRenames": "Apply Renames",
+  "addToSelection": "Add to Selection",
+  "removeFromSelection": "Remove from Selection",
   "imagesSelected": "{count} selected",
   "@imagesSelected": {
     "placeholders": {

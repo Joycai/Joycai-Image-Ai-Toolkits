@@ -11,14 +11,14 @@ import '../../state/gallery_state.dart';
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
-  final bool useBrowserState;
+  final bool useFileBrowserState;
   final Function(String, String)? onRemove; // Only needed for roots
 
   const DirectoryTreeItem({
     super.key,
     required this.path,
     this.isRoot = false,
-    this.useBrowserState = false,
+    this.useFileBrowserState = false,
     this.onRemove,
   });
 
@@ -36,7 +36,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final appState = Provider.of<AppState>(context);
-    final currentCounter = widget.useBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
+    final currentCounter = widget.useFileBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
     
     if (currentCounter != _lastRefreshCounter) {
       _lastRefreshCounter = currentCounter;
@@ -54,17 +54,17 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     if (newPath != null) {
       // If it was a root, we might need to replace it in the list
       if (widget.isRoot) {
-        if (widget.useBrowserState) {
-          await appState.browserState.removeBaseDirectory(widget.path);
-          await appState.browserState.addBaseDirectory(newPath);
+        if (widget.useFileBrowserState) {
+          await appState.fileBrowserState.removeBaseDirectory(widget.path);
+          await appState.fileBrowserState.addBaseDirectory(newPath);
         } else {
           await appState.removeBaseDirectory(widget.path);
           await appState.addBaseDirectory(newPath);
         }
       } else {
         // Just refresh the whole state
-        if (widget.useBrowserState) {
-          appState.browserState.refresh();
+        if (widget.useFileBrowserState) {
+          appState.fileBrowserState.refresh();
         } else {
           appState.galleryState.refreshImages();
         }
@@ -120,20 +120,17 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   Widget build(BuildContext context) {
     // Listen to selection changes efficiently based on the target state
     final isSelected = context.select<AppState, bool>((state) {
-      if (widget.useBrowserState) {
-        return state.browserState.activeDirectories.contains(widget.path);
+      if (widget.useFileBrowserState) {
+        return state.fileBrowserState.activeDirectories.contains(widget.path);
       } else {
         return state.activeSourceDirectories.contains(widget.path);
       }
     });
 
-    final isViewing = context.select<AppState, bool>((state) {
-      if (widget.useBrowserState) return false;
-      return state.galleryState.viewMode == GalleryViewMode.folder && state.galleryState.viewSourcePath == widget.path;
-    });
-    
+    // We no longer need the separate 'isViewing' concept for highlighting, 
+    // we use 'isSelected' for the primary visual feedback.
     final appState = Provider.of<AppState>(context, listen: false);
-    final isUnreachable = widget.useBrowserState 
+    final isUnreachable = widget.useFileBrowserState 
         ? appState.unreachableBrowserDirectories.contains(widget.path)
         : appState.galleryState.unreachableDirectories.contains(widget.path);
     final folderName = p.basename(widget.path);
@@ -144,7 +141,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       children: [
         ListTile(
           dense: true,
-          selected: isViewing,
+          selected: isSelected, // Use isSelected for background highlight
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -163,11 +160,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               else
                 Checkbox(
                   value: isSelected,
-                  onChanged: (_) {
-                    if (widget.useBrowserState) {
-                      appState.browserState.toggleDirectory(widget.path);
+                  onChanged: (val) {
+                    if (widget.useFileBrowserState) {
+                      appState.fileBrowserState.toggleDirectory(widget.path);
                     } else {
-                      appState.toggleDirectory(widget.path);
+                      appState.galleryState.toggleDirectory(widget.path);
+                      // Always ensure we are in a mode that shows selected directories
+                      appState.galleryState.setViewMode(GalleryViewMode.all);
                     }
                   },
                   visualDensity: VisualDensity.compact,
@@ -177,35 +176,19 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 size: 20,
                 color: isUnreachable 
                   ? theme.colorScheme.error.withAlpha(100)
-                  : (isViewing ? theme.colorScheme.primary : (isSelected ? theme.colorScheme.primary.withAlpha(150) : theme.colorScheme.outline)),
+                  : (isSelected ? theme.colorScheme.primary : theme.colorScheme.outline),
               ),
               const SizedBox(width: 8),
             ],
           ),
-          title: InkWell(
-            onTap: () {
-              if (isUnreachable) {
-                _reAuthorize(context, appState);
-              } else if (!widget.useBrowserState) {
-                appState.galleryState.setViewFolder(widget.path);
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    folderName,
-                    style: TextStyle(
-                      fontSize: 13, 
-                      fontWeight: isViewing ? FontWeight.bold : FontWeight.w500,
-                      color: isViewing ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+          title: Text(
+            folderName,
+            style: TextStyle(
+              fontSize: 13, 
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -235,7 +218,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             if (isUnreachable) {
               _reAuthorize(context, appState);
             } else {
-              _handleExpansionChanged(!_isExpanded);
+              // Clicking the row now toggles selection
+              if (widget.useFileBrowserState) {
+                appState.fileBrowserState.toggleDirectory(widget.path);
+              } else {
+                appState.galleryState.toggleDirectory(widget.path);
+                appState.galleryState.setViewMode(GalleryViewMode.all);
+              }
             }
           },
         ),
@@ -248,7 +237,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 return DirectoryTreeItem(
                   path: dir.path,
                   isRoot: false,
-                  useBrowserState: widget.useBrowserState,
+                  useFileBrowserState: widget.useFileBrowserState,
                   // onRemove not needed for children
                 );
               }).toList(),

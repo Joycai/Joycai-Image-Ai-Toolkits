@@ -5,9 +5,10 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
-import '../../services/llm/llm_models.dart';
+import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
+import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
 
@@ -347,7 +348,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
     final colorScheme = Theme.of(context).colorScheme;
-    final feeGroup = appState.allFeeGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
+    final pricingGroup = appState.allPricingGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
 
     return Card(
       elevation: 0,
@@ -372,9 +373,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     Row(
                       children: [
                         Flexible(child: Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.outline), overflow: TextOverflow.ellipsis)),
-                        if (feeGroup != null) ...[
+                        if (pricingGroup != null) ...[
                           const SizedBox(width: 8),
-                          _buildFeeBadge(feeGroup.name, colorScheme),
+                          _buildFeeBadge(pricingGroup.name, colorScheme),
                         ],
                       ],
                     ),
@@ -574,10 +575,24 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _showChannelDialog(AppLocalizations l10n, AppState appState, {LLMChannel? channel}) {
-    showDialog(
-      context: context,
-      builder: (context) => ChannelEditDialog(l10n: l10n, appState: appState, channel: channel),
-    );
+    if (channel == null) {
+      if (Responsive.isMobile(context)) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => ChannelWizardDialog(l10n: l10n, appState: appState),
+          fullscreenDialog: true,
+        ));
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => ChannelWizardDialog(l10n: l10n, appState: appState),
+        );
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => ChannelEditDialog(l10n: l10n, appState: appState, channel: channel),
+      );
+    }
   }
 
   void _confirmDeleteChannel(AppLocalizations l10n, LLMChannel channel, AppState appState) {

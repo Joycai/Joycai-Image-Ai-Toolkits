@@ -14,6 +14,7 @@
   "noResultsYet": "暂无结果",
   "selectAll": "全选",
   "importFromGallery": "从系统图库导入",
+  "takePhoto": "拍摄照片",
   "clearTempWorkspace": "清空工作区",
   "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
   "noImagesSelected": "未选择图像",
@@ -71,44 +72,41 @@
   "compareModeSync": "同步模式",
   "compareModeSwap": "切换模式",
   "sendToComparator": "发送至对比器",
-  "sendToComparatorRaw": "发送至对比器 (原图)",
-  "sendToComparatorAfter": "发送至对比器 (后图)",
-  "sendToSelection": "发送到选中列表",
+  "sendToComparatorRaw": "设置为对比原图",
+  "sendToComparatorAfter": "设置为对比效果图",
+  "sendToSelection": "添加到选中列表",
+  "removeFromSelection": "从选中列表移除",
+  "sendToOptimizer": "发送到提示词优化器",
+  "optimizePromptWithImage": "以此图优化提示词",
   "selectFromLibrary": "从库中选择",
   "metadataSelectedNone": "未选中图像元数据",
   "labelRaw": "原图",
   "labelAfter": "效果图",
+  "cropAndResize": "裁剪与缩放",
+  "overwriteSource": "覆盖原图",
+  "overwriteConfirmTitle": "确定覆盖原图？",
+  "overwriteConfirmMessage": "此操作将永久修改原始文件，确定要继续吗？",
+  "saveToTempSuccess": "已保存至临时工作区",
+  "overwriteSuccess": "原图已更新",
+  "aspectRatio": "比例",
+  "custom": "自定义",
+  "resize": "缩放",
+  "maintainAspectRatio": "保持纵横比",
+  "width": "宽度",
+  "height": "高度",
+  "sampling": "采样方式",
   "drawMask": "绘制蒙版",
   "maskEditor": "蒙版编辑器",
   "brushSize": "画笔大小",
   "maskColor": "蒙版颜色",
+  "maskOpacity": "蒙版透明度",
   "undo": "撤销",
-  "saveAndSelect": "保存并选中",
-  "aiSmartMask": "AI 智能蒙版",
+  "saveToTemp": "保存至工作区",
+  "saveMaskToTemp": "保存遮罩至工作区",
   "binaryMode": "二值化模式",
-  "maskModel": "分析模型",
-  "maskDetail": "详情度: {count}",
-  "@maskDetail": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maskPromptLabel": "要遮罩的内容？",
-  "generating": "正在生成...",
-  "generate": "生成",
-  "maskSaved": "蒙版已保存并选中",
+  "maskSaved": "蒙版已保存至工作区",
   "maskSaveError": "保存蒙版失败: {error}",
   "@maskSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "maskGenError": "AI 蒙版生成失败: {error}",
-  "@maskGenError": {
     "placeholders": {
       "error": {
         "type": "String"
@@ -145,5 +143,7 @@
   },
   "iosSandboxActive": "iOS 沙盒模式生效",
   "iosSandboxDesc": "在 iOS 上，请使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
+  "mobileSandboxActive": "移动端存储限制生效",
+  "mobileSandboxDesc": "在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。",
   "filesAppSuffix": " (文件 App)"
 }

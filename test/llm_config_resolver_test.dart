@@ -30,8 +30,8 @@ void main() {
         'api_key': 'key-123',
       });
 
-      final feeGroupId = await db.addFeeGroup({
-        'name': 'Test Fee',
+      final pricingGroupId = await db.addPricingGroup({
+        'name': 'Test Pricing',
         'billing_mode': 'token',
         'input_price': 0.5,
         'output_price': 1.0,
@@ -43,7 +43,7 @@ void main() {
         'type': 'chat',
         'tag': 'chat',
         'channel_id': channelId,
-        'fee_group_id': feeGroupId,
+        'fee_group_id': pricingGroupId,
       });
 
       final resolver = LLMConfigResolver();

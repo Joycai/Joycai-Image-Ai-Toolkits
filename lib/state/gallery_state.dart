@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
-import '../models/app_file.dart';
+import '../models/app_image.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
 
@@ -17,15 +17,21 @@ List<String> _scanImagesIsolate(List<String> paths) {
   for (var path in paths) {
     try {
       final dir = Directory(path);
-      // On iOS, listing arbitrary external directories might throw even if exists() is true
       if (dir.existsSync()) {
-        for (var file in dir.listSync(recursive: false)) {
-          if (file is File && AppConstants.isImageFile(file.path)) {
-            results.add(file.path);
+        final entities = dir.listSync(recursive: false);
+        for (var entity in entities) {
+          try {
+            if (entity is File && AppConstants.isImageFile(entity.path)) {
+              results.add(entity.path);
+            }
+          } catch (_) {
+            // Ignore individual file access errors
           }
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      // Ignore directory access errors
+    }
   }
   return results;
 }
@@ -49,12 +55,14 @@ class GalleryState extends ChangeNotifier {
   String? viewSourcePath; // Used when viewMode is folder
 
   // Model-based image lists
-  List<AppFile> galleryImages = [];
-  List<AppFile> processedImages = [];
-  List<AppFile> selectedImages = [];
-  List<AppFile> droppedImages = []; // Transient workspace
+  List<AppImage> galleryImages = [];
+  List<AppImage> folderImages = [];
+  List<AppImage> processedImages = [];
+  List<AppImage> selectedImages = [];
+  List<AppImage> droppedImages = []; // Transient workspace
   
   String? outputDirectory;
+  String? resultCacheDirectory;
   double thumbnailSize = 150.0;
   String imagePrefix = "result";
 
@@ -94,13 +102,20 @@ class GalleryState extends ChangeNotifier {
     imagePrefix = await _db.getSetting('image_prefix') ?? "result";
     outputDirectory = await _db.getSetting('output_directory');
 
-    // On iOS, we use the System Cache folder as a "Result Cache"
-    if (Platform.isIOS) {
+    // Result Cache initialization (Fallback for sandboxed environments like iOS/macOS)
+    if (Platform.isIOS || Platform.isMacOS) {
       final cacheDir = await getTemporaryDirectory();
-      outputDirectory = p.join(cacheDir.path, 'result_cache');
-      final dir = Directory(outputDirectory!);
+      resultCacheDirectory = p.join(cacheDir.path, 'result_cache');
+      final dir = Directory(resultCacheDirectory!);
       if (!dir.existsSync()) dir.createSync(recursive: true);
-      await _db.saveSetting('output_directory', outputDirectory!);
+      
+      await _db.saveSetting('result_cache_directory', resultCacheDirectory!);
+      
+      // On iOS, we also treat this as the primary output if not set
+      if (Platform.isIOS && (outputDirectory == null || outputDirectory!.isEmpty)) {
+        outputDirectory = resultCacheDirectory;
+        await _db.saveSetting('output_directory', outputDirectory!);
+      }
     }
     
     final dirs = await _db.getSourceDirectories();
@@ -223,13 +238,50 @@ class GalleryState extends ChangeNotifier {
     _refreshCounter++;
     await _scanImages();
     await _scanProcessedImages();
+    
+    // Verify droppedImages (Temporary Workspace)
+    final List<AppImage> existingDropped = [];
+    for (var img in droppedImages) {
+      if (await File(img.path).exists()) {
+        existingDropped.add(img);
+      }
+    }
+    if (existingDropped.length != droppedImages.length) {
+      droppedImages = existingDropped;
+    }
+
+    if (viewMode == GalleryViewMode.folder && viewSourcePath != null) {
+      await _scanFolder(viewSourcePath!);
+    }
+
+    _cleanupSelection();
     notifyListeners();
+  }
+
+  void _cleanupSelection() {
+    final validSelection = selectedImages.where((selected) => 
+      galleryImages.any((img) => img.path == selected.path) ||
+      processedImages.any((img) => img.path == selected.path) ||
+      droppedImages.any((img) => img.path == selected.path) ||
+      folderImages.any((img) => img.path == selected.path)
+    ).toList();
+    
+    if (validSelection.length != selectedImages.length) {
+      selectedImages = validSelection;
+    }
   }
 
   void _evictImages(List<String> paths) {
     for (var path in paths) {
       PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
     }
+  }
+
+  Future<void> _scanFolder(String path) async {
+    final List<String> paths = await compute(_scanImagesIsolate, [path]);
+    _evictImages(paths); // Ensure edited images are re-loaded from disk
+    folderImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
+    notifyListeners();
   }
 
   Future<void> _scanImages() async {
@@ -249,31 +301,30 @@ class GalleryState extends ChangeNotifier {
 
     final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
     _evictImages(paths);
-    galleryImages = paths.map((p) => AppFile.fromFile(File(p))).toList();
-    
-    final validSelection = selectedImages.where((selected) => 
-      galleryImages.any((img) => img.path == selected.path) ||
-      processedImages.any((img) => img.path == selected.path) ||
-      droppedImages.any((img) => img.path == selected.path)
-    ).toList();
-    
-    if (validSelection.length != selectedImages.length) {
-      selectedImages = validSelection;
-    }
+    galleryImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
   Future<void> _scanProcessedImages() async {
-    if (outputDirectory == null || outputDirectory!.isEmpty) {
+    final List<String> scanPaths = [];
+    if (outputDirectory != null && outputDirectory!.isNotEmpty) scanPaths.add(outputDirectory!);
+    if (resultCacheDirectory != null && resultCacheDirectory!.isNotEmpty && resultCacheDirectory != outputDirectory) {
+      scanPaths.add(resultCacheDirectory!);
+    }
+
+    if (scanPaths.isEmpty) {
       processedImages = [];
       notifyListeners();
       return;
     }
 
     try {
-      final List<String> paths = await compute(_scanImagesIsolate, [outputDirectory!]);
+      final List<String> paths = await compute(_scanImagesIsolate, scanPaths);
       _evictImages(paths);
-      List<File> files = paths.map((p) => File(p)).toList();
+      
+      // Use a set to avoid duplicates if directories overlap
+      final uniquePaths = paths.toSet().toList();
+      List<File> files = uniquePaths.map((p) => File(p)).toList();
       
       files.sort((a, b) {
         try {
@@ -282,25 +333,14 @@ class GalleryState extends ChangeNotifier {
           return 0;
         }
       });
-      processedImages = files.map((f) => AppFile.fromFile(f)).toList();
-      
-      // Also clean up selection if images were deleted from disk
-      final validSelection = selectedImages.where((selected) => 
-        galleryImages.any((img) => img.path == selected.path) ||
-        processedImages.any((img) => img.path == selected.path) ||
-        droppedImages.any((img) => img.path == selected.path)
-      ).toList();
-      
-      if (validSelection.length != selectedImages.length) {
-        selectedImages = validSelection;
-      }
+      processedImages = files.map((f) => AppImage.fromFile(f)).toList();
     } catch (e) {
       processedImages = [];
     }
     notifyListeners();
   }
 
-  void addDroppedFiles(List<AppFile> files) {
+  void addDroppedFiles(List<AppImage> files) {
     for (var file in files) {
       if (!droppedImages.any((img) => img.path == file.path)) {
         droppedImages.add(file);
@@ -311,20 +351,12 @@ class GalleryState extends ChangeNotifier {
 
   void clearDroppedImages() {
     droppedImages.clear();
-    // Also remove from selection if they were selected and are not in other collections
-    final validSelection = selectedImages.where((s) => 
-      galleryImages.any((g) => g.path == s.path) ||
-      processedImages.any((p) => p.path == s.path)
-    ).toList();
-    
-    if (validSelection.length != selectedImages.length) {
-      selectedImages = validSelection;
-    }
+    _cleanupSelection();
     notifyListeners();
   }
 
-  void toggleImageSelection(AppFile image) {
-    final newList = List<AppFile>.from(selectedImages);
+  void toggleImageSelection(AppImage image) {
+    final newList = List<AppImage>.from(selectedImages);
     final index = newList.indexWhere((img) => img.path == image.path);
     if (index != -1) {
       newList.removeAt(index);
@@ -339,8 +371,8 @@ class GalleryState extends ChangeNotifier {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final newList = List<AppFile>.from(selectedImages);
-    final AppFile item = newList.removeAt(oldIndex);
+    final newList = List<AppImage>.from(selectedImages);
+    final AppImage item = newList.removeAt(oldIndex);
     newList.insert(newIndex, item);
     selectedImages = newList;
     notifyListeners();
@@ -356,7 +388,7 @@ class GalleryState extends ChangeNotifier {
     // Usually it's better to select from the currently visible list, 
     // but the state doesn't know what's visible (Tab index).
     // For now, let's select from galleryImages.
-    selectedImages = List<AppFile>.from(galleryImages);
+    selectedImages = List<AppImage>.from(galleryImages);
     notifyListeners();
   }
 
@@ -389,7 +421,17 @@ class GalleryState extends ChangeNotifier {
   void setViewFolder(String path) {
     viewMode = GalleryViewMode.folder;
     viewSourcePath = path;
+    _scanFolder(path);
     notifyListeners();
+  }
+
+  List<AppImage> get currentViewImages {
+    switch (viewMode) {
+      case GalleryViewMode.all: return galleryImages;
+      case GalleryViewMode.processed: return processedImages;
+      case GalleryViewMode.temp: return droppedImages;
+      case GalleryViewMode.folder: return folderImages;
+    }
   }
 
   bool isPathUnreachable(String? path) => FilePermissionService().isPathUnreachable(path);

@@ -1,0 +1,20 @@
+{
+  "usage": "使用状況",
+  "tokenUsageMetrics": "トークン使用状況メトリクス",
+  "clearAllUsage": "すべての使用状況データをクリアしますか？",
+  "clearUsageWarning": "これにより、データベースからすべてのトークン使用状況レコードが完全に削除されます。",
+  "modelsLabel": "モデル：",
+  "rangeLabel": "範囲：",
+  "today": "今日",
+  "lastWeek": "先週",
+  "lastMonth": "先月",
+  "thisYear": "今年",
+  "inputTokens": "入力トークン",
+  "outputTokens": "出力トークン",
+  "estimatedCost": "推定コスト",
+  "clearDataForModel": "{modelId}のデータをクリアしますか？",
+  "clearModelDataWarning": "これにより、モデル「{modelId}」に関連するすべての使用状況レコードが削除されます。",
+  "clearModelData": "モデルデータをクリア",
+  "usageByGroup": "グループ別の使用状況",
+  "clearAll": "すべてクリア"
+}

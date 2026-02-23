@@ -1,4 +1,4 @@
-import 'llm_models.dart';
+import 'llm_types.dart';
 
 abstract class ILLMProvider {
   /// Simple request-response

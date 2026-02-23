@@ -102,12 +102,7 @@ class _UserPromptListState extends State<UserPromptList> {
                 _expandedPromptIds.add(id);
               }
             }),
-            leading: (widget.searchQuery.isEmpty && widget.selectedFilterTagIds.isEmpty)
-                ? ReorderableDragStartListener(
-                    index: index,
-                    child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20),
-                  )
-                : null,
+            leading: null,
             onMoveToTop: index == 0 ? null : () async {
               setState(() {
                 final item = prompts.removeAt(prompts.indexWhere((p) => p.id == id));

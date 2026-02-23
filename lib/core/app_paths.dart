@@ -5,6 +5,11 @@ import 'package:path_provider/path_provider.dart';
 
 class AppPaths {
   static Future<String> getDataDirectory() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      final supportDir = await getApplicationSupportDirectory();
+      return supportDir.path;
+    }
+    
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final portableMarker = File(p.join(exeDir, '.portable'));
 
@@ -22,11 +27,15 @@ class AppPaths {
   }
 
   static Future<bool> isPortableMode() async {
+    if (Platform.isAndroid || Platform.isIOS) return false;
+    
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     return await File(p.join(exeDir, '.portable')).exists();
   }
 
   static Future<void> setPortableMode(bool enabled) async {
+    if (Platform.isAndroid || Platform.isIOS) return;
+    
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final portableMarker = File(p.join(exeDir, '.portable'));
 

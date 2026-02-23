@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -95,7 +96,9 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ja'),
     Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @fileBrowser.
@@ -259,6 +262,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply Renames'**
   String get applyRenames;
+
+  /// No description provided for @addToSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Selection'**
+  String get addToSelection;
+
+  /// No description provided for @removeFromSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Selection'**
+  String get removeFromSelection;
 
   /// No description provided for @imagesSelected.
   ///
@@ -440,6 +455,12 @@ abstract class AppLocalizations {
   /// **'Coming Soon'**
   String get comingSoon;
 
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
   /// No description provided for @sidebar.
   ///
   /// In en, this message translates to:
@@ -565,6 +586,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Analyzing...'**
   String get analyzing;
+
+  /// No description provided for @urlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid Website URL.'**
+  String get urlRequired;
+
+  /// No description provided for @requirementRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter what images you want to find (Requirements).'**
+  String get requirementRequired;
+
+  /// No description provided for @manualHtmlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please paste the HTML content in Manual Mode.'**
+  String get manualHtmlRequired;
 
   /// No description provided for @findImages.
   ///
@@ -917,7 +956,7 @@ abstract class AppLocalizations {
   /// No description provided for @countModels.
   ///
   /// In en, this message translates to:
-  /// **'{count} models'**
+  /// **'{count} Models'**
   String countModels(int count);
 
   /// No description provided for @addFirstModel.
@@ -1142,6 +1181,30 @@ abstract class AppLocalizations {
   /// **'Select models to add'**
   String get selectModelsToAdd;
 
+  /// No description provided for @searchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search model name or ID...'**
+  String get searchModels;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @deselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get deselectAll;
+
+  /// No description provided for @modelsDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models discovered'**
+  String modelsDiscovered(int count);
+
   /// No description provided for @addSelected.
   ///
   /// In en, this message translates to:
@@ -1165,6 +1228,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to fetch models: {error}'**
   String fetchFailed(String error);
+
+  /// No description provided for @stepProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Protocol'**
+  String get stepProtocol;
+
+  /// No description provided for @stepProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Provider'**
+  String get stepProvider;
+
+  /// No description provided for @stepApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get stepApiKey;
+
+  /// No description provided for @stepConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Config'**
+  String get stepConfig;
+
+  /// No description provided for @stepPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get stepPreview;
+
+  /// No description provided for @protocolOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Compatible (REST)'**
+  String get protocolOpenAI;
+
+  /// No description provided for @protocolOpenAIDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard OpenAI REST API compatibility'**
+  String get protocolOpenAIDesc;
+
+  /// No description provided for @protocolGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (REST)'**
+  String get protocolGoogle;
+
+  /// No description provided for @protocolGoogleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Official Google Gemini REST API'**
+  String get protocolGoogleDesc;
+
+  /// No description provided for @providerOpenAIOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Official'**
+  String get providerOpenAIOfficial;
+
+  /// No description provided for @providerGoogleOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI Official'**
+  String get providerGoogleOfficial;
+
+  /// No description provided for @providerGoogleCompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'Google GenAI (OpenAI Compatible)'**
+  String get providerGoogleCompatible;
+
+  /// No description provided for @providerGoogleCompatibleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Gemini via OpenAI endpoint'**
+  String get providerGoogleCompatibleDesc;
+
+  /// No description provided for @providerCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Provider'**
+  String get providerCustom;
+
+  /// No description provided for @providerCustomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-hosted or 3rd party provider'**
+  String get providerCustomDesc;
+
+  /// No description provided for @customEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your custom endpoint URL'**
+  String get customEndpointHint;
+
+  /// No description provided for @openaiV1Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: OpenAI compatible endpoints usually end with \'/v1\''**
+  String get openaiV1Hint;
+
+  /// No description provided for @googleV1BetaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\''**
+  String get googleV1BetaHint;
+
+  /// No description provided for @enterApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your API Key'**
+  String get enterApiKey;
+
+  /// No description provided for @apiKeyStorageNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your key is stored locally and never sent to our servers.'**
+  String get apiKeyStorageNotice;
+
+  /// No description provided for @nameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. My Production API'**
+  String get nameHint;
+
+  /// No description provided for @enableDiscoveryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically list available models from this endpoint'**
+  String get enableDiscoveryDesc;
+
+  /// No description provided for @tagHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. GPT4, Local, etc.'**
+  String get tagHint;
+
+  /// No description provided for @bindTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Bind Tag'**
+  String get bindTag;
+
+  /// No description provided for @previewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to add this channel?'**
+  String get previewReady;
+
+  /// No description provided for @feeGroupDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Define billing standards for models to accurately calculate usage costs.'**
+  String get feeGroupDesc;
+
+  /// No description provided for @noFeeGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No fee groups created yet'**
+  String get noFeeGroups;
+
+  /// No description provided for @pricePerMillion.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per Million Tokens'**
+  String get pricePerMillion;
+
+  /// No description provided for @pricePerRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per Request'**
+  String get pricePerRequest;
+
+  /// No description provided for @tokenBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Token Billing'**
+  String get tokenBilling;
+
+  /// No description provided for @requestBilling.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Billing'**
+  String get requestBilling;
 
   /// No description provided for @model.
   ///
@@ -1525,6 +1774,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings imported successfully'**
   String get settingsImported;
+
+  /// No description provided for @exportOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Options'**
+  String get exportOptions;
+
+  /// No description provided for @includeDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Directory Config'**
+  String get includeDirectories;
+
+  /// No description provided for @includeDirectoriesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Workbench/Browser directories and output path'**
+  String get includeDirectoriesDesc;
+
+  /// No description provided for @includePrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Prompts'**
+  String get includePrompts;
+
+  /// No description provided for @includePromptsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'User and system prompt library'**
+  String get includePromptsDesc;
+
+  /// No description provided for @includeUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Usage Metrics'**
+  String get includeUsage;
+
+  /// No description provided for @includeUsageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'API token consumption history'**
+  String get includeUsageDesc;
+
+  /// No description provided for @exportNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Now'**
+  String get exportNow;
+
+  /// No description provided for @importNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Now'**
+  String get importNow;
+
+  /// No description provided for @importOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Options'**
+  String get importOptions;
+
+  /// No description provided for @notInBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available in backup file'**
+  String get notInBackup;
 
   /// No description provided for @importSettingsTitle.
   ///
@@ -1988,17 +2303,17 @@ abstract class AppLocalizations {
   /// **'No results yet'**
   String get noResultsYet;
 
-  /// No description provided for @selectAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Select All'**
-  String get selectAll;
-
   /// No description provided for @importFromGallery.
   ///
   /// In en, this message translates to:
   /// **'Import from Gallery'**
   String get importFromGallery;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
 
   /// No description provided for @clearTempWorkspace.
   ///
@@ -2177,20 +2492,32 @@ abstract class AppLocalizations {
   /// No description provided for @sendToComparatorRaw.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (Raw)'**
+  /// **'Set as Before (RAW)'**
   String get sendToComparatorRaw;
 
   /// No description provided for @sendToComparatorAfter.
   ///
   /// In en, this message translates to:
-  /// **'Send to Comparator (After)'**
+  /// **'Set as After (Result)'**
   String get sendToComparatorAfter;
 
   /// No description provided for @sendToSelection.
   ///
   /// In en, this message translates to:
-  /// **'Send to Selection'**
+  /// **'Add to Selection'**
   String get sendToSelection;
+
+  /// No description provided for @sendToOptimizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Prompt Optimizer'**
+  String get sendToOptimizer;
+
+  /// No description provided for @optimizePromptWithImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimize Prompt with Image'**
+  String get optimizePromptWithImage;
 
   /// No description provided for @selectFromLibrary.
   ///
@@ -2216,6 +2543,78 @@ abstract class AppLocalizations {
   /// **'AFTER'**
   String get labelAfter;
 
+  /// No description provided for @cropAndResize.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop & Resize'**
+  String get cropAndResize;
+
+  /// No description provided for @overwriteSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite Original'**
+  String get overwriteSource;
+
+  /// No description provided for @overwriteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite Original File?'**
+  String get overwriteConfirmTitle;
+
+  /// No description provided for @overwriteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will permanently replace the original file. Are you sure?'**
+  String get overwriteConfirmMessage;
+
+  /// No description provided for @saveToTempSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image saved to temporary workspace'**
+  String get saveToTempSuccess;
+
+  /// No description provided for @overwriteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Original file updated'**
+  String get overwriteSuccess;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
+
+  /// No description provided for @resize.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize'**
+  String get resize;
+
+  /// No description provided for @maintainAspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain Aspect Ratio'**
+  String get maintainAspectRatio;
+
+  /// No description provided for @width.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get width;
+
+  /// No description provided for @height.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get height;
+
+  /// No description provided for @sampling.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling'**
+  String get sampling;
+
   /// No description provided for @drawMask.
   ///
   /// In en, this message translates to:
@@ -2240,23 +2639,29 @@ abstract class AppLocalizations {
   /// **'Mask Color'**
   String get maskColor;
 
+  /// No description provided for @maskOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask Opacity'**
+  String get maskOpacity;
+
   /// No description provided for @undo.
   ///
   /// In en, this message translates to:
   /// **'Undo'**
   String get undo;
 
-  /// No description provided for @saveAndSelect.
+  /// No description provided for @saveToTemp.
   ///
   /// In en, this message translates to:
-  /// **'Save & Select'**
-  String get saveAndSelect;
+  /// **'Save to Workspace'**
+  String get saveToTemp;
 
-  /// No description provided for @aiSmartMask.
+  /// No description provided for @saveMaskToTemp.
   ///
   /// In en, this message translates to:
-  /// **'AI Smart Mask'**
-  String get aiSmartMask;
+  /// **'Save Mask to Workspace'**
+  String get saveMaskToTemp;
 
   /// No description provided for @binaryMode.
   ///
@@ -2264,40 +2669,10 @@ abstract class AppLocalizations {
   /// **'Binary Mode'**
   String get binaryMode;
 
-  /// No description provided for @maskModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Model'**
-  String get maskModel;
-
-  /// No description provided for @maskDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Detail: {count}'**
-  String maskDetail(int count);
-
-  /// No description provided for @maskPromptLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'What to mask?'**
-  String get maskPromptLabel;
-
-  /// No description provided for @generating.
-  ///
-  /// In en, this message translates to:
-  /// **'Generating...'**
-  String get generating;
-
-  /// No description provided for @generate.
-  ///
-  /// In en, this message translates to:
-  /// **'Generate'**
-  String get generate;
-
   /// No description provided for @maskSaved.
   ///
   /// In en, this message translates to:
-  /// **'Mask saved and selected'**
+  /// **'Mask saved to workspace'**
   String get maskSaved;
 
   /// No description provided for @maskSaveError.
@@ -2305,12 +2680,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error saving mask: {error}'**
   String maskSaveError(String error);
-
-  /// No description provided for @maskGenError.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Mask generation failed: {error}'**
-  String maskGenError(String error);
 
   /// No description provided for @promptOptimizer.
   ///
@@ -2408,6 +2777,18 @@ abstract class AppLocalizations {
   /// **'On iOS, please use the \'Import from Gallery\' button in the top toolbar to add images to your Temporary Workspace.'**
   String get iosSandboxDesc;
 
+  /// No description provided for @mobileSandboxActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Storage Restriction'**
+  String get mobileSandboxActive;
+
+  /// No description provided for @mobileSandboxDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'On mobile devices, direct folder access may be limited by the OS. It is recommended to use the \'Import from Gallery\' button in the top toolbar.'**
+  String get mobileSandboxDesc;
+
   /// No description provided for @filesAppSuffix.
   ///
   /// In en, this message translates to:
@@ -2426,17 +2807,31 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'zh'].contains(locale.languageCode);
+      <String>['en', 'ja', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hant':
+            return AppLocalizationsZhHant();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'zh':
       return AppLocalizationsZh();
   }

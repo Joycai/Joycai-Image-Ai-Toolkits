@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../screens/workbench/source_explorer.dart';
+import '../screens/workbench/folder_list.dart';
 import '../state/app_state.dart';
 
 class UnifiedSidebar extends StatelessWidget {
-  final bool useBrowserState;
+  final bool useFileBrowserState;
 
   const UnifiedSidebar({
     super.key,
-    this.useBrowserState = false,
+    this.useFileBrowserState = false,
   });
 
   @override
@@ -23,7 +23,7 @@ class UnifiedSidebar extends StatelessWidget {
         Expanded(
           child: Container(
             color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.2).round()),
-            child: SourceExplorerWidget(useBrowserState: useBrowserState),
+            child: FolderList(useFileBrowserState: useFileBrowserState),
           ),
         ),
 

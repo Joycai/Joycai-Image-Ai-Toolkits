@@ -6,7 +6,7 @@ import '../../../models/tag.dart';
 import '../../../widgets/chat_model_selector.dart';
 
 class OptimizerConfigPanel extends StatelessWidget {
-  final int? selectedModelPk;
+  final int? selectedModelDbId;
   final int? selectedTagId;
   final String? selectedSysPrompt;
   final List<PromptTag> tags;
@@ -18,7 +18,7 @@ class OptimizerConfigPanel extends StatelessWidget {
 
   const OptimizerConfigPanel({
     super.key,
-    required this.selectedModelPk,
+    required this.selectedModelDbId,
     required this.selectedTagId,
     required this.selectedSysPrompt,
     required this.tags,
@@ -45,7 +45,7 @@ class OptimizerConfigPanel extends StatelessWidget {
         const SizedBox(height: 16),
         
         ChatModelSelector(
-          selectedModelId: selectedModelPk,
+          selectedModelId: selectedModelDbId,
           label: l10n.refinerModel,
           onChanged: onModelChanged,
         ),
@@ -89,7 +89,7 @@ class OptimizerConfigPanel extends StatelessWidget {
                 children: [
                   CircleAvatar(backgroundColor: Color(t.color), radius: 6),
                   const SizedBox(width: 8),
-                  Text(t.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                  Expanded(child: Text(t.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
                 ],
               ),
             )),

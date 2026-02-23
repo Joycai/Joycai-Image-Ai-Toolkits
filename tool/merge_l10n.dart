@@ -6,7 +6,7 @@ void main() async {
   final l10nDir = p.join('lib', 'l10n');
   final srcDir = p.join(l10nDir, 'src');
 
-  for (final lang in ['en', 'zh']) {
+  for (final lang in ['en', 'zh', 'zh_Hant', 'ja']) {
     final langDir = Directory(p.join(srcDir, lang));
     if (!await langDir.exists()) continue;
 

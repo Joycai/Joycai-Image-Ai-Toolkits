@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
-import '../../../state/browser_state.dart';
+import '../../../state/file_browser_state.dart';
 
 class BrowserFilterBar extends StatelessWidget {
-  final BrowserState state;
+  final FileBrowserState state;
 
   const BrowserFilterBar({
     super.key,

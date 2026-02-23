@@ -14,6 +14,7 @@
   "noResultsYet": "No results yet",
   "selectAll": "Select All",
   "importFromGallery": "Import from Gallery",
+  "takePhoto": "Take Photo",
   "clearTempWorkspace": "Clear Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
@@ -71,44 +72,41 @@
   "compareModeSync": "Sync Mode",
   "compareModeSwap": "Swap Mode",
   "sendToComparator": "Send to Comparator",
-  "sendToComparatorRaw": "Send to Comparator (Raw)",
-  "sendToComparatorAfter": "Send to Comparator (After)",
-  "sendToSelection": "Send to Selection",
+  "sendToComparatorRaw": "Set as Before (RAW)",
+  "sendToComparatorAfter": "Set as After (Result)",
+  "sendToSelection": "Add to Selection",
+  "removeFromSelection": "Remove from Selection",
+  "sendToOptimizer": "Send to Prompt Optimizer",
+  "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",
   "labelRaw": "RAW",
   "labelAfter": "AFTER",
+  "cropAndResize": "Crop & Resize",
+  "overwriteSource": "Overwrite Original",
+  "overwriteConfirmTitle": "Overwrite Original File?",
+  "overwriteConfirmMessage": "This action will permanently replace the original file. Are you sure?",
+  "saveToTempSuccess": "Image saved to temporary workspace",
+  "overwriteSuccess": "Original file updated",
+  "aspectRatio": "Aspect Ratio",
+  "custom": "Custom",
+  "resize": "Resize",
+  "maintainAspectRatio": "Maintain Aspect Ratio",
+  "width": "Width",
+  "height": "Height",
+  "sampling": "Sampling",
   "drawMask": "Draw Mask",
   "maskEditor": "Mask Editor",
   "brushSize": "Brush Size",
   "maskColor": "Mask Color",
+  "maskOpacity": "Mask Opacity",
   "undo": "Undo",
-  "saveAndSelect": "Save & Select",
-  "aiSmartMask": "AI Smart Mask",
+  "saveToTemp": "Save to Workspace",
+  "saveMaskToTemp": "Save Mask to Workspace",
   "binaryMode": "Binary Mode",
-  "maskModel": "Model",
-  "maskDetail": "Detail: {count}",
-  "@maskDetail": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "maskPromptLabel": "What to mask?",
-  "generating": "Generating...",
-  "generate": "Generate",
-  "maskSaved": "Mask saved and selected",
+  "maskSaved": "Mask saved to workspace",
   "maskSaveError": "Error saving mask: {error}",
   "@maskSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "maskGenError": "AI Mask generation failed: {error}",
-  "@maskGenError": {
     "placeholders": {
       "error": {
         "type": "String"
@@ -145,5 +143,7 @@
   },
   "iosSandboxActive": "iOS Sandbox Active",
   "iosSandboxDesc": "On iOS, please use the 'Import from Gallery' button in the top toolbar to add images to your Temporary Workspace.",
+  "mobileSandboxActive": "Mobile Storage Restriction",
+  "mobileSandboxDesc": "On mobile devices, direct folder access may be limited by the OS. It is recommended to use the 'Import from Gallery' button in the top toolbar.",
   "filesAppSuffix": " (Files App)"
 }

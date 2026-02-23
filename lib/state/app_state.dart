@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
-import '../models/app_file.dart';
-import '../models/fee_group.dart';
+import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/log_entry.dart';
+import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/tag.dart';
 import '../services/database_service.dart';
@@ -16,10 +16,10 @@ import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
-import 'browser_state.dart';
 import 'downloader_state.dart';
+import 'file_browser_state.dart';
 import 'gallery_state.dart';
-import 'window_state.dart';
+import 'workbench_ui_state.dart';
 
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
@@ -29,15 +29,15 @@ class AppState extends ChangeNotifier {
   final TaskQueueService taskQueue = TaskQueueService();
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
-  final BrowserState browserState = BrowserState();
-  final WindowState windowState = WindowState();
+  final FileBrowserState fileBrowserState = FileBrowserState();
+  final WorkbenchUIState workbenchUIState = WorkbenchUIState();
 
   AppState._internal() {
     taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
-    browserState.addListener(notifyListeners);
-    windowState.addListener(notifyListeners);
+    fileBrowserState.addListener(notifyListeners);
+    workbenchUIState.addListener(notifyListeners);
     
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
@@ -49,6 +49,10 @@ class AppState extends ChangeNotifier {
     };
 
     taskQueue.onTaskFinished = (task) {
+      if (task.type == TaskType.aiRename && task.status == TaskStatus.completed) {
+        fileBrowserState.refresh();
+      }
+
       if (!notificationsEnabled) return;
       
       final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
@@ -109,6 +113,7 @@ class AppState extends ChangeNotifier {
   AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
   AppResolution lastResolution = AppResolution.r1K;
   String lastPrompt = "";
+  bool useStream = true;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
   bool isMarkdownRefinerTarget = true;
@@ -116,11 +121,11 @@ class AppState extends ChangeNotifier {
   // Data cache
   List<LLMModel> _models = [];
   List<LLMChannel> _channels = [];
-  List<FeeGroup> _feeGroups = [];
+  List<PricingGroup> _pricingGroups = [];
 
   List<LLMModel> get allModels => _models;
   List<LLMChannel> get allChannels => _channels;
-  List<FeeGroup> get allFeeGroups => _feeGroups;
+  List<PricingGroup> get allPricingGroups => _pricingGroups;
 
   List<LLMModel> get imageModels => _models.where((m) => 
     m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
@@ -147,21 +152,21 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     galleryState.dispose();
-    browserState.dispose();
+    fileBrowserState.dispose();
     taskQueue.removeListener(notifyListeners);
     galleryState.removeListener(notifyListeners);
     downloaderState.removeListener(notifyListeners);
-    browserState.removeListener(notifyListeners);
-    windowState.removeListener(notifyListeners);
+    fileBrowserState.removeListener(notifyListeners);
+    workbenchUIState.removeListener(notifyListeners);
     _sidebarWidthSaveTimer?.cancel();
     super.dispose();
   }
 
   // Proxies for Gallery State
-  List<AppFile> get galleryImages => galleryState.galleryImages;
-  List<AppFile> get processedImages => galleryState.processedImages;
-  List<AppFile> get selectedImages => galleryState.selectedImages;
-  List<AppFile> get droppedImages => galleryState.droppedImages;
+  List<AppImage> get galleryImages => galleryState.galleryImages;
+  List<AppImage> get processedImages => galleryState.processedImages;
+  List<AppImage> get selectedImages => galleryState.selectedImages;
+  List<AppImage> get droppedImages => galleryState.droppedImages;
   
   String? get outputDirectory => galleryState.outputDirectory;
   String get imagePrefix => galleryState.imagePrefix;
@@ -172,7 +177,7 @@ class AppState extends ChangeNotifier {
   Future<void> updateOutputDirectory(String path) => galleryState.updateOutputDirectory(path);
   Future<void> setImagePrefix(String prefix) => galleryState.setImagePrefix(prefix);
   void clearImageSelection() => galleryState.clearImageSelection();
-  void toggleImageSelection(AppFile image) => galleryState.toggleImageSelection(image);
+  void toggleImageSelection(AppImage image) => galleryState.toggleImageSelection(image);
   Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
   Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
   Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);
@@ -181,8 +186,8 @@ class AppState extends ChangeNotifier {
   void selectAllImages() => galleryState.selectAllImages();
 
   // Browser State Proxies
-  Set<String> get unreachableBrowserDirectories => browserState.unreachableDirectories;
-  int get browserRefreshCounter => browserState.refreshCounter;
+  Set<String> get unreachableBrowserDirectories => fileBrowserState.unreachableDirectories;
+  int get browserRefreshCounter => fileBrowserState.refreshCounter;
 
   Future<String?> getSetting(String key) => _db.getSetting(key);
 
@@ -230,17 +235,23 @@ class AppState extends ChangeNotifier {
     // Load locale
     final savedLocale = await _db.getSetting('locale');
     if (savedLocale != null && savedLocale.isNotEmpty) {
-      locale = Locale(savedLocale);
+      if (savedLocale.contains('_')) {
+        final parts = savedLocale.split('_');
+        locale = Locale.fromSubtags(languageCode: parts[0], scriptCode: parts[1]);
+      } else {
+        locale = Locale(savedLocale);
+      }
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 3);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 4);
     }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -249,8 +260,8 @@ class AppState extends ChangeNotifier {
     
     _models = await _db.getModels();
     _channels = await _db.getChannels();
-    _feeGroups = await _db.getFeeGroups();
-    
+    _pricingGroups = await _db.getPricingGroups();
+
     await downloaderState.loadCookieHistory();
 
     settingsLoaded = true;
@@ -361,14 +372,21 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index.clamp(0, 3);
+    workbenchTabIndex = index.clamp(0, 4);
     _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
   
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
-    await _db.saveSetting('locale', newLocale?.languageCode ?? '');
+    String localeStr = '';
+    if (newLocale != null) {
+      localeStr = newLocale.languageCode;
+      if (newLocale.scriptCode != null) {
+        localeStr += '_${newLocale.scriptCode}';
+      }
+    }
+    await _db.saveSetting('locale', localeStr);
     notifyListeners();
   }
 
@@ -440,11 +458,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Model, Channel & Fee Group Management
+  // Model, Channel & Pricing Group Management
   Future<void> refreshDataCache() async {
     _models = await _db.getModels();
     _channels = await _db.getChannels();
-    _feeGroups = await _db.getFeeGroups();
+    _pricingGroups = await _db.getPricingGroups();
     notifyListeners();
   }
 
@@ -485,20 +503,20 @@ class AppState extends ChangeNotifier {
     await refreshDataCache();
   }
 
-  // Fee Group Management
-  Future<int> addFeeGroup(Map<String, dynamic> group) async {
-    final id = await _db.addFeeGroup(group);
+  // Pricing Group Management
+  Future<int> addPricingGroup(Map<String, dynamic> group) async {
+    final id = await _db.addPricingGroup(group);
     await refreshDataCache();
     return id;
   }
 
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) async {
-    await _db.updateFeeGroup(id, group);
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {
+    await _db.updatePricingGroup(id, group);
     await refreshDataCache();
   }
 
-  Future<void> deleteFeeGroup(int id) async {
-    await _db.deleteFeeGroup(id);
+  Future<void> deletePricingGroup(int id) async {
+    await _db.deletePricingGroup(id);
     await refreshDataCache();
   }
 
@@ -525,6 +543,7 @@ class AppState extends ChangeNotifier {
     AppAspectRatio? aspectRatio,
     AppResolution? resolution,
     String? prompt,
+    bool? useStream,
   }) async {
     if (modelId != null) {
       lastSelectedModelId = modelId;
@@ -542,6 +561,10 @@ class AppState extends ChangeNotifier {
       lastPrompt = prompt;
       await _db.saveSetting('last_prompt', prompt);
     }
+    if (useStream != null) {
+      this.useStream = useStream;
+      await _db.saveSetting('workbench_use_stream', useStream.toString());
+    }
     notifyListeners();
   }
 
@@ -553,7 +576,13 @@ class AppState extends ChangeNotifier {
     params['retryCount'] = retryCount;
     
     final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
-    await taskQueue.addTask(imagePaths, modelIdentifier, params, modelIdDisplay: modelIdDisplay);
+    await taskQueue.addTask(
+      imagePaths, 
+      modelIdentifier, 
+      params, 
+      modelIdDisplay: modelIdDisplay,
+      useStream: params['useStream'] ?? useStream,
+    );
     
     addLog('Task submitted for ${imagePaths.length} images.');
   }

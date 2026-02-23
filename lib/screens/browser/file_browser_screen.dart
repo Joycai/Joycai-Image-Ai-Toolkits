@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
-import '../../state/browser_state.dart';
-import '../../state/window_state.dart';
+import '../../state/file_browser_state.dart';
+import '../../state/workbench_ui_state.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../workbench/widgets/image_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
@@ -82,8 +84,15 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Widget _buildDesktopLayout(AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
-    final browserState = appState.browserState;
+    final fileBrowserState = appState.fileBrowserState;
     final colorScheme = Theme.of(context).colorScheme;
+    final isNarrow = Responsive.isNarrow(context);
+
+    final sidebar = Container(
+      width: isNarrow ? null : 300,
+      color: colorScheme.surfaceContainerLow,
+      child: const UnifiedSidebar(useFileBrowserState: true),
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -93,36 +102,25 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         scrolledUnderElevation: 0,
         backgroundColor: colorScheme.surface,
         centerTitle: false,
-        actions: [
-          IconButton.filledTonal(
-            icon: Icon(browserState.viewMode == BrowserViewMode.grid ? Icons.view_list : Icons.grid_view, size: 20),
-            onPressed: () => browserState.setViewMode(
-              browserState.viewMode == BrowserViewMode.grid ? BrowserViewMode.list : BrowserViewMode.grid
-            ),
-            tooltip: l10n.switchViewMode,
+        leading: isNarrow ? Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: () => browserState.refresh(),
-            tooltip: l10n.refresh,
-          ),
-          const SizedBox(width: 16),
-        ],
+        ) : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
         ),
       ),
+      drawer: isNarrow ? Drawer(child: sidebar) : null,
       body: Row(
         children: [
-          // Sidebar
-          Container(
-            width: 300,
-            color: colorScheme.surfaceContainerLow,
-            child: const UnifiedSidebar(useBrowserState: true),
-          ),
-          const VerticalDivider(width: 1),
+          // Sidebar (Fixed for desktop wide)
+          if (!isNarrow) ...[
+            sidebar,
+            const VerticalDivider(width: 1),
+          ],
           // Main Content
           Expanded(
             child: Container(
@@ -132,16 +130,16 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: BrowserToolbar(
-                      state: browserState,
+                      state: fileBrowserState,
                       onAiRename: () => _showAiRenameDialog(context),
                     ),
                   ),
-                  BrowserFilterBar(state: browserState),
+                  BrowserFilterBar(state: fileBrowserState),
                   const Divider(height: 1),
                   Expanded(
-                    child: browserState.viewMode == BrowserViewMode.grid
-                        ? _buildFileGrid(context, browserState)
-                        : _buildFileListView(context, browserState),
+                    child: fileBrowserState.viewMode == BrowserViewMode.grid
+                        ? _buildFileGrid(context, fileBrowserState)
+                        : _buildFileListView(context, fileBrowserState),
                   ),
                 ],
               ),
@@ -152,7 +150,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-  Widget _buildFileGrid(BuildContext context, BrowserState state) {
+  Widget _buildFileGrid(BuildContext context, FileBrowserState state) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
 
     return LayoutBuilder(
@@ -177,7 +175,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               onTap: () => state.toggleSelection(file),
               onDoubleTap: () {
                 if (file.category == FileCategory.image) {
-                  showImagePreview(context, file.path);
+                  final imageFiles = state.filteredFiles
+                      .where((f) => f.category == FileCategory.image)
+                      .map((f) => AppImage(path: f.path, name: f.name))
+                      .toList();
+                  final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
+                  showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
                 } else {
                   _handleOpenFile(file);
                 }
@@ -190,7 +193,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-  Widget _buildFileListView(BuildContext context, BrowserState state) {
+  Widget _buildFileListView(BuildContext context, FileBrowserState state) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
 
     return ListView.separated(
@@ -204,7 +207,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () {
             if (file.category == FileCategory.image) {
-              showImagePreview(context, file.path);
+              final imageFiles = state.filteredFiles
+                  .where((f) => f.category == FileCategory.image)
+                  .map((f) => AppImage(path: f.path, name: f.name))
+                  .toList();
+              final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
+              showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
             } else {
               _handleOpenFile(file);
             }
@@ -242,12 +250,12 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   void _showContextMenu(BuildContext context, BrowserFile file, Offset position) {
-    final state = Provider.of<AppState>(context, listen: false).browserState;
+    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
     showFileContextMenu(
       context: context,
       file: file,
       position: position,
-      windowState: Provider.of<WindowState>(context, listen: false),
+      workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
       onRefresh: () => state.refresh(),
     );
   }

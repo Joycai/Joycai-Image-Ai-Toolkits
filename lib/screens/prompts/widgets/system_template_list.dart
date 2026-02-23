@@ -104,9 +104,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                   _expandedSysPromptIds.add(id);
                 }
               }),
-              leading: widget.searchQuery.isEmpty 
-                  ? ReorderableDragStartListener(index: index, child: const Icon(Icons.drag_handle, color: Colors.grey, size: 20))
-                  : Icon(systemPrompt.type == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple, size: 20),
+              leading: Icon(systemPrompt.type == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple, size: 20),
               showCategory: true,
               actions: [
                 IconButton(

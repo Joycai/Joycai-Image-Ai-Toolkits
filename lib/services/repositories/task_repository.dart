@@ -22,13 +22,23 @@ class TaskRepository {
     await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<List<double>> getTaskDurations(int modelPk, int limit) async {
+  Future<void> cleanupStuckTasks() async {
+    final db = await _db;
+    await db.update(
+      'tasks', 
+      {'status': 'failed'}, 
+      where: 'status = ?', 
+      whereArgs: ['processing']
+    );
+  }
+
+  Future<List<double>> getTaskDurations(int modelDbId, int limit) async {
     final db = await _db;
     final results = await db.query(
       'tasks',
       columns: ['start_time', 'end_time'],
       where: 'model_pk = ? AND status = "completed" AND start_time IS NOT NULL AND end_time IS NOT NULL'.replaceAll('"', "'"),
-      whereArgs: [modelPk],
+      whereArgs: [modelDbId],
       orderBy: 'end_time DESC',
       limit: limit,
     );

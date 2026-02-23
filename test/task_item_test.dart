@@ -8,7 +8,7 @@ void main() {
         id: 'test-id',
         imagePaths: ['path1.png', 'path2.jpg'],
         modelId: 'gpt-4o',
-        modelPk: 1,
+        modelDbId: 1,
         channelTag: 'OpenAI',
         channelColor: 0xFF00FF00,
         parameters: {'prompt': 'hello', 'imagePrefix': 'test'},
@@ -23,7 +23,7 @@ void main() {
       expect(decodedTask.id, task.id);
       expect(decodedTask.imagePaths, task.imagePaths);
       expect(decodedTask.modelId, task.modelId);
-      expect(decodedTask.modelPk, task.modelPk);
+      expect(decodedTask.modelDbId, task.modelDbId);
       expect(decodedTask.channelTag, task.channelTag);
       expect(decodedTask.channelColor, task.channelColor);
       expect(decodedTask.status, task.status);

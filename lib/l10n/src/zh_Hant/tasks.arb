@@ -1,0 +1,94 @@
+{
+  "tasks": "任務",
+  "taskQueueManager": "任務佇列管理員",
+  "noTasksInQueue": "佇列中沒有任務",
+  "submitTaskFromWorkbench": "從工作台提交任務以在此處查看。",
+  "taskId": "任務 ID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskSummary": "任務摘要",
+  "pendingTasks": "待處理",
+  "processingTasks": "處理中",
+  "completedTasks": "已完成",
+  "failedTasks": "已失敗",
+  "canceledTasks": "已取消",
+  "clearCompleted": "清除已完成",
+  "clearFailed": "清除已失敗",
+  "clearAll": "清除全部",
+  "cancelAll": "全部取消",
+  "cancelAllPending": "取消所有待處理",
+  "cancelTask": "取消任務",
+  "removeFromList": "從清單中移除",
+  "model": "模型",
+  "images": "圖片",
+  "filesCount": "{count} 個檔案",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runningCount": "{count} 個執行中",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} 個已計劃",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "latestLog": "最新日誌：",
+  "taskCompletedNotification": "任務完成",
+  "taskFailedNotification": "任務失敗",
+  "taskCanceledNotification": "任務取消",
+  "taskCompletedBody": "任務 {id} 已成功完成。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "處理任務 {id} 失敗。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskCanceledBody": "任務 {id} 已被使用者取消。",
+  "retryAllFailed": "全部重試失敗的任務",
+  "pauseQueue": "暫停佇列",
+  "resumeQueue": "繼續佇列",
+  "queueSettings": "佇列設定",
+  "concurrencyLimit": "並行限制: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "retryCount": "重試次數: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

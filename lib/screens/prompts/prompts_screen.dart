@@ -12,8 +12,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../state/app_state.dart';
+import '../../widgets/color_picker_widget.dart';
 import '../../widgets/markdown_editor.dart';
-import 'widgets/color_hue_picker.dart';
 import 'widgets/prompts_sidebar.dart';
 import 'widgets/system_template_list.dart';
 import 'widgets/tag_management_list.dart';
@@ -457,20 +457,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) {
     final nameCtrl = TextEditingController(text: tag?.name ?? '');
-    final hexCtrl = TextEditingController(text: tag != null ? '#${tag.color.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}' : '#607D8B');
     int selectedColor = tag?.color ?? AppConstants.tagColors.first.toARGB32();
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          void updateColor(int color) {
-            setDialogState(() {
-              selectedColor = color;
-              hexCtrl.text = '#${color.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
-            });
-          }
-
           return AlertDialog(
             title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
             content: SizedBox(
@@ -481,56 +473,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   children: [
                     TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
                     const SizedBox(height: 24),
-                    
-                    // Color Picker Section
-                    ColorHuePicker(
-                      initialColor: Color(selectedColor),
-                      onColorChanged: updateColor,
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: hexCtrl, 
-                      decoration: const InputDecoration(
-                        labelText: 'HEX Color', 
-                        prefixIcon: Icon(Icons.colorize),
-                        isDense: true,
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (v) {
-                        if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
-                          try {
-                            final colorStr = v.length == 7 ? 'FF${v.substring(1)}' : v.substring(1);
-                            final color = int.parse(colorStr, radix: 16);
-                            setDialogState(() => selectedColor = color);
-                          } catch (_) {}
-                        }
+
+                    // Color Picker Widget
+                    ColorPickerWidget(
+                      selectedColor: selectedColor,
+                      onColorChanged: (color) {
+                        setDialogState(() => selectedColor = color);
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text("Presets", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: AppConstants.tagColors.map((color) => InkWell(
-                        onTap: () => updateColor(color.toARGB32()),
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: selectedColor == color.toARGB32() ? Colors.black : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      )).toList(),
+                      showHexInput: true,
+                      showColorWheel: true,
                     ),
                   ],
                 ),
@@ -542,7 +493,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 onPressed: () async {
                   final appState = Provider.of<AppState>(context, listen: false);
                   final data = {
-                    'name': nameCtrl.text, 
+                    'name': nameCtrl.text,
                     'color': selectedColor,
                     'sort_order': tag?.sortOrder ?? (_tags.isEmpty ? 0 : _tags.map((t) => t.sortOrder).reduce(math.max) + 1),
                   };
@@ -567,7 +518,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
     String selectedType = prompt?.type ?? _selectedSystemType;
 
@@ -650,7 +601,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     label: l10n.promptContent,
                     isMarkdown: isMarkdown,
                     onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                    initiallyPreview: true,
+                    initiallyPreview: false,
                   ),
                 ],
               ),
@@ -689,7 +640,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showPromptDialog(AppLocalizations l10n, {Prompt? prompt}) {
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-    final contentCtrl = TextEditingController(text: prompt?.content ?? '');
+    final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
 
     final Set<int> selectedTagIds = {};
@@ -764,7 +715,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     label: l10n.promptContent,
                     isMarkdown: isMarkdown,
                     onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                    initiallyPreview: true,
+                    initiallyPreview: false,
                   ),
                 ],
               ),

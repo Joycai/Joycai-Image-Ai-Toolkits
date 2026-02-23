@@ -1,13 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../core/app_paths.dart';
-import '../models/fee_group.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
+import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/tag.dart';
 import 'database_migrations.dart';
@@ -27,6 +29,7 @@ class DatabaseService {
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
+    await syncPresets();
     return _database!;
   }
 
@@ -59,7 +62,7 @@ class DatabaseService {
       return await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 22,
+          version: 24,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -69,7 +72,7 @@ class DatabaseService {
       // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
       return await openDatabase(
         dbPath,
-        version: 22,
+        version: 24,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -88,11 +91,56 @@ class DatabaseService {
     await DatabaseMigration.migrate(db, oldVersion, newVersion);
   }
 
+  /// Synchronize preset prompts from asset files into the database.
+  /// This checks for missing presets and inserts them if they don't exist by title.
+  Future<void> syncPresets() async {
+    final db = await database;
+    
+    // 1. Sync System Prompts
+    try {
+      final String systemJsonString = await rootBundle.loadString('assets/presets/prompts/system_prompts.json');
+      final List<dynamic> systemPresets = jsonDecode(systemJsonString);
+      
+      for (var preset in systemPresets) {
+        final existing = await db.query(
+          'system_prompts', 
+          where: 'title = ? AND type = ?', 
+          whereArgs: [preset['title'], preset['type']]
+        );
+        if (existing.isEmpty) {
+          await db.insert('system_prompts', preset);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // 2. Sync User Prompts
+    try {
+      final String userJsonString = await rootBundle.loadString('assets/presets/prompts/user_prompts.json');
+      final List<dynamic> userPresets = jsonDecode(userJsonString);
+      
+      for (var preset in userPresets) {
+        final existing = await db.query(
+          'prompts', 
+          where: 'title = ?', 
+          whereArgs: [preset['title']]
+        );
+        if (existing.isEmpty) {
+          await db.insert('prompts', preset);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // Task History Methods
   Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
   Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);
-  Future<List<double>> getTaskDurations(int modelPk, int limit) => TaskRepository().getTaskDurations(modelPk, limit);
+  Future<void> cleanupStuckTasks() => TaskRepository().cleanupStuckTasks();
+  Future<List<double>> getTaskDurations(int modelDbId, int limit) => TaskRepository().getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
   Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
@@ -118,8 +166,8 @@ class DatabaseService {
   Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
   Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);
   Future<List<LLMModel>> getModels() => ModelRepository().getModels();
-  Future<void> updateModelEstimation(int modelPk, double mean, double sd, int tasksSinceUpdate) 
-      => ModelRepository().updateModelEstimation(modelPk, mean, sd, tasksSinceUpdate);
+  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) 
+      => ModelRepository().updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
   Future<void> saveSetting(String key, String value) async {
@@ -185,11 +233,11 @@ class DatabaseService {
     return await db.query('source_directories');
   }
 
-  // Fee Groups Methods
-  Future<int> addFeeGroup(Map<String, dynamic> group) => ModelRepository().addFeeGroup(FeeGroup.fromMap(group));
-  Future<void> updateFeeGroup(int id, Map<String, dynamic> group) => ModelRepository().updateFeeGroup(id, FeeGroup.fromMap(group));
-  Future<void> deleteFeeGroup(int id) => ModelRepository().deleteFeeGroup(id);
-  Future<List<FeeGroup>> getFeeGroups() => ModelRepository().getFeeGroups();
+  // Pricing Groups Methods
+  Future<int> addPricingGroup(Map<String, dynamic> group) => ModelRepository().addPricingGroup(PricingGroup.fromMap(group));
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) => ModelRepository().updatePricingGroup(id, PricingGroup.fromMap(group));
+  Future<void> deletePricingGroup(int id) => ModelRepository().deletePricingGroup(id);
+  Future<List<PricingGroup>> getPricingGroups() => ModelRepository().getPricingGroups();
 
   // LLM Channels Methods
   Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
@@ -228,17 +276,36 @@ class DatabaseService {
   }
 
   // Backup & Restore (Now with optional prompt inclusion)
-  Future<Map<String, dynamic>> getAllDataRaw({bool includePrompts = true}) async {
+  Future<Map<String, dynamic>> getAllDataRaw({
+    bool includePrompts = true, 
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
     final db = await database;
+    
+    // Filter settings if directories are excluded
+    final settingsRows = await db.query('settings');
+    var filteredSettings = settingsRows;
+    if (!includeDirectories) {
+      final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
+      filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
+    }
+
     final Map<String, dynamic> data = {
-      'settings': await db.query('settings'),
+      'settings': filteredSettings,
       'llm_channels': await db.query('llm_channels'),
       'llm_models': await db.query('llm_models'),
       'fee_groups': await db.query('fee_groups'),
-      'source_directories': await db.query('source_directories'),
       'downloader_cookies': await db.query('downloader_cookies'),
-      'token_usage': await db.query('token_usage'),
     };
+
+    if (includeUsage) {
+      data['token_usage'] = await db.query('token_usage');
+    }
+
+    if (includeDirectories) {
+      data['source_directories'] = await db.query('source_directories');
+    }
 
     if (includePrompts) {
       data.addAll(await getPromptDataRaw());
@@ -247,15 +314,25 @@ class DatabaseService {
     return data;
   }
 
-  Future<void> clearAllData(DatabaseExecutor txn, {bool includePrompts = true}) async {
+  Future<void> clearAllData(DatabaseExecutor txn, {
+    bool includePrompts = true, 
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
     await txn.delete('settings');
     await txn.delete('llm_channels');
     await txn.delete('llm_models');
     await txn.delete('fee_groups');
-    await txn.delete('source_directories');
     await txn.delete('tasks');
-    await txn.delete('token_usage');
     await txn.delete('downloader_cookies');
+
+    if (includeUsage) {
+      await txn.delete('token_usage');
+    }
+
+    if (includeDirectories) {
+      await txn.delete('source_directories');
+    }
 
     if (includePrompts) {
       await txn.delete('prompts');
@@ -266,22 +343,29 @@ class DatabaseService {
     }
   }
 
-  Future<void> restoreBackup(Map<String, dynamic> data) async {
+  Future<void> restoreBackup(Map<String, dynamic> data, {
+    bool includePrompts = true, 
+    bool includeUsage = true, 
+    bool includeDirectories = true,
+  }) async {
     final db = await database;
-    final bool includePrompts = data.containsKey('prompts') || data.containsKey('user_prompts') || data.containsKey('tags');
 
     await db.transaction((txn) async {
-      await clearAllData(txn, includePrompts: includePrompts);
+      await clearAllData(txn, 
+        includePrompts: includePrompts, 
+        includeUsage: includeUsage, 
+        includeDirectories: includeDirectories,
+      );
 
       final channelIdMap = await _importChannels(txn, data['llm_channels']);
-      final feeGroupIdMap = await _importFeeGroups(txn, data['fee_groups']);
-      final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, feeGroupIdMap);
+      final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
+      final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
       
       if (data['downloader_cookies'] != null) {
         await _importSimpleTable(txn, 'downloader_cookies', data['downloader_cookies']);
       }
 
-      if (data['token_usage'] != null) {
+      if (includeUsage && data['token_usage'] != null) {
         await _importTokenUsage(txn, data['token_usage'], modelIdMap);
       }
 
@@ -291,8 +375,19 @@ class DatabaseService {
         await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);
       }
       
-      await _importSimpleTable(txn, 'settings', data['settings']);
-      await _importSimpleTable(txn, 'source_directories', data['source_directories']);
+      if (data['settings'] != null) {
+        final List<dynamic> settingsRows = data['settings'];
+        var filteredSettings = settingsRows;
+        if (!includeDirectories) {
+          final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
+          filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
+        }
+        await _importSimpleTable(txn, 'settings', filteredSettings);
+      }
+
+      if (includeDirectories && data['source_directories'] != null) {
+        await _importSimpleTable(txn, 'source_directories', data['source_directories']);
+      }
     });
   }
 
@@ -354,11 +449,15 @@ class DatabaseService {
           final List<dynamic>? tags = row['tags'];
           row.remove('tags');
 
-          if (!replace) {
-            final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
-            if (existing.isNotEmpty) continue;
+          final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
+          if (existing.isNotEmpty) {
+            if (!replace) continue;
+            // Delete existing prompt and its tag refs when replacing
+            final existingId = existing.first['id'] as int;
+            await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [existingId]);
+            await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
           }
-          
+
           final newPromptId = await txn.insert('system_prompts', row);
           if (tags != null) {
             for (var t in tags) {
@@ -387,14 +486,14 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
-  Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> feeGroupIdMap) async {
+  Future<Map<int, int>> _importModels(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> channelIdMap, Map<int, int> pricingGroupIdMap) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
     for (var m in rows) {
       final oldId = m['id'] as int;
       final Map<String, dynamic> row = Map.from(m)..remove('id');
       if (row['channel_id'] != null) row['channel_id'] = channelIdMap[row['channel_id']];
-      if (row['fee_group_id'] != null) row['fee_group_id'] = feeGroupIdMap[row['fee_group_id']];
+      if (row['fee_group_id'] != null) row['fee_group_id'] = pricingGroupIdMap[row['fee_group_id']];
       final newId = await txn.insert('llm_models', row);
       idMap[oldId] = newId;
     }
@@ -493,7 +592,7 @@ class DatabaseService {
     return idMap;
   }
 
-  Future<Map<int, int>> _importFeeGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
+  Future<Map<int, int>> _importPricingGroups(DatabaseExecutor txn, List<dynamic>? rows) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
     for (var g in rows) {

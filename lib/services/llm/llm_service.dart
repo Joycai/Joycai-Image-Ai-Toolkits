@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
-import 'llm_models.dart';
 import 'llm_provider_interface.dart';
+import 'llm_types.dart';
 
 class LLMService {
   static final LLMService _instance = LLMService._internal();
@@ -22,7 +22,7 @@ class LLMService {
   }
 
   Future<LLMResponse> request({
-    required dynamic modelIdentifier,
+    required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,
@@ -53,12 +53,14 @@ class LLMService {
           List<Uint8List> accumulatedImages = [];
           Map<String, dynamic>? finalMetadata;
 
-          await for (final chunk in provider.generateStream(
+          final stream = provider.generateStream(
             config, 
             fullHistory, 
             options: options, 
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          )) {
+          );
+
+          await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
             if (chunk.textPart != null) {
               accumulatedText += chunk.textPart!;
               onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
@@ -77,7 +79,7 @@ class LLMService {
 
           // Record usage
           if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
           }
 
           // Update session
@@ -96,14 +98,14 @@ class LLMService {
             fullHistory,
             options: options,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          );
+          ).timeout(const Duration(seconds: 120));
           if (response.text.isNotEmpty) {
             onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
           }
 
           // Record usage
           if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
           }
 
           // Update session
@@ -150,7 +152,7 @@ class LLMService {
   }
 
   Stream<LLMResponseChunk> requestStream({
-    required dynamic modelIdentifier, // Can be String (legacy ID) or int (PK)
+    required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
     String? sessionId,
     String? contextId,
@@ -181,7 +183,14 @@ class LLMService {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
         
-        await for (final chunk in provider.generateStream(config, fullHistory, options: options, logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId))) {
+        final stream = provider.generateStream(
+          config, 
+          fullHistory, 
+          options: options, 
+          logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+        );
+
+        await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
           if (chunk.textPart != null) {
             accumulatedText += chunk.textPart!;
             onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
@@ -199,7 +208,7 @@ class LLMService {
         // Unified Token Usage Recording
         if (finalMetadata != null) {
           onLogAdded?.call('Recording token usage...', level: 'DEBUG', contextId: contextId);
-          _recordUsage(config.modelId, config, finalMetadata, modelPk: modelIdentifier is int ? modelIdentifier : null);
+          _recordUsage(config.modelId, config, finalMetadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
         }
 
         if (sessionId != null) {
@@ -220,7 +229,7 @@ class LLMService {
     }
   }
 
-  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelPk}) async {
+  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId}) async {
     final db = DatabaseService();
     
     // Standardize metadata keys (OpenAI vs Google)
@@ -230,7 +239,7 @@ class LLMService {
     await db.recordTokenUsage({
       'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
       'model_id': modelId,
-      'model_pk': modelPk,
+      'model_pk': modelDbId,
       'timestamp': DateTime.now().toIso8601String(),
       'input_tokens': inputTokens,
       'output_tokens': outputTokens,

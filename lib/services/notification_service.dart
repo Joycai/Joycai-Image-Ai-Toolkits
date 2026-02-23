@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:local_notifier/local_notifier.dart';
 
 class NotificationService {

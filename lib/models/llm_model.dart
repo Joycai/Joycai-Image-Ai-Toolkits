@@ -5,6 +5,8 @@ class LLMModel {
   final String type; // google-genai, openai-api
   final String tag; // image, chat, multimodal
   final bool isPaid;
+  final bool supportsStream;
+  final bool supportsStandard;
   final int sortOrder;
   final int? channelId;
   final int? feeGroupId;
@@ -21,6 +23,8 @@ class LLMModel {
     required this.type,
     required this.tag,
     this.isPaid = true,
+    this.supportsStream = true,
+    this.supportsStandard = true,
     this.sortOrder = 0,
     this.channelId,
     this.feeGroupId,
@@ -37,6 +41,8 @@ class LLMModel {
       type: map['type'] as String,
       tag: map['tag'] as String,
       isPaid: (map['is_paid'] ?? 1) == 1,
+      supportsStream: (map['supports_stream'] ?? 1) == 1,
+      supportsStandard: (map['supports_standard'] ?? 1) == 1,
       sortOrder: map['sort_order'] as int? ?? 0,
       channelId: map['channel_id'] as int?,
       feeGroupId: map['fee_group_id'] as int?,
@@ -53,6 +59,8 @@ class LLMModel {
       'type': type,
       'tag': tag,
       'is_paid': isPaid ? 1 : 0,
+      'supports_stream': supportsStream ? 1 : 0,
+      'supports_standard': supportsStandard ? 1 : 0,
       'sort_order': sortOrder,
       'channel_id': channelId,
       'fee_group_id': feeGroupId,

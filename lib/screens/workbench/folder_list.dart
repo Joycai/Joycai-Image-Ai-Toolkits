@@ -1,0 +1,244 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../l10n/app_localizations.dart';
+import '../../state/app_state.dart';
+import '../../state/gallery_state.dart';
+import 'directory_tree_item.dart';
+
+class FolderList extends StatelessWidget {
+  final bool useFileBrowserState;
+
+  const FolderList({
+    super.key,
+    this.useFileBrowserState = false,
+  });
+
+  Future<void> _pickDirectory(BuildContext context, AppState appState) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: l10n.selectSourceDirectory,
+      );
+
+      if (selectedDirectory != null) {
+        if (useFileBrowserState) {
+          appState.fileBrowserState.addBaseDirectory(selectedDirectory);
+        } else {
+          appState.addBaseDirectory(selectedDirectory);
+        }
+      }
+    } catch (e) {
+      appState.addLog('Error picking directory: $e', level: 'ERROR');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final galleryState = appState.galleryState;
+
+    final sourceDirectories = useFileBrowserState 
+        ? appState.fileBrowserState.sourceDirectories 
+        : appState.sourceDirectories;
+
+    return Column(
+        children: [
+          if (Platform.isIOS || Platform.isAndroid)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withAlpha(100),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.photo_library_outlined, color: colorScheme.primary, size: 32),
+                    const SizedBox(height: 12),
+                    Text(
+                      Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
+                      style: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FilledButton.icon(
+                onPressed: () => _pickDirectory(context, appState),
+                icon: const Icon(Icons.create_new_folder_outlined),
+                label: Text(l10n.addFolder),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(45),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          const Divider(height: 1),
+          
+          // Fixed Nodes
+          if (!useFileBrowserState) ...[
+            _buildFixedNode(
+              context,
+              icon: Icons.photo_library_outlined,
+              label: l10n.sourceGallery,
+              isSelected: galleryState.viewMode == GalleryViewMode.all,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.all),
+              colorScheme: colorScheme,
+            ),
+            _buildFixedNode(
+              context,
+              icon: Icons.workspaces_outline,
+              label: l10n.tempWorkspace,
+              isSelected: galleryState.viewMode == GalleryViewMode.temp,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
+              colorScheme: colorScheme,
+            ),
+            _buildFixedNode(
+              context,
+              icon: Icons.auto_awesome_motion,
+              label: (Platform.isIOS || Platform.isMacOS) ? l10n.resultCache : l10n.processResults,
+              isSelected: galleryState.viewMode == GalleryViewMode.processed,
+              onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
+              colorScheme: colorScheme,
+            ),
+            const Divider(height: 1),
+          ],
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  l10n.directories,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${sourceDirectories.length}',
+                  style: TextStyle(fontSize: 11, color: colorScheme.primary),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: sourceDirectories.isEmpty
+                ? _buildEmptyState(colorScheme, l10n)
+                : ListView.builder(
+                    itemCount: sourceDirectories.length,
+                    itemBuilder: (context, index) {
+                      final path = sourceDirectories[index];
+                      return DirectoryTreeItem(
+                        key: ValueKey(path),
+                        path: path,
+                        isRoot: true,
+                        useFileBrowserState: useFileBrowserState,
+                        onRemove: (p, name) => _confirmRemove(context, appState, p, name),
+                      );
+                    },
+                  ),
+          ),
+        ],
+    );
+  }
+
+  Widget _buildFixedNode(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+        ),
+      ),
+      selected: isSelected,
+      dense: true,
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  void _confirmRemove(BuildContext context, AppState appState, String path, String folderName) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.removeFolderConfirmTitle),
+        content: Text(l10n.removeFolderConfirmMessage(folderName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              if (useFileBrowserState) {
+                appState.fileBrowserState.removeBaseDirectory(path);
+              } else {
+                appState.removeBaseDirectory(path);
+              }
+              Navigator.pop(context);
+            },
+            child: Text(l10n.remove, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.folder_off_outlined, size: 48, color: colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noFolders,
+              style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.clickAddFolder,
+              style: TextStyle(color: colorScheme.outline, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

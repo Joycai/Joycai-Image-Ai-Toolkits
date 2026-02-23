@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -19,7 +21,9 @@ import 'services/llm/model_discovery_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
+import 'services/task_queue_service.dart';
 import 'state/app_state.dart';
+import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +45,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appState),
-        ChangeNotifierProvider.value(value: appState.windowState),
-        ChangeNotifierProvider.value(value: appState.browserState),
+        ChangeNotifierProvider<TaskQueueService>.value(value: appState.taskQueue),
+        ChangeNotifierProvider.value(value: appState.workbenchUIState),
+        ChangeNotifierProvider.value(value: appState.fileBrowserState),
         ChangeNotifierProvider.value(value: appState.downloaderState),
       ],
       child: MyApp(version: packageInfo.version),
@@ -80,10 +85,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('zh'),
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const MainNavigationScreen(),
     );
   }
@@ -119,115 +121,167 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  final List<Widget> _screens = [
-    const WorkbenchScreen(),
-    const FileBrowserScreen(),
-    const TaskQueueScreen(),
-    const ImageDownloaderScreen(),
-    const PromptsScreen(),
-    const TokenUsageScreen(),
-    const ModelsScreen(),
-    const SettingsScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final l10n = AppLocalizations.of(context)!;
-    final isMobile = Responsive.isMobile(context);
-    final isTablet = Responsive.isTablet(context);
-
-    // If rail extended state hasn't been set by user, default based on tablet/desktop
-    if (isTablet) _isRailExtended = false;
-
-    final allNavItems = [
+  // Define all possible nav items
+  List<({Icon icon, Icon selectedIcon, String label, Widget screen, bool hideOnMobile})> _getNavDefinitions(AppLocalizations l10n) {
+    return [
       (
         icon: const Icon(Icons.work_outline),
         selectedIcon: const Icon(Icons.work),
         label: l10n.workbench,
+        screen: const WorkbenchScreen(),
+        hideOnMobile: false,
       ),
       (
         icon: const Icon(Icons.folder_copy_outlined),
         selectedIcon: const Icon(Icons.folder_copy),
         label: l10n.fileBrowser,
+        screen: const FileBrowserScreen(),
+        hideOnMobile: true,
       ),
       (
         icon: const Icon(Icons.assignment_outlined),
         selectedIcon: const Icon(Icons.assignment),
         label: l10n.tasks,
+        screen: const TaskQueueScreen(),
+        hideOnMobile: false,
       ),
       (
         icon: const Icon(Icons.cloud_download_outlined),
         selectedIcon: const Icon(Icons.cloud_download),
         label: l10n.downloader,
+        screen: const ImageDownloaderScreen(),
+        hideOnMobile: true,
       ),
       (
         icon: const Icon(Icons.notes_outlined),
         selectedIcon: const Icon(Icons.notes),
         label: l10n.prompts,
+        screen: const PromptsScreen(),
+        hideOnMobile: false,
       ),
       (
         icon: const Icon(Icons.analytics_outlined),
         selectedIcon: const Icon(Icons.analytics),
         label: l10n.usage,
+        screen: const TokenUsageScreen(),
+        hideOnMobile: false,
       ),
       (
         icon: const Icon(Icons.model_training_outlined),
         selectedIcon: const Icon(Icons.model_training),
         label: l10n.models,
+        screen: const ModelsScreen(),
+        hideOnMobile: false,
       ),
       (
         icon: const Icon(Icons.settings_outlined),
         selectedIcon: const Icon(Icons.settings),
         label: l10n.settings,
+        screen: const SettingsScreen(),
+        hideOnMobile: false,
       ),
     ];
+  }
 
-    // Split for mobile: 4 items + "More"
-    final primaryItems = allNavItems.take(4).toList();
-    final secondaryItems = allNavItems.skip(4).toList();
+  @override
+  Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+    final l10n = AppLocalizations.of(context)!;
+    final isMobileUI = Responsive.isMobile(context);
+    final isTabletUI = Responsive.isTablet(context);
+    final isMobilePlatform = Platform.isAndroid || Platform.isIOS;
+
+    // Filter items based on platform
+    final allDefinitions = _getNavDefinitions(l10n);
+    final filteredDefinitions = isMobilePlatform 
+        ? allDefinitions.where((d) => !d.hideOnMobile).toList()
+        : allDefinitions;
+
+    final screens = filteredDefinitions.map((d) => d.screen).toList();
+    final navItems = filteredDefinitions.map((d) => (
+      icon: d.icon,
+      selectedIcon: d.selectedIcon,
+      label: d.label,
+    )).toList();
+
+    // Mapping logic for active index
+    // If current index is out of bounds for filtered list (e.g. switched from desktop to mobile via dev tools?)
+    // But here we care about platform. If platform is mobile, index must be mapped.
+    int displayIndex = appState.activeScreenIndex;
+    if (isMobilePlatform) {
+      // Find the index of the screen in the filtered list
+      final currentScreen = allDefinitions[appState.activeScreenIndex].screen;
+      displayIndex = screens.indexOf(currentScreen);
+      if (displayIndex == -1) {
+        displayIndex = 0; // Fallback to workbench
+        // Optionally update appState here, but we should be careful with side effects in build
+      }
+    }
+
+    // If rail extended state hasn't been set by user, default based on tablet/desktop
+    if (isTabletUI) _isRailExtended = false;
+
+    // Split for mobile UI (NavigationBar): first 4 items + "More"
+    final primaryItems = navItems.take(4).toList();
+    final secondaryItems = navItems.skip(4).toList();
 
     return Stack(
       children: [
         Scaffold(
           key: _scaffoldKey,
-          drawer: isMobile ? _buildMobileDrawer(secondaryItems, l10n, appState) : null,
+          drawer: isMobileUI ? _buildMobileDrawer(secondaryItems, l10n, filteredDefinitions, displayIndex) : null,
           body: SafeArea(
             child: Row(
               children: [
-                if (!isMobile)
-                  NavigationRail(
-                    extended: _isRailExtended,
-                    selectedIndex: appState.activeScreenIndex,
-                    onDestinationSelected: (int index) {
-                      appState.navigateToScreen(index);
-                    },
-                    leading: IconButton(
-                      icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
-                      onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
-                    ),
-                    labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-                    destinations: allNavItems
-                        .map((d) => NavigationRailDestination(
-                              icon: d.icon,
-                              selectedIcon: d.selectedIcon,
-                              label: Text(d.label),
-                            ))
-                        .toList(),
+                if (!isMobileUI)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: IntrinsicHeight(
+                            child: NavigationRail(
+                              extended: _isRailExtended,
+                              selectedIndex: displayIndex,
+                              onDestinationSelected: (int index) {
+                                // Map back to original index
+                                final targetScreen = filteredDefinitions[index].screen;
+                                final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
+                                appState.navigateToScreen(originalIndex);
+                              },
+                              leading: IconButton(
+                                icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
+                                onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
+                              ),
+                              labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                              destinations: navItems
+                                  .map((d) => NavigationRailDestination(
+                                        icon: d.icon,
+                                        selectedIcon: d.selectedIcon,
+                                        label: Text(d.label),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
                   ),
-                if (!isMobile) const VerticalDivider(thickness: 1, width: 1),
+                if (!isMobileUI) const VerticalDivider(thickness: 1, width: 1),
                 Expanded(
-                  child: _screens[appState.activeScreenIndex],
+                  child: screens[displayIndex],
                 ),
               ],
             ),
           ),
-          bottomNavigationBar: isMobile
+          bottomNavigationBar: isMobileUI
               ? NavigationBar(
-                  selectedIndex: appState.activeScreenIndex < 4 ? appState.activeScreenIndex : 4,
+                  selectedIndex: displayIndex < 4 ? displayIndex : 4,
                   onDestinationSelected: (int index) {
                     if (index < 4) {
-                      appState.navigateToScreen(index);
+                      final targetScreen = filteredDefinitions[index].screen;
+                      final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
+                      appState.navigateToScreen(originalIndex);
                     } else {
                       _scaffoldKey.currentState?.openDrawer();
                     }
@@ -241,17 +295,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     const NavigationDestination(
                       icon: Icon(Icons.more_horiz_outlined),
                       selectedIcon: Icon(Icons.more_horiz),
-                      label: "More", // Usually stays English or translated if needed
+                      label: "More", 
                     ),
                   ],
                 )
               : null,
         ),
+        const TaskCapsuleMonitor(),
       ],
     );
   }
 
-  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n, AppState appState) {
+  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n, List<dynamic> filteredDefinitions, int displayIndex) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final allDefinitions = _getNavDefinitions(l10n);
+
     return Drawer(
       child: Column(
         children: [
@@ -279,13 +337,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ...items.asMap().entries.map((entry) {
             final index = entry.key + 4; // Skip first 4
             final d = entry.value;
-            final isSelected = appState.activeScreenIndex == index;
+            final isSelected = displayIndex == index;
             return ListTile(
               leading: isSelected ? d.selectedIcon : d.icon,
               title: Text(d.label),
               selected: isSelected,
               onTap: () {
-                appState.navigateToScreen(index);
+                final targetScreen = filteredDefinitions[index].screen;
+                final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
+                appState.navigateToScreen(originalIndex);
                 Navigator.pop(context);
               },
             );

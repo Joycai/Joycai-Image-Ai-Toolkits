@@ -79,18 +79,37 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
   }
 
   Future<void> _analyze() async {
-    if (_urlController.text.isEmpty || _requirementController.text.isEmpty) return;
-    
+    final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
-    
-    if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-       state.selectedModelPk = appState.chatModels.first.id;
+
+    if (_urlController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.urlRequired), backgroundColor: Colors.orange),
+      );
+      return;
     }
     
-    if (state.selectedModelPk == null) {
+    if (_requirementController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.requirementRequired), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    if (state.isManualHtml && state.manualHtml.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.manualHtmlRequired), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    
+    if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
+       state.selectedModelDbId = appState.chatModels.first.id;
+    }
+    
+    if (state.selectedModelDbId == null) {
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.noModelsConfigured),
@@ -106,17 +125,26 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
     setState(() => _isAnalyzing = true);
     state.reset();
+    state.addLog('Starting analysis...');
 
     try {
       final results = await WebScraperService().discoverImages(
         url: _urlController.text,
         requirement: _requirementController.text,
-        modelIdentifier: state.selectedModelPk!,
+        modelIdentifier: state.selectedModelDbId!,
         cookies: _cookieController.text,
         manualHtml: state.isManualHtml ? state.manualHtml : null,
         onLog: state.addLog,
       );
-      state.setState(discoveredImages: results);
+      
+      if (mounted) {
+        state.setState(discoveredImages: results);
+        if (results.isEmpty) {
+          state.addLog('Analysis finished, but no matching images were found.');
+        } else {
+          state.addLog('Found ${results.length} images.');
+        }
+      }
       
       if (results.isNotEmpty && _cookieController.text.isNotEmpty) {
         try {
@@ -126,6 +154,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       }
     } catch (e) {
       state.addLog('Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Analysis failed: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
@@ -182,7 +215,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final urls = selected.map((img) => img.url).toList();
     appState.taskQueue.addTask(
       urls,
-      state.selectedModelPk,
+      state.selectedModelDbId,
       {
         'url': _urlController.text,
         'prefix': _prefixController.text,
@@ -263,8 +296,8 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final size = MediaQuery.of(context).size;
     final isNarrow = size.width < 900;
 
-    if (state.selectedModelPk == null && appState.chatModels.isNotEmpty) {
-      state.selectedModelPk = appState.chatModels.first.id;
+    if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
+      state.selectedModelDbId = appState.chatModels.first.id;
     }
 
     final controlPanel = Column(

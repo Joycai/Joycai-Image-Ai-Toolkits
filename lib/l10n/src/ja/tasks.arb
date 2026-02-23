@@ -1,0 +1,94 @@
+{
+  "tasks": "タスク",
+  "taskQueueManager": "タスクキューマネージャー",
+  "noTasksInQueue": "キューにタスクがありません",
+  "submitTaskFromWorkbench": "ワークベンチからタスクを送信して、ここに表示します。",
+  "taskId": "タスクID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskSummary": "タスクの概要",
+  "pendingTasks": "保留中",
+  "processingTasks": "処理中",
+  "completedTasks": "完了",
+  "failedTasks": "失敗",
+  "canceledTasks": "キャンセル済み",
+  "clearCompleted": "完了済みをクリア",
+  "clearFailed": "失敗をクリア",
+  "clearAll": "すべてクリア",
+  "cancelAll": "すべてキャンセル",
+  "cancelAllPending": "すべての保留中をキャンセル",
+  "cancelTask": "タスクをキャンセル",
+  "removeFromList": "リストから削除",
+  "model": "モデル",
+  "images": "画像",
+  "filesCount": "{count} 個のファイル",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runningCount": "{count} 個実行中",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannedCount": "{count} 個計画済み",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "latestLog": "最新ログ:",
+  "taskCompletedNotification": "タスク完了",
+  "taskFailedNotification": "タスク失敗",
+  "taskCanceledNotification": "タスクキャンセル",
+  "taskCompletedBody": "タスク {id} が正常に完了しました。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "タスク {id} の処理に失敗しました。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskCanceledBody": "タスク {id} はユーザーによってキャンセルされました。",
+  "retryAllFailed": "失敗したものをすべて再試行",
+  "pauseQueue": "キューを一時停止",
+  "resumeQueue": "キューを再開",
+  "queueSettings": "キュー設定",
+  "concurrencyLimit": "並列処理制限: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "retryCount": "再試行回数: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

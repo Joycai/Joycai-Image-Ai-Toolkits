@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/app_file.dart';
+import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 
@@ -19,7 +19,8 @@ class GalleryToolbar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final appState = Provider.of<AppState>(context);
     final galleryState = appState.galleryState;
-    final isMobile = Responsive.isMobile(context);
+    final isDesktop = Responsive.isDesktop(context);
+    final isNarrow = Responsive.isNarrow(context);
     
     final selectedCount = appState.selectedImages.length;
     final thumbnailSize = appState.thumbnailSize;
@@ -38,7 +39,7 @@ class GalleryToolbar extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    isMobile ? '$selectedCount' : l10n.selectedCount(selectedCount),
+                    isNarrow ? '$selectedCount' : l10n.selectedCount(selectedCount),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(width: 8),
@@ -55,51 +56,85 @@ class GalleryToolbar extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                   ),
                   
-                  if (!isMobile) ...[
-                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                    if (galleryState.droppedImages.isNotEmpty)
-                      TextButton.icon(
-                        onPressed: () => galleryState.clearDroppedImages(),
-                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                        label: Text(l10n.clearTempWorkspace),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      ),
-                    
-                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
-                    // Thumbnail Size Slider
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
-                        SizedBox(
-                          width: 100,
-                          child: Slider(
-                            value: thumbnailSize,
-                            min: 80,
-                            max: 400,
-                            onChanged: (v) => galleryState.setThumbnailSize(v),
-                          ),
-                        ),
-                        Icon(Icons.image, size: 20, color: colorScheme.outline),
-                      ],
+                  const VerticalDivider(width: 24, indent: 8, endIndent: 8),
+                  if (!isDesktop && galleryState.droppedImages.isNotEmpty) ...[
+                    TextButton.icon(
+                      onPressed: () => galleryState.clearDroppedImages(),
+                      icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                      label: Text(l10n.clearTempWorkspace),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                     ),
+                    const VerticalDivider(width: 24, indent: 8, endIndent: 8),
                   ],
+
+                  // Thumbnail Size Slider
+                  if (!isNarrow) ...[
+                    Icon(Icons.image_outlined, size: 16, color: colorScheme.outline),
+                    SizedBox(
+                      width: 100,
+                      child: Slider(
+                        value: thumbnailSize,
+                        min: 80,
+                        max: 400,
+                        onChanged: (v) => galleryState.setThumbnailSize(v),
+                      ),
+                    ),
+                    Icon(Icons.image, size: 20, color: colorScheme.outline),
+                  ] else
+                    IconButton(
+                      icon: const Icon(Icons.grid_view, size: 20),
+                      onPressed: () => _showThumbnailSizeDialog(context, galleryState, thumbnailSize, l10n),
+                      tooltip: l10n.thumbnailSize,
+                    ),
                 ],
               ),
             ),
           ),
           
-          if (isMobile) 
+          if (!isDesktop) ...[
+            IconButton(
+              icon: const Icon(Icons.camera_alt_outlined, size: 22),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                if (photo != null) {
+                  galleryState.addDroppedFiles([AppImage(path: photo.path, name: photo.name)]);
+                  galleryState.setViewMode(GalleryViewMode.temp);
+                }
+              },
+              tooltip: l10n.takePhoto,
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 22),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final List<XFile> picked = await picker.pickMultiImage();
+                if (picked.isNotEmpty) {
+                  final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
+                  galleryState.addDroppedFiles(newFiles);
+                  galleryState.setViewMode(GalleryViewMode.temp);
+                }
+              },
+              tooltip: l10n.importFromGallery,
+            ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (val) async {
                 if (val == 'refresh') galleryState.refreshImages();
                 if (val == 'clear_temp') galleryState.clearDroppedImages();
+                if (val == 'camera') {
+                  final picker = ImagePicker();
+                  final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+                  if (photo != null) {
+                    galleryState.addDroppedFiles([AppImage(path: photo.path, name: photo.name)]);
+                    galleryState.setViewMode(GalleryViewMode.temp);
+                  }
+                }
                 if (val == 'import') {
                   final picker = ImagePicker();
                   final List<XFile> picked = await picker.pickMultiImage();
                   if (picked.isNotEmpty) {
-                    final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                    final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
                     galleryState.addDroppedFiles(newFiles);
                     galleryState.setViewMode(GalleryViewMode.temp);
                   }
@@ -123,6 +158,15 @@ class GalleryToolbar extends StatelessWidget {
                       dense: true,
                     ),
                   ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'camera',
+                  child: ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: Text(l10n.takePhoto),
+                    dense: true,
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'import',
                   child: ListTile(
@@ -132,8 +176,8 @@ class GalleryToolbar extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-          else ...[
+            ),
+          ] else ...[
             IconButton(
               icon: const Icon(Icons.refresh, size: 20),
               onPressed: () => galleryState.refreshImages(),
@@ -145,7 +189,7 @@ class GalleryToolbar extends StatelessWidget {
                 final picker = ImagePicker();
                 final List<XFile> picked = await picker.pickMultiImage();
                 if (picked.isNotEmpty) {
-                  final List<AppFile> newFiles = picked.map((f) => AppFile(path: f.path, name: f.name)).toList();
+                  final List<AppImage> newFiles = picked.map((f) => AppImage(path: f.path, name: f.name)).toList();
                   galleryState.addDroppedFiles(newFiles);
                   galleryState.setViewMode(GalleryViewMode.temp);
                 }
@@ -154,6 +198,38 @@ class GalleryToolbar extends StatelessWidget {
               label: Text(l10n.importFromGallery),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showThumbnailSizeDialog(BuildContext context, GalleryState state, double current, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.thumbnailSize),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            double val = current;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: val,
+                  min: 80,
+                  max: 400,
+                  onChanged: (v) {
+                    state.setThumbnailSize(v);
+                    setState(() => val = v);
+                  },
+                ),
+                Text("${val.toInt()}px"),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
