@@ -264,6 +264,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get analyzing => '正在分析...';
 
   @override
+  String get urlRequired => '请输入有效的网站 URL。';
+
+  @override
+  String get requirementRequired => '请输入您想要查找的图片描述（需求）。';
+
+  @override
+  String get manualHtmlRequired => '手动模式下请先粘贴 HTML 内容。';
+
+  @override
   String get findImages => '寻找图像';
 
   @override
@@ -1679,6 +1688,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get analyzing => '分析中...';
 
   @override
+  String get urlRequired => '請輸入有效的網站 URL。';
+
+  @override
+  String get requirementRequired => '請輸入您想要查找的圖片描述（需求）。';
+
+  @override
+  String get manualHtmlRequired => '手動模式下請先貼上 HTML 内容。';
+
+  @override
   String get findImages => '尋找圖片';
 
   @override
@@ -1797,7 +1815,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get usageByGroup => '按群組分類的用量';
 
   @override
-  String get clearAll => '全部清除';
+  String get clearAll => '清除全部';
 
   @override
   String get models => '模型';
@@ -2486,7 +2504,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get setupWizardTitle => '歡迎設定';
 
   @override
-  String get welcomeMessage => '歡迎使用 Joycai Image AI Toolkits！讓我們開始設定。';
+  String get welcomeMessage => '歡迎使用 Joycai Image AI Toolkits！讓我們為您完成設定。';
 
   @override
   String get getStarted => '開始使用';
@@ -2495,58 +2513,58 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get stepAppearance => '外觀';
 
   @override
-  String get stepStorage => '儲存空間';
+  String get stepStorage => '儲存';
 
   @override
-  String get stepApi => '智慧（API）';
+  String get stepApi => '智慧 (API)';
 
   @override
-  String get setupCompleteMessage => '您已全部設定完成！享受創作的樂趣。';
+  String get setupCompleteMessage => '您已全部設定完成！盡情享受創作吧。';
 
   @override
   String get skip => '略過';
 
   @override
-  String get storageLocationDesc => '選取要儲存產生的圖片的位置。';
+  String get storageLocationDesc => '選取產生的圖片將儲存的位置。';
 
   @override
-  String get addChannelOptional => '新增您的第一個 AI 供應商通道（選用）。';
+  String get addChannelOptional => '新增您的第一個 AI 供應商通道 (選用)。';
 
   @override
-  String get configureModelOptional => '為您的新通道設定模型（選用）。';
+  String get configureModelOptional => '為您的新通道設定模型 (選用)。';
 
   @override
-  String get googleGenAiFree => 'Google GenAI（免費）';
+  String get googleGenAiFree => 'Google GenAI (免費)';
 
   @override
-  String get googleGenAiPaid => 'Google GenAI（付費）';
+  String get googleGenAiPaid => 'Google GenAI (付費)';
 
   @override
   String get openaiApi => 'OpenAI API';
 
   @override
-  String get filenamePrefix => '檔案名前綴';
+  String get filenamePrefix => '檔案名稱前綴詞';
 
   @override
-  String get openaiEndpointHint => '提示：與 OpenAI 相容的端點通常以「/v1」結尾';
+  String get openaiEndpointHint => '提示：OpenAI 相容端點通常以「/v1」結尾';
 
   @override
-  String get googleEndpointHint => '提示：Google GenAI 端點通常以「/v1beta」結尾（內部處理）';
+  String get googleEndpointHint => '提示：Google GenAI 端點通常以「/v1beta」結尾 (內部處理)';
 
   @override
   String get workbench => '工作台';
 
   @override
-  String get imageProcessing => '影像處理';
+  String get imageProcessing => '圖片處理';
 
   @override
-  String get sourceGallery => '來源媒體櫃';
+  String get sourceGallery => '來源圖庫';
 
   @override
-  String get sourceExplorer => '來源總管';
+  String get sourceExplorer => '來源瀏覽器';
 
   @override
-  String get tempWorkspace => '暫存工作區';
+  String get tempWorkspace => '臨時工作區';
 
   @override
   String get processResults => '處理結果';
@@ -2561,19 +2579,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get addFolder => '新增資料夾';
 
   @override
-  String get noFolders => '未新增任何資料夾';
+  String get noFolders => '未新增資料夾';
 
   @override
-  String get clickAddFolder => '按一下「新增資料夾」以開始掃描影像。';
+  String get clickAddFolder => '點擊「新增資料夾」開始掃描圖片。';
 
   @override
-  String get noImagesFound => '找不到影像';
+  String get noImagesFound => '未找到圖片';
 
   @override
   String get noResultsYet => '尚無結果';
 
   @override
-  String get importFromGallery => '從媒體櫃匯入';
+  String get importFromGallery => '從圖庫匯入';
 
   @override
   String get takePhoto => '拍照';
@@ -2582,7 +2600,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get clearTempWorkspace => '清除工作區';
 
   @override
-  String get dropFilesHere => '將影像拖放到此處以新增至暫存工作區';
+  String get dropFilesHere => '將圖片拖放到此處以新增到臨時工作區';
+
+  @override
+  String get noImagesSelected => '未選取圖片';
 
   @override
   String get selectSourceDirectory => '選取來源目錄';
@@ -2595,11 +2616,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String removeFolderConfirmMessage(String folderName) {
-    return '您確定要從清單中移除「$folderName」嗎？';
+    return '您確定要從列表中移除「$folderName」嗎？';
   }
 
   @override
   String get thumbnailSize => '縮圖大小';
+
+  @override
+  String get deleteFile => '刪除檔案';
 
   @override
   String get deleteFileConfirmTitle => '刪除檔案？';
@@ -2610,13 +2634,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get moveToTrash => '移至垃圾桶';
+  String get moveToTrash => '移至資源回收筒';
 
   @override
   String get permanentlyDelete => '永久刪除';
 
   @override
-  String get deleteSuccess => '已成功刪除';
+  String get deleteSuccess => '刪除成功';
 
   @override
   String deleteFailed(String error) {
@@ -2627,7 +2651,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get modelSelection => '模型選取';
 
   @override
-  String get selectAModel => '提交任務前請先選取一個模型';
+  String get selectAModel => '選取模型';
 
   @override
   String get aspectRatio => '長寬比';
@@ -2636,24 +2660,24 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get resolution => '解析度';
 
   @override
-  String get prompt => '提示';
+  String get prompt => '提示詞';
 
   @override
-  String get promptHint => '在此輸入提示...';
+  String get promptHint => '在此輸入提示詞...';
 
   @override
-  String get prefixHint => '選用的檔名前綴';
+  String get prefixHint => '例如：result';
 
   @override
-  String get processPrompt => '處理提示';
+  String get processPrompt => '處理提示詞';
 
   @override
   String processImages(int count) {
-    return '處理 $count 張影像';
+    return '處理 $count 張圖片';
   }
 
   @override
-  String get taskSubmitted => '已將任務提交至佇列';
+  String get taskSubmitted => '任務已提交至佇列';
 
   @override
   String get comparator => '比較器';
@@ -2665,43 +2689,52 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get compareModeSwap => '交換模式';
 
   @override
-  String get sendToComparatorRaw => '設為之前（原始）';
+  String get sendToComparator => '發送到比較器';
 
   @override
-  String get sendToComparatorAfter => '設為之後（結果）';
+  String get sendToComparatorRaw => '設為原始圖 (RAW)';
 
   @override
-  String get optimizePromptWithImage => '使用影像最佳化提示';
+  String get sendToComparatorAfter => '設為處理後 (Result)';
 
   @override
-  String get selectFromLibrary => '從媒體櫃選取';
+  String get sendToSelection => '新增至選取項目';
 
   @override
-  String get metadataSelectedNone => '未選取影像中繼資料';
+  String get sendToOptimizer => '發送到提示詞優化器';
+
+  @override
+  String get optimizePromptWithImage => '使用圖片優化提示詞';
+
+  @override
+  String get selectFromLibrary => '從庫中選取';
+
+  @override
+  String get metadataSelectedNone => '未選取圖片中繼資料';
 
   @override
   String get labelRaw => '原始';
 
   @override
-  String get labelAfter => '之後';
+  String get labelAfter => '處理後';
 
   @override
-  String get cropAndResize => '裁剪並調整大小';
+  String get cropAndResize => '裁切與調整大小';
 
   @override
-  String get overwriteSource => '覆寫原始檔案';
+  String get overwriteSource => '覆蓋原始檔案';
 
   @override
-  String get overwriteConfirmTitle => '覆寫原始檔案？';
+  String get overwriteConfirmTitle => '覆蓋原始檔案？';
 
   @override
-  String get overwriteConfirmMessage => '此動作將永久取代原始檔案。您確定嗎？';
+  String get overwriteConfirmMessage => '此操作將永久替換原始檔案。您確定嗎？';
 
   @override
-  String get saveToTempSuccess => '已將影像儲存至暫存工作區';
+  String get saveToTempSuccess => '圖片已儲存至臨時工作區';
 
   @override
-  String get overwriteSuccess => '已更新原始檔案';
+  String get overwriteSuccess => '原始檔案已更新';
 
   @override
   String get custom => '自訂';
@@ -2710,7 +2743,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get resize => '調整大小';
 
   @override
-  String get maintainAspectRatio => '維持長寬比';
+  String get maintainAspectRatio => '保持長寬比';
 
   @override
   String get width => '寬度';
@@ -2719,7 +2752,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get height => '高度';
 
   @override
-  String get sampling => '取樣';
+  String get sampling => '採樣';
 
   @override
   String get drawMask => '繪製遮罩';
@@ -2728,71 +2761,74 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get maskEditor => '遮罩編輯器';
 
   @override
-  String get brushSize => '筆刷大小';
+  String get brushSize => '畫筆大小';
 
   @override
   String get maskColor => '遮罩顏色';
 
   @override
-  String get maskOpacity => '遮罩不透明度';
+  String get maskOpacity => '遮罩透明度';
 
   @override
-  String get saveToTemp => '儲存至工作區';
+  String get undo => '復原';
 
   @override
-  String get saveMaskToTemp => '將遮罩儲存至工作区';
+  String get saveToTemp => '儲存到工作區';
 
   @override
-  String get binaryMode => '二元模式';
+  String get saveMaskToTemp => '儲存遮罩到工作區';
 
   @override
-  String get maskSaved => '已將遮罩儲存至工作區';
+  String get binaryMode => '二進制模式';
+
+  @override
+  String get maskSaved => '遮罩已儲存到工作區';
 
   @override
   String maskSaveError(String error) {
-    return '儲存遮罩時發生錯誤：$error';
+    return '儲存遮罩出錯：$error';
   }
 
   @override
-  String get promptOptimizer => '提示最佳化工具';
+  String get promptOptimizer => '提示詞優化器';
 
   @override
-  String get refinerModel => 'Refiner 模型';
+  String get refinerModel => '優化模型';
 
   @override
-  String get systemPrompt => '系統提示';
+  String get systemPrompt => '系統提示詞';
 
   @override
-  String get refinerIntro => '使用 AI 分析影像並調整您的提示。';
+  String get refinerIntro => '使用 AI 分析圖片並優化您的提示詞。';
 
   @override
-  String get roughPrompt => '粗略的提示/想法';
+  String get roughPrompt => '初步想法 / 草稿';
 
   @override
-  String get optimizedPrompt => '最佳化提示';
+  String get optimizedPrompt => '優化後的提示詞';
 
   @override
-  String get applyToWorkbench => '套用至工作台';
+  String get applyToWorkbench => '套用到工作台';
 
   @override
-  String get promptApplied => '已將提示套用至工作台';
+  String get promptApplied => '提示詞已套用到工作台';
 
   @override
   String refineFailed(String error) {
-    return '調整失敗：$error';
+    return '優化失敗：$error';
   }
 
   @override
-  String get executionLogs => '執行記錄';
+  String get executionLogs => '執行日誌';
 
   @override
-  String get saveToPhotos => '儲存至相片';
+  String get saveToPhotos => '儲存到照片';
 
   @override
-  String get saveToGallery => '儲存至圖庫';
+  String get saveToGallery => '儲存到相簿';
 
   @override
-  String get savedToPhotos => '已儲存至相片';
+  String get savedToPhotos => '已儲存到照片';
 
   @override
   String saveFailed(String error) {
@@ -2800,18 +2836,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get iosSandboxActive => 'iOS 沙箱作用中';
+  String get iosSandboxActive => 'iOS 沙盒已啟用';
 
   @override
-  String get iosSandboxDesc => '在 iOS 上，請使用頂端工具列中的「從圖庫匯入」按鈕，將影像新增至您的暫存工作區。';
+  String get iosSandboxDesc => '在 iOS 上，請使用頂部工具列中的「從圖庫匯入」按鈕將圖片新增到您的臨時工作區。';
 
   @override
-  String get mobileSandboxActive => '行動儲存空間限制';
+  String get mobileSandboxActive => '行動裝置儲存限制';
 
   @override
   String get mobileSandboxDesc =>
-      '在行動裝置上，作業系統可能會限制直接存取資料夾。建議使用頂端工具列中的「從圖庫匯入」按鈕。';
+      '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
 
   @override
-  String get filesAppSuffix => '（檔案應用程式）';
+  String get filesAppSuffix => ' (檔案 App)';
 }

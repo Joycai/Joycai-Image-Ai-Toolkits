@@ -587,6 +587,24 @@ abstract class AppLocalizations {
   /// **'Analyzing...'**
   String get analyzing;
 
+  /// No description provided for @urlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid Website URL.'**
+  String get urlRequired;
+
+  /// No description provided for @requirementRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter what images you want to find (Requirements).'**
+  String get requirementRequired;
+
+  /// No description provided for @manualHtmlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please paste the HTML content in Manual Mode.'**
+  String get manualHtmlRequired;
+
   /// No description provided for @findImages.
   ///
   /// In en, this message translates to:

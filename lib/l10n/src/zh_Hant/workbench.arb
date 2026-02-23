@@ -1,53 +1,148 @@
 {
   "workbench": "工作台",
-  "gallery": "圖庫",
-  "source": "來源",
-  "processed": "已處理",
-  "noImagesInSource": "來源目錄中沒有圖片",
-  "noImagesProcessed": "尚未處理任何圖片",
-  "dropImagesHere": "在此處拖放圖片檔案或資料夾",
-  "pickDirectory": "挑選目錄",
-  "pickFiles": "挑選檔案",
-  "model": "模型",
+  "imageProcessing": "圖片處理",
+  "sourceGallery": "來源圖庫",
+  "sourceExplorer": "來源瀏覽器",
+  "tempWorkspace": "臨時工作區",
+  "processResults": "處理結果",
+  "resultCache": "結果快取",
+  "directories": "目錄",
+  "addFolder": "新增資料夾",
+  "noFolders": "未新增資料夾",
+  "clickAddFolder": "點擊「新增資料夾」開始掃描圖片。",
+  "noImagesFound": "未找到圖片",
+  "noResultsYet": "尚無結果",
+  "selectAll": "全選",
+  "importFromGallery": "從圖庫匯入",
+  "takePhoto": "拍照",
+  "clearTempWorkspace": "清除工作區",
+  "dropFilesHere": "將圖片拖放到此處以新增到臨時工作區",
+  "noImagesSelected": "未選取圖片",
+  "selectSourceDirectory": "選取來源目錄",
+  "removeFolderTooltip": "移除資料夾",
+  "removeFolderConfirmTitle": "移除資料夾？",
+  "removeFolderConfirmMessage": "您確定要從列表中移除「{folderName}」嗎？",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "縮圖大小",
+  "deleteFile": "刪除檔案",
+  "deleteFileConfirmTitle": "刪除檔案？",
+  "deleteFileConfirmMessage": "您確定要刪除「{filename}」嗎？",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTrash": "移至資源回收筒",
+  "permanentlyDelete": "永久刪除",
+  "deleteSuccess": "刪除成功",
+  "deleteFailed": "刪除失敗：{error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "modelSelection": "模型選取",
+  "selectAModel": "選取模型",
   "aspectRatio": "長寬比",
   "resolution": "解析度",
-  "prompt": "提示",
-  "negativePrompt": "負面提示",
-  "refinerSystemPrompt": "Refiner 系統提示",
-  "submit": "提交",
-  "submitToQueue": "提交至佇列",
-  "result": "結果",
-  "console": "主控台",
-  "selectPrompt": "選取提示",
-  "noResult": "尚無結果",
-  "submitPromptToSee": "提交提示以查看結果",
-  "fieldCannotBeEmpty": "此欄位不得為空",
-  "refining": "正在優化...",
-  "raw": "原始",
-  "stylized": "風格化",
-  "promptTooShort": "提示長度必須至少為 3 個字元",
-  "selectModel": "選取模型",
-  "useStream": "使用串流",
-  "streamNotSupported": "此模型不支援串流",
-  "noImageSelected": "未選取圖片",
-  "selectAnImage": "請選取一張圖片以在工作台中處理",
-  "noModelSelected": "未選取模型",
-  "selectAModel": "提交任務前請先選取一個模型",
-  "parameters": "參數",
-  "control": "控制項",
-  "history": "歷史記錄",
-  "tools": "工具",
-  "toggleSidebar": "切換側邊欄",
-  "directories": "目錄",
+  "prompt": "提示詞",
+  "promptHint": "在此輸入提示詞...",
+  "prefixHint": "例如：result",
+  "processPrompt": "處理提示詞",
+  "processImages": "處理 {count} 張圖片",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSubmitted": "任務已提交至佇列",
   "comparator": "比較器",
+  "compareModeSync": "同步模式",
+  "compareModeSwap": "交換模式",
+  "sendToComparator": "發送到比較器",
+  "sendToComparatorRaw": "設為原始圖 (RAW)",
+  "sendToComparatorAfter": "設為處理後 (Result)",
+  "sendToSelection": "新增至選取項目",
+  "removeFromSelection": "從選取項目中移除",
+  "sendToOptimizer": "發送到提示詞優化器",
+  "optimizePromptWithImage": "使用圖片優化提示詞",
+  "selectFromLibrary": "從庫中選取",
+  "metadataSelectedNone": "未選取圖片中繼資料",
+  "labelRaw": "原始",
+  "labelAfter": "處理後",
+  "cropAndResize": "裁切與調整大小",
+  "overwriteSource": "覆蓋原始檔案",
+  "overwriteConfirmTitle": "覆蓋原始檔案？",
+  "overwriteConfirmMessage": "此操作將永久替換原始檔案。您確定嗎？",
+  "saveToTempSuccess": "圖片已儲存至臨時工作區",
+  "overwriteSuccess": "原始檔案已更新",
+  "custom": "自訂",
+  "resize": "調整大小",
+  "maintainAspectRatio": "保持長寬比",
+  "width": "寬度",
+  "height": "高度",
+  "sampling": "採樣",
+  "drawMask": "繪製遮罩",
   "maskEditor": "遮罩編輯器",
-  "noActiveDirectories": "沒有使用中的目錄",
-  "addSourceDirectory": "新增來源目錄",
-  "prefixHint": "選用的檔名前綴",
-  "noGalleries": "沒有圖庫",
-  "addSome": "新增一些",
-  "thumbnailSize": "縮圖大小",
-  "noGalleriesDesc": "拖放圖片或使用上方的按鈕新增來源資料夾。",
-  "showProcessed": "顯示已處理",
-  "enterPrompt": "輸入提示..."
+  "brushSize": "畫筆大小",
+  "maskColor": "遮罩顏色",
+  "maskOpacity": "遮罩透明度",
+  "undo": "復原",
+  "saveToTemp": "儲存到工作區",
+  "saveMaskToTemp": "儲存遮罩到工作區",
+  "binaryMode": "二進制模式",
+  "maskSaved": "遮罩已儲存到工作區",
+  "maskSaveError": "儲存遮罩出錯：{error}",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "promptOptimizer": "提示詞優化器",
+  "refinerModel": "優化模型",
+  "systemPrompt": "系統提示詞",
+  "refinerIntro": "使用 AI 分析圖片並優化您的提示詞。",
+  "roughPrompt": "初步想法 / 草稿",
+  "optimizedPrompt": "優化後的提示詞",
+  "applyToWorkbench": "套用到工作台",
+  "promptApplied": "提示詞已套用到工作台",
+  "refineFailed": "優化失敗：{error}",
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "executionLogs": "執行日誌",
+  "saveToPhotos": "儲存到照片",
+  "saveToGallery": "儲存到相簿",
+  "savedToPhotos": "已儲存到照片",
+  "saveFailed": "儲存失敗：{error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "iosSandboxActive": "iOS 沙盒已啟用",
+  "iosSandboxDesc": "在 iOS 上，請使用頂部工具列中的「從圖庫匯入」按鈕將圖片新增到您的臨時工作區。",
+  "mobileSandboxActive": "行動裝置儲存限制",
+  "mobileSandboxDesc": "在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。",
+  "filesAppSuffix": " (檔案 App)"
 }

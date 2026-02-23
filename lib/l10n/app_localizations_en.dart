@@ -264,6 +264,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzing => 'Analyzing...';
 
   @override
+  String get urlRequired => 'Please enter a valid Website URL.';
+
+  @override
+  String get requirementRequired =>
+      'Please enter what images you want to find (Requirements).';
+
+  @override
+  String get manualHtmlRequired =>
+      'Please paste the HTML content in Manual Mode.';
+
+  @override
   String get findImages => 'Find Images';
 
   @override

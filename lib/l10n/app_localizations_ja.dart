@@ -264,6 +264,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get analyzing => '分析中...';
 
   @override
+  String get urlRequired => '有効なウェブサイト URL を入力してください。';
+
+  @override
+  String get requirementRequired => '探したい画像の要件（説明）を入力してください。';
+
+  @override
+  String get manualHtmlRequired => '手動モードでは、まず HTML コンテンツを貼り付けてください。';
+
+  @override
   String get findImages => '画像を探す';
 
   @override
@@ -1085,10 +1094,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stepStorage => 'ストレージ';
 
   @override
-  String get stepApi => 'インテリジェンス（API）';
+  String get stepApi => 'インテリジェンス (API)';
 
   @override
-  String get setupCompleteMessage => 'すべて設定完了です！制作をお楽しみください。';
+  String get setupCompleteMessage => 'すべての準備が整いました！創作をお楽しみください。';
 
   @override
   String get skip => 'スキップ';
@@ -1103,23 +1112,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get configureModelOptional => '新しいチャネルのモデルを設定します（オプション）。';
 
   @override
-  String get googleGenAiFree => 'Google GenAI（無料）';
+  String get googleGenAiFree => 'Google GenAI (無料)';
 
   @override
-  String get googleGenAiPaid => 'Google GenAI（有料）';
+  String get googleGenAiPaid => 'Google GenAI (有料)';
 
   @override
   String get openaiApi => 'OpenAI API';
 
   @override
-  String get filenamePrefix => 'ファイル名プレフィックス';
+  String get filenamePrefix => 'ファイル名のプレフィックス';
 
   @override
-  String get openaiEndpointHint => 'ヒント：OpenAI互換のエンドポイントは通常「/v1」で終わります';
+  String get openaiEndpointHint => 'ヒント: OpenAI互換のエンドポイントは通常「/v1」で終わります';
 
   @override
   String get googleEndpointHint =>
-      'ヒント：Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）';
+      'ヒント: Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）';
 
   @override
   String get workbench => 'ワークベンチ';
@@ -1152,13 +1161,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noFolders => 'フォルダが追加されていません';
 
   @override
-  String get clickAddFolder => '「フォルダを追加」をクリックして画像のスキャンを開始します。';
+  String get clickAddFolder => '「フォルダを追加」をクリックして、画像のスキャンを開始します。';
 
   @override
   String get noImagesFound => '画像が見つかりません';
 
   @override
-  String get noResultsYet => 'まだ結果がありません';
+  String get noResultsYet => '結果がありません';
 
   @override
   String get importFromGallery => 'ギャラリーからインポート';
@@ -1170,10 +1179,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get clearTempWorkspace => 'ワークスペースをクリア';
 
   @override
-  String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加します';
+  String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加';
 
   @override
-  String get noImagesSelected => 'No images selected';
+  String get noImagesSelected => '画像が選択されていません';
 
   @override
   String get selectSourceDirectory => 'ソースディレクトリを選択';
@@ -1193,7 +1202,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get thumbnailSize => 'サムネイルサイズ';
 
   @override
-  String get deleteFile => 'Delete File';
+  String get deleteFile => 'ファイルを削除';
 
   @override
   String get deleteFileConfirmTitle => 'ファイルを削除しますか？';
@@ -1210,18 +1219,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get permanentlyDelete => '完全に削除';
 
   @override
-  String get deleteSuccess => '正常に削除されました';
+  String get deleteSuccess => '削除に成功しました';
 
   @override
   String deleteFailed(String error) {
-    return '削除に失敗しました：$error';
+    return '削除に失敗しました: $error';
   }
 
   @override
   String get modelSelection => 'モデル選択';
 
   @override
-  String get selectAModel => 'タスクを送信する前にモデルを選択してください';
+  String get selectAModel => 'モデルを選択';
 
   @override
   String get aspectRatio => 'アスペクト比';
@@ -1233,10 +1242,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get prompt => 'プロンプト';
 
   @override
-  String get promptHint => 'ここにプロンプトを入力...';
+  String get promptHint => 'プロンプトをここに入力...';
 
   @override
-  String get prefixHint => 'オプションのファイル名プレフィックス';
+  String get prefixHint => '例：result';
 
   @override
   String get processPrompt => 'プロンプトを処理';
@@ -1259,22 +1268,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get compareModeSwap => 'スワップモード';
 
   @override
-  String get sendToComparator => 'Send to Comparator';
+  String get sendToComparator => '比較ツールに送信';
 
   @override
-  String get sendToComparatorRaw => '前として設定（RAW）';
+  String get sendToComparatorRaw => 'Before (RAW) として設定';
 
   @override
-  String get sendToComparatorAfter => '後として設定（結果）';
+  String get sendToComparatorAfter => 'After (結果) として設定';
 
   @override
-  String get sendToSelection => 'Add to Selection';
+  String get sendToSelection => '選択に追加';
 
   @override
-  String get sendToOptimizer => 'Send to Prompt Optimizer';
+  String get sendToOptimizer => 'プロンプト最適化に送信';
 
   @override
-  String get optimizePromptWithImage => '画像でプロンプトを最適化';
+  String get optimizePromptWithImage => '画像からプロンプトを最適化';
 
   @override
   String get selectFromLibrary => 'ライブラリから選択';
@@ -1286,25 +1295,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get labelRaw => 'RAW';
 
   @override
-  String get labelAfter => '後';
+  String get labelAfter => 'AFTER';
 
   @override
   String get cropAndResize => '切り抜きとサイズ変更';
 
   @override
-  String get overwriteSource => 'オリジナルを上書き';
+  String get overwriteSource => '元のファイルを上書き';
 
   @override
-  String get overwriteConfirmTitle => 'オリジナルファイルを上書きしますか？';
+  String get overwriteConfirmTitle => '元のファイルを上書きしますか？';
 
   @override
-  String get overwriteConfirmMessage => 'この操作はオリジナルファイルを永久に置き換えます。よろしいですか？';
+  String get overwriteConfirmMessage => 'この操作により、元のファイルが完全に置き換えられます。よろしいですか？';
 
   @override
   String get saveToTempSuccess => '画像が一時ワークスペースに保存されました';
 
   @override
-  String get overwriteSuccess => 'オリジナルファイルが更新されました';
+  String get overwriteSuccess => '元のファイルが更新されました';
 
   @override
   String get custom => 'カスタム';
@@ -1340,7 +1349,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get maskOpacity => 'マスクの不透明度';
 
   @override
-  String get undo => 'Undo';
+  String get undo => '元に戻す';
 
   @override
   String get saveToTemp => 'ワークスペースに保存';
@@ -1356,11 +1365,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String maskSaveError(String error) {
-    return 'マスクの保存中にエラーが発生しました：$error';
+    return 'マスク保存エラー: $error';
   }
 
   @override
-  String get promptOptimizer => 'プロンプトオプティマイザ';
+  String get promptOptimizer => 'プロンプト最適化';
 
   @override
   String get refinerModel => 'リファイナーモデル';
@@ -1369,10 +1378,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPrompt => 'システムプロンプト';
 
   @override
-  String get refinerIntro => 'AIを使用して画像を分析し、プロンプトを改良します。';
+  String get refinerIntro => 'AIを使用して画像を分析し、プロンプトを洗練させます。';
 
   @override
-  String get roughPrompt => 'ラフなプロンプト/アイデア';
+  String get roughPrompt => 'ラフなプロンプト / アイデア';
 
   @override
   String get optimizedPrompt => '最適化されたプロンプト';
@@ -1385,7 +1394,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String refineFailed(String error) {
-    return '改良に失敗しました：$error';
+    return '洗練に失敗しました: $error';
   }
 
   @override
@@ -1398,27 +1407,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveToGallery => 'ギャラリーに保存';
 
   @override
-  String get savedToPhotos => '写真に保存しました';
+  String get savedToPhotos => '写真に保存されました';
 
   @override
   String saveFailed(String error) {
-    return '保存に失敗しました：$error';
+    return '保存に失敗しました: $error';
   }
 
   @override
-  String get iosSandboxActive => 'iOSサンドボックスがアクティブです';
+  String get iosSandboxActive => 'iOSサンドボックス有効';
 
   @override
   String get iosSandboxDesc =>
-      'iOSでは、トップツールバーの「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。';
+      'iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。';
 
   @override
   String get mobileSandboxActive => 'モバイルストレージの制限';
 
   @override
   String get mobileSandboxDesc =>
-      'モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。トップツールバーの「ギャラリーからインポート」ボタンを使用することをお勧めします。';
+      'モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。';
 
   @override
-  String get filesAppSuffix => '（ファイルアプリ）';
+  String get filesAppSuffix => ' (ファイル App)';
 }

@@ -142,44 +142,114 @@ class _GalleryState extends State<Gallery> {
       );
     }
 
+    // Group images by parent directory
+    final Map<String, List<AppImage>> grouped = {};
+    for (var img in images) {
+      final parent = File(img.path).parent.path;
+      grouped.putIfAbsent(parent, () => []).add(img);
+    }
+
+    final sortedPaths = grouped.keys.toList();
+    // Sort directories so the view is stable
+    if (isResult) {
+      // For results, maybe keep order or sort by newest? 
+      // Actually, processedImages is already sorted by modification date. 
+      // If we group, we might break that. Let's only group if it's NOT the result view,
+      // OR if we want to show results by directory too.
+      // Usually, users want to see the latest results first regardless of directory.
+    } else {
+      sortedPaths.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
         
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: state.thumbnailSize,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1,
-          ),
-          itemCount: images.length,
-          itemBuilder: (context, index) {
-            final imageFile = images[index];
-            
-            return Selector<AppState, bool>(
-              selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
-              builder: (context, isSelected, _) {
-                return _ImageCard(
-                  imageFile: imageFile,
-                  isSelected: isSelected,
-                  isResult: isResult,
-                  thumbnailSize: state.thumbnailSize,
-                  onTap: () {
-                    state.galleryState.toggleImageSelection(imageFile);
-                  },
-                  onDoubleTap: () {
-                    showImagePreview(context, galleryImages: state.galleryState.currentViewImages, initialIndex: index);
-                  },
-                );
-              },
-            );
-          },
+        // If it's a single group and not 'all' mode, or results, we can just show the grid without headers for a cleaner look.
+        // However, the user specifically asked for grouping, so let's provide it whenever there's more than one source.
+        final bool showHeaders = !isTemp && (grouped.length > 1 || state.galleryState.viewMode == GalleryViewMode.all);
+
+        return CustomScrollView(
+          primary: false,
+          slivers: [
+            for (final path in sortedPaths) ...[
+              if (showHeaders)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.folder_open, size: 16, color: colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            path,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.secondary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          "(${grouped[path]!.length})",
+                          style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: state.thumbnailSize,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final imageGroup = grouped[path]!;
+                      final imageFile = imageGroup[index];
+                      
+                      // Calculate global index for preview paging
+                      final globalIndex = images.indexOf(imageFile);
+                      
+                      return Selector<AppState, bool>(
+                        selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
+                        builder: (context, isSelected, _) {
+                          return _ImageCard(
+                            imageFile: imageFile,
+                            isSelected: isSelected,
+                            isResult: isResult,
+                            thumbnailSize: state.thumbnailSize,
+                            onTap: () {
+                              state.galleryState.toggleImageSelection(imageFile);
+                            },
+                            onDoubleTap: () {
+                              showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                            },
+                          );
+                        },
+                      );
+                    },
+                    childCount: grouped[path]!.length,
+                  ),
+                ),
+              ),
+            ],
+            // Bottom padding
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
         );
       }
     );
   }
+
 }
 
 class _ImageCard extends StatefulWidget {

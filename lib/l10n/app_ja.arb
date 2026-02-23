@@ -80,6 +80,9 @@
   "analysisModel": "分析モデル",
   "advancedOptions": "詳細オプション",
   "analyzing": "分析中...",
+  "urlRequired": "有効なウェブサイト URL を入力してください。",
+  "requirementRequired": "探したい画像の要件（説明）を入力してください。",
+  "manualHtmlRequired": "手動モードでは、まず HTML コンテンツを貼り付けてください。",
   "findImages": "画像を探す",
   "noImagesDiscovered": "まだ画像が見つかっていません。",
   "enterUrlToStart": "URLと要件を入力して開始してください。",
@@ -312,51 +315,107 @@
   "noTasksInQueue": "キューにタスクがありません",
   "submitTaskFromWorkbench": "ワークベンチからタスクを送信して、ここに表示します。",
   "taskId": "タスクID: {id}",
+  "@taskId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
   "taskSummary": "タスクの概要",
   "pendingTasks": "保留中",
   "processingTasks": "処理中",
   "completedTasks": "完了",
   "failedTasks": "失敗",
   "canceledTasks": "キャンセル済み",
-  "taskCompletedNotification": "タスク完了",
-  "taskCompletedBody": "タスク {id} が正常に完了しました。",
-  "taskFailedNotification": "タスク失敗",
-  "taskFailedBody": "タスク {id} の処理に失敗しました。",
-  "taskCanceledNotification": "タスクキャンセル",
-  "taskCanceledBody": "タスク {id} はユーザーによってキャンセルされました。",
   "clearCompleted": "完了済みをクリア",
   "clearFailed": "失敗をクリア",
   "cancelAll": "すべてキャンセル",
-  "retryAllFailed": "失敗したものをすべて再試行",
-  "pauseQueue": "キューを一時停止",
-  "resumeQueue": "キューを再開",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
   "removeFromList": "リストから削除",
   "images": "画像",
   "filesCount": "{count} ファイル",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "runningCount": "{count} 実行中",
+  "@runningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "plannedCount": "{count} 計画中",
+  "@plannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "latestLog": "最新のログ:",
+  "taskCompletedNotification": "タスク完了",
+  "taskFailedNotification": "タスク失敗",
+  "taskCanceledNotification": "タスクキャンセル",
+  "taskCompletedBody": "タスク {id} が正常に完了しました。",
+  "@taskCompletedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFailedBody": "タスク {id} の処理に失敗しました。",
+  "@taskFailedBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "taskCanceledBody": "タスク {id} はユーザーによってキャンセルされました。",
+  "retryAllFailed": "失敗したものをすべて再試行",
+  "pauseQueue": "キューを一時停止",
+  "resumeQueue": "キューを再開",
   "queueSettings": "キュー設定",
   "concurrencyLimit": "同時実行制限: {limit}",
+  "@concurrencyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
   "retryCount": "再試行回数: {count}",
+  "@retryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
   "stepAppearance": "外観",
   "stepStorage": "ストレージ",
-  "stepApi": "インテリジェンス（API）",
-  "setupCompleteMessage": "すべて設定完了です！制作をお楽しみください。",
+  "stepApi": "インテリジェンス (API)",
+  "setupCompleteMessage": "すべての準備が整いました！創作をお楽しみください。",
   "skip": "スキップ",
   "storageLocationDesc": "生成された画像が保存される場所を選択します。",
   "addChannelOptional": "最初のAIプロバイダーチャネルを追加します（オプション）。",
   "configureModelOptional": "新しいチャネルのモデルを設定します（オプション）。",
-  "googleGenAiFree": "Google GenAI（無料）",
-  "googleGenAiPaid": "Google GenAI（有料）",
+  "googleGenAiFree": "Google GenAI (無料)",
+  "googleGenAiPaid": "Google GenAI (有料)",
   "openaiApi": "OpenAI API",
-  "filenamePrefix": "ファイル名プレフィックス",
-  "openaiEndpointHint": "ヒント：OpenAI互換のエンドポイントは通常「/v1」で終わります",
-  "googleEndpointHint": "ヒント：Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）",
+  "filenamePrefix": "ファイル名のプレフィックス",
+  "openaiEndpointHint": "ヒント: OpenAI互換のエンドポイントは通常「/v1」で終わります",
+  "googleEndpointHint": "ヒント: Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）",
   "imageProcessing": "画像処理",
   "sourceGallery": "ソースギャラリー",
   "sourceExplorer": "ソースエクスプローラー",
@@ -365,13 +424,13 @@
   "resultCache": "結果キャッシュ",
   "addFolder": "フォルダを追加",
   "noFolders": "フォルダが追加されていません",
-  "clickAddFolder": "「フォルダを追加」をクリックして画像のスキャンを開始します。",
+  "clickAddFolder": "「フォルダを追加」をクリックして、画像のスキャンを開始します。",
   "noImagesFound": "画像が見つかりません",
-  "noResultsYet": "まだ結果がありません",
+  "noResultsYet": "結果がありません",
   "importFromGallery": "ギャラリーからインポート",
   "takePhoto": "写真を撮る",
   "clearTempWorkspace": "ワークスペースをクリア",
-  "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加します",
+  "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
   "selectSourceDirectory": "ソースディレクトリを選択",
   "removeFolderTooltip": "フォルダを削除",
   "removeFolderConfirmTitle": "フォルダを削除しますか？",
@@ -380,29 +439,29 @@
   "deleteFileConfirmMessage": "「{filename}」を削除してもよろしいですか？",
   "moveToTrash": "ゴミ箱に移動",
   "permanentlyDelete": "完全に削除",
-  "deleteSuccess": "正常に削除されました",
-  "deleteFailed": "削除に失敗しました：{error}",
+  "deleteSuccess": "削除に成功しました",
+  "deleteFailed": "削除に失敗しました: {error}",
   "modelSelection": "モデル選択",
-  "selectAModel": "タスクを送信する前にモデルを選択してください",
-  "promptHint": "ここにプロンプトを入力...",
+  "selectAModel": "モデルを選択",
+  "promptHint": "プロンプトをここに入力...",
   "processPrompt": "プロンプトを処理",
   "processImages": "{count}枚の画像を処理",
   "taskSubmitted": "タスクがキューに送信されました",
   "compareModeSync": "同期モード",
   "compareModeSwap": "スワップモード",
-  "sendToComparatorRaw": "前として設定（RAW）",
-  "sendToComparatorAfter": "後として設定（結果）",
-  "optimizePromptWithImage": "画像でプロンプトを最適化",
+  "sendToComparatorRaw": "Before (RAW) として設定",
+  "sendToComparatorAfter": "After (結果) として設定",
+  "optimizePromptWithImage": "画像からプロンプトを最適化",
   "selectFromLibrary": "ライブラリから選択",
   "metadataSelectedNone": "画像メタデータが選択されていません",
   "labelRaw": "RAW",
-  "labelAfter": "後",
+  "labelAfter": "AFTER",
   "cropAndResize": "切り抜きとサイズ変更",
-  "overwriteSource": "オリジナルを上書き",
-  "overwriteConfirmTitle": "オリジナルファイルを上書きしますか？",
-  "overwriteConfirmMessage": "この操作はオリジナルファイルを永久に置き換えます。よろしいですか？",
+  "overwriteSource": "元のファイルを上書き",
+  "overwriteConfirmTitle": "元のファイルを上書きしますか？",
+  "overwriteConfirmMessage": "この操作により、元のファイルが完全に置き換えられます。よろしいですか？",
   "saveToTempSuccess": "画像が一時ワークスペースに保存されました",
-  "overwriteSuccess": "オリジナルファイルが更新されました",
+  "overwriteSuccess": "元のファイルが更新されました",
   "custom": "カスタム",
   "resize": "サイズ変更",
   "maintainAspectRatio": "アスペクト比を維持",
@@ -417,95 +476,89 @@
   "saveMaskToTemp": "マスクをワークスペースに保存",
   "binaryMode": "バイナリモード",
   "maskSaved": "マスクがワークスペースに保存されました",
-  "maskSaveError": "マスクの保存中にエラーが発生しました：{error}",
-  "promptOptimizer": "プロンプトオプティマイザ",
+  "maskSaveError": "マスク保存エラー: {error}",
+  "promptOptimizer": "プロンプト最適化",
   "refinerModel": "リファイナーモデル",
   "systemPrompt": "システムプロンプト",
-  "refinerIntro": "AIを使用して画像を分析し、プロンプトを改良します。",
-  "roughPrompt": "ラフなプロンプト/アイデア",
+  "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
+  "roughPrompt": "ラフなプロンプト / アイデア",
   "optimizedPrompt": "最適化されたプロンプト",
   "applyToWorkbench": "ワークベンチに適用",
   "promptApplied": "プロンプトがワークベンチに適用されました",
-  "refineFailed": "改良に失敗しました：{error}",
+  "refineFailed": "洗練に失敗しました: {error}",
   "executionLogs": "実行ログ",
   "saveToPhotos": "写真に保存",
   "saveToGallery": "ギャラリーに保存",
-  "savedToPhotos": "写真に保存しました",
-  "saveFailed": "保存に失敗しました：{error}",
-  "iosSandboxActive": "iOSサンドボックスがアクティブです",
-  "iosSandboxDesc": "iOSでは、トップツールバーの「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。",
+  "savedToPhotos": "写真に保存されました",
+  "saveFailed": "保存に失敗しました: {error}",
+  "iosSandboxActive": "iOSサンドボックス有効",
+  "iosSandboxDesc": "iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。",
   "mobileSandboxActive": "モバイルストレージの制限",
-  "mobileSandboxDesc": "モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。トップツールバーの「ギャラリーからインポート」ボタンを使用することをお勧めします。",
-  "filesAppSuffix": "（ファイルアプリ）",
-  "setupWizard": "セットアップウィザード",
-  "welcomeTitle": "Joycai Image AI Toolkitsへようこそ",
-  "welcomeDesc": "AIパワードメディアワークフローのための究極のデスクトップツールキット。始めるためにいくつかの簡単な手順をご案内します。",
+  "mobileSandboxDesc": "モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。",
+  "filesAppSuffix": " (ファイル App)",
   "getStarted": "始める",
-  "stepBasicConfig": "基本設定",
-  "stepModels": "モデルの追加",
-  "stepFolders": "フォルダの選択",
-  "stepFinish": "完了",
-  "languageDesc": "最初に、ご希望の言語を選択してください。",
-  "outputFolderDesc": "次に、AIが生成したすべての画像とメタデータが保存されるメインフォルダを選択します。",
-  "selectFolder": "フォルダを選択",
-  "addModelsDesc": "次に、AIモデルを追加しましょう。OpenAI、Google GenAI、またはOpenAI互換のカスタムプロバイダから選択できます。",
-  "addYourFirstModel": "最初のモデルを追加",
-  "noModelsYet": "まだモデルがありません",
-  "addAnotherModel": "別のモデルを追加",
-  "manageModelsLater": "後で設定でモデルを管理できます。",
-  "selectSourceFoldersTitle": "ソースフォルダの選択",
-  "selectSourceFoldersDesc": "最後に、処理したい画像を含む1つ以上のフォルダを選択します。アプリはこれらのフォルダの変更を監視します。",
-  "addSourceFolder": "ソースフォルダを追加",
-  "setupCompleteTitle": "セットアップ完了！",
-  "setupCompleteDesc": "すべての設定が完了しました。アプリをお楽しみください！",
-  "exploreTheApp": "アプリを探索",
   "workbench": "ワークベンチ",
-  "gallery": "ギャラリー",
-  "source": "ソース",
-  "processed": "処理済み",
-  "noImagesInSource": "ソースディレクトリに画像がありません",
-  "noImagesProcessed": "まだ画像が処理されていません",
-  "dropImagesHere": "ここに画像ファイルまたはフォルダをドロップ",
-  "pickDirectory": "ディレクトリを選択",
-  "pickFiles": "ファイルを選択",
+  "directories": "ディレクトリ",
+  "noImagesSelected": "画像が選択されていません",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "サムネイルサイズ",
+  "deleteFile": "ファイルを削除",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "aspectRatio": "アスペクト比",
   "resolution": "解像度",
   "prompt": "プロンプト",
-  "negativePrompt": "ネガティブプロンプト",
-  "refinerSystemPrompt": "リファイナーシステムプロンプト",
-  "submit": "送信",
-  "submitToQueue": "キューに送信",
-  "result": "結果",
-  "console": "コンソール",
-  "selectPrompt": "プロンプトを選択",
-  "noResult": "まだ結果がありません",
-  "submitPromptToSee": "プロンプトを送信して結果を表示",
-  "fieldCannotBeEmpty": "このフィールドは空にできません",
-  "refining": "リファイン中...",
-  "raw": "RAW",
-  "stylized": "定型化",
-  "promptTooShort": "プロンプトは3文字以上である必要があります",
-  "selectModel": "モデルを選択",
-  "useStream": "ストリームを使用",
-  "streamNotSupported": "このモデルはストリーミングをサポートしていません",
-  "noImageSelected": "画像が選択されていません",
-  "selectAnImage": "ワークベンチで処理する画像を選択してください",
-  "noModelSelected": "モデルが選択されていません",
-  "parameters": "パラメータ",
-  "control": "コントロール",
-  "history": "履歴",
-  "tools": "ツール",
-  "toggleSidebar": "サイドバーを切り替え",
-  "directories": "ディレクトリ",
+  "prefixHint": "例：result",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "comparator": "比較ツール",
+  "sendToComparator": "比較ツールに送信",
+  "sendToSelection": "選択に追加",
+  "sendToOptimizer": "プロンプト最適化に送信",
   "maskEditor": "マスクエディタ",
-  "noActiveDirectories": "アクティブなディレクトリがありません",
-  "addSourceDirectory": "ソースディレクトリを追加",
-  "prefixHint": "オプションのファイル名プレフィックス",
-  "noGalleries": "ギャラリーがありません",
-  "addSome": "いくつか追加してください",
-  "thumbnailSize": "サムネイルサイズ",
-  "noGalleriesDesc": "画像をドラッグアンドドロップするか、上のボタンを使用してソースフォルダを追加します。",
-  "showProcessed": "処理済みを表示",
-  "enterPrompt": "プロンプトを入力..."
+  "undo": "元に戻す",
+  "@maskSaveError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@refineFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

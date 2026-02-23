@@ -127,15 +127,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       }
     });
 
-    final isViewing = context.select<AppState, bool>((state) {
-      if (widget.useFileBrowserState) {
-        // In browser, highlight if it's the exclusive active directory
-        return state.fileBrowserState.activeDirectories.length == 1 && 
-               state.fileBrowserState.activeDirectories.first == widget.path;
-      }
-      return state.galleryState.viewMode == GalleryViewMode.folder && state.galleryState.viewSourcePath == widget.path;
-    });
-    
+    // We no longer need the separate 'isViewing' concept for highlighting, 
+    // we use 'isSelected' for the primary visual feedback.
     final appState = Provider.of<AppState>(context, listen: false);
     final isUnreachable = widget.useFileBrowserState 
         ? appState.unreachableBrowserDirectories.contains(widget.path)
@@ -148,7 +141,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       children: [
         ListTile(
           dense: true,
-          selected: isViewing,
+          selected: isSelected, // Use isSelected for background highlight
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -172,9 +165,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                       appState.fileBrowserState.toggleDirectory(widget.path);
                     } else {
                       appState.galleryState.toggleDirectory(widget.path);
-                      if (val == true) {
-                        appState.galleryState.setViewMode(GalleryViewMode.all);
-                      }
+                      // Always ensure we are in a mode that shows selected directories
+                      appState.galleryState.setViewMode(GalleryViewMode.all);
                     }
                   },
                   visualDensity: VisualDensity.compact,
@@ -184,37 +176,19 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 size: 20,
                 color: isUnreachable 
                   ? theme.colorScheme.error.withAlpha(100)
-                  : (isViewing ? theme.colorScheme.primary : (isSelected ? theme.colorScheme.primary.withAlpha(150) : theme.colorScheme.outline)),
+                  : (isSelected ? theme.colorScheme.primary : theme.colorScheme.outline),
               ),
               const SizedBox(width: 8),
             ],
           ),
-          title: InkWell(
-            onTap: () {
-              if (isUnreachable) {
-                _reAuthorize(context, appState);
-              } else if (!widget.useFileBrowserState) {
-                appState.galleryState.setViewFolder(widget.path);
-              } else {
-                appState.fileBrowserState.setExclusiveDirectory(widget.path);
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    folderName,
-                    style: TextStyle(
-                      fontSize: 13, 
-                      fontWeight: isViewing ? FontWeight.bold : FontWeight.w500,
-                      color: isViewing ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+          title: Text(
+            folderName,
+            style: TextStyle(
+              fontSize: 13, 
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -244,7 +218,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             if (isUnreachable) {
               _reAuthorize(context, appState);
             } else {
-              _handleExpansionChanged(!_isExpanded);
+              // Clicking the row now toggles selection
+              if (widget.useFileBrowserState) {
+                appState.fileBrowserState.toggleDirectory(widget.path);
+              } else {
+                appState.galleryState.toggleDirectory(widget.path);
+                appState.galleryState.setViewMode(GalleryViewMode.all);
+              }
             }
           },
         ),
