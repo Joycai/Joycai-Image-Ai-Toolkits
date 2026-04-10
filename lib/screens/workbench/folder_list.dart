@@ -20,7 +20,7 @@ class FolderList extends StatelessWidget {
   Future<void> _pickDirectory(BuildContext context, AppState appState) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+      String? selectedDirectory = await FilePicker.getDirectoryPath(
         dialogTitle: l10n.selectSourceDirectory,
       );
 

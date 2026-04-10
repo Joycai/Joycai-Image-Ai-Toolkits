@@ -103,7 +103,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
           trailing: const Icon(Icons.folder_open),
           shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
           onTap: () async {
-            String? path = await FilePicker.platform.getDirectoryPath();
+            String? path = await FilePicker.getDirectoryPath();
             if (path != null) {
               setState(() => _outputDirController.text = path);
               await appState.updateOutputDirectory(path);

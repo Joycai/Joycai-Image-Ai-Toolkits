@@ -120,7 +120,7 @@ class DataSection extends StatelessWidget {
     final json = jsonEncode(data);
     final bytes = utf8.encode(json);
     
-    String? path = await FilePicker.platform.saveFile(
+    String? path = await FilePicker.saveFile(
       fileName: 'joycai_backup.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
@@ -237,7 +237,7 @@ class DataSection extends StatelessWidget {
     final appState = Provider.of<AppState>(context, listen: false);
     final importedMsg = l10n.settingsImported;
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!context.mounted || result == null) return;
     
     try {

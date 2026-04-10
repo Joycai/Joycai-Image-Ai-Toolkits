@@ -231,7 +231,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final l10n = AppLocalizations.of(context)!;
     final state = Provider.of<AppState>(context, listen: false).downloaderState;
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['txt', 'cookie', 'cookies'],
     );
