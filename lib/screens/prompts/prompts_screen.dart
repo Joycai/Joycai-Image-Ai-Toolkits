@@ -770,7 +770,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final json = jsonEncode(data);
     final bytes = utf8.encode(json);
 
-    String? path = await FilePicker.platform.saveFile(
+    String? path = await FilePicker.saveFile(
       fileName: 'joycai_prompts.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
@@ -791,7 +791,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final messenger = ScaffoldMessenger.of(context);
     final successMsg = l10n.settingsImported;
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!mounted || result == null) return;
 
     final String? importMode = await showDialog<String>(

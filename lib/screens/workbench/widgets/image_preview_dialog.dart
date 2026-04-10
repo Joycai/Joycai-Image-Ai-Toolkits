@@ -55,7 +55,7 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
         // Desktop: Use FilePicker to save to a specific location
         final extension = path.split('.').last;
-        String? outputFile = await FilePicker.platform.saveFile(
+        String? outputFile = await FilePicker.saveFile(
           dialogTitle: l10n.save,
           fileName: fileName,
           type: FileType.custom,

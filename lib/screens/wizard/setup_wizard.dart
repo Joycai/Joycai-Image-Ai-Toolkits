@@ -143,7 +143,7 @@ class _SetupWizardState extends State<SetupWizard> {
     final appState = Provider.of<AppState>(context, listen: false);
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!context.mounted || result == null) return;
     
     try {
@@ -441,7 +441,7 @@ class _SetupWizardState extends State<SetupWizard> {
               suffixIcon: const Icon(Icons.folder_open),
             ),
             onTap: () async {
-              String? path = await FilePicker.platform.getDirectoryPath();
+              String? path = await FilePicker.getDirectoryPath();
               if (path != null) {
                 setState(() => _outputDirController.text = path);
                 appState.updateOutputDirectory(path);

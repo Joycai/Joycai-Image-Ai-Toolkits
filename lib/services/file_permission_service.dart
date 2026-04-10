@@ -24,7 +24,7 @@ class FilePermissionService {
 
   /// Triggers a system dialog to let the user re-select and authorize a folder.
   Future<String?> reAuthorize(String initialPath, {String? title}) async {
-    return await FilePicker.platform.getDirectoryPath(
+    return await FilePicker.getDirectoryPath(
       initialDirectory: initialPath,
       dialogTitle: title ?? (Platform.isMacOS 
           ? "Re-authorize access to folder" 
