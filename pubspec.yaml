@@ -82,9 +82,9 @@ msix_config:
   publisher_display_name: Joycai
   publisher: CN=76DB0498-B398-4C2F-953A-2D26ADD20625
   identity_name: Joycai.JoycaiImageAIToolkits
-  msix_version: 2.1.1.0
+  msix_version: 2.1.1.2
   logo_path: assets/icon/icon.png
   capabilities: internetClient, privateNetworkClientServer
   install_certificate: false
-  sign_msix: false
+  sign_msix: true
   languages: en-US,zh-CN
