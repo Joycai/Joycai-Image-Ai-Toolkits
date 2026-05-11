@@ -1,12 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/browser_file.dart';
@@ -63,10 +61,7 @@ void showFileContextMenu({
             dense: true,
           ),
           onTap: () async {
-            final uri = Uri.file(file.path);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
-            }
+            await FileUtils.openPath(file.path);
           },
         ),
 
@@ -115,8 +110,7 @@ void showFileContextMenu({
           dense: true,
         ),
         onTap: () async {
-          final uri = Uri.directory(File(file.path).parent.path);
-          if (await canLaunchUrl(uri)) await launchUrl(uri);
+          await FileUtils.openFolder(file.path);
         },
       ),
 

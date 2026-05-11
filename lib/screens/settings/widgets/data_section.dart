@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
@@ -88,10 +88,7 @@ class DataSection extends StatelessWidget {
   Future<void> _openAppDataDir(BuildContext context) async {
     try {
       final path = await DatabaseService().getDatabasePath();
-      final uri = Uri.directory(path);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      }
+      await FileUtils.openFolder(path);
     } catch (e) {
       // Ignore
     }

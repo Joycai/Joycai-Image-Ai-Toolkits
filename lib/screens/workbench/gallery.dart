@@ -7,9 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/file_utils.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -642,11 +642,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () async {
-            final folderPath = File(widget.imageFile.path).parent.path;
-            final uri = Uri.directory(folderPath);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
-            }
+            await FileUtils.openFolder(widget.imageFile.path);
           },
         ),
 
