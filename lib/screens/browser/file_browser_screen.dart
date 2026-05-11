@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
+import '../../core/file_utils.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -231,10 +231,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   Future<void> _handleOpenFile(BrowserFile file) async {
-    final uri = Uri.file(file.path);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+    await FileUtils.openPath(file.path);
   }
 
   Widget _buildEmptyState(BuildContext context) {

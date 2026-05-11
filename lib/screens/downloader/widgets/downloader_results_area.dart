@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 
@@ -167,10 +167,7 @@ class _ImageDiscoveryCard extends StatelessWidget {
             dense: true,
           ),
           onTap: () async {
-            final uri = Uri.parse(image.url);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri);
-            }
+            await FileUtils.openUri(Uri.parse(image.url));
           },
         ),
       ],
