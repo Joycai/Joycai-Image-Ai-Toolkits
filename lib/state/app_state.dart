@@ -663,4 +663,14 @@ class AppState extends ChangeNotifier {
     params['taskType'] = TaskType.videoGenerate.name;
     await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
   }
+
+  Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
+    if (!isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
+      return;
+    }
+
+    params['taskType'] = TaskType.videoGenerate.name;
+    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
+  }
 }
