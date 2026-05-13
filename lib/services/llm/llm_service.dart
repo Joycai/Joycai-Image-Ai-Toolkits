@@ -255,6 +255,44 @@ class LLMService {
     _sessions.remove(sessionId);
   }
 
+  Future<String> startLongRunning({
+    required dynamic modelIdentifier,
+    required List<LLMMessage> messages,
+    String? contextId,
+    Map<String, dynamic>? options,
+  }) async {
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    final provider = _getProvider(config.type);
+
+    return await provider.startLongRunning(
+      config,
+      messages,
+      options: options,
+      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+  }
+
+  Future<Map<String, dynamic>> checkOperation({
+    required dynamic modelIdentifier,
+    required String operationName,
+    String? contextId,
+  }) async {
+    final config = await _configResolver.resolveConfig(
+      modelIdentifier,
+      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+    final provider = _getProvider(config.type);
+
+    return await provider.checkOperation(
+      config,
+      operationName,
+      logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+    );
+  }
+
   ILLMProvider _getProvider(String type) {
     final provider = _providers[type];
     if (provider == null) {

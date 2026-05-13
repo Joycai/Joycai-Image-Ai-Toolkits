@@ -49,13 +49,39 @@ enum ModelTag {
   image('image'),
   multimodal('multimodal'),
   chat('chat'),
-  refiner('refiner');
+  refiner('refiner'),
+  video('video');
 
   final String value;
   const ModelTag(this.value);
 
   static ModelTag fromString(String? val) {
     return ModelTag.values.firstWhere((e) => e.value == val, orElse: () => ModelTag.chat);
+  }
+}
+
+enum VeoResolution {
+  r720p('720p'),
+  r1080p('1080p'),
+  r4k('4k');
+
+  final String value;
+  const VeoResolution(this.value);
+
+  static VeoResolution fromString(String? val) {
+    return VeoResolution.values.firstWhere((e) => e.value == val, orElse: () => VeoResolution.r720p);
+  }
+}
+
+enum VeoAspectRatio {
+  r9_16('9:16'),
+  r16_9('16:9');
+
+  final String value;
+  const VeoAspectRatio(this.value);
+
+  static VeoAspectRatio fromString(String? val) {
+    return VeoAspectRatio.values.firstWhere((e) => e.value == val, orElse: () => VeoAspectRatio.r16_9);
   }
 }
 

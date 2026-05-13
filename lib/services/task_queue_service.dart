@@ -15,7 +15,7 @@ import 'llm/llm_types.dart';
 import 'web_scraper_service.dart';
 
 enum TaskStatus { pending, processing, completed, failed, cancelled }
-enum TaskType { imageProcess, imageDownload, promptRefine, aiRename }
+enum TaskType { imageProcess, imageDownload, promptRefine, aiRename, videoGenerate }
 
 enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
 
@@ -202,6 +202,8 @@ class TaskQueueService extends ChangeNotifier {
       task.addLog('Prompt refinement task created using $modelIdStr.');
     } else if (type == TaskType.aiRename) {
       task.addLog('AI Batch Rename task created for ${imagePaths.length} files using $modelIdStr.');
+    } else if (type == TaskType.videoGenerate) {
+      task.addLog('Video generation task created using $modelIdStr.');
     }
     
     _queue.add(task);
@@ -282,6 +284,8 @@ class TaskQueueService extends ChangeNotifier {
         await _executePromptRefineTask(task);
       } else if (task.type == TaskType.aiRename) {
         await _executeAiRenameTask(task);
+      } else if (task.type == TaskType.videoGenerate) {
+        await _executeVideoGenerateTask(task);
       }
       
       if (task.status != TaskStatus.cancelled) {
@@ -554,6 +558,141 @@ Do not include any other text or markdown formatting.
     task.addLog('AI Rename complete.');
   }
 
+  Future<void> _executeVideoGenerateTask(TaskItem task) async {
+    task.addLog('Start video generation with model: ${task.modelDbId ?? task.modelId}');
+    
+    final outputDir = await _getEffectiveOutputDir(task);
+    
+    // 1. Prepare messages and attachments
+    final attachments = <LLMAttachment>[];
+    
+    // Main image (first frame)
+    if (task.imagePaths.isNotEmpty) {
+      attachments.add(LLMAttachment.fromFile(File(task.imagePaths.first), 'image/png', referenceType: LLMReferenceType.firstFrame));
+    }
+    
+    // Last frame
+    final lastFramePath = task.parameters['lastFramePath'] as String?;
+    if (lastFramePath != null && lastFramePath.isNotEmpty) {
+      attachments.add(LLMAttachment.fromFile(File(lastFramePath), 'image/png', referenceType: LLMReferenceType.lastFrame));
+    }
+    
+    // Reference images
+    final referenceImagePaths = task.parameters['referenceImagePaths'] as List<dynamic>?;
+    if (referenceImagePaths != null) {
+      for (var path in referenceImagePaths) {
+        attachments.add(LLMAttachment.fromFile(File(path as String), 'image/png', referenceType: LLMReferenceType.asset));
+      }
+    }
+
+    final messages = [
+      LLMMessage(
+        role: LLMRole.user,
+        content: task.parameters['prompt'] ?? '',
+        attachments: attachments,
+      )
+    ];
+
+    // 2. Start Long Running Operation
+    final operationName = await LLMService().startLongRunning(
+      modelIdentifier: task.modelDbId ?? task.modelId,
+      messages: messages,
+      contextId: task.id,
+      options: task.parameters,
+    );
+    
+    task.addLog('LRO started: $operationName');
+    _emit(task.id, TaskEventType.progress, 0.05);
+
+    // 3. Polling Loop
+    String? videoUri;
+    while (true) {
+      if (task.status == TaskStatus.cancelled) break;
+
+      final opStatus = await LLMService().checkOperation(
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        operationName: operationName,
+        contextId: task.id,
+      );
+
+      final isDone = opStatus['done'] == true;
+      if (isDone) {
+        final response = opStatus['response'];
+        if (response != null && response['generateVideoResponse'] != null) {
+          final samples = response['generateVideoResponse']['generatedSamples'] as List?;
+          if (samples != null && samples.isNotEmpty) {
+            videoUri = samples[0]['video']?['uri'];
+          }
+        }
+        
+        if (videoUri == null) {
+          throw Exception('Operation finished but no video URI found. Response: ${jsonEncode(response)}');
+        }
+        break;
+      }
+
+      // If not done, update progress and wait
+      task.addLog('Generation in progress...');
+      _emit(task.id, TaskEventType.progress, 0.5); // Placeholder progress
+
+      await Future.delayed(const Duration(seconds: 10));
+    }
+
+    if (task.status == TaskStatus.cancelled) return;
+
+    // 4. Download Video
+    task.addLog('Downloading video from: $videoUri');
+    _emit(task.id, TaskEventType.progress, 0.8);
+
+    final downloadPath = await _downloadVideo(videoUri!, task, outputDir);
+    
+    task.resultPaths.add(downloadPath);
+    _emit(task.id, TaskEventType.imageResult, downloadPath); // Reusing imageResult for video path
+    task.addLog('Saved video to: $downloadPath');
+    
+    onTaskCompleted?.call(File(downloadPath));
+  }
+
+  Future<String> _downloadVideo(String url, TaskItem task, String outputDir) async {
+    final client = HttpClient();
+    try {
+      final db = DatabaseService();
+      String? apiKey;
+      if (task.modelDbId != null) {
+        final models = await db.getModels();
+        final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
+        if (model != null && model.channelId != null) {
+          final channel = await db.getChannel(model.channelId!);
+          if (channel != null) {
+            apiKey = channel.apiKey;
+          }
+        }
+      }
+
+      final request = await client.getUrl(Uri.parse(url));
+      if (apiKey != null) {
+        request.headers.add('x-goog-api-key', apiKey);
+      }
+      
+      final response = await request.close();
+      if (response.statusCode != 200) {
+        throw Exception('Failed to download video: ${response.statusCode}');
+      }
+
+      final bytes = await response.fold<List<int>>([], (p, e) => p..addAll(e));
+      
+      final prefix = task.parameters['imagePrefix'] ?? 'video';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${prefix}_${timestamp}.mp4';
+      final filePath = p.join(outputDir, fileName);
+      
+      await File(filePath).writeAsBytes(bytes);
+      return filePath;
+    } finally {
+      client.close();
+    }
+  }
+
   Future<void> _executeDownloadTask(TaskItem task) async {
     task.addLog('Start downloading ${task.imagePaths.length} images.');
     
@@ -689,14 +828,9 @@ Do not include any other text or markdown formatting.
     String? primary = await db.getSetting('output_directory');
     
     // Result Cache is always initialized in GalleryState for iOS/macOS
-    // We can re-fetch or use a placeholder logic here.
-    // For safety, let's re-calculate the app cache path.
     String? fallback;
     try {
       if (Platform.isIOS || Platform.isMacOS) {
-        // Actually, we should use the one from GalleryState if possible, 
-        // but TaskQueueService doesn't have direct access to GalleryState.
-        // We'll trust the setting 'result_cache_directory' initialized by GalleryState.
         final appCache = (await db.getSetting('result_cache_directory')) ?? '';
         if (appCache.isNotEmpty) fallback = appCache;
       }

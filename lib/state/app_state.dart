@@ -135,6 +135,17 @@ class AppState extends ChangeNotifier {
       m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
+  List<LLMModel> get videoModels => _models.where((m) =>
+      (m.tag == ModelTag.video.value || m.tag == ModelTag.multimodal.value) && 
+      m.type == 'google-genai'
+  ).toList();
+
+  bool isVideoCompatibleModel(int? modelDbId) {
+    if (modelDbId == null) return false;
+    final model = _models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
+    return model != null && model.type == 'google-genai';
+  }
+
   Future<int> getDownloaderCacheSize() async {
     return await WebScraperService().getCacheSize();
   }
@@ -571,6 +582,11 @@ class AppState extends ChangeNotifier {
   Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     final prompt = params['prompt'] as String? ?? '';
     if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
+
+    if (params['taskType'] == TaskType.videoGenerate.name && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
+      return;
+    }
     
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
@@ -582,8 +598,21 @@ class AppState extends ChangeNotifier {
       params, 
       modelIdDisplay: modelIdDisplay,
       useStream: params['useStream'] ?? useStream,
+      type: params['taskType'] != null 
+          ? TaskType.values.firstWhere((e) => e.name == params['taskType']) 
+          : TaskType.imageProcess,
     );
     
     addLog('Task submitted for ${imagePaths.length} images.');
+  }
+
+  Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
+    if (!isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
+      return;
+    }
+
+    params['taskType'] = TaskType.videoGenerate.name;
+    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
   }
 }
