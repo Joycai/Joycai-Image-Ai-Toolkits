@@ -97,7 +97,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.didChangeDependencies();
     if (_appState == null) {
       _appState = Provider.of<AppState>(context, listen: false);
-      _optCurrentPromptCtrl.text = _appState!.lastPrompt;
+      _optCurrentPromptCtrl.text = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
       _initTabController();
       
       _appState!.addListener(_onAppStateChanged);
@@ -239,6 +239,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final targetIndex = _lastKnownTabIndex.clamp(0, _tabController.length - 1);
       if (_tabController.index != targetIndex) {
          _tabController.animateTo(targetIndex);
+      }
+      
+      // Update optimizer prompt if switching to/from video tab
+      if (_tabController.index == 4) {
+        final currentWorkspacePrompt = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
+        if (_optCurrentPromptCtrl.text != currentWorkspacePrompt) {
+          setState(() {
+            _optCurrentPromptCtrl.text = currentWorkspacePrompt;
+          });
+        }
       }
     }
   }

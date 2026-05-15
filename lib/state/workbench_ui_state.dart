@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants.dart';
 import '../models/app_image.dart';
 
 class WorkbenchUIState extends ChangeNotifier {
@@ -25,8 +24,6 @@ class WorkbenchUIState extends ChangeNotifier {
   List<AppImage> videoReferenceImages = [];
   AppImage? videoFirstFrame;
   AppImage? videoLastFrame;
-  VeoResolution videoResolution = VeoResolution.r720p;
-  VeoAspectRatio videoAspectRatio = VeoAspectRatio.r16_9;
   String? lastGeneratedVideoPath;
 
   // Preview Methods
@@ -63,16 +60,6 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   // Video Methods
-  void setVideoResolution(VeoResolution res) {
-    videoResolution = res;
-    notifyListeners();
-  }
-
-  void setVideoAspectRatio(VeoAspectRatio ratio) {
-    videoAspectRatio = ratio;
-    notifyListeners();
-  }
-
   void addVideoReferenceImage(AppImage image) {
     if (!videoReferenceImages.any((i) => i.path == image.path)) {
       videoReferenceImages.add(image);

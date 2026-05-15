@@ -112,7 +112,11 @@ class AppState extends ChangeNotifier {
   String? lastSelectedModelId;
   AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
   AppResolution lastResolution = AppResolution.r1K;
+  String? lastVideoModelId;
+  VeoResolution lastVideoResolution = VeoResolution.r720p;
+  VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
   String lastPrompt = "";
+  String lastVideoPrompt = "";
   bool useStream = true;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
@@ -257,7 +261,11 @@ class AppState extends ChangeNotifier {
     lastSelectedModelId = await _db.getSetting('last_model_id');
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
+    lastVideoModelId = await _db.getSetting('last_video_model_id');
+    lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
+    lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
@@ -575,6 +583,31 @@ class AppState extends ChangeNotifier {
     if (useStream != null) {
       this.useStream = useStream;
       await _db.saveSetting('workbench_use_stream', useStream.toString());
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateVideoConfig({
+    String? modelId,
+    VeoResolution? resolution,
+    VeoAspectRatio? aspectRatio,
+    String? prompt,
+  }) async {
+    if (modelId != null) {
+      lastVideoModelId = modelId;
+      await _db.saveSetting('last_video_model_id', modelId);
+    }
+    if (resolution != null) {
+      lastVideoResolution = resolution;
+      await _db.saveSetting('last_video_resolution', resolution.value);
+    }
+    if (aspectRatio != null) {
+      lastVideoAspectRatio = aspectRatio;
+      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);
+    }
+    if (prompt != null) {
+      lastVideoPrompt = prompt;
+      await _db.saveSetting('last_video_prompt', prompt);
     }
     notifyListeners();
   }

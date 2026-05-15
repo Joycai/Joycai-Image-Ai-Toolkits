@@ -28,7 +28,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
   void initState() {
     super.initState();
     final appState = Provider.of<AppState>(context, listen: false);
-    _promptController = MarkdownTextEditingController(text: appState.lastPrompt);
+    _promptController = MarkdownTextEditingController(text: appState.lastVideoPrompt);
   }
 
   @override
@@ -49,7 +49,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       return;
     }
 
-    final savedModelId = appState.lastSelectedModelId;
+    final savedModelId = appState.lastVideoModelId;
     final selectedModel = videoModels.cast<LLMModel?>().firstWhere(
       (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
       orElse: () => videoModels.first,
@@ -59,8 +59,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     final params = {
       'prompt': _promptController.text,
-      'resolution': uiState.videoResolution.value,
-      'aspectRatio': uiState.videoAspectRatio.value,
+      'resolution': appState.lastVideoResolution.value,
+      'aspectRatio': appState.lastVideoAspectRatio.value,
       'referenceImagePaths': uiState.videoReferenceImages.map((i) => i.path).toList(),
       'firstFramePath': uiState.videoFirstFrame?.path,
       'lastFramePath': uiState.videoLastFrame?.path,
@@ -87,7 +87,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     int? selectedChannelId;
     
     if (videoModels.isNotEmpty) {
-      final savedModelId = appState.lastSelectedModelId;
+      final savedModelId = appState.lastVideoModelId;
       final match = videoModels.cast<LLMModel?>().firstWhere(
         (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
         orElse: () => null,
@@ -106,7 +106,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Model Selection
-        _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, uiState),
+        _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
         
         const Divider(height: 32),
         
@@ -120,7 +120,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
           maxLines: 8,
           hint: l10n.promptHint,
-          onChanged: (v) => appState.updateWorkbenchConfig(prompt: v),
+          onChanged: (v) => appState.updateVideoConfig(prompt: v),
           expand: false,
         ),
         
@@ -193,6 +193,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     List<LLMChannel> allChannels,
     int? selectedChannelId,
     int? selectedModelDbId,
+    AppState appState,
     WorkbenchUIState uiState,
   ) {
     return CollapsibleCard(
@@ -203,7 +204,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         children: [
           DropdownButtonFormField<int>(
             decoration: InputDecoration(labelText: l10n.channel, isDense: true),
-            value: selectedChannelId,
+            initialValue: selectedChannelId,
             items: allChannels.map((c) => DropdownMenuItem(
               value: c.id,
               child: Text(c.displayName),
@@ -211,21 +212,21 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             onChanged: (val) {
               final firstVideoInChannel = videoModels.where((m) => m.channelId == val).firstOrNull;
               if (firstVideoInChannel != null) {
-                context.read<AppState>().updateWorkbenchConfig(modelId: firstVideoInChannel.id.toString());
+                appState.updateVideoConfig(modelId: firstVideoInChannel.id.toString());
               }
             },
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             decoration: InputDecoration(labelText: l10n.model, isDense: true),
-            value: selectedModelDbId,
+            initialValue: selectedModelDbId,
             items: videoModels.where((m) => m.channelId == selectedChannelId).map((m) => DropdownMenuItem(
               value: m.id,
               child: Text(m.modelName),
             )).toList(),
             onChanged: (val) {
               if (val != null) {
-                context.read<AppState>().updateWorkbenchConfig(modelId: val.toString());
+                appState.updateVideoConfig(modelId: val.toString());
               }
             },
           ),
@@ -236,24 +237,24 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               Expanded(
                 child: DropdownButtonFormField<VeoResolution>(
                   decoration: InputDecoration(labelText: l10n.videoResolution, isDense: true),
-                  initialValue: uiState.videoResolution,
+                  initialValue: appState.lastVideoResolution,
                   items: VeoResolution.values.map((v) => DropdownMenuItem(
                     value: v,
                     child: Text(v.value),
                   )).toList(),
-                  onChanged: (v) => uiState.setVideoResolution(v!),
+                  onChanged: (v) => appState.updateVideoConfig(resolution: v),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<VeoAspectRatio>(
                   decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
-                  initialValue: uiState.videoAspectRatio,
+                  initialValue: appState.lastVideoAspectRatio,
                   items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
                     value: v,
                     child: Text(v.value),
                   )).toList(),
-                  onChanged: (v) => uiState.setVideoAspectRatio(v!),
+                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
                 ),
               ),
             ],
