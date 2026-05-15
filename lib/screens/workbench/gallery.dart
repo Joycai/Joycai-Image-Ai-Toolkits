@@ -60,7 +60,7 @@ class _GalleryState extends State<Gallery> {
           _buildActiveView(context, galleryState, appState),
           if (_isDragging)
             Container(
-              color: Theme.of(context).colorScheme.primary.withAlpha(40),
+              color: Theme.of(context).colorScheme.primary.withAlpha(40),       
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -70,7 +70,7 @@ class _GalleryState extends State<Gallery> {
                     Text(
                       l10n.dropFilesHere,
                       style: TextStyle(
-                        fontSize: 20, 
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary
                       ),
@@ -87,13 +87,13 @@ class _GalleryState extends State<Gallery> {
   Widget _buildActiveView(BuildContext context, GalleryState galleryState, AppState appState) {
     switch (galleryState.viewMode) {
       case GalleryViewMode.all:
-        return _buildImageGrid(context, galleryState.galleryImages, appState);
+        return _buildImageGrid(context, galleryState.galleryImages, appState);  
       case GalleryViewMode.processed:
         return _buildImageGrid(context, galleryState.processedImages, appState, isResult: true);
       case GalleryViewMode.temp:
         return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
       case GalleryViewMode.folder:
-        return _buildImageGrid(context, galleryState.folderImages, appState);
+        return _buildImageGrid(context, galleryState.folderImages, appState);   
     }
   }
 
@@ -117,7 +117,7 @@ class _GalleryState extends State<Gallery> {
     final l10n = AppLocalizations.of(context)!;
 
     // Check for macOS permission issues
-    final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);
+    final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);  
     final bool isUnreachable = !isTemp && currentPath != null && state.galleryState.isPathUnreachable(currentPath);
 
     if (images.isEmpty) {
@@ -152,13 +152,13 @@ class _GalleryState extends State<Gallery> {
     final sortedPaths = grouped.keys.toList();
     // Sort directories so the view is stable
     if (isResult) {
-      // For results, maybe keep order or sort by newest? 
-      // Actually, processedImages is already sorted by modification date. 
+      // For results, maybe keep order or sort by newest?
+      // Actually, processedImages is already sorted by modification date.      
       // If we group, we might break that. Let's only group if it's NOT the result view,
       // OR if we want to show results by directory too.
       // Usually, users want to see the latest results first regardless of directory.
     } else {
-      sortedPaths.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      sortedPaths.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));   
     }
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -166,7 +166,7 @@ class _GalleryState extends State<Gallery> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
-        
+
         // If it's a single group and not 'all' mode, or results, we can just show the grid without headers for a cleaner look.
         // However, the user specifically asked for grouping, so let's provide it whenever there's more than one source.
         final bool showHeaders = !isTemp && (grouped.length > 1 || state.galleryState.viewMode == GalleryViewMode.all);
@@ -205,7 +205,7 @@ class _GalleryState extends State<Gallery> {
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(       
                     maxCrossAxisExtent: state.thumbnailSize,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
@@ -215,10 +215,10 @@ class _GalleryState extends State<Gallery> {
                     (context, index) {
                       final imageGroup = grouped[path]!;
                       final imageFile = imageGroup[index];
-                      
+
                       // Calculate global index for preview paging
                       final globalIndex = images.indexOf(imageFile);
-                      
+
                       return Selector<AppState, bool>(
                         selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
                         builder: (context, isSelected, _) {
@@ -341,7 +341,7 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           boxShadow: widget.isSelected ? [
             BoxShadow(
-              color: colorScheme.primary.withAlpha((255 * 0.2).round()),
+              color: colorScheme.primary.withAlpha((255 * 0.2).round()),        
               blurRadius: 8,
               spreadRadius: 2,
             )
@@ -359,13 +359,13 @@ class _ImageCardState extends State<_ImageCard> {
                   width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
                 ),
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorBuilder: (context, error, stackTrace) => Container(        
                   color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                  child: const Icon(Icons.broken_image, color: Colors.grey),    
                 ),
               ),
             ),
-            
+
             if (_dimensions.isNotEmpty)
               Positioned(
                 top: 0,
@@ -376,7 +376,7 @@ class _ImageCardState extends State<_ImageCard> {
                   color: Colors.black.withAlpha((255 * 0.4).round()),
                   child: Text(
                     _dimensions,
-                    style: const TextStyle(color: Colors.white, fontSize: 9),
+                    style: const TextStyle(color: Colors.white, fontSize: 9),   
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -384,9 +384,9 @@ class _ImageCardState extends State<_ImageCard> {
 
             if (widget.isSelected)
               Container(
-                color: colorScheme.primary.withAlpha((255 * 0.1).round()),
+                color: colorScheme.primary.withAlpha((255 * 0.1).round()),      
               ),
-            
+
             Positioned(
               bottom: 0,
               left: 0,
@@ -440,7 +440,7 @@ class _ImageCardState extends State<_ImageCard> {
                   ),
                 ),
               ),
-            
+
             if (widget.isSelected)
               Positioned(
                 top: 8,
@@ -575,7 +575,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            workbenchUIState.setMaskEditorSourceImage(widget.imageFile);
+            workbenchUIState.setMaskEditorSourceImage(widget.imageFile);        
             appState.setWorkbenchTab(2); // Mask Editor
           },
         ),
@@ -586,7 +586,7 @@ class _ImageCardState extends State<_ImageCard> {
             dense: true,
           ),
           onTap: () {
-            workbenchUIState.setCropResizeSourceImage(widget.imageFile);
+            workbenchUIState.setCropResizeSourceImage(widget.imageFile);        
             appState.setWorkbenchTab(3); // Crop & Resize Tab
           },
         ),
@@ -604,7 +604,7 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.compare, size: 18, color: Colors.blue),
+            leading: const Icon(Icons.compare, size: 18, color: Colors.blue),   
             title: Text(l10n.sendToComparatorRaw),
             dense: true,
           ),
@@ -614,12 +614,49 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.compare, size: 18, color: Colors.orange),
+            leading: const Icon(Icons.compare, size: 18, color: Colors.orange), 
             title: Text(l10n.sendToComparatorAfter),
             dense: true,
           ),
           onTap: () {
             workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: true);
+          },
+        ),
+
+        const PopupMenuDivider(),
+
+        // Video Generation Shortcuts
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.video_library_outlined, size: 18, color: Colors.purple),
+            title: Text(l10n.sendToFirstFrame),
+            dense: true,
+          ),
+          onTap: () {
+            workbenchUIState.setVideoFirstFrame(widget.imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.video_library_outlined, size: 18, color: Colors.indigo),
+            title: Text(l10n.sendToLastFrame),
+            dense: true,
+          ),
+          onTap: () {
+            workbenchUIState.setVideoLastFrame(widget.imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
+          },
+        ),
+        PopupMenuItem(
+          child: ListTile(
+            leading: const Icon(Icons.add_photo_alternate_outlined, size: 18, color: Colors.teal),
+            title: Text(l10n.sendToVideoReferences),
+            dense: true,
+          ),
+          onTap: () {
+            workbenchUIState.addVideoReferenceImage(widget.imageFile);
+            appState.setWorkbenchTab(5); // Video Generation
           },
         ),
 
@@ -672,7 +709,7 @@ class _ImageCardState extends State<_ImageCard> {
         // Save & Share
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),
+            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),  
             title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
             dense: true,
           ),
@@ -687,21 +724,21 @@ class _ImageCardState extends State<_ImageCard> {
           onTap: () async {
             try {
               final xFiles = filesToShare.map((f) => XFile(
-                f.path, 
+                f.path,
                 name: f.name,
                 mimeType: AppConstants.getMimeType(f.path),
               )).toList();
-              
+
               // ignore: deprecated_member_use
               await Share.shareXFiles(
-                xFiles, 
+                xFiles,
                 subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
                 sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
               );
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),
+                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),      
                 );
               }
             }
@@ -743,7 +780,7 @@ class _ImageCardState extends State<_ImageCard> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isWindows ? l10n.moveToTrash : l10n.permanentlyDelete),
+            child: Text(isWindows ? l10n.moveToTrash : l10n.permanentlyDelete), 
           ),
         ],
       ),
@@ -757,18 +794,18 @@ class _ImageCardState extends State<_ImageCard> {
   Future<void> _deleteFile(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context, listen: false);
-    
+
     try {
       if (Platform.isWindows) {
-        final path = widget.imageFile.path.replaceAll("'", "''"); 
+        final path = widget.imageFile.path.replaceAll("'", "''");
         final result = await Process.run(
-          'powershell', 
+          'powershell',
           [
             '-Command',
             "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('$path', 'OnlyErrorDialogs', 'SendToRecycleBin')"
           ],
         );
-        
+
         if (result.exitCode != 0) {
           throw Exception('PowerShell Error: ${result.stderr}');
         }

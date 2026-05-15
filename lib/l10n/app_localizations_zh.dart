@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1273,6 +1272,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sendToComparatorAfter => '设置为对比效果图';
+
+  @override
+  String get sendToFirstFrame => '设置为视频首帧';
+
+  @override
+  String get sendToLastFrame => '设置为视频尾帧';
+
+  @override
+  String get sendToVideoReferences => '添加到视频参考图';
 
   @override
   String get sendToSelection => '添加到选中列表';

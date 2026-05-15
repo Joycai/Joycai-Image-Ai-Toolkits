@@ -29,7 +29,7 @@ class PromptsScreen extends StatefulWidget {
 class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
-  
+
   List<Prompt> _userPrompts = [];
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
@@ -37,12 +37,16 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   String _selectedSystemType = 'refiner'; // 'refiner' or 'rename'
   final Set<int> _selectedFilterTagIds = {};
 
+  final Set<int> _selectedIds = {};
+  bool get _isSelectionMode => _selectedIds.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
+        _clearSelection();
         setState(() {});
       }
     });
@@ -57,6 +61,32 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     _tabController.dispose();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _toggleSelection(int id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _enterSelectionMode(int id) {
+    if (!_isSelectionMode) {
+      setState(() {
+        _selectedIds.add(id);
+      });
+    }
+  }
+
+  void _clearSelection() {
+    if (_selectedIds.isNotEmpty) {
+      setState(() {
+        _selectedIds.clear();
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -76,12 +106,151 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
-    return ResponsiveBuilder(
-      mobile: _buildMobileLayout(l10n),
-      tablet: _buildDesktopLayout(l10n, isTablet: true),
-      desktop: _buildDesktopLayout(l10n),
+
+    return Scaffold(
+      body: ResponsiveBuilder(
+        mobile: _buildMobileLayout(l10n),
+        tablet: _buildDesktopLayout(l10n, isTablet: true),
+        desktop: _buildDesktopLayout(l10n),
+      ),
+      floatingActionButton: _isSelectionMode ? _buildBulkActionFAB(l10n) : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  Widget _buildBulkActionFAB(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 6,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      color: colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _clearSelection,
+              tooltip: l10n.cancel,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "${_selectedIds.length} Selected",
+              style: TextStyle(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const VerticalDivider(width: 1, indent: 8, endIndent: 8),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              icon: const Icon(Icons.category_outlined),
+              label: const Text("Categorize"),
+              onPressed: _handleBulkCategorize,
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              label: const Text("Delete", style: TextStyle(color: Colors.red)),
+              onPressed: _handleBulkDelete,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleBulkDelete() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Delete ${_selectedIds.length} Prompts?"),
+        content: Text("This action cannot be undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final appState = Provider.of<AppState>(context, listen: false);
+      if (_tabController.index == 0) {
+        await appState.deletePrompts(_selectedIds.toList());
+      } else {
+        await appState.deleteSystemPrompts(_selectedIds.toList());
+      }
+      _clearSelection();
+      _loadData();
+    }
+  }
+
+  Future<void> _handleBulkCategorize() async {
+    final Set<int> targetTagIds = {};
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text("Bulk Categorize"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Select categories to apply to selected prompts:"),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _tags.map((t) {
+                  final isSelected = targetTagIds.contains(t.id);
+                  return FilterChip(
+                    label: Text(t.name),
+                    selected: isSelected,
+                    onSelected: (val) {
+                      setDialogState(() {
+                        if (val) {
+                          targetTagIds.add(t.id!);
+                        } else {
+                          targetTagIds.remove(t.id!);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Apply"),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final appState = Provider.of<AppState>(context, listen: false);
+      if (_tabController.index == 0) {
+        await appState.updatePromptsTags(_selectedIds.toList(), targetTagIds.toList());
+      } else {
+        await appState.updateSystemPromptsTags(_selectedIds.toList(), targetTagIds.toList());
+      }
+      _clearSelection();
+      _loadData();
+    }
   }
 
   // --- Mobile Layout ---
@@ -91,11 +260,11 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            title: Text(l10n.promptLibrary),
+            title: Text(_isSelectionMode ? "Selection Mode" : l10n.promptLibrary),
             pinned: true,
             floating: true,
             snap: true,
-            actions: [
+            actions: _isSelectionMode ? [] : [
               _buildImportExportMenu(l10n),
               IconButton(onPressed: _handleAddAction, icon: const Icon(Icons.add)),
             ],
@@ -137,17 +306,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   // --- Desktop/Tablet Layout ---
-  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
+  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {  
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: Text(l10n.promptLibrary, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(_isSelectionMode ? "Selection Mode (${_selectedIds.length})" : l10n.promptLibrary, 
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: colorScheme.surface,
         centerTitle: false,
-        actions: [
+        leading: _isSelectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _clearSelection) : null,
+        actions: _isSelectionMode ? [] : [
           _buildSearchField(l10n),
           const SizedBox(width: 8),
           _buildImportExportActions(l10n),
@@ -177,7 +348,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             destinations: [
               NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.userPrompts)),
               NavigationRailDestination(icon: const Icon(Icons.auto_fix_high_outlined), selectedIcon: const Icon(Icons.auto_fix_high), label: Text(l10n.systemTemplates)),
-              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),
+              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),  
             ],
           ),
           const VerticalDivider(width: 1),
@@ -197,7 +368,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     }
                   });
                 },
-                onClear: () => setState(() => _selectedFilterTagIds.clear()),
+                onClear: () => setState(() => _selectedFilterTagIds.clear()),   
               ),
             ),
             const VerticalDivider(width: 1),
@@ -216,8 +387,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   List<Widget> _buildTabViews(AppLocalizations l10n) {
     final filteredUser = _userPrompts.where((p) {
-      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
-                            p.content.toLowerCase().contains(_searchQuery);
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||     
+                            p.content.toLowerCase().contains(_searchQuery);     
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
       return matchesSearch && _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
@@ -225,8 +396,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
     final filteredSystem = _systemPrompts.where((p) {
       final matchesType = p.type == _selectedSystemType;
-      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) || 
-                            p.content.toLowerCase().contains(_searchQuery);
+      final matchesSearch = p.title.toLowerCase().contains(_searchQuery) ||     
+                            p.content.toLowerCase().contains(_searchQuery);     
       return matchesType && matchesSearch;
     }).toList();
 
@@ -234,20 +405,28 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
     return [
       UserPromptList(
-        prompts: filteredUser, 
-        searchQuery: _searchQuery, 
+        prompts: filteredUser,
+        searchQuery: _searchQuery,
         selectedFilterTagIds: _selectedFilterTagIds,
         onRefresh: _loadData,
         onShowEditDialog: (l, {prompt}) => _showPromptDialog(l, prompt: prompt),
         onConfirmDelete: _confirmDelete,
+        selectedIds: _selectedIds,
+        isSelectionMode: _isSelectionMode,
+        onToggleSelection: _toggleSelection,
+        onEnterSelectionMode: _enterSelectionMode,
       ),
       SystemTemplateList(
-        prompts: filteredSystem, 
+        prompts: filteredSystem,
         searchQuery: _searchQuery,
         onRefresh: _loadData,
         onShowEditDialog: (l, {prompt}) => _showSystemPromptDialog(l, prompt: prompt),
         onConfirmDelete: _confirmDelete,
         header: _buildSystemTypeToggle(colorScheme, l10n),
+        selectedIds: _selectedIds,
+        isSelectionMode: _isSelectionMode,
+        onToggleSelection: _toggleSelection,
+        onEnterSelectionMode: _enterSelectionMode,
       ),
       TagManagementList(
         tags: _tags,
@@ -258,7 +437,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     ];
   }
 
-  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false}) {
+  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false}) {    
     return Container(
       width: isMobile ? double.infinity : 300,
       height: 40,
@@ -272,8 +451,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         decoration: InputDecoration(
           hintText: l10n.filterPrompts,
           prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: _searchQuery.isNotEmpty 
-              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear()) 
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear())
               : null,
           border: InputBorder.none,
           isDense: true,
@@ -294,7 +473,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         ),
         const SizedBox(width: 4),
         IconButton.filledTonal(
-          icon: const Icon(Icons.download_for_offline_outlined, size: 20),
+          icon: const Icon(Icons.download_for_offline_outlined, size: 20),      
           tooltip: l10n.exportSettings,
           onPressed: () => _exportPrompts(l10n),
         ),
@@ -321,7 +500,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         if (val == 'export') _exportPrompts(l10n);
       },
       itemBuilder: (context) => [
-        PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),
+        PopupMenuItem(value: 'import', child: ListTile(leading: const Icon(Icons.upload_file_outlined), title: Text(l10n.importSettings), dense: true)),        
         PopupMenuItem(value: 'export', child: ListTile(leading: const Icon(Icons.download_for_offline_outlined), title: Text(l10n.exportSettings), dense: true)),
       ],
     );
@@ -347,9 +526,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
           return FilterChip(
             label: Text(tag.name, style: TextStyle(
-              fontSize: 12, 
+              fontSize: 12,
               color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,     
             )),
             selected: isSelected,
             onSelected: (val) {
@@ -410,9 +589,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),       
             onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);
+              final appState = Provider.of<AppState>(context, listen: false);   
               if (isSystem) {
                 await appState.deleteSystemPrompt(prompt.id);
               } else {
@@ -439,9 +618,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),       
             onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);
+              final appState = Provider.of<AppState>(context, listen: false);   
               await appState.deletePromptTag(tag.id!);
               if (context.mounted) {
                 Navigator.pop(context);
@@ -457,14 +636,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   void _showTagDialog(AppLocalizations l10n, {PromptTag? tag}) {
     final nameCtrl = TextEditingController(text: tag?.name ?? '');
-    int selectedColor = tag?.color ?? AppConstants.tagColors.first.toARGB32();
+    int selectedColor = tag?.color ?? AppConstants.tagColors.first.toARGB32();  
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
+            title: Text(tag == null ? l10n.addCategory : l10n.editCategory),    
             content: SizedBox(
               width: 400,
               child: SingleChildScrollView(
@@ -516,7 +695,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) {
+  void _showSystemPromptDialog(AppLocalizations l10n, {SystemPrompt? prompt}) { 
     final titleCtrl = TextEditingController(text: prompt?.title ?? '');
     final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
     bool isMarkdown = prompt?.isMarkdown ?? true;
@@ -541,7 +720,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             ],
           ),
           content: SizedBox(
-            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),      
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -551,7 +730,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     children: [
                       Expanded(
                         flex: 2,
-                        child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                        child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),        
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -611,8 +790,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
             FilledButton(
               onPressed: () async {
-                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
-                final appState = Provider.of<AppState>(context, listen: false);
+                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return; 
+                final appState = Provider.of<AppState>(context, listen: false); 
                 final data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
@@ -668,7 +847,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             ],
           ),
           content: SizedBox(
-            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
+            width: math.min(MediaQuery.of(context).size.width * 0.9, 800),      
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -725,9 +904,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
             FilledButton(
               onPressed: () async {
-                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
+                if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return; 
 
-                final appState = Provider.of<AppState>(context, listen: false);
+                final appState = Provider.of<AppState>(context, listen: false); 
                 final Map<String, dynamic> data = {
                   'title': titleCtrl.text,
                   'content': contentCtrl.text,
@@ -766,7 +945,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       'export_type': 'prompts_only',
       'version': 1
     };
-    
+
     final json = jsonEncode(data);
     final bytes = utf8.encode(json);
 
@@ -776,7 +955,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       allowedExtensions: ['json'],
       bytes: bytes,
     );
-    
+
     if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
       await File(path).writeAsString(json);
     }
@@ -823,8 +1002,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       final file = File(result.files.single.path!);
       final String content = await file.readAsString();
       final Map<String, dynamic> data = jsonDecode(content);
-      
-      await appState.importPromptData(data, replace: importMode == 'replace');
+
+      await appState.importPromptData(data, replace: importMode == 'replace');  
 
       if (mounted) {
         // ignore: use_build_context_synchronously

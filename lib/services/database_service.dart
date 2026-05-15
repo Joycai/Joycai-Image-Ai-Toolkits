@@ -35,16 +35,16 @@ class DatabaseService {
 
   Future<Database> _initDatabase() async {
     String dbPath;
-    
+
     final dataDir = await AppPaths.getDataDirectory();
     final newPath = join(dataDir, 'joycai_workbench.db');
-    
-    // Legacy migration check (Only for non-portable mode or first transition)
+
+    // Legacy migration check (Only for non-portable mode or first transition)  
     if (!await AppPaths.isPortableMode()) {
       final docsDir = await getApplicationDocumentsDirectory();
       final oldPath = join(docsDir.path, 'joycai_workbench.db');
 
-      if (await File(oldPath).exists() && !await File(newPath).exists()) {
+      if (await File(oldPath).exists() && !await File(newPath).exists()) {      
         try {
           final dir = Directory(dataDir);
           if (!await dir.exists()) {
@@ -56,7 +56,7 @@ class DatabaseService {
     }
 
     dbPath = newPath;
-    
+
     if (Platform.isWindows || Platform.isLinux) {
       sqfliteFfiInit();
       return await databaseFactoryFfi.openDatabase(
@@ -87,7 +87,7 @@ class DatabaseService {
     await DatabaseMigration.onCreate(db);
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {  
     await DatabaseMigration.migrate(db, oldVersion, newVersion);
   }
 
@@ -95,16 +95,16 @@ class DatabaseService {
   /// This checks for missing presets and inserts them if they don't exist by title.
   Future<void> syncPresets() async {
     final db = await database;
-    
+
     // 1. Sync System Prompts
     try {
       final String systemJsonString = await rootBundle.loadString('assets/presets/prompts/system_prompts.json');
       final List<dynamic> systemPresets = jsonDecode(systemJsonString);
-      
+
       for (var preset in systemPresets) {
         final existing = await db.query(
-          'system_prompts', 
-          where: 'title = ? AND type = ?', 
+          'system_prompts',
+          where: 'title = ? AND type = ?',
           whereArgs: [preset['title'], preset['type']]
         );
         if (existing.isEmpty) {
@@ -119,11 +119,11 @@ class DatabaseService {
     try {
       final String userJsonString = await rootBundle.loadString('assets/presets/prompts/user_prompts.json');
       final List<dynamic> userPresets = jsonDecode(userJsonString);
-      
+
       for (var preset in userPresets) {
         final existing = await db.query(
-          'prompts', 
-          where: 'title = ?', 
+          'prompts',
+          where: 'title = ?',
           whereArgs: [preset['title']]
         );
         if (existing.isEmpty) {
@@ -138,14 +138,14 @@ class DatabaseService {
   // Task History Methods
   Future<void> saveTask(Map<String, dynamic> task) => TaskRepository().saveTask(task);
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) => TaskRepository().getRecentTasks(limit);
-  Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);
-  Future<void> cleanupStuckTasks() => TaskRepository().cleanupStuckTasks();
+  Future<void> deleteTask(String id) => TaskRepository().deleteTask(id);        
+  Future<void> cleanupStuckTasks() => TaskRepository().cleanupStuckTasks();     
   Future<List<double>> getTaskDurations(int modelDbId, int limit) => TaskRepository().getTaskDurations(modelDbId, limit);
 
   // Token Usage Methods
   Future<void> recordTokenUsage(Map<String, dynamic> usage) => UsageRepository().recordTokenUsage(usage);
   Future<void> clearTokenUsage({String? modelId}) => UsageRepository().clearTokenUsage(modelId: modelId);
-  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset}) 
+  Future<List<Map<String, dynamic>>> getTokenUsage({List<String>? modelIds, DateTime? start, DateTime? end, int? limit, int? offset})
       => UsageRepository().getTokenUsage(modelIds: modelIds, start: start, end: end, limit: limit, offset: offset);
 
   Future<void> saveUsageCheckpoint(Map<String, dynamic> checkpoint) => UsageRepository().saveUsageCheckpoint(checkpoint);
@@ -156,7 +156,9 @@ class DatabaseService {
   // Prompts Methods
   Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addPrompt(Prompt.fromMap(prompt), tagIds: tagIds);
   Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updatePrompt(id, Prompt.fromMap(prompt), tagIds: tagIds);
-  Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);
+  Future<void> deletePrompt(int id) => PromptRepository().deletePrompt(id);     
+  Future<void> deletePrompts(List<int> ids) => PromptRepository().deletePrompts(ids);
+  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => PromptRepository().updatePromptsTags(promptIds, tagIds);
   Future<List<Prompt>> getPrompts() => PromptRepository().getPrompts();
   Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
 
@@ -164,9 +166,9 @@ class DatabaseService {
   Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(LLMModel.fromMap(model));
   Future<void> updateModel(int id, Map<String, dynamic> model) => ModelRepository().updateModel(id, LLMModel.fromMap(model));
   Future<void> updateModelOrder(List<int> ids) => ModelRepository().updateModelOrder(ids);
-  Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);
+  Future<void> deleteModel(int id) => ModelRepository().deleteModel(id);        
   Future<List<LLMModel>> getModels() => ModelRepository().getModels();
-  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate) 
+  Future<void> updateModelEstimation(int modelDbId, double mean, double sd, int tasksSinceUpdate)
       => ModelRepository().updateModelEstimation(modelDbId, mean, sd, tasksSinceUpdate);
 
   // Settings Methods
@@ -189,14 +191,14 @@ class DatabaseService {
   }
 
   // Downloader Cookies History
-  Future<void> saveDownloaderCookie(String host, String cookies) async {
+  Future<void> saveDownloaderCookie(String host, String cookies) async {        
     final db = await database;
     await db.insert('downloader_cookies', {
       'host': host,
       'cookies': cookies,
       'last_used': DateTime.now().toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
-    
+
     // Limit to last 5
     final all = await db.query('downloader_cookies', orderBy: 'last_used DESC');
     if (all.length > 5) {
@@ -209,7 +211,7 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getDownloaderCookies() async {
     final db = await database;
-    return await db.query('downloader_cookies', orderBy: 'last_used DESC');
+    return await db.query('downloader_cookies', orderBy: 'last_used DESC');     
   }
 
   // Source Directories Methods
@@ -223,7 +225,7 @@ class DatabaseService {
     await db.delete('source_directories', where: 'path = ?', whereArgs: [path]);
   }
 
-  Future<void> updateDirectorySelection(String path, bool isSelected) async {
+  Future<void> updateDirectorySelection(String path, bool isSelected) async {   
     final db = await database;
     await db.update('source_directories', {'is_selected': isSelected ? 1 : 0}, where: 'path = ?', whereArgs: [path]);
   }
@@ -242,9 +244,9 @@ class DatabaseService {
   // LLM Channels Methods
   Future<int> addChannel(Map<String, dynamic> channel) => ModelRepository().addChannel(LLMChannel.fromMap(channel));
   Future<void> updateChannel(int id, Map<String, dynamic> channel) => ModelRepository().updateChannel(id, LLMChannel.fromMap(channel));
-  Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);
-  Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();
-  Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);
+  Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);    
+  Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();    
+  Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);   
 
   // Prompt Tags Methods
   Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(PromptTag.fromMap(tag));
@@ -257,6 +259,8 @@ class DatabaseService {
   Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().addSystemPrompt(SystemPrompt.fromMap(prompt), tagIds: tagIds);
   Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) => PromptRepository().updateSystemPrompt(id, SystemPrompt.fromMap(prompt), tagIds: tagIds);
   Future<void> deleteSystemPrompt(int id) => PromptRepository().deleteSystemPrompt(id);
+  Future<void> deleteSystemPrompts(List<int> ids) => PromptRepository().deleteSystemPrompts(ids);
+  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) => PromptRepository().updateSystemPromptsTags(promptIds, tagIds);
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) => PromptRepository().getSystemPrompts(type: type);
   Future<void> updateSystemPromptOrder(List<int> ids) => PromptRepository().updateSystemPromptOrder(ids);
 
@@ -277,12 +281,12 @@ class DatabaseService {
 
   // Backup & Restore (Now with optional prompt inclusion)
   Future<Map<String, dynamic>> getAllDataRaw({
-    bool includePrompts = true, 
+    bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
   }) async {
     final db = await database;
-    
+
     // Filter settings if directories are excluded
     final settingsRows = await db.query('settings');
     var filteredSettings = settingsRows;
@@ -304,7 +308,7 @@ class DatabaseService {
     }
 
     if (includeDirectories) {
-      data['source_directories'] = await db.query('source_directories');
+      data['source_directories'] = await db.query('source_directories');        
     }
 
     if (includePrompts) {
@@ -315,7 +319,7 @@ class DatabaseService {
   }
 
   Future<void> clearAllData(DatabaseExecutor txn, {
-    bool includePrompts = true, 
+    bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
   }) async {
@@ -344,23 +348,23 @@ class DatabaseService {
   }
 
   Future<void> restoreBackup(Map<String, dynamic> data, {
-    bool includePrompts = true, 
-    bool includeUsage = true, 
+    bool includePrompts = true,
+    bool includeUsage = true,
     bool includeDirectories = true,
   }) async {
     final db = await database;
 
     await db.transaction((txn) async {
-      await clearAllData(txn, 
-        includePrompts: includePrompts, 
-        includeUsage: includeUsage, 
+      await clearAllData(txn,
+        includePrompts: includePrompts,
+        includeUsage: includeUsage,
         includeDirectories: includeDirectories,
       );
 
-      final channelIdMap = await _importChannels(txn, data['llm_channels']);
+      final channelIdMap = await _importChannels(txn, data['llm_channels']);    
       final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
       final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
-      
+
       if (data['downloader_cookies'] != null) {
         await _importSimpleTable(txn, 'downloader_cookies', data['downloader_cookies']);
       }
@@ -372,9 +376,9 @@ class DatabaseService {
       if (includePrompts) {
         final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
         await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
-        await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);
+        await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);      
       }
-      
+
       if (data['settings'] != null) {
         final List<dynamic> settingsRows = data['settings'];
         var filteredSettings = settingsRows;
@@ -398,7 +402,7 @@ class DatabaseService {
         await txn.delete('prompts');
         await txn.delete('prompt_tag_refs');
         await txn.delete('system_prompts');
-        await txn.delete('prompt_tags'); 
+        await txn.delete('prompt_tags');
       }
 
       // Import Tags first to get new IDs
@@ -424,7 +428,7 @@ class DatabaseService {
           final Map<String, dynamic> row = Map.from(p)..remove('id');
           final List<dynamic>? tags = row['tags'];
           row.remove('tags');
-          row.remove('tag_name'); 
+          row.remove('tag_name');
           row.remove('tag_color');
           row.remove('tag_is_system');
           row.remove('tag_id');
@@ -524,10 +528,10 @@ class DatabaseService {
     for (var p in rows) {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
       final originalTagId = row['tag_id'] as int?;
-      
+
       final List<dynamic>? tagsFromData = row['tags'];
       row.remove('tags');
-      row.remove('tag_name'); 
+      row.remove('tag_name');
       row.remove('tag_color');
       row.remove('tag_is_system');
 
@@ -556,7 +560,7 @@ class DatabaseService {
       final Map<String, dynamic> row = Map.from(p)..remove('id');
       final List<dynamic>? tagsFromData = row['tags'];
       row.remove('tags');
-      
+
       final newPromptId = await txn.insert('system_prompts', row);
 
       if (tagsFromData != null) {

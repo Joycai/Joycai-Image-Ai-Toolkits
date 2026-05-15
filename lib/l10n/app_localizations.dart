@@ -2501,6 +2501,24 @@ abstract class AppLocalizations {
   /// **'Set as After (Result)'**
   String get sendToComparatorAfter;
 
+  /// No description provided for @sendToFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as First Frame (Video)'**
+  String get sendToFirstFrame;
+
+  /// No description provided for @sendToLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Last Frame (Video)'**
+  String get sendToLastFrame;
+
+  /// No description provided for @sendToVideoReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Video References'**
+  String get sendToVideoReferences;
+
   /// No description provided for @sendToSelection.
   ///
   /// In en, this message translates to:
