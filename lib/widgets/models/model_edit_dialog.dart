@@ -114,6 +114,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             items: const [
               DropdownMenuItem(value: 'chat', child: Text('Chat')),
               DropdownMenuItem(value: 'image', child: Text('Image')),
+              DropdownMenuItem(value: 'video', child: Text('Video')),
               DropdownMenuItem(value: 'multimodal', child: Text('Multimodal')),
             ],
             onChanged: (v) => setState(() => tag = v!),

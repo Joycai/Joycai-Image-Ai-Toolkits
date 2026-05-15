@@ -120,7 +120,7 @@
   "optimizedPrompt": "優化後的提示詞",
   "applyToWorkbench": "套用到工作台",
   "promptApplied": "提示詞已套用到工作台",
-  "refineFailed": "優化失敗：{error}",
+  "refineFailed": "優化失敗: {error}",
   "@refineFailed": {
     "placeholders": {
       "error": {
@@ -128,6 +128,18 @@
       }
     }
   },
+  "videoGeneration": "影片生成",
+  "referenceImages": "參考圖片",
+  "firstFrame": "首幀",
+  "lastFrame": "尾幀",
+  "generateVideo": "生成影片",
+  "frames": "幀控制",
+  "videoResolution": "影片解析度",
+  "videoAspectRatio": "影片比例",
+  "openInSystemPlayer": "在系統播放器中打開",
+  "dropVideoReferenceHere": "在此處拖入用於風格/內容參考的圖片",
+  "dropFirstFrameHere": "在此處拖入起始幀圖片",
+  "dropLastFrameHere": "在此處拖入結束幀圖片",
   "executionLogs": "執行日誌",
   "saveToPhotos": "儲存到照片",
   "saveToGallery": "儲存到相簿",

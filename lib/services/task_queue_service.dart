@@ -21,12 +21,14 @@ enum TaskEventType { textChunk, imageResult, progress, statusChanged, error }
 
 class TaskEvent {
   final String taskId;
+  final TaskType? taskType;
   final TaskEventType type;
   final dynamic data;
   final DateTime timestamp;
 
   TaskEvent({
     required this.taskId,
+    this.taskType,
     required this.type,
     this.data,
   }) : timestamp = DateTime.now();
@@ -126,7 +128,8 @@ class TaskQueueService extends ChangeNotifier {
   }
 
   void _emit(String taskId, TaskEventType type, [dynamic data]) {
-    _eventController.add(TaskEvent(taskId: taskId, type: type, data: data));
+    final task = _queue.cast<TaskItem?>().firstWhere((t) => t?.id == taskId, orElse: () => null);
+    _eventController.add(TaskEvent(taskId: taskId, taskType: task?.type, type: type, data: data));
   }
   
   Function(File)? onTaskCompleted;
@@ -566,22 +569,27 @@ Do not include any other text or markdown formatting.
     // 1. Prepare messages and attachments
     final attachments = <LLMAttachment>[];
     
-    // Main image (first frame)
-    if (task.imagePaths.isNotEmpty) {
-      attachments.add(LLMAttachment.fromFile(File(task.imagePaths.first), 'image/png', referenceType: LLMReferenceType.firstFrame));
+    // First frame
+    final firstFramePath = task.parameters['firstFramePath'] as String?;
+    if (firstFramePath != null && firstFramePath.isNotEmpty) {
+      attachments.add(LLMAttachment.fromFile(File(firstFramePath), _getMimeType(firstFramePath), referenceType: LLMReferenceType.firstFrame));
+      task.addLog('Added first frame: ${p.basename(firstFramePath)}');
     }
     
     // Last frame
     final lastFramePath = task.parameters['lastFramePath'] as String?;
     if (lastFramePath != null && lastFramePath.isNotEmpty) {
-      attachments.add(LLMAttachment.fromFile(File(lastFramePath), 'image/png', referenceType: LLMReferenceType.lastFrame));
+      attachments.add(LLMAttachment.fromFile(File(lastFramePath), _getMimeType(lastFramePath), referenceType: LLMReferenceType.lastFrame));
+      task.addLog('Added last frame: ${p.basename(lastFramePath)}');
     }
     
     // Reference images
     final referenceImagePaths = task.parameters['referenceImagePaths'] as List<dynamic>?;
     if (referenceImagePaths != null) {
       for (var path in referenceImagePaths) {
-        attachments.add(LLMAttachment.fromFile(File(path as String), 'image/png', referenceType: LLMReferenceType.asset));
+        final pathStr = path as String;
+        attachments.add(LLMAttachment.fromFile(File(pathStr), _getMimeType(pathStr), referenceType: LLMReferenceType.asset));
+        task.addLog('Added reference image: ${p.basename(pathStr)}');
       }
     }
 
@@ -683,7 +691,7 @@ Do not include any other text or markdown formatting.
       
       final prefix = task.parameters['imagePrefix'] ?? 'video';
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${prefix}_${timestamp}.mp4';
+      final fileName = '${prefix}_$timestamp.mp4';
       final filePath = p.join(outputDir, fileName);
       
       await File(filePath).writeAsBytes(bytes);

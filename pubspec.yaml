@@ -38,6 +38,7 @@ dependencies:
   gal: ^2.3.2
   image: ^4.2.0
   extended_image: ^10.0.1
+  video_player: ^2.8.1
 
 dev_dependencies:
   flutter_test:

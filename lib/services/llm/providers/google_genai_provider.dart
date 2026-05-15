@@ -217,11 +217,21 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:predictLongRunning');
-    logger?.call('Starting Google LRO: ${url.host}', level: 'DEBUG');
+    final baseUrl = config.endpoint.endsWith('/') 
+        ? config.endpoint.substring(0, config.endpoint.length - 1) 
+        : config.endpoint;
+    final url = Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning');
     
     final headers = _getHeaders(config.channelType, config.apiKey);
     final payload = _prepareVeoPayload(history, options);
+
+    // Debug logging for the user to see what's happening
+    logger?.call('POST URL: $url', level: 'DEBUG');
+    logger?.call('Headers: ${headers.keys.join(', ')}', level: 'DEBUG');
+    
+    // Log payload structure (without large data)
+    final safePayload = _getSafePayload(payload);
+    logger?.call('Payload Structure: ${jsonEncode(safePayload)}', level: 'DEBUG');
 
     final client = config.createClient();
     try {
@@ -244,11 +254,14 @@ class GoogleGenAIProvider implements ILLMProvider {
 
       final data = jsonDecode(response.body);
       if (data['error'] != null) {
-        throw Exception('Google LRO Start Error: [${data['error']['code']}] ${data['error']['message']}');
+        final err = data['error'];
+        final msg = 'Google LRO Error: [${err['code']}] ${err['message']}';
+        logger?.call(msg, level: 'ERROR');
+        throw Exception(msg);
       }
 
       if (response.statusCode != 200) {
-        throw Exception('Google LRO Start failed: ${response.statusCode} - ${response.body}');
+        throw Exception('Google LRO failed: ${response.statusCode} - ${response.body}');
       }
 
       final name = data['name'] as String?;
@@ -260,6 +273,23 @@ class GoogleGenAIProvider implements ILLMProvider {
     } finally {
       client.close();
     }
+  }
+
+  Map<String, dynamic> _getSafePayload(Map<String, dynamic> payload) {
+    // Recursively strip 'data' fields for logging
+    final Map<String, dynamic> safe = {};
+    payload.forEach((key, value) {
+      if (key == 'data' && value is String && value.length > 100) {
+        safe[key] = '<BASE64_DATA (${value.length} chars)>';
+      } else if (value is Map<String, dynamic>) {
+        safe[key] = _getSafePayload(value);
+      } else if (value is List) {
+        safe[key] = value.map((e) => e is Map<String, dynamic> ? _getSafePayload(e) : e).toList();
+      } else {
+        safe[key] = value;
+      }
+    });
+    return safe;
   }
 
   @override
@@ -305,30 +335,38 @@ class GoogleGenAIProvider implements ILLMProvider {
       }
 
       if (b64Data != null) {
-        final mediaData = {
-          "inlineData": {
+        // // Some Google REST APIs (like Veo in Google AI Studio) expect fields directly,
+        // // without the 'inline_data' or 'inlineData' wrapper.
+        // // We'll use snake_case for mime_type as it's common in generativelanguage REST.
+        // final mediaData = {
+        //   "inlineData": {
+        //     "mimeType": attachment.mimeType,
+        //     "data": b64Data
+        //   }
+        // };
+
+        // Google Gen API doc is wrong, this code is get from ai studio, fuck google
+        final mediaDataLegacy = {
             "mimeType": attachment.mimeType,
-            "data": b64Data
-          }
+            "bytesBase64Encoded": b64Data
         };
 
         switch (attachment.referenceType) {
           case LLMReferenceType.firstFrame:
-            instance['image'] = mediaData;
+            instance['image'] = mediaDataLegacy;
             break;
           case LLMReferenceType.lastFrame:
-            instance['lastFrame'] = mediaData;
+            instance['lastFrame'] = mediaDataLegacy;
             break;
           case LLMReferenceType.asset:
             referenceImages.add({
-              "image": mediaData,
+              "image": mediaDataLegacy,
               "referenceType": "asset"
             });
             break;
           default:
-            // Default to reference image if not specified and it's Veo
             referenceImages.add({
-              "image": mediaData,
+              "image": mediaDataLegacy,
               "referenceType": "asset"
             });
         }
@@ -341,6 +379,8 @@ class GoogleGenAIProvider implements ILLMProvider {
 
     final parameters = <String, dynamic>{};
     if (options != null) {
+      // Keep parameters as camelCase for now as per LRO standard, 
+      // but switch if errors persist.
       if (options.containsKey('resolution')) parameters['resolution'] = options['resolution'];
       if (options.containsKey('aspectRatio')) parameters['aspectRatio'] = options['aspectRatio'];
     }

@@ -535,6 +535,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
     Color color;
     switch (tag.toLowerCase()) {
       case 'image': color = Colors.purple; break;
+      case 'video': color = Colors.red; break;
       case 'multimodal': color = Colors.orange; break;
       case 'chat': color = Colors.green; break;
       default: color = Colors.blue;

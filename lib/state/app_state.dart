@@ -262,7 +262,7 @@ class AppState extends ChangeNotifier {
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 4);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 5);
     }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -383,7 +383,7 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index.clamp(0, 4);
+    workbenchTabIndex = index.clamp(0, 5);
     _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
@@ -581,9 +581,25 @@ class AppState extends ChangeNotifier {
 
   Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     final prompt = params['prompt'] as String? ?? '';
-    if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
+    final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;
+    
+    List<String> imagePaths = [];
+    if (isVideoTask) {
+      // For video generation, collect all image inputs
+      final first = params['firstFramePath'] as String?;
+      final last = params['lastFramePath'] as String?;
+      final refs = params['referenceImagePaths'] as List<dynamic>?;
+      
+      if (first != null) imagePaths.add(first);
+      if (last != null) imagePaths.add(last);
+      if (refs != null) imagePaths.addAll(refs.cast<String>());
+    } else {
+      imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
+    }
 
-    if (params['taskType'] == TaskType.videoGenerate.name && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+    if (prompt.isEmpty && imagePaths.isEmpty) return;
+
+    if (isVideoTask && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
       addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
       return;
     }
@@ -591,7 +607,6 @@ class AppState extends ChangeNotifier {
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
     
-    final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
     await taskQueue.addTask(
       imagePaths, 
       modelIdentifier, 
@@ -603,7 +618,7 @@ class AppState extends ChangeNotifier {
           : TaskType.imageProcess,
     );
     
-    addLog('Task submitted for ${imagePaths.length} images.');
+    addLog('Task submitted with ${imagePaths.length} input images.');
   }
 
   Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {

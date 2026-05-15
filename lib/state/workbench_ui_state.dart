@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/constants.dart';
 import '../models/app_image.dart';
 
 class WorkbenchUIState extends ChangeNotifier {
@@ -19,6 +20,14 @@ class WorkbenchUIState extends ChangeNotifier {
   // Prompt Optimizer State
   String optimizerRoughPrompt = "";
   List<AppImage> optimizerReferenceImages = [];
+
+  // Video Generation State
+  List<AppImage> videoReferenceImages = [];
+  AppImage? videoFirstFrame;
+  AppImage? videoLastFrame;
+  VeoResolution videoResolution = VeoResolution.r720p;
+  VeoAspectRatio videoAspectRatio = VeoAspectRatio.r16_9;
+  String? lastGeneratedVideoPath;
 
   // Preview Methods
   void setPreviewList(List<AppImage> images, int initialIndex) {
@@ -50,6 +59,51 @@ class WorkbenchUIState extends ChangeNotifier {
     optimizerRoughPrompt = "";
     // Note: We might want to keep the images as reference in the sidebar
     // so we only clear the prompt "signal" that triggers the overwrite.
+    notifyListeners();
+  }
+
+  // Video Methods
+  void setVideoResolution(VeoResolution res) {
+    videoResolution = res;
+    notifyListeners();
+  }
+
+  void setVideoAspectRatio(VeoAspectRatio ratio) {
+    videoAspectRatio = ratio;
+    notifyListeners();
+  }
+
+  void addVideoReferenceImage(AppImage image) {
+    if (!videoReferenceImages.any((i) => i.path == image.path)) {
+      videoReferenceImages.add(image);
+      notifyListeners();
+    }
+  }
+
+  void removeVideoReferenceImage(AppImage image) {
+    videoReferenceImages.removeWhere((i) => i.path == image.path);
+    notifyListeners();
+  }
+
+  void setVideoFirstFrame(AppImage? image) {
+    videoFirstFrame = image;
+    notifyListeners();
+  }
+
+  void setVideoLastFrame(AppImage? image) {
+    videoLastFrame = image;
+    notifyListeners();
+  }
+
+  void setLastGeneratedVideoPath(String? path) {
+    lastGeneratedVideoPath = path;
+    notifyListeners();
+  }
+
+  void clearVideoInputs() {
+    videoReferenceImages.clear();
+    videoFirstFrame = null;
+    videoLastFrame = null;
     notifyListeners();
   }
 
