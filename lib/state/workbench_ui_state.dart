@@ -20,6 +20,12 @@ class WorkbenchUIState extends ChangeNotifier {
   String optimizerRoughPrompt = "";
   List<AppImage> optimizerReferenceImages = [];
 
+  // Video Generation State
+  List<AppImage> videoReferenceImages = [];
+  AppImage? videoFirstFrame;
+  AppImage? videoLastFrame;
+  String? lastGeneratedVideoPath;
+
   // Preview Methods
   void setPreviewList(List<AppImage> images, int initialIndex) {
     previewImages = List.from(images);
@@ -50,6 +56,41 @@ class WorkbenchUIState extends ChangeNotifier {
     optimizerRoughPrompt = "";
     // Note: We might want to keep the images as reference in the sidebar
     // so we only clear the prompt "signal" that triggers the overwrite.
+    notifyListeners();
+  }
+
+  // Video Methods
+  void addVideoReferenceImage(AppImage image) {
+    if (!videoReferenceImages.any((i) => i.path == image.path)) {
+      videoReferenceImages.add(image);
+      notifyListeners();
+    }
+  }
+
+  void removeVideoReferenceImage(AppImage image) {
+    videoReferenceImages.removeWhere((i) => i.path == image.path);
+    notifyListeners();
+  }
+
+  void setVideoFirstFrame(AppImage? image) {
+    videoFirstFrame = image;
+    notifyListeners();
+  }
+
+  void setVideoLastFrame(AppImage? image) {
+    videoLastFrame = image;
+    notifyListeners();
+  }
+
+  void setLastGeneratedVideoPath(String? path) {
+    lastGeneratedVideoPath = path;
+    notifyListeners();
+  }
+
+  void clearVideoInputs() {
+    videoReferenceImages.clear();
+    videoFirstFrame = null;
+    videoLastFrame = null;
     notifyListeners();
   }
 

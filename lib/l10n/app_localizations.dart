@@ -2735,6 +2735,78 @@ abstract class AppLocalizations {
   /// **'Refine failed: {error}'**
   String refineFailed(String error);
 
+  /// No description provided for @videoGeneration.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Generation'**
+  String get videoGeneration;
+
+  /// No description provided for @referenceImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference Images'**
+  String get referenceImages;
+
+  /// No description provided for @firstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'First Frame'**
+  String get firstFrame;
+
+  /// No description provided for @lastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Frame'**
+  String get lastFrame;
+
+  /// No description provided for @generateVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Video'**
+  String get generateVideo;
+
+  /// No description provided for @frames.
+  ///
+  /// In en, this message translates to:
+  /// **'Frames'**
+  String get frames;
+
+  /// No description provided for @videoResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Resolution'**
+  String get videoResolution;
+
+  /// No description provided for @videoAspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Aspect Ratio'**
+  String get videoAspectRatio;
+
+  /// No description provided for @openInSystemPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in System Player'**
+  String get openInSystemPlayer;
+
+  /// No description provided for @dropVideoReferenceHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop images here for style/content reference'**
+  String get dropVideoReferenceHere;
+
+  /// No description provided for @dropFirstFrameHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop image here for start frame'**
+  String get dropFirstFrameHere;
+
+  /// No description provided for @dropLastFrameHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop image here for end frame'**
+  String get dropLastFrameHere;
+
   /// No description provided for @executionLogs.
   ///
   /// In en, this message translates to:

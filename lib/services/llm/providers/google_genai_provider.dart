@@ -210,6 +210,187 @@ class GoogleGenAIProvider implements ILLMProvider {
     yield LLMResponseChunk(isDone: true);
   }
 
+  @override
+  Future<String> startLongRunning(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
+  }) async {
+    final baseUrl = config.endpoint.endsWith('/') 
+        ? config.endpoint.substring(0, config.endpoint.length - 1) 
+        : config.endpoint;
+    final url = Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning');
+    
+    final headers = _getHeaders(config.channelType, config.apiKey);
+    final payload = _prepareVeoPayload(history, options);
+
+    // Debug logging for the user to see what's happening
+    logger?.call('POST URL: $url', level: 'DEBUG');
+    logger?.call('Headers: ${headers.keys.join(', ')}', level: 'DEBUG');
+    
+    // Log payload structure (without large data)
+    final safePayload = _getSafePayload(payload);
+    logger?.call('Payload Structure: ${jsonEncode(safePayload)}', level: 'DEBUG');
+
+    final client = config.createClient();
+    try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleVeo (LRO Start)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': payload,
+        });
+      }
+
+      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
+
+      final data = jsonDecode(response.body);
+      if (data['error'] != null) {
+        final err = data['error'];
+        final msg = 'Google LRO Error: [${err['code']}] ${err['message']}';
+        logger?.call(msg, level: 'ERROR');
+        throw Exception(msg);
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Google LRO failed: ${response.statusCode} - ${response.body}');
+      }
+
+      final name = data['name'] as String?;
+      if (name == null) {
+        throw Exception('Failed to get operation name from response');
+      }
+
+      return name;
+    } finally {
+      client.close();
+    }
+  }
+
+  Map<String, dynamic> _getSafePayload(Map<String, dynamic> payload) {
+    // Recursively strip 'data' fields for logging
+    final Map<String, dynamic> safe = {};
+    payload.forEach((key, value) {
+      if ( (key == 'data' || key == 'bytesBase64Encoded') && value is String && value.length > 100) {
+        safe[key] = '<BASE64_DATA (${value.length} chars)>';
+      } else if (value is Map<String, dynamic>) {
+        safe[key] = _getSafePayload(value);
+      } else if (value is List) {
+        safe[key] = value.map((e) => e is Map<String, dynamic> ? _getSafePayload(e) : e).toList();
+      } else {
+        safe[key] = value;
+      }
+    });
+    return safe;
+  }
+
+  @override
+  Future<Map<String, dynamic>> checkOperation(
+    LLMModelConfig config,
+    String operationName, {
+    Function(String, {String level})? logger,
+  }) async {
+    // Operation name usually starts with 'operations/'
+    final url = Uri.parse('${config.endpoint}/$operationName');
+    logger?.call('Checking Google operation: $operationName', level: 'DEBUG');
+    
+    final headers = _getHeaders(config.channelType, config.apiKey);
+    final client = config.createClient();
+    try {
+      final response = await client.get(url, headers: headers);
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to check operation: ${response.statusCode} - ${response.body}');
+      }
+
+      return jsonDecode(response.body);
+    } finally {
+      client.close();
+    }
+  }
+
+  Map<String, dynamic> _prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
+    final userMsg = history.lastWhere((m) => m.role == LLMRole.user);
+    
+    final instance = <String, dynamic>{
+      "prompt": userMsg.content,
+    };
+
+    final referenceImages = <Map<String, dynamic>>[];
+
+    for (var attachment in userMsg.attachments) {
+      String? b64Data;
+      if (attachment.path != null) {
+        b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
+      } else if (attachment.bytes != null) {
+        b64Data = base64Encode(attachment.bytes!);
+      }
+
+      if (b64Data != null) {
+        // // Some Google REST APIs (like Veo in Google AI Studio) expect fields directly,
+        // // without the 'inline_data' or 'inlineData' wrapper.
+        // // We'll use snake_case for mime_type as it's common in generativelanguage REST.
+        // final mediaData = {
+        //   "inlineData": {
+        //     "mimeType": attachment.mimeType,
+        //     "data": b64Data
+        //   }
+        // };
+
+        // Google Gen API doc is wrong, this code is get from ai studio, fuck google
+        final mediaDataLegacy = {
+            "mimeType": attachment.mimeType,
+            "bytesBase64Encoded": b64Data
+        };
+
+        switch (attachment.referenceType) {
+          case LLMReferenceType.firstFrame:
+            instance['image'] = mediaDataLegacy;
+            break;
+          case LLMReferenceType.lastFrame:
+            instance['lastFrame'] = mediaDataLegacy;
+            break;
+          case LLMReferenceType.asset:
+            referenceImages.add({
+              "image": mediaDataLegacy,
+              "referenceType": "asset"
+            });
+            break;
+          default:
+            referenceImages.add({
+              "image": mediaDataLegacy,
+              "referenceType": "asset"
+            });
+        }
+      }
+    }
+
+    if (referenceImages.isNotEmpty) {
+      instance['referenceImages'] = referenceImages;
+    }
+
+    final parameters = <String, dynamic>{};
+    if (options != null) {
+      // Keep parameters as camelCase for now as per LRO standard, 
+      // but switch if errors persist.
+      if (options.containsKey('resolution')) parameters['resolution'] = options['resolution'];
+      if (options.containsKey('aspectRatio')) parameters['aspectRatio'] = options['aspectRatio'];
+    }
+
+    return {
+      "instances": [instance],
+      if (parameters.isNotEmpty) "parameters": parameters,
+    };
+  }
+
   Iterable<LLMResponseChunk> _parseChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
     Map<String, dynamic>? metadata = chunkData['usageMetadata'];
 

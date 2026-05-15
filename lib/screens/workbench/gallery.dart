@@ -297,146 +297,167 @@ class _ImageCardState extends State<_ImageCard> {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
 
+    return Draggable<AppImage>(
+      data: widget.imageFile,
+      feedback: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: Image(image: widget.imageFile.imageProvider, fit: BoxFit.cover),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: _buildCardContent(context, colorScheme, isMobile),
+      ),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovering = true),
+        onExit: (_) => setState(() => _isHovering = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          onDoubleTap: widget.onDoubleTap,
+          onSecondaryTapDown: (details) => _showContextMenu(context, details.globalPosition),
+          onLongPressStart: (details) => _showContextMenu(context, details.globalPosition),
+          child: _buildCardContent(context, colorScheme, isMobile),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardContent(BuildContext context, ColorScheme colorScheme, bool isMobile) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onDoubleTap: widget.onDoubleTap,
-        onSecondaryTapDown: (details) => _showContextMenu(context, details.globalPosition),
-        onLongPressStart: (details) => _showContextMenu(context, details.globalPosition),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
-              border: Border.all(
-                color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
-                width: widget.isSelected ? 2 : 1,
-              ),
-              boxShadow: widget.isSelected ? [
-                BoxShadow(
-                  color: colorScheme.primary.withAlpha((255 * 0.2).round()),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                )
-              ] : null,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Image(
-                    image: ResizeImage(
-                      widget.imageFile.imageProvider,
-                      width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
-                    ),
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
-                    ),
-                  ),
-                ),
-                
-                if (_dimensions.isNotEmpty)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                      color: Colors.black.withAlpha((255 * 0.4).round()),
-                      child: Text(
-                        _dimensions,
-                        style: const TextStyle(color: Colors.white, fontSize: 9),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-
-                if (widget.isSelected)
-                  Container(
-                    color: colorScheme.primary.withAlpha((255 * 0.1).round()),
-                  ),
-                
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha((255 * 0.6).round()),
-                    ),
-                    child: Text(
-                      widget.imageFile.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-
-                // Overlay Buttons
-                if (_isHovering || isMobile)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    right: 8,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildOverlayButton(
-                            icon: Icons.compare,
-                            onPressed: () => _handleCompare(context),
-                            tooltip: 'Compare',
-                          ),
-                          const SizedBox(width: 4),
-                          _buildOverlayButton(
-                            icon: Icons.brush,
-                            onPressed: () => _handleMask(context),
-                            tooltip: 'Mask',
-                          ),
-                          const SizedBox(width: 4),
-                          _buildOverlayButton(
-                            icon: Icons.crop,
-                            onPressed: () => _handleCrop(context),
-                            tooltip: 'Crop',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                
-                if (widget.isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        color: colorScheme.primary,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
+          border: Border.all(
+            color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
+            width: widget.isSelected ? 2 : 1,
           ),
+          boxShadow: widget.isSelected ? [
+            BoxShadow(
+              color: colorScheme.primary.withAlpha((255 * 0.2).round()),
+              blurRadius: 8,
+              spreadRadius: 2,
+            )
+          ] : null,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Image(
+                image: ResizeImage(
+                  widget.imageFile.imageProvider,
+                  width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                ),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                ),
+              ),
+            ),
+            
+            if (_dimensions.isNotEmpty)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  color: Colors.black.withAlpha((255 * 0.4).round()),
+                  child: Text(
+                    _dimensions,
+                    style: const TextStyle(color: Colors.white, fontSize: 9),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+            if (widget.isSelected)
+              Container(
+                color: colorScheme.primary.withAlpha((255 * 0.1).round()),
+              ),
+            
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha((255 * 0.6).round()),
+                ),
+                child: Text(
+                  widget.imageFile.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            // Overlay Buttons
+            if (_isHovering || isMobile)
+              Positioned(
+                top: 8,
+                left: 8,
+                right: 8,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildOverlayButton(
+                        icon: Icons.compare,
+                        onPressed: () => _handleCompare(context),
+                        tooltip: 'Compare',
+                      ),
+                      const SizedBox(width: 4),
+                      _buildOverlayButton(
+                        icon: Icons.brush,
+                        onPressed: () => _handleMask(context),
+                        tooltip: 'Mask',
+                      ),
+                      const SizedBox(width: 4),
+                      _buildOverlayButton(
+                        icon: Icons.crop,
+                        onPressed: () => _handleCrop(context),
+                        tooltip: 'Crop',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
+            if (widget.isSelected)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

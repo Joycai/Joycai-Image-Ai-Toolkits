@@ -112,7 +112,11 @@ class AppState extends ChangeNotifier {
   String? lastSelectedModelId;
   AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
   AppResolution lastResolution = AppResolution.r1K;
+  String? lastVideoModelId;
+  VeoResolution lastVideoResolution = VeoResolution.r720p;
+  VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
   String lastPrompt = "";
+  String lastVideoPrompt = "";
   bool useStream = true;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
@@ -134,6 +138,17 @@ class AppState extends ChangeNotifier {
   List<LLMModel> get chatModels => _models.where((m) =>
       m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
   ).toList();
+
+  List<LLMModel> get videoModels => _models.where((m) =>
+      (m.tag == ModelTag.video.value || m.tag == ModelTag.multimodal.value) && 
+      m.type == 'google-genai'
+  ).toList();
+
+  bool isVideoCompatibleModel(int? modelDbId) {
+    if (modelDbId == null) return false;
+    final model = _models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
+    return model != null && model.type == 'google-genai';
+  }
 
   Future<int> getDownloaderCacheSize() async {
     return await WebScraperService().getCacheSize();
@@ -246,12 +261,16 @@ class AppState extends ChangeNotifier {
     lastSelectedModelId = await _db.getSetting('last_model_id');
     lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
     lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
+    lastVideoModelId = await _db.getSetting('last_video_model_id');
+    lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
+    lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
+    lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
     
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 4);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 5);
     }
     
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -372,7 +391,7 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index.clamp(0, 4);
+    workbenchTabIndex = index.clamp(0, 5);
     _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
     notifyListeners();
   }
@@ -568,22 +587,80 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateVideoConfig({
+    String? modelId,
+    VeoResolution? resolution,
+    VeoAspectRatio? aspectRatio,
+    String? prompt,
+  }) async {
+    if (modelId != null) {
+      lastVideoModelId = modelId;
+      await _db.saveSetting('last_video_model_id', modelId);
+    }
+    if (resolution != null) {
+      lastVideoResolution = resolution;
+      await _db.saveSetting('last_video_resolution', resolution.value);
+    }
+    if (aspectRatio != null) {
+      lastVideoAspectRatio = aspectRatio;
+      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);
+    }
+    if (prompt != null) {
+      lastVideoPrompt = prompt;
+      await _db.saveSetting('last_video_prompt', prompt);
+    }
+    notifyListeners();
+  }
+
   Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     final prompt = params['prompt'] as String? ?? '';
-    if (prompt.isEmpty && galleryState.selectedImages.isEmpty) return;
+    final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;
+    
+    List<String> imagePaths = [];
+    if (isVideoTask) {
+      // For video generation, collect all image inputs
+      final first = params['firstFramePath'] as String?;
+      final last = params['lastFramePath'] as String?;
+      final refs = params['referenceImagePaths'] as List<dynamic>?;
+      
+      if (first != null) imagePaths.add(first);
+      if (last != null) imagePaths.add(last);
+      if (refs != null) imagePaths.addAll(refs.cast<String>());
+    } else {
+      imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
+    }
+
+    if (prompt.isEmpty && imagePaths.isEmpty) return;
+
+    if (isVideoTask && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
+      return;
+    }
     
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
     
-    final imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
     await taskQueue.addTask(
       imagePaths, 
       modelIdentifier, 
       params, 
       modelIdDisplay: modelIdDisplay,
       useStream: params['useStream'] ?? useStream,
+      type: params['taskType'] != null 
+          ? TaskType.values.firstWhere((e) => e.name == params['taskType']) 
+          : TaskType.imageProcess,
     );
     
-    addLog('Task submitted for ${imagePaths.length} images.');
+    addLog('Task submitted with ${imagePaths.length} input images.');
+  }
+
+  Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
+    if (!isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
+      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
+      return;
+    }
+
+    params['taskType'] = TaskType.videoGenerate.name;
+    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
   }
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1394,8 +1395,44 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String refineFailed(String error) {
-    return '洗練に失敗しました: $error';
+    return '最適化に失敗しました: $error';
   }
+
+  @override
+  String get videoGeneration => '動画生成';
+
+  @override
+  String get referenceImages => '参照画像';
+
+  @override
+  String get firstFrame => '最初のフレーム';
+
+  @override
+  String get lastFrame => '最後のフレーム';
+
+  @override
+  String get generateVideo => '動画を生成';
+
+  @override
+  String get frames => 'フレーム';
+
+  @override
+  String get videoResolution => '動画解像度';
+
+  @override
+  String get videoAspectRatio => '動画アスペクト比';
+
+  @override
+  String get openInSystemPlayer => 'システムプレイヤーで開く';
+
+  @override
+  String get dropVideoReferenceHere => 'スタイル/内容参照用の画像をここにドロップ';
+
+  @override
+  String get dropFirstFrameHere => '開始フレーム画像をここにドロップ';
+
+  @override
+  String get dropLastFrameHere => '終了フレーム画像をここにドロップ';
 
   @override
   String get executionLogs => '実行ログ';

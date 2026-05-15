@@ -10,7 +10,6 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../widgets/markdown_editor.dart';
 import '../../core/app_paths.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -22,6 +21,7 @@ import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/drawing_canvas.dart';
+import '../../widgets/markdown_editor.dart';
 import '../../widgets/unified_sidebar.dart';
 import 'gallery.dart';
 import 'widgets/comparator_toolbar.dart';
@@ -36,6 +36,8 @@ import 'widgets/optimizer_config_panel.dart';
 import 'widgets/optimizer_reference_panel.dart';
 import 'widgets/prompt_optimizer_toolbar.dart';
 import 'widgets/prompt_optimizer_view.dart';
+import 'widgets/video_config_panel.dart';
+import 'widgets/video_workbench_view.dart';
 import 'widgets/workbench_bottom_console.dart';
 import 'widgets/workbench_top_bar.dart';
 import 'workbench_config_panel.dart';
@@ -95,7 +97,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.didChangeDependencies();
     if (_appState == null) {
       _appState = Provider.of<AppState>(context, listen: false);
-      _optCurrentPromptCtrl.text = _appState!.lastPrompt;
+      _optCurrentPromptCtrl.text = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
       _initTabController();
       
       _appState!.addListener(_onAppStateChanged);
@@ -113,14 +115,20 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   void _onTaskEvent(TaskEvent event) {
-    if (_activeRefineTaskId == null || event.taskId != _activeRefineTaskId) return;
-
-    if (event.type == TaskEventType.textChunk) {
-      if (mounted) {
-        setState(() {
-          _optRefinedPromptCtrl.text += (event.data as String);
-        });
+    if (_activeRefineTaskId != null && event.taskId == _activeRefineTaskId) {
+      if (event.type == TaskEventType.textChunk) {
+        if (mounted) {
+          setState(() {
+            _optRefinedPromptCtrl.text += (event.data as String);
+          });
+        }
       }
+    }
+
+    if (event.type == TaskEventType.imageResult && event.taskType == TaskType.videoGenerate) {
+       // Video task finished
+       final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+       uiState.setLastGeneratedVideoPath(event.data as String);
     }
   }
 
@@ -232,6 +240,16 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       if (_tabController.index != targetIndex) {
          _tabController.animateTo(targetIndex);
       }
+      
+      // Update optimizer prompt if switching to/from video tab
+      if (_tabController.index == 4) {
+        final currentWorkspacePrompt = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
+        if (_optCurrentPromptCtrl.text != currentWorkspacePrompt) {
+          setState(() {
+            _optCurrentPromptCtrl.text = currentWorkspacePrompt;
+          });
+        }
+      }
     }
   }
 
@@ -312,9 +330,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _initTabController() {
     if (_appState == null) return;
-    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 4);
+    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 5);
     
-    _tabController = TabController(length: 5, vsync: this, initialIndex: _lastKnownTabIndex);
+    _tabController = TabController(length: 6, vsync: this, initialIndex: _lastKnownTabIndex);
     
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -340,7 +358,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.length != 5) {
+    if (_tabController.length != 6) {
        _tabController.dispose();
        _initTabController();
     }
@@ -456,6 +474,23 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showRightPanel = !isNarrow;
         showLeftPanel = !isNarrow; // Show reference images on left
         break;
+      case 5: // Video Generation
+        centerContent = const Column(
+          children: [
+            GalleryToolbar(),
+            Expanded(
+              child: Stack(
+                children: [
+                  Gallery(),
+                  VideoWorkbenchOverlay(),
+                ],
+              ),
+            ),
+          ],
+        );
+        showRightPanel = !isNarrow;
+        showLeftPanel = appState.isSidebarExpanded;
+        break;
       default:
         centerContent = Center(child: Text(AppLocalizations.of(context)!.comingSoon));
         showRightPanel = false;
@@ -484,6 +519,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               onTagChanged: (v) => setState(() { _optSelectedTagId = v; _applyOptimizerFilter(); }),
               onSysPromptChanged: (v) => setState(() => _optSelectedSysPrompt = v),
             );
+          case 5:
+            return VideoConfigPanel(scrollController: scrollController);
           default:
             return const SizedBox.shrink();
         }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1393,6 +1394,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String refineFailed(String error) {
     return '优化失败: $error';
   }
+
+  @override
+  String get videoGeneration => '视频生成';
+
+  @override
+  String get referenceImages => '参考图片';
+
+  @override
+  String get firstFrame => '首帧';
+
+  @override
+  String get lastFrame => '尾帧';
+
+  @override
+  String get generateVideo => '生成视频';
+
+  @override
+  String get frames => '帧控制';
+
+  @override
+  String get videoResolution => '视频分辨率';
+
+  @override
+  String get videoAspectRatio => '视频比例';
+
+  @override
+  String get openInSystemPlayer => '在系统播放器中打开';
+
+  @override
+  String get dropVideoReferenceHere => '在此处拖入用于风格/内容参考的图片';
+
+  @override
+  String get dropFirstFrameHere => '在此处拖入起始帧图片';
+
+  @override
+  String get dropLastFrameHere => '在此处拖入结束帧图片';
 
   @override
   String get executionLogs => '执行日志';
@@ -2815,8 +2852,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String refineFailed(String error) {
-    return '優化失敗：$error';
+    return '優化失敗: $error';
   }
+
+  @override
+  String get videoGeneration => '影片生成';
+
+  @override
+  String get referenceImages => '參考圖片';
+
+  @override
+  String get firstFrame => '首幀';
+
+  @override
+  String get lastFrame => '尾幀';
+
+  @override
+  String get generateVideo => '生成影片';
+
+  @override
+  String get frames => '幀控制';
+
+  @override
+  String get videoResolution => '影片解析度';
+
+  @override
+  String get videoAspectRatio => '影片比例';
+
+  @override
+  String get openInSystemPlayer => '在系統播放器中打開';
+
+  @override
+  String get dropVideoReferenceHere => '在此處拖入用於風格/內容參考的圖片';
+
+  @override
+  String get dropFirstFrameHere => '在此處拖入起始幀圖片';
+
+  @override
+  String get dropLastFrameHere => '在此處拖入結束幀圖片';
 
   @override
   String get executionLogs => '執行日誌';

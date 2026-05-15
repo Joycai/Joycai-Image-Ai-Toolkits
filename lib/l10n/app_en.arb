@@ -669,6 +669,18 @@
       }
     }
   },
+  "videoGeneration": "Video Generation",
+  "referenceImages": "Reference Images",
+  "firstFrame": "First Frame",
+  "lastFrame": "Last Frame",
+  "generateVideo": "Generate Video",
+  "frames": "Frames",
+  "videoResolution": "Video Resolution",
+  "videoAspectRatio": "Video Aspect Ratio",
+  "openInSystemPlayer": "Open in System Player",
+  "dropVideoReferenceHere": "Drop images here for style/content reference",
+  "dropFirstFrameHere": "Drop image here for start frame",
+  "dropLastFrameHere": "Drop image here for end frame",
   "executionLogs": "EXECUTION LOGS",
   "saveToPhotos": "Save to Photos",
   "saveToGallery": "Save to Gallery",

@@ -120,7 +120,7 @@
   "optimizedPrompt": "最適化されたプロンプト",
   "applyToWorkbench": "ワークベンチに適用",
   "promptApplied": "プロンプトがワークベンチに適用されました",
-  "refineFailed": "洗練に失敗しました: {error}",
+  "refineFailed": "最適化に失敗しました: {error}",
   "@refineFailed": {
     "placeholders": {
       "error": {
@@ -128,6 +128,18 @@
       }
     }
   },
+  "videoGeneration": "動画生成",
+  "referenceImages": "参照画像",
+  "firstFrame": "最初のフレーム",
+  "lastFrame": "最後のフレーム",
+  "generateVideo": "動画を生成",
+  "frames": "フレーム",
+  "videoResolution": "動画解像度",
+  "videoAspectRatio": "動画アスペクト比",
+  "openInSystemPlayer": "システムプレイヤーで開く",
+  "dropVideoReferenceHere": "スタイル/内容参照用の画像をここにドロップ",
+  "dropFirstFrameHere": "開始フレーム画像をここにドロップ",
+  "dropLastFrameHere": "終了フレーム画像をここにドロップ",
   "executionLogs": "実行ログ",
   "saveToPhotos": "写真に保存",
   "saveToGallery": "ギャラリーに保存",

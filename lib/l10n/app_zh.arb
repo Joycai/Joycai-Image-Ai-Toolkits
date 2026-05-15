@@ -669,6 +669,18 @@
       }
     }
   },
+  "videoGeneration": "视频生成",
+  "referenceImages": "参考图片",
+  "firstFrame": "首帧",
+  "lastFrame": "尾帧",
+  "generateVideo": "生成视频",
+  "frames": "帧控制",
+  "videoResolution": "视频分辨率",
+  "videoAspectRatio": "视频比例",
+  "openInSystemPlayer": "在系统播放器中打开",
+  "dropVideoReferenceHere": "在此处拖入用于风格/内容参考的图片",
+  "dropFirstFrameHere": "在此处拖入起始帧图片",
+  "dropLastFrameHere": "在此处拖入结束帧图片",
   "executionLogs": "执行日志",
   "saveToPhotos": "保存到系统相册",
   "saveToGallery": "保存到相册",

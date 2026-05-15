@@ -278,6 +278,25 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     return _TextProcessResult(cleanText.trim(), images);
   }
 
+  @override
+  Future<String> startLongRunning(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
+  }) async {
+    throw UnimplementedError('OpenAI provider does not support long-running operations yet.');
+  }
+
+  @override
+  Future<Map<String, dynamic>> checkOperation(
+    LLMModelConfig config,
+    String operationName, {
+    Function(String, {String level})? logger,
+  }) async {
+    throw UnimplementedError('OpenAI provider does not support long-running operations yet.');
+  }
+
   Map<String, String> _getHeaders(String apiKey) {
     return {
       "Authorization": "Bearer $apiKey",

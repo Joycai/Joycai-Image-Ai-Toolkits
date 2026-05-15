@@ -6,13 +6,16 @@ import 'package:http/io_client.dart';
 
 enum LLMRole { system, user, assistant }
 
+enum LLMReferenceType { media, asset, firstFrame, lastFrame }
+
 class LLMAttachment {
   final String? path;
   final Uint8List? bytes;
   final String mimeType;
+  final LLMReferenceType referenceType;
 
-  LLMAttachment.fromFile(File file, this.mimeType) : path = file.path, bytes = null;
-  LLMAttachment.fromBytes(this.bytes, this.mimeType) : path = null;
+  LLMAttachment.fromFile(File file, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = file.path, bytes = null;
+  LLMAttachment.fromBytes(this.bytes, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = null;
 }
 
 class LLMMessage {
@@ -95,11 +98,15 @@ class LLMModelConfig {
 class LLMResponse {
   final String text;
   final List<Uint8List> generatedImages;
+  final String? videoUri;
+  final String? operationName;
   final Map<String, dynamic> metadata;
 
   LLMResponse({
     required this.text,
     this.generatedImages = const [],
+    this.videoUri,
+    this.operationName,
     this.metadata = const {},
   });
 }
