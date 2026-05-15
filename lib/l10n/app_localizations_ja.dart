@@ -199,6 +199,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get viewAll => 'すべて表示';
 
   @override
+  String get noTasks => 'No active tasks';
+
+  @override
   String get sidebar => 'サイドバー';
 
   @override

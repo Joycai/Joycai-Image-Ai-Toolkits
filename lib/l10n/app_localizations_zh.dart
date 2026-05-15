@@ -103,7 +103,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get appTitle => 'Joycai 图像 AI 工具箱';
+  String get appTitle => 'Joycai Image AI 工具集';
 
   @override
   String get save => '保存';
@@ -142,7 +142,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remove => '移除';
 
   @override
-  String get clear => '清除';
+  String get clear => '清空';
 
   @override
   String get refresh => '刷新';
@@ -160,7 +160,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get started => '开始时间';
 
   @override
-  String get finished => '完成时间';
+  String get finished => '结束时间';
 
   @override
   String get config => '配置';
@@ -172,10 +172,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copyFilename => '复制文件名';
 
   @override
-  String get openInFolder => '打开所在文件夹';
+  String get openInFolder => '在文件夹中打开';
 
   @override
-  String get openInPreview => '在预览窗口打开';
+  String get openInPreview => '在预览中打开';
 
   @override
   String copiedToClipboard(String text) {
@@ -197,6 +197,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get viewAll => '查看全部';
+
+  @override
+  String get noTasks => '暂无任务';
 
   @override
   String get sidebar => '侧边栏';

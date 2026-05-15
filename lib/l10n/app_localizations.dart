@@ -461,6 +461,12 @@ abstract class AppLocalizations {
   /// **'View All'**
   String get viewAll;
 
+  /// No description provided for @noTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active tasks'**
+  String get noTasks;
+
   /// No description provided for @sidebar.
   ///
   /// In en, this message translates to:

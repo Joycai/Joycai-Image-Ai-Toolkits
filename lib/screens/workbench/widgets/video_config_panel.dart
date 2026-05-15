@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/llm_channel.dart';
@@ -11,6 +12,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/markdown_editor.dart';
+import '../workbench_layout.dart';
 
 class VideoConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -39,7 +41,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
   void _handleSubmit() {
     final appState = Provider.of<AppState>(context, listen: false);
-    final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final uiState = Provider.of<WorkbenchUIState>(context, listen: false);      
     final l10n = AppLocalizations.of(context)!;
 
     // Find selected model
@@ -51,7 +53,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     final savedModelId = appState.lastVideoModelId;
     final selectedModel = videoModels.cast<LLMModel?>().firstWhere(
-      (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
+      (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,    
       orElse: () => videoModels.first,
     );
 
@@ -85,14 +87,14 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // Determine selected model
     int? selectedModelDbId;
     int? selectedChannelId;
-    
+
     if (videoModels.isNotEmpty) {
       final savedModelId = appState.lastVideoModelId;
       final match = videoModels.cast<LLMModel?>().firstWhere(
-        (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
+        (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,  
         orElse: () => null,
       );
-      
+
       if (match != null) {
         selectedModelDbId = match.id;
         selectedChannelId = match.channelId;
@@ -102,16 +104,18 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       }
     }
 
+    final bool isMobile = Responsive.isMobile(context);
+
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Model Selection
         _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
-        
+
         const Divider(height: 32),
-        
+
         // Prompt
-        Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)), 
         const SizedBox(height: 8),
         MarkdownEditor(
           controller: _promptController,
@@ -123,34 +127,41 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onChanged: (v) => appState.updateVideoConfig(prompt: v),
           expand: false,
         ),
-        
+
         const Divider(height: 32),
-        
+
         // Frame Controls
-        Text(l10n.frames, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(l10n.frames, style: const TextStyle(fontWeight: FontWeight.bold)), 
         const SizedBox(height: 12),
-        Row(
+        Flex(
+          direction: isMobile ? Axis.vertical : Axis.horizontal,
           children: [
-            Expanded(child: _FrameDropTarget(
-              label: l10n.firstFrame,
-              image: uiState.videoFirstFrame,
-              onDrop: (img) => uiState.setVideoFirstFrame(img),
-              onClear: () => uiState.setVideoFirstFrame(null),
-              dropHint: l10n.dropFirstFrameHere,
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: _FrameDropTarget(
-              label: l10n.lastFrame,
-              image: uiState.videoLastFrame,
-              onDrop: (img) => uiState.setVideoLastFrame(img),
-              onClear: () => uiState.setVideoLastFrame(null),
-              dropHint: l10n.dropLastFrameHere,
-            )),
+            _buildFrameTargetWrapper(
+              isMobile: isMobile,
+              child: _FrameDropTarget(
+                label: l10n.firstFrame,
+                image: uiState.videoFirstFrame,
+                onDrop: (img) => uiState.setVideoFirstFrame(img),
+                onClear: () => uiState.setVideoFirstFrame(null),
+                dropHint: l10n.dropFirstFrameHere,
+              ),
+            ),
+            SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 12 : 0),      
+            _buildFrameTargetWrapper(
+              isMobile: isMobile,
+              child: _FrameDropTarget(
+                label: l10n.lastFrame,
+                image: uiState.videoLastFrame,
+                onDrop: (img) => uiState.setVideoLastFrame(img),
+                onClear: () => uiState.setVideoLastFrame(null),
+                dropHint: l10n.dropLastFrameHere,
+              ),
+            ),
           ],
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Reference Images
         Text(l10n.referenceImages, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
@@ -160,14 +171,14 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onRemove: (img) => uiState.removeVideoReferenceImage(img),
           dropHint: l10n.dropVideoReferenceHere,
         ),
-        
+
         const SizedBox(height: 32),
-        
+
         // Submit Button
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
+            onPressed: _promptController.text.isEmpty ? null : _handleSubmit,   
             icon: const Icon(Icons.movie_outlined),
             label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
             style: FilledButton.styleFrom(
@@ -185,6 +196,13 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       padding: const EdgeInsets.all(16),
       child: content,
     );
+  }
+
+  Widget _buildFrameTargetWrapper({required bool isMobile, required Widget child}) {
+    if (isMobile) {
+      return SizedBox(width: double.infinity, child: child);
+    }
+    return Expanded(child: child);
   }
 
   Widget _buildModelSection(
@@ -218,7 +236,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            decoration: InputDecoration(labelText: l10n.model, isDense: true),
+            decoration: InputDecoration(labelText: l10n.model, isDense: true),  
             initialValue: selectedModelDbId,
             items: videoModels.where((m) => m.channelId == selectedChannelId).map((m) => DropdownMenuItem(
               value: m.id,
@@ -238,11 +256,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 child: DropdownButtonFormField<VeoResolution>(
                   decoration: InputDecoration(labelText: l10n.videoResolution, isDense: true),
                   initialValue: appState.lastVideoResolution,
-                  items: VeoResolution.values.map((v) => DropdownMenuItem(
+                  items: VeoResolution.values.map((v) => DropdownMenuItem(      
                     value: v,
                     child: Text(v.value),
                   )).toList(),
-                  onChanged: (v) => appState.updateVideoConfig(resolution: v),
+                  onChanged: (v) => appState.updateVideoConfig(resolution: v),  
                 ),
               ),
               const SizedBox(width: 12),
@@ -250,11 +268,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 child: DropdownButtonFormField<VeoAspectRatio>(
                   decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
                   initialValue: appState.lastVideoAspectRatio,
-                  items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
+                  items: VeoAspectRatio.values.map((v) => DropdownMenuItem(     
                     value: v,
                     child: Text(v.value),
                   )).toList(),
-                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
+                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v), 
                 ),
               ),
             ],
@@ -283,7 +301,8 @@ class _FrameDropTarget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final bool isMobile = Responsive.isMobile(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -302,10 +321,10 @@ class _FrameDropTarget extends StatelessWidget {
             onAcceptWithDetails: (details) => onDrop(details.data),
             builder: (context, candidateData, rejectedData) {
               return AspectRatio(
-                aspectRatio: 1,
+                aspectRatio: isMobile ? 16 / 9 : 1, // Wider on mobile to save vertical space
                 child: Container(
                   decoration: BoxDecoration(
-                    color: candidateData.isNotEmpty 
+                    color: candidateData.isNotEmpty
                         ? colorScheme.primaryContainer.withValues(alpha: 0.5)
                         : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
@@ -316,28 +335,43 @@ class _FrameDropTarget extends StatelessWidget {
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: image != null
-                      ? Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image(image: image!.imageProvider, fit: BoxFit.cover),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: IconButton.filledTonal(
-                                onPressed: onClear,
-                                icon: const Icon(Icons.close, size: 16),
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                  child: InkWell(
+                    onTap: () {
+                      // Trigger Pick Mode - open the drawer on mobile to show gallery
+                      if (isMobile) {
+                        final workbenchState = Provider.of<WorkbenchLayoutState>(context, listen: false);
+                        workbenchState.openLeftPanel(); // Left panel is gallery 
+                      }
+                    },
+                    child: image != null
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image(image: image!.imageProvider, fit: BoxFit.cover),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: IconButton.filledTonal(
+                                  onPressed: onClear,
+                                  icon: const Icon(Icons.close, size: 16),      
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+                                ),
                               ),
-                            ),
-                          ],
-                        )
-                      : Tooltip(
-                          message: dropHint,
-                          child: Icon(Icons.add_photo_alternate_outlined, color: colorScheme.outline),
-                        ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_outlined, color: colorScheme.outline),
+                              if (isMobile) ...[
+                                const SizedBox(height: 4),
+                                Text("Tap to Pick", style: TextStyle(color: colorScheme.outline, fontSize: 10)),
+                              ],
+                            ],
+                          ),
+                  ),
                 ),
               );
             },
@@ -380,9 +414,9 @@ class _ReferenceImagesTarget extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: candidateData.isNotEmpty 
+              color: candidateData.isNotEmpty
                   ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3), 
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: candidateData.isNotEmpty ? colorScheme.primary : colorScheme.outlineVariant,
@@ -423,7 +457,7 @@ class _ReferenceThumbnail extends StatelessWidget {
   final AppImage image;
   final VoidCallback onRemove;
 
-  const _ReferenceThumbnail({required this.image, required this.onRemove});
+  const _ReferenceThumbnail({required this.image, required this.onRemove});     
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +480,7 @@ class _ReferenceThumbnail extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-              child: const Icon(Icons.close, size: 12, color: Colors.white),
+              child: const Icon(Icons.close, size: 12, color: Colors.white),    
             ),
           ),
         ),
