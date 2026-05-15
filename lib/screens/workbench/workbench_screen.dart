@@ -475,7 +475,19 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = !isNarrow; // Show reference images on left
         break;
       case 5: // Video Generation
-        centerContent = const VideoWorkbenchView();
+        centerContent = const Column(
+          children: [
+            GalleryToolbar(),
+            Expanded(
+              child: Stack(
+                children: [
+                  Gallery(),
+                  VideoWorkbenchOverlay(),
+                ],
+              ),
+            ),
+          ],
+        );
         showRightPanel = !isNarrow;
         showLeftPanel = appState.isSidebarExpanded;
         break;

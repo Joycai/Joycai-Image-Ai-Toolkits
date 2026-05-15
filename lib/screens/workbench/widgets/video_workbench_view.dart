@@ -8,14 +8,14 @@ import 'package:video_player/video_player.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
 
-class VideoWorkbenchView extends StatefulWidget {
-  const VideoWorkbenchView({super.key});
+class VideoWorkbenchOverlay extends StatefulWidget {
+  const VideoWorkbenchOverlay({super.key});
 
   @override
-  State<VideoWorkbenchView> createState() => _VideoWorkbenchViewState();
+  State<VideoWorkbenchOverlay> createState() => _VideoWorkbenchOverlayState();
 }
 
-class _VideoWorkbenchViewState extends State<VideoWorkbenchView> {
+class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
   VideoPlayerController? _controller;
   String? _lastPath;
 
@@ -45,62 +45,76 @@ class _VideoWorkbenchViewState extends State<VideoWorkbenchView> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (uiState.lastGeneratedVideoPath != null) {
-      _initPlayer(uiState.lastGeneratedVideoPath!);
-    }
+    if (uiState.lastGeneratedVideoPath == null) return const SizedBox.shrink();
 
-    return Container(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      child: Center(
-        child: uiState.lastGeneratedVideoPath == null
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
+    _initPlayer(uiState.lastGeneratedVideoPath!);
+
+    return Positioned(
+      bottom: 20,
+      right: 20,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(16),
+        color: colorScheme.surfaceContainerHighest,
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 children: [
-                  Icon(Icons.movie_creation_outlined, size: 64, color: colorScheme.outline),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.noResultsYet,
-                    style: TextStyle(color: colorScheme.outline, fontSize: 16),
+                  Icon(Icons.movie_outlined, size: 20, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.processResults,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
                   ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_controller != null && _controller!.value.isInitialized)
-                    Flexible(
-                      child: AspectRatio(
-                        aspectRatio: _controller!.value.aspectRatio,
-                        child: Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            VideoPlayer(_controller!),
-                            _VideoControls(controller: _controller!),
-                            VideoProgressIndicator(_controller!, allowScrubbing: true),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    const CircularProgressIndicator(),
-                  const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 12,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _openInSystemPlayer(uiState.lastGeneratedVideoPath!),
-                        icon: const Icon(Icons.open_in_new),
-                        label: Text(l10n.openInSystemPlayer),
-                      ),
-                      TextButton.icon(
-                        onPressed: () => uiState.setLastGeneratedVideoPath(null),
-                        icon: const Icon(Icons.clear),
-                        label: Text(l10n.clearTempWorkspace),
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => uiState.setLastGeneratedVideoPath(null),
+                    visualDensity: VisualDensity.compact,
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              if (_controller != null && _controller!.value.isInitialized)
+                Flexible(
+                  child: AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        VideoPlayer(_controller!),
+                        _VideoControls(controller: _controller!),
+                        VideoProgressIndicator(_controller!, allowScrubbing: true),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                const Center(child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                )),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _openInSystemPlayer(uiState.lastGeneratedVideoPath!),
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: Text(l10n.openInSystemPlayer, style: const TextStyle(fontSize: 12)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

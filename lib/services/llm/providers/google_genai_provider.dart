@@ -279,7 +279,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     // Recursively strip 'data' fields for logging
     final Map<String, dynamic> safe = {};
     payload.forEach((key, value) {
-      if (key == 'data' && value is String && value.length > 100) {
+      if ( (key == 'data' || key == 'bytesBase64Encoded') && value is String && value.length > 100) {
         safe[key] = '<BASE64_DATA (${value.length} chars)>';
       } else if (value is Map<String, dynamic>) {
         safe[key] = _getSafePayload(value);
