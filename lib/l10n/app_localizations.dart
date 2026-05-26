@@ -461,6 +461,12 @@ abstract class AppLocalizations {
   /// **'View All'**
   String get viewAll;
 
+  /// No description provided for @noTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active tasks'**
+  String get noTasks;
+
   /// No description provided for @sidebar.
   ///
   /// In en, this message translates to:
@@ -2500,6 +2506,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set as After (Result)'**
   String get sendToComparatorAfter;
+
+  /// No description provided for @sendToFirstFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as First Frame (Video)'**
+  String get sendToFirstFrame;
+
+  /// No description provided for @sendToLastFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Last Frame (Video)'**
+  String get sendToLastFrame;
+
+  /// No description provided for @sendToVideoReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Video References'**
+  String get sendToVideoReferences;
 
   /// No description provided for @sendToSelection.
   ///

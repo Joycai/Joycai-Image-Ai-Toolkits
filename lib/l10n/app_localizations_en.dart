@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -198,6 +197,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewAll => 'View All';
+
+  @override
+  String get noTasks => 'No active tasks';
 
   @override
   String get sidebar => 'Sidebar';
@@ -1300,6 +1302,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendToComparatorAfter => 'Set as After (Result)';
+
+  @override
+  String get sendToFirstFrame => 'Set as First Frame (Video)';
+
+  @override
+  String get sendToLastFrame => 'Set as Last Frame (Video)';
+
+  @override
+  String get sendToVideoReferences => 'Add to Video References';
 
   @override
   String get sendToSelection => 'Add to Selection';

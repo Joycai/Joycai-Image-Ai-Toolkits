@@ -14,6 +14,11 @@ class SystemTemplateList extends StatefulWidget {
   final Function(AppLocalizations, dynamic prompt, {required bool isSystem}) onConfirmDelete;
   final Widget? header;
 
+  final Set<int> selectedIds;
+  final bool isSelectionMode;
+  final Function(int) onToggleSelection;
+  final Function(int) onEnterSelectionMode;
+
   const SystemTemplateList({
     super.key,
     required this.prompts,
@@ -22,10 +27,14 @@ class SystemTemplateList extends StatefulWidget {
     required this.onShowEditDialog,
     required this.onConfirmDelete,
     this.header,
+    required this.selectedIds,
+    required this.isSelectionMode,
+    required this.onToggleSelection,
+    required this.onEnterSelectionMode,
   });
 
   @override
-  State<SystemTemplateList> createState() => _SystemTemplateListState();
+  State<SystemTemplateList> createState() => _SystemTemplateListState();        
 }
 
 class _SystemTemplateListState extends State<SystemTemplateList> {
@@ -43,15 +52,15 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.auto_fix_high, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.auto_fix_high, size: 64, color: Colors.grey.shade400),   
             const SizedBox(height: 16),
             Text(
-              l10n.noPromptsSaved, 
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+              l10n.noPromptsSaved,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold) 
             ),
             const SizedBox(height: 8),
             const Text(
-              "Add system templates for the Refiner or Batch Rename here.", 
+              "Add system templates for the Refiner or Batch Rename here.",     
               style: TextStyle(color: Colors.grey)
             ),
             const SizedBox(height: 24),
@@ -67,6 +76,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
       content = ReorderableListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: prompts.length,
+        // ignore: deprecated_member_use
         onReorder: (oldIndex, newIndex) async {
           if (widget.searchQuery.isNotEmpty) return;
           setState(() {
@@ -81,6 +91,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
           final systemPrompt = prompts[index];
           final id = systemPrompt.id!;
           final isExpanded = _expandedSysPromptIds.contains(id);
+          final isSelected = widget.selectedIds.contains(id);
 
           // Map to Prompt for PromptCard
           final promptForCard = Prompt(
@@ -94,37 +105,47 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
           return Padding(
             key: ValueKey('sys_$id'),
             padding: const EdgeInsets.only(bottom: 12),
-            child: PromptCard(
-              prompt: promptForCard,
-              isExpanded: isExpanded,
-              onToggle: () => setState(() {
-                if (isExpanded) {
-                  _expandedSysPromptIds.remove(id);
-                } else {
-                  _expandedSysPromptIds.add(id);
-                }
-              }),
-              leading: Icon(systemPrompt.type == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple, size: 20),
-              showCategory: true,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.copy_all, size: 18),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: systemPrompt.content));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.copiedToClipboard(systemPrompt.title))),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  onPressed: () => widget.onShowEditDialog(l10n, prompt: systemPrompt),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                  onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
-                ),
-              ],
+            child: GestureDetector(
+              onLongPress: () => widget.onEnterSelectionMode(id),
+              child: PromptCard(
+                prompt: promptForCard,
+                isExpanded: isExpanded,
+                onToggle: widget.isSelectionMode
+                  ? () => widget.onToggleSelection(id)
+                  : () => setState(() {
+                    if (isExpanded) {
+                      _expandedSysPromptIds.remove(id);
+                    } else {
+                      _expandedSysPromptIds.add(id);
+                    }
+                  }),
+                leading: widget.isSelectionMode
+                  ? Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => widget.onToggleSelection(id),
+                    )
+                  : Icon(systemPrompt.type == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple, size: 20),
+                showCategory: true,
+                actions: widget.isSelectionMode ? [] : [
+                  IconButton(
+                    icon: const Icon(Icons.copy_all, size: 18),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: systemPrompt.content));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.copiedToClipboard(systemPrompt.title))),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: () => widget.onShowEditDialog(l10n, prompt: systemPrompt),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
+                  ),
+                ],
+              ),
             ),
           );
         },

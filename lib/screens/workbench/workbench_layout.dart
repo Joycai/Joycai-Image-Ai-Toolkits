@@ -38,7 +38,7 @@ class WorkbenchLayout extends StatefulWidget {
 }
 
 class _WorkbenchLayoutState extends State<WorkbenchLayout> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();     
   double _leftWidth = 300;
   double _rightWidth = 350;
 
@@ -68,8 +68,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                       width: _leftWidth,
                       child: widget.leftPanel,
                     ),
-                    _buildDivider(
-                      isLeft: true,
+                    _ResizableDivider(
                       onResize: (delta) {
                         setState(() {
                           _leftWidth = (_leftWidth + delta).clamp(200.0, 500.0);
@@ -85,8 +84,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
                   // Right Panel
                   if (widget.rightPanelBuilder != null && widget.showRightPanel && !isNarrow) ...[
-                    _buildDivider(
-                      isLeft: false,
+                    _ResizableDivider(
                       onResize: (delta) {
                         setState(() {
                           _rightWidth = (_rightWidth - delta).clamp(250.0, 600.0);
@@ -151,23 +149,39 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       ),
     );
   }
+}
 
-  Widget _buildDivider({
-    required bool isLeft,
-    required Function(double) onResize,
-  }) {
+class _ResizableDivider extends StatefulWidget {
+  final Function(double) onResize;
+
+  const _ResizableDivider({required this.onResize});
+
+  @override
+  State<_ResizableDivider> createState() => _ResizableDividerState();
+}
+
+class _ResizableDividerState extends State<_ResizableDivider> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onHorizontalDragUpdate: (details) => onResize(details.delta.dx),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.resizeLeftRight,
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeLeftRight,
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: GestureDetector(
+        onHorizontalDragUpdate: (details) => widget.onResize(details.delta.dx),
         child: Container(
-          width: 4,
-          color: colorScheme.outlineVariant.withAlpha(50),
+          width: 10, // Increased hit area
+          color: Colors.transparent, // Invisible hit area background
           child: Center(
-            child: Container(
-              width: 1,
-              color: colorScheme.outlineVariant,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: _isHovering ? 2 : 1,
+              height: double.infinity,
+              color: _isHovering ? colorScheme.primary : colorScheme.outlineVariant.withAlpha(100),
             ),
           ),
         ),

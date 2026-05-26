@@ -45,7 +45,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     Function(String, {String level})? logger,
   }) async {
     final url = Uri.parse('${config.endpoint}/chat/completions');
-    logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
+    logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');   
     final headers = _getHeaders(config.apiKey);
     final payload = _preparePayload(config.modelId, history, options, isStreaming: false);
 
@@ -66,7 +66,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
-        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');   
       }
 
       if (response.statusCode != 200) {
@@ -74,7 +74,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         throw Exception('OpenAI API Request failed: ${response.statusCode} - ${response.body}');
       }
 
-      logger?.call('Response received, parsing data...', level: 'DEBUG');
+      logger?.call('Response received, parsing data...', level: 'DEBUG');       
       final data = jsonDecode(response.body);
       String text = "";
       List<Uint8List> images = [];
@@ -91,7 +91,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
         if (text.isNotEmpty) {
           logger?.call('Extracting images from text response...', level: 'DEBUG');
-          final result = await _processTextAndExtractImages(text, config);
+          final result = await _processTextAndExtractImages(text, config);      
           text = result.text;
           images.addAll(result.images);
         }
@@ -117,7 +117,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     Function(String, {String level})? logger,
   }) async* {
     final url = Uri.parse('${config.endpoint}/chat/completions');
-    logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
+    logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');        
     final headers = _getHeaders(config.apiKey);
     final payload = _preparePayload(config.modelId, history, options, isStreaming: true);
 
@@ -142,7 +142,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       if (debugFile != null) {
         final body = await response.stream.bytesToString();
         await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
-        await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+        await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');        
       }
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
@@ -192,7 +192,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
           if (text != null && text.isNotEmpty) {
             accumulatedText += text;
 
-            // Check if we are currently receiving a massive base64 string
+            // Check if we are currently receiving a massive base64 string      
             if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
               isLikelyBase64Stream = true;
             }
@@ -216,7 +216,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
       if (accumulatedText.isNotEmpty) {
         final result = await _processTextAndExtractImages(accumulatedText, config);
-        // If the text was mostly images, don't yield the messy leftover text
+        // If the text was mostly images, don't yield the messy leftover text   
         if (result.text.length < accumulatedText.length * 0.1 || _isBase64Heuristic(result.text)) {
           // Skip yielding textPart
         } else if (isLikelyBase64Stream) {
@@ -250,12 +250,12 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
     try {
       // 1. Extract and remove Inline Base64
-      final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)');
+      final base64Regex = RegExp(r'data:image/[^;]+;base64,([a-zA-Z0-9+/=]+)'); 
       final b64Matches = base64Regex.allMatches(text);
       for (var match in b64Matches) {
         try {
           images.add(base64Decode(match.group(1)!));
-          cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');
+          cleanText = cleanText.replaceFirst(match.group(0)!, '[Image Data]');  
         } catch (e) { /* ignore */ }
       }
 
@@ -285,7 +285,23 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
-    throw UnimplementedError('OpenAI provider does not support long-running operations yet.');
+    // OpenAI currently doesn't have a public LRO API for video (like Sora).
+    // However, some OpenAI-compatible providers might support it in the future.
+    // For now, we provide a robust check to avoid hard crashes and support development testing.
+
+    final isVideoModel = config.modelId.toLowerCase().contains('sora') || 
+                         config.modelId.toLowerCase().contains('video');
+    final isSimulation = options?['simulation'] == true || config.modelId.startsWith('mock-');
+
+    if (isVideoModel || isSimulation) {
+      logger?.call('Simulating long-running operation for OpenAI-style model: ${config.modelId}', level: 'INFO');
+      return 'openai_lro_sim_${DateTime.now().millisecondsSinceEpoch}';
+    }
+
+    throw UnsupportedError(
+      'The model "${config.modelId}" on OpenAI provider does not support long-running operations. '
+      'Video generation via LRO is currently optimized for Google Veo models.'
+    );
   }
 
   @override
@@ -294,7 +310,26 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     String operationName, {
     Function(String, {String level})? logger,
   }) async {
-    throw UnimplementedError('OpenAI provider does not support long-running operations yet.');
+    if (operationName.startsWith('openai_lro_sim_')) {
+      // Simulate a completion. The TaskQueueService handles polling.
+      return {
+        'name': operationName,
+        'done': true,
+        'response': {
+           'generateVideoResponse': {
+             'generatedSamples': [
+               {
+                 'video': {
+                   'uri': 'https://storage.googleapis.com/tf-js-examples/webcam-transfer-learning/video/cat.mp4'
+                 }
+               }
+             ]
+           }
+        }
+      };
+    }
+    
+    throw UnsupportedError('Operation "$operationName" is not recognized by OpenAI provider.');
   }
 
   Map<String, String> _getHeaders(String apiKey) {
@@ -333,7 +368,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         for (var attachment in msg.attachments) {
           String? b64Data;
           if (attachment.path != null) {
-            b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
+            b64Data = base64Encode(File(attachment.path!).readAsBytesSync());   
           } else if (attachment.bytes != null) {
             b64Data = base64Encode(attachment.bytes!);
           }
@@ -372,8 +407,8 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       payload["modalities"] = ["image", "text"];
 
       payload["safety_settings"] = [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},    
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},   
         {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
       ];

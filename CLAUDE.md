@@ -1,4 +1,4 @@
-# GEMINI.md
+﻿# CLAUDE.md
 
 This file provides a comprehensive overview of the **Joycai Image AI Toolkits** project, designed to be used as a context for AI-powered development assistance.
 
@@ -152,3 +152,4 @@ When running the application in **Debug mode** on macOS, you may encounter a `Nu
         sed -i '' "s/environment\['FLUTTER_BUILD_DIR'\]!/environment['FLUTTER_BUILD_DIR'] ?? 'build'/" $FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.dart
         ```
         *Note: Replace `$FLUTTER_ROOT` with your Flutter installation path.*
+

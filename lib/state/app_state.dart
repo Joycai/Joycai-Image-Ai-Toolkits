@@ -38,7 +38,7 @@ class AppState extends ChangeNotifier {
     downloaderState.addListener(notifyListeners);
     fileBrowserState.addListener(notifyListeners);
     workbenchUIState.addListener(notifyListeners);
-    
+
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
       addLog(msg, level: level);
@@ -54,9 +54,9 @@ class AppState extends ChangeNotifier {
       }
 
       if (!notificationsEnabled) return;
-      
-      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));
-      
+
+      final l10n = lookupAppLocalizations(locale ?? const Locale('en'));        
+
       if (task.status == TaskStatus.completed) {
         NotificationService().showNotification(
           title: l10n.taskCompletedNotification,
@@ -69,7 +69,7 @@ class AppState extends ChangeNotifier {
         );
       }
     };
-    
+
     taskQueue.onLogAdded = (msg, {level = 'INFO', taskId}) {
       addLog(msg, level: level, taskId: taskId);
     };
@@ -87,7 +87,7 @@ class AppState extends ChangeNotifier {
   List<LogEntry> logs = [];
   bool isProcessing = false;
   bool settingsLoaded = false;
-  bool setupCompleted = true; 
+  bool setupCompleted = true;
   int concurrencyLimit = 2;
   int retryCount = 0;
   bool notificationsEnabled = true;
@@ -104,7 +104,7 @@ class AppState extends ChangeNotifier {
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
   Color themeSeedColor = Colors.blueGrey;
-  
+
   // Language configuration
   Locale? locale;
 
@@ -131,16 +131,16 @@ class AppState extends ChangeNotifier {
   List<LLMChannel> get allChannels => _channels;
   List<PricingGroup> get allPricingGroups => _pricingGroups;
 
-  List<LLMModel> get imageModels => _models.where((m) => 
+  List<LLMModel> get imageModels => _models.where((m) =>
     m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
   ).toList();
 
   List<LLMModel> get chatModels => _models.where((m) =>
-      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
+      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value        
   ).toList();
 
   List<LLMModel> get videoModels => _models.where((m) =>
-      (m.tag == ModelTag.video.value || m.tag == ModelTag.multimodal.value) && 
+      (m.tag == ModelTag.video.value || m.tag == ModelTag.multimodal.value) &&  
       m.type == 'google-genai'
   ).toList();
 
@@ -182,7 +182,7 @@ class AppState extends ChangeNotifier {
   List<AppImage> get processedImages => galleryState.processedImages;
   List<AppImage> get selectedImages => galleryState.selectedImages;
   List<AppImage> get droppedImages => galleryState.droppedImages;
-  
+
   String? get outputDirectory => galleryState.outputDirectory;
   String get imagePrefix => galleryState.imagePrefix;
   double get thumbnailSize => galleryState.thumbnailSize;
@@ -208,7 +208,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> loadSettings() async {
     addLog('Loading settings from database...');
-    
+
     final setupVal = await _db.getSetting('setup_completed');
     setupCompleted = setupVal == 'true';
 
@@ -226,7 +226,7 @@ class AppState extends ChangeNotifier {
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
-    
+
     final savedSidebarWidth = await _db.getSetting('sidebar_width');
     if (savedSidebarWidth != null) {
       sidebarWidth = double.tryParse(savedSidebarWidth) ?? 400.0;
@@ -246,7 +246,7 @@ class AppState extends ChangeNotifier {
         themeSeedColor = Color(int.parse(savedSeed));
       } catch (_) {}
     }
-    
+
     // Load locale
     final savedLocale = await _db.getSetting('locale');
     if (savedLocale != null && savedLocale.isNotEmpty) {
@@ -267,16 +267,16 @@ class AppState extends ChangeNotifier {
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
     lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
-    
-    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');
+
+    final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');      
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 5);
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 5);   
     }
-    
+
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
     isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
     isMarkdownRefinerTarget = (await _db.getSetting('is_markdown_refiner_target') ?? 'true') == 'true';
-    
+
     _models = await _db.getModels();
     _channels = await _db.getChannels();
     _pricingGroups = await _db.getPricingGroups();
@@ -293,11 +293,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addLog(String message, {String level = 'INFO', String? taskId}) {
+  void addLog(String message, {String level = 'INFO', String? taskId}) {        
     if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
       final lastLog = logs.last;
       if (lastLog.taskId == taskId) {
-        final newText = message.substring(6); 
+        final newText = message.substring(6);
         logs[logs.length - 1] = LogEntry(
           timestamp: lastLog.timestamp,
           level: lastLog.level,
@@ -309,12 +309,12 @@ class AppState extends ChangeNotifier {
       }
     }
     logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
-    
+
     // Maintain maximum log size
     if (logs.length > 1000) {
       logs.removeRange(0, logs.length - 1000);
     }
-    
+
     notifyListeners();
   }
 
@@ -346,7 +346,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> setThemeSeedColor(Color color) async {
     themeSeedColor = color;
-    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());
+    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());     
     notifyListeners();
   }
 
@@ -384,7 +384,7 @@ class AppState extends ChangeNotifier {
       await _db.saveSetting('sidebar_width', sidebarWidth.toString());
     });
   }
-  
+
   void navigateToScreen(int index) {
     activeScreenIndex = index;
     notifyListeners();
@@ -392,10 +392,10 @@ class AppState extends ChangeNotifier {
 
   void setWorkbenchTab(int index) {
     workbenchTabIndex = index.clamp(0, 5);
-    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());
+    _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());       
     notifyListeners();
   }
-  
+
   Future<void> setLocale(Locale? newLocale) async {
     locale = newLocale;
     String localeStr = '';
@@ -422,7 +422,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     return id;
   }
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {
+  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {        
     await _db.updatePromptTag(id, tag);
     notifyListeners();
   }
@@ -430,7 +430,7 @@ class AppState extends ChangeNotifier {
     await _db.deletePromptTag(id);
     notifyListeners();
   }
-  Future<void> updateTagOrder(List<int> ids) => _db.updateTagOrder(ids);
+  Future<void> updateTagOrder(List<int> ids) => _db.updateTagOrder(ids);        
 
   // Prompts Methods
   Future<List<Prompt>> getPrompts() => _db.getPrompts();
@@ -447,7 +447,17 @@ class AppState extends ChangeNotifier {
     await _db.deletePrompt(id);
     notifyListeners();
   }
-  Future<void> updatePromptOrder(List<int> ids) => _db.updatePromptOrder(ids);
+  Future<void> updatePromptOrder(List<int> ids) => _db.updatePromptOrder(ids);  
+
+  Future<void> deletePrompts(List<int> ids) async {
+    await _db.deletePrompts(ids);
+    notifyListeners();
+  }
+
+  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) async {
+    await _db.updatePromptsTags(promptIds, tagIds);
+    notifyListeners();
+  }
 
   // System Prompts Methods
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _db.getSystemPrompts(type: type);
@@ -462,6 +472,14 @@ class AppState extends ChangeNotifier {
   }
   Future<void> deleteSystemPrompt(int id) async {
     await _db.deleteSystemPrompt(id);
+    notifyListeners();
+  }
+  Future<void> deleteSystemPrompts(List<int> ids) async {
+    await _db.deleteSystemPrompts(ids);
+    notifyListeners();
+  }
+  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) async {
+    await _db.updateSystemPromptsTags(promptIds, tagIds);
     notifyListeners();
   }
   Future<void> updateSystemPromptOrder(List<int> ids) => _db.updateSystemPromptOrder(ids);
@@ -491,7 +509,7 @@ class AppState extends ChangeNotifier {
     return id;
   }
 
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {
+  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {      
     await _db.updateChannel(id, channel);
     await refreshDataCache();
   }
@@ -529,7 +547,7 @@ class AppState extends ChangeNotifier {
     return id;
   }
 
-  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {
+  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {   
     await _db.updatePricingGroup(id, group);
     await refreshDataCache();
   }
@@ -547,13 +565,13 @@ class AppState extends ChangeNotifier {
 
   Future<void> setIsMarkdownRefinerSource(bool value) async {
     isMarkdownRefinerSource = value;
-    await _db.saveSetting('is_markdown_refiner_source', value.toString());
+    await _db.saveSetting('is_markdown_refiner_source', value.toString());      
     notifyListeners();
   }
 
   Future<void> setIsMarkdownRefinerTarget(bool value) async {
     isMarkdownRefinerTarget = value;
-    await _db.saveSetting('is_markdown_refiner_target', value.toString());
+    await _db.saveSetting('is_markdown_refiner_target', value.toString());      
     notifyListeners();
   }
 
@@ -582,7 +600,7 @@ class AppState extends ChangeNotifier {
     }
     if (useStream != null) {
       this.useStream = useStream;
-      await _db.saveSetting('workbench_use_stream', useStream.toString());
+      await _db.saveSetting('workbench_use_stream', useStream.toString());      
     }
     notifyListeners();
   }
@@ -603,7 +621,7 @@ class AppState extends ChangeNotifier {
     }
     if (aspectRatio != null) {
       lastVideoAspectRatio = aspectRatio;
-      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);
+      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);      
     }
     if (prompt != null) {
       lastVideoPrompt = prompt;
@@ -614,20 +632,20 @@ class AppState extends ChangeNotifier {
 
   Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
     final prompt = params['prompt'] as String? ?? '';
-    final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;
-    
+    final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;      
+
     List<String> imagePaths = [];
     if (isVideoTask) {
       // For video generation, collect all image inputs
       final first = params['firstFramePath'] as String?;
       final last = params['lastFramePath'] as String?;
       final refs = params['referenceImagePaths'] as List<dynamic>?;
-      
+
       if (first != null) imagePaths.add(first);
       if (last != null) imagePaths.add(last);
       if (refs != null) imagePaths.addAll(refs.cast<String>());
     } else {
-      imagePaths = galleryState.selectedImages.map((f) => f.path).toList();
+      imagePaths = galleryState.selectedImages.map((f) => f.path).toList();     
     }
 
     if (prompt.isEmpty && imagePaths.isEmpty) return;
@@ -636,21 +654,21 @@ class AppState extends ChangeNotifier {
       addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
       return;
     }
-    
+
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
-    
+
     await taskQueue.addTask(
-      imagePaths, 
-      modelIdentifier, 
-      params, 
+      imagePaths,
+      modelIdentifier,
+      params,
       modelIdDisplay: modelIdDisplay,
       useStream: params['useStream'] ?? useStream,
-      type: params['taskType'] != null 
-          ? TaskType.values.firstWhere((e) => e.name == params['taskType']) 
+      type: params['taskType'] != null
+          ? TaskType.values.firstWhere((e) => e.name == params['taskType'])     
           : TaskType.imageProcess,
     );
-    
+
     addLog('Task submitted with ${imagePaths.length} input images.');
   }
 
@@ -661,6 +679,6 @@ class AppState extends ChangeNotifier {
     }
 
     params['taskType'] = TaskType.videoGenerate.name;
-    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);
+    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);  
   }
 }

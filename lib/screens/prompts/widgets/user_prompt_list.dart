@@ -13,6 +13,11 @@ class UserPromptList extends StatefulWidget {
   final VoidCallback onRefresh;
   final Function(AppLocalizations, {Prompt? prompt}) onShowEditDialog;
   final Function(AppLocalizations, dynamic prompt, {required bool isSystem}) onConfirmDelete;
+  
+  final Set<int> selectedIds;
+  final bool isSelectionMode;
+  final Function(int) onToggleSelection;
+  final Function(int) onEnterSelectionMode;
 
   const UserPromptList({
     super.key,
@@ -22,6 +27,10 @@ class UserPromptList extends StatefulWidget {
     required this.onRefresh,
     required this.onShowEditDialog,
     required this.onConfirmDelete,
+    required this.selectedIds,
+    required this.isSelectionMode,
+    required this.onToggleSelection,
+    required this.onEnterSelectionMode,
   });
 
   @override
@@ -45,12 +54,12 @@ class _UserPromptListState extends State<UserPromptList> {
             Icon(Icons.notes, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              l10n.noPromptsSaved, 
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+              l10n.noPromptsSaved,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold) 
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.saveFavoritePrompts, 
+              l10n.saveFavoritePrompts,
               style: const TextStyle(color: Colors.grey)
             ),
             const SizedBox(height: 24),
@@ -63,19 +72,20 @@ class _UserPromptListState extends State<UserPromptList> {
         ),
       );
     }
-    
+
     return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
+      // ignore: deprecated_member_use
       onReorder: (oldIndex, newIndex) async {
         if (widget.searchQuery.isNotEmpty || widget.selectedFilterTagIds.isNotEmpty) return;
-        
+
         setState(() {
           if (newIndex > oldIndex) newIndex -= 1;
           final item = prompts.removeAt(oldIndex);
           prompts.insert(newIndex, item);
         });
-        await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());
+        await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());        
         widget.onRefresh();
       },
       proxyDecorator: (child, index, animation) => Material(
@@ -88,56 +98,67 @@ class _UserPromptListState extends State<UserPromptList> {
         final prompt = prompts[index];
         final id = prompt.id!;
         final isExpanded = _expandedPromptIds.contains(id);
+        final isSelected = widget.selectedIds.contains(id);
 
         return Padding(
           key: ValueKey('user_$id'),
           padding: const EdgeInsets.only(bottom: 12),
-          child: PromptCard(
-            prompt: prompt,
-            isExpanded: isExpanded,
-            onToggle: () => setState(() {
-              if (isExpanded) {
-                _expandedPromptIds.remove(id);
-              } else {
-                _expandedPromptIds.add(id);
-              }
-            }),
-            leading: null,
-            onMoveToTop: index == 0 ? null : () async {
-              setState(() {
-                final item = prompts.removeAt(prompts.indexWhere((p) => p.id == id));
-                prompts.insert(0, item);
-              });
-              await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());
-              widget.onRefresh();
-            },
-            onMoveToBottom: index == prompts.length - 1 ? null : () async {
-              setState(() {
-                final item = prompts.removeAt(prompts.indexWhere((p) => p.id == id));
-                prompts.add(item);
-              });
-              await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());
-              widget.onRefresh();
-            },
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.copy_all, size: 18),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: prompt.content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.copiedToClipboard(prompt.title))),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => widget.onShowEditDialog(l10n, prompt: prompt),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                onPressed: () => widget.onConfirmDelete(l10n, prompt, isSystem: false),
-              ),
-            ],
+          child: GestureDetector(
+            onLongPress: () => widget.onEnterSelectionMode(id),
+            child: PromptCard(
+              prompt: prompt,
+              isExpanded: isExpanded,
+              onToggle: widget.isSelectionMode 
+                ? () => widget.onToggleSelection(id)
+                : () => setState(() {
+                  if (isExpanded) {
+                    _expandedPromptIds.remove(id);
+                  } else {
+                    _expandedPromptIds.add(id);
+                  }
+                }),
+              leading: widget.isSelectionMode
+                ? Checkbox(
+                    value: isSelected,
+                    onChanged: (_) => widget.onToggleSelection(id),
+                  )
+                : null,
+              onMoveToTop: (index == 0 || widget.isSelectionMode) ? null : () async {
+                setState(() {
+                  final item = prompts.removeAt(prompts.indexWhere((p) => p.id == id));
+                  prompts.insert(0, item);
+                });
+                await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());
+                widget.onRefresh();
+              },
+              onMoveToBottom: (index == prompts.length - 1 || widget.isSelectionMode) ? null : () async {     
+                setState(() {
+                  final item = prompts.removeAt(prompts.indexWhere((p) => p.id == id));
+                  prompts.add(item);
+                });
+                await _db.updatePromptOrder(prompts.map((p) => p.id!).toList());  
+                widget.onRefresh();
+              },
+              actions: widget.isSelectionMode ? [] : [
+                IconButton(
+                  icon: const Icon(Icons.copy_all, size: 18),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: prompt.content));       
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.copiedToClipboard(prompt.title))),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  onPressed: () => widget.onShowEditDialog(l10n, prompt: prompt), 
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                  onPressed: () => widget.onConfirmDelete(l10n, prompt, isSystem: false),
+                ),
+              ],
+            ),
           ),
         );
       },

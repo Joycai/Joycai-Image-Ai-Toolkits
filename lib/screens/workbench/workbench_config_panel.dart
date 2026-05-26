@@ -422,6 +422,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           child: ReorderableListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: selectedImages.length,
+            // ignore: deprecated_member_use
             onReorder: (oldIndex, newIndex) {
               Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
             },

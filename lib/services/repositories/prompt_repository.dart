@@ -28,12 +28,12 @@ class PromptRepository {
     });
   }
 
-  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async {
+  Future<void> updatePrompt(int id, Prompt prompt, {List<int>? tagIds}) async { 
     final db = await _db;
     await db.transaction((txn) async {
       // CRITICAL: Use includeId: false to avoid updating the Primary Key to NULL
       await txn.update('prompts', prompt.toMap(includeId: false), where: 'id = ?', whereArgs: [id]);
-      
+
       if (tagIds != null) {
         await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
         for (var tagId in tagIds) {
@@ -51,11 +51,39 @@ class PromptRepository {
     await db.delete('prompts', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> deletePrompts(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await _db;
+    final idsStr = ids.join(',');
+    await db.transaction((txn) async {
+      await txn.delete('prompts', where: 'id IN ($idsStr)');
+      await txn.delete('prompt_tag_refs', where: 'prompt_id IN ($idsStr)');
+    });
+  }
+
+  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) async {
+    if (promptIds.isEmpty) return;
+    final db = await _db;
+    await db.transaction((txn) async {
+      for (var id in promptIds) {
+        await txn.delete('prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
+        if (tagIds.isNotEmpty) {
+          for (var tagId in tagIds) {
+            await txn.insert('prompt_tag_refs', {
+              'prompt_id': id,
+              'tag_id': tagId,
+            });
+          }
+        }
+      }
+    });
+  }
+
   Future<List<Prompt>> getPrompts() async {
     final db = await _db;
-    
+
     final results = await db.rawQuery('''
-      SELECT p.*, 
+      SELECT p.*,
              json_group_array(
                json_object(
                  'id', t.id,
@@ -73,7 +101,7 @@ class PromptRepository {
 
     return results.map((row) {
       final data = Map<String, dynamic>.from(row);
-      
+
       if (data['tags_json'] != null) {
         try {
           final String jsonStr = data['tags_json'] as String;
@@ -85,7 +113,7 @@ class PromptRepository {
       } else {
         data['tags'] = [];
       }
-      
+
       return Prompt.fromMap(data);
     }).toList();
   }
@@ -116,7 +144,7 @@ class PromptRepository {
 
   Future<List<PromptTag>> getPromptTags() async {
     final db = await _db;
-    final maps = await db.query('prompt_tags', orderBy: 'sort_order ASC');
+    final maps = await db.query('prompt_tags', orderBy: 'sort_order ASC');      
     return maps.map((m) => PromptTag.fromMap(m)).toList();
   }
 
@@ -130,7 +158,7 @@ class PromptRepository {
   }
 
   // System Prompts Methods
-  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async {
+  Future<int> addSystemPrompt(SystemPrompt prompt, {List<int>? tagIds}) async { 
     final db = await _db;
     return await db.transaction((txn) async {
       final id = await txn.insert('system_prompts', prompt.toMap(includeId: false));
@@ -164,14 +192,42 @@ class PromptRepository {
 
   Future<void> deleteSystemPrompt(int id) async {
     final db = await _db;
-    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);
+    await db.delete('system_prompts', where: 'id = ?', whereArgs: [id]);        
+  }
+
+  Future<void> deleteSystemPrompts(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await _db;
+    final idsStr = ids.join(',');
+    await db.transaction((txn) async {
+      await txn.delete('system_prompts', where: 'id IN ($idsStr)');
+      await txn.delete('system_prompt_tag_refs', where: 'prompt_id IN ($idsStr)');
+    });
+  }
+
+  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) async {
+    if (promptIds.isEmpty) return;
+    final db = await _db;
+    await db.transaction((txn) async {
+      for (var id in promptIds) {
+        await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [id]);
+        if (tagIds.isNotEmpty) {
+          for (var tagId in tagIds) {
+            await txn.insert('system_prompt_tag_refs', {
+              'prompt_id': id,
+              'tag_id': tagId,
+            });
+          }
+        }
+      }
+    });
   }
 
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) async {
     final db = await _db;
-    
+
     final results = await db.rawQuery('''
-      SELECT p.*, 
+      SELECT p.*,
              json_group_array(
                json_object(
                  'id', t.id,
@@ -191,7 +247,7 @@ class PromptRepository {
 
     return results.map((row) {
       final data = Map<String, dynamic>.from(row);
-      
+
       if (data['tags_json'] != null) {
         try {
           final String jsonStr = data['tags_json'] as String;
@@ -203,7 +259,7 @@ class PromptRepository {
       } else {
         data['tags'] = [];
       }
-      
+
       return SystemPrompt.fromMap(data);
     }).toList();
   }
