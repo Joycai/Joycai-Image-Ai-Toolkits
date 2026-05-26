@@ -76,6 +76,7 @@ class _UserPromptListState extends State<UserPromptList> {
     return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: prompts.length,
+      // ignore: deprecated_member_use
       onReorder: (oldIndex, newIndex) async {
         if (widget.searchQuery.isNotEmpty || widget.selectedFilterTagIds.isNotEmpty) return;
 

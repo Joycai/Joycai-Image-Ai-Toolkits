@@ -33,6 +33,7 @@ class _TagManagementListState extends State<TagManagementList> {
     return ReorderableListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: tags.length,
+      // ignore: deprecated_member_use
       onReorder: (oldIndex, newIndex) async {
         setState(() {
           if (newIndex > oldIndex) newIndex -= 1;

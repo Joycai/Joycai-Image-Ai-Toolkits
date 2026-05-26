@@ -117,7 +117,7 @@ class PromptCard extends StatelessWidget {
             if (onMoveToTop != null || onMoveToBottom != null)
               _buildSortActions(colorScheme),
 
-            if (actions != null) ...actions!,
+            ...?actions,
           ],
         ),
       ),

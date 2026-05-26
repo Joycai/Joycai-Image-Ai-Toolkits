@@ -76,6 +76,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
       content = ReorderableListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: prompts.length,
+        // ignore: deprecated_member_use
         onReorder: (oldIndex, newIndex) async {
           if (widget.searchQuery.isNotEmpty) return;
           setState(() {
