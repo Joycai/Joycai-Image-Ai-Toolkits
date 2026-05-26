@@ -2,7 +2,9 @@ name: '🔨 Multi-Platform Build'
 
 on:
   push:
-    tags: [ 'v*' ]
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+      - 'v[0-9]*.[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
 
 jobs:
@@ -19,6 +21,7 @@ jobs:
             artifact_name: windows-release
             artifact_path: |
               build/joycai-windows-x64.zip
+              build/dist/*.exe
           - platform: macos
             os: macos-latest
             output: build/dist/
@@ -85,6 +88,10 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path ${{ matrix.output }}* -DestinationPath build/joycai-windows-x64.zip
 
+      - name: 'Compile Windows Installer (Inno Setup)'
+        if: matrix.platform == 'windows'
+        run: iscc build_script/inno_setup.iss
+
       - name: 'Package Linux'
         if: matrix.platform == 'linux'
         run: tar -czf build/joycai-linux-x64.tar.gz -C ${{ matrix.output }} .
@@ -118,6 +125,7 @@ jobs:
             artifacts/*.tar.gz
             artifacts/*.dmg
             artifacts/*.apk
+            artifacts/*.exe
           generate_release_notes: true
           draft: false
           prerelease: false
