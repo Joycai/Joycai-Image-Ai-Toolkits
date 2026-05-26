@@ -48,17 +48,22 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
               children: [
                 _buildStatusIndicator(appState),
                 const SizedBox(width: 8),
-                Text(
-                  l10n.executionLogs,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
+                Flexible(
+                  child: Text(
+                    l10n.executionLogs,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 
                 // Task Summary for Mobile
                 if (isMobile) ...[
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 8),
                   const VerticalDivider(width: 1, indent: 8, endIndent: 8),
-                  const SizedBox(width: 16),
-                  _buildTaskSummary(appState, l10n, colorScheme),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: _buildTaskSummary(appState, l10n, colorScheme),
+                  ),
                 ],
 
                 const Spacer(),

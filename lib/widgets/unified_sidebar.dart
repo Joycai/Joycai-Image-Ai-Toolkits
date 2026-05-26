@@ -21,7 +21,7 @@ class UnifiedSidebar extends StatelessWidget {
       children: [
         // Content Area (Now takes full width of the panel)
         Expanded(
-          child: Container(
+          child: Material(
             color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.2).round()),
             child: FolderList(useFileBrowserState: useFileBrowserState),
           ),
