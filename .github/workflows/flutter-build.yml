@@ -22,6 +22,7 @@ jobs:
             artifact_path: |
               build/joycai-windows-x64.zip
               build/dist/*.exe
+              build/windows/x64/runner/Release/*.msix
           - platform: macos
             os: macos-latest
             output: build/dist/
@@ -92,6 +93,10 @@ jobs:
         if: matrix.platform == 'windows'
         run: iscc build_script/inno_setup.iss
 
+      - name: 'Build MSIX Installer'
+        if: matrix.platform == 'windows'
+        run: dart run msix:create --build-windows false
+
       - name: 'Package Linux'
         if: matrix.platform == 'linux'
         run: tar -czf build/joycai-linux-x64.tar.gz -C ${{ matrix.output }} .
@@ -126,6 +131,7 @@ jobs:
             artifacts/*.dmg
             artifacts/*.apk
             artifacts/*.exe
+            artifacts/*.msix
           generate_release_notes: true
           draft: false
           prerelease: false
