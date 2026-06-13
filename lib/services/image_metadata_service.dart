@@ -59,7 +59,7 @@ class ImageMetadataService {
           aspectRatio: "",
           sizeString: AppConstants.formatFileSize(fileSize),
         );
-        _cache[path] = metadata;
+        _putInCache(path, metadata);
         return metadata;
       }
 
@@ -75,17 +75,21 @@ class ImageMetadataService {
         sizeString: AppConstants.formatFileSize(fileSize),
       );
 
-      // 2. Update cache with basic LRU policy (evict oldest if full)
-      if (_cache.length >= _maxCacheSize) {
-        _cache.remove(_cache.keys.first);
-      }
-      _cache[path] = metadata;
+      _putInCache(path, metadata);
 
       return metadata;
     } catch (e) {
       debugPrint('Error loading metadata for $path: $e');
       return null;
     }
+  }
+
+  // Insert into cache with a basic LRU policy (evict oldest if full).
+  void _putInCache(String path, ImageMetadata metadata) {
+    if (_cache.length >= _maxCacheSize) {
+      _cache.remove(_cache.keys.first);
+    }
+    _cache[path] = metadata;
   }
 
   void clearCache() => _cache.clear();

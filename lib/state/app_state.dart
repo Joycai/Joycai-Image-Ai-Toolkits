@@ -181,6 +181,7 @@ class AppState extends ChangeNotifier {
   List<AppImage> get galleryImages => galleryState.galleryImages;
   List<AppImage> get processedImages => galleryState.processedImages;
   List<AppImage> get selectedImages => galleryState.selectedImages;
+  bool isImageSelected(String path) => galleryState.isImageSelected(path);
   List<AppImage> get droppedImages => galleryState.droppedImages;
 
   String? get outputDirectory => galleryState.outputDirectory;

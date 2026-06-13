@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:gal/gal.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -16,6 +12,7 @@ import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/video_thumbnail_service.dart';
 import '../../../state/workbench_ui_state.dart';
 
 class ImagePreviewDialog extends StatefulWidget {
@@ -492,9 +489,13 @@ class _VideoPreviewItemState extends State<_VideoPreviewItem> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            AspectRatio(
-              aspectRatio: _controller!.value.aspectRatio,
-              child: VideoPlayer(_controller!),
+            // Isolate the video texture's repaints from the overlay so its
+            // frames don't dirty the surrounding subtree every frame.
+            RepaintBoundary(
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
+              ),
             ),
             Positioned(
               bottom: 0,
@@ -511,9 +512,14 @@ class _VideoPreviewItemState extends State<_VideoPreviewItem> {
                 ),
               ),
             ),
-            if (!_controller!.value.isPlaying && _showOverlay)
-              ExcludeSemantics(
-                child: IgnorePointer(
+            // Always present (opacity-driven) so toggling play/pause never
+            // adds or removes a node from the tree — structural churn is a
+            // trigger for the accessibility-bridge tree-update errors.
+            ExcludeSemantics(
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: (!_controller!.value.isPlaying && _showOverlay) ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
                   child: Container(
                     width: 72,
                     height: 72,
@@ -525,6 +531,7 @@ class _VideoPreviewItemState extends State<_VideoPreviewItem> {
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -544,35 +551,16 @@ class _VideoControlBarState extends State<_VideoControlBar> {
   bool _isMuted = false;
   double _volume = 1.0;
 
+  // While the user is dragging the scrubber we ignore controller position
+  // updates so the thumb doesn't fight the drag.
+  bool _dragging = false;
+  double _dragValueMs = 0.0;
+
   @override
   void initState() {
     super.initState();
     _isMuted = widget.controller.value.volume == 0;
     _volume = widget.controller.value.volume;
-    widget.controller.addListener(_onControllerUpdate);
-  }
-
-  @override
-  void didUpdateWidget(_VideoControlBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.removeListener(_onControllerUpdate);
-      widget.controller.addListener(_onControllerUpdate);
-      _isMuted = widget.controller.value.volume == 0;
-      _volume = widget.controller.value.volume;
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerUpdate);
-    super.dispose();
-  }
-
-  void _onControllerUpdate() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   String _formatDuration(Duration duration) {
@@ -581,17 +569,21 @@ class _VideoControlBarState extends State<_VideoControlBar> {
     return '$minutes:$seconds';
   }
 
+  void _toggleMute() {
+    setState(() {
+      if (_isMuted) {
+        widget.controller.setVolume(_volume > 0 ? _volume : 1.0);
+        _isMuted = false;
+      } else {
+        _volume = widget.controller.value.volume;
+        widget.controller.setVolume(0.0);
+        _isMuted = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final value = widget.controller.value;
-    if (!value.isInitialized) return const SizedBox.shrink();
-
-    final position = value.position;
-    final duration = value.duration;
-    
-    final currentText = _formatDuration(position);
-    final totalText = _formatDuration(duration);
-
     final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
@@ -599,75 +591,86 @@ class _VideoControlBarState extends State<_VideoControlBar> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.black.withAlpha(160),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+        // Only the position-dependent leaves rebuild per frame, via the
+        // ValueListenableBuilder below. The Container / SliderTheme / static
+        // controls stay stable instead of the whole bar rebuilding on every
+        // controller tick (which is what hammered the desktop accessibility
+        // bridge and spammed "Failed to update ui::AXTree").
+        child: ValueListenableBuilder<VideoPlayerValue>(
+          valueListenable: widget.controller,
+          builder: (context, value, _) {
+            if (!value.isInitialized) return const SizedBox.shrink();
+
+            final durationMs = value.duration.inMilliseconds.toDouble();
+            final maxMs = durationMs > 0 ? durationMs : 1.0;
+            final positionMs = value.position.inMilliseconds.toDouble();
+            final sliderMs =
+                (_dragging ? _dragValueMs : positionMs).clamp(0.0, maxMs);
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 4,
-                      activeTrackColor: colorScheme.primary,
-                      inactiveTrackColor: Colors.white24,
-                      thumbColor: colorScheme.primary,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                    ),
-                    child: Slider(
-                      min: 0.0,
-                      max: duration.inMilliseconds.toDouble(),
-                      value: position.inMilliseconds.toDouble().clamp(0.0, duration.inMilliseconds.toDouble()),
-                      onChanged: (newValue) {
-                        widget.controller.seekTo(Duration(milliseconds: newValue.toInt()));
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    activeTrackColor: colorScheme.primary,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: colorScheme.primary,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                  ),
+                  child: Slider(
+                    min: 0.0,
+                    max: maxMs,
+                    value: sliderMs,
+                    onChangeStart: (v) {
+                      setState(() {
+                        _dragging = true;
+                        _dragValueMs = v;
+                      });
+                    },
+                    onChanged: (v) {
+                      setState(() => _dragValueMs = v);
+                    },
+                    onChangeEnd: (v) {
+                      widget.controller.seekTo(Duration(milliseconds: v.toInt()));
+                      setState(() => _dragging = false);
+                    },
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        if (value.isPlaying) {
+                          widget.controller.pause();
+                        } else {
+                          widget.controller.play();
+                        }
                       },
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_formatDuration(value.position)} / ${_formatDuration(value.duration)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        _isMuted || _volume == 0 ? Icons.volume_off : Icons.volume_up,
+                        color: Colors.white,
+                      ),
+                      onPressed: _toggleMute,
+                    ),
+                  ],
                 ),
               ],
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    value.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    if (value.isPlaying) {
-                      widget.controller.pause();
-                    } else {
-                      widget.controller.play();
-                    }
-                  },
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '$currentText / $totalText',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(
-                    _isMuted || _volume == 0 ? Icons.volume_off : Icons.volume_up,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      if (_isMuted) {
-                        widget.controller.setVolume(_volume > 0 ? _volume : 1.0);
-                        _isMuted = false;
-                      } else {
-                        _volume = widget.controller.value.volume;
-                        widget.controller.setVolume(0.0);
-                        _isMuted = true;
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -720,47 +723,13 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   }
 
   Future<void> _loadThumbnail() async {
-    try {
-      final file = File(widget.videoPath);
-      if (!await file.exists()) return;
-
-      final tempDir = await getTemporaryDirectory();
-      final cacheDir = Directory('${tempDir.path}/joycai/video_thumbnails');
-      if (!cacheDir.existsSync()) {
-        cacheDir.createSync(recursive: true);
-      }
-
-      final stat = await file.stat();
-      final key = '${widget.videoPath}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
-      final hash = md5.convert(utf8.encode(key)).toString();
-      final cachePath = '${cacheDir.path}/$hash.jpg';
-
-      final cacheFile = File(cachePath);
-      if (cacheFile.existsSync()) {
-        if (mounted) {
-          setState(() {
-            _thumbnailPath = cachePath;
-          });
-        }
-        return;
-      }
-
-      final plugin = FcNativeVideoThumbnail();
-      final success = await plugin.saveThumbnailToFile(
-        srcFile: widget.videoPath,
-        destFile: cachePath,
-        width: 150,
-        height: 150,
-        quality: 75,
-      );
-
-      if (success && mounted && File(cachePath).existsSync()) {
-        setState(() {
-          _thumbnailPath = cachePath;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error generating video thumbnail in preview strip: $e');
+    final path = widget.videoPath;
+    final cachePath = await VideoThumbnailService.instance.getThumbnail(path);
+    // Widget may have been recycled to a different video while awaiting.
+    if (cachePath != null && mounted && widget.videoPath == path) {
+      setState(() {
+        _thumbnailPath = cachePath;
+      });
     }
   }
 

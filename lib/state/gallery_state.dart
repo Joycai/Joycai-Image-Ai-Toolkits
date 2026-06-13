@@ -58,8 +58,21 @@ class GalleryState extends ChangeNotifier {
   List<AppImage> galleryImages = [];
   List<AppImage> folderImages = [];
   List<AppImage> processedImages = [];
-  List<AppImage> selectedImages = [];
+  List<AppImage> _selectedImages = [];
+  Set<String> _selectedImagePaths = {};
   List<AppImage> droppedImages = []; // Transient workspace
+
+  List<AppImage> get selectedImages => _selectedImages;
+
+  /// Assigning a new selection list also rebuilds the path index so callers can
+  /// test membership in O(1) via [isImageSelected] instead of scanning the list.
+  set selectedImages(List<AppImage> value) {
+    _selectedImages = value;
+    _selectedImagePaths = value.map((img) => img.path).toSet();
+  }
+
+  /// O(1) selection membership check (avoids O(n) `selectedImages.any(...)`).
+  bool isImageSelected(String path) => _selectedImagePaths.contains(path);
   
   String? outputDirectory;
   String? resultCacheDirectory;

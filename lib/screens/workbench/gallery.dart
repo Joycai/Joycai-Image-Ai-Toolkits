@@ -1,14 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -19,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/file_permission_service.dart';
 import '../../services/image_metadata_service.dart';
+import '../../services/video_thumbnail_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
@@ -146,11 +143,16 @@ class _GalleryState extends State<Gallery> {
       );
     }
 
-    // Group images by parent directory
+    // Group images by parent directory, and build a path -> global index map
+    // once so per-card lookups are O(1) instead of List.indexOf's O(n)
+    // (which made grid rebuilds O(n^2) on large galleries).
     final Map<String, List<AppImage>> grouped = {};
-    for (var img in images) {
+    final Map<String, int> globalIndexByPath = {};
+    for (var i = 0; i < images.length; i++) {
+      final img = images[i];
       final parent = File(img.path).parent.path;
       grouped.putIfAbsent(parent, () => []).add(img);
+      globalIndexByPath.putIfAbsent(img.path, () => i);
     }
 
     final sortedPaths = grouped.keys.toList();
@@ -220,12 +222,12 @@ class _GalleryState extends State<Gallery> {
                       (context, index) {
                         final imageGroup = grouped[path]!;
                         final imageFile = imageGroup[index];
-  
-                        // Calculate global index for preview paging
-                        final globalIndex = images.indexOf(imageFile);
-  
+
+                        // Global index for preview paging (O(1) lookup)
+                        final globalIndex = globalIndexByPath[imageFile.path] ?? 0;
+
                         return Selector<AppState, bool>(
-                          selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
+                          selector: (_, state) => state.isImageSelected(imageFile.path),
                           builder: (context, isSelected, _) {
                             final isVideo = AppConstants.isVideoFile(imageFile.path);
                             return _ImageCard(
@@ -323,47 +325,13 @@ class _ImageCardState extends State<_ImageCard> {
   Future<void> _loadVideoThumbnail() async {
     if (!AppConstants.isVideoFile(widget.imageFile.path)) return;
 
-    try {
-      final file = File(widget.imageFile.path);
-      if (!await file.exists()) return;
-
-      final tempDir = await getTemporaryDirectory();
-      final cacheDir = Directory('${tempDir.path}/joycai/video_thumbnails');
-      if (!cacheDir.existsSync()) {
-        cacheDir.createSync(recursive: true);
-      }
-
-      final stat = await file.stat();
-      final key = '${widget.imageFile.path}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
-      final hash = md5.convert(utf8.encode(key)).toString();
-      final cachePath = '${cacheDir.path}/$hash.jpg';
-
-      final cacheFile = File(cachePath);
-      if (cacheFile.existsSync()) {
-        if (mounted) {
-          setState(() {
-            _videoThumbnailPath = cachePath;
-          });
-        }
-        return;
-      }
-
-      final plugin = FcNativeVideoThumbnail();
-      final success = await plugin.saveThumbnailToFile(
-        srcFile: widget.imageFile.path,
-        destFile: cachePath,
-        width: 150,
-        height: 150,
-        quality: 75,
-      );
-
-      if (success && mounted && File(cachePath).existsSync()) {
-        setState(() {
-          _videoThumbnailPath = cachePath;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error generating video thumbnail: $e');
+    final path = widget.imageFile.path;
+    final cachePath = await VideoThumbnailService.instance.getThumbnail(path);
+    // Widget may have been recycled to a different file while awaiting.
+    if (cachePath != null && mounted && widget.imageFile.path == path) {
+      setState(() {
+        _videoThumbnailPath = cachePath;
+      });
     }
   }
 
@@ -683,7 +651,7 @@ class _ImageCardState extends State<_ImageCard> {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
-    final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
+    final bool isPartOfSelection = appState.isImageSelected(widget.imageFile.path);
     final List<AppImage> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
     final bool isVideo = AppConstants.isVideoFile(widget.imageFile.path);
 
