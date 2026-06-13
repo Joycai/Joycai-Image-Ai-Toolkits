@@ -157,6 +157,19 @@ class AppConstants {
            ext.endsWith('.avif');
   }
 
+  static bool isVideoFile(String path) {
+    final ext = path.toLowerCase();
+    return ext.endsWith('.mp4') || 
+           ext.endsWith('.mkv') || 
+           ext.endsWith('.mov') || 
+           ext.endsWith('.avi') || 
+           ext.endsWith('.webm');
+  }
+
+  static bool isSupportedFile(String path) {
+    return isImageFile(path) || isVideoFile(path);
+  }
+
   static String formatAspectRatio(int width, int height) {
     if (width == 0 || height == 0) return "";
     final double ratio = width / height;

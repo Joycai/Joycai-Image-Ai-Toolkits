@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -44,7 +48,7 @@ class _GalleryState extends State<Gallery> {
       onDragDone: (details) {
         final List<AppImage> newFiles = [];
         for (var file in details.files) {
-          if (AppConstants.isImageFile(file.path)) {
+          if (AppConstants.isSupportedFile(file.path)) {
             newFiles.add(AppImage(path: file.path, name: file.name));
           }
         }
@@ -171,80 +175,86 @@ class _GalleryState extends State<Gallery> {
         // However, the user specifically asked for grouping, so let's provide it whenever there's more than one source.
         final bool showHeaders = !isTemp && (grouped.length > 1 || state.galleryState.viewMode == GalleryViewMode.all);
 
-        return CustomScrollView(
-          primary: false,
-          slivers: [
-            for (final path in sortedPaths) ...[
-              if (showHeaders)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.folder_open, size: 16, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            path,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.secondary,
-                              letterSpacing: 0.5,
+        return ExcludeSemantics(
+          child: CustomScrollView(
+            primary: false,
+            slivers: [
+              for (final path in sortedPaths) ...[
+                if (showHeaders)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_open, size: 16, color: colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              path,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.secondary,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          "(${grouped[path]!.length})",
-                          style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                        ),
-                      ],
+                          Text(
+                            "(${grouped[path]!.length})",
+                            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(       
+                      maxCrossAxisExtent: state.thumbnailSize,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final imageGroup = grouped[path]!;
+                        final imageFile = imageGroup[index];
+  
+                        // Calculate global index for preview paging
+                        final globalIndex = images.indexOf(imageFile);
+  
+                        return Selector<AppState, bool>(
+                          selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
+                          builder: (context, isSelected, _) {
+                            return _ImageCard(
+                              imageFile: imageFile,
+                              isSelected: isSelected,
+                              isResult: isResult,
+                              thumbnailSize: state.thumbnailSize,
+                              onTap: () {
+                                if (AppConstants.isVideoFile(imageFile.path)) {
+                                  showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                                } else {
+                                  state.galleryState.toggleImageSelection(imageFile);
+                                }
+                              },
+                              onDoubleTap: () {
+                                showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                              },
+                            );
+                          },
+                        );
+                      },
+                      childCount: grouped[path]!.length,
                     ),
                   ),
                 ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(       
-                    maxCrossAxisExtent: state.thumbnailSize,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final imageGroup = grouped[path]!;
-                      final imageFile = imageGroup[index];
-
-                      // Calculate global index for preview paging
-                      final globalIndex = images.indexOf(imageFile);
-
-                      return Selector<AppState, bool>(
-                        selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
-                        builder: (context, isSelected, _) {
-                          return _ImageCard(
-                            imageFile: imageFile,
-                            isSelected: isSelected,
-                            isResult: isResult,
-                            thumbnailSize: state.thumbnailSize,
-                            onTap: () {
-                              state.galleryState.toggleImageSelection(imageFile);
-                            },
-                            onDoubleTap: () {
-                              showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
-                            },
-                          );
-                        },
-                      );
-                    },
-                    childCount: grouped[path]!.length,
-                  ),
-                ),
-              ),
+              ],
+              // Bottom padding
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
-            // Bottom padding
-            const SliverToBoxAdapter(child: SizedBox(height: 80)),
-          ],
+          ),
         );
       }
     );
@@ -276,11 +286,13 @@ class _ImageCard extends StatefulWidget {
 class _ImageCardState extends State<_ImageCard> {
   String _dimensions = "";
   bool _isHovering = false;
+  String? _videoThumbnailPath;
 
   @override
   void initState() {
     super.initState();
     _getImageDimensions();
+    _loadVideoThumbnail();
   }
 
   Future<void> _getImageDimensions() async {
@@ -290,6 +302,120 @@ class _ImageCardState extends State<_ImageCard> {
         _dimensions = metadata.displayString;
       });
     }
+  }
+
+  Future<void> _loadVideoThumbnail() async {
+    if (!AppConstants.isVideoFile(widget.imageFile.path)) return;
+
+    try {
+      final file = File(widget.imageFile.path);
+      if (!await file.exists()) return;
+
+      final tempDir = await getTemporaryDirectory();
+      final cacheDir = Directory('${tempDir.path}/joycai/video_thumbnails');
+      if (!cacheDir.existsSync()) {
+        cacheDir.createSync(recursive: true);
+      }
+
+      final stat = await file.stat();
+      final key = '${widget.imageFile.path}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
+      final hash = md5.convert(utf8.encode(key)).toString();
+      final cachePath = '${cacheDir.path}/$hash.jpg';
+
+      final cacheFile = File(cachePath);
+      if (cacheFile.existsSync()) {
+        if (mounted) {
+          setState(() {
+            _videoThumbnailPath = cachePath;
+          });
+        }
+        return;
+      }
+
+      final plugin = FcNativeVideoThumbnail();
+      final success = await plugin.saveThumbnailToFile(
+        srcFile: widget.imageFile.path,
+        destFile: cachePath,
+        width: 150,
+        height: 150,
+        quality: 75,
+      );
+
+      if (success && mounted && File(cachePath).existsSync()) {
+        setState(() {
+          _videoThumbnailPath = cachePath;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error generating video thumbnail: $e');
+    }
+  }
+
+  Widget _buildThumbnail(BuildContext context, ColorScheme colorScheme, {double? width, double? height}) {
+    final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
+
+    if (isVideo) {
+      return Container(
+        width: width,
+        height: height,
+        color: colorScheme.surfaceContainerHighest,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (_videoThumbnailPath != null)
+              Positioned.fill(
+                child: Image.file(
+                  File(_videoThumbnailPath!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                ),
+              ),
+            Container(
+              color: _videoThumbnailPath != null ? Colors.black26 : Colors.transparent,
+            ),
+            Icon(
+              Icons.play_circle_filled_rounded,
+              size: 40,
+              color: Colors.white.withAlpha((255 * 0.9).round()),
+            ),
+            Positioned(
+              bottom: 4,
+              right: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.videocam, size: 10, color: Colors.white),
+                    SizedBox(width: 2),
+                    Text(
+                      "VIDEO",
+                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Image(
+      image: ResizeImage(
+        widget.imageFile.imageProvider,
+        width: width != null ? (width * MediaQuery.of(context).devicePixelRatio).round() : (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+      ),
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      ),
+    );
   }
 
   @override
@@ -306,7 +432,7 @@ class _ImageCardState extends State<_ImageCard> {
         child: SizedBox(
           width: 100,
           height: 100,
-          child: Image(image: widget.imageFile.imageProvider, fit: BoxFit.cover),
+          child: _buildThumbnail(context, colorScheme, width: 100, height: 100),
         ),
       ),
       childWhenDragging: Opacity(
@@ -328,6 +454,8 @@ class _ImageCardState extends State<_ImageCard> {
   }
 
   Widget _buildCardContent(BuildContext context, ColorScheme colorScheme, bool isMobile) {
+    final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
@@ -353,17 +481,7 @@ class _ImageCardState extends State<_ImageCard> {
           children: [
             Padding(
               padding: const EdgeInsets.all(4.0),
-              child: Image(
-                image: ResizeImage(
-                  widget.imageFile.imageProvider,
-                  width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
-                ),
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(        
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, color: Colors.grey),    
-                ),
-              ),
+              child: _buildThumbnail(context, colorScheme),
             ),
 
             if (_dimensions.isNotEmpty)
@@ -409,7 +527,7 @@ class _ImageCardState extends State<_ImageCard> {
             ),
 
             // Overlay Buttons
-            if (_isHovering || isMobile)
+            if ((_isHovering || isMobile) && !isVideo)
               Positioned(
                 top: 8,
                 left: 8,
@@ -487,7 +605,6 @@ class _ImageCardState extends State<_ImageCard> {
   void _handleCompare(BuildContext context) {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     workbenchUIState.sendToComparator(widget.imageFile.path);
-    // Removed automatic tab switch
   }
 
   void _handleMask(BuildContext context) {
@@ -507,7 +624,6 @@ class _ImageCardState extends State<_ImageCard> {
   Future<void> _saveFile(BuildContext context, String sourcePath, String fileName, AppLocalizations l10n) async {
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-        // Desktop: Use FilePicker to save to a specific location
         final extension = sourcePath.split('.').last;
         String? outputFile = await FilePicker.saveFile(
           dialogTitle: l10n.save,
@@ -526,7 +642,6 @@ class _ImageCardState extends State<_ImageCard> {
           }
         }
       } else {
-        // Mobile: Use gal to save to system gallery
         await Gal.putImage(sourcePath);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -550,24 +665,25 @@ class _ImageCardState extends State<_ImageCard> {
 
     final bool isPartOfSelection = appState.selectedImages.any((img) => img.path == widget.imageFile.path);
     final List<AppImage> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
+    final bool isVideo = AppConstants.isVideoFile(widget.imageFile.path);
 
-    showMenu<dynamic>(
-      context: context,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
-      items: <PopupMenuEntry<dynamic>>[
-        // View & Quick Edit
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.open_in_new, size: 18),
-            title: Text(l10n.openInPreview),
-            dense: true,
-          ),
-          onTap: () {
-            final images = appState.galleryState.currentViewImages;
-            final idx = images.indexWhere((img) => img.path == widget.imageFile.path);
-            showImagePreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
-          },
+    final List<PopupMenuEntry<dynamic>> menuItems = [
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.open_in_new, size: 18),
+          title: Text(l10n.openInPreview),
+          dense: true,
         ),
+        onTap: () {
+          final images = appState.galleryState.currentViewImages;
+          final idx = images.indexWhere((img) => img.path == widget.imageFile.path);
+          showImagePreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
+        },
+      ),
+    ];
+
+    if (!isVideo) {
+      menuItems.addAll([
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.brush_outlined, size: 18),
@@ -590,10 +706,13 @@ class _ImageCardState extends State<_ImageCard> {
             appState.setWorkbenchTab(3); // Crop & Resize Tab
           },
         ),
+      ]);
+    }
 
-        const PopupMenuDivider(),
+    menuItems.add(const PopupMenuDivider());
 
-        // Selection & Comparison
+    if (!isVideo) {
+      menuItems.add(
         PopupMenuItem(
           child: ListTile(
             leading: Icon(isPartOfSelection ? Icons.remove_circle_outline : Icons.add_circle_outline, size: 18),
@@ -602,6 +721,11 @@ class _ImageCardState extends State<_ImageCard> {
           ),
           onTap: () => appState.galleryState.toggleImageSelection(widget.imageFile),
         ),
+      );
+    }
+
+    if (!isVideo) {
+      menuItems.addAll([
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.compare, size: 18, color: Colors.blue),   
@@ -622,10 +746,12 @@ class _ImageCardState extends State<_ImageCard> {
             workbenchUIState.sendToComparator(widget.imageFile.path, isAfter: true);
           },
         ),
+      ]);
+    }
 
+    if (!isVideo) {
+      menuItems.addAll([
         const PopupMenuDivider(),
-
-        // Video Generation Shortcuts
         PopupMenuItem(
           child: ListTile(
             leading: const Icon(Icons.video_library_outlined, size: 18, color: Colors.purple),
@@ -659,106 +785,106 @@ class _ImageCardState extends State<_ImageCard> {
             appState.setWorkbenchTab(5); // Video Generation
           },
         ),
+      ]);
+    }
 
-        const PopupMenuDivider(),
-
-        // File Management
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.edit_outlined, size: 18),
-            title: Text(l10n.rename),
-            dense: true,
-          ),
-          onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              showFileRenameDialog(
-                context: context,
-                filePath: widget.imageFile.path,
-                onSuccess: () => appState.galleryState.refreshImages(),
-              );
-            });
-          },
+    menuItems.addAll([
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.edit_outlined, size: 18),
+          title: Text(l10n.rename),
+          dense: true,
         ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.copy, size: 18),
-            title: Text(l10n.copyFilename),
-            dense: true,
-          ),
-          onTap: () {
-            final filename = widget.imageFile.name;
-            Clipboard.setData(ClipboardData(text: filename));
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.copiedToClipboard(filename)), duration: const Duration(seconds: 1)),
+        onTap: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showFileRenameDialog(
+              context: context,
+              filePath: widget.imageFile.path,
+              onSuccess: () => appState.galleryState.refreshImages(),
             );
-          },
+          });
+        },
+      ),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.copy, size: 18),
+          title: Text(l10n.copyFilename),
+          dense: true,
         ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.folder_open, size: 18),
-            title: Text(l10n.openInFolder),
-            dense: true,
-          ),
-          onTap: () async {
-            await FileUtils.openFolder(widget.imageFile.path);
-          },
+        onTap: () {
+          final filename = widget.imageFile.name;
+          Clipboard.setData(ClipboardData(text: filename));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.copiedToClipboard(filename)), duration: const Duration(seconds: 1)),
+          );
+        },
+      ),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.folder_open, size: 18),
+          title: Text(l10n.openInFolder),
+          dense: true,
         ),
-
-        const PopupMenuDivider(),
-
-        // Save & Share
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),  
-            title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
-            dense: true,
-          ),
-          onTap: () => _saveFile(context, widget.imageFile.path, widget.imageFile.name, l10n),
+        onTap: () async {
+          await FileUtils.openFolder(widget.imageFile.path);
+        },
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),  
+          title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
+          dense: true,
         ),
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.share_outlined, size: 18),
-            title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
-            dense: true,
-          ),
-          onTap: () async {
-            try {
-              final xFiles = filesToShare.map((f) => XFile(
-                f.path,
-                name: f.name,
-                mimeType: AppConstants.getMimeType(f.path),
-              )).toList();
+        onTap: () => _saveFile(context, widget.imageFile.path, widget.imageFile.name, l10n),
+      ),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.share_outlined, size: 18),
+          title: Text(filesToShare.length > 1 ? l10n.shareFiles(filesToShare.length) : l10n.share),
+          dense: true,
+        ),
+        onTap: () async {
+          try {
+            final xFiles = filesToShare.map((f) => XFile(
+              f.path,
+              name: f.name,
+              mimeType: AppConstants.getMimeType(f.path),
+            )).toList();
 
-              // ignore: deprecated_member_use
-              await Share.shareXFiles(
-                xFiles,
-                subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
-                sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
+            // ignore: deprecated_member_use
+            await Share.shareXFiles(
+              xFiles,
+              subject: filesToShare.length == 1 ? filesToShare.first.name : l10n.appTitle,
+              sharePositionOrigin: Rect.fromLTWH(position.dx, position.dy, 1, 1),
+            );
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.shareFailed(e.toString()))),      
               );
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.shareFailed(e.toString()))),      
-                );
-              }
             }
-          },
+          }
+        },
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+          title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+          dense: true,
         ),
+        onTap: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _confirmDelete(context));
+        },
+      ),
+    ]);
 
-        const PopupMenuDivider(),
-
-        // Danger Zone
-        PopupMenuItem(
-          child: ListTile(
-            leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-            title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
-            dense: true,
-          ),
-          onTap: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _confirmDelete(context));
-          },
-        ),
-      ],
+    showMenu<dynamic>(
+      context: context,
+      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      items: menuItems,
     );
   }
 

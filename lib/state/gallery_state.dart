@@ -21,7 +21,7 @@ List<String> _scanImagesIsolate(List<String> paths) {
         final entities = dir.listSync(recursive: false);
         for (var entity in entities) {
           try {
-            if (entity is File && AppConstants.isImageFile(entity.path)) {
+            if (entity is File && AppConstants.isSupportedFile(entity.path)) {
               results.add(entity.path);
             }
           } catch (_) {
@@ -356,6 +356,7 @@ class GalleryState extends ChangeNotifier {
   }
 
   void toggleImageSelection(AppImage image) {
+    if (AppConstants.isVideoFile(image.path)) return; // Prevent selecting videos
     final newList = List<AppImage>.from(selectedImages);
     final index = newList.indexWhere((img) => img.path == image.path);
     if (index != -1) {
@@ -384,11 +385,8 @@ class GalleryState extends ChangeNotifier {
   }
 
   void selectAllImages() {
-    // Select all from current active collections? 
-    // Usually it's better to select from the currently visible list, 
-    // but the state doesn't know what's visible (Tab index).
-    // For now, let's select from galleryImages.
-    selectedImages = List<AppImage>.from(galleryImages);
+    // Select all from current active collections that are not videos
+    selectedImages = galleryImages.where((img) => !AppConstants.isVideoFile(img.path)).toList();
     notifyListeners();
   }
 

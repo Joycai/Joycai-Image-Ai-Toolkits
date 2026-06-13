@@ -21,12 +21,12 @@ class ImageMetadata {
     required this.sizeString,
   });
 
-  String get displayString => "${width}x$height ($aspectRatio) | $sizeString";
+  String get displayString => width > 0 ? "${width}x$height ($aspectRatio) | $sizeString" : sizeString;
 
   Map<String, String> get params => {
-    "Width": "$width px",
-    "Height": "$height px",
-    "Aspect Ratio": aspectRatio,
+    if (width > 0) "Width": "$width px",
+    if (height > 0) "Height": "$height px",
+    if (aspectRatio.isNotEmpty) "Aspect Ratio": aspectRatio,
     "File Size": sizeString,
   };
 }
@@ -49,6 +49,19 @@ class ImageMetadataService {
     try {
       final file = File(path);
       if (!await file.exists()) return null;
+
+      if (AppConstants.isVideoFile(path)) {
+        final fileSize = await file.length();
+        final metadata = ImageMetadata(
+          width: 0,
+          height: 0,
+          fileSize: fileSize,
+          aspectRatio: "",
+          sizeString: AppConstants.formatFileSize(fileSize),
+        );
+        _cache[path] = metadata;
+        return metadata;
+      }
 
       final result = ImageSizeGetter.getSizeResult(FileInput(file));
       final size = result.size;

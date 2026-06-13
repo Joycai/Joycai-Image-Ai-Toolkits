@@ -131,8 +131,9 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         ],
       ),
       contentPadding: EdgeInsets.zero,
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width.clamp(280.0, 600.0),
+        height: MediaQuery.of(context).size.height.clamp(280.0, 600.0),
         child: Column(
           children: [
             Padding(
@@ -176,6 +177,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   Widget _buildMainContent(AppLocalizations l10n) {
     if (_isLoading) {
       return Center(
+        key: const ValueKey('discovery_dialog_loading'),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -189,6 +191,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
     if (_error != null) {
       return _buildStateView(
+        key: const ValueKey('discovery_dialog_error'),
         icon: Icons.error_outline,
         color: Theme.of(context).colorScheme.error,
         title: "Connection Failed",
@@ -202,6 +205,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
     if (_discovered.isEmpty) {
       return _buildStateView(
+        key: const ValueKey('discovery_dialog_empty'),
         icon: Icons.search_off_outlined,
         color: Theme.of(context).colorScheme.outline,
         title: "No Models Found",
@@ -212,6 +216,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     final available = _filtered.where((m) => !_isModelAdded(m)).toList();
 
     return Column(
+      key: const ValueKey('discovery_dialog_content'),
       children: [
         if (_filtered.isNotEmpty)
           Padding(
@@ -335,6 +340,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   }
 
   Widget _buildStateView({
+    Key? key,
     required IconData icon,
     required Color color,
     required String title,
@@ -342,6 +348,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     Widget? action,
   }) {
     return Center(
+      key: key,
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(

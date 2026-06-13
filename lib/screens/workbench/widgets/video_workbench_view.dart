@@ -18,6 +18,8 @@ class VideoWorkbenchOverlay extends StatefulWidget {
 class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
   VideoPlayerController? _controller;
   String? _lastPath;
+  bool _hasError = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -29,13 +31,34 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     if (_lastPath == path) return;
     _lastPath = path;
     _controller?.dispose();
+    _controller = null;
+    _hasError = false;
+    _errorMessage = null;
     
     final file = File(path);
-    if (!file.existsSync()) return;
+    if (!file.existsSync()) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Video file does not exist.';
+      });
+      return;
+    }
 
     _controller = VideoPlayerController.file(file)
       ..initialize().then((_) {
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {
+            _hasError = false;
+            _errorMessage = null;
+          });
+        }
+      }).catchError((error) {
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = error.toString();
+          });
+        }
       });
   }
 
@@ -45,7 +68,14 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (uiState.lastGeneratedVideoPath == null) return const SizedBox.shrink();
+    if (uiState.lastGeneratedVideoPath == null) {
+      if (_controller != null) {
+        _controller!.dispose();
+        _controller = null;
+        _lastPath = null;
+      }
+      return const SizedBox.shrink();
+    }
 
     _initPlayer(uiState.lastGeneratedVideoPath!);
 
@@ -84,7 +114,23 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                 ],
               ),
               const SizedBox(height: 8),
-              if (_controller != null && _controller!.value.isInitialized)
+              if (_hasError)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 36, color: colorScheme.error),
+                      const SizedBox(height: 8),
+                      Text(
+                        _errorMessage ?? 'Failed to initialize video player',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: colorScheme.error),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_controller != null && _controller!.value.isInitialized)
                 Flexible(
                   child: AspectRatio(
                     aspectRatio: _controller!.value.aspectRatio,
