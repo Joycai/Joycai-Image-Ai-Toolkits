@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - platform: windows
-            os: windows-latest
+            os: windows-2022
             output: build/windows/x64/runner/Release/
             artifact_name: windows-release
             artifact_path: |
