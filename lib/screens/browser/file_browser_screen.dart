@@ -14,7 +14,7 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/unified_sidebar.dart';
-import '../workbench/widgets/image_preview_dialog.dart';
+import '../workbench/widgets/preview/media_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_toolbar.dart';
@@ -180,7 +180,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                       .map((f) => AppImage(path: f.path, name: f.name))
                       .toList();
                   final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-                  showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
+                  showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
                 } else {
                   _handleOpenFile(file);
                 }
@@ -212,7 +212,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                   .map((f) => AppImage(path: f.path, name: f.name))
                   .toList();
               final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-              showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
+              showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
             } else {
               _handleOpenFile(file);
             }

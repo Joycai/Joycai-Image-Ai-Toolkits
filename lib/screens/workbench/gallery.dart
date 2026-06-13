@@ -21,7 +21,7 @@ import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
-import 'widgets/image_preview_dialog.dart';
+import 'widgets/preview/media_preview_dialog.dart';
 
 class Gallery extends StatefulWidget {
   const Gallery({
@@ -237,7 +237,7 @@ class _GalleryState extends State<Gallery> {
                               thumbnailSize: state.thumbnailSize,
                               onTap: () {
                                 if (isVideo) {
-                                  showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                                  showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
                                 } else {
                                   state.galleryState.toggleImageSelection(imageFile);
                                 }
@@ -245,7 +245,7 @@ class _GalleryState extends State<Gallery> {
                               onDoubleTap: isVideo
                                   ? null
                                   : () {
-                                      showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                                      showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
                                     },
                             );
                           },
@@ -665,7 +665,7 @@ class _ImageCardState extends State<_ImageCard> {
         onTap: () {
           final images = appState.galleryState.currentViewImages;
           final idx = images.indexWhere((img) => img.path == widget.imageFile.path);
-          showImagePreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
+          showMediaPreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
         },
       ),
     ];

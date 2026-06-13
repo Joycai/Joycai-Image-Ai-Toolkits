@@ -11,7 +11,7 @@ import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
-import '../../workbench/widgets/image_preview_dialog.dart';
+import '../../workbench/widgets/preview/media_preview_dialog.dart';
 
 void showFileContextMenu({
   required BuildContext context,
@@ -49,7 +49,7 @@ void showFileContextMenu({
                 .map((f) => AppImage(path: f.path, name: f.name))
                 .toList();
             final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-            showImagePreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
+            showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
           },
         ),
       
