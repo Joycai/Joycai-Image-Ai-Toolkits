@@ -132,8 +132,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       ),
       contentPadding: EdgeInsets.zero,
       content: SizedBox(
-        width: MediaQuery.of(context).size.width.clamp(280.0, 600.0),
-        height: MediaQuery.of(context).size.height.clamp(280.0, 600.0),
+        width: MediaQuery.of(context).size.width.clamp(280.0, 600.0).clamp(0.0, MediaQuery.of(context).size.width - 32),
+        height: MediaQuery.of(context).size.height.clamp(280.0, 600.0).clamp(0.0, MediaQuery.of(context).size.height - 96),
         child: Column(
           children: [
             Padding(

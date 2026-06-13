@@ -227,21 +227,24 @@ class _GalleryState extends State<Gallery> {
                         return Selector<AppState, bool>(
                           selector: (_, state) => state.selectedImages.any((img) => img.path == imageFile.path),
                           builder: (context, isSelected, _) {
+                            final isVideo = AppConstants.isVideoFile(imageFile.path);
                             return _ImageCard(
                               imageFile: imageFile,
                               isSelected: isSelected,
                               isResult: isResult,
                               thumbnailSize: state.thumbnailSize,
                               onTap: () {
-                                if (AppConstants.isVideoFile(imageFile.path)) {
+                                if (isVideo) {
                                   showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
                                 } else {
                                   state.galleryState.toggleImageSelection(imageFile);
                                 }
                               },
-                              onDoubleTap: () {
-                                showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
-                              },
+                              onDoubleTap: isVideo
+                                  ? null
+                                  : () {
+                                      showImagePreview(context, galleryImages: images, initialIndex: globalIndex);
+                                    },
                             );
                           },
                         );
@@ -293,6 +296,19 @@ class _ImageCardState extends State<_ImageCard> {
     super.initState();
     _getImageDimensions();
     _loadVideoThumbnail();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ImageCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageFile.path != widget.imageFile.path) {
+      setState(() {
+        _dimensions = "";
+        _videoThumbnailPath = null;
+      });
+      _getImageDimensions();
+      _loadVideoThumbnail();
+    }
   }
 
   Future<void> _getImageDimensions() async {
@@ -642,7 +658,11 @@ class _ImageCardState extends State<_ImageCard> {
           }
         }
       } else {
-        await Gal.putImage(sourcePath);
+        if (AppConstants.isVideoFile(sourcePath)) {
+          await Gal.putVideo(sourcePath);
+        } else {
+          await Gal.putImage(sourcePath);
+        }
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),

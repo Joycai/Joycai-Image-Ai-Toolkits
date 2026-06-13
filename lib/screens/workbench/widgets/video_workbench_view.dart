@@ -23,15 +23,27 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _disposePlayer();
     super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _disposePlayer() {
+    _controller?.removeListener(_onControllerUpdate);
+    _controller?.dispose();
+    _controller = null;
+    _lastPath = null;
   }
 
   void _initPlayer(String path) {
     if (_lastPath == path) return;
     _lastPath = path;
-    _controller?.dispose();
-    _controller = null;
+    _disposePlayer();
     _hasError = false;
     _errorMessage = null;
     
@@ -44,22 +56,29 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
       return;
     }
 
-    _controller = VideoPlayerController.file(file)
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _hasError = false;
-            _errorMessage = null;
-          });
-        }
-      }).catchError((error) {
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _errorMessage = error.toString();
-          });
-        }
+    final controller = VideoPlayerController.file(file);
+    _controller = controller;
+
+    controller.initialize().then((_) {
+      if (!mounted || _controller != controller) {
+        controller.dispose();
+        return;
+      }
+      controller.addListener(_onControllerUpdate);
+      setState(() {
+        _hasError = false;
+        _errorMessage = null;
       });
+    }).catchError((error) {
+      if (!mounted || _controller != controller) {
+        controller.dispose();
+        return;
+      }
+      setState(() {
+        _hasError = true;
+        _errorMessage = error.toString();
+      });
+    });
   }
 
   @override
@@ -69,11 +88,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (uiState.lastGeneratedVideoPath == null) {
-      if (_controller != null) {
-        _controller!.dispose();
-        _controller = null;
-        _lastPath = null;
-      }
+      _disposePlayer();
       return const SizedBox.shrink();
     }
 
@@ -134,13 +149,22 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                 Flexible(
                   child: AspectRatio(
                     aspectRatio: _controller!.value.aspectRatio,
-                    child: Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        VideoPlayer(_controller!),
-                        _VideoControls(controller: _controller!),
-                        VideoProgressIndicator(_controller!, allowScrubbing: true),
-                      ],
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_controller!.value.isPlaying) {
+                          _controller!.pause();
+                        } else {
+                          _controller!.play();
+                        }
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          VideoPlayer(_controller!),
+                          _VideoControls(controller: _controller!),
+                          VideoProgressIndicator(_controller!, allowScrubbing: true),
+                        ],
+                      ),
                     ),
                   ),
                 )

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -76,7 +77,11 @@ class _ImagePreviewDialogState extends State<ImagePreviewDialog> {
           }
         }
       } else {
-        await Gal.putImage(path);
+        if (AppConstants.isVideoFile(path)) {
+          await Gal.putVideo(path);
+        } else {
+          await Gal.putImage(path);
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
@@ -384,25 +389,31 @@ class _VideoPreviewItemState extends State<_VideoPreviewItem> {
       return;
     }
 
-    _controller = VideoPlayerController.file(file)
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {});
-          if (widget.isActive) {
-            _controller?.play();
-          }
-          _controller?.setLooping(true);
-          _controller?.addListener(_onControllerPlayStatusChanged);
-          _startHideTimer();
-        }
-      }).catchError((error) {
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-            _errorMessage = error.toString();
-          });
-        }
+    final controller = VideoPlayerController.file(file);
+    _controller = controller;
+
+    controller.initialize().then((_) {
+      if (!mounted || _controller != controller) {
+        controller.dispose();
+        return;
+      }
+      setState(() {});
+      if (widget.isActive) {
+        controller.play();
+      }
+      controller.setLooping(true);
+      controller.addListener(_onControllerPlayStatusChanged);
+      _startHideTimer();
+    }).catchError((error) {
+      if (!mounted || _controller != controller) {
+        controller.dispose();
+        return;
+      }
+      setState(() {
+        _hasError = true;
+        _errorMessage = error.toString();
       });
+    });
   }
 
   void _disposePlayer() {
@@ -416,11 +427,13 @@ class _VideoPreviewItemState extends State<_VideoPreviewItem> {
   @override
   void didUpdateWidget(_VideoPreviewItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive != oldWidget.isActive) {
+    if (widget.path != oldWidget.path || widget.isActive != oldWidget.isActive) {
+      _disposePlayer();
+      _hasError = false;
+      _errorMessage = null;
       if (widget.isActive) {
         _initPlayer();
       } else {
-        _disposePlayer();
         setState(() {});
       }
     }
@@ -695,23 +708,60 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
     _loadThumbnail();
   }
 
+  @override
+  void didUpdateWidget(covariant _VideoThumbnailWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoPath != widget.videoPath) {
+      setState(() {
+        _thumbnailPath = null;
+      });
+      _loadThumbnail();
+    }
+  }
+
   Future<void> _loadThumbnail() async {
     try {
       final file = File(widget.videoPath);
       if (!await file.exists()) return;
 
       final tempDir = await getTemporaryDirectory();
+      final cacheDir = Directory('${tempDir.path}/joycai/video_thumbnails');
+      if (!cacheDir.existsSync()) {
+        cacheDir.createSync(recursive: true);
+      }
+
       final stat = await file.stat();
       final key = '${widget.videoPath}_${stat.modified.millisecondsSinceEpoch}_${stat.size}';
       final hash = md5.convert(utf8.encode(key)).toString();
-      final cachePath = '${tempDir.path}/joycai/video_thumbnails/$hash.jpg';
+      final cachePath = '${cacheDir.path}/$hash.jpg';
 
-      if (File(cachePath).existsSync() && mounted) {
+      final cacheFile = File(cachePath);
+      if (cacheFile.existsSync()) {
+        if (mounted) {
+          setState(() {
+            _thumbnailPath = cachePath;
+          });
+        }
+        return;
+      }
+
+      final plugin = FcNativeVideoThumbnail();
+      final success = await plugin.saveThumbnailToFile(
+        srcFile: widget.videoPath,
+        destFile: cachePath,
+        width: 150,
+        height: 150,
+        quality: 75,
+      );
+
+      if (success && mounted && File(cachePath).existsSync()) {
         setState(() {
           _thumbnailPath = cachePath;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error generating video thumbnail in preview strip: $e');
+    }
   }
 
   @override
