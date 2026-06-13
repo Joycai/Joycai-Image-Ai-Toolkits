@@ -62,21 +62,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final themeMode = context.select<AppState, ThemeMode>((s) => s.themeMode);
+    final locale = context.select<AppState, Locale?>((s) => s.locale);
+    final themeSeedColor = context.select<AppState, Color>((s) => s.themeSeedColor);
 
     return MaterialApp(
       onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
       debugShowCheckedModeBanner: false,
-      themeMode: appState.themeMode,
-      locale: appState.locale,
+      themeMode: themeMode,
+      locale: locale,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: appState.themeSeedColor, brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.light),
         fontFamily: 'NotoSansSC',
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: appState.themeSeedColor, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.dark),
         fontFamily: 'NotoSansSC',
       ),
       localizationsDelegates: const [

@@ -117,6 +117,7 @@ class TaskQueueService extends ChangeNotifier {
   int _runningCount = 0;
   final _uuid = const Uuid();
   Timer? _progressTimer;
+  List<LLMModel>? _cachedModelsForProgress;
   
   // Event stream for real-time subscriptions
   final _eventController = StreamController<TaskEvent>.broadcast();
@@ -218,22 +219,22 @@ class TaskQueueService extends ChangeNotifier {
     _attemptNextExecution();
   }
 
-  void cancelTask(String taskId) {
+  Future<void> cancelTask(String taskId) async {
     final index = _queue.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       final task = _queue[index];
       if (task.status == TaskStatus.pending) {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
-        DatabaseService().saveTask(task.toMap());
+        await DatabaseService().saveTask(task.toMap());
         notifyListeners();
       }
     }
   }
 
-  void removeTask(String taskId) {
+  Future<void> removeTask(String taskId) async {
     _queue.removeWhere((t) => t.id == taskId && (t.status == TaskStatus.completed || t.status == TaskStatus.failed || t.status == TaskStatus.cancelled));
-    DatabaseService().deleteTask(taskId);
+    await DatabaseService().deleteTask(taskId);
     notifyListeners();
   }
 
@@ -409,6 +410,10 @@ class TaskQueueService extends ChangeNotifier {
         _emit(task.id, TaskEventType.textChunk, response.text);
         task.addLog('AI: ${response.text}');
       }
+
+      if (response.generatedImages.isNotEmpty) {
+        generatedImages.addAll(response.generatedImages);
+      }
     }
 
     task.addLog('LLM Task finished.');
@@ -546,9 +551,19 @@ Do not include any other text or markdown formatting.
 
     final List<dynamic> suggestions = jsonDecode(jsonText);
     
+    bool isSafeFileName(String name) {
+      return !name.contains('..') && !name.contains('/') && !name.contains('\\') && !name.contains('\x00') && name.trim().isNotEmpty;
+    }
+
     for (var s in suggestions) {
       final oldPath = s['path'] as String;
       final newName = s['new_name'] as String;
+      
+      if (!isSafeFileName(newName)) {
+        task.addLog('Skipped unsafe rename suggestion: "$newName"');
+        continue;
+      }
+
       final oldFile = File(oldPath);
       final newPath = p.join(p.dirname(oldPath), newName);
 
@@ -614,8 +629,13 @@ Do not include any other text or markdown formatting.
 
     // 3. Polling Loop
     String? videoUri;
+    final pollStartTime = DateTime.now();
     while (true) {
       if (task.status == TaskStatus.cancelled) break;
+
+      if (DateTime.now().difference(pollStartTime) > const Duration(minutes: 30)) {
+        throw Exception('Video generation task timed out after 30 minutes.');
+      }
 
       final opStatus = await LLMService().checkOperation(
         modelIdentifier: task.modelDbId ?? task.modelId,
@@ -625,11 +645,16 @@ Do not include any other text or markdown formatting.
 
       final isDone = opStatus['done'] == true;
       if (isDone) {
-        final response = opStatus['response'];
-        if (response != null && response['generateVideoResponse'] != null) {
-          final samples = response['generateVideoResponse']['generatedSamples'] as List?;
-          if (samples != null && samples.isNotEmpty) {
-            videoUri = samples[0]['video']?['uri'];
+        final response = opStatus['response'] as Map?;
+        if (response != null) {
+          final genVideoResponse = response['generateVideoResponse'] as Map?;
+          if (genVideoResponse != null) {
+            final samples = genVideoResponse['generatedSamples'] as List?;
+            if (samples != null && samples.isNotEmpty) {
+              final firstSample = samples[0] as Map?;
+              final video = firstSample?['video'] as Map?;
+              videoUri = video?['uri'] as String?;
+            }
           }
         }
         
@@ -687,14 +712,19 @@ Do not include any other text or markdown formatting.
         throw Exception('Failed to download video: ${response.statusCode}');
       }
 
-      final bytes = await response.fold<List<int>>([], (p, e) => p..addAll(e));
-      
       final prefix = task.parameters['imagePrefix'] ?? 'video';
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = '${prefix}_$timestamp.mp4';
       final filePath = p.join(outputDir, fileName);
       
-      await File(filePath).writeAsBytes(bytes);
+      final file = File(filePath);
+      final sink = file.openWrite();
+      try {
+        await response.pipe(sink);
+      } catch (e) {
+        await sink.close();
+        rethrow;
+      }
       return filePath;
     } finally {
       client.close();
@@ -731,15 +761,19 @@ Do not include any other text or markdown formatting.
           throw Exception('Failed to download image: ${response.statusCode}');
         }
 
-        final bytes = await response.timeout(const Duration(seconds: 60)).fold<List<int>>([], (p, e) => p..addAll(e));
-        
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final extension = _getExtensionFromUrl(url);
         final fileName = '${prefix}_${timestamp}_$i$extension';
         final filePath = p.join(outputDir, fileName);
         
         final file = File(filePath);
-        await file.writeAsBytes(bytes);
+        final sink = file.openWrite();
+        try {
+          await response.timeout(const Duration(seconds: 60)).pipe(sink);
+        } catch (e) {
+          await sink.close();
+          rethrow;
+        }
         task.resultPaths.add(filePath);
         _emit(task.id, TaskEventType.imageResult, filePath);
         _emit(task.id, TaskEventType.progress, (i + 1) / task.imagePaths.length);
@@ -773,18 +807,21 @@ Do not include any other text or markdown formatting.
 
   void _startProgressTimer() {
     _progressTimer?.cancel();
+    _cachedModelsForProgress = null;
     _progressTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _updateProgress());
   }
 
   void _stopProgressTimer() {
     _progressTimer?.cancel();
     _progressTimer = null;
+    _cachedModelsForProgress = null;
   }
 
   Future<void> _updateProgress() async {
     bool hasActive = false;
     final db = DatabaseService();
-    final models = await db.getModels();
+    _cachedModelsForProgress ??= await db.getModels();
+    final models = _cachedModelsForProgress!;
 
     for (var task in _queue) {
       if (task.status == TaskStatus.processing && task.startTime != null) {

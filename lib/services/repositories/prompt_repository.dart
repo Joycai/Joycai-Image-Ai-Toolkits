@@ -54,10 +54,10 @@ class PromptRepository {
   Future<void> deletePrompts(List<int> ids) async {
     if (ids.isEmpty) return;
     final db = await _db;
-    final idsStr = ids.join(',');
+    final placeholders = ids.map((_) => '?').join(',');
     await db.transaction((txn) async {
-      await txn.delete('prompts', where: 'id IN ($idsStr)');
-      await txn.delete('prompt_tag_refs', where: 'prompt_id IN ($idsStr)');
+      await txn.delete('prompts', where: 'id IN ($placeholders)', whereArgs: ids);
+      await txn.delete('prompt_tag_refs', where: 'prompt_id IN ($placeholders)', whereArgs: ids);
     });
   }
 
@@ -198,10 +198,10 @@ class PromptRepository {
   Future<void> deleteSystemPrompts(List<int> ids) async {
     if (ids.isEmpty) return;
     final db = await _db;
-    final idsStr = ids.join(',');
+    final placeholders = ids.map((_) => '?').join(',');
     await db.transaction((txn) async {
-      await txn.delete('system_prompts', where: 'id IN ($idsStr)');
-      await txn.delete('system_prompt_tag_refs', where: 'prompt_id IN ($idsStr)');
+      await txn.delete('system_prompts', where: 'id IN ($placeholders)', whereArgs: ids);
+      await txn.delete('system_prompt_tag_refs', where: 'prompt_id IN ($placeholders)', whereArgs: ids);
     });
   }
 

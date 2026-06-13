@@ -57,6 +57,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   int _lastKnownTabIndex = 0;
   StreamSubscription? _taskSubscription;
   String? _activeRefineTaskId;
+  Timer? _promptSaveTimer;
 
   // Mask Editor State
   final List<DrawingPath> _maskPaths = [];
@@ -88,7 +89,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _onOptCurrentPromptChanged() {
     if (_appState != null && _optCurrentPromptCtrl.text != _appState!.lastPrompt) {
-      _appState!.updateWorkbenchConfig(prompt: _optCurrentPromptCtrl.text);
+      _appState!.lastPrompt = _optCurrentPromptCtrl.text;
+      _promptSaveTimer?.cancel();
+      _promptSaveTimer = Timer(const Duration(seconds: 1), () {
+        _appState!.updateWorkbenchConfig(prompt: _optCurrentPromptCtrl.text);
+      });
     }
   }
 
@@ -346,6 +351,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   void dispose() {
+    _promptSaveTimer?.cancel();
     _optCurrentPromptCtrl.removeListener(_onOptCurrentPromptChanged);
     _optCurrentPromptCtrl.dispose();
     _optRefinedPromptCtrl.dispose();

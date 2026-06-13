@@ -41,6 +41,7 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   void clearAllPreviews() {
+    previewImages = [];
     activePreviewIndex = 0;
     notifyListeners();
   }

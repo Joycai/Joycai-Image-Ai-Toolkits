@@ -8,7 +8,7 @@ Joycai Image AI Toolkits is a cross-platform desktop (and mobile) application bu
 
 The application allows users to manage local image libraries, perform batch processing tasks, refine and manage a library of prompts, download images from the web, rename files with AI, generate videos, and track AI model usage and costs. It is designed for artists, designers, and researchers who work extensively with AI-generated media.
 
-- **Current Version:** 2.3.0
+- **Current Version:** 2.3.1
 - **Dart SDK:** `^3.11.0`
 - **Flutter SDK:** `^3.10.8` (tested against Flutter 3.41.1)
 
@@ -134,6 +134,11 @@ The project follows standard Flutter conventions.
     *   **Multi-language Support:** The project currently supports English (`en`), Simplified Chinese (`zh`), Traditional Chinese (`zh_Hant`), and Japanese (`ja`). Ensure **all four languages** are updated when adding new keys.
 *   **Task System:** When adding new background operations, use the `TaskQueueService.addTask()` API and add a new `TaskType` enum value if needed. Implement the corresponding `_executeXxxTask()` method in `task_queue_service.dart`.
 *   **LLM Providers:** To add a new AI provider, implement `ILLMProvider` from `llm_provider_interface.dart`, and register it in `main.dart` via `LLMService().registerProvider(...)`.
+*   **Shell Commands & Environment Execution:**
+    *   **Detect Environment:** Before running any shell commands, check the current host OS environment (e.g., Windows with PowerShell, macOS, or Linux). Do NOT attempt Unix/Linux commands (like `rm`, `ls`, `export`, etc.) on Windows, or PowerShell commands on macOS/Linux.
+    *   **No Trial-and-Error Retries:** Do not run arbitrary shell commands to "test" the OS environment or try-fail-retry. Determine the target platform beforehand and execute the correct command directly.
+    *   **Platform-Specific Toolchains:** Use appropriate commands and toolchains for the target platform (e.g., Windows/PowerShell cmdlets or `del`, `dir`, `set` vs macOS/Linux `rm`, `ls`, `export`).
+
 
 ## Known Issues & Troubleshooting
 

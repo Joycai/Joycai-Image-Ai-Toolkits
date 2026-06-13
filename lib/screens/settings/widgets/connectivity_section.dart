@@ -20,9 +20,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
   final TextEditingController _proxyUrlController = TextEditingController();
   final TextEditingController _proxyUsernameController = TextEditingController();
   final TextEditingController _proxyPasswordController = TextEditingController();
-  
-  bool _mcpEnabled = false;
-  final TextEditingController _mcpPortController = TextEditingController();
 
   @override
   void initState() {
@@ -36,8 +33,7 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
     _proxyUsernameController.text = await _db.getSetting('proxy_username') ?? '';
     _proxyPasswordController.text = await _db.getSetting('proxy_password') ?? '';
 
-    _mcpEnabled = (await _db.getSetting('mcp_enabled')) == 'true';
-    _mcpPortController.text = await _db.getSetting('mcp_port') ?? '3000';
+
 
     if (mounted) setState(() {});
   }
@@ -123,25 +119,14 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
           children: [
             SwitchListTile(
               title: Text(l10n.enableMcpServer),
-              value: _mcpEnabled,
-              onChanged: (v) {
-                setState(() => _mcpEnabled = v);
-                _db.saveSetting('mcp_enabled', v.toString());
-              },
-            ),
-            if (_mcpEnabled)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _mcpPortController,
-                  decoration: InputDecoration(
-                    labelText: l10n.port,
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  onChanged: (v) => _db.saveSetting('mcp_port', v),
-                ),
+              subtitle: Text(
+                l10n.localeName == 'zh' 
+                    ? "即将推出（当前版本未实现）" 
+                    : (l10n.localeName == 'ja' ? "近日公開（このバージョンでは未実装）" : "Coming Soon (Not implemented in this version)")
               ),
+              value: false,
+              onChanged: null,
+            ),
           ],
         ),
       ],

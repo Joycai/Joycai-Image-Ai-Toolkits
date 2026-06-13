@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 enum SamplingMethod {
@@ -8,6 +8,69 @@ enum SamplingMethod {
   linear,
   cubic,
   lanczos,
+}
+
+class _ImageProcessParams {
+  final String sourcePath;
+  final int? cropX;
+  final int? cropY;
+  final int? cropWidth;
+  final int? cropHeight;
+  final int? width;
+  final int? height;
+  final bool maintainAspectRatio;
+  final SamplingMethod sampling;
+
+  _ImageProcessParams({
+    required this.sourcePath,
+    this.cropX,
+    this.cropY,
+    this.cropWidth,
+    this.cropHeight,
+    this.width,
+    this.height,
+    required this.maintainAspectRatio,
+    required this.sampling,
+  });
+}
+
+Uint8List _runImageProcess(_ImageProcessParams params) {
+  final file = File(params.sourcePath);
+  final bytes = file.readAsBytesSync();
+  img.Image? image = img.decodeImage(bytes);
+  if (image == null) throw Exception("Failed to decode image");
+
+  // 1. Crop
+  if (params.cropX != null && params.cropY != null && params.cropWidth != null && params.cropHeight != null) {
+    image = img.copyCrop(
+      image, 
+      x: params.cropX!, 
+      y: params.cropY!, 
+      width: params.cropWidth!, 
+      height: params.cropHeight!
+    );
+  }
+
+  // 2. Resize
+  if (params.width != null || params.height != null) {
+    img.Interpolation filter;
+    switch (params.sampling) {
+      case SamplingMethod.nearest: filter = img.Interpolation.nearest; break;
+      case SamplingMethod.linear: filter = img.Interpolation.linear; break;
+      case SamplingMethod.cubic: filter = img.Interpolation.cubic; break;
+      case SamplingMethod.lanczos: filter = img.Interpolation.average; break; // Lanczos not directly mapped, use average
+    }
+
+    image = img.copyResize(
+      image,
+      width: params.width,
+      height: params.height,
+      maintainAspect: params.maintainAspectRatio,
+      interpolation: filter,
+    );
+  }
+
+  return Uint8List.fromList(img.encodePng(image));
 }
 
 class ImageProcessingService {
@@ -26,41 +89,18 @@ class ImageProcessingService {
     bool maintainAspectRatio = true,
     SamplingMethod sampling = SamplingMethod.lanczos,
   }) async {
-    final bytes = await File(sourcePath).readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) throw Exception("Failed to decode image");
-
-    // 1. Crop
-    if (cropX != null && cropY != null && cropWidth != null && cropHeight != null) {
-      image = img.copyCrop(
-        image, 
-        x: cropX, 
-        y: cropY, 
-        width: cropWidth, 
-        height: cropHeight
-      );
-    }
-
-    // 2. Resize
-    if (width != null || height != null) {
-      img.Interpolation filter;
-      switch (sampling) {
-        case SamplingMethod.nearest: filter = img.Interpolation.nearest; break;
-        case SamplingMethod.linear: filter = img.Interpolation.linear; break;
-        case SamplingMethod.cubic: filter = img.Interpolation.cubic; break;
-        case SamplingMethod.lanczos: filter = img.Interpolation.average; break; // Lanczos not directly mapped, use average or best available
-      }
-
-      image = img.copyResize(
-        image,
-        width: width,
-        height: height,
-        maintainAspect: maintainAspectRatio,
-        interpolation: filter,
-      );
-    }
-
-    return Uint8List.fromList(img.encodePng(image));
+    final params = _ImageProcessParams(
+      sourcePath: sourcePath,
+      cropX: cropX,
+      cropY: cropY,
+      cropWidth: cropWidth,
+      cropHeight: cropHeight,
+      width: width,
+      height: height,
+      maintainAspectRatio: maintainAspectRatio,
+      sampling: sampling,
+    );
+    return await compute(_runImageProcess, params);
   }
 
   Future<void> saveImage({

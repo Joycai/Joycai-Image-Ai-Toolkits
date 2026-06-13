@@ -21,6 +21,7 @@ import 'repositories/usage_repository.dart';
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
+  static Future<Database>? _databaseFuture;
 
   factory DatabaseService() => _instance;
 
@@ -28,9 +29,13 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
-    await syncPresets();
-    return _database!;
+    _databaseFuture ??= () async {
+      final db = await _initDatabase();
+      _database = db;
+      await syncPresets();
+      return db;
+    }();
+    return _databaseFuture!;
   }
 
   Future<Database> _initDatabase() async {
@@ -56,10 +61,11 @@ class DatabaseService {
     }
 
     dbPath = newPath;
+    Database db;
 
     if (Platform.isWindows || Platform.isLinux) {
       sqfliteFfiInit();
-      return await databaseFactoryFfi.openDatabase(
+      db = await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
           version: 24,
@@ -70,13 +76,15 @@ class DatabaseService {
     } else {
       // On macOS, iOS, and Android, use standard sqflite (non-FFI)
       // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
-      return await openDatabase(
+      db = await openDatabase(
         dbPath,
         version: 24,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
     }
+    await db.execute('PRAGMA foreign_keys = ON');
+    return db;
   }
 
   Future<String> getDatabasePath() async {
@@ -295,12 +303,30 @@ class DatabaseService {
       filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
     }
 
+    final channels = await db.query('llm_channels');
+    final sanitizedChannels = channels.map((row) {
+      final map = Map<String, dynamic>.from(row);
+      if (map.containsKey('api_key')) {
+        map['api_key'] = ''; // Redact key on backup export
+      }
+      return map;
+    }).toList();
+
+    final cookies = await db.query('downloader_cookies');
+    final sanitizedCookies = cookies.map((row) {
+      final map = Map<String, dynamic>.from(row);
+      if (map.containsKey('cookies')) {
+        map['cookies'] = ''; // Redact cookies on backup export
+      }
+      return map;
+    }).toList();
+
     final Map<String, dynamic> data = {
       'settings': filteredSettings,
-      'llm_channels': await db.query('llm_channels'),
+      'llm_channels': sanitizedChannels,
       'llm_models': await db.query('llm_models'),
       'fee_groups': await db.query('fee_groups'),
-      'downloader_cookies': await db.query('downloader_cookies'),
+      'downloader_cookies': sanitizedCookies,
     };
 
     if (includeUsage) {

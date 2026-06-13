@@ -247,11 +247,17 @@ Example: [{"path": "...", "new_name": "..."}]
       final List<dynamic> suggestions = jsonDecode(jsonText);
       final List<Map<String, String>> proposed = [];
 
+      bool isSafeFileName(String name) {
+        return !name.contains('..') && !name.contains('/') && !name.contains('\\') && !name.contains('\x00') && name.trim().isNotEmpty;
+      }
+
       for (var s in suggestions) {
+        final newName = s['new_name'] as String;
+        if (!isSafeFileName(newName)) continue;
         proposed.add({
           'path': s['path'] as String,
           'old_name': p.basename(s['path'] as String),
-          'new_name': s['new_name'] as String,
+          'new_name': newName,
         });
       }
 

@@ -797,7 +797,10 @@ class _ImageCardState extends State<_ImageCard> {
 
     try {
       if (Platform.isWindows) {
-        final path = widget.imageFile.path.replaceAll("'", "''");
+        final path = widget.imageFile.path
+            .replaceAll("'", "''")
+            .replaceAll('`', '``')
+            .replaceAll(r'$', r'`$');
         final result = await Process.run(
           'powershell',
           [
