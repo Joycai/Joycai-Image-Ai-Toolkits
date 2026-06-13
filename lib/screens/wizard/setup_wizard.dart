@@ -262,8 +262,8 @@ class _SetupWizardState extends State<SetupWizard> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: Text(l10n.importOptions),
-          content: SizedBox(
-            width: 450,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -612,9 +612,8 @@ class _SetupWizardState extends State<SetupWizard> {
         context: context,
         builder: (context) => AlertDialog(
           title: Text(l10n.selectModelsToAdd),
-          content: SizedBox(
-            width: 400,
-            height: 400,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400, maxHeight: 400),
             child: ListView.builder(
               itemCount: models.length,
               itemBuilder: (context, index) {

@@ -87,8 +87,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ],
       ),
       contentPadding: EdgeInsets.zero,
-      content: SizedBox(
-        width: 550,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 550),
         child: _buildContent(l10n),
       ),
       actions: [

@@ -52,12 +52,16 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
     return Positioned(
       bottom: 20,
       right: 20,
-      child: Material(
+      left: 20,
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Material(
         elevation: 8,
         borderRadius: BorderRadius.circular(16),
         color: colorScheme.surfaceContainerHighest,
         child: Container(
-          width: 320,
           padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -114,6 +118,8 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
               ),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );

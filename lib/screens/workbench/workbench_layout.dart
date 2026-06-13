@@ -47,10 +47,14 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
     final isNarrow = Responsive.isNarrow(context);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     if (isMobile) {
-      return _buildMobileLayout(context);
+      return _buildMobileLayout(context, screenWidth);
     }
+
+    // Cap right panel to 40% of screen so content area is never squeezed below 60%
+    final rightMaxWidth = (screenWidth * 0.40).clamp(250.0, 600.0);
 
     return Provider<WorkbenchLayoutState>.value(
       value: WorkbenchLayoutState(_scaffoldKey),
@@ -87,12 +91,12 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                     _ResizableDivider(
                       onResize: (delta) {
                         setState(() {
-                          _rightWidth = (_rightWidth - delta).clamp(250.0, 600.0);
+                          _rightWidth = (_rightWidth - delta).clamp(250.0, rightMaxWidth);
                         });
                       },
                     ),
                     SizedBox(
-                      width: isTablet ? 280 : _rightWidth,
+                      width: _rightWidth.clamp(250.0, rightMaxWidth),
                       child: widget.rightPanelBuilder!(null),
                     ),
                   ],
@@ -102,26 +106,31 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
             if (widget.bottomPanel != null) widget.bottomPanel!,
           ],
         ),
-        drawer: (isTablet && widget.leftPanel != null) ? Drawer(width: 300, child: widget.leftPanel) : null,
-        endDrawer: (isNarrow && widget.rightPanelBuilder != null) ? Drawer(width: 350, child: widget.rightPanelBuilder!(null)) : null,
+        drawer: (isTablet && widget.leftPanel != null)
+            ? Drawer(width: (screenWidth * 0.75).clamp(200.0, 300.0), child: widget.leftPanel)
+            : null,
+        endDrawer: (isNarrow && widget.rightPanelBuilder != null)
+            ? Drawer(width: (screenWidth * 0.80).clamp(280.0, 350.0), child: widget.rightPanelBuilder!(null))
+            : null,
       ),
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobileLayout(BuildContext context, double screenWidth) {
+    final mobileDrawerWidth = (screenWidth * 0.80).clamp(200.0, 300.0);
     return Provider<WorkbenchLayoutState>.value(
       value: WorkbenchLayoutState(_scaffoldKey),
       child: Scaffold(
         key: _scaffoldKey,
         appBar: widget.topBar != null ? PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight + 1), // +1 for the divider
+          preferredSize: const Size.fromHeight(kToolbarHeight + 1),
           child: Provider<WorkbenchLayoutState>.value(
             value: WorkbenchLayoutState(_scaffoldKey),
             child: widget.topBar!,
           ),
         ) : null,
         body: widget.centerContent,
-        drawer: widget.leftPanel != null ? Drawer(width: 300, child: widget.leftPanel) : null,
+        drawer: widget.leftPanel != null ? Drawer(width: mobileDrawerWidth, child: widget.leftPanel) : null,
         floatingActionButton: widget.rightPanelBuilder != null ? FloatingActionButton(
           onPressed: () {
             final workbenchState = WorkbenchLayoutState(_scaffoldKey);

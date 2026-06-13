@@ -248,8 +248,8 @@ class PricingGroupManager extends StatelessWidget {
         context: context,
         builder: (context) => AlertDialog(
           title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
-          content: SizedBox(
-            width: 450,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450),
             child: _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: false),
           ),
         ),

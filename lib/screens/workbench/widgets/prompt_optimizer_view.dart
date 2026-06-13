@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/markdown_editor.dart';
@@ -22,7 +23,7 @@ class PromptOptimizerView extends StatelessWidget {
     
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 600;
+        final isNarrow = constraints.maxWidth < Responsive.mobileBreakpoint;
         
         if (isNarrow) {
           return Padding(

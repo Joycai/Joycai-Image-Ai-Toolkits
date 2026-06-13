@@ -644,8 +644,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         builder: (context, setDialogState) {
           return AlertDialog(
             title: Text(tag == null ? l10n.addCategory : l10n.editCategory),    
-            content: SizedBox(
-              width: 400,
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

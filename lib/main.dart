@@ -190,7 +190,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final isMobileUI = Responsive.isMobile(context);
-    final isTabletUI = Responsive.isTablet(context);
     final isMobilePlatform = Platform.isAndroid || Platform.isIOS;
 
     // Filter items based on platform
@@ -219,9 +218,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         // Optionally update appState here, but we should be careful with side effects in build
       }
     }
-
-    // If rail extended state hasn't been set by user, default based on tablet/desktop
-    if (isTabletUI) _isRailExtended = false;
 
     // Split for mobile UI (NavigationBar): first 4 items + "More"
     final primaryItems = navItems.take(4).toList();

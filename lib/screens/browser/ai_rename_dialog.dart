@@ -135,9 +135,9 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.selectRenameTemplate),
-        content: SizedBox(
-          width: 400,
-          child: templates.isEmpty 
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: templates.isEmpty
             ? Center(child: Text(l10n.noPromptsSaved))
             : ListView.builder(
                 shrinkWrap: true,

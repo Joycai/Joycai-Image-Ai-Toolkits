@@ -131,9 +131,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         ],
       ),
       contentPadding: EdgeInsets.zero,
-      content: SizedBox(
-        width: 600,
-        height: 600,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 600),
         child: Column(
           children: [
             Padding(
