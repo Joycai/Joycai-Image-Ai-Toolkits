@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.1
   uuid: ^4.2.1
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0-beta.5
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0
   path_provider: ^2.1.1
@@ -25,13 +25,13 @@ dependencies:
   intl: ^0.20.2
   shelf: ^1.4.2
   shelf_router: ^1.1.4
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
   flutter_markdown_plus: ^1.0.1
   local_notifier: ^0.1.6
   desktop_drop: ^0.7.0
   html: ^0.15.4
   crypto: ^3.0.6
-  share_plus: ^12.0.1
+  share_plus: ^13.1.0
   image_picker: ^1.2.1
   image_size_getter: ^2.4.1
   google_fonts: ^8.0.1
@@ -40,7 +40,7 @@ dependencies:
   extended_image: ^10.0.1
   video_player: ^2.8.1
   video_player_win: ^3.2.2
-  fc_native_video_thumbnail: ^2.2.0
+  fc_native_video_thumbnail: ^3.0.1
 
 dev_dependencies:
   flutter_test:

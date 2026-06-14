@@ -609,16 +609,16 @@ class _ImageCardState extends State<_ImageCard> {
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
         final extension = sourcePath.split('.').last;
-        String? outputFile = await FilePicker.saveFile(
+        final bytes = await File(sourcePath).readAsBytes();
+        final outputFile = await FilePicker.saveFile(
           dialogTitle: l10n.save,
           fileName: fileName,
           type: FileType.custom,
           allowedExtensions: [extension],
+          bytes: bytes,
         );
 
         if (outputFile != null) {
-          final file = File(sourcePath);
-          await file.copy(outputFile);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.settingsExported), backgroundColor: Colors.green),
