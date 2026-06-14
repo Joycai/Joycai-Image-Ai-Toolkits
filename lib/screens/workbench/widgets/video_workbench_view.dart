@@ -35,8 +35,8 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
 
   void _initPlayer(String path) {
     if (_lastPath == path) return;
-    _lastPath = path;
     _disposePlayer();
+    _lastPath = path;
     _hasError = false;
     _errorMessage = null;
 
