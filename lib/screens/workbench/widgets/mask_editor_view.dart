@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/drawing_canvas.dart';
 
@@ -81,6 +83,7 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final sourceImage = workbenchUIState.maskEditorSourceImage;
 
@@ -89,9 +92,15 @@ class _MaskEditorViewState extends State<MaskEditorView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.brush, size: 64, color: colorScheme.outlineVariant),
+            Icon(Icons.brush_outlined, size: 64, color: colorScheme.outlineVariant),
             const SizedBox(height: 16),
-            const Text("No image selected for masking"),
+            Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurfaceVariant)),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
+              icon: const Icon(Icons.photo_library_outlined),
+              label: Text(l10n.goToGallery),
+            ),
           ],
         ),
       );
@@ -105,49 +114,73 @@ class _MaskEditorViewState extends State<MaskEditorView> {
       return const Center(child: Text("Failed to load image"));
     }
 
-    return Container(
-      color: Colors.black,
-      child: InteractiveViewer(
-        maxScale: 10.0,
-        minScale: 0.1,
-        child: Center(
-          child: AspectRatio(
-            aspectRatio: _imageInfo!.width / _imageInfo!.height,
-            child: RepaintBoundary(
-              key: widget.repaintKey,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (widget.isBinaryMode)
-                    Container(color: Colors.black)
-                  else
-                    Image.file(File(sourceImage.path), fit: BoxFit.fill),
-                  
-                  MouseRegion(
-                    cursor: SystemMouseCursors.none,
-                    onHover: (event) => widget.onHover(event.localPosition),
-                    onExit: (event) => widget.onHover(null),
-                    child: GestureDetector(
-                      onPanStart: (details) => widget.onPanStart(details.localPosition),
-                      onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
-                      child: CustomPaint(
-                        painter: MaskPainter(paths: widget.paths),
-                        foregroundPainter: widget.mousePosition != null 
-                          ? BrushPreviewPainter(
-                              position: widget.mousePosition!, 
-                              size: widget.brushSize,
-                              color: widget.selectedColor,
-                            ) 
-                          : null,
-                      ),
+    return Column(
+      children: [
+        if (widget.isBinaryMode)
+          Container(
+            width: double.infinity,
+            color: colorScheme.tertiaryContainer,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                Icon(Icons.contrast, size: 16, color: colorScheme.onTertiaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.binaryModeActive,
+                    style: TextStyle(fontSize: 12, color: colorScheme.onTertiaryContainer),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: Container(
+            color: Colors.black,
+            child: InteractiveViewer(
+              maxScale: 10.0,
+              minScale: 0.1,
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: _imageInfo!.width / _imageInfo!.height,
+                  child: RepaintBoundary(
+                    key: widget.repaintKey,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (widget.isBinaryMode)
+                          Container(color: Colors.black)
+                        else
+                          Image.file(File(sourceImage.path), fit: BoxFit.fill),
+
+                        MouseRegion(
+                          cursor: SystemMouseCursors.none,
+                          onHover: (event) => widget.onHover(event.localPosition),
+                          onExit: (event) => widget.onHover(null),
+                          child: GestureDetector(
+                            onPanStart: (details) => widget.onPanStart(details.localPosition),
+                            onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
+                            child: CustomPaint(
+                              painter: MaskPainter(paths: widget.paths),
+                              foregroundPainter: widget.mousePosition != null
+                                  ? BrushPreviewPainter(
+                                      position: widget.mousePosition!,
+                                      size: widget.brushSize,
+                                      color: widget.selectedColor,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

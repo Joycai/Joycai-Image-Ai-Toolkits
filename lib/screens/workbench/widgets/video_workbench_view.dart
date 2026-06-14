@@ -96,95 +96,107 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
       left: 20,
       child: Align(
         alignment: Alignment.bottomRight,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(16),
-            color: colorScheme.surfaceContainerHighest,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.movie_outlined, size: 20, color: colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          l10n.processResults,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () => uiState.setLastGeneratedVideoPath(null),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_hasError)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.error_outline, size: 36, color: colorScheme.error),
-                          const SizedBox(height: 8),
-                          Text(
-                            _errorMessage ?? 'Failed to initialize video player',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: colorScheme.error),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (_controller != null && _controller!.value.isInitialized)
-                    Flexible(
-                      child: AspectRatio(
-                        aspectRatio: _controller!.value.aspectRatio,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_controller!.value.isPlaying) {
-                              _controller!.pause();
-                            } else {
-                              _controller!.play();
-                            }
-                          },
-                          child: Stack(
-                            alignment: Alignment.bottomCenter,
-                            children: [
-                              VideoPlayer(_controller!),
-                              _VideoControls(controller: _controller!),
-                              VideoProgressIndicator(_controller!, allowScrubbing: true),
-                            ],
+        child: TweenAnimationBuilder<double>(
+          key: ValueKey(uiState.lastGeneratedVideoPath),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, 24 * (1 - value)),
+              child: Opacity(opacity: value, child: child),
+            );
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(16),
+              color: colorScheme.surfaceContainerHighest,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.movie_outlined, size: 20, color: colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.processResults,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () => uiState.setLastGeneratedVideoPath(null),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_hasError)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline, size: 36, color: colorScheme.error),
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage ?? 'Failed to initialize video player',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: colorScheme.error),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (_controller != null && _controller!.value.isInitialized)
+                      Flexible(
+                        child: AspectRatio(
+                          aspectRatio: _controller!.value.aspectRatio,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_controller!.value.isPlaying) {
+                                _controller!.pause();
+                              } else {
+                                _controller!.play();
+                              }
+                            },
+                            child: Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                VideoPlayer(_controller!),
+                                _VideoControls(controller: _controller!),
+                                VideoProgressIndicator(_controller!, allowScrubbing: true),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
                       ),
-                    )
-                  else
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => _openInSystemPlayer(uiState.lastGeneratedVideoPath!),
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: Text(l10n.openInSystemPlayer, style: const TextStyle(fontSize: 12)),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
                       ),
                     ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => _openInSystemPlayer(uiState.lastGeneratedVideoPath!),
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: Text(l10n.openInSystemPlayer, style: const TextStyle(fontSize: 12)),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

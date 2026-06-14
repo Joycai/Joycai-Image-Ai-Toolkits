@@ -449,82 +449,80 @@ class _ImageCardState extends State<_ImageCard> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: _buildThumbnail(context, colorScheme),
-            ),
+            _buildThumbnail(context, colorScheme),
 
-            if (_dimensions.isNotEmpty)
+            if (_isHovering && _dimensions.isNotEmpty)
               Positioned(
-                top: 0,
+                top: 4,
+                right: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha((255 * 0.6).round()),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _dimensions,
+                    style: const TextStyle(color: Colors.white, fontSize: 9),
+                  ),
+                ),
+              ),
+
+            if (_isHovering || widget.isSelected || isMobile)
+              Positioned(
+                bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                  color: Colors.black.withAlpha((255 * 0.4).round()),
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha((255 * 0.6).round()),
+                  ),
                   child: Text(
-                    _dimensions,
-                    style: const TextStyle(color: Colors.white, fontSize: 9),   
+                    widget.imageFile.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
               ),
 
-            if (widget.isSelected)
-              Container(
-                color: colorScheme.primary.withAlpha((255 * 0.1).round()),      
-              ),
-
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha((255 * 0.6).round()),
-                ),
-                child: Text(
-                  widget.imageFile.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-
-            // Overlay Buttons
+            // Overlay Buttons — bottom-center pill above name label
             if ((_isHovering || isMobile) && !isVideo)
               Positioned(
-                top: 8,
-                left: 8,
-                right: 8,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildOverlayButton(
-                        icon: Icons.compare,
-                        onPressed: () => _handleCompare(context),
-                        tooltip: 'Compare',
-                      ),
-                      const SizedBox(width: 4),
-                      _buildOverlayButton(
-                        icon: Icons.brush,
-                        onPressed: () => _handleMask(context),
-                        tooltip: 'Mask',
-                      ),
-                      const SizedBox(width: 4),
-                      _buildOverlayButton(
-                        icon: Icons.crop,
-                        onPressed: () => _handleCrop(context),
-                        tooltip: 'Crop',
-                      ),
-                    ],
+                bottom: 28,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(160),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildOverlayButton(
+                          icon: Icons.compare,
+                          onPressed: () => _handleCompare(context),
+                          tooltip: 'Compare',
+                        ),
+                        _buildOverlayButton(
+                          icon: Icons.brush,
+                          onPressed: () => _handleMask(context),
+                          tooltip: 'Mask',
+                        ),
+                        _buildOverlayButton(
+                          icon: Icons.crop,
+                          onPressed: () => _handleCrop(context),
+                          tooltip: 'Crop',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -636,6 +634,7 @@ class _ImageCardState extends State<_ImageCard> {
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
+    final colorScheme = Theme.of(context).colorScheme;
 
     final bool isPartOfSelection = appState.isImageSelected(widget.imageFile.path);
     final List<AppImage> filesToShare = isPartOfSelection ? appState.selectedImages : [widget.imageFile];
@@ -702,7 +701,7 @@ class _ImageCardState extends State<_ImageCard> {
       menuItems.addAll([
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.compare, size: 18, color: Colors.blue),   
+            leading: Icon(Icons.compare, size: 18, color: colorScheme.primary),
             title: Text(l10n.sendToComparatorRaw),
             dense: true,
           ),
@@ -712,7 +711,7 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.compare, size: 18, color: Colors.orange), 
+            leading: Icon(Icons.compare, size: 18, color: colorScheme.tertiary),
             title: Text(l10n.sendToComparatorAfter),
             dense: true,
           ),
@@ -728,7 +727,7 @@ class _ImageCardState extends State<_ImageCard> {
         const PopupMenuDivider(),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.video_library_outlined, size: 18, color: Colors.purple),
+            leading: Icon(Icons.video_library_outlined, size: 18, color: colorScheme.secondary),
             title: Text(l10n.sendToFirstFrame),
             dense: true,
           ),
@@ -739,7 +738,7 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.video_library_outlined, size: 18, color: Colors.indigo),
+            leading: Icon(Icons.video_library_outlined, size: 18, color: colorScheme.secondary),
             title: Text(l10n.sendToLastFrame),
             dense: true,
           ),
@@ -750,7 +749,7 @@ class _ImageCardState extends State<_ImageCard> {
         ),
         PopupMenuItem(
           child: ListTile(
-            leading: const Icon(Icons.add_photo_alternate_outlined, size: 18, color: Colors.teal),
+            leading: Icon(Icons.add_photo_alternate_outlined, size: 18, color: colorScheme.secondary),
             title: Text(l10n.sendToVideoReferences),
             dense: true,
           ),
@@ -807,7 +806,7 @@ class _ImageCardState extends State<_ImageCard> {
       const PopupMenuDivider(),
       PopupMenuItem(
         child: ListTile(
-          leading: const Icon(Icons.save_alt, size: 18, color: Colors.blue),  
+          leading: Icon(Icons.save_alt, size: 18, color: colorScheme.primary),
           title: Text(Platform.isIOS ? l10n.saveToPhotos : l10n.saveToGallery),
           dense: true,
         ),
@@ -845,8 +844,8 @@ class _ImageCardState extends State<_ImageCard> {
       const PopupMenuDivider(),
       PopupMenuItem(
         child: ListTile(
-          leading: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-          title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+          leading: Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
+          title: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
           dense: true,
         ),
         onTap: () {

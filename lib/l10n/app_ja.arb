@@ -573,5 +573,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tapToPick": "タップして選択",
+  "goToGallery": "ギャラリーへ",
+  "binaryModeActive": "バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示"
 }

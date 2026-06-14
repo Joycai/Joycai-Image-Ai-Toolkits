@@ -1481,4 +1481,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get filesAppSuffix => ' (ファイル App)';
+
+  @override
+  String get tapToPick => 'タップして選択';
+
+  @override
+  String get goToGallery => 'ギャラリーへ';
+
+  @override
+  String get binaryModeActive => 'バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示';
 }

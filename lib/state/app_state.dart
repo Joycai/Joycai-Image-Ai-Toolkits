@@ -95,6 +95,7 @@ class AppState extends ChangeNotifier {
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
   double sidebarWidth = 400.0;
+  double consoleHeight = 200.0;
   bool enableApiDebug = false;
 
   // Navigation State
@@ -174,6 +175,7 @@ class AppState extends ChangeNotifier {
     fileBrowserState.removeListener(notifyListeners);
     workbenchUIState.removeListener(notifyListeners);
     _sidebarWidthSaveTimer?.cancel();
+    _consoleHeightSaveTimer?.cancel();
     super.dispose();
   }
 
@@ -227,6 +229,11 @@ class AppState extends ChangeNotifier {
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
+
+    final savedConsoleHeight = await _db.getSetting('console_height');
+    if (savedConsoleHeight != null) {
+      consoleHeight = (double.tryParse(savedConsoleHeight) ?? 200.0).clamp(100.0, 600.0);
+    }
 
     final savedSidebarWidth = await _db.getSetting('sidebar_width');
     if (savedSidebarWidth != null) {
@@ -369,6 +376,16 @@ class AppState extends ChangeNotifier {
     isSidebarExpanded = value;
     await _db.saveSetting('is_sidebar_expanded', value.toString());
     notifyListeners();
+  }
+
+  Timer? _consoleHeightSaveTimer;
+
+  Future<void> setConsoleHeight(double height) async {
+    consoleHeight = height.clamp(100.0, 600.0);
+    _consoleHeightSaveTimer?.cancel();
+    _consoleHeightSaveTimer = Timer(const Duration(milliseconds: 500), () async {
+      await _db.saveSetting('console_height', consoleHeight.toString());
+    });
   }
 
   Timer? _sidebarWidthSaveTimer;
