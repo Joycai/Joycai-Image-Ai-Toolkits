@@ -325,6 +325,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     Color color;
     switch (tag.toLowerCase()) {
       case 'image': color = Colors.purple; break;
+      case 'video': color = Colors.red; break;
       case 'multimodal': color = Colors.orange; break;
       case 'chat': color = Colors.green; break;
       default: color = Colors.blue;
@@ -406,8 +407,26 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
   String _inferTag(DiscoveredModel m) {
     final id = m.modelId.toLowerCase();
-    if (id.contains('vision') || id.contains('image')) return 'multimodal';
-    if (id.contains('gemini')) return 'multimodal'; 
+
+    // Veo → video
+    if (id.contains('veo')) return 'video';
+
+    // Imagen → image (must check before gemini to avoid overlap)
+    if (id.contains('imagen')) return 'image';
+
+    // NanoBanana-style image models (e.g. gemini-3.1-flash-image-preview)
+    // detected by gemini + image in the same model id
+    if (id.contains('gemini') && id.contains('image')) return 'image';
+
+    // Gemini series → multimodal
+    if (id.contains('gemini')) return 'multimodal';
+
+    // Claude Opus / Sonnet → multimodal
+    if (id.contains('claude') && (id.contains('opus') || id.contains('sonnet'))) return 'multimodal';
+
+    // Generic vision → multimodal
+    if (id.contains('vision')) return 'multimodal';
+
     return 'chat';
   }
 }
