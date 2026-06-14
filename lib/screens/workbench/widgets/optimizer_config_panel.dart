@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
+import '../../../state/app_state.dart';
 import '../../../widgets/chat_model_selector.dart';
 
 class OptimizerConfigPanel extends StatelessWidget {
@@ -33,6 +35,7 @@ class OptimizerConfigPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final appState = Provider.of<AppState>(context);
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,11 +46,12 @@ class OptimizerConfigPanel extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2),
         ),
         const SizedBox(height: 16),
-        
+
         ChatModelSelector(
           selectedModelId: selectedModelDbId,
           label: l10n.refinerModel,
           onChanged: onModelChanged,
+          models: appState.multimodalModels,
         ),
         
         const SizedBox(height: 24),

@@ -133,15 +133,19 @@ class AppState extends ChangeNotifier {
   List<PricingGroup> get allPricingGroups => _pricingGroups;
 
   List<LLMModel> get imageModels => _models.where((m) =>
-    m.tag == ModelTag.image.value || m.tag == ModelTag.multimodal.value
+    m.tag == ModelTag.image.value
   ).toList();
 
   List<LLMModel> get chatModels => _models.where((m) =>
-      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value        
+      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
+  ).toList();
+
+  List<LLMModel> get multimodalModels => _models.where((m) =>
+      m.tag == ModelTag.multimodal.value
   ).toList();
 
   List<LLMModel> get videoModels => _models.where((m) =>
-      (m.tag == ModelTag.video.value || m.tag == ModelTag.multimodal.value) &&  
+      m.tag == ModelTag.video.value &&
       m.type == 'google-genai'
   ).toList();
 

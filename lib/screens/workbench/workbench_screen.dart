@@ -165,8 +165,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           _applyOptimizerFilter(wuiState);
 
           // Only set defaults on first load; preserve user's previous selections.
-          if (wuiState.optSelectedModelDbId == null && _appState!.chatModels.isNotEmpty) {
-            wuiState.setOptimizerModel(_appState!.chatModels.first.id);
+          if (wuiState.optSelectedModelDbId == null && _appState!.multimodalModels.isNotEmpty) {
+            wuiState.setOptimizerModel(_appState!.multimodalModels.first.id);
           }
           if (wuiState.optSelectedSysPrompt == null && _optFilteredSysPrompts.isNotEmpty) {
             wuiState.setOptimizerSysPrompt(_optFilteredSysPrompts.first.content);

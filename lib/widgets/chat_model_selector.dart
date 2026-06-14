@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
+import '../models/llm_model.dart';
 import '../state/app_state.dart';
 
 class ChatModelSelector extends StatelessWidget {
@@ -10,6 +11,7 @@ class ChatModelSelector extends StatelessWidget {
   final ValueChanged<int?> onChanged;
   final String? label;
   final IconData? prefixIcon;
+  final List<LLMModel>? models;
 
   const ChatModelSelector({
     super.key,
@@ -17,13 +19,14 @@ class ChatModelSelector extends StatelessWidget {
     required this.onChanged,
     this.label,
     this.prefixIcon,
+    this.models,
   });
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
-    final chatModels = appState.chatModels;
+    final chatModels = models ?? appState.chatModels;
 
     return DropdownButtonFormField<int>(
       initialValue: selectedModelId,
