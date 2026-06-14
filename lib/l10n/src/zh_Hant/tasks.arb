@@ -20,6 +20,7 @@
   "clearCompleted": "清除已完成",
   "clearFailed": "清除已失敗",
   "clearAll": "清除全部",
+  "clearAllConfirm": "此操作將刪除所有未運行的任務，且無法復原。",
   "cancelAll": "全部取消",
   "cancelAllPending": "取消所有待處理",
   "cancelTask": "取消任務",

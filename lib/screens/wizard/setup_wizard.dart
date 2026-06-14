@@ -314,7 +314,9 @@ class _SetupWizardState extends State<SetupWizard> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.setupWizardTitle),
         automaticallyImplyLeading: false,
@@ -371,6 +373,7 @@ class _SetupWizardState extends State<SetupWizard> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

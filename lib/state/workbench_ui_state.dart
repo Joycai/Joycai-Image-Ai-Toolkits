@@ -20,6 +20,11 @@ class WorkbenchUIState extends ChangeNotifier {
   String optimizerRoughPrompt = "";
   List<AppImage> optimizerReferenceImages = [];
 
+  // Optimizer Config State (persisted across tab switches)
+  int? optSelectedModelDbId;
+  int? optSelectedTagId;
+  String? optSelectedSysPrompt;
+
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
   AppImage? videoFirstFrame;
@@ -47,6 +52,10 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   // Optimizer Methods
+  void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
+  void setOptimizerTag(int? id) { optSelectedTagId = id; notifyListeners(); }
+  void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
+
   void sendToOptimizer(String prompt, List<AppImage> images) {
     optimizerRoughPrompt = prompt;
     optimizerReferenceImages = List.from(images);

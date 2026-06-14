@@ -18,6 +18,7 @@
   "failedTasks": "Failed",
   "clearCompleted": "Clear Completed",
   "clearAll": "Clear All",
+  "clearAllConfirm": "This will remove all non-running tasks. This action cannot be undone.",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "removeFromList": "Remove from list",

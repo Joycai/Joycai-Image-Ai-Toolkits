@@ -128,6 +128,10 @@ class _GalleryState extends State<Gallery> {
         );
       }
 
+      if (state.galleryState.isScanning) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -143,29 +147,13 @@ class _GalleryState extends State<Gallery> {
       );
     }
 
-    // Group images by parent directory, and build a path -> global index map
-    // once so per-card lookups are O(1) instead of List.indexOf's O(n)
-    // (which made grid rebuilds O(n^2) on large galleries).
-    final Map<String, List<AppImage>> grouped = {};
-    final Map<String, int> globalIndexByPath = {};
-    for (var i = 0; i < images.length; i++) {
-      final img = images[i];
-      final parent = File(img.path).parent.path;
-      grouped.putIfAbsent(parent, () => []).add(img);
-      globalIndexByPath.putIfAbsent(img.path, () => i);
-    }
-
-    final sortedPaths = grouped.keys.toList();
-    // Sort directories so the view is stable
-    if (isResult) {
-      // For results, maybe keep order or sort by newest?
-      // Actually, processedImages is already sorted by modification date.      
-      // If we group, we might break that. Let's only group if it's NOT the result view,
-      // OR if we want to show results by directory too.
-      // Usually, users want to see the latest results first regardless of directory.
-    } else {
-      sortedPaths.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));   
-    }
+    // Grouping is memoized in GalleryState — only recomputed when the list identity changes.
+    final grouped = state.galleryState.getGrouped(images);
+    final globalIndexByPath = state.galleryState.getGlobalIndex(images);
+    // processedImages is pre-sorted by modification date; use memoized paths for other views.
+    final sortedPaths = isResult
+        ? grouped.keys.toList()
+        : state.galleryState.getSortedPaths(images);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -173,8 +161,6 @@ class _GalleryState extends State<Gallery> {
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
-        // If it's a single group and not 'all' mode, or results, we can just show the grid without headers for a cleaner look.
-        // However, the user specifically asked for grouping, so let's provide it whenever there's more than one source.
         final bool showHeaders = !isTemp && (grouped.length > 1 || state.galleryState.viewMode == GalleryViewMode.all);
 
         return ExcludeSemantics(

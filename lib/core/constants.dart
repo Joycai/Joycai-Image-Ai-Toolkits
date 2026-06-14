@@ -89,6 +89,7 @@ class AppConstants {
   // UI Defaults
   static const double defaultThumbnailSize = 150.0;
   static const int maxConcurrency = 8;
+  static const int workbenchTabCount = 6;
   static const Duration animationDuration = Duration(milliseconds: 200);
 
   // Opacity levels

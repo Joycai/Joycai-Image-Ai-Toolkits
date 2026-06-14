@@ -330,6 +330,7 @@
   "canceledTasks": "已取消",
   "clearCompleted": "清除已完成",
   "clearFailed": "清除已失敗",
+  "clearAllConfirm": "此操作將刪除所有未運行的任務，且無法復原。",
   "cancelAll": "全部取消",
   "cancelAllPending": "全部取消待辦",
   "cancelTask": "取消任務",

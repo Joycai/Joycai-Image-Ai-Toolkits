@@ -1023,6 +1023,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get clearCompleted => '完了済みをクリア';
 
   @override
+  String get clearAllConfirm => '実行中でないすべてのタスクを削除します。この操作は元に戻せません。';
+
+  @override
   String get cancelAllPending => 'すべての保留中をキャンセル';
 
   @override

@@ -18,6 +18,7 @@
   "failedTasks": "失败",
   "clearCompleted": "清除已完成",
   "clearAll": "清除全部",
+  "clearAllConfirm": "此操作将删除所有未运行的任务，且无法撤销。",
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
   "removeFromList": "从列表中移除",

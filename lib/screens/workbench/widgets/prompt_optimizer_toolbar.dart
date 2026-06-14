@@ -8,6 +8,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
   final VoidCallback onApply;
   final VoidCallback onClear;
   final bool isRefining;
+  final bool canRefine;
   final bool canApply;
 
   const PromptOptimizerToolbar({
@@ -16,6 +17,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
     required this.onApply,
     required this.onClear,
     required this.isRefining,
+    required this.canRefine,
     required this.canApply,
   });
 
@@ -55,7 +57,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
             ],
             
             FilledButton.icon(
-              onPressed: isRefining ? null : onRefine,
+              onPressed: (isRefining || !canRefine) ? null : onRefine,
               icon: const Icon(Icons.auto_fix_high, size: 18),
               label: Text(l10n.refine, style: const TextStyle(fontSize: 12)),
               style: FilledButton.styleFrom(

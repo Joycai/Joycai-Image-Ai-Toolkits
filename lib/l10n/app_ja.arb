@@ -330,6 +330,7 @@
   "canceledTasks": "キャンセル済み",
   "clearCompleted": "完了済みをクリア",
   "clearFailed": "失敗をクリア",
+  "clearAllConfirm": "実行中でないすべてのタスクを削除します。この操作は元に戻せません。",
   "cancelAll": "すべてキャンセル",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
