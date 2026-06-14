@@ -22,6 +22,7 @@ class WorkbenchLayout extends StatefulWidget {
   final Widget? bottomPanel;
   final bool showLeftPanel;
   final bool showRightPanel;
+  final IconData? fabIcon;
 
   const WorkbenchLayout({
     super.key,
@@ -32,6 +33,7 @@ class WorkbenchLayout extends StatefulWidget {
     this.bottomPanel,
     this.showLeftPanel = true,
     this.showRightPanel = true,
+    this.fabIcon,
   });
 
   @override
@@ -150,28 +152,30 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
           ],
         ),
         drawer: widget.leftPanel != null ? Drawer(width: mobileDrawerWidth, child: widget.leftPanel) : null,
-        floatingActionButton: widget.rightPanelBuilder != null ? FloatingActionButton(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              useSafeArea: true,
-              builder: (bottomSheetContext) => Provider<WorkbenchLayoutState>.value(
-                value: layoutState,
-                child: DraggableScrollableSheet(
-                  expand: false,
-                  initialChildSize: 0.6,
-                  minChildSize: 0.3,
-                  maxChildSize: 0.95,
-                  builder: (ctx, scrollController) {
-                    return widget.rightPanelBuilder!(scrollController);
-                  },
-                ),
-              ),
-            );
-          },
-          child: const Icon(Icons.tune),
-        ) : null,
+        floatingActionButton: (widget.rightPanelBuilder != null && widget.fabIcon != null)
+            ? FloatingActionButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    builder: (bottomSheetContext) => Provider<WorkbenchLayoutState>.value(
+                      value: layoutState,
+                      child: DraggableScrollableSheet(
+                        expand: false,
+                        initialChildSize: 0.6,
+                        minChildSize: 0.3,
+                        maxChildSize: 0.95,
+                        builder: (ctx, scrollController) {
+                          return widget.rightPanelBuilder!(scrollController);
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: Icon(widget.fabIcon),
+              )
+            : null,
       ),
     );
   }

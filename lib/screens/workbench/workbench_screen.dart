@@ -502,6 +502,15 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
     }
 
+    // Context-aware FAB icon for mobile (null = no FAB for that tab)
+    final IconData? fabIcon = switch (appState.workbenchTabIndex) {
+      0 => Icons.tune,
+      1 => Icons.info_outline,
+      4 => Icons.auto_awesome_outlined,
+      5 => Icons.tune,
+      _ => null,
+    };
+
     return WorkbenchLayout(
       topBar: WorkbenchTopBar(tabController: _tabController),
       leftPanel: leftPanel,
@@ -536,6 +545,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       bottomPanel: const WorkbenchBottomConsole(),
       showLeftPanel: showLeftPanel,
       showRightPanel: showRightPanel,
+      fabIcon: fabIcon,
     );
   }
 }

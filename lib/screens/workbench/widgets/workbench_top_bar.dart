@@ -47,14 +47,22 @@ class WorkbenchTopBar extends StatelessWidget {
                   controller: tabController,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  labelPadding: EdgeInsets.symmetric(horizontal: isNarrow ? 12 : 16),
+                  indicator: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelColor: colorScheme.onPrimaryContainer,
+                  unselectedLabelColor: colorScheme.onSurfaceVariant,
+                  dividerColor: Colors.transparent,
                   tabs: [
-                    Tab(child: _buildTabLabel(Icons.image, l10n.imageProcessing, isNarrow, l10n.imageProcessing)),
-                    Tab(child: _buildTabLabel(Icons.compare, l10n.comparator, isNarrow, l10n.comparator)),
-                    Tab(child: _buildTabLabel(Icons.brush, l10n.maskEditor, isNarrow, l10n.maskEditor)),
-                    Tab(child: _buildTabLabel(Icons.crop, l10n.cropAndResize, isNarrow, l10n.cropAndResize)),
-                    Tab(child: _buildTabLabel(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow, l10n.promptOptimizer)),
-                    Tab(child: _buildTabLabel(Icons.movie_outlined, l10n.videoGeneration, isNarrow, l10n.videoGeneration)),
+                    _buildTab(Icons.image, l10n.imageProcessing, isNarrow, l10n.imageProcessing),
+                    _buildTab(Icons.compare, l10n.comparator, isNarrow, l10n.comparator),
+                    _buildTab(Icons.brush, l10n.maskEditor, isNarrow, l10n.maskEditor),
+                    _buildTab(Icons.crop, l10n.cropAndResize, isNarrow, l10n.cropAndResize),
+                    _buildTab(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow, l10n.promptOptimizer),
+                    _buildTab(Icons.movie_outlined, l10n.videoGeneration, isNarrow, l10n.videoGeneration),
                   ],
                 ),
               ),
@@ -68,32 +76,32 @@ class WorkbenchTopBar extends StatelessWidget {
                 ),
             ],
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(80)),
         ],
       ),
     );
   }
 
-  Widget _buildTabLabel(IconData icon, String label, bool isNarrow, String tooltip) {
+  Widget _buildTab(IconData icon, String label, bool isNarrow, String tooltip) {
     if (isNarrow) {
       return Tooltip(
         message: tooltip,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18),
-            Text(label, style: const TextStyle(fontSize: 9), overflow: TextOverflow.ellipsis),
-          ],
+        child: Tab(
+          height: 44,
+          child: Icon(icon, size: 22),
         ),
       );
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 8),
-        Text(label),
-      ],
+    return Tab(
+      height: 44,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Text(label),
+        ],
+      ),
     );
   }
 

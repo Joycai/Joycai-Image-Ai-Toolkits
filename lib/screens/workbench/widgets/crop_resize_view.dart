@@ -4,6 +4,7 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 
@@ -18,6 +19,8 @@ class _CropResizeViewState extends State<CropResizeView> {
   @override
   Widget build(BuildContext context) {
     final uiState = Provider.of<WorkbenchUIState>(context);
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final sourceImage = uiState.cropResizeSourceImage;
 
     if (sourceImage == null) {
@@ -25,13 +28,13 @@ class _CropResizeViewState extends State<CropResizeView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.crop, size: 64, color: Colors.grey),
+            Icon(Icons.crop, size: 64, color: colorScheme.outlineVariant),
             const SizedBox(height: 16),
-            const Text("No image selected for cropping"),
+            Text(l10n.noImagesSelected),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-              child: const Text("Go to Gallery"),
+              child: Text(l10n.goToGallery),
             ),
           ],
         ),

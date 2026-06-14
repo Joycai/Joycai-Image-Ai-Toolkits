@@ -1477,6 +1477,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get filesAppSuffix => ' (文件 App)';
+
+  @override
+  String get tapToPick => '点击选取';
+
+  @override
+  String get goToGallery => '前往图库';
+
+  @override
+  String get binaryModeActive => '二值化模式已启用 — 背景已隐藏以导出纯净蒙版';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -2940,4 +2949,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get filesAppSuffix => ' (檔案 App)';
+
+  @override
+  String get tapToPick => '點擊選取';
+
+  @override
+  String get goToGallery => '前往圖庫';
+
+  @override
+  String get binaryModeActive => '二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩';
 }

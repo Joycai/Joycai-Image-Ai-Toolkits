@@ -52,13 +52,22 @@ class _ComparatorViewState extends State<ComparatorView> {
             Icon(Icons.compare, size: 64, color: colorScheme.outline),
             const SizedBox(height: 16),
             Text(
-              l10n.sendToComparator, // Using existing string as fallback or placeholder
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              l10n.sendToComparator,
+              style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Text(
               l10n.selectFromLibrary,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 14, color: colorScheme.outline),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDropHintCard(l10n.labelRaw, colorScheme.primaryContainer, colorScheme.onPrimaryContainer, Icons.photo_outlined),
+                const SizedBox(width: 16),
+                _buildDropHintCard(l10n.labelAfter, colorScheme.tertiaryContainer, colorScheme.onTertiaryContainer, Icons.auto_fix_high),
+              ],
             ),
           ],
         ),
@@ -77,18 +86,28 @@ class _ComparatorViewState extends State<ComparatorView> {
           ),
         ),
         
-        // Footer Info (Basic status bar for now)
+        // Footer
         Container(
           height: 24,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           color: colorScheme.surfaceContainer,
           child: Row(
             children: [
-              Icon(Icons.info_outline, size: 12, color: colorScheme.onSurfaceVariant),
+              _buildFooterLabel(l10n.labelRaw, colorScheme.primary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'Raw: ${workbenchUIState.comparatorRawPath?.split(Platform.pathSeparator).last ?? "N/A"} | After: ${workbenchUIState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? "N/A"}',
+                  workbenchUIState.comparatorRawPath?.split(Platform.pathSeparator).last ?? '—',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildFooterLabel(l10n.labelAfter, colorScheme.tertiary),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  workbenchUIState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? '—',
                   style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -101,24 +120,25 @@ class _ComparatorViewState extends State<ComparatorView> {
   }
 
   Widget _buildSyncView(WorkbenchUIState workbenchUIState) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
           child: _buildViewer(
-            workbenchUIState.comparatorRawPath, 
-            "RAW", 
-            _controller1, 
-            borderColor: Colors.blueAccent
-          )
+            workbenchUIState.comparatorRawPath,
+            "RAW",
+            _controller1,
+            borderColor: colorScheme.primary,
+          ),
         ),
         const VerticalDivider(width: 1, color: Colors.white24),
         Expanded(
           child: _buildViewer(
-            workbenchUIState.comparatorAfterPath, 
-            "AFTER", 
-            _controller2, 
-            borderColor: Colors.orangeAccent
-          )
+            workbenchUIState.comparatorAfterPath,
+            "AFTER",
+            _controller2,
+            borderColor: colorScheme.tertiary,
+          ),
         ),
       ],
     );
@@ -196,24 +216,63 @@ class _ComparatorViewState extends State<ComparatorView> {
               ),
 
               // Labels
-              Positioned(
-                top: 10,
-                left: 10,
-                child: IgnorePointer(
-                  child: _buildLabelBadge("RAW", Colors.blueAccent, opacity: (1.0 - _scanRatio).clamp(0.4, 1.0)),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: IgnorePointer(
-                  child: _buildLabelBadge("AFTER", Colors.orangeAccent, opacity: _scanRatio.clamp(0.4, 1.0)),
-                ),
+              Builder(
+                builder: (context) {
+                  final cs = Theme.of(context).colorScheme;
+                  return Stack(
+                    children: [
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: IgnorePointer(
+                          child: _buildLabelBadge("RAW", cs.primary, opacity: (1.0 - _scanRatio).clamp(0.4, 1.0)),
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: IgnorePointer(
+                          child: _buildLabelBadge("AFTER", cs.tertiary, opacity: _scanRatio.clamp(0.4, 1.0)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
         );
       }
+    );
+  }
+
+  Widget _buildDropHintCard(String label, Color bg, Color fg, IconData icon) {
+    return Container(
+      width: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg.withAlpha(180),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 24, color: fg),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterLabel(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withAlpha(40),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
     );
   }
 

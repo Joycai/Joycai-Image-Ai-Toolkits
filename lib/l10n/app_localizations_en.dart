@@ -1508,4 +1508,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filesAppSuffix => ' (Files App)';
+
+  @override
+  String get tapToPick => 'Tap to Pick';
+
+  @override
+  String get goToGallery => 'Go to Gallery';
+
+  @override
+  String get binaryModeActive =>
+      'Binary mode active — background hidden for clean mask export';
 }

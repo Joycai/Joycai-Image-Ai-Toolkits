@@ -12,7 +12,6 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/markdown_editor.dart';
-import '../workbench_layout.dart';
 
 class VideoConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -133,31 +132,40 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // Frame Controls
         Text(l10n.frames, style: const TextStyle(fontWeight: FontWeight.bold)), 
         const SizedBox(height: 12),
-        Flex(
-          direction: isMobile ? Axis.vertical : Axis.horizontal,
-          children: [
-            _buildFrameTargetWrapper(
-              isMobile: isMobile,
-              child: _FrameDropTarget(
-                label: l10n.firstFrame,
-                image: uiState.videoFirstFrame,
-                onDrop: (img) => uiState.setVideoFirstFrame(img),
-                onClear: () => uiState.setVideoFirstFrame(null),
-                dropHint: l10n.dropFirstFrameHere,
-              ),
-            ),
-            SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 12 : 0),      
-            _buildFrameTargetWrapper(
-              isMobile: isMobile,
-              child: _FrameDropTarget(
-                label: l10n.lastFrame,
-                image: uiState.videoLastFrame,
-                onDrop: (img) => uiState.setVideoLastFrame(img),
-                onClear: () => uiState.setVideoLastFrame(null),
-                dropHint: l10n.dropLastFrameHere,
-              ),
-            ),
-          ],
+        Builder(
+          builder: (context) {
+            final cs = Theme.of(context).colorScheme;
+            return Flex(
+              direction: isMobile ? Axis.vertical : Axis.horizontal,
+              children: [
+                _buildFrameTargetWrapper(
+                  isMobile: isMobile,
+                  child: _FrameDropTarget(
+                    label: l10n.firstFrame,
+                    image: uiState.videoFirstFrame,
+                    onDrop: (img) => uiState.setVideoFirstFrame(img),
+                    onClear: () => uiState.setVideoFirstFrame(null),
+                    dropHint: l10n.dropFirstFrameHere,
+                    emptyColor: cs.primaryContainer.withValues(alpha: 0.3),
+                    emptyIcon: Icons.first_page,
+                  ),
+                ),
+                SizedBox(width: isMobile ? 0 : 12, height: isMobile ? 12 : 0),
+                _buildFrameTargetWrapper(
+                  isMobile: isMobile,
+                  child: _FrameDropTarget(
+                    label: l10n.lastFrame,
+                    image: uiState.videoLastFrame,
+                    onDrop: (img) => uiState.setVideoLastFrame(img),
+                    onClear: () => uiState.setVideoLastFrame(null),
+                    dropHint: l10n.dropLastFrameHere,
+                    emptyColor: cs.tertiaryContainer.withValues(alpha: 0.3),
+                    emptyIcon: Icons.last_page,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
 
         const SizedBox(height: 20),
@@ -289,6 +297,8 @@ class _FrameDropTarget extends StatelessWidget {
   final Function(AppImage) onDrop;
   final VoidCallback onClear;
   final String dropHint;
+  final Color? emptyColor;
+  final IconData emptyIcon;
 
   const _FrameDropTarget({
     required this.label,
@@ -296,12 +306,16 @@ class _FrameDropTarget extends StatelessWidget {
     required this.onDrop,
     required this.onClear,
     required this.dropHint,
+    this.emptyColor,
+    this.emptyIcon = Icons.add_photo_alternate_outlined,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final bool isMobile = Responsive.isMobile(context);
+    final bgColor = emptyColor ?? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +340,7 @@ class _FrameDropTarget extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: candidateData.isNotEmpty
                         ? colorScheme.primaryContainer.withValues(alpha: 0.5)
-                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        : bgColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: candidateData.isNotEmpty ? colorScheme.primary : colorScheme.outlineVariant,
@@ -337,10 +351,8 @@ class _FrameDropTarget extends StatelessWidget {
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: () {
-                      // Trigger Pick Mode - open the drawer on mobile to show gallery
                       if (isMobile) {
-                        final workbenchState = Provider.of<WorkbenchLayoutState>(context, listen: false);
-                        workbenchState.openLeftPanel(); // Left panel is gallery 
+                        Provider.of<AppState>(context, listen: false).setWorkbenchTab(0);
                       }
                     },
                     child: image != null
@@ -353,7 +365,7 @@ class _FrameDropTarget extends StatelessWidget {
                                 right: 4,
                                 child: IconButton.filledTonal(
                                   onPressed: onClear,
-                                  icon: const Icon(Icons.close, size: 16),      
+                                  icon: const Icon(Icons.close, size: 16),
                                   visualDensity: VisualDensity.compact,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints.tightFor(width: 24, height: 24),
@@ -364,10 +376,10 @@ class _FrameDropTarget extends StatelessWidget {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_photo_alternate_outlined, color: colorScheme.outline),
+                              Icon(emptyIcon, color: colorScheme.outline),
                               if (isMobile) ...[
                                 const SizedBox(height: 4),
-                                Text("Tap to Pick", style: TextStyle(color: colorScheme.outline, fontSize: 10)),
+                                Text(l10n.tapToPick, style: TextStyle(color: colorScheme.outline, fontSize: 10)),
                               ],
                             ],
                           ),

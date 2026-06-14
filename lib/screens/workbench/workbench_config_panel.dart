@@ -141,9 +141,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               selector: (_, s) => s.selectedImages,
               builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
             ),
-            const Divider(height: 32),
-            
+
             // Model Selection Section
+            _buildSectionHeader(l10n.modelSelection, colorScheme),
             ModelSelectionSection(
               availableModels: imageModels.map((m) => m.toMap()).toList(),
               channels: allChannels.map((c) => c.toMap()).toList(),
@@ -172,19 +172,18 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             SwitchListTile(
               title: const Text("Use Streaming", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               subtitle: const Text("Real-time AI response (if supported)", style: TextStyle(fontSize: 11)),
-              value: useStream, 
+              value: useStream,
               onChanged: (v) => _updateConfig(useStream: v),
               secondary: const Icon(Icons.stream, size: 20),
               contentPadding: EdgeInsets.zero,
               dense: true,
             ),
 
-            const Divider(height: 24),
-            
+            _buildSectionHeader(l10n.prompt, colorScheme),
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               alignment: WrapAlignment.spaceBetween,
@@ -213,9 +212,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               expand: false, // Don't expand inside scrollable
             ),
             const SizedBox(height: 16),
-            
-            const Divider(),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 12),
             // Action Zone Container
             Container(
               padding: const EdgeInsets.all(12),
@@ -481,6 +479,20 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionHeader(String label, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 4),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: colorScheme.primary,
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 

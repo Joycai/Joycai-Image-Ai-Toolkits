@@ -39,43 +39,29 @@ class ModelSelectionSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final filteredModels = availableModels.where((m) => m['channel_id'] == selectedChannelId).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Custom Collapsible Header
-        InkWell(
-          onTap: onToggleExpansion,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              children: [
-                Icon(
-                  isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      if (!isExpanded && selectedModelDbId != null)
-                        Text(
-                          availableModels.firstWhere((m) => m['id'] == selectedModelDbId)['model_name'],
-                          style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    // Resolve subtitle model name safely
+    String? collapsedModelName;
+    if (!isExpanded && selectedModelDbId != null) {
+      final match = availableModels.cast<Map<String, dynamic>?>().firstWhere(
+        (m) => m?['id'] == selectedModelDbId,
+        orElse: () => null,
+      );
+      collapsedModelName = match?['model_name'] as String?;
+    }
 
-        // Collapsible Content
-        if (isExpanded) ...[
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: EdgeInsets.zero,
+        initiallyExpanded: isExpanded,
+        onExpansionChanged: (_) => onToggleExpansion(),
+        leading: Icon(Icons.tune_outlined, size: 20, color: colorScheme.primary),
+        title: Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: collapsedModelName != null
+            ? Text(collapsedModelName, style: TextStyle(fontSize: 11, color: colorScheme.outline))
+            : null,
+        children: [
           const SizedBox(height: 8),
           Row(
             children: [
@@ -96,8 +82,8 @@ class ModelSelectionSection extends StatelessWidget {
                     Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                     DropdownButton<int>(
                       isExpanded: true,
-                      value: (filteredModels.any((m) => m['id'] == selectedModelDbId)) 
-                          ? selectedModelDbId 
+                      value: (filteredModels.any((m) => m['id'] == selectedModelDbId))
+                          ? selectedModelDbId
                           : null,
                       hint: Text(l10n.selectAModel),
                       style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
@@ -121,10 +107,10 @@ class ModelSelectionSection extends StatelessWidget {
                   return _buildModelSpecificOptions(context, model['model_id'] as String, l10n);
                 }
                 return const SizedBox.shrink();
-              }
+              },
             ),
         ],
-      ],
+      ),
     );
   }
 
@@ -149,7 +135,7 @@ class ModelSelectionSection extends StatelessWidget {
                 child: Text(
                   c['tag'],
                   style: TextStyle(
-                    fontSize: 9, 
+                    fontSize: 9,
                     color: Color(c['tag_color'] ?? 0xFF607D8B),
                     fontWeight: FontWeight.bold,
                   ),
@@ -202,8 +188,8 @@ class ModelSelectionSection extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       textStyle: const TextStyle(fontSize: 10),
                     ),
-                    segments: AppResolution.values.map((r) => 
-                      ButtonSegment(value: r, label: Text(r.value))
+                    segments: AppResolution.values.map((r) =>
+                      ButtonSegment(value: r, label: Text(r.value)),
                     ).toList(),
                     selected: {resolution},
                     onSelectionChanged: (v) => onResolutionChanged(v.first),

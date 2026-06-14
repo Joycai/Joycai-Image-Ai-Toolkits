@@ -17,9 +17,14 @@ class WorkbenchBottomConsole extends StatefulWidget {
 
 class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
   double _height = 200;
+  bool _heightInitialized = false;
 
   @override
   Widget build(BuildContext context) {
+    if (!_heightInitialized) {
+      _heightInitialized = true;
+      _height = Provider.of<AppState>(context, listen: false).consoleHeight;
+    }
     final isConsoleExpanded = context.select<AppState, bool>((s) => s.isConsoleExpanded);
     final hasErrors = context.select<AppState, bool>((s) => s.hasErrors);
     final isProcessing = context.select<AppState, bool>((s) => s.isProcessing);
@@ -32,7 +37,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Status Bar (Clickable to toggle or show sheet)
+        // Status Bar
         InkWell(
           onTap: () {
             if (isMobile) {
@@ -41,55 +46,71 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
               context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
             }
           },
-          child: Container(
-            height: 36, // Slightly taller for mobile tap target
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _buildStatusIndicator(isProcessing, hasErrors),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    l10n.executionLogs,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis, maxLines: 1,
-                  ),
+          child: Stack(
+            children: [
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
                 ),
-                
-                // Task Summary for Mobile
-                if (isMobile) ...[
-                  const SizedBox(width: 8),
-                  const VerticalDivider(width: 1, indent: 8, endIndent: 8),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: _buildTaskSummary(queue, l10n, colorScheme),
-                  ),
-                ],
-
-                const Spacer(),
-                
-                if (!isMobile && lastLogMessage != null)
-                  Expanded(
-                    child: Text(
-                      lastLogMessage,
-                      style: const TextStyle(fontSize: 11, fontFamily: 'monospace', overflow: TextOverflow.ellipsis),
-                      maxLines: 1,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildStatusIndicator(isProcessing, hasErrors, colorScheme),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.executionLogs,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
 
-                Icon(
-                  isMobile
-                    ? Icons.assignment_outlined
-                    : (isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up),
-                  size: 16,
-                  color: isMobile ? colorScheme.primary : null,
+                    // Task Summary for Mobile
+                    if (isMobile) ...[
+                      const SizedBox(width: 8),
+                      const VerticalDivider(width: 1, indent: 8, endIndent: 8),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: _buildTaskSummary(queue, l10n, colorScheme),
+                      ),
+                    ],
+
+                    const Spacer(),
+
+                    if (!isMobile && lastLogMessage != null)
+                      Expanded(
+                        child: Text(
+                          lastLogMessage,
+                          style: const TextStyle(fontSize: 11, fontFamily: 'monospace', overflow: TextOverflow.ellipsis),
+                          maxLines: 1,
+                        ),
+                      ),
+
+                    Icon(
+                      isMobile
+                          ? Icons.assignment_outlined
+                          : (isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up),
+                      size: 16,
+                      color: isMobile ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              if (isProcessing)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: Colors.transparent,
+                    color: colorScheme.primary,
+                  ),
+                ),
+            ],
           ),
         ),
 
@@ -98,15 +119,19 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
           GestureDetector(
             onVerticalDragUpdate: (details) {
               setState(() {
-                _height = (_height - details.delta.dy).clamp(100.0, 600.0);     
+                _height = (_height - details.delta.dy).clamp(100.0, 600.0);
               });
+              Provider.of<AppState>(context, listen: false).setConsoleHeight(_height);
             },
             child: MouseRegion(
               cursor: SystemMouseCursors.resizeUpDown,
               child: Container(
-                height: 4,
+                height: 6,
                 width: double.infinity,
-                color: colorScheme.outlineVariant.withAlpha(50),
+                color: colorScheme.outlineVariant.withAlpha(180),
+                child: Center(
+                  child: Icon(Icons.drag_handle, size: 14, color: colorScheme.outline),
+                ),
               ),
             ),
           ),
@@ -119,10 +144,10 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
     );
   }
 
-  Widget _buildStatusIndicator(bool isProcessing, bool hasErrors) {
-    Color color = Colors.grey;
-    if (isProcessing) color = Colors.green;
-    if (hasErrors) color = Colors.red;
+  Widget _buildStatusIndicator(bool isProcessing, bool hasErrors, ColorScheme colorScheme) {
+    Color color = colorScheme.outline;
+    if (isProcessing) color = colorScheme.primary;
+    if (hasErrors) color = colorScheme.error;
 
     return Container(
       width: 8,
@@ -130,9 +155,9 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        boxShadow: isProcessing ? [
-          BoxShadow(color: color.withAlpha(100), blurRadius: 4, spreadRadius: 1),
-        ] : null,
+        boxShadow: isProcessing
+            ? [BoxShadow(color: color.withAlpha(100), blurRadius: 4, spreadRadius: 1)]
+            : null,
       ),
     );
   }
@@ -155,7 +180,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
           Icon(Icons.sync, size: 14, color: colorScheme.primary),
           const SizedBox(width: 4),
           Text(
-            "$runningCount",
+            '$runningCount',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.primary),
           ),
           const SizedBox(width: 12),
@@ -164,7 +189,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
           Icon(Icons.schedule, size: 14, color: colorScheme.outline),
           const SizedBox(width: 4),
           Text(
-            "$pendingCount",
+            '$pendingCount',
             style: TextStyle(fontSize: 12, color: colorScheme.outline),
           ),
         ],

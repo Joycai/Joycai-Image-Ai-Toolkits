@@ -573,5 +573,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tapToPick": "點擊選取",
+  "goToGallery": "前往圖庫",
+  "binaryModeActive": "二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩"
 }

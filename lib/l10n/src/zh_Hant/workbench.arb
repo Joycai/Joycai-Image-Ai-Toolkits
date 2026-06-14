@@ -156,5 +156,8 @@
   "iosSandboxDesc": "在 iOS 上，請使用頂部工具列中的「從圖庫匯入」按鈕將圖片新增到您的臨時工作區。",
   "mobileSandboxActive": "行動裝置儲存限制",
   "mobileSandboxDesc": "在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。",
-  "filesAppSuffix": " (檔案 App)"
+  "filesAppSuffix": " (檔案 App)",
+  "tapToPick": "點擊選取",
+  "goToGallery": "前往圖庫",
+  "binaryModeActive": "二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩"
 }

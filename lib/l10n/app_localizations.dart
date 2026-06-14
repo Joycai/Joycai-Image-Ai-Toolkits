@@ -2896,6 +2896,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **' (Files App)'**
   String get filesAppSuffix;
+
+  /// No description provided for @tapToPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to Pick'**
+  String get tapToPick;
+
+  /// No description provided for @goToGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Gallery'**
+  String get goToGallery;
+
+  /// No description provided for @binaryModeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Binary mode active — background hidden for clean mask export'**
+  String get binaryModeActive;
 }
 
 class _AppLocalizationsDelegate
