@@ -115,6 +115,8 @@
   "promptOptimizer": "提示詞優化器",
   "refinerModel": "優化模型",
   "systemPrompt": "系統提示詞",
+  "preset": "預設",
+  "customSysPromptHint": "為本次工作階段輸入自訂系統提示詞...",
   "refinerIntro": "使用 AI 分析圖片並優化您的提示詞。",
   "roughPrompt": "初步想法 / 草稿",
   "optimizedPrompt": "優化後的提示詞",

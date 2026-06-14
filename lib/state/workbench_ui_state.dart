@@ -24,6 +24,7 @@ class WorkbenchUIState extends ChangeNotifier {
   int? optSelectedModelDbId;
   int? optSelectedTagId;
   String? optSelectedSysPrompt;
+  bool optUseCustomSysPrompt = false;
 
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
@@ -55,6 +56,7 @@ class WorkbenchUIState extends ChangeNotifier {
   void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
   void setOptimizerTag(int? id) { optSelectedTagId = id; notifyListeners(); }
   void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
+  void setOptimizerSysPromptMode(bool useCustom) { optUseCustomSysPrompt = useCustom; notifyListeners(); }
 
   void sendToOptimizer(String prompt, List<AppImage> images) {
     optimizerRoughPrompt = prompt;

@@ -548,6 +548,8 @@
       }
     }
   },
+  "preset": "プリセット",
+  "customSysPromptHint": "このセッション用のカスタムシステムプロンプトを入力...",
   "@refineFailed": {
     "placeholders": {
       "error": {

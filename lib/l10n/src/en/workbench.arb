@@ -119,6 +119,8 @@
   "promptOptimizer": "Prompt Optimizer",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",
+  "preset": "Preset",
+  "customSysPromptHint": "Enter a custom system prompt for this session...",
   "refinerIntro": "Use AI to analyze images and refine your prompt.",
   "roughPrompt": "Rough Prompt / Ideas",
   "optimizedPrompt": "Optimized Prompt",

@@ -548,6 +548,8 @@
       }
     }
   },
+  "preset": "預設",
+  "customSysPromptHint": "為本次工作階段輸入自訂系統提示詞...",
   "@refineFailed": {
     "placeholders": {
       "error": {

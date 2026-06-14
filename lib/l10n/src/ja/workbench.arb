@@ -115,6 +115,8 @@
   "promptOptimizer": "プロンプト最適化",
   "refinerModel": "リファイナーモデル",
   "systemPrompt": "システムプロンプト",
+  "preset": "プリセット",
+  "customSysPromptHint": "このセッション用のカスタムシステムプロンプトを入力...",
   "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
   "roughPrompt": "ラフなプロンプト / アイデア",
   "optimizedPrompt": "最適化されたプロンプト",

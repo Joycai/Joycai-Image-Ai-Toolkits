@@ -527,6 +527,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               selectedModelDbId: workbenchUIState.optSelectedModelDbId,
               selectedTagId: workbenchUIState.optSelectedTagId,
               selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
+              useCustomSysPrompt: workbenchUIState.optUseCustomSysPrompt,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
               onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
@@ -535,6 +536,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                 setState(() => _applyOptimizerFilter(workbenchUIState));
               },
               onSysPromptChanged: (v) => workbenchUIState.setOptimizerSysPrompt(v),
+              onUseCustomChanged: (v) => workbenchUIState.setOptimizerSysPromptMode(v),
             );
           case 5:
             return VideoConfigPanel(scrollController: scrollController);
