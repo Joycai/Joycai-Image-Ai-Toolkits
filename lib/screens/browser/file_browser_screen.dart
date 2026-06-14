@@ -173,18 +173,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               isSelected: state.selectedFiles.contains(file),
               thumbnailSize: state.thumbnailSize,
               onTap: () => state.toggleSelection(file),
-              onDoubleTap: () {
-                if (file.category == FileCategory.image) {
-                  final imageFiles = state.filteredFiles
-                      .where((f) => f.category == FileCategory.image)
-                      .map((f) => AppImage(path: f.path, name: f.name))
-                      .toList();
-                  final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-                  showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
-                } else {
-                  _handleOpenFile(file);
-                }
-              },
+              onDoubleTap: () => _openWithPreview(context, file, state),
               onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
             );
           },
@@ -205,18 +194,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         final isSelected = state.selectedFiles.contains(file);
         return GestureDetector(
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
-          onDoubleTap: () {
-            if (file.category == FileCategory.image) {
-              final imageFiles = state.filteredFiles
-                  .where((f) => f.category == FileCategory.image)
-                  .map((f) => AppImage(path: f.path, name: f.name))
-                  .toList();
-              final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-              showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
-            } else {
-              _handleOpenFile(file);
-            }
-          },
+          onDoubleTap: () => _openWithPreview(context, file, state),
           child: ListTile(
             leading: Icon(file.icon, color: file.color),
             title: Text(file.name, style: const TextStyle(fontSize: 13)),
@@ -228,6 +206,19 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         );
       },
     );
+  }
+
+  void _openWithPreview(BuildContext context, BrowserFile file, FileBrowserState state) {
+    if (file.category == FileCategory.image || file.category == FileCategory.video) {
+      final mediaFiles = state.filteredFiles
+          .where((f) => f.category == file.category)
+          .map((f) => AppImage(path: f.path, name: f.name))
+          .toList();
+      final idx = mediaFiles.indexWhere((m) => m.path == file.path);
+      showMediaPreview(context, galleryImages: mediaFiles, initialIndex: idx >= 0 ? idx : 0);
+    } else {
+      _handleOpenFile(file);
+    }
   }
 
   Future<void> _handleOpenFile(BrowserFile file) async {
