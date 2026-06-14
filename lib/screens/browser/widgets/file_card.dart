@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
+import '../../workbench/widgets/preview/video_thumbnail.dart';
 
 
 class FileCard extends StatefulWidget {
@@ -90,7 +91,9 @@ class _FileCardState extends State<FileCard> {
                                           ),
                                           fit: BoxFit.cover,
                                         )
-                                      : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
+                                      : widget.file.category == FileCategory.video
+                                          ? VideoThumbnail(videoPath: widget.file.path, fit: BoxFit.cover)
+                                          : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
                                 ),
                   
                   Container(
