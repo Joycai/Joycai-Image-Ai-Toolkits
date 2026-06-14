@@ -1419,6 +1419,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPrompt => 'System Prompt';
 
   @override
+  String get preset => 'Preset';
+
+  @override
+  String get customSysPromptHint =>
+      'Enter a custom system prompt for this session...';
+
+  @override
   String get refinerIntro => 'Use AI to analyze images and refine your prompt.';
 
   @override

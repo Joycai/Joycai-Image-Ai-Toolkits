@@ -1393,6 +1393,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPrompt => 'システムプロンプト';
 
   @override
+  String get preset => 'プリセット';
+
+  @override
+  String get customSysPromptHint => 'このセッション用のカスタムシステムプロンプトを入力...';
+
+  @override
   String get refinerIntro => 'AIを使用して画像を分析し、プロンプトを洗練させます。';
 
   @override

@@ -1390,6 +1390,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPrompt => '系统提示词';
 
   @override
+  String get preset => '预设';
+
+  @override
+  String get customSysPromptHint => '为本次会话输入自定义系统提示词...';
+
+  @override
   String get refinerIntro => '使用 AI 分析图像并优化您的提示词。';
 
   @override
@@ -2860,6 +2866,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get systemPrompt => '系統提示詞';
+
+  @override
+  String get preset => '預設';
+
+  @override
+  String get customSysPromptHint => '為本次工作階段輸入自訂系統提示詞...';
 
   @override
   String get refinerIntro => '使用 AI 分析圖片並優化您的提示詞。';

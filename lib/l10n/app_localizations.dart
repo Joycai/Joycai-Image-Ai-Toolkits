@@ -2729,6 +2729,18 @@ abstract class AppLocalizations {
   /// **'System Prompt'**
   String get systemPrompt;
 
+  /// No description provided for @preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get preset;
+
+  /// No description provided for @customSysPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a custom system prompt for this session...'**
+  String get customSysPromptHint;
+
   /// No description provided for @refinerIntro.
   ///
   /// In en, this message translates to:
