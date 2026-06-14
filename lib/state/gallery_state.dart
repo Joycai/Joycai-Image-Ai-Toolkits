@@ -137,7 +137,7 @@ class GalleryState extends ChangeNotifier {
   int get refreshCounter => _refreshCounter;
 
   GalleryState() {
-    _loadSettings();
+    reloadSettings();
   }
 
   @override
@@ -151,7 +151,7 @@ class GalleryState extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> _loadSettings() async {
+  Future<void> reloadSettings() async {
     final savedThumbSize = await _db.getSetting('thumbnail_size');
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;

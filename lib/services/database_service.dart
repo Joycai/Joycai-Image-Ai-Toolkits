@@ -331,6 +331,7 @@ class DatabaseService {
 
     if (includeUsage) {
       data['token_usage'] = await db.query('token_usage');
+      data['usage_checkpoints'] = await db.query('usage_checkpoints');
     }
 
     if (includeDirectories) {
@@ -358,6 +359,7 @@ class DatabaseService {
 
     if (includeUsage) {
       await txn.delete('token_usage');
+      await txn.delete('usage_checkpoints');
     }
 
     if (includeDirectories) {
@@ -397,6 +399,13 @@ class DatabaseService {
 
       if (includeUsage && data['token_usage'] != null) {
         await _importTokenUsage(txn, data['token_usage'], modelIdMap);
+      }
+
+      if (includeUsage && data['usage_checkpoints'] != null) {
+        final checkpoints = (data['usage_checkpoints'] as List<dynamic>).map((row) {
+          return Map<String, dynamic>.from(row)..remove('id');
+        }).toList();
+        await _importSimpleTable(txn, 'usage_checkpoints', checkpoints);
       }
 
       if (includePrompts) {

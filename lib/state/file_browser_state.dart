@@ -80,10 +80,10 @@ class FileBrowserState extends ChangeNotifier {
   int get refreshCounter => _refreshCounter;
   
   FileBrowserState() {
-    _loadSettings();
+    reloadSettings();
   }
 
-  Future<void> _loadSettings() async {
+  Future<void> reloadSettings() async {
     final savedThumbSize = await _db.getSetting('browser_thumbnail_size');
     if (savedThumbSize != null) {
       thumbnailSize = double.tryParse(savedThumbSize) ?? 150.0;

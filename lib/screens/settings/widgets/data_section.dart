@@ -238,8 +238,15 @@ class DataSection extends StatelessWidget {
     if (!context.mounted || result == null) return;
     
     try {
-      final file = File(result.files.single.path!);
-      final fileContent = await file.readAsString();
+      final singleFile = result.files.single;
+      final String fileContent;
+      if (singleFile.path != null) {
+        fileContent = await File(singleFile.path!).readAsString();
+      } else {
+        final bytes = await singleFile.readAsBytes();
+        if (bytes.isEmpty) return;
+        fileContent = utf8.decode(bytes);
+      }
       if (!context.mounted) return;
       final Map<String, dynamic> data = jsonDecode(fileContent);
       
@@ -272,8 +279,9 @@ class DataSection extends StatelessWidget {
 
       if (!context.mounted) return;
       await appState.loadSettings();
+      await appState.galleryState.reloadSettings();
+      await appState.fileBrowserState.reloadSettings();
       if (!context.mounted) return;
-      appState.refreshImages();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(importedMsg)));
     } catch (e) {
       if (!context.mounted) return;
@@ -412,12 +420,14 @@ class DataSection extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
+              final appState = Provider.of<AppState>(context, listen: false);
               await DatabaseService().resetAllSettings();
-              if (context.mounted) {
-                Navigator.pop(context);
-                Provider.of<AppState>(context, listen: false).addLog('All settings reset to default.');
-                // Note: ideally we should reload settings here or restart app
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              appState.addLog('All settings reset to default.');
+              await appState.loadSettings();
+              await appState.galleryState.reloadSettings();
+              await appState.fileBrowserState.reloadSettings();
             },
             child: Text(l10n.resetEverything, style: const TextStyle(color: Colors.white)),
           ),
