@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
@@ -18,7 +19,8 @@ class WorkbenchTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
+    final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
+    final concurrencyLimit = context.select<AppState, int>((s) => s.concurrencyLimit);
     final isNarrow = Responsive.isNarrow(context);
     final isMobile = Responsive.isMobile(context);
 
@@ -36,8 +38,8 @@ class WorkbenchTopBar extends StatelessWidget {
                 )
               else
                 IconButton(
-                  icon: Icon(appState.isSidebarExpanded ? Icons.menu_open : Icons.menu),
-                  onPressed: () => appState.setSidebarExpanded(!appState.isSidebarExpanded),
+                  icon: Icon(isSidebarExpanded ? Icons.menu_open : Icons.menu),
+                  onPressed: () => context.read<AppState>().setSidebarExpanded(!isSidebarExpanded),
                 ),
 
               Expanded(
@@ -45,20 +47,20 @@ class WorkbenchTopBar extends StatelessWidget {
                   controller: tabController,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),     
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                   tabs: [
-                    Tab(child: _buildTabLabel(Icons.image, l10n.imageProcessing, isNarrow)),
-                    Tab(child: _buildTabLabel(Icons.compare, l10n.comparator, isNarrow)),
-                    Tab(child: _buildTabLabel(Icons.brush, l10n.maskEditor, isNarrow)),
-                    Tab(child: _buildTabLabel(Icons.crop, l10n.cropAndResize, isNarrow)),
-                    Tab(child: _buildTabLabel(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow)),
-                    Tab(child: _buildTabLabel(Icons.movie_outlined, l10n.videoGeneration, isNarrow)),
+                    Tab(child: _buildTabLabel(Icons.image, l10n.imageProcessing, isNarrow, l10n.imageProcessing)),
+                    Tab(child: _buildTabLabel(Icons.compare, l10n.comparator, isNarrow, l10n.comparator)),
+                    Tab(child: _buildTabLabel(Icons.brush, l10n.maskEditor, isNarrow, l10n.maskEditor)),
+                    Tab(child: _buildTabLabel(Icons.crop, l10n.cropAndResize, isNarrow, l10n.cropAndResize)),
+                    Tab(child: _buildTabLabel(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow, l10n.promptOptimizer)),
+                    Tab(child: _buildTabLabel(Icons.movie_outlined, l10n.videoGeneration, isNarrow, l10n.videoGeneration)),
                   ],
                 ),
               ),
 
               if (isMobile)
-                _buildMobileMoreMenu(context, appState, l10n)
+                _buildMobileMoreMenu(context, concurrencyLimit, l10n)
               else if (isNarrow)
                 IconButton(
                   icon: const Icon(Icons.tune),
@@ -72,9 +74,18 @@ class WorkbenchTopBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTabLabel(IconData icon, String label, bool isNarrow) {
+  Widget _buildTabLabel(IconData icon, String label, bool isNarrow, String tooltip) {
     if (isNarrow) {
-      return Icon(icon, size: 20);
+      return Tooltip(
+        message: tooltip,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            Text(label, style: const TextStyle(fontSize: 9), overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      );
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -86,14 +97,14 @@ class WorkbenchTopBar extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileMoreMenu(BuildContext context, AppState appState, AppLocalizations l10n) {
+  Widget _buildMobileMoreMenu(BuildContext context, int concurrencyLimit, AppLocalizations l10n) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert),
       onSelected: (val) {
         if (val == 'concurrency') {
-          _showConcurrencyDialog(context, appState, l10n);
+          _showConcurrencyDialog(context, l10n);
         } else if (val == 'refresh') {
-          appState.galleryState.refreshImages();
+          context.read<AppState>().galleryState.refreshImages();
         }
       },
       itemBuilder: (context) => [
@@ -101,7 +112,7 @@ class WorkbenchTopBar extends StatelessWidget {
           value: 'concurrency',
           child: ListTile(
             leading: const Icon(Icons.sync_alt),
-            title: Text(l10n.concurrencyLimit(appState.concurrencyLimit)),      
+            title: Text(l10n.concurrencyLimit(concurrencyLimit)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -119,32 +130,38 @@ class WorkbenchTopBar extends StatelessWidget {
     );
   }
 
-  void _showConcurrencyDialog(BuildContext context, AppState appState, AppLocalizations l10n) {
+  void _showConcurrencyDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
-        content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Slider(
-                value: appState.concurrencyLimit.toDouble(),
-                min: 1,
-                max: 10,
-                divisions: 9,
-                onChanged: (v) {
-                  appState.setConcurrency(v.round());
-                  setDialogState(() {});
-                },
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final appState = Provider.of<AppState>(dialogContext);
+          return AlertDialog(
+            title: Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: appState.concurrencyLimit.toDouble(),
+                  min: 1,
+                  max: AppConstants.maxConcurrency.toDouble(),
+                  divisions: AppConstants.maxConcurrency - 1,
+                  onChanged: (v) {
+                    appState.setConcurrency(v.round());
+                    setDialogState(() {});
+                  },
+                ),
+                Text(appState.concurrencyLimit.toString()),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(l10n.close),
               ),
-              Text(appState.concurrencyLimit.toString()),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-        ],
+          );
+        },
       ),
     );
   }

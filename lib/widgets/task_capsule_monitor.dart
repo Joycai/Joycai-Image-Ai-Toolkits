@@ -32,7 +32,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final queue = context.watch<TaskQueueService>();
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
@@ -41,9 +41,9 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
     _initPosition(screenSize, isMobile);
 
     // Calculate task stats
-    final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-    final runningCount = appState.taskQueue.runningCount;
-    final activeTasks = appState.taskQueue.queue.where((t) => t.status == TaskStatus.processing).toList();
+    final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
+    final runningCount = queue.runningCount;
+    final activeTasks = queue.queue.where((t) => t.status == TaskStatus.processing).toList();
     
     if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
 
@@ -187,7 +187,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                       )),
                       TextButton(
                         onPressed: () {
-                          appState.navigateToScreen(2); // Tasks screen index
+                          context.read<AppState>().navigateToScreen(2);
                           setState(() => _isExpanded = false);
                         },
                         style: TextButton.styleFrom(

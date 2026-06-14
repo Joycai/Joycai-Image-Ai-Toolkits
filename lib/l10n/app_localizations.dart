@@ -2039,6 +2039,12 @@ abstract class AppLocalizations {
   /// **'Clear Completed'**
   String get clearCompleted;
 
+  /// No description provided for @clearAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove all non-running tasks. This action cannot be undone.'**
+  String get clearAllConfirm;
+
   /// No description provided for @cancelAllPending.
   ///
   /// In en, this message translates to:

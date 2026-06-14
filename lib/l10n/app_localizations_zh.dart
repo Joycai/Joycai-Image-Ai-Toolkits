@@ -1020,6 +1020,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearCompleted => '清除已完成';
 
   @override
+  String get clearAllConfirm => '此操作将删除所有未运行的任务，且无法撤销。';
+
+  @override
   String get cancelAllPending => '取消所有等待中';
 
   @override
@@ -2488,6 +2491,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearCompleted => '清除已完成';
+
+  @override
+  String get clearAllConfirm => '此操作將刪除所有未運行的任務，且無法復原。';
 
   @override
   String get cancelAllPending => '全部取消待辦';

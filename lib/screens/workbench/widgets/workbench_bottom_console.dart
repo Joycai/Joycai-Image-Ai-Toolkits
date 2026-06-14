@@ -20,7 +20,11 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final isConsoleExpanded = context.select<AppState, bool>((s) => s.isConsoleExpanded);
+    final hasErrors = context.select<AppState, bool>((s) => s.hasErrors);
+    final isProcessing = context.select<AppState, bool>((s) => s.isProcessing);
+    final lastLogMessage = context.select<AppState, String?>((s) => s.logs.isEmpty ? null : s.logs.last.message);
+    final queue = context.watch<TaskQueueService>();
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final isMobile = Responsive.isMobile(context);
@@ -34,7 +38,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
             if (isMobile) {
               _showTaskQueueSheet(context);
             } else {
-              appState.setConsoleExpanded(!appState.isConsoleExpanded);
+              context.read<AppState>().setConsoleExpanded(!isConsoleExpanded);
             }
           },
           child: Container(
@@ -46,13 +50,13 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                _buildStatusIndicator(appState),
+                _buildStatusIndicator(isProcessing, hasErrors),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     l10n.executionLogs,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                    overflow: TextOverflow.ellipsis,
+                    overflow: TextOverflow.ellipsis, maxLines: 1,
                   ),
                 ),
                 
@@ -62,25 +66,25 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
                   const VerticalDivider(width: 1, indent: 8, endIndent: 8),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: _buildTaskSummary(appState, l10n, colorScheme),
+                    child: _buildTaskSummary(queue, l10n, colorScheme),
                   ),
                 ],
 
                 const Spacer(),
                 
-                if (!isMobile && appState.logs.isNotEmpty)
+                if (!isMobile && lastLogMessage != null)
                   Expanded(
                     child: Text(
-                      appState.logs.last.message,
+                      lastLogMessage,
                       style: const TextStyle(fontSize: 11, fontFamily: 'monospace', overflow: TextOverflow.ellipsis),
                       maxLines: 1,
                     ),
                   ),
-                
+
                 Icon(
-                  isMobile 
+                  isMobile
                     ? Icons.assignment_outlined
-                    : (appState.isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up),
+                    : (isConsoleExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up),
                   size: 16,
                   color: isMobile ? colorScheme.primary : null,
                 ),
@@ -90,7 +94,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
         ),
 
         // Expanded Console (Desktop/Tablet only)
-        if (!isMobile && appState.isConsoleExpanded) ...[
+        if (!isMobile && isConsoleExpanded) ...[
           GestureDetector(
             onVerticalDragUpdate: (details) {
               setState(() {
@@ -115,13 +119,10 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
     );
   }
 
-  Widget _buildStatusIndicator(AppState appState) {
-    final isRunning = appState.taskQueue.runningCount > 0;
-    final hasError = appState.logs.any((l) => l.level == 'ERROR');
-
+  Widget _buildStatusIndicator(bool isProcessing, bool hasErrors) {
     Color color = Colors.grey;
-    if (isRunning) color = Colors.green;
-    if (hasError) color = Colors.red;
+    if (isProcessing) color = Colors.green;
+    if (hasErrors) color = Colors.red;
 
     return Container(
       width: 8,
@@ -129,16 +130,16 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        boxShadow: isRunning ? [
+        boxShadow: isProcessing ? [
           BoxShadow(color: color.withAlpha(100), blurRadius: 4, spreadRadius: 1),
         ] : null,
       ),
     );
   }
 
-  Widget _buildTaskSummary(AppState appState, AppLocalizations l10n, ColorScheme colorScheme) {
-    final pendingCount = appState.taskQueue.queue.where((t) => t.status == TaskStatus.pending).length;
-    final runningCount = appState.taskQueue.runningCount;
+  Widget _buildTaskSummary(TaskQueueService queue, AppLocalizations l10n, ColorScheme colorScheme) {
+    final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
+    final runningCount = queue.runningCount;
 
     if (pendingCount == 0 && runningCount == 0) {
       return Text(

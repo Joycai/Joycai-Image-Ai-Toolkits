@@ -113,8 +113,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       }
     }
 
-    final appState = Provider.of<AppState>(context);
-    
+    final appState = Provider.of<AppState>(context, listen: false);
+
     // BUT only if we are NOT currently on the optimizer tab to avoid overriding work-in-progress
     if (appState.workbenchTabIndex != 4 && _promptController.text != lastPrompt) {
       _promptController.value = _promptController.value.copyWith(
@@ -224,107 +224,42 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      // Send to Optimizer
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final appState = Provider.of<AppState>(context, listen: false);
-                            final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-                            
-                            workbenchUIState.sendToOptimizer(
-                              _promptController.text,
-                              appState.selectedImages,
-                            );
-                            
-                            appState.setWorkbenchTab(4);
-                            
-                            if (widget.scrollController != null) {
-                              Navigator.pop(context);
-                            }
-                          },
-                          icon: const Icon(Icons.auto_fix_high, size: 18),
-                          label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
+                  // Send to Optimizer
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final appState = Provider.of<AppState>(context, listen: false);
+                        final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+
+                        workbenchUIState.sendToOptimizer(
+                          _promptController.text,
+                          appState.selectedImages,
+                        );
+
+                        appState.setWorkbenchTab(4);
+
+                        if (widget.scrollController != null) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.auto_fix_high, size: 18),
+                      label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      const SizedBox(width: 10),
-                      // Queue Settings
-                      IconButton.filledTonal(
-                        onPressed: () => _showQueueSettings(context, l10n),
-                        icon: const Icon(Icons.settings_outlined, size: 20),
-                        tooltip: l10n.queueSettings,
-                        style: IconButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  // Primary Execution Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: Selector<AppState, int>(
-                      selector: (_, s) => s.selectedImages.length,
-                      builder: (context, selectedCount, _) => FilledButton.icon(
-                        onPressed: _promptController.text.isEmpty 
-                            ? null 
-                            : () {
-                                final appState = Provider.of<AppState>(context, listen: false);
-                                if (selectedModelDbId == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(l10n.noModelsConfigured),
-                                      action: SnackBarAction(
-                                        label: l10n.settings,
-                                        onPressed: () => appState.navigateToScreen(6),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
-                                final modelName = selectedModel.modelName;
-                                
-                                appState.submitTask(selectedModelDbId, {
-                                  'prompt': _promptController.text,
-                                  'aspectRatio': lastAspectRatio.value,
-                                  'imageSize': lastResolution.value,
-                                }, modelIdDisplay: modelName);
-                                
-                                if (widget.scrollController != null) {
-                                  Navigator.pop(context);
-                                }
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(l10n.taskSubmitted),
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
-                                    width: 250,
-                                  ),
-                                );
-                              },
-                        icon: const Icon(Icons.play_arrow_rounded, size: 24),
-                        label: Text(
-                          selectedCount == 0 
-                              ? l10n.processPrompt 
-                              : l10n.processImages(selectedCount),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                      ),
+                  const SizedBox(width: 10),
+                  // Queue Settings
+                  IconButton.filledTonal(
+                    onPressed: () => _showQueueSettings(context, l10n),
+                    icon: const Icon(Icons.settings_outlined, size: 20),
+                    tooltip: l10n.queueSettings,
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ],
@@ -333,18 +268,98 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ],
         );
 
+        // Primary Execution Button — reused in both mobile (pinned) and desktop (in scroll)
+        final processButton = SizedBox(
+          width: double.infinity,
+          child: Selector<AppState, int>(
+            selector: (_, s) => s.selectedImages.length,
+            builder: (context, selectedCount, _) => FilledButton.icon(
+              onPressed: _promptController.text.isEmpty
+                  ? null
+                  : () {
+                      final appState = Provider.of<AppState>(context, listen: false);
+                      if (selectedModelDbId == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.noModelsConfigured),
+                            action: SnackBarAction(
+                              label: l10n.models,
+                              onPressed: () => appState.navigateToScreen(6),
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
+                      final modelName = selectedModel.modelName;
+
+                      appState.submitTask(selectedModelDbId, {
+                        'prompt': _promptController.text,
+                        'aspectRatio': lastAspectRatio.value,
+                        'imageSize': lastResolution.value,
+                      }, modelIdDisplay: modelName);
+
+                      if (widget.scrollController != null) {
+                        Navigator.pop(context);
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.taskSubmitted),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          width: 250,
+                        ),
+                      );
+                    },
+              icon: const Icon(Icons.play_arrow_rounded, size: 24),
+              label: Text(
+                selectedCount == 0
+                    ? l10n.processPrompt
+                    : l10n.processImages(selectedCount),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+        );
+
         if (widget.scrollController != null) {
-          // Being scrolled by external sheet
-          return SingleChildScrollView(
-            controller: widget.scrollController,
-            padding: const EdgeInsets.all(16),
-            child: content,
+          // Mobile bottom sheet: pin Process button at top so it's always visible
+          return Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: processButton,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: widget.scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: content,
+                ),
+              ),
+            ],
           );
         } else {
-          // Sidebar mode: use own scroll if needed
+          // Desktop sidebar: Process button at bottom of scrollable content
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: content,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                content,
+                const SizedBox(height: 10),
+                processButton,
+              ],
+            ),
           );
         }
       },
@@ -422,8 +437,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           child: ReorderableListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: selectedImages.length,
-            // ignore: deprecated_member_use
-            onReorder: (oldIndex, newIndex) {
+            onReorderItem: (oldIndex, newIndex) {
               Provider.of<AppState>(context, listen: false).galleryState.reorderSelectedImages(oldIndex, newIndex);
             },
             proxyDecorator: (child, index, animation) {

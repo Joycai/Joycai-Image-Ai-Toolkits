@@ -139,7 +139,31 @@ class TaskQueueScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
-                        onPressed: tasks.isEmpty ? null : () => _handleBulkAction('clear_all', appState.taskQueue),
+                        onPressed: tasks.isEmpty
+                            ? null
+                            : () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(l10n.clearAll),
+                                    content: Text(l10n.clearAllConfirm),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, false),
+                                        child: Text(l10n.cancel),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
+                                        child: Text(l10n.clearAll),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true) {
+                                  _handleBulkAction('clear_all', appState.taskQueue);
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.errorContainer,
                           foregroundColor: colorScheme.error,

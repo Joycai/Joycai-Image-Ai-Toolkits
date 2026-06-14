@@ -1040,6 +1040,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearCompleted => 'Clear Completed';
 
   @override
+  String get clearAllConfirm =>
+      'This will remove all non-running tasks. This action cannot be undone.';
+
+  @override
   String get cancelAllPending => 'Cancel All Pending';
 
   @override

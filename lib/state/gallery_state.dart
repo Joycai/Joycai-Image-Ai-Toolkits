@@ -88,6 +88,51 @@ class GalleryState extends ChangeNotifier {
   // Callback for logging to the main app log
   Function(String, {String level})? onLog;
 
+  // Cached image grouping — recomputed only when the source list changes identity
+  List<AppImage>? _lastGroupedList;
+  Map<String, List<AppImage>> _cachedGrouped = {};
+  Map<String, int> _cachedGlobalIndex = {};
+  List<String> _cachedSortedPaths = [];
+
+  /// Returns the grouped map for [images], using a cached result when the list
+  /// has not changed since the last call (identity comparison).
+  Map<String, List<AppImage>> getGrouped(List<AppImage> images) {
+    if (!identical(images, _lastGroupedList)) {
+      _rebuildGroupCache(images);
+    }
+    return _cachedGrouped;
+  }
+
+  Map<String, int> getGlobalIndex(List<AppImage> images) {
+    if (!identical(images, _lastGroupedList)) {
+      _rebuildGroupCache(images);
+    }
+    return _cachedGlobalIndex;
+  }
+
+  List<String> getSortedPaths(List<AppImage> images) {
+    if (!identical(images, _lastGroupedList)) {
+      _rebuildGroupCache(images);
+    }
+    return _cachedSortedPaths;
+  }
+
+  void _rebuildGroupCache(List<AppImage> images) {
+    _lastGroupedList = images;
+    _cachedGrouped = {};
+    _cachedGlobalIndex = {};
+    for (var i = 0; i < images.length; i++) {
+      final img = images[i];
+      final parent = File(img.path).parent.path;
+      _cachedGrouped.putIfAbsent(parent, () => []).add(img);
+      _cachedGlobalIndex[img.path] = i;
+    }
+    _cachedSortedPaths = _cachedGrouped.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  }
+
+  bool isScanning = false;
+
   int _refreshCounter = 0;
   int get refreshCounter => _refreshCounter;
 
@@ -247,6 +292,8 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> refreshImages() async {
+    isScanning = true;
+    notifyListeners();
     _log('Manually refreshing images...');
     _refreshCounter++;
     await _scanImages();
@@ -268,6 +315,7 @@ class GalleryState extends ChangeNotifier {
     }
 
     _cleanupSelection();
+    isScanning = false;
     notifyListeners();
   }
 
@@ -382,9 +430,6 @@ class GalleryState extends ChangeNotifier {
   }
 
   void reorderSelectedImages(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
     final newList = List<AppImage>.from(selectedImages);
     final AppImage item = newList.removeAt(oldIndex);
     newList.insert(newIndex, item);

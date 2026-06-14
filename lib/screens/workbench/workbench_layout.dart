@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
+import '../../state/app_state.dart';
 
 class WorkbenchLayoutState {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -38,9 +39,17 @@ class WorkbenchLayout extends StatefulWidget {
 }
 
 class _WorkbenchLayoutState extends State<WorkbenchLayout> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();     
-  double _leftWidth = 300;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late double _leftWidth;
   double _rightWidth = 350;
+
+  @override
+  void initState() {
+    super.initState();
+    // Restore persisted sidebar width so the layout matches the last session.
+    final appState = Provider.of<AppState>(context, listen: false);
+    _leftWidth = appState.sidebarWidth.clamp(200.0, 500.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +86,10 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                         setState(() {
                           _leftWidth = (_leftWidth + delta).clamp(200.0, 500.0);
                         });
+                      },
+                      onResizeEnd: () {
+                        Provider.of<AppState>(context, listen: false)
+                            .setSidebarWidth(_leftWidth);
                       },
                     ),
                   ],
@@ -118,34 +131,39 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
   Widget _buildMobileLayout(BuildContext context, double screenWidth) {
     final mobileDrawerWidth = (screenWidth * 0.80).clamp(200.0, 300.0);
+    final layoutState = WorkbenchLayoutState(_scaffoldKey);
     return Provider<WorkbenchLayoutState>.value(
-      value: WorkbenchLayoutState(_scaffoldKey),
+      value: layoutState,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: widget.topBar != null ? PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight + 1),
           child: Provider<WorkbenchLayoutState>.value(
-            value: WorkbenchLayoutState(_scaffoldKey),
+            value: layoutState,
             child: widget.topBar!,
           ),
         ) : null,
-        body: widget.centerContent,
+        body: Column(
+          children: [
+            Expanded(child: widget.centerContent),
+            if (widget.bottomPanel != null) widget.bottomPanel!,
+          ],
+        ),
         drawer: widget.leftPanel != null ? Drawer(width: mobileDrawerWidth, child: widget.leftPanel) : null,
         floatingActionButton: widget.rightPanelBuilder != null ? FloatingActionButton(
           onPressed: () {
-            final workbenchState = WorkbenchLayoutState(_scaffoldKey);
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,
               useSafeArea: true,
               builder: (bottomSheetContext) => Provider<WorkbenchLayoutState>.value(
-                value: workbenchState,
+                value: layoutState,
                 child: DraggableScrollableSheet(
                   expand: false,
                   initialChildSize: 0.6,
                   minChildSize: 0.3,
                   maxChildSize: 0.95,
-                  builder: (context, scrollController) {
+                  builder: (ctx, scrollController) {
                     return widget.rightPanelBuilder!(scrollController);
                   },
                 ),
@@ -154,7 +172,6 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
           },
           child: const Icon(Icons.tune),
         ) : null,
-        bottomNavigationBar: widget.bottomPanel,
       ),
     );
   }
@@ -162,8 +179,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
 class _ResizableDivider extends StatefulWidget {
   final Function(double) onResize;
+  final VoidCallback? onResizeEnd;
 
-  const _ResizableDivider({required this.onResize});
+  const _ResizableDivider({required this.onResize, this.onResizeEnd});
 
   @override
   State<_ResizableDivider> createState() => _ResizableDividerState();
@@ -182,9 +200,10 @@ class _ResizableDividerState extends State<_ResizableDivider> {
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
         onHorizontalDragUpdate: (details) => widget.onResize(details.delta.dx),
+        onHorizontalDragEnd: (_) => widget.onResizeEnd?.call(),
         child: Container(
-          width: 10, // Increased hit area
-          color: Colors.transparent, // Invisible hit area background
+          width: 10,
+          color: Colors.transparent,
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),

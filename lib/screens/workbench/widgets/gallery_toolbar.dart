@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
@@ -23,6 +24,7 @@ class GalleryToolbar extends StatelessWidget {
     final isNarrow = Responsive.isNarrow(context);
     
     final selectedCount = appState.selectedImages.length;
+    final selectableCount = galleryState.galleryImages.where((img) => !AppConstants.isVideoFile(img.path)).length;
     final thumbnailSize = appState.thumbnailSize;
 
     return Container(
@@ -46,7 +48,7 @@ class GalleryToolbar extends StatelessWidget {
                   IconButton(
                     onPressed: () => galleryState.selectAllImages(),
                     icon: const Icon(Icons.select_all, size: 20),
-                    tooltip: l10n.selectAll,
+                    tooltip: '${l10n.selectAll} ($selectableCount)',
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(

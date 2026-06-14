@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
@@ -74,9 +75,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   List<SystemPrompt> _optAllSysPrompts = [];
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
-  int? _optSelectedModelDbId;
-  int? _optSelectedTagId;
-  String? _optSelectedSysPrompt;
   bool _optIsLoadingData = true;
 
   @override
@@ -131,9 +129,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     if (event.type == TaskEventType.imageResult && event.taskType == TaskType.videoGenerate) {
-       // Video task finished
-       final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
-       uiState.setLastGeneratedVideoPath(event.data as String);
+      if (!mounted) return;
+      final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+      uiState.setLastGeneratedVideoPath(event.data as String);
     }
   }
 
@@ -160,15 +158,19 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final tags = await _appState!.getPromptTags();
 
       if (mounted) {
+        final wuiState = Provider.of<WorkbenchUIState>(context, listen: false);
         setState(() {
           _optAllSysPrompts = refinerPrompts;
           _optTags = tags;
-          _applyOptimizerFilter();
-          
-          if (_appState!.chatModels.isNotEmpty) {
-            _optSelectedModelDbId = _appState!.chatModels.first.id;
+          _applyOptimizerFilter(wuiState);
+
+          // Only set defaults on first load; preserve user's previous selections.
+          if (wuiState.optSelectedModelDbId == null && _appState!.chatModels.isNotEmpty) {
+            wuiState.setOptimizerModel(_appState!.chatModels.first.id);
           }
-          if (_optFilteredSysPrompts.isNotEmpty) _optSelectedSysPrompt = _optFilteredSysPrompts.first.content;
+          if (wuiState.optSelectedSysPrompt == null && _optFilteredSysPrompts.isNotEmpty) {
+            wuiState.setOptimizerSysPrompt(_optFilteredSysPrompts.first.content);
+          }
           _optIsLoadingData = false;
         });
       }
@@ -177,14 +179,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
   }
 
-  void _applyOptimizerFilter() {
-    if (_optSelectedTagId == null) {
+  void _applyOptimizerFilter(WorkbenchUIState wuiState) {
+    if (wuiState.optSelectedTagId == null) {
       _optFilteredSysPrompts = _optAllSysPrompts;
     } else {
-      _optFilteredSysPrompts = _optAllSysPrompts.where((p) => p.tags.any((t) => t.id == _optSelectedTagId)).toList();
+      _optFilteredSysPrompts = _optAllSysPrompts.where((p) => p.tags.any((t) => t.id == wuiState.optSelectedTagId)).toList();
     }
-    if (_optSelectedSysPrompt != null && !_optFilteredSysPrompts.any((p) => p.content == _optSelectedSysPrompt)) {
-      _optSelectedSysPrompt = _optFilteredSysPrompts.isNotEmpty ? _optFilteredSysPrompts.first.content : null;
+    if (wuiState.optSelectedSysPrompt != null && !_optFilteredSysPrompts.any((p) => p.content == wuiState.optSelectedSysPrompt)) {
+      wuiState.setOptimizerSysPrompt(_optFilteredSysPrompts.isNotEmpty ? _optFilteredSysPrompts.first.content : null);
     }
   }
 
@@ -192,7 +194,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     
-    if (_optSelectedModelDbId == null || _appState == null) {
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
@@ -200,17 +202,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     try {
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       final taskId = const Uuid().v4();
-      
+
       setState(() {
         _activeRefineTaskId = taskId;
         _optRefinedPromptCtrl.clear();
       });
-      
+
       await taskService.addTask(
         workbenchUIState.optimizerReferenceImages.map((f) => f.path).toList(),
-        _optSelectedModelDbId!,
+        workbenchUIState.optSelectedModelDbId!,
         {
-          'systemPrompt': _optSelectedSysPrompt,
+          'systemPrompt': workbenchUIState.optSelectedSysPrompt,
           'roughPrompt': _optCurrentPromptCtrl.text,
         },
         type: TaskType.promptRefine,
@@ -335,9 +337,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _initTabController() {
     if (_appState == null) return;
-    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, 5);
-    
-    _tabController = TabController(length: 6, vsync: this, initialIndex: _lastKnownTabIndex);
+    _lastKnownTabIndex = _appState!.workbenchTabIndex.clamp(0, AppConstants.workbenchTabCount - 1);
+
+    _tabController = TabController(length: AppConstants.workbenchTabCount, vsync: this, initialIndex: _lastKnownTabIndex);
     
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -364,12 +366,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.length != 6) {
-       _tabController.dispose();
-       _initTabController();
-    }
-
     final appState = Provider.of<AppState>(context);
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final isNarrow = Responsive.isNarrow(context);
 
     // Determine content based on active tab
@@ -464,6 +462,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               onApply: _handleOptimizerApply,
               onClear: () => setState(() { _optCurrentPromptCtrl.clear(); _optRefinedPromptCtrl.clear(); }),
               isRefining: isRefining,
+              canRefine: workbenchUIState.optSelectedSysPrompt != null,
               canApply: _optRefinedPromptCtrl.text.isNotEmpty,
             ),
             Expanded(
@@ -516,14 +515,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           case 4:
             return OptimizerConfigPanel(
               scrollController: scrollController,
-              selectedModelDbId: _optSelectedModelDbId,
-              selectedTagId: _optSelectedTagId,
-              selectedSysPrompt: _optSelectedSysPrompt,
+              selectedModelDbId: workbenchUIState.optSelectedModelDbId,
+              selectedTagId: workbenchUIState.optSelectedTagId,
+              selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
-              onModelChanged: (v) => setState(() => _optSelectedModelDbId = v),
-              onTagChanged: (v) => setState(() { _optSelectedTagId = v; _applyOptimizerFilter(); }),
-              onSysPromptChanged: (v) => setState(() => _optSelectedSysPrompt = v),
+              onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
+              onTagChanged: (v) {
+                workbenchUIState.setOptimizerTag(v);
+                setState(() => _applyOptimizerFilter(workbenchUIState));
+              },
+              onSysPromptChanged: (v) => workbenchUIState.setOptimizerSysPrompt(v),
             );
           case 5:
             return VideoConfigPanel(scrollController: scrollController);

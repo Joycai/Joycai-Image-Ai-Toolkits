@@ -33,7 +33,6 @@ class AppState extends ChangeNotifier {
   final WorkbenchUIState workbenchUIState = WorkbenchUIState();
 
   AppState._internal() {
-    taskQueue.addListener(notifyListeners);
     galleryState.addListener(notifyListeners);
     downloaderState.addListener(notifyListeners);
     fileBrowserState.addListener(notifyListeners);
@@ -58,6 +57,7 @@ class AppState extends ChangeNotifier {
       final l10n = lookupAppLocalizations(locale ?? const Locale('en'));        
 
       if (task.status == TaskStatus.completed) {
+        hasErrors = false; // A successful task clears the stale error indicator
         NotificationService().showNotification(
           title: l10n.taskCompletedNotification,
           body: l10n.taskCompletedBody(task.id.substring(0, 8)),
@@ -80,12 +80,13 @@ class AppState extends ChangeNotifier {
 
     taskQueue.addListener(() {
       isProcessing = taskQueue.runningCount > 0;
-      notifyListeners();
+      notifyListeners(); // single listener — also propagates all task queue changes
     });
   }
 
   List<LogEntry> logs = [];
   bool isProcessing = false;
+  bool hasErrors = false;
   bool settingsLoaded = false;
   bool setupCompleted = true;
   int concurrencyLimit = 2;
@@ -93,7 +94,6 @@ class AppState extends ChangeNotifier {
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
-  bool isSidebarResizing = false;
   double sidebarWidth = 400.0;
   bool enableApiDebug = false;
 
@@ -271,7 +271,7 @@ class AppState extends ChangeNotifier {
 
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');      
     if (savedWorkbenchTab != null) {
-      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, 5);   
+      workbenchTabIndex = (int.tryParse(savedWorkbenchTab) ?? 0).clamp(0, AppConstants.workbenchTabCount - 1);
     }
 
     isMarkdownWorkbench = (await _db.getSetting('is_markdown_workbench') ?? 'true') == 'true';
@@ -294,7 +294,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addLog(String message, {String level = 'INFO', String? taskId}) {        
+  void addLog(String message, {String level = 'INFO', String? taskId}) {
+    if (level == 'ERROR') hasErrors = true;
     if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
       final lastLog = logs.last;
       if (lastLog.taskId == taskId) {
@@ -321,6 +322,7 @@ class AppState extends ChangeNotifier {
 
   void clearLogs() {
     logs.clear();
+    hasErrors = false;
     notifyListeners();
   }
 
@@ -369,11 +371,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setIsSidebarResizing(bool value) {
-    isSidebarResizing = value;
-    notifyListeners();
-  }
-
   Timer? _sidebarWidthSaveTimer;
 
   Future<void> setSidebarWidth(double width) async {
@@ -392,7 +389,7 @@ class AppState extends ChangeNotifier {
   }
 
   void setWorkbenchTab(int index) {
-    workbenchTabIndex = index.clamp(0, 5);
+    workbenchTabIndex = index.clamp(0, AppConstants.workbenchTabCount - 1);
     _db.saveSetting('workbench_tab_index', workbenchTabIndex.toString());       
     notifyListeners();
   }

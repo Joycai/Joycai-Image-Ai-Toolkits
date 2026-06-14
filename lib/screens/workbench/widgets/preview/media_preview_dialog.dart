@@ -61,16 +61,16 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
         final extension = path.split('.').last;
-        String? outputFile = await FilePicker.saveFile(
+        final bytes = await File(path).readAsBytes();
+        final outputFile = await FilePicker.saveFile(
           dialogTitle: l10n.save,
           fileName: fileName,
           type: FileType.custom,
           allowedExtensions: [extension],
+          bytes: bytes,
         );
 
         if (outputFile != null) {
-          final file = File(path);
-          await file.copy(outputFile);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.settingsExported), backgroundColor: Colors.green),

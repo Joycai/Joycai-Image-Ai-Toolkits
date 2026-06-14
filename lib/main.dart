@@ -219,8 +219,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       final currentScreen = allDefinitions[appState.activeScreenIndex].screen;
       displayIndex = screens.indexOf(currentScreen);
       if (displayIndex == -1) {
-        displayIndex = 0; // Fallback to workbench
-        // Optionally update appState here, but we should be careful with side effects in build
+        displayIndex = 0;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) appState.navigateToScreen(0);
+        });
       }
     }
 
@@ -312,6 +314,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n, List<dynamic> filteredDefinitions, int displayIndex) {
     final appState = Provider.of<AppState>(context, listen: false);
     final allDefinitions = _getNavDefinitions(l10n);
+    // Primary item count determines the offset for secondary (drawer) items.
+    final primaryCount = filteredDefinitions.length - items.length;
 
     return Drawer(
       child: Column(
@@ -338,7 +342,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ),
           ...items.asMap().entries.map((entry) {
-            final index = entry.key + 4; // Skip first 4
+            final index = entry.key + primaryCount;
             final d = entry.value;
             final isSelected = displayIndex == index;
             return ListTile(
