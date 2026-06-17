@@ -2471,6 +2471,18 @@ abstract class AppLocalizations {
   /// **'High'**
   String get qualityHigh;
 
+  /// No description provided for @referenceImagesNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This model does not support reference images. Selected images will be ignored.'**
+  String get referenceImagesNotSupported;
+
+  /// No description provided for @referenceImagesLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'This model accepts at most {count} reference image(s); the rest will be ignored.'**
+  String referenceImagesLimited(int count);
+
   /// No description provided for @prompt.
   ///
   /// In en, this message translates to:

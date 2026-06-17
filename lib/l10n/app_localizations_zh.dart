@@ -1257,6 +1257,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qualityHigh => '高';
 
   @override
+  String get referenceImagesNotSupported => '该模型不支持参考图，所选图片将被忽略。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return '该模型最多支持 $count 张参考图，其余将被忽略。';
+  }
+
+  @override
   String get prompt => '提示词';
 
   @override
@@ -2757,6 +2765,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get qualityHigh => '高';
+
+  @override
+  String get referenceImagesNotSupported => '此模型不支援參考圖，所選圖片將被忽略。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return '此模型最多支援 $count 張參考圖，其餘將被忽略。';
+  }
 
   @override
   String get prompt => '提示詞';

@@ -44,6 +44,23 @@ void main() {
       expect(chat.imageParams, isEmpty);
     });
 
+    test('reference image support differs by family', () {
+      // nanoBanana: supported, no enforced cap.
+      final nano = ModelCapabilities.forModel('gemini-2.5-flash-image');
+      expect(nano.supportsReferenceImages, true);
+      expect(nano.maxReferenceImages, isNull);
+
+      // Imagen: text-to-image only.
+      final imagen = ModelCapabilities.forModel('imagen-4.0');
+      expect(imagen.supportsReferenceImages, false);
+      expect(imagen.maxReferenceImages, 0);
+
+      // OpenAI image: supported up to 16.
+      final openai = ModelCapabilities.forModel('gpt-image-1');
+      expect(openai.supportsReferenceImages, true);
+      expect(openai.maxReferenceImages, 16);
+    });
+
     test('normalize falls back to default for invalid values', () {
       final spec = ModelCapabilities.forModel('gpt-image-1')
           .imageParams

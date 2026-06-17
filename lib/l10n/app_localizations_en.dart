@@ -1285,6 +1285,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qualityHigh => 'High';
 
   @override
+  String get referenceImagesNotSupported =>
+      'This model does not support reference images. Selected images will be ignored.';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return 'This model accepts at most $count reference image(s); the rest will be ignored.';
+  }
+
+  @override
   String get prompt => 'Prompt';
 
   @override

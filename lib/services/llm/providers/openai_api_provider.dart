@@ -8,6 +8,7 @@ import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
+import '../model_capabilities.dart';
 import '../model_discovery_service.dart';
 import '../model_family.dart';
 
@@ -284,7 +285,17 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       orElse: () => history.last,
     );
     final prompt = userMsg.content;
-    final inputImages = userMsg.attachments;
+
+    // Cap the reference images to what the model accepts (gpt-image-1: 16).
+    var inputImages = userMsg.attachments;
+    final maxRef = ModelCapabilities.forModel(config.modelId).maxReferenceImages;
+    if (maxRef != null && maxRef >= 0 && inputImages.length > maxRef) {
+      logger?.call(
+        'Model accepts at most $maxRef reference image(s); using the first $maxRef of ${inputImages.length}.',
+        level: 'WARN',
+      );
+      inputImages = inputImages.sublist(0, maxRef);
+    }
 
     final baseUrl = config.endpoint.endsWith('/')
         ? config.endpoint.substring(0, config.endpoint.length - 1)

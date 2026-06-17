@@ -350,6 +350,19 @@ class GoogleGenAIProvider implements ILLMProvider {
     final url = Uri.parse('$baseUrl/models/${config.modelId}:predict');
     logger?.call('Preparing Imagen request to: ${url.host}', level: 'DEBUG');
 
+    // Imagen is text-to-image only — surface (rather than silently drop) any
+    // reference images the user attached.
+    final refCount = history
+        .where((m) => m.role == LLMRole.user)
+        .expand((m) => m.attachments)
+        .length;
+    if (refCount > 0) {
+      logger?.call(
+        'Imagen does not support reference images; ignoring $refCount attached image(s).',
+        level: 'WARN',
+      );
+    }
+
     final headers = _getHeaders(config.channelType, config.apiKey);
     final payload = _prepareImagenPayload(history, options);
 

@@ -1260,6 +1260,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qualityHigh => '高';
 
   @override
+  String get referenceImagesNotSupported =>
+      'このモデルは参照画像に対応していません。選択した画像は無視されます。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return 'このモデルは参照画像を最大 $count 枚まで使用できます。残りは無視されます。';
+  }
+
+  @override
   String get prompt => 'プロンプト';
 
   @override

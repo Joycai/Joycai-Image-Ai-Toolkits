@@ -60,6 +60,15 @@
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",
+  "referenceImagesNotSupported": "このモデルは参照画像に対応していません。選択した画像は無視されます。",
+  "referenceImagesLimited": "このモデルは参照画像を最大 {count} 枚まで使用できます。残りは無視されます。",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompt": "プロンプト",
   "promptHint": "プロンプトをここに入力...",
   "prefixHint": "例：result",

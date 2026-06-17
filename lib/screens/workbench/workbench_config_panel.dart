@@ -7,6 +7,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
@@ -91,6 +92,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     // Determine selected model from AppState
     int? selectedModelDbId;
     int? selectedChannelId;
+    String? selectedModelIdStr;
 
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
@@ -102,6 +104,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       final resolved = match ?? imageModels.first;
       selectedModelDbId = resolved.id;
       selectedChannelId = resolved.channelId;
+      selectedModelIdStr = resolved.modelId;
     }
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -130,7 +133,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           children: [
             Selector<AppState, List<AppImage>>(
               selector: (_, s) => s.selectedImages,
-              builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
+              builder: (context, selectedImages, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
+                  _buildReferenceImageNotice(context, selectedModelIdStr, selectedImages.length, colorScheme, l10n),
+                ],
+              ),
             ),
 
             // Model Selection Section
@@ -467,6 +476,40 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Warns when the selected model can't use the images the user has picked as
+  /// references (Imagen accepts none; OpenAI image caps the count).
+  Widget _buildReferenceImageNotice(
+      BuildContext context, String? modelId, int selectedCount, ColorScheme colorScheme, AppLocalizations l10n) {
+    if (modelId == null || selectedCount == 0) return const SizedBox.shrink();
+
+    final caps = ModelCapabilities.forModel(modelId);
+    String? message;
+    if (!caps.supportsReferenceImages) {
+      message = l10n.referenceImagesNotSupported;
+    } else if (caps.maxReferenceImages != null && selectedCount > caps.maxReferenceImages!) {
+      message = l10n.referenceImagesLimited(caps.maxReferenceImages!);
+    }
+    if (message == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: colorScheme.onTertiaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(message, style: TextStyle(fontSize: 11, color: colorScheme.onTertiaryContainer)),
+          ),
+        ],
+      ),
     );
   }
 

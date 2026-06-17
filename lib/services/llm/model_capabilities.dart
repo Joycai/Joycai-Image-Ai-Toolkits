@@ -52,10 +52,20 @@ class ModelCapabilities {
   /// showing up for, say, a GPT-4o chat model or a `gemini-2.5-pro` text model.
   final List<ParamSpec> imageParams;
 
+  /// How many reference (input) images this family accepts for generation:
+  ///  * `null` — supported with no enforced limit (e.g. nanoBanana).
+  ///  * `0` — not supported at all (e.g. Imagen text-to-image).
+  ///  * `> 0` — supported up to this many (e.g. OpenAI `gpt-image-1`).
+  final int? maxReferenceImages;
+
   const ModelCapabilities({
     this.isImageGenerator = false,
     this.imageParams = const [],
+    this.maxReferenceImages,
   });
+
+  /// Whether the model accepts any reference images at all.
+  bool get supportsReferenceImages => maxReferenceImages != 0;
 
   static ModelCapabilities forModel(String modelId) =>
       forFamily(ModelFamilyClassifier.classify(modelId));
@@ -79,8 +89,10 @@ class ModelCapabilities {
   // --- Family parameter tables ---------------------------------------------
 
   /// nanoBanana — `gemini-*-image`. Full Gemini aspect-ratio set + 1K/2K/4K.
+  /// Accepts multiple reference images (no hard limit enforced here).
   static const _geminiImage = ModelCapabilities(
     isImageGenerator: true,
+    maxReferenceImages: null,
     imageParams: [
       ParamSpec(
         key: 'aspectRatio',
@@ -110,9 +122,11 @@ class ModelCapabilities {
     ],
   );
 
-  /// Imagen — `:predict`. Supports a restricted aspect-ratio set, no 4K.
+  /// Imagen — `:predict`. Text-to-image only; reference images are not
+  /// supported. Restricted aspect-ratio set, no 4K.
   static const _imagen = ModelCapabilities(
     isImageGenerator: true,
+    maxReferenceImages: 0,
     imageParams: [
       ParamSpec(
         key: 'aspectRatio',
@@ -138,9 +152,11 @@ class ModelCapabilities {
   );
 
   /// Native OpenAI image (`gpt-image-1`). Pixel sizes + quality, no separate
-  /// aspect-ratio control (size encodes the ratio).
+  /// aspect-ratio control (size encodes the ratio). Accepts up to 16 reference
+  /// images via the images/edits endpoint.
   static const _openaiImage = ModelCapabilities(
     isImageGenerator: true,
+    maxReferenceImages: 16,
     imageParams: [
       ParamSpec(
         key: 'imageSize',
