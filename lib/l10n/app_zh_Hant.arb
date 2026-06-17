@@ -526,6 +526,11 @@
   },
   "aspectRatio": "長寬比",
   "resolution": "解析度",
+  "quality": "品質",
+  "optionAuto": "自動",
+  "qualityLow": "低",
+  "qualityMedium": "中",
+  "qualityHigh": "高",
   "prompt": "提示詞",
   "prefixHint": "例如：result",
   "@processImages": {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
@@ -61,9 +60,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     }
   }
 
-  void _updateConfig({int? modelDbId, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt, bool? useStream}) {
+  void _updateConfig({int? modelDbId, String? modelIdStr, String? prompt, bool? useStream}) {
     final appState = Provider.of<AppState>(context, listen: false);
-    
+
     String? idToSave;
     if (modelDbId != null) {
       idToSave = modelDbId.toString(); // Save PK as string
@@ -71,8 +70,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
     appState.updateWorkbenchConfig(
       modelId: idToSave ?? modelIdStr,
-      aspectRatio: ar,
-      resolution: res,
       prompt: prompt,
       useStream: useStream,
     );
@@ -88,29 +85,23 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
     final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
-    final lastAspectRatio = context.select<AppState, AppAspectRatio>((s) => s.lastAspectRatio);
-    final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
-    
+    // Rebuild parameter controls when the stored image params change.
+    context.select<AppState, int>((s) => s.imageParamsRevision);
+
     // Determine selected model from AppState
     int? selectedModelDbId;
     int? selectedChannelId;
-    
+
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
       final match = imageModels.cast<LLMModel?>().firstWhere(
         (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
         orElse: () => null,
       );
-      
-      if (match != null) {
-        selectedModelDbId = match.id;
-        selectedChannelId = match.channelId;
-      } else {
-        // Default to first
-        final first = imageModels.first;
-        selectedModelDbId = first.id;
-        selectedChannelId = first.channelId;
-      }
+
+      final resolved = match ?? imageModels.first;
+      selectedModelDbId = resolved.id;
+      selectedChannelId = resolved.channelId;
     }
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -149,8 +140,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               channels: allChannels.map((c) => c.toMap()).toList(),
               selectedChannelId: selectedChannelId,
               selectedModelDbId: selectedModelDbId,
-              aspectRatio: lastAspectRatio,
-              resolution: lastResolution,
               isExpanded: _isModelSettingsExpanded,
               onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
               onChannelChanged: (val) {
@@ -164,12 +153,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               onModelChanged: (val) {
                 _updateConfig(modelDbId: val);
               },
-              onAspectRatioChanged: (v) {
-                _updateConfig(ar: v);
-              },
-              onResolutionChanged: (v) {
-                _updateConfig(res: v);
-              },
+              imageParamResolver: (modelId, spec) =>
+                  Provider.of<AppState>(context, listen: false).getImageParam(modelId, spec),
+              onImageParamChanged: (modelId, key, value) =>
+                  Provider.of<AppState>(context, listen: false).setImageParam(modelId, key, value),
             ),
 
             const SizedBox(height: 8),
@@ -292,11 +279,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                       final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
                       final modelName = selectedModel.modelName;
 
-                      appState.submitTask(selectedModelDbId, {
+                      final params = <String, dynamic>{
                         'prompt': _promptController.text,
-                        'aspectRatio': lastAspectRatio.value,
-                        'imageSize': lastResolution.value,
-                      }, modelIdDisplay: modelName);
+                        ...appState.effectiveImageParams(selectedModel.modelId),
+                      };
+
+                      appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
 
                       if (widget.scrollController != null) {
                         Navigator.pop(context);

@@ -1245,6 +1245,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resolution => '解像度';
 
   @override
+  String get quality => '品質';
+
+  @override
+  String get optionAuto => '自動';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
+
+  @override
   String get prompt => 'プロンプト';
 
   @override

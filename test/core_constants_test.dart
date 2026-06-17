@@ -1,26 +1,55 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 
 void main() {
-  group('AppAspectRatio', () {
-    test('fromString should return correct enum', () {
-      expect(AppAspectRatio.fromString('1:1'), AppAspectRatio.r1_1);
-      expect(AppAspectRatio.fromString('16:9'), AppAspectRatio.r16_9);
-      expect(AppAspectRatio.fromString('unknown'), AppAspectRatio.notSet);
-      expect(AppAspectRatio.fromString(null), AppAspectRatio.notSet);
+  group('ModelFamilyClassifier', () {
+    test('classifies Google families', () {
+      expect(ModelFamilyClassifier.classify('veo-3.0'), ModelFamily.geminiVideo);
+      expect(ModelFamilyClassifier.classify('imagen-4.0'), ModelFamily.geminiImagen);
+      expect(ModelFamilyClassifier.classify('gemini-2.5-flash-image'), ModelFamily.geminiImage);
+      expect(ModelFamilyClassifier.classify('gemini-2.5-pro'), ModelFamily.geminiChat);
     });
 
-    test('value should be correct', () {
-      expect(AppAspectRatio.r1_1.value, '1:1');
-      expect(AppAspectRatio.notSet.value, 'not_set');
+    test('classifies OpenAI families', () {
+      expect(ModelFamilyClassifier.classify('gpt-image-1'), ModelFamily.openaiImage);
+      expect(ModelFamilyClassifier.classify('gpt-4o'), ModelFamily.openaiChat);
+      expect(ModelFamilyClassifier.classify('o3-mini'), ModelFamily.openaiChat);
+      expect(ModelFamilyClassifier.classify('claude-3-opus'), ModelFamily.other);
+    });
+
+    test('infers tags consistently', () {
+      expect(ModelFamilyClassifier.inferTag('veo-3.0'), 'video');
+      expect(ModelFamilyClassifier.inferTag('gpt-image-1'), 'image');
+      expect(ModelFamilyClassifier.inferTag('imagen-4.0'), 'image');
+      expect(ModelFamilyClassifier.inferTag('gemini-2.5-pro'), 'multimodal');
+      expect(ModelFamilyClassifier.inferTag('gpt-4o'), 'chat');
     });
   });
 
-  group('AppResolution', () {
-    test('fromString should return correct enum', () {
-      expect(AppResolution.fromString('1K'), AppResolution.r1K);
-      expect(AppResolution.fromString('4K'), AppResolution.r4K);
-      expect(AppResolution.fromString('unknown'), AppResolution.r1K);
+  group('ModelCapabilities', () {
+    test('image families expose adapted parameters', () {
+      final nano = ModelCapabilities.forModel('gemini-2.5-flash-image');
+      expect(nano.isImageGenerator, true);
+      expect(nano.imageParams.map((p) => p.key), containsAll(['aspectRatio', 'imageSize']));
+
+      final openai = ModelCapabilities.forModel('gpt-image-1');
+      expect(openai.imageParams.map((p) => p.key), containsAll(['imageSize', 'quality']));
+    });
+
+    test('chat models expose no image parameters', () {
+      final chat = ModelCapabilities.forModel('gpt-4o');
+      expect(chat.isImageGenerator, false);
+      expect(chat.imageParams, isEmpty);
+    });
+
+    test('normalize falls back to default for invalid values', () {
+      final spec = ModelCapabilities.forModel('gpt-image-1')
+          .imageParams
+          .firstWhere((p) => p.key == 'imageSize');
+      expect(spec.normalize('4K'), spec.defaultValue); // 4K is a Gemini value
+      expect(spec.normalize('1024x1024'), '1024x1024');
     });
   });
 

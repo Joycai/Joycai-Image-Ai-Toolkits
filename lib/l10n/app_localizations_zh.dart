@@ -1242,6 +1242,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resolution => '分辨率';
 
   @override
+  String get quality => '质量';
+
+  @override
+  String get optionAuto => '自动';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
+
+  @override
   String get prompt => '提示词';
 
   @override
@@ -2727,6 +2742,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get resolution => '解析度';
+
+  @override
+  String get quality => '品質';
+
+  @override
+  String get optionAuto => '自動';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
 
   @override
   String get prompt => '提示詞';

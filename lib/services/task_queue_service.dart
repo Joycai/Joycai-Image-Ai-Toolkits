@@ -403,9 +403,10 @@ class TaskQueueService extends ChangeNotifier {
       final response = await LLMService().request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
+        options: task.parameters,
         useStream: false,
       );
-      
+
       if (response.text.isNotEmpty) {
         _emit(task.id, TaskEventType.textChunk, response.text);
         task.addLog('AI: ${response.text}');
@@ -477,6 +478,7 @@ class TaskQueueService extends ChangeNotifier {
       final response = await LLMService().request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
+        options: task.parameters,
         useStream: false,
       );
       resultText = response.text;
@@ -532,6 +534,7 @@ Do not include any other text or markdown formatting.
       final response = await LLMService().request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: [LLMMessage(role: LLMRole.user, content: prompt)],
+        options: task.parameters,
         useStream: false,
       );
       jsonText = response.text;

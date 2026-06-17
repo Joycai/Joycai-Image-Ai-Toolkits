@@ -296,6 +296,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     logger?.call('Preparing OpenAI Images request (${isEdit ? 'edit' : 'generate'}) to: ${url.host}', level: 'DEBUG');
 
     final size = _resolveImageSize(options);
+    final quality = _resolveQuality(options);
     final client = config.createClient();
     try {
       final appState = AppState();
@@ -308,6 +309,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         request.fields['model'] = config.modelId;
         request.fields['prompt'] = prompt;
         if (size != null) request.fields['size'] = size;
+        if (quality != null) request.fields['quality'] = quality;
         request.fields['n'] = '1';
 
         for (int i = 0; i < inputImages.length; i++) {
@@ -344,6 +346,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
           'prompt': prompt,
           'n': 1,
           'size': ?size,
+          'quality': ?quality,
         };
 
         if (appState.enableApiDebug) {
@@ -425,6 +428,13 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       default:
         return null;
     }
+  }
+
+  /// OpenAI image quality (`low` / `medium` / `high`); omitted for `auto`.
+  String? _resolveQuality(Map<String, dynamic>? options) {
+    final q = options?['quality'];
+    if (q is String && q.isNotEmpty && q != 'auto') return q;
+    return null;
   }
 
   String _extForMime(String mime) {

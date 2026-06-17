@@ -2441,6 +2441,36 @@ abstract class AppLocalizations {
   /// **'Resolution'**
   String get resolution;
 
+  /// No description provided for @quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get quality;
+
+  /// No description provided for @optionAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get optionAuto;
+
+  /// No description provided for @qualityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get qualityLow;
+
+  /// No description provided for @qualityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get qualityMedium;
+
+  /// No description provided for @qualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get qualityHigh;
+
   /// No description provided for @prompt.
   ///
   /// In en, this message translates to:

@@ -1270,6 +1270,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resolution => 'Resolution';
 
   @override
+  String get quality => 'Quality';
+
+  @override
+  String get optionAuto => 'Auto';
+
+  @override
+  String get qualityLow => 'Low';
+
+  @override
+  String get qualityMedium => 'Medium';
+
+  @override
+  String get qualityHigh => 'High';
+
+  @override
   String get prompt => 'Prompt';
 
   @override

@@ -1,37 +1,9 @@
 import 'package:flutter/material.dart';
 
-enum AppAspectRatio {
-  notSet('not_set'),
-  r1_1('1:1'),
-  r2_3('2:3'),
-  r3_2('3:2'),
-  r3_4('3:4'),
-  r4_3('4:3'),
-  r4_5('4:5'),
-  r5_4('5:4'),
-  r9_16('9:16'),
-  r16_9('16:9');
-
-  final String value;
-  const AppAspectRatio(this.value);
-
-  static AppAspectRatio fromString(String? val) {
-    return AppAspectRatio.values.firstWhere((e) => e.value == val, orElse: () => AppAspectRatio.notSet);
-  }
-}
-
-enum AppResolution {
-  r1K('1K'),
-  r2K('2K'),
-  r4K('4K');
-
-  final String value;
-  const AppResolution(this.value);
-
-  static AppResolution fromString(String? val) {
-    return AppResolution.values.firstWhere((e) => e.value == val, orElse: () => AppResolution.r1K);
-  }
-}
+// Image-generation aspect-ratio / resolution options are now described
+// declaratively per model family in `services/llm/model_capabilities.dart`,
+// since different models (nanoBanana, Imagen, OpenAI image) support different
+// option sets.
 
 enum BillingMode {
   token('token'),
