@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
+import '../../services/llm/model_family.dart';
 import '../../state/app_state.dart';
 
 class DiscoveryDialog extends StatefulWidget {
@@ -405,28 +406,5 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
     if (mounted) Navigator.pop(context);
   }
 
-  String _inferTag(DiscoveredModel m) {
-    final id = m.modelId.toLowerCase();
-
-    // Veo → video
-    if (id.contains('veo')) return 'video';
-
-    // Imagen → image (must check before gemini to avoid overlap)
-    if (id.contains('imagen')) return 'image';
-
-    // NanoBanana-style image models (e.g. gemini-3.1-flash-image-preview)
-    // detected by gemini + image in the same model id
-    if (id.contains('gemini') && id.contains('image')) return 'image';
-
-    // Gemini series → multimodal
-    if (id.contains('gemini')) return 'multimodal';
-
-    // Claude Opus / Sonnet → multimodal
-    if (id.contains('claude') && (id.contains('opus') || id.contains('sonnet'))) return 'multimodal';
-
-    // Generic vision → multimodal
-    if (id.contains('vision')) return 'multimodal';
-
-    return 'chat';
-  }
+  String _inferTag(DiscoveredModel m) => ModelFamilyClassifier.inferTag(m.modelId);
 }

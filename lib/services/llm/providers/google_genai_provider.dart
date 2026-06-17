@@ -9,6 +9,7 @@ import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
 import '../model_discovery_service.dart';
+import '../model_family.dart';
 
 class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
   @override
@@ -54,6 +55,11 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
+    // Imagen uses the dedicated `:predict` surface, not `:generateContent`.
+    if (ModelFamilyClassifier.classify(config.modelId) == ModelFamily.geminiImagen) {
+      return _generateImagen(config, history, options: options, logger: logger);
+    }
+
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
@@ -125,6 +131,20 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async* {
+    // Imagen has no streaming surface — run the single-shot predict call and
+    // emit its result as chunks.
+    if (ModelFamilyClassifier.classify(config.modelId) == ModelFamily.geminiImagen) {
+      final response = await _generateImagen(config, history, options: options, logger: logger);
+      if (response.text.isNotEmpty) {
+        yield LLMResponseChunk(textPart: response.text);
+      }
+      for (final img in response.generatedImages) {
+        yield LLMResponseChunk(imagePart: img);
+      }
+      yield LLMResponseChunk(metadata: response.metadata, isDone: true);
+      return;
+    }
+
     final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey);
@@ -315,6 +335,100 @@ class GoogleGenAIProvider implements ILLMProvider {
     } finally {
       client.close();
     }
+  }
+
+  /// Imagen text-to-image via the `:predict` endpoint.
+  Future<LLMResponse> _generateImagen(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
+  }) async {
+    final baseUrl = config.endpoint.endsWith('/')
+        ? config.endpoint.substring(0, config.endpoint.length - 1)
+        : config.endpoint;
+    final url = Uri.parse('$baseUrl/models/${config.modelId}:predict');
+    logger?.call('Preparing Imagen request to: ${url.host}', level: 'DEBUG');
+
+    final headers = _getHeaders(config.channelType, config.apiKey);
+    final payload = _prepareImagenPayload(history, options);
+
+    final client = config.createClient();
+    try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': _getSafePayload(payload),
+        });
+      }
+
+      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
+
+      final data = jsonDecode(response.body);
+      if (data['error'] != null) {
+        final err = data['error'];
+        final msg = 'Imagen Error: [${err['code']}] ${err['message']} (${err['status']})';
+        logger?.call(msg, level: 'ERROR');
+        throw Exception(msg);
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Imagen Request failed: ${response.statusCode} - ${response.body}');
+      }
+
+      final List<Uint8List> images = [];
+      final predictions = data['predictions'] as List?;
+      if (predictions != null) {
+        for (final p in predictions) {
+          final b64 = p['bytesBase64Encoded'] ?? p['image']?['bytesBase64Encoded'];
+          if (b64 is String) {
+            try {
+              images.add(base64Decode(b64));
+            } catch (_) {/* ignore */}
+          }
+        }
+      }
+
+      logger?.call('Imagen parse complete. Images: ${images.length}', level: 'DEBUG');
+      return LLMResponse(text: '', generatedImages: images, metadata: {});
+    } finally {
+      client.close();
+    }
+  }
+
+  Map<String, dynamic> _prepareImagenPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
+    final userMsg = history.lastWhere(
+      (m) => m.role == LLMRole.user,
+      orElse: () => history.last,
+    );
+
+    final parameters = <String, dynamic>{
+      'sampleCount': 1,
+      'personGeneration': 'allow_all',
+    };
+    if (options != null) {
+      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
+        parameters['aspectRatio'] = options['aspectRatio'];
+      }
+      if (options.containsKey('imageSize')) {
+        parameters['sampleImageSize'] = options['imageSize'];
+      }
+    }
+
+    return {
+      "instances": [
+        {"prompt": userMsg.content}
+      ],
+      "parameters": parameters,
+    };
   }
 
   Map<String, dynamic> _prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
