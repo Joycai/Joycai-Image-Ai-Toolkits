@@ -90,7 +90,13 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
 
     _initPlayer(uiState.lastGeneratedVideoPath!);
 
+    // Inset on all four sides (note the `top`): this bounds the card's height
+    // to the available area. Without a top anchor the vertical constraint is
+    // unbounded, the `Flexible` video below becomes a no-op, and a tall
+    // (portrait) video grows the card upward until the header — and its close
+    // button — is pushed behind the gallery toolbar.
     return Positioned(
+      top: 20,
       bottom: 20,
       right: 20,
       left: 20,
