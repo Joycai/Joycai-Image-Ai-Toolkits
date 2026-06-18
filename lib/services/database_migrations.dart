@@ -44,6 +44,12 @@ class DatabaseMigration {
        // Handled by DatabaseService.syncPresets()
     }
     if (oldVersion < 24) await _createV24Tables(db);
+    if (oldVersion < 25) {
+      // Purge models orphaned by the pre-v25 deleteChannel, which nulled
+      // channel_id instead of deleting. Such rows can't resolve a channel and
+      // polluted the workbench model selector.
+      await db.delete('llm_models', where: 'channel_id IS NULL');
+    }
   }
 
   static Future<void> onCreate(Database db) async {

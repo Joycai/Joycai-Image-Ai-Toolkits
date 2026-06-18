@@ -444,7 +444,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deleteChannelConfirm(String name) {
-    return 'チャンネル「$name」を削除してもよろしいですか？関連するすべてのモデルのリンクが解除されます。';
+    return 'チャンネル「$name」を削除してもよろしいですか？このチャンネルのモデルも一緒に削除されます。';
   }
 
   @override
@@ -656,6 +656,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get providerCustomDesc => 'セルフホストまたはサードパーティプロバイダー';
+
+  @override
+  String get providerNewApiOpenAI => 'New API（OpenAI 形式）';
+
+  @override
+  String get providerNewApiGemini => 'New API（Gemini 形式）';
+
+  @override
+  String get providerNewApiDesc => 'New API リレー · ベアラートークン認証';
+
+  @override
+  String get newApiBaseUrl => 'New API ベース URL';
+
+  @override
+  String get newApiBaseHint => 'New API のホストを入力してください。バージョンパスは自動的に追加されます';
 
   @override
   String get customEndpointHint => 'カスタムエンドポイントURLを入力してください';
@@ -1243,6 +1258,30 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get resolution => '解像度';
+
+  @override
+  String get quality => '品質';
+
+  @override
+  String get optionAuto => '自動';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
+
+  @override
+  String get referenceImagesNotSupported =>
+      'このモデルは参照画像に対応していません。選択した画像は無視されます。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return 'このモデルは参照画像を最大 $count 枚まで使用できます。残りは無視されます。';
+  }
 
   @override
   String get prompt => 'プロンプト';

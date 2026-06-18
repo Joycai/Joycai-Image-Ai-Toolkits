@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
@@ -62,10 +63,19 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   void _updateDefaultEndpoint() {
-    if (_channelType == 'openai-api-rest') {
-      _endpointController.text = 'https://api.openai.com/v1';
-    } else {
-      _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
+    switch (_channelType) {
+      case 'openai-api-rest':
+        _endpointController.text = 'https://api.openai.com/v1';
+        break;
+      case 'newapi-openai':
+        // New API is a self-hosted relay; only the path suffix is known.
+        _endpointController.text = 'https://your-newapi-host.com/v1';
+        break;
+      case 'newapi-gemini':
+        _endpointController.text = 'https://your-newapi-host.com/v1beta';
+        break;
+      default:
+        _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
   }
 
@@ -119,7 +129,7 @@ class _SetupWizardState extends State<SetupWizard> {
       await _db.addModel({
         'model_id': _modelIdController.text,
         'model_name': _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
-        'type': _channelType.contains('google') ? 'google-genai' : 'openai-api',
+        'type': ChannelDialect.providerType(_channelType),
         'tag': _modelTag,
         'is_paid': 1,
         'sort_order': 0,
@@ -468,9 +478,9 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
     String endpointHint = "";
-    if (_channelType == 'openai-api-rest') {
+    if (_channelType == 'openai-api-rest' || _channelType == 'newapi-openai') {
       endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
-    } else if (_channelType.contains('google')) {
+    } else {
       endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
     }
 
@@ -498,6 +508,8 @@ class _SetupWizardState extends State<SetupWizard> {
               DropdownMenuItem(value: 'google-genai-rest', child: Text('Google GenAI REST')),
               DropdownMenuItem(value: 'openai-api-rest', child: Text('OpenAI API REST')),
               DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API')),
+              DropdownMenuItem(value: 'newapi-openai', child: Text('New API (OpenAI format)')),
+              DropdownMenuItem(value: 'newapi-gemini', child: Text('New API (Gemini format)')),
             ],
             onChanged: (v) {
               setState(() {
@@ -596,7 +608,7 @@ class _SetupWizardState extends State<SetupWizard> {
     setState(() => _isFetchingModels = true);
     
     try {
-      final type = _channelType.contains('google') ? 'google-genai' : 'openai-api';
+      final type = ChannelDialect.providerType(_channelType);
       final apiKey = _apiKeyController.text.trim();
       
       final config = LLMModelConfig(

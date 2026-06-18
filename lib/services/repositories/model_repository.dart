@@ -68,7 +68,11 @@ class ModelRepository {
 
   Future<void> deleteChannel(int id) async {
     final db = await _db;
-    await db.update('llm_models', {'channel_id': null}, where: 'channel_id = ?', whereArgs: [id]);
+    // Delete the channel's models too. A model without a channel can't resolve
+    // an endpoint/key (it's unusable), and the previous behavior of merely
+    // nulling channel_id left orphaned rows that leaked into the workbench model
+    // selector — appearing as a "ghost" channel with a blank selection.
+    await db.delete('llm_models', where: 'channel_id = ?', whereArgs: [id]);
     await db.delete('llm_channels', where: 'id = ?', whereArgs: [id]);
   }
 

@@ -55,6 +55,20 @@
   "selectAModel": "选择一个模型",
   "aspectRatio": "宽高比",
   "resolution": "分辨率",
+  "quality": "质量",
+  "optionAuto": "自动",
+  "qualityLow": "低",
+  "qualityMedium": "中",
+  "qualityHigh": "高",
+  "referenceImagesNotSupported": "该模型不支持参考图，所选图片将被忽略。",
+  "referenceImagesLimited": "该模型最多支持 {count} 张参考图，其余将被忽略。",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompt": "提示词",
   "promptHint": "在此输入提示词...",
   "prefixHint": "例如：result",

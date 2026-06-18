@@ -5,6 +5,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
@@ -625,7 +626,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _showDiscoveryDialog(AppLocalizations l10n, LLMChannel channel, AppState appState) async {
-    final type = channel.type.contains('google') ? 'google-genai' : 'openai-api';
+    final type = ChannelDialect.providerType(channel.type);
     
     final config = LLMModelConfig(
       modelId: 'discovery',

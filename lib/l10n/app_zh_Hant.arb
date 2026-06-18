@@ -135,7 +135,7 @@
   "enableDiscovery": "啟用模型探索",
   "filterModels": "篩選模型...",
   "tagColor": "標籤顏色",
-  "deleteChannelConfirm": "您確定要刪除通道「{name}」嗎？這將會取消所有關聯模型的連結。",
+  "deleteChannelConfirm": "您確定要刪除通道「{name}」嗎？其下的關聯模型也會一併刪除。",
   "modelManager": "模型管理員",
   "name": "名稱",
   "addModel": "新增模型",
@@ -202,6 +202,11 @@
   "providerGoogleCompatibleDesc": "透過 OpenAI 端點的 Google Gemini",
   "providerCustom": "自訂供應商",
   "providerCustomDesc": "自行託管或第三方供應商",
+  "providerNewApiOpenAI": "New API（OpenAI 格式）",
+  "providerNewApiGemini": "New API（Gemini 格式）",
+  "providerNewApiDesc": "New API 中轉 · Bearer 權杖驗證",
+  "newApiBaseUrl": "New API 基礎位址",
+  "newApiBaseHint": "填寫 New API 主機位址，版本路徑將自動補全",
   "customEndpointHint": "輸入您的自訂端點 URL",
   "openaiV1Hint": "提示：OpenAI 相容端點通常以「/v1」結尾",
   "googleV1BetaHint": "提示：Google GenAI 端點通常以「/v1beta」結尾",
@@ -526,6 +531,20 @@
   },
   "aspectRatio": "長寬比",
   "resolution": "解析度",
+  "quality": "品質",
+  "optionAuto": "自動",
+  "qualityLow": "低",
+  "qualityMedium": "中",
+  "qualityHigh": "高",
+  "referenceImagesNotSupported": "此模型不支援參考圖，所選圖片將被忽略。",
+  "referenceImagesLimited": "此模型最多支援 {count} 張參考圖，其餘將被忽略。",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompt": "提示詞",
   "prefixHint": "例如：result",
   "@processImages": {

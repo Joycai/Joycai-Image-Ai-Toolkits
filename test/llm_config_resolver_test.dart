@@ -54,5 +54,32 @@ void main() {
       expect(config.inputFee, 0.5);
       expect(config.outputFee, 1.0);
     });
+
+    test('deleting a channel deletes its models without leaving orphans', () async {
+      final db = DatabaseService();
+      final channelId = await db.addChannel({
+        'display_name': 'Disposable Channel',
+        'type': 'openai-api-rest',
+        'endpoint': 'https://disposable.com/v1',
+        'api_key': 'key-xyz',
+      });
+      await db.addModel({
+        'model_id': 'doomed-model',
+        'model_name': 'Doomed',
+        'type': 'openai-api',
+        'tag': 'image',
+        'channel_id': channelId,
+      });
+
+      expect((await db.getModels()).where((m) => m.channelId == channelId), isNotEmpty);
+
+      await db.deleteChannel(channelId);
+
+      final remaining = await db.getModels();
+      // The model must be gone — not merely orphaned (channel_id == null), which
+      // is what previously leaked a "ghost" channel into the workbench selector.
+      expect(remaining.where((m) => m.modelId == 'doomed-model'), isEmpty);
+      expect(remaining.where((m) => m.channelId == null), isEmpty);
+    });
   });
 }

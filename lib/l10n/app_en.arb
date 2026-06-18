@@ -213,7 +213,7 @@
   "enableDiscovery": "Enable Model Discovery",
   "filterModels": "Filter models...",
   "tagColor": "Tag Color",
-  "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.",
+  "deleteChannelConfirm": "Are you sure you want to delete channel \"{name}\"? Its models will be deleted too.",
   "@deleteChannelConfirm": {
     "placeholders": {
       "name": {
@@ -329,6 +329,11 @@
   "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
   "providerCustom": "Custom Provider",
   "providerCustomDesc": "Self-hosted or 3rd party provider",
+  "providerNewApiOpenAI": "New API (OpenAI format)",
+  "providerNewApiGemini": "New API (Gemini format)",
+  "providerNewApiDesc": "New API relay · bearer-token auth",
+  "newApiBaseUrl": "New API Base URL",
+  "newApiBaseHint": "Enter your New API host; the version path is added automatically",
   "customEndpointHint": "Enter your custom endpoint URL",
   "openaiV1Hint": "Hint: OpenAI compatible endpoints usually end with '/v1'",
   "googleV1BetaHint": "Hint: Google GenAI endpoints usually end with '/v1beta'",
@@ -599,6 +604,20 @@
   "selectAModel": "Select a model",
   "aspectRatio": "Aspect Ratio",
   "resolution": "Resolution",
+  "quality": "Quality",
+  "optionAuto": "Auto",
+  "qualityLow": "Low",
+  "qualityMedium": "Medium",
+  "qualityHigh": "High",
+  "referenceImagesNotSupported": "This model does not support reference images. Selected images will be ignored.",
+  "referenceImagesLimited": "This model accepts at most {count} reference image(s); the rest will be ignored.",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompt": "Prompt",
   "promptHint": "Enter prompt here...",
   "prefixHint": "e.g. result",

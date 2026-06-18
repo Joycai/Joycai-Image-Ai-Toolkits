@@ -1,14 +1,73 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
+import '../channel_dialect.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
 import '../model_discovery_service.dart';
+import '../model_family.dart';
+
+/// Builds the auth headers for Google's REST dialect.
+///
+/// Google's API key is passed in `x-goog-api-key`. The official Google host
+/// (`*.googleapis.com`) treats an `Authorization: Bearer <api-key>` header as an
+/// OAuth2 access token, fails to validate it, and returns 401 — so the bearer
+/// token is only sent to third-party relays that emulate the dialect and may
+/// expect OpenAI-style auth.
+///
+/// New API's Gemini format ([ChannelDialect.newApiGemini]) is the special case:
+/// it authenticates *purely* with an OpenAI-style bearer token and rejects
+/// requests carrying `x-goog-api-key`, so it gets the bearer header alone.
+@visibleForTesting
+Map<String, String> buildGoogleAuthHeaders(
+  String channelType,
+  String apiKey,
+  String endpoint,
+) {
+  if (ChannelDialect.isNewApiGemini(channelType)) {
+    return {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $apiKey",
+    };
+  }
+
+  final headers = {
+    "Content-Type": "application/json",
+    "x-goog-api-key": apiKey,
+  };
+  final host = Uri.tryParse(endpoint)?.host ?? '';
+  final isOfficialGoogle = host.endsWith('googleapis.com');
+  if (channelType != ChannelDialect.officialGoogle && !isOfficialGoogle) {
+    headers["Authorization"] = "Bearer $apiKey";
+  }
+  return headers;
+}
+
+/// Appends the API key as a `?key=` query parameter, matching Google's
+/// documented REST examples (e.g. `...:generateContent?key=$GEMINI_API_KEY`).
+///
+/// This is equivalent to the `x-goog-api-key` header but is the most robust
+/// form: it survives any proxy/relay that strips custom request headers.
+/// Existing query parameters (such as `alt=sse`) are preserved.
+///
+/// New API's Gemini format authenticates with a bearer token only, so the key
+/// is never leaked into the query string for that dialect.
+@visibleForTesting
+Uri appendGoogleKey(Uri url, String apiKey, {String? channelType}) {
+  if (apiKey.isEmpty) return url;
+  if (channelType != null && ChannelDialect.isNewApiGemini(channelType)) {
+    return url;
+  }
+  return url.replace(queryParameters: {
+    ...url.queryParameters,
+    'key': apiKey,
+  });
+}
 
 class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
   @override
@@ -18,15 +77,9 @@ class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
         : config.endpoint;
 
     // Use /models as requested, but ensure auth is sent
-    final url = Uri.parse('$baseUrl/models');
+    final url = appendGoogleKey(Uri.parse('$baseUrl/models'), config.apiKey, channelType: config.channelType);
     
-    final headers = {"Content-Type": "application/json"};
-    if (config.channelType == 'official-google-genai-api') {
-      headers["x-goog-api-key"] = config.apiKey;
-    } else {
-      headers["Authorization"] = "Bearer ${config.apiKey}";
-      headers["x-goog-api-key"] = config.apiKey;
-    }
+    final headers = buildGoogleAuthHeaders(config.channelType, config.apiKey, config.endpoint);
 
     final response = await http.get(url, headers: headers);
 
@@ -54,9 +107,15 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent');
+    // Imagen uses the dedicated `:predict` surface, not `:generateContent`.
+    if (ModelFamilyClassifier.classify(config.modelId) == ModelFamily.geminiImagen) {
+      return _generateImagen(config, history, options: options, logger: logger);
+    }
+
+    final url = appendGoogleKey(
+        Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'), config.apiKey, channelType: config.channelType);
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
-    final headers = _getHeaders(config.channelType, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _preparePayload(history, options, config.endpoint);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
@@ -125,9 +184,25 @@ class GoogleGenAIProvider implements ILLMProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async* {
-    final url = Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse');
+    // Imagen has no streaming surface — run the single-shot predict call and
+    // emit its result as chunks.
+    if (ModelFamilyClassifier.classify(config.modelId) == ModelFamily.geminiImagen) {
+      final response = await _generateImagen(config, history, options: options, logger: logger);
+      if (response.text.isNotEmpty) {
+        yield LLMResponseChunk(textPart: response.text);
+      }
+      for (final img in response.generatedImages) {
+        yield LLMResponseChunk(imagePart: img);
+      }
+      yield LLMResponseChunk(metadata: response.metadata, isDone: true);
+      return;
+    }
+
+    final url = appendGoogleKey(
+        Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse'),
+        config.apiKey, channelType: config.channelType);
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
-    final headers = _getHeaders(config.channelType, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _preparePayload(history, options, config.endpoint);
 
     final request = http.Request('POST', url);
@@ -220,9 +295,10 @@ class GoogleGenAIProvider implements ILLMProvider {
     final baseUrl = config.endpoint.endsWith('/') 
         ? config.endpoint.substring(0, config.endpoint.length - 1) 
         : config.endpoint;
-    final url = Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning');
+    final url = appendGoogleKey(
+        Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'), config.apiKey, channelType: config.channelType);
     
-    final headers = _getHeaders(config.channelType, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _prepareVeoPayload(history, options);
 
     // Debug logging for the user to see what's happening
@@ -299,10 +375,10 @@ class GoogleGenAIProvider implements ILLMProvider {
     Function(String, {String level})? logger,
   }) async {
     // Operation name usually starts with 'operations/'
-    final url = Uri.parse('${config.endpoint}/$operationName');
+    final url = appendGoogleKey(Uri.parse('${config.endpoint}/$operationName'), config.apiKey, channelType: config.channelType);
     logger?.call('Checking Google operation: $operationName', level: 'DEBUG');
     
-    final headers = _getHeaders(config.channelType, config.apiKey);
+    final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final client = config.createClient();
     try {
       final response = await client.get(url, headers: headers);
@@ -315,6 +391,114 @@ class GoogleGenAIProvider implements ILLMProvider {
     } finally {
       client.close();
     }
+  }
+
+  /// Imagen text-to-image via the `:predict` endpoint.
+  Future<LLMResponse> _generateImagen(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
+  }) async {
+    final baseUrl = config.endpoint.endsWith('/')
+        ? config.endpoint.substring(0, config.endpoint.length - 1)
+        : config.endpoint;
+    final url = appendGoogleKey(
+        Uri.parse('$baseUrl/models/${config.modelId}:predict'), config.apiKey, channelType: config.channelType);
+    logger?.call('Preparing Imagen request to: ${url.host}', level: 'DEBUG');
+
+    // Imagen is text-to-image only — surface (rather than silently drop) any
+    // reference images the user attached.
+    final refCount = history
+        .where((m) => m.role == LLMRole.user)
+        .expand((m) => m.attachments)
+        .length;
+    if (refCount > 0) {
+      logger?.call(
+        'Imagen does not support reference images; ignoring $refCount attached image(s).',
+        level: 'WARN',
+      );
+    }
+
+    final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
+    final payload = _prepareImagenPayload(history, options);
+
+    final client = config.createClient();
+    try {
+      final appState = AppState();
+      File? debugFile;
+      if (appState.enableApiDebug) {
+        debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
+          'url': url.toString(),
+          'headers': headers,
+          'body': _getSafePayload(payload),
+        });
+      }
+
+      final response = await client.post(url, headers: headers, body: jsonEncode(payload));
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
+
+      final data = jsonDecode(response.body);
+      if (data['error'] != null) {
+        final err = data['error'];
+        final msg = 'Imagen Error: [${err['code']}] ${err['message']} (${err['status']})';
+        logger?.call(msg, level: 'ERROR');
+        throw Exception(msg);
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Imagen Request failed: ${response.statusCode} - ${response.body}');
+      }
+
+      final List<Uint8List> images = [];
+      final predictions = data['predictions'] as List?;
+      if (predictions != null) {
+        for (final p in predictions) {
+          final b64 = p['bytesBase64Encoded'] ?? p['image']?['bytesBase64Encoded'];
+          if (b64 is String) {
+            try {
+              images.add(base64Decode(b64));
+            } catch (_) {/* ignore */}
+          }
+        }
+      }
+
+      logger?.call('Imagen parse complete. Images: ${images.length}', level: 'DEBUG');
+      return LLMResponse(text: '', generatedImages: images, metadata: {});
+    } finally {
+      client.close();
+    }
+  }
+
+  Map<String, dynamic> _prepareImagenPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
+    final userMsg = history.lastWhere(
+      (m) => m.role == LLMRole.user,
+      orElse: () => history.last,
+    );
+
+    final parameters = <String, dynamic>{
+      'sampleCount': 1,
+      'personGeneration': 'allow_all',
+    };
+    if (options != null) {
+      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
+        parameters['aspectRatio'] = options['aspectRatio'];
+      }
+      if (options.containsKey('imageSize')) {
+        parameters['sampleImageSize'] = options['imageSize'];
+      }
+    }
+
+    return {
+      "instances": [
+        {"prompt": userMsg.content}
+      ],
+      "parameters": parameters,
+    };
   }
 
   Map<String, dynamic> _prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
@@ -462,16 +646,8 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
   }
 
-  Map<String, String> _getHeaders(String channelType, String apiKey) {
-    final headers = {"Content-Type": "application/json"};
-    if (channelType == 'official-google-genai-api') {
-      headers["x-goog-api-key"] = apiKey;
-    } else {
-      headers["Authorization"] = "Bearer $apiKey";
-      headers["x-goog-api-key"] = apiKey;
-    }
-    return headers;
-  }
+  Map<String, String> _getHeaders(String channelType, String apiKey, String endpoint) =>
+      buildGoogleAuthHeaders(channelType, apiKey, endpoint);
 
   Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
     final systemMessages = history.where((m) => m.role == LLMRole.system).toList();

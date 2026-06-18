@@ -926,7 +926,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteChannelConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete channel \"{name}\"? This will unlink all associated models.'**
+  /// **'Are you sure you want to delete channel \"{name}\"? Its models will be deleted too.'**
   String deleteChannelConfirm(String name);
 
   /// No description provided for @modelManager.
@@ -1324,6 +1324,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Self-hosted or 3rd party provider'**
   String get providerCustomDesc;
+
+  /// No description provided for @providerNewApiOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'New API (OpenAI format)'**
+  String get providerNewApiOpenAI;
+
+  /// No description provided for @providerNewApiGemini.
+  ///
+  /// In en, this message translates to:
+  /// **'New API (Gemini format)'**
+  String get providerNewApiGemini;
+
+  /// No description provided for @providerNewApiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'New API relay · bearer-token auth'**
+  String get providerNewApiDesc;
+
+  /// No description provided for @newApiBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'New API Base URL'**
+  String get newApiBaseUrl;
+
+  /// No description provided for @newApiBaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your New API host; the version path is added automatically'**
+  String get newApiBaseHint;
 
   /// No description provided for @customEndpointHint.
   ///
@@ -2440,6 +2470,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resolution'**
   String get resolution;
+
+  /// No description provided for @quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get quality;
+
+  /// No description provided for @optionAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get optionAuto;
+
+  /// No description provided for @qualityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get qualityLow;
+
+  /// No description provided for @qualityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get qualityMedium;
+
+  /// No description provided for @qualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get qualityHigh;
+
+  /// No description provided for @referenceImagesNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This model does not support reference images. Selected images will be ignored.'**
+  String get referenceImagesNotSupported;
+
+  /// No description provided for @referenceImagesLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'This model accepts at most {count} reference image(s); the rest will be ignored.'**
+  String referenceImagesLimited(int count);
 
   /// No description provided for @prompt.
   ///

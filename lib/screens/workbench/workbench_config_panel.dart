@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
@@ -61,9 +61,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     }
   }
 
-  void _updateConfig({int? modelDbId, String? modelIdStr, AppAspectRatio? ar, AppResolution? res, String? prompt, bool? useStream}) {
+  void _updateConfig({int? modelDbId, String? modelIdStr, String? prompt, bool? useStream}) {
     final appState = Provider.of<AppState>(context, listen: false);
-    
+
     String? idToSave;
     if (modelDbId != null) {
       idToSave = modelDbId.toString(); // Save PK as string
@@ -71,8 +71,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
     appState.updateWorkbenchConfig(
       modelId: idToSave ?? modelIdStr,
-      aspectRatio: ar,
-      resolution: res,
       prompt: prompt,
       useStream: useStream,
     );
@@ -88,29 +86,25 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
     final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
-    final lastAspectRatio = context.select<AppState, AppAspectRatio>((s) => s.lastAspectRatio);
-    final lastResolution = context.select<AppState, AppResolution>((s) => s.lastResolution);
-    
+    // Rebuild parameter controls when the stored image params change.
+    context.select<AppState, int>((s) => s.imageParamsRevision);
+
     // Determine selected model from AppState
     int? selectedModelDbId;
     int? selectedChannelId;
-    
+    String? selectedModelIdStr;
+
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
       final match = imageModels.cast<LLMModel?>().firstWhere(
         (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
         orElse: () => null,
       );
-      
-      if (match != null) {
-        selectedModelDbId = match.id;
-        selectedChannelId = match.channelId;
-      } else {
-        // Default to first
-        final first = imageModels.first;
-        selectedModelDbId = first.id;
-        selectedChannelId = first.channelId;
-      }
+
+      final resolved = match ?? imageModels.first;
+      selectedModelDbId = resolved.id;
+      selectedChannelId = resolved.channelId;
+      selectedModelIdStr = resolved.modelId;
     }
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -139,7 +133,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           children: [
             Selector<AppState, List<AppImage>>(
               selector: (_, s) => s.selectedImages,
-              builder: (context, selectedImages, _) => _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
+              builder: (context, selectedImages, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSelectionPreview(context, selectedImages, colorScheme, l10n),
+                  _buildReferenceImageNotice(context, selectedModelIdStr, selectedImages.length, colorScheme, l10n),
+                ],
+              ),
             ),
 
             // Model Selection Section
@@ -149,8 +149,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               channels: allChannels.map((c) => c.toMap()).toList(),
               selectedChannelId: selectedChannelId,
               selectedModelDbId: selectedModelDbId,
-              aspectRatio: lastAspectRatio,
-              resolution: lastResolution,
               isExpanded: _isModelSettingsExpanded,
               onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
               onChannelChanged: (val) {
@@ -164,12 +162,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               onModelChanged: (val) {
                 _updateConfig(modelDbId: val);
               },
-              onAspectRatioChanged: (v) {
-                _updateConfig(ar: v);
-              },
-              onResolutionChanged: (v) {
-                _updateConfig(res: v);
-              },
+              imageParamResolver: (modelId, spec) =>
+                  Provider.of<AppState>(context, listen: false).getImageParam(modelId, spec),
+              onImageParamChanged: (modelId, key, value) =>
+                  Provider.of<AppState>(context, listen: false).setImageParam(modelId, key, value),
             ),
 
             const SizedBox(height: 8),
@@ -292,11 +288,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                       final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
                       final modelName = selectedModel.modelName;
 
-                      appState.submitTask(selectedModelDbId, {
+                      final params = <String, dynamic>{
                         'prompt': _promptController.text,
-                        'aspectRatio': lastAspectRatio.value,
-                        'imageSize': lastResolution.value,
-                      }, modelIdDisplay: modelName);
+                        ...appState.effectiveImageParams(selectedModel.modelId),
+                      };
+
+                      appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
 
                       if (widget.scrollController != null) {
                         Navigator.pop(context);
@@ -479,6 +476,40 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Warns when the selected model can't use the images the user has picked as
+  /// references (Imagen accepts none; OpenAI image caps the count).
+  Widget _buildReferenceImageNotice(
+      BuildContext context, String? modelId, int selectedCount, ColorScheme colorScheme, AppLocalizations l10n) {
+    if (modelId == null || selectedCount == 0) return const SizedBox.shrink();
+
+    final caps = ModelCapabilities.forModel(modelId);
+    String? message;
+    if (!caps.supportsReferenceImages) {
+      message = l10n.referenceImagesNotSupported;
+    } else if (caps.maxReferenceImages != null && selectedCount > caps.maxReferenceImages!) {
+      message = l10n.referenceImagesLimited(caps.maxReferenceImages!);
+    }
+    if (message == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: colorScheme.onTertiaryContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(message, style: TextStyle(fontSize: 11, color: colorScheme.onTertiaryContainer)),
+          ),
+        ],
+      ),
     );
   }
 

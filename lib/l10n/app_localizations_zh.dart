@@ -443,7 +443,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteChannelConfirm(String name) {
-    return '确定要删除渠道“$name”吗？这将断开所有关联模型的连接。';
+    return '确定要删除渠道“$name”吗？其下的关联模型也会一并删除。';
   }
 
   @override
@@ -655,6 +655,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providerCustomDesc => '自建或第三方 API 服务商';
+
+  @override
+  String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
+
+  @override
+  String get providerNewApiGemini => 'New API（Gemini 格式）';
+
+  @override
+  String get providerNewApiDesc => 'New API 中转 · Bearer 令牌鉴权';
+
+  @override
+  String get newApiBaseUrl => 'New API 基础地址';
+
+  @override
+  String get newApiBaseHint => '填写 New API 主机地址，版本路径将自动补全';
 
   @override
   String get customEndpointHint => '请输入自定义端点 URL';
@@ -1240,6 +1255,29 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resolution => '分辨率';
+
+  @override
+  String get quality => '质量';
+
+  @override
+  String get optionAuto => '自动';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
+
+  @override
+  String get referenceImagesNotSupported => '该模型不支持参考图，所选图片将被忽略。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return '该模型最多支持 $count 张参考图，其余将被忽略。';
+  }
 
   @override
   String get prompt => '提示词';
@@ -1930,7 +1968,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String deleteChannelConfirm(String name) {
-    return '您確定要刪除通道「$name」嗎？這將會取消所有關聯模型的連結。';
+    return '您確定要刪除通道「$name」嗎？其下的關聯模型也會一併刪除。';
   }
 
   @override
@@ -2142,6 +2180,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerCustomDesc => '自行託管或第三方供應商';
+
+  @override
+  String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
+
+  @override
+  String get providerNewApiGemini => 'New API（Gemini 格式）';
+
+  @override
+  String get providerNewApiDesc => 'New API 中轉 · Bearer 權杖驗證';
+
+  @override
+  String get newApiBaseUrl => 'New API 基礎位址';
+
+  @override
+  String get newApiBaseHint => '填寫 New API 主機位址，版本路徑將自動補全';
 
   @override
   String get customEndpointHint => '輸入您的自訂端點 URL';
@@ -2727,6 +2780,29 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get resolution => '解析度';
+
+  @override
+  String get quality => '品質';
+
+  @override
+  String get optionAuto => '自動';
+
+  @override
+  String get qualityLow => '低';
+
+  @override
+  String get qualityMedium => '中';
+
+  @override
+  String get qualityHigh => '高';
+
+  @override
+  String get referenceImagesNotSupported => '此模型不支援參考圖，所選圖片將被忽略。';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return '此模型最多支援 $count 張參考圖，其餘將被忽略。';
+  }
 
   @override
   String get prompt => '提示詞';

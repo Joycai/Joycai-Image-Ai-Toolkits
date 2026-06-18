@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/llm/model_capabilities.dart';
 
 class ModelSelectionSection extends StatelessWidget {
   final List<Map<String, dynamic>> availableModels;
   final List<Map<String, dynamic>> channels;
   final int? selectedChannelId;
   final int? selectedModelDbId;
-  final AppAspectRatio aspectRatio;
-  final AppResolution resolution;
   final bool isExpanded;
   final VoidCallback onToggleExpansion;
   final ValueChanged<int?> onChannelChanged;
   final ValueChanged<int?> onModelChanged;
-  final ValueChanged<AppAspectRatio> onAspectRatioChanged;
-  final ValueChanged<AppResolution> onResolutionChanged;
+
+  /// Resolves the current (validated) value for a parameter of the given model.
+  final String Function(String modelId, ParamSpec spec) imageParamResolver;
+
+  /// Persists a parameter change for the given model.
+  final void Function(String modelId, String paramKey, String value) onImageParamChanged;
 
   const ModelSelectionSection({
     super.key,
@@ -23,14 +25,12 @@ class ModelSelectionSection extends StatelessWidget {
     required this.channels,
     required this.selectedChannelId,
     required this.selectedModelDbId,
-    required this.aspectRatio,
-    required this.resolution,
     required this.isExpanded,
     required this.onToggleExpansion,
     required this.onChannelChanged,
     required this.onModelChanged,
-    required this.onAspectRatioChanged,
-    required this.onResolutionChanged,
+    required this.imageParamResolver,
+    required this.onImageParamChanged,
   });
 
   @override
@@ -150,57 +150,102 @@ class ModelSelectionSection extends StatelessWidget {
   }
 
   Widget _buildModelSpecificOptions(BuildContext context, String modelId, AppLocalizations l10n) {
-    if (modelId.contains('image') || modelId.contains('pro')) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(l10n.aspectRatio, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: DropdownButton<AppAspectRatio>(
-                    isExpanded: true,
-                    value: aspectRatio,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
-                    underline: Container(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
-                    items: AppAspectRatio.values
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e.value))).toList(),
-                    onChanged: (v) => onAspectRatioChanged(v!),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(l10n.resolution, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: SegmentedButton<AppResolution>(
-                    showSelectedIcon: false,
-                    style: SegmentedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      textStyle: const TextStyle(fontSize: 10),
-                    ),
-                    segments: AppResolution.values.map((r) =>
-                      ButtonSegment(value: r, label: Text(r.value)),
-                    ).toList(),
-                    selected: {resolution},
-                    onSelectionChanged: (v) => onResolutionChanged(v.first),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
+    final caps = ModelCapabilities.forModel(modelId);
+    if (!caps.isImageGenerator || caps.imageParams.isEmpty) {
+      return const SizedBox.shrink();
     }
-    return const SizedBox.shrink();
+
+    final fields = <Widget>[];
+    for (final spec in caps.imageParams) {
+      if (fields.isNotEmpty) fields.add(const SizedBox(height: 8));
+      fields.add(_buildParamRow(context, modelId, spec, l10n));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(children: fields),
+    );
+  }
+
+  Widget _buildParamRow(BuildContext context, String modelId, ParamSpec spec, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final current = imageParamResolver(modelId, spec);
+
+    Widget control;
+    switch (spec.control) {
+      case ParamControl.dropdown:
+        control = DropdownButton<String>(
+          isExpanded: true,
+          value: current,
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+          underline: Container(height: 1, color: colorScheme.outlineVariant),
+          items: spec.options
+              .map((o) => DropdownMenuItem(
+                    value: o.value,
+                    child: Text(_optionLabel(l10n, spec.key, o.value)),
+                  ))
+              .toList(),
+          onChanged: (v) {
+            if (v != null) onImageParamChanged(modelId, spec.key, v);
+          },
+        );
+        break;
+      case ParamControl.segmented:
+        control = SegmentedButton<String>(
+          showSelectedIcon: false,
+          style: SegmentedButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            textStyle: const TextStyle(fontSize: 10),
+          ),
+          segments: spec.options
+              .map((o) => ButtonSegment(
+                    value: o.value,
+                    label: Text(_optionLabel(l10n, spec.key, o.value)),
+                  ))
+              .toList(),
+          selected: {current},
+          onSelectionChanged: (v) => onImageParamChanged(modelId, spec.key, v.first),
+        );
+        break;
+    }
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(_paramLabel(l10n, spec.labelKey),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        ),
+        Expanded(child: control),
+      ],
+    );
+  }
+
+  String _paramLabel(AppLocalizations l10n, String labelKey) {
+    switch (labelKey) {
+      case 'aspectRatio':
+        return l10n.aspectRatio;
+      case 'resolution':
+        return l10n.resolution;
+      case 'quality':
+        return l10n.quality;
+      default:
+        return labelKey;
+    }
+  }
+
+  String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
+    if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
+    if (paramKey == 'quality') {
+      switch (value) {
+        case 'low':
+          return l10n.qualityLow;
+        case 'medium':
+          return l10n.qualityMedium;
+        case 'high':
+          return l10n.qualityHigh;
+      }
+    }
+    return value;
   }
 }

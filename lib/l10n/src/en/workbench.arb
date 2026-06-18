@@ -55,6 +55,20 @@
   "selectAModel": "Select a model",
   "aspectRatio": "Aspect Ratio",
   "resolution": "Resolution",
+  "quality": "Quality",
+  "optionAuto": "Auto",
+  "qualityLow": "Low",
+  "qualityMedium": "Medium",
+  "qualityHigh": "High",
+  "referenceImagesNotSupported": "This model does not support reference images. Selected images will be ignored.",
+  "referenceImagesLimited": "This model accepts at most {count} reference image(s); the rest will be ignored.",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompt": "Prompt",
   "promptHint": "Enter prompt here...",
   "prefixHint": "e.g. result",

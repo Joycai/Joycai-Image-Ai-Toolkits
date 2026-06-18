@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
+import '../services/llm/model_capabilities.dart';
+import '../services/llm/model_family.dart';
 import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -111,8 +114,14 @@ class AppState extends ChangeNotifier {
 
   // Workbench configurations
   String? lastSelectedModelId;
-  AppAspectRatio lastAspectRatio = AppAspectRatio.notSet;
-  AppResolution lastResolution = AppResolution.r1K;
+  // Per-family image generation parameters, namespaced as "<family>.<paramKey>"
+  // so that switching between e.g. nanoBanana and an OpenAI image model does
+  // not clobber each other's remembered choices. Resolved through the model
+  // capability specs (see [getImageParam] / [effectiveImageParams]).
+  Map<String, String> _imageParamStore = {};
+  // Bumped whenever an image param changes, so selectors can rebuild the
+  // parameter controls without exposing the internal store.
+  int imageParamsRevision = 0;
   String? lastVideoModelId;
   VeoResolution lastVideoResolution = VeoResolution.r720p;
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
@@ -271,8 +280,7 @@ class AppState extends ChangeNotifier {
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
-    lastAspectRatio = AppAspectRatio.fromString(await _db.getSetting('last_aspect_ratio'));
-    lastResolution = AppResolution.fromString(await _db.getSetting('last_resolution'));
+    await _loadImageParams();
     lastVideoModelId = await _db.getSetting('last_video_model_id');
     lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
     lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
@@ -596,8 +604,6 @@ class AppState extends ChangeNotifier {
 
   Future<void> updateWorkbenchConfig({
     String? modelId,
-    AppAspectRatio? aspectRatio,
-    AppResolution? resolution,
     String? prompt,
     bool? useStream,
   }) async {
@@ -605,23 +611,64 @@ class AppState extends ChangeNotifier {
       lastSelectedModelId = modelId;
       await _db.saveSetting('last_model_id', modelId);
     }
-    if (aspectRatio != null) {
-      lastAspectRatio = aspectRatio;
-      await _db.saveSetting('last_aspect_ratio', aspectRatio.value);
-    }
-    if (resolution != null) {
-      lastResolution = resolution;
-      await _db.saveSetting('last_resolution', resolution.value);
-    }
     if (prompt != null) {
       lastPrompt = prompt;
       await _db.saveSetting('last_prompt', prompt);
     }
     if (useStream != null) {
       this.useStream = useStream;
-      await _db.saveSetting('workbench_use_stream', useStream.toString());      
+      await _db.saveSetting('workbench_use_stream', useStream.toString());
     }
     notifyListeners();
+  }
+
+  // --- Per-family image generation parameters ------------------------------
+
+  Future<void> _loadImageParams() async {
+    final raw = await _db.getSetting('workbench_image_params');
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        _imageParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
+        return;
+      } catch (_) {/* fall through to legacy migration */}
+    }
+    // Migrate the old single-set params into the nanoBanana namespace.
+    final legacyAr = await _db.getSetting('last_aspect_ratio');
+    final legacyRes = await _db.getSetting('last_resolution');
+    final ns = ModelFamily.geminiImage.name;
+    if (legacyAr != null) _imageParamStore['$ns.aspectRatio'] = legacyAr;
+    if (legacyRes != null) _imageParamStore['$ns.imageSize'] = legacyRes;
+  }
+
+  String _familyKey(String modelId) =>
+      ModelFamilyClassifier.classify(modelId).name;
+
+  /// Current value for [spec] under the selected [modelId], validated against
+  /// the spec's options (falls back to the spec default).
+  String getImageParam(String modelId, ParamSpec spec) {
+    final stored = _imageParamStore['${_familyKey(modelId)}.${spec.key}'];
+    return spec.normalize(stored);
+  }
+
+  Future<void> setImageParam(String modelId, String paramKey, String value) async {
+    _imageParamStore = {
+      ..._imageParamStore,
+      '${_familyKey(modelId)}.$paramKey': value,
+    };
+    imageParamsRevision++;
+    await _db.saveSetting('workbench_image_params', jsonEncode(_imageParamStore));
+    notifyListeners();
+  }
+
+  /// Validated parameter map to send with a generation task for [modelId].
+  Map<String, dynamic> effectiveImageParams(String modelId) {
+    final caps = ModelCapabilities.forModel(modelId);
+    final result = <String, dynamic>{};
+    for (final spec in caps.imageParams) {
+      result[spec.key] = getImageParam(modelId, spec);
+    }
+    return result;
   }
 
   Future<void> updateVideoConfig({

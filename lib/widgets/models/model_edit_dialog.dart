@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
+import '../../services/llm/channel_dialect.dart';
 import '../../state/app_state.dart';
 
 class ModelEditDialog extends StatefulWidget {
@@ -195,7 +196,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             final data = {
               'model_id': idCtrl.text.trim(),
               'model_name': nameCtrl.text.trim(),
-              'type': channel.type.contains('google') ? 'google-genai' : 'openai-api',
+              'type': ChannelDialect.providerType(channel.type),
               'tag': tag,
               'is_paid': 1,
               'supports_stream': supportsStream ? 1 : 0,

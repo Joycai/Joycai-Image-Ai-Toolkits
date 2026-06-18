@@ -87,8 +87,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ],
       ),
       contentPadding: EdgeInsets.zero,
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 550),
+      // A tight (fixed) width lets AlertDialog's IntrinsicWidth short-circuit
+      // instead of recursing into the scrollable content below — the content
+      // is not compatible with intrinsic-dimension queries.
+      content: SizedBox(
+        width: 550,
         child: _buildContent(l10n),
       ),
       actions: [
@@ -128,111 +131,104 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     
     String endpointHint = "";
-    if (type == 'openai-api-rest') {
+    if (type == 'openai-api-rest' || type == 'newapi-openai') {
       endpointHint = l10n.openaiV1Hint;
-    } else if (type.contains('google')) {
+    } else {
       endpointHint = l10n.googleV1BetaHint;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Protocol Section
-                  _buildSectionHeader(l10n.stepProtocol),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: type,
-                    isExpanded: true,
-                    items: [
-                      DropdownMenuItem(value: 'openai-api-rest', child: Text(l10n.protocolOpenAI)),
-                      DropdownMenuItem(value: 'google-genai-rest', child: Text(l10n.protocolGoogle)),
-                      DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API (Deprecated)')),
-                    ],
-                    onChanged: (v) => setState(() => type = v!),
-                    decoration: InputDecoration(
-                      labelText: l10n.channelType,
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.category_outlined),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Configuration Section
-                  _buildSectionHeader(l10n.configuration),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: epCtrl,
-                    decoration: InputDecoration(
-                      labelText: l10n.endpointUrl,
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.link),
-                      helperText: endpointHint.isNotEmpty ? endpointHint : null,
-                      helperMaxLines: 3,
-                      helperStyle: TextStyle(color: colorScheme.outline, fontSize: 11),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ApiKeyField(
-                    controller: keyCtrl, 
-                    label: l10n.apiKey, 
-                    onChanged: (v) {}
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
-                    subtitle: Text(l10n.enableDiscoveryDesc, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
-                    value: discovery,
-                    onChanged: (v) => setState(() => discovery = v),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Visual/Tags Section
-                  _buildSectionHeader(l10n.stepConfig),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: nameCtrl, 
-                    decoration: InputDecoration(
-                      labelText: l10n.displayName,
-                      hintText: l10n.nameHint,
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.label_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: tagCtrl, 
-                    decoration: InputDecoration(
-                      labelText: l10n.tag,
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.tag),
-                      hintText: l10n.tagHint,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(l10n.tagColor, style: TextStyle(fontSize: 12, color: colorScheme.outline, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  ColorPickerWidget(
-                    selectedColor: tagColor,
-                    onColorChanged: (color) {
-                      setState(() => tagColor = color);
-                    },
-                    showHexInput: true,
-                    showColorWheel: true,
-                  ),
-                ],
-              ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Protocol Section
+          _buildSectionHeader(l10n.stepProtocol),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: type,
+            isExpanded: true,
+            items: [
+              DropdownMenuItem(value: 'openai-api-rest', child: Text(l10n.protocolOpenAI)),
+              DropdownMenuItem(value: 'google-genai-rest', child: Text(l10n.protocolGoogle)),
+              DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API (Deprecated)')),
+              DropdownMenuItem(value: 'newapi-openai', child: Text(l10n.providerNewApiOpenAI)),
+              DropdownMenuItem(value: 'newapi-gemini', child: Text(l10n.providerNewApiGemini)),
+            ],
+            onChanged: (v) => setState(() => type = v!),
+            decoration: InputDecoration(
+              labelText: l10n.channelType,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.category_outlined),
             ),
           ),
-        );
-      }
+
+          const SizedBox(height: 24),
+          // Configuration Section
+          _buildSectionHeader(l10n.configuration),
+          const SizedBox(height: 12),
+          TextField(
+            controller: epCtrl,
+            decoration: InputDecoration(
+              labelText: l10n.endpointUrl,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.link),
+              helperText: endpointHint.isNotEmpty ? endpointHint : null,
+              helperMaxLines: 3,
+              helperStyle: TextStyle(color: colorScheme.outline, fontSize: 11),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ApiKeyField(
+            controller: keyCtrl,
+            label: l10n.apiKey,
+            onChanged: (v) {}
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+            subtitle: Text(l10n.enableDiscoveryDesc, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+            value: discovery,
+            onChanged: (v) => setState(() => discovery = v),
+            contentPadding: EdgeInsets.zero,
+          ),
+
+          const SizedBox(height: 24),
+          // Visual/Tags Section
+          _buildSectionHeader(l10n.stepConfig),
+          const SizedBox(height: 12),
+          TextField(
+            controller: nameCtrl,
+            decoration: InputDecoration(
+              labelText: l10n.displayName,
+              hintText: l10n.nameHint,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.label_outline),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: tagCtrl,
+            decoration: InputDecoration(
+              labelText: l10n.tag,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.tag),
+              hintText: l10n.tagHint,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(l10n.tagColor, style: TextStyle(fontSize: 12, color: colorScheme.outline, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ColorPickerWidget(
+            selectedColor: tagColor,
+            onColorChanged: (color) {
+              setState(() => tagColor = color);
+            },
+            showHexInput: true,
+            showColorWheel: true,
+          ),
+        ],
+      ),
     );
   }
 

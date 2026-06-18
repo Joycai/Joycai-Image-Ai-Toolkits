@@ -449,7 +449,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteChannelConfirm(String name) {
-    return 'Are you sure you want to delete channel \"$name\"? This will unlink all associated models.';
+    return 'Are you sure you want to delete channel \"$name\"? Its models will be deleted too.';
   }
 
   @override
@@ -662,6 +662,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providerCustomDesc => 'Self-hosted or 3rd party provider';
+
+  @override
+  String get providerNewApiOpenAI => 'New API (OpenAI format)';
+
+  @override
+  String get providerNewApiGemini => 'New API (Gemini format)';
+
+  @override
+  String get providerNewApiDesc => 'New API relay · bearer-token auth';
+
+  @override
+  String get newApiBaseUrl => 'New API Base URL';
+
+  @override
+  String get newApiBaseHint =>
+      'Enter your New API host; the version path is added automatically';
 
   @override
   String get customEndpointHint => 'Enter your custom endpoint URL';
@@ -1268,6 +1284,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resolution => 'Resolution';
+
+  @override
+  String get quality => 'Quality';
+
+  @override
+  String get optionAuto => 'Auto';
+
+  @override
+  String get qualityLow => 'Low';
+
+  @override
+  String get qualityMedium => 'Medium';
+
+  @override
+  String get qualityHigh => 'High';
+
+  @override
+  String get referenceImagesNotSupported =>
+      'This model does not support reference images. Selected images will be ignored.';
+
+  @override
+  String referenceImagesLimited(int count) {
+    return 'This model accepts at most $count reference image(s); the rest will be ignored.';
+  }
 
   @override
   String get prompt => 'Prompt';
