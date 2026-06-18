@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/llm/channel_dialect.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../color_picker_widget.dart';
@@ -79,9 +80,34 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     }
   }
 
+  /// Normalizes a New API base URL to the correct versioned path. If the user
+  /// already typed a full path ending in `/v1` or `/v1beta`, it is respected;
+  /// otherwise [suffix] is appended.
+  String _resolveNewApiEndpoint(String input, String suffix) {
+    var base = input.trim();
+    while (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    if (base.endsWith('/v1') || base.endsWith('/v1beta')) return base;
+    return '$base$suffix';
+  }
+
   Future<void> _finish() async {
     String finalEndpoint = "";
-    if (_selectedProtocol == 'openai-api-rest') {
+    // The persisted channel type usually mirrors the protocol, but the New API
+    // presets resolve to a dedicated dialect so the transport knows to use
+    // bearer-token auth (and, for Gemini, to skip Google's key conventions).
+    String channelType = _selectedProtocol;
+
+    if (_selectedProvider == 'newapi') {
+      if (_selectedProtocol == 'openai-api-rest') {
+        channelType = ChannelDialect.newApiOpenAI;
+        finalEndpoint = _resolveNewApiEndpoint(_customEndpointCtrl.text, '/v1');
+      } else {
+        channelType = ChannelDialect.newApiGemini;
+        finalEndpoint = _resolveNewApiEndpoint(_customEndpointCtrl.text, '/v1beta');
+      }
+    } else if (_selectedProtocol == 'openai-api-rest') {
       if (_selectedProvider == 'openai-official') {
         finalEndpoint = 'https://api.openai.com/v1';
       } else if (_selectedProvider == 'google-compatible') {
@@ -101,7 +127,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       'display_name': _nameCtrl.text.trim().isEmpty ? _selectedProvider : _nameCtrl.text.trim(),
       'endpoint': finalEndpoint,
       'api_key': _apiKeyCtrl.text.trim(),
-      'type': _selectedProtocol,
+      'type': channelType,
       'enable_discovery': _enableDiscovery ? 1 : 0,
       'tag': _tagCtrl.text.trim().isEmpty ? _selectedProvider.split('-').first : _tagCtrl.text.trim(),
       'tag_color': _tagColor,
@@ -207,7 +233,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   bool _isNextEnabled() {
-    if (_currentStep == 1 && _selectedProvider == 'custom' && _customEndpointCtrl.text.trim().isEmpty) return false;
+    final needsEndpoint = _selectedProvider == 'custom' || _selectedProvider == 'newapi';
+    if (_currentStep == 1 && needsEndpoint && _customEndpointCtrl.text.trim().isEmpty) return false;
     if (_currentStep == 2 && _apiKeyCtrl.text.trim().isEmpty) return false;
     return true;
   }
@@ -254,8 +281,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   Widget _buildProviderStep(AppLocalizations l10n) {
+    final isOpenAIProtocol = _selectedProtocol == 'openai-api-rest';
     List<Widget> providers = [];
-    if (_selectedProtocol == 'openai-api-rest') {
+    if (isOpenAIProtocol) {
       providers = [
         _buildSelectionCard(
           title: l10n.providerOpenAIOfficial,
@@ -272,6 +300,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           isSelected: _selectedProvider == 'google-compatible',
           onTap: () => setState(() => _selectedProvider = 'google-compatible'),
         ),
+        const SizedBox(height: 12),
+        _buildSelectionCard(
+          title: l10n.providerNewApiOpenAI,
+          subtitle: l10n.providerNewApiDesc,
+          icon: Icons.hub_outlined,
+          isSelected: _selectedProvider == 'newapi',
+          onTap: () => setState(() => _selectedProvider = 'newapi'),
+        ),
       ];
     } else {
       providers = [
@@ -282,8 +318,19 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           isSelected: _selectedProvider == 'google-official',
           onTap: () => setState(() => _selectedProvider = 'google-official'),
         ),
+        const SizedBox(height: 12),
+        _buildSelectionCard(
+          title: l10n.providerNewApiGemini,
+          subtitle: l10n.providerNewApiDesc,
+          icon: Icons.hub_outlined,
+          isSelected: _selectedProvider == 'newapi',
+          onTap: () => setState(() => _selectedProvider = 'newapi'),
+        ),
       ];
     }
+
+    final needsEndpoint = _selectedProvider == 'custom' || _selectedProvider == 'newapi';
+    final isNewApi = _selectedProvider == 'newapi';
 
     providers.addAll([
       const SizedBox(height: 12),
@@ -294,15 +341,17 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         isSelected: _selectedProvider == 'custom',
         onTap: () => setState(() => _selectedProvider = 'custom'),
       ),
-      if (_selectedProvider == 'custom') ...[
+      if (needsEndpoint) ...[
         const SizedBox(height: 16),
         TextField(
           controller: _customEndpointCtrl,
           decoration: InputDecoration(
-            labelText: l10n.endpointUrl,
-            hintText: "https://your-api.com/v1",
+            labelText: isNewApi ? l10n.newApiBaseUrl : l10n.endpointUrl,
+            hintText: isNewApi ? "https://your-newapi-host.com" : "https://your-api.com/v1",
             border: const OutlineInputBorder(),
-            helperText: _selectedProtocol == 'openai-api-rest' ? l10n.openaiV1Hint : l10n.googleV1BetaHint,
+            helperText: isNewApi
+                ? l10n.newApiBaseHint
+                : (isOpenAIProtocol ? l10n.openaiV1Hint : l10n.googleV1BetaHint),
           ),
           onChanged: (_) => setState(() {}),
         ),

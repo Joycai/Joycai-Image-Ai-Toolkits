@@ -14,7 +14,7 @@
   "enableDiscovery": "启用模型检索",
   "filterModels": "过滤模型...",
   "tagColor": "标签颜色",
-  "deleteChannelConfirm": "确定要删除渠道“{name}”吗？这将断开所有关联模型的连接。",
+  "deleteChannelConfirm": "确定要删除渠道“{name}”吗？其下的关联模型也会一并删除。",
   "@deleteChannelConfirm": {
     "placeholders": {
       "name": {
@@ -130,6 +130,11 @@
   "providerGoogleCompatibleDesc": "通过 OpenAI 适配端点访问 Gemini",
   "providerCustom": "自定义提供商",
   "providerCustomDesc": "自建或第三方 API 服务商",
+  "providerNewApiOpenAI": "New API（OpenAI 格式）",
+  "providerNewApiGemini": "New API（Gemini 格式）",
+  "providerNewApiDesc": "New API 中转 · Bearer 令牌鉴权",
+  "newApiBaseUrl": "New API 基础地址",
+  "newApiBaseHint": "填写 New API 主机地址，版本路径将自动补全",
   "customEndpointHint": "请输入自定义端点 URL",
   "openaiV1Hint": "提示：OpenAI 兼容接口通常以 '/v1' 结尾",
   "googleV1BetaHint": "提示：Google GenAI 接口通常以 '/v1beta' 结尾",

@@ -38,6 +38,42 @@ void main() {
       expect(openai.imageParams.map((p) => p.key), containsAll(['imageSize', 'quality']));
     });
 
+    test('gpt-image-2 exposes the expanded 2K/4K size set', () {
+      List<String> sizesFor(String modelId) => ModelCapabilities.forModel(modelId)
+          .imageParams
+          .firstWhere((p) => p.key == 'imageSize')
+          .options
+          .map((o) => o.value)
+          .toList();
+
+      final v2 = sizesFor('gpt-image-2');
+      // The popular 2K / 4K sizes are only offered on v2.
+      expect(v2, containsAll(['2048x2048', '3840x2160', '2160x3840']));
+      // v1 must stay restricted to its documented size set.
+      expect(sizesFor('gpt-image-1'), isNot(contains('3840x2160')));
+    });
+
+    test('nano Banana variants expose wider aspect-ratio sets', () {
+      List<String> ratiosFor(String modelId) => ModelCapabilities.forModel(modelId)
+          .imageParams
+          .firstWhere((p) => p.key == 'aspectRatio')
+          .options
+          .map((o) => o.value)
+          .toList();
+
+      // Nano Banana Pro adds 21:9; it must not gain the extreme strip ratios.
+      final pro = ratiosFor('gemini-3.1-pro-image');
+      expect(pro, contains('21:9'));
+      expect(pro, isNot(contains('1:8')));
+
+      // Nano Banana 2 adds 21:9 plus the extreme panoramic / strip ratios.
+      final v2 = ratiosFor('gemini-3.1-flash-image');
+      expect(v2, containsAll(['21:9', '1:4', '4:1', '1:8', '8:1']));
+
+      // The generic gemini-*-image table stays on the standard set.
+      expect(ratiosFor('gemini-2.5-flash-image'), isNot(contains('21:9')));
+    });
+
     test('chat models expose no image parameters', () {
       final chat = ModelCapabilities.forModel('gpt-4o');
       expect(chat.isImageGenerator, false);

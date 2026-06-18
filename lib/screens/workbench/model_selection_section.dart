@@ -235,7 +235,7 @@ class ModelSelectionSection extends StatelessWidget {
   }
 
   String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
-    if (value == 'auto') return l10n.optionAuto;
+    if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
     if (paramKey == 'quality') {
       switch (value) {
         case 'low':

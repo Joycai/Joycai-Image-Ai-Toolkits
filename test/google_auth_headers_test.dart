@@ -55,6 +55,19 @@ void main() {
       );
       expect(headers.containsKey('Authorization'), isFalse);
     });
+
+    test('newapi-gemini uses bearer token only (no x-goog-api-key)', () {
+      // New API's Gemini format authenticates like OpenAI and rejects the
+      // x-goog-api-key header; it must receive Authorization: Bearer alone.
+      final headers = buildGoogleAuthHeaders(
+        'newapi-gemini',
+        key,
+        'https://my-newapi-host.com/v1beta',
+      );
+      expect(headers['Authorization'], 'Bearer $key');
+      expect(headers.containsKey('x-goog-api-key'), isFalse);
+      expect(headers['Content-Type'], 'application/json');
+    });
   });
 
   group('appendGoogleKey', () {
@@ -81,6 +94,13 @@ void main() {
     test('leaves the URL untouched when the key is empty', () {
       final original = Uri.parse('https://example.com/v1beta/models');
       expect(appendGoogleKey(original, ''), original);
+    });
+
+    test('newapi-gemini never leaks the key into the query string', () {
+      final original = Uri.parse('https://my-newapi-host.com/v1beta/models');
+      final url = appendGoogleKey(original, key, channelType: 'newapi-gemini');
+      expect(url.queryParameters.containsKey('key'), isFalse);
+      expect(url, original);
     });
   });
 }

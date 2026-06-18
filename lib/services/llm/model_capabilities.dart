@@ -67,8 +67,25 @@ class ModelCapabilities {
   /// Whether the model accepts any reference images at all.
   bool get supportsReferenceImages => maxReferenceImages != 0;
 
-  static ModelCapabilities forModel(String modelId) =>
-      forFamily(ModelFamilyClassifier.classify(modelId));
+  static ModelCapabilities forModel(String modelId) {
+    final family = ModelFamilyClassifier.classify(modelId);
+    final id = modelId.toLowerCase();
+
+    // gpt-image-2 shares the OpenAI image transport with gpt-image-1 but accepts
+    // a much larger size set (2K / 4K), so it resolves to its own table.
+    if (family == ModelFamily.openaiImage && id.contains('gpt-image-2')) {
+      return _openaiImage2;
+    }
+
+    // Nano Banana variants share the gemini-*-image transport but expose wider
+    // aspect-ratio sets than the generic nanoBanana table.
+    if (family == ModelFamily.geminiImage) {
+      if (id.contains('gemini-3.1-flash-image')) return _geminiImageV2;
+      if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
+    }
+
+    return forFamily(family);
+  }
 
   static ModelCapabilities forFamily(ModelFamily family) {
     switch (family) {
@@ -87,6 +104,15 @@ class ModelCapabilities {
   }
 
   // --- Family parameter tables ---------------------------------------------
+
+  /// 1K / 2K / 4K resolution control shared by every nanoBanana image family.
+  static const _geminiSizeParam = ParamSpec(
+    key: 'imageSize',
+    labelKey: 'resolution',
+    control: ParamControl.segmented,
+    defaultValue: '1K',
+    options: [ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
+  );
 
   /// nanoBanana — `gemini-*-image`. Full Gemini aspect-ratio set + 1K/2K/4K.
   /// Accepts multiple reference images (no hard limit enforced here).
@@ -112,13 +138,69 @@ class ModelCapabilities {
           ParamOption('16:9'),
         ],
       ),
+      _geminiSizeParam,
+    ],
+  );
+
+  /// Nano Banana Pro — `gemini-3.1-pro-image`. The standard nanoBanana set plus
+  /// the 21:9 ultrawide ratio.
+  static const _geminiImagePro = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: null,
+    imageParams: [
       ParamSpec(
-        key: 'imageSize',
-        labelKey: 'resolution',
-        control: ParamControl.segmented,
-        defaultValue: '1K',
-        options: [ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'not_set',
+        options: [
+          ParamOption('not_set'),
+          ParamOption('1:1'),
+          ParamOption('2:3'),
+          ParamOption('3:2'),
+          ParamOption('3:4'),
+          ParamOption('4:3'),
+          ParamOption('4:5'),
+          ParamOption('5:4'),
+          ParamOption('9:16'),
+          ParamOption('16:9'),
+          ParamOption('21:9'),
+        ],
       ),
+      _geminiSizeParam,
+    ],
+  );
+
+  /// Nano Banana 2 — `gemini-3.1-flash-image`. The Pro set plus the extreme
+  /// panoramic / strip ratios (1:4, 4:1, 1:8, 8:1).
+  static const _geminiImageV2 = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: null,
+    imageParams: [
+      ParamSpec(
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'not_set',
+        options: [
+          ParamOption('not_set'),
+          ParamOption('1:1'),
+          ParamOption('2:3'),
+          ParamOption('3:2'),
+          ParamOption('3:4'),
+          ParamOption('4:3'),
+          ParamOption('4:5'),
+          ParamOption('5:4'),
+          ParamOption('9:16'),
+          ParamOption('16:9'),
+          ParamOption('21:9'),
+          ParamOption('1:4'),
+          ParamOption('4:1'),
+          ParamOption('1:8'),
+          ParamOption('8:1'),
+        ],
+      ),
+      _geminiSizeParam,
     ],
   );
 
@@ -151,6 +233,20 @@ class ModelCapabilities {
     ],
   );
 
+  /// Quality control shared by every native OpenAI image model.
+  static const _openaiQualityParam = ParamSpec(
+    key: 'quality',
+    labelKey: 'quality',
+    control: ParamControl.segmented,
+    defaultValue: 'auto',
+    options: [
+      ParamOption('auto'),
+      ParamOption('low'),
+      ParamOption('medium'),
+      ParamOption('high'),
+    ],
+  );
+
   /// Native OpenAI image (`gpt-image-1`). Pixel sizes + quality, no separate
   /// aspect-ratio control (size encodes the ratio). Accepts up to 16 reference
   /// images via the images/edits endpoint.
@@ -170,18 +266,35 @@ class ModelCapabilities {
           ParamOption('1024x1536'),
         ],
       ),
+      _openaiQualityParam,
+    ],
+  );
+
+  /// Native OpenAI image v2 (`gpt-image-2`). Same transport as gpt-image-1 but
+  /// with the expanded "popular sizes" set up to 4K (the API also accepts any
+  /// custom size meeting its constraints: edges multiples of 16, max edge
+  /// 3840px, ratio <= 3:1, 0.66–8.29 MP — the provider passes WxH through).
+  static const _openaiImage2 = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 16,
+    imageParams: [
       ParamSpec(
-        key: 'quality',
-        labelKey: 'quality',
-        control: ParamControl.segmented,
+        key: 'imageSize',
+        labelKey: 'resolution',
+        control: ParamControl.dropdown,
         defaultValue: 'auto',
         options: [
           ParamOption('auto'),
-          ParamOption('low'),
-          ParamOption('medium'),
-          ParamOption('high'),
+          ParamOption('1024x1024'),
+          ParamOption('1536x1024'),
+          ParamOption('1024x1536'),
+          ParamOption('2048x2048'),
+          ParamOption('2048x1152'),
+          ParamOption('3840x2160'),
+          ParamOption('2160x3840'),
         ],
       ),
+      _openaiQualityParam,
     ],
   );
 }

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
+import '../channel_dialect.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
@@ -18,19 +19,30 @@ import '../model_family.dart';
 /// OAuth2 access token, fails to validate it, and returns 401 — so the bearer
 /// token is only sent to third-party relays that emulate the dialect and may
 /// expect OpenAI-style auth.
+///
+/// New API's Gemini format ([ChannelDialect.newApiGemini]) is the special case:
+/// it authenticates *purely* with an OpenAI-style bearer token and rejects
+/// requests carrying `x-goog-api-key`, so it gets the bearer header alone.
 @visibleForTesting
 Map<String, String> buildGoogleAuthHeaders(
   String channelType,
   String apiKey,
   String endpoint,
 ) {
+  if (ChannelDialect.isNewApiGemini(channelType)) {
+    return {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $apiKey",
+    };
+  }
+
   final headers = {
     "Content-Type": "application/json",
     "x-goog-api-key": apiKey,
   };
   final host = Uri.tryParse(endpoint)?.host ?? '';
   final isOfficialGoogle = host.endsWith('googleapis.com');
-  if (channelType != 'official-google-genai-api' && !isOfficialGoogle) {
+  if (channelType != ChannelDialect.officialGoogle && !isOfficialGoogle) {
     headers["Authorization"] = "Bearer $apiKey";
   }
   return headers;
@@ -42,9 +54,15 @@ Map<String, String> buildGoogleAuthHeaders(
 /// This is equivalent to the `x-goog-api-key` header but is the most robust
 /// form: it survives any proxy/relay that strips custom request headers.
 /// Existing query parameters (such as `alt=sse`) are preserved.
+///
+/// New API's Gemini format authenticates with a bearer token only, so the key
+/// is never leaked into the query string for that dialect.
 @visibleForTesting
-Uri appendGoogleKey(Uri url, String apiKey) {
+Uri appendGoogleKey(Uri url, String apiKey, {String? channelType}) {
   if (apiKey.isEmpty) return url;
+  if (channelType != null && ChannelDialect.isNewApiGemini(channelType)) {
+    return url;
+  }
   return url.replace(queryParameters: {
     ...url.queryParameters,
     'key': apiKey,
@@ -59,7 +77,7 @@ class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
         : config.endpoint;
 
     // Use /models as requested, but ensure auth is sent
-    final url = appendGoogleKey(Uri.parse('$baseUrl/models'), config.apiKey);
+    final url = appendGoogleKey(Uri.parse('$baseUrl/models'), config.apiKey, channelType: config.channelType);
     
     final headers = buildGoogleAuthHeaders(config.channelType, config.apiKey, config.endpoint);
 
@@ -95,7 +113,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     final url = appendGoogleKey(
-        Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'), config.apiKey);
+        Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'), config.apiKey, channelType: config.channelType);
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _preparePayload(history, options, config.endpoint);
@@ -182,7 +200,7 @@ class GoogleGenAIProvider implements ILLMProvider {
 
     final url = appendGoogleKey(
         Uri.parse('${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse'),
-        config.apiKey);
+        config.apiKey, channelType: config.channelType);
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _preparePayload(history, options, config.endpoint);
@@ -278,7 +296,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         ? config.endpoint.substring(0, config.endpoint.length - 1) 
         : config.endpoint;
     final url = appendGoogleKey(
-        Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'), config.apiKey);
+        Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'), config.apiKey, channelType: config.channelType);
     
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = _prepareVeoPayload(history, options);
@@ -357,7 +375,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     Function(String, {String level})? logger,
   }) async {
     // Operation name usually starts with 'operations/'
-    final url = appendGoogleKey(Uri.parse('${config.endpoint}/$operationName'), config.apiKey);
+    final url = appendGoogleKey(Uri.parse('${config.endpoint}/$operationName'), config.apiKey, channelType: config.channelType);
     logger?.call('Checking Google operation: $operationName', level: 'DEBUG');
     
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
@@ -386,7 +404,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         ? config.endpoint.substring(0, config.endpoint.length - 1)
         : config.endpoint;
     final url = appendGoogleKey(
-        Uri.parse('$baseUrl/models/${config.modelId}:predict'), config.apiKey);
+        Uri.parse('$baseUrl/models/${config.modelId}:predict'), config.apiKey, channelType: config.channelType);
     logger?.call('Preparing Imagen request to: ${url.host}', level: 'DEBUG');
 
     // Imagen is text-to-image only — surface (rather than silently drop) any
