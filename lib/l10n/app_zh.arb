@@ -613,6 +613,12 @@
   "tempWorkspace": "临时工作区",
   "processResults": "处理结果",
   "resultCache": "结果缓存区",
+  "sectionSources": "来源",
+  "sectionResults": "结果",
+  "sectionWorkspace": "工作区",
+  "allSources": "全部来源",
+  "allResults": "全部结果",
+  "backToAll": "返回全部",
   "directories": "目录列表",
   "addFolder": "添加文件夹",
   "noFolders": "未添加文件夹",
@@ -687,6 +693,8 @@
       }
     }
   },
+  "useStreaming": "使用流式传输",
+  "useStreamingDesc": "实时 AI 响应（如果支持）",
   "taskSubmitted": "任务已提交至队列",
   "comparator": "对比器",
   "compareModeSync": "同步模式",

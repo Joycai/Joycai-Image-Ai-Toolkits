@@ -9,6 +9,12 @@
   "tempWorkspace": "臨時工作區",
   "processResults": "處理結果",
   "resultCache": "結果快取",
+  "sectionSources": "來源",
+  "sectionResults": "結果",
+  "sectionWorkspace": "工作區",
+  "allSources": "全部來源",
+  "allResults": "全部結果",
+  "backToAll": "返回全部",
   "directories": "目錄",
   "addFolder": "新增資料夾",
   "noFolders": "未新增資料夾",
@@ -84,6 +90,8 @@
       }
     }
   },
+  "useStreaming": "使用串流",
+  "useStreamingDesc": "即時 AI 回應（若支援）",
   "taskSubmitted": "任務已提交至佇列",
   "comparator": "比較器",
   "compareModeSync": "同步模式",

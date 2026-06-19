@@ -2441,6 +2441,42 @@ abstract class AppLocalizations {
   /// **'Result Cache'**
   String get resultCache;
 
+  /// No description provided for @sectionSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get sectionSources;
+
+  /// No description provided for @sectionResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get sectionResults;
+
+  /// No description provided for @sectionWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get sectionWorkspace;
+
+  /// No description provided for @allSources.
+  ///
+  /// In en, this message translates to:
+  /// **'All Sources'**
+  String get allSources;
+
+  /// No description provided for @allResults.
+  ///
+  /// In en, this message translates to:
+  /// **'All Results'**
+  String get allResults;
+
+  /// No description provided for @backToAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to all'**
+  String get backToAll;
+
   /// No description provided for @directories.
   ///
   /// In en, this message translates to:
@@ -2674,6 +2710,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Process {count} Images'**
   String processImages(int count);
+
+  /// No description provided for @useStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Streaming'**
+  String get useStreaming;
+
+  /// No description provided for @useStreamingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time AI response (if supported)'**
+  String get useStreamingDesc;
 
   /// No description provided for @taskSubmitted.
   ///

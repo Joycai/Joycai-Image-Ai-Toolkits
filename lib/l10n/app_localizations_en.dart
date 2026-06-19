@@ -1276,6 +1276,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resultCache => 'Result Cache';
 
   @override
+  String get sectionSources => 'Sources';
+
+  @override
+  String get sectionResults => 'Results';
+
+  @override
+  String get sectionWorkspace => 'Workspace';
+
+  @override
+  String get allSources => 'All Sources';
+
+  @override
+  String get allResults => 'All Results';
+
+  @override
+  String get backToAll => 'Back to all';
+
+  @override
   String get directories => 'DIRECTORIES';
 
   @override
@@ -1404,6 +1422,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String processImages(int count) {
     return 'Process $count Images';
   }
+
+  @override
+  String get useStreaming => 'Use Streaming';
+
+  @override
+  String get useStreamingDesc => 'Real-time AI response (if supported)';
 
   @override
   String get taskSubmitted => 'Task submitted to queue';

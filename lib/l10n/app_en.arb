@@ -613,6 +613,12 @@
   "tempWorkspace": "Temp Workspace",
   "processResults": "Process Results",
   "resultCache": "Result Cache",
+  "sectionSources": "Sources",
+  "sectionResults": "Results",
+  "sectionWorkspace": "Workspace",
+  "allSources": "All Sources",
+  "allResults": "All Results",
+  "backToAll": "Back to all",
   "directories": "DIRECTORIES",
   "addFolder": "Add Folder",
   "noFolders": "No folders added",
@@ -687,6 +693,8 @@
       }
     }
   },
+  "useStreaming": "Use Streaming",
+  "useStreamingDesc": "Real-time AI response (if supported)",
   "taskSubmitted": "Task submitted to queue",
   "comparator": "Comparator",
   "compareModeSync": "Sync Mode",

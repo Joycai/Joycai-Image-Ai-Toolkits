@@ -9,6 +9,12 @@
   "tempWorkspace": "一時ワークスペース",
   "processResults": "処理結果",
   "resultCache": "結果キャッシュ",
+  "sectionSources": "ソース",
+  "sectionResults": "結果",
+  "sectionWorkspace": "ワークスペース",
+  "allSources": "すべてのソース",
+  "allResults": "すべての結果",
+  "backToAll": "すべてに戻る",
   "directories": "ディレクトリ",
   "addFolder": "フォルダを追加",
   "noFolders": "フォルダが追加されていません",
@@ -84,6 +90,8 @@
       }
     }
   },
+  "useStreaming": "ストリーミングを使用",
+  "useStreamingDesc": "リアルタイム AI 応答（対応時）",
   "taskSubmitted": "タスクがキューに送信されました",
   "comparator": "比較ツール",
   "compareModeSync": "同期モード",
