@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
@@ -40,6 +41,8 @@ class GalleryToolbar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
+                  _buildBreadcrumb(context, galleryState, l10n, colorScheme),
+                  const VerticalDivider(width: 24, indent: 8, endIndent: 8),
                   Text(
                     isNarrow ? '$selectedCount' : l10n.selectedCount(selectedCount),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -202,6 +205,55 @@ class GalleryToolbar extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  /// Context breadcrumb: which view (or folder) is currently shown, with a
+  /// one-tap return to the parent aggregate when browsing a single folder.
+  Widget _buildBreadcrumb(BuildContext context, GalleryState gs, AppLocalizations l10n, ColorScheme colorScheme) {
+    if (gs.viewMode == GalleryViewMode.folder && gs.viewSourcePath != null) {
+      final parentLabel = gs.folderViewIsResult ? l10n.allResults : l10n.allSources;
+      final name = p.basename(gs.viewSourcePath!);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () => gs.setViewMode(gs.folderViewIsResult ? GalleryViewMode.processed : GalleryViewMode.all),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.arrow_back_ios_new, size: 12, color: colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(parentLabel, style: TextStyle(fontSize: 12, color: colorScheme.primary, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+          ),
+          Icon(Icons.chevron_right, size: 16, color: colorScheme.outline),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      );
+    }
+
+    final (IconData icon, String label) = switch (gs.viewMode) {
+      GalleryViewMode.all => (Icons.photo_library_outlined, l10n.allSources),
+      GalleryViewMode.processed => (Icons.auto_awesome_motion, l10n.allResults),
+      GalleryViewMode.temp => (Icons.workspaces_outline, l10n.tempWorkspace),
+      _ => (Icons.image_outlined, ''),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: colorScheme.primary),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 

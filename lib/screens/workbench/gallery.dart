@@ -94,7 +94,7 @@ class _GalleryState extends State<Gallery> {
       case GalleryViewMode.temp:
         return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
       case GalleryViewMode.folder:
-        return _buildImageGrid(context, galleryState.folderImages, appState);   
+        return _buildImageGrid(context, galleryState.folderImages, appState, isResult: galleryState.folderViewIsResult);
     }
   }
 

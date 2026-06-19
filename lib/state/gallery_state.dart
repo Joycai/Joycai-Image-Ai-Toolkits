@@ -53,6 +53,7 @@ class GalleryState extends ChangeNotifier {
   // View State
   GalleryViewMode viewMode = GalleryViewMode.all;
   String? viewSourcePath; // Used when viewMode is folder
+  bool folderViewIsResult = false; // Whether the browsed folder belongs to the result tree
 
   // Model-based image lists
   List<AppImage> galleryImages = [];
@@ -78,6 +79,19 @@ class GalleryState extends ChangeNotifier {
   String? resultCacheDirectory;
   double thumbnailSize = 150.0;
   String imagePrefix = "result";
+
+  /// Root directories of the result tree (dedup, non-empty): the configured
+  /// output directory plus the platform result cache when it differs.
+  List<String> get resultRootDirectories {
+    final roots = <String>[];
+    if (outputDirectory != null && outputDirectory!.isNotEmpty) roots.add(outputDirectory!);
+    if (resultCacheDirectory != null &&
+        resultCacheDirectory!.isNotEmpty &&
+        resultCacheDirectory != outputDirectory) {
+      roots.add(resultCacheDirectory!);
+    }
+    return roots;
+  }
 
   // Directory watchers
   final Map<String, StreamSubscription> _watchers = {};
@@ -471,12 +485,14 @@ class GalleryState extends ChangeNotifier {
   void setViewMode(GalleryViewMode mode) {
     viewMode = mode;
     viewSourcePath = null;
+    folderViewIsResult = false;
     notifyListeners();
   }
 
-  void setViewFolder(String path) {
+  void setViewFolder(String path, {bool isResult = false}) {
     viewMode = GalleryViewMode.folder;
     viewSourcePath = path;
+    folderViewIsResult = isResult;
     _scanFolder(path);
     notifyListeners();
   }
