@@ -52,16 +52,17 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.auto_fix_high, size: 64, color: Colors.grey.shade400),   
+            Icon(Icons.auto_fix_high, size: 64, color: Theme.of(context).colorScheme.outlineVariant),
             const SizedBox(height: 16),
             Text(
               l10n.noPromptsSaved,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold) 
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Add system templates for the Refiner or Batch Rename here.",     
-              style: TextStyle(color: Colors.grey)
+            Text(
+              l10n.addSystemTemplateHint,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -78,7 +79,12 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
         itemCount: prompts.length,
         // ignore: deprecated_member_use
         onReorder: (oldIndex, newIndex) async {
-          if (widget.searchQuery.isNotEmpty) return;
+          if (widget.searchQuery.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.reorderDisabledWhileFiltered)),
+            );
+            return;
+          }
           setState(() {
             if (newIndex > oldIndex) newIndex -= 1;
             final item = prompts.removeAt(oldIndex);
@@ -141,7 +147,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                     onPressed: () => widget.onShowEditDialog(l10n, prompt: systemPrompt),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    icon: Icon(Icons.delete_outline, size: 18, color: Theme.of(context).colorScheme.error),
                     onPressed: () => widget.onConfirmDelete(l10n, systemPrompt, isSystem: true),
                   ),
                 ],

@@ -250,6 +250,60 @@
   "editCategory": "カテゴリを編集",
   "library": "ライブラリ",
   "refiner": "リファイナー",
+  "selectionMode": "選択モード",
+  "selectionModeCount": "選択モード（{count}）",
+  "@selectionModeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nSelected": "{count} 件を選択",
+  "@nSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categorize": "分類",
+  "bulkCategorize": "一括分類",
+  "selectCategoriesToApply": "選択したプロンプトに適用するカテゴリを選択：",
+  "deleteNPromptsConfirm": "{count} 件のプロンプトを削除しますか？",
+  "@deleteNPromptsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCannotBeUndone": "この操作は取り消せません。",
+  "deleteCategoryConfirmMessage": "カテゴリ「{name}」を削除しますか？プロンプトは General に移動されます。",
+  "@deleteCategoryConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTop": "先頭へ移動",
+  "moveToBottom": "末尾へ移動",
+  "addSystemTemplateHint": "リファイナーまたは一括名前変更用のシステムテンプレートをここに追加します。",
+  "importFailed": "インポートに失敗しました：{error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAll": "すべて",
+  "newTemplate": "新しいテンプレート",
+  "reorderDisabledWhileFiltered": "フィルターまたは検索中は並べ替えできません",
+  "matchModeLabel": "一致",
+  "matchAny": "いずれか",
+  "matchAllTags": "すべて",
   "settings": "設定",
   "appearance": "外観",
   "connectivity": "接続性",

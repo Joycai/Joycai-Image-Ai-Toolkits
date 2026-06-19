@@ -803,6 +803,73 @@ class AppLocalizationsZh extends AppLocalizations {
   String get refiner => '优化器';
 
   @override
+  String get selectionMode => '选择模式';
+
+  @override
+  String selectionModeCount(int count) {
+    return '选择模式（$count）';
+  }
+
+  @override
+  String nSelected(int count) {
+    return '已选择 $count 项';
+  }
+
+  @override
+  String get categorize => '归类';
+
+  @override
+  String get bulkCategorize => '批量归类';
+
+  @override
+  String get selectCategoriesToApply => '选择要应用到所选提示词的分类：';
+
+  @override
+  String deleteNPromptsConfirm(int count) {
+    return '删除 $count 个提示词？';
+  }
+
+  @override
+  String get actionCannotBeUndone => '此操作无法撤销。';
+
+  @override
+  String deleteCategoryConfirmMessage(String name) {
+    return '删除分类“$name”？其中的提示词将移至 General。';
+  }
+
+  @override
+  String get moveToTop => '移到顶部';
+
+  @override
+  String get moveToBottom => '移到底部';
+
+  @override
+  String get addSystemTemplateHint => '在此添加用于优化器或批量重命名的系统模板。';
+
+  @override
+  String importFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get filterAll => '全部';
+
+  @override
+  String get newTemplate => '新建模板';
+
+  @override
+  String get reorderDisabledWhileFiltered => '筛选或搜索时无法拖动排序';
+
+  @override
+  String get matchModeLabel => '匹配';
+
+  @override
+  String get matchAny => '任一';
+
+  @override
+  String get matchAllTags => '全部';
+
+  @override
   String get settings => '设置';
 
   @override
@@ -2326,6 +2393,73 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get refiner => 'Refiner';
+
+  @override
+  String get selectionMode => '選擇模式';
+
+  @override
+  String selectionModeCount(int count) {
+    return '選擇模式（$count）';
+  }
+
+  @override
+  String nSelected(int count) {
+    return '已選擇 $count 項';
+  }
+
+  @override
+  String get categorize => '歸類';
+
+  @override
+  String get bulkCategorize => '批次歸類';
+
+  @override
+  String get selectCategoriesToApply => '選擇要套用到所選提示的類別：';
+
+  @override
+  String deleteNPromptsConfirm(int count) {
+    return '刪除 $count 個提示？';
+  }
+
+  @override
+  String get actionCannotBeUndone => '此操作無法復原。';
+
+  @override
+  String deleteCategoryConfirmMessage(String name) {
+    return '刪除類別「$name」？其中的提示將移至 General。';
+  }
+
+  @override
+  String get moveToTop => '移到頂部';
+
+  @override
+  String get moveToBottom => '移到底部';
+
+  @override
+  String get addSystemTemplateHint => '在此新增用於 Refiner 或批次重新命名的系統範本。';
+
+  @override
+  String importFailed(String error) {
+    return '匯入失敗：$error';
+  }
+
+  @override
+  String get filterAll => '全部';
+
+  @override
+  String get newTemplate => '新增範本';
+
+  @override
+  String get reorderDisabledWhileFiltered => '篩選或搜尋時無法拖曳排序';
+
+  @override
+  String get matchModeLabel => '符合';
+
+  @override
+  String get matchAny => '任一';
+
+  @override
+  String get matchAllTags => '全部';
 
   @override
   String get settings => '設定';

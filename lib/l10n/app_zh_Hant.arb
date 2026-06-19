@@ -250,6 +250,60 @@
   "editCategory": "編輯類別",
   "library": "媒體庫",
   "refiner": "Refiner",
+  "selectionMode": "選擇模式",
+  "selectionModeCount": "選擇模式（{count}）",
+  "@selectionModeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nSelected": "已選擇 {count} 項",
+  "@nSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categorize": "歸類",
+  "bulkCategorize": "批次歸類",
+  "selectCategoriesToApply": "選擇要套用到所選提示的類別：",
+  "deleteNPromptsConfirm": "刪除 {count} 個提示？",
+  "@deleteNPromptsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCannotBeUndone": "此操作無法復原。",
+  "deleteCategoryConfirmMessage": "刪除類別「{name}」？其中的提示將移至 General。",
+  "@deleteCategoryConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTop": "移到頂部",
+  "moveToBottom": "移到底部",
+  "addSystemTemplateHint": "在此新增用於 Refiner 或批次重新命名的系統範本。",
+  "importFailed": "匯入失敗：{error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAll": "全部",
+  "newTemplate": "新增範本",
+  "reorderDisabledWhileFiltered": "篩選或搜尋時無法拖曳排序",
+  "matchModeLabel": "符合",
+  "matchAny": "任一",
+  "matchAllTags": "全部",
   "settings": "設定",
   "appearance": "外觀",
   "connectivity": "連線",

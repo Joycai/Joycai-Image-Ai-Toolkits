@@ -1613,6 +1613,120 @@ abstract class AppLocalizations {
   /// **'Refiner'**
   String get refiner;
 
+  /// No description provided for @selectionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection Mode'**
+  String get selectionMode;
+
+  /// No description provided for @selectionModeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection Mode ({count})'**
+  String selectionModeCount(int count);
+
+  /// No description provided for @nSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Selected'**
+  String nSelected(int count);
+
+  /// No description provided for @categorize.
+  ///
+  /// In en, this message translates to:
+  /// **'Categorize'**
+  String get categorize;
+
+  /// No description provided for @bulkCategorize.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk Categorize'**
+  String get bulkCategorize;
+
+  /// No description provided for @selectCategoriesToApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Select categories to apply to the selected prompts:'**
+  String get selectCategoriesToApply;
+
+  /// No description provided for @deleteNPromptsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} prompts?'**
+  String deleteNPromptsConfirm(int count);
+
+  /// No description provided for @actionCannotBeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get actionCannotBeUndone;
+
+  /// No description provided for @deleteCategoryConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete category \"{name}\"? Prompts will be moved to General.'**
+  String deleteCategoryConfirmMessage(String name);
+
+  /// No description provided for @moveToTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Top'**
+  String get moveToTop;
+
+  /// No description provided for @moveToBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Bottom'**
+  String get moveToBottom;
+
+  /// No description provided for @addSystemTemplateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add system templates for the Refiner or Batch Rename here.'**
+  String get addSystemTemplateHint;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(String error);
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @newTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'New Template'**
+  String get newTemplate;
+
+  /// No description provided for @reorderDisabledWhileFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'Reordering is unavailable while a filter or search is active'**
+  String get reorderDisabledWhileFiltered;
+
+  /// No description provided for @matchModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Match'**
+  String get matchModeLabel;
+
+  /// No description provided for @matchAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get matchAny;
+
+  /// No description provided for @matchAllTags.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get matchAllTags;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:

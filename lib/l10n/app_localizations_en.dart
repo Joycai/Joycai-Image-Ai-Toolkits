@@ -817,6 +817,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refiner => 'Refiner';
 
   @override
+  String get selectionMode => 'Selection Mode';
+
+  @override
+  String selectionModeCount(int count) {
+    return 'Selection Mode ($count)';
+  }
+
+  @override
+  String nSelected(int count) {
+    return '$count Selected';
+  }
+
+  @override
+  String get categorize => 'Categorize';
+
+  @override
+  String get bulkCategorize => 'Bulk Categorize';
+
+  @override
+  String get selectCategoriesToApply =>
+      'Select categories to apply to the selected prompts:';
+
+  @override
+  String deleteNPromptsConfirm(int count) {
+    return 'Delete $count prompts?';
+  }
+
+  @override
+  String get actionCannotBeUndone => 'This action cannot be undone.';
+
+  @override
+  String deleteCategoryConfirmMessage(String name) {
+    return 'Delete category \"$name\"? Prompts will be moved to General.';
+  }
+
+  @override
+  String get moveToTop => 'Move to Top';
+
+  @override
+  String get moveToBottom => 'Move to Bottom';
+
+  @override
+  String get addSystemTemplateHint =>
+      'Add system templates for the Refiner or Batch Rename here.';
+
+  @override
+  String importFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get newTemplate => 'New Template';
+
+  @override
+  String get reorderDisabledWhileFiltered =>
+      'Reordering is unavailable while a filter or search is active';
+
+  @override
+  String get matchModeLabel => 'Match';
+
+  @override
+  String get matchAny => 'Any';
+
+  @override
+  String get matchAllTags => 'All';
+
+  @override
   String get settings => 'Settings';
 
   @override

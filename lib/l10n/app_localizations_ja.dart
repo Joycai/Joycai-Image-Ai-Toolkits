@@ -804,6 +804,73 @@ class AppLocalizationsJa extends AppLocalizations {
   String get refiner => 'リファイナー';
 
   @override
+  String get selectionMode => '選択モード';
+
+  @override
+  String selectionModeCount(int count) {
+    return '選択モード（$count）';
+  }
+
+  @override
+  String nSelected(int count) {
+    return '$count 件を選択';
+  }
+
+  @override
+  String get categorize => '分類';
+
+  @override
+  String get bulkCategorize => '一括分類';
+
+  @override
+  String get selectCategoriesToApply => '選択したプロンプトに適用するカテゴリを選択：';
+
+  @override
+  String deleteNPromptsConfirm(int count) {
+    return '$count 件のプロンプトを削除しますか？';
+  }
+
+  @override
+  String get actionCannotBeUndone => 'この操作は取り消せません。';
+
+  @override
+  String deleteCategoryConfirmMessage(String name) {
+    return 'カテゴリ「$name」を削除しますか？プロンプトは General に移動されます。';
+  }
+
+  @override
+  String get moveToTop => '先頭へ移動';
+
+  @override
+  String get moveToBottom => '末尾へ移動';
+
+  @override
+  String get addSystemTemplateHint => 'リファイナーまたは一括名前変更用のシステムテンプレートをここに追加します。';
+
+  @override
+  String importFailed(String error) {
+    return 'インポートに失敗しました：$error';
+  }
+
+  @override
+  String get filterAll => 'すべて';
+
+  @override
+  String get newTemplate => '新しいテンプレート';
+
+  @override
+  String get reorderDisabledWhileFiltered => 'フィルターまたは検索中は並べ替えできません';
+
+  @override
+  String get matchModeLabel => '一致';
+
+  @override
+  String get matchAny => 'いずれか';
+
+  @override
+  String get matchAllTags => 'すべて';
+
+  @override
   String get settings => '設定';
 
   @override
