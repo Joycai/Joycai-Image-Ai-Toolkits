@@ -384,6 +384,60 @@
   "editCategory": "编辑分类",
   "library": "提示词库",
   "refiner": "优化器",
+  "selectionMode": "选择模式",
+  "selectionModeCount": "选择模式（{count}）",
+  "@selectionModeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nSelected": "已选择 {count} 项",
+  "@nSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categorize": "归类",
+  "bulkCategorize": "批量归类",
+  "selectCategoriesToApply": "选择要应用到所选提示词的分类：",
+  "deleteNPromptsConfirm": "删除 {count} 个提示词？",
+  "@deleteNPromptsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCannotBeUndone": "此操作无法撤销。",
+  "deleteCategoryConfirmMessage": "删除分类“{name}”？其中的提示词将移至 General。",
+  "@deleteCategoryConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moveToTop": "移到顶部",
+  "moveToBottom": "移到底部",
+  "addSystemTemplateHint": "在此添加用于优化器或批量重命名的系统模板。",
+  "importFailed": "导入失败：{error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAll": "全部",
+  "newTemplate": "新建模板",
+  "reorderDisabledWhileFiltered": "筛选或搜索时无法拖动排序",
+  "matchModeLabel": "匹配",
+  "matchAny": "任一",
+  "matchAllTags": "全部",
   "settings": "设置",
   "appearance": "外观",
   "connectivity": "连接设置",

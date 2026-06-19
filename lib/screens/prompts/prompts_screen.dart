@@ -36,6 +36,8 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   String _searchQuery = "";
   String _selectedSystemType = 'refiner'; // 'refiner' or 'rename'
   final Set<int> _selectedFilterTagIds = {};
+  // When multiple categories are selected: false = match any (OR), true = match all (AND).
+  bool _filterMatchAll = false;
 
   final Set<int> _selectedIds = {};
   bool get _isSelectionMode => _selectedIds.isNotEmpty;
@@ -120,6 +122,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Widget _buildBulkActionFAB(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isNarrow = Responsive.isMobile(context);
     return Card(
       elevation: 6,
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -135,29 +138,42 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               onPressed: _clearSelection,
               tooltip: l10n.cancel,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             Text(
-              "${_selectedIds.length} Selected",
+              l10n.nSelected(_selectedIds.length),
               style: TextStyle(
                 color: colorScheme.onPrimaryContainer,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             const VerticalDivider(width: 1, indent: 8, endIndent: 8),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.category_outlined),
-              label: const Text("Categorize"),
-              onPressed: _handleBulkCategorize,
-            ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              label: const Text("Delete", style: TextStyle(color: Colors.red)),
-              onPressed: _handleBulkDelete,
-            ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
+            if (isNarrow) ...[
+              IconButton(
+                icon: const Icon(Icons.category_outlined),
+                tooltip: l10n.categorize,
+                onPressed: _handleBulkCategorize,
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                tooltip: l10n.delete,
+                onPressed: _handleBulkDelete,
+              ),
+            ] else ...[
+              TextButton.icon(
+                icon: const Icon(Icons.category_outlined),
+                label: Text(l10n.categorize),
+                onPressed: _handleBulkCategorize,
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+                onPressed: _handleBulkDelete,
+              ),
+              const SizedBox(width: 8),
+            ],
           ],
         ),
       ),
@@ -166,15 +182,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
   Future<void> _handleBulkDelete() async {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Delete ${_selectedIds.length} Prompts?"),
-        content: Text("This action cannot be undone."),
+        title: Text(l10n.deleteNPromptsConfirm(_selectedIds.length)),
+        content: Text(l10n.actionCannotBeUndone),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n.delete),
           ),
@@ -195,18 +215,19 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Future<void> _handleBulkCategorize() async {
+    final l10n = AppLocalizations.of(context)!;
     final Set<int> targetTagIds = {};
-    
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text("Bulk Categorize"),
+          title: Text(l10n.bulkCategorize),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Select categories to apply to selected prompts:"),
+              Text(l10n.selectCategoriesToApply),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 8,
@@ -231,10 +252,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Apply"),
+              child: Text(l10n.apply),
             ),
           ],
         ),
@@ -260,7 +281,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            title: Text(_isSelectionMode ? "Selection Mode" : l10n.promptLibrary),
+            title: Text(_isSelectionMode ? l10n.selectionMode : l10n.promptLibrary),
             pinned: true,
             floating: true,
             snap: true,
@@ -306,12 +327,20 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   // --- Desktop/Tablet Layout ---
-  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {  
+  Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Per-category counts for the User Prompts list (tag filter applies there).
+    final tagCounts = _computeTagCounts();
+
+    final bool showSidebar = !isTablet && _tabController.index == 0;
+    final bool showTabletFilter =
+        isTablet && _tabController.index == 0 && _tags.isNotEmpty;
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: Text(_isSelectionMode ? "Selection Mode (${_selectedIds.length})" : l10n.promptLibrary, 
+        title: Text(_isSelectionMode ? l10n.selectionModeCount(_selectedIds.length) : l10n.promptLibrary,
             style: const TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -319,17 +348,23 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         centerTitle: false,
         leading: _isSelectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _clearSelection) : null,
         actions: _isSelectionMode ? [] : [
-          _buildSearchField(l10n),
+          _buildSearchField(l10n, width: isTablet ? 200 : 300),
           const SizedBox(width: 8),
           _buildImportExportActions(l10n),
           const SizedBox(width: 8),
           Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FilledButton.icon(
-              onPressed: _handleAddAction,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(l10n.add),
-            ),
+            padding: EdgeInsets.only(right: isTablet ? 12 : 16),
+            child: isTablet
+                ? IconButton.filled(
+                    onPressed: _handleAddAction,
+                    icon: const Icon(Icons.add),
+                    tooltip: _addLabel(l10n),
+                  )
+                : FilledButton.icon(
+                    onPressed: _handleAddAction,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(_addLabel(l10n)),
+                  ),
           ),
         ],
         bottom: PreferredSize(
@@ -348,17 +383,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             destinations: [
               NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.userPrompts)),
               NavigationRailDestination(icon: const Icon(Icons.auto_fix_high_outlined), selectedIcon: const Icon(Icons.auto_fix_high), label: Text(l10n.systemTemplates)),
-              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),  
+              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),
             ],
           ),
           const VerticalDivider(width: 1),
-          // Tag Sidebar (Only for Prompts)
-          if (_tabController.index != 2) ...[
+          // Tag Sidebar — desktop only, User Prompts tab only
+          if (showSidebar) ...[
             SizedBox(
-              width: isTablet ? 200 : 260,
+              width: 260,
               child: PromptsSidebar(
                 tags: _tags,
                 selectedFilterTagIds: _selectedFilterTagIds,
+                tagCounts: tagCounts,
+                totalCount: _userPrompts.length,
+                matchAll: _filterMatchAll,
+                onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
                 onTagToggle: (id) {
                   setState(() {
                     if (_selectedFilterTagIds.contains(id)) {
@@ -368,7 +407,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                     }
                   });
                 },
-                onClear: () => setState(() => _selectedFilterTagIds.clear()),   
+                onClear: () => setState(() => _selectedFilterTagIds.clear()),
               ),
             ),
             const VerticalDivider(width: 1),
@@ -377,12 +416,50 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Expanded(
             child: Container(
               color: colorScheme.surface,
-              child: _buildTabViews(l10n)[_tabController.index],
+              child: Column(
+                children: [
+                  // Tablet: horizontal category filter replaces the sidebar
+                  if (showTabletFilter) _buildMobileFilterBar(colorScheme),
+                  Expanded(
+                    child: _buildConstrainedContent(
+                      _buildTabViews(l10n)[_tabController.index],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Number of user prompts carrying each tag id.
+  Map<int, int> _computeTagCounts() => {
+        for (final t in _tags)
+          t.id!: _userPrompts.where((p) => p.tags.any((pt) => pt.id == t.id)).length,
+      };
+
+  /// Caps content width on ultra-wide screens for readability, top-aligned.
+  Widget _buildConstrainedContent(Widget child) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 920),
+        child: child,
+      ),
+    );
+  }
+
+  String _addLabel(AppLocalizations l10n) {
+    switch (_tabController.index) {
+      case 1:
+        return l10n.newTemplate;
+      case 2:
+        return l10n.addCategory;
+      default:
+        return l10n.newPrompt;
+    }
   }
 
   List<Widget> _buildTabViews(AppLocalizations l10n) {
@@ -391,7 +468,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                             p.content.toLowerCase().contains(_searchQuery);     
       if (_selectedFilterTagIds.isEmpty) return matchesSearch;
       final promptTagIds = p.tags.map((t) => t.id!).toSet();
-      return matchesSearch && _selectedFilterTagIds.every((id) => promptTagIds.contains(id));
+      final matchesTags = _filterMatchAll
+          ? _selectedFilterTagIds.every((id) => promptTagIds.contains(id))
+          : _selectedFilterTagIds.any((id) => promptTagIds.contains(id));
+      return matchesSearch && matchesTags;
     }).toList();
 
     final filteredSystem = _systemPrompts.where((p) {
@@ -430,6 +510,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       TagManagementList(
         tags: _tags,
+        promptCounts: _computeTagCounts(),
         onRefresh: _loadData,
         onShowEditDialog: (l, {tag}) => _showTagDialog(l, tag: tag),
         onConfirmDelete: _confirmDeleteTag,
@@ -437,9 +518,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     ];
   }
 
-  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false}) {    
+  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false, double width = 300}) {
     return Container(
-      width: isMobile ? double.infinity : 300,
+      width: isMobile ? double.infinity : width,
       height: 40,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100),
@@ -516,10 +597,34 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: _tags.length,
+        // +1 for the leading "All" chip that clears the filter.
+        itemCount: _tags.length + 1,
         separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final tag = _tags[index];
+          final l10n = AppLocalizations.of(context)!;
+
+          // Leading "All" chip.
+          if (index == 0) {
+            final allSelected = _selectedFilterTagIds.isEmpty;
+            return FilterChip(
+              label: Text(l10n.filterAll, style: TextStyle(
+                fontSize: 12,
+                color: allSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                fontWeight: allSelected ? FontWeight.bold : FontWeight.normal,
+              )),
+              selected: allSelected,
+              onSelected: (_) => setState(() => _selectedFilterTagIds.clear()),
+              selectedColor: colorScheme.primary,
+              checkmarkColor: colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              visualDensity: VisualDensity.compact,
+            );
+          }
+
+          final tag = _tags[index - 1];
           final id = tag.id!;
           final isSelected = _selectedFilterTagIds.contains(id);
           final color = Color(tag.color);
@@ -528,7 +633,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             label: Text(tag.name, style: TextStyle(
               fontSize: 12,
               color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,     
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             )),
             selected: isSelected,
             onSelected: (val) {
@@ -581,6 +686,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   void _confirmDelete(AppLocalizations l10n, dynamic prompt, {required bool isSystem}) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -588,10 +694,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         content: Text(l10n.deletePromptConfirmMessage(prompt.title)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),       
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
             onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);   
+              final appState = Provider.of<AppState>(context, listen: false);
               if (isSystem) {
                 await appState.deleteSystemPrompt(prompt.id);
               } else {
@@ -602,7 +711,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 _loadData();
               }
             },
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -610,24 +719,28 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   void _confirmDeleteTag(AppLocalizations l10n, PromptTag tag) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.delete),
-        content: Text("Are you sure you want to delete category \"${tag.name}\"? Prompts will be moved to General."),
+        content: Text(l10n.deleteCategoryConfirmMessage(tag.name)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),       
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
             onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);   
+              final appState = Provider.of<AppState>(context, listen: false);
               await appState.deletePromptTag(tag.id!);
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadData();
               }
             },
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.white)),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -969,6 +1082,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     final appState = Provider.of<AppState>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
     final successMsg = l10n.settingsImported;
+    final errorColor = Theme.of(context).colorScheme.error;
 
     FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (!mounted || result == null) return;
@@ -984,7 +1098,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             child: Text(l10n.merge),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             onPressed: () => Navigator.pop(context, 'replace'),
             child: Text(l10n.replaceAll),
           ),
@@ -1013,7 +1130,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       }
     } catch (e) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
+        messenger.showSnackBar(SnackBar(
+          content: Text(l10n.importFailed(e.toString())),
+          backgroundColor: errorColor,
+        ));
       }
     }
   }

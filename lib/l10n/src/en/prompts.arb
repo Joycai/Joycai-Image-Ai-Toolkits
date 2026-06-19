@@ -31,5 +31,49 @@
   "addCategory": "Add Category",
   "editCategory": "Edit Category",
   "library": "Library",
-  "refiner": "Refiner"
+  "refiner": "Refiner",
+  "selectionMode": "Selection Mode",
+  "selectionModeCount": "Selection Mode ({count})",
+  "@selectionModeCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "nSelected": "{count} Selected",
+  "@nSelected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "categorize": "Categorize",
+  "bulkCategorize": "Bulk Categorize",
+  "selectCategoriesToApply": "Select categories to apply to the selected prompts:",
+  "deleteNPromptsConfirm": "Delete {count} prompts?",
+  "@deleteNPromptsConfirm": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "actionCannotBeUndone": "This action cannot be undone.",
+  "deleteCategoryConfirmMessage": "Delete category \"{name}\"? Prompts will be moved to General.",
+  "@deleteCategoryConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "moveToTop": "Move to Top",
+  "moveToBottom": "Move to Bottom",
+  "addSystemTemplateHint": "Add system templates for the Refiner or Batch Rename here.",
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "filterAll": "All",
+  "newTemplate": "New Template",
+  "reorderDisabledWhileFiltered": "Reordering is unavailable while a filter or search is active",
+  "matchModeLabel": "Match",
+  "matchAny": "Any",
+  "matchAllTags": "All"
 }

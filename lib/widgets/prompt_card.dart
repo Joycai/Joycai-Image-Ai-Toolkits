@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/prompt.dart';
 
 class PromptCard extends StatelessWidget {
@@ -115,7 +116,7 @@ class PromptCard extends StatelessWidget {
 
             // Reordering actions
             if (onMoveToTop != null || onMoveToBottom != null)
-              _buildSortActions(colorScheme),
+              _buildSortActions(context, colorScheme),
 
             ...?actions,
           ],
@@ -124,7 +125,8 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSortActions(ColorScheme colorScheme) {
+  Widget _buildSortActions(BuildContext context, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -132,7 +134,7 @@ class PromptCard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.vertical_align_top_rounded, size: 18),
             visualDensity: VisualDensity.compact,
-            tooltip: "Move to Top",
+            tooltip: l10n.moveToTop,
             onPressed: onMoveToTop,
             color: colorScheme.outline,
           ),
@@ -140,7 +142,7 @@ class PromptCard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.vertical_align_bottom_rounded, size: 18),
             visualDensity: VisualDensity.compact,
-            tooltip: "Move to Bottom",
+            tooltip: l10n.moveToBottom,
             onPressed: onMoveToBottom,
             color: colorScheme.outline,
           ),
