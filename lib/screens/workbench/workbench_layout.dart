@@ -139,7 +139,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       child: Scaffold(
         key: _scaffoldKey,
         appBar: widget.topBar != null ? PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight + 1),
+          preferredSize: const Size.fromHeight(kToolbarHeight + 8),
           child: Provider<WorkbenchLayoutState>.value(
             value: layoutState,
             child: widget.topBar!,

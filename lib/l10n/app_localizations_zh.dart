@@ -1222,6 +1222,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageProcessing => '图片处理';
 
   @override
+  String get wbModeImage => '图像';
+
+  @override
+  String get wbModeVideo => '视频';
+
+  @override
+  String get wbTools => '工具';
+
+  @override
   String get sourceGallery => '源图库';
 
   @override
@@ -1235,6 +1244,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resultCache => '结果缓存区';
+
+  @override
+  String get sectionSources => '来源';
+
+  @override
+  String get sectionResults => '结果';
+
+  @override
+  String get sectionWorkspace => '工作区';
+
+  @override
+  String get allSources => '全部来源';
+
+  @override
+  String get allResults => '全部结果';
+
+  @override
+  String get backToAll => '返回全部';
 
   @override
   String get directories => '目录列表';
@@ -1362,6 +1389,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String processImages(int count) {
     return '处理 $count 张图像';
   }
+
+  @override
+  String get useStreaming => '使用流式传输';
+
+  @override
+  String get useStreamingDesc => '实时 AI 响应（如果支持）';
 
   @override
   String get taskSubmitted => '任务已提交至队列';
@@ -2814,6 +2847,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get imageProcessing => '圖片處理';
 
   @override
+  String get wbModeImage => '圖像';
+
+  @override
+  String get wbModeVideo => '影片';
+
+  @override
+  String get wbTools => '工具';
+
+  @override
   String get sourceGallery => '來源圖庫';
 
   @override
@@ -2827,6 +2869,24 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get resultCache => '結果快取';
+
+  @override
+  String get sectionSources => '來源';
+
+  @override
+  String get sectionResults => '結果';
+
+  @override
+  String get sectionWorkspace => '工作區';
+
+  @override
+  String get allSources => '全部來源';
+
+  @override
+  String get allResults => '全部結果';
+
+  @override
+  String get backToAll => '返回全部';
 
   @override
   String get directories => '目錄';
@@ -2954,6 +3014,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String processImages(int count) {
     return '處理 $count 張圖片';
   }
+
+  @override
+  String get useStreaming => '使用串流';
+
+  @override
+  String get useStreamingDesc => '即時 AI 回應（若支援）';
 
   @override
   String get taskSubmitted => '任務已提交至佇列';

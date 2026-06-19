@@ -7,6 +7,14 @@ import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../workbench_layout.dart';
 
+/// Describes a single workbench destination (tab) for the top bar controls.
+class _WbDest {
+  final int index;
+  final IconData icon;
+  final String label;
+  const _WbDest(this.index, this.icon, this.label);
+}
+
 class WorkbenchTopBar extends StatelessWidget {
   final TabController tabController;
 
@@ -24,82 +32,97 @@ class WorkbenchTopBar extends StatelessWidget {
     final isNarrow = Responsive.isNarrow(context);
     final isMobile = Responsive.isMobile(context);
 
+    // Primary creation modes — the headline functions of the workbench.
+    final primary = <_WbDest>[
+      _WbDest(0, Icons.image_outlined, l10n.wbModeImage),
+      _WbDest(5, Icons.movie_outlined, l10n.wbModeVideo),
+    ];
+    // Secondary tools — supporting utilities, presented with lighter weight.
+    final tools = <_WbDest>[
+      _WbDest(1, Icons.compare, l10n.comparator),
+      _WbDest(2, Icons.brush_outlined, l10n.maskEditor),
+      _WbDest(3, Icons.crop, l10n.cropAndResize),
+      _WbDest(4, Icons.auto_fix_high, l10n.promptOptimizer),
+    ];
+
     return Container(
       color: colorScheme.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              if (isNarrow)
-                IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => context.read<WorkbenchLayoutState>().openLeftPanel(),
-                )
-              else
-                IconButton(
-                  icon: Icon(isSidebarExpanded ? Icons.menu_open : Icons.menu),
-                  onPressed: () => context.read<AppState>().setSidebarExpanded(!isSidebarExpanded),
-                ),
-
-              Expanded(
-                child: TabBar(
-                  controller: tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  labelPadding: EdgeInsets.symmetric(horizontal: isNarrow ? 12 : 16),
-                  indicator: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
+            child: Row(
+              children: [
+                // Leading: sidebar toggle (desktop) / drawer (narrow)
+                if (isNarrow)
+                  IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => context.read<WorkbenchLayoutState>().openLeftPanel(),
+                  )
+                else
+                  IconButton(
+                    icon: Icon(isSidebarExpanded ? Icons.menu_open : Icons.menu),
+                    tooltip: l10n.workbench,
+                    onPressed: () => context.read<AppState>().setSidebarExpanded(!isSidebarExpanded),
                   ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: colorScheme.onPrimaryContainer,
-                  unselectedLabelColor: colorScheme.onSurfaceVariant,
-                  dividerColor: Colors.transparent,
-                  tabs: [
-                    _buildTab(Icons.image, l10n.imageProcessing, isNarrow, l10n.imageProcessing),
-                    _buildTab(Icons.compare, l10n.comparator, isNarrow, l10n.comparator),
-                    _buildTab(Icons.brush, l10n.maskEditor, isNarrow, l10n.maskEditor),
-                    _buildTab(Icons.crop, l10n.cropAndResize, isNarrow, l10n.cropAndResize),
-                    _buildTab(Icons.auto_fix_high, l10n.promptOptimizer, isNarrow, l10n.promptOptimizer),
-                    _buildTab(Icons.movie_outlined, l10n.videoGeneration, isNarrow, l10n.videoGeneration),
-                  ],
-                ),
-              ),
 
-              if (isMobile)
-                _buildMobileMoreMenu(context, concurrencyLimit, l10n)
-              else if (isNarrow)
-                IconButton(
-                  icon: const Icon(Icons.tune),
-                  onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+                const SizedBox(width: 4),
+
+                // Primary modes + secondary tools, scrollable to avoid overflow.
+                Expanded(
+                  child: AnimatedBuilder(
+                    animation: tabController,
+                    builder: (context, _) {
+                      final active = tabController.index;
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _PrimarySegment(
+                              destinations: primary,
+                              activeIndex: active,
+                              onSelect: (i) => tabController.animateTo(i),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              width: 1,
+                              height: 24,
+                              color: colorScheme.outlineVariant.withAlpha(90),
+                            ),
+                            const SizedBox(width: 8),
+                            if (isMobile)
+                              _ToolsMenu(
+                                destinations: tools,
+                                activeIndex: active,
+                                onSelect: (i) => tabController.animateTo(i),
+                              )
+                            else
+                              ...tools.map((t) => _ToolButton(
+                                    dest: t,
+                                    selected: active == t.index,
+                                    onTap: () => tabController.animateTo(t.index),
+                                  )),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-            ],
+
+                // Trailing actions
+                if (isMobile)
+                  _buildMobileMoreMenu(context, concurrencyLimit, l10n)
+                else if (isNarrow)
+                  IconButton(
+                    icon: const Icon(Icons.tune),
+                    tooltip: l10n.modelSelection,
+                    onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+                  ),
+              ],
+            ),
           ),
           Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(80)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTab(IconData icon, String label, bool isNarrow, String tooltip) {
-    if (isNarrow) {
-      return Tooltip(
-        message: tooltip,
-        child: Tab(
-          height: 44,
-          child: Icon(icon, size: 22),
-        ),
-      );
-    }
-    return Tab(
-      height: 44,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
-          Text(label),
         ],
       ),
     );
@@ -170,6 +193,190 @@ class WorkbenchTopBar extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Prominent iOS-style segmented control for the primary creation modes.
+class _PrimarySegment extends StatelessWidget {
+  final List<_WbDest> destinations;
+  final int activeIndex;
+  final ValueChanged<int> onSelect;
+
+  const _PrimarySegment({
+    required this.destinations,
+    required this.activeIndex,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(140),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: destinations.map((d) {
+          final selected = activeIndex == d.index;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: selected ? colorScheme.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(18),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(9),
+                onTap: () => onSelect(d.index),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        d.icon,
+                        size: 18,
+                        color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        d.label,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/// Quiet, secondary icon button for a workbench tool.
+class _ToolButton extends StatelessWidget {
+  final _WbDest dest;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ToolButton({
+    required this.dest,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Tooltip(
+        message: dest.label,
+        child: Material(
+          color: selected ? colorScheme.primary.withAlpha(28) : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(9),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(9),
+              child: Icon(
+                dest.icon,
+                size: 20,
+                color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact overflow menu that collapses the secondary tools on mobile.
+class _ToolsMenu extends StatelessWidget {
+  final List<_WbDest> destinations;
+  final int activeIndex;
+  final ValueChanged<int> onSelect;
+
+  const _ToolsMenu({
+    required this.destinations,
+    required this.activeIndex,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final isToolActive = destinations.any((d) => d.index == activeIndex);
+
+    return PopupMenuButton<int>(
+      tooltip: l10n.wbTools,
+      onSelected: onSelect,
+      itemBuilder: (context) => destinations.map((d) {
+        final selected = d.index == activeIndex;
+        return PopupMenuItem<int>(
+          value: d.index,
+          child: Row(
+            children: [
+              Icon(d.icon, size: 20, color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Text(
+                d.label,
+                style: TextStyle(
+                  color: selected ? colorScheme.primary : null,
+                  fontWeight: selected ? FontWeight.w600 : null,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: isToolActive ? colorScheme.primary.withAlpha(28) : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.handyman_outlined,
+              size: 20,
+              color: isToolActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: isToolActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }

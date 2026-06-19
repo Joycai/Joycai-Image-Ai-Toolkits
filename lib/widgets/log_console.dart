@@ -71,7 +71,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
         if (widget.showHeader) _buildToolbar(context, appState, colorScheme),
         Expanded(
           child: Container(
-            color: const Color(0xFF121212),
+            color: colorScheme.surfaceContainerLowest,
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -89,7 +89,10 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
   Widget _buildToolbar(BuildContext context, AppState appState, ColorScheme colorScheme) {
     return Container(
       height: 40,
-      color: const Color(0xFF1E1E1E),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
@@ -101,13 +104,13 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: colorScheme.onSurface, fontSize: 12),
                   decoration: InputDecoration(
                     hintText: 'Filter logs...',
-                    hintStyle: TextStyle(color: Colors.white.withAlpha(100), fontSize: 12),
-                    prefixIcon: const Icon(Icons.search, size: 14, color: Colors.white),
+                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                    prefixIcon: Icon(Icons.search, size: 14, color: colorScheme.onSurfaceVariant),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.close, size: 14, color: Colors.white),
+                      icon: Icon(Icons.close, size: 14, color: colorScheme.onSurfaceVariant),
                       onPressed: () {
                         setState(() {
                           _searchQuery = "";
@@ -126,23 +129,23 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             )
           else
             IconButton(
-              icon: const Icon(Icons.search, size: 18, color: Colors.white70),
+              icon: Icon(Icons.search, size: 18, color: colorScheme.onSurfaceVariant),
               onPressed: () => setState(() => _isSearchExpanded = true),
               tooltip: 'Search logs',
             ),
 
           if (!_isSearchExpanded) ...[
             const Spacer(),
-            
+
             // Level Filter
-            _buildLevelChip('ERR', 'ERROR', Colors.redAccent),
-            _buildLevelChip('RUN', 'RUNNING', Colors.blueAccent),
-            _buildLevelChip('SUC', 'SUCCESS', Colors.greenAccent),
-            
-            const VerticalDivider(width: 16, indent: 8, endIndent: 8, color: Colors.white24),
+            _buildLevelChip('ERR', 'ERROR', colorScheme.error),
+            _buildLevelChip('RUN', 'RUNNING', colorScheme.primary),
+            _buildLevelChip('SUC', 'SUCCESS', const Color(0xFF2E9E6B)),
+
+            VerticalDivider(width: 16, indent: 8, endIndent: 8, color: colorScheme.outlineVariant),
 
             IconButton(
-              icon: const Icon(Icons.copy_all, size: 18, color: Colors.white70),
+              icon: Icon(Icons.copy_all, size: 18, color: colorScheme.onSurfaceVariant),
               onPressed: () {
                 final text = appState.logs.map((l) => '[${l.level}] ${l.message}').join('\n');
                 Clipboard.setData(ClipboardData(text: text));
@@ -151,7 +154,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
               tooltip: 'Copy all',
             ),
             IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined, size: 18, color: Colors.white70),
+              icon: Icon(Icons.delete_sweep_outlined, size: 18, color: colorScheme.onSurfaceVariant),
               onPressed: () => appState.clearLogs(),
               tooltip: 'Clear',
             ),
@@ -166,7 +169,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: ActionChip(
-        label: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : color)),
+        label: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
         backgroundColor: isSelected ? color.withAlpha(100) : Colors.transparent,
         side: BorderSide(color: color.withAlpha(isSelected ? 255 : 100)),
         padding: EdgeInsets.zero,
@@ -187,6 +190,8 @@ class _LogLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: RichText(
@@ -194,21 +199,21 @@ class _LogLine extends StatelessWidget {
           style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.4),
           children: [
             TextSpan(
-              text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ', 
-              style: const TextStyle(color: Colors.grey)
+              text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ',
+              style: TextStyle(color: colorScheme.onSurfaceVariant.withAlpha(160)),
             ),
             if (log.taskId != null)
               TextSpan(
-                text: '[${log.taskId!.length > 8 ? log.taskId!.substring(0, 8) : log.taskId}] ', 
-                style: const TextStyle(color: Colors.cyan)
+                text: '[${log.taskId!.length > 8 ? log.taskId!.substring(0, 8) : log.taskId}] ',
+                style: TextStyle(color: colorScheme.primary),
               ),
             TextSpan(
-              text: '[${log.level}] ', 
-              style: TextStyle(color: _getLevelColor(log.level), fontWeight: FontWeight.bold)
+              text: '[${log.level}] ',
+              style: TextStyle(color: _getLevelColor(log.level, isDark), fontWeight: FontWeight.bold),
             ),
             TextSpan(
-              text: log.message, 
-              style: TextStyle(color: log.level == 'ERROR' ? Colors.red[100] : Colors.white70)
+              text: log.message,
+              style: TextStyle(color: log.level == 'ERROR' ? colorScheme.error : colorScheme.onSurface),
             ),
           ],
         ),
@@ -216,12 +221,16 @@ class _LogLine extends StatelessWidget {
     );
   }
 
-  Color _getLevelColor(String level) {
+  Color _getLevelColor(String level, bool isDark) {
     switch (level) {
-      case 'ERROR': return Colors.redAccent;
-      case 'RUNNING': return Colors.blueAccent;
-      case 'SUCCESS': return Colors.greenAccent;
-      default: return Colors.amberAccent;
+      case 'ERROR':
+        return isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F);
+      case 'RUNNING':
+        return isDark ? const Color(0xFF82B1FF) : const Color(0xFF1565C0);
+      case 'SUCCESS':
+        return isDark ? const Color(0xFF69F0AE) : const Color(0xFF2E7D32);
+      default:
+        return isDark ? const Color(0xFFFFD180) : const Color(0xFFB26A00);
     }
   }
 }

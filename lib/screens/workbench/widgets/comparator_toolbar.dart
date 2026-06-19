@@ -15,9 +15,12 @@ class ComparatorToolbar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 48,
+      height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: colorScheme.surface,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+      ),
       child: Row(
         children: [
           // Comparator Controls

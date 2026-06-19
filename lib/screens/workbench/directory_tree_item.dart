@@ -127,6 +127,16 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       }
     });
 
+    // In the gallery, the checkbox controls aggregate inclusion while tapping
+    // the name browses just that folder — so the row highlight tracks "you are
+    // here" (viewing), distinct from the checkbox/inclusion state.
+    final isViewing = !widget.useFileBrowserState &&
+        context.select<AppState, bool>((state) =>
+            state.galleryState.viewMode == GalleryViewMode.folder &&
+            !state.galleryState.folderViewIsResult &&
+            state.galleryState.viewSourcePath == widget.path);
+    final highlight = widget.useFileBrowserState ? isSelected : isViewing;
+
     // We no longer need the separate 'isViewing' concept for highlighting, 
     // we use 'isSelected' for the primary visual feedback.
     final appState = Provider.of<AppState>(context, listen: false);
@@ -141,7 +151,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       children: [
         ListTile(
           dense: true,
-          selected: isSelected, // Use isSelected for background highlight
+          selected: highlight, // Background highlight: inclusion (browser) / viewing (gallery)
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -164,9 +174,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                     if (widget.useFileBrowserState) {
                       appState.fileBrowserState.toggleDirectory(widget.path);
                     } else {
+                      // Checkbox = include/exclude from the aggregate; the live
+                      // aggregate rescans, no forced view switch.
                       appState.galleryState.toggleDirectory(widget.path);
-                      // Always ensure we are in a mode that shows selected directories
-                      appState.galleryState.setViewMode(GalleryViewMode.all);
                     }
                   },
                   visualDensity: VisualDensity.compact,
@@ -184,9 +194,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           title: Text(
             folderName,
             style: TextStyle(
-              fontSize: 13, 
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
+              fontSize: 13,
+              fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
+              color: highlight ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -217,14 +227,12 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           onTap: () {
             if (isUnreachable) {
               _reAuthorize(context, appState);
+            } else if (widget.useFileBrowserState) {
+              // File Browser keeps tap-to-toggle.
+              appState.fileBrowserState.toggleDirectory(widget.path);
             } else {
-              // Clicking the row now toggles selection
-              if (widget.useFileBrowserState) {
-                appState.fileBrowserState.toggleDirectory(widget.path);
-              } else {
-                appState.galleryState.toggleDirectory(widget.path);
-                appState.galleryState.setViewMode(GalleryViewMode.all);
-              }
+              // Gallery: tapping the name browses just this folder.
+              appState.galleryState.setViewFolder(widget.path);
             }
           },
         ),

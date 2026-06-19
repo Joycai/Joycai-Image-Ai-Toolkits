@@ -558,6 +558,15 @@
   "filesAppSuffix": " (ファイル App)",
   "getStarted": "始める",
   "workbench": "ワークベンチ",
+  "wbModeImage": "画像",
+  "wbModeVideo": "動画",
+  "wbTools": "ツール",
+  "sectionSources": "ソース",
+  "sectionResults": "結果",
+  "sectionWorkspace": "ワークスペース",
+  "allSources": "すべてのソース",
+  "allResults": "すべての結果",
+  "backToAll": "すべてに戻る",
   "directories": "ディレクトリ",
   "noImagesSelected": "画像が選択されていません",
   "@removeFolderConfirmMessage": {
@@ -608,6 +617,8 @@
       }
     }
   },
+  "useStreaming": "ストリーミングを使用",
+  "useStreamingDesc": "リアルタイム AI 応答（対応時）",
   "comparator": "比較ツール",
   "sendToComparator": "比較ツールに送信",
   "sendToSelection": "選択に追加",

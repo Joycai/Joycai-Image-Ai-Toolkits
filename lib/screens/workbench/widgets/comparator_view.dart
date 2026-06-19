@@ -292,7 +292,7 @@ class _ComparatorViewState extends State<ComparatorView> {
 
   Widget _buildViewer(String? path, String label, TransformationController controller, {bool showLabel = true, Color? borderColor}) {
     if (path == null) {
-      return Center(child: Text('No image', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700], fontSize: 12)));
+      return const Center(child: Text('No image', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)));
     }
     return Stack(
       fit: StackFit.expand,

@@ -558,6 +558,15 @@
   "filesAppSuffix": " (檔案 App)",
   "getStarted": "開始使用",
   "workbench": "工作台",
+  "wbModeImage": "圖像",
+  "wbModeVideo": "影片",
+  "wbTools": "工具",
+  "sectionSources": "來源",
+  "sectionResults": "結果",
+  "sectionWorkspace": "工作區",
+  "allSources": "全部來源",
+  "allResults": "全部結果",
+  "backToAll": "返回全部",
   "directories": "目錄",
   "noImagesSelected": "未選取圖片",
   "@removeFolderConfirmMessage": {
@@ -608,6 +617,8 @@
       }
     }
   },
+  "useStreaming": "使用串流",
+  "useStreamingDesc": "即時 AI 回應（若支援）",
   "comparator": "比較器",
   "sendToComparator": "發送到比較器",
   "sendToSelection": "新增至選取項目",

@@ -1225,6 +1225,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageProcessing => '画像処理';
 
   @override
+  String get wbModeImage => '画像';
+
+  @override
+  String get wbModeVideo => '動画';
+
+  @override
+  String get wbTools => 'ツール';
+
+  @override
   String get sourceGallery => 'ソースギャラリー';
 
   @override
@@ -1238,6 +1247,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get resultCache => '結果キャッシュ';
+
+  @override
+  String get sectionSources => 'ソース';
+
+  @override
+  String get sectionResults => '結果';
+
+  @override
+  String get sectionWorkspace => 'ワークスペース';
+
+  @override
+  String get allSources => 'すべてのソース';
+
+  @override
+  String get allResults => 'すべての結果';
+
+  @override
+  String get backToAll => 'すべてに戻る';
 
   @override
   String get directories => 'ディレクトリ';
@@ -1366,6 +1393,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String processImages(int count) {
     return '$count枚の画像を処理';
   }
+
+  @override
+  String get useStreaming => 'ストリーミングを使用';
+
+  @override
+  String get useStreamingDesc => 'リアルタイム AI 応答（対応時）';
 
   @override
   String get taskSubmitted => 'タスクがキューに送信されました';

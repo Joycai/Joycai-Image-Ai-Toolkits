@@ -306,7 +306,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : null,
         ),
-        const TaskCapsuleMonitor(),
+        // The workbench has its own integrated bottom status bar, so the
+        // floating capsule would be redundant there — show it only elsewhere.
+        if (appState.activeScreenIndex != 0) const TaskCapsuleMonitor(),
       ],
     );
   }

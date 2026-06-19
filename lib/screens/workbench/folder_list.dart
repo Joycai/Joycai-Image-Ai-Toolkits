@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import 'directory_tree_item.dart';
+import 'widgets/result_tree_item.dart';
 
 class FolderList extends StatelessWidget {
   final bool useFileBrowserState;
@@ -90,75 +91,153 @@ class FolderList extends StatelessWidget {
               ),
             ),
           const Divider(height: 1),
-          
-          // Fixed Nodes
-          if (!useFileBrowserState) ...[
-            _buildFixedNode(
-              context,
-              icon: Icons.photo_library_outlined,
-              label: l10n.sourceGallery,
-              isSelected: galleryState.viewMode == GalleryViewMode.all,
-              onTap: () => galleryState.setViewMode(GalleryViewMode.all),
-              colorScheme: colorScheme,
-            ),
-            _buildFixedNode(
-              context,
-              icon: Icons.workspaces_outline,
-              label: l10n.tempWorkspace,
-              isSelected: galleryState.viewMode == GalleryViewMode.temp,
-              onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
-              colorScheme: colorScheme,
-            ),
-            _buildFixedNode(
-              context,
-              icon: Icons.auto_awesome_motion,
-              label: (Platform.isIOS || Platform.isMacOS) ? l10n.resultCache : l10n.processResults,
-              isSelected: galleryState.viewMode == GalleryViewMode.processed,
-              onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
-              colorScheme: colorScheme,
-            ),
-            const Divider(height: 1),
-          ],
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Text(
-                  l10n.directories,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                    letterSpacing: 1.2,
+          // File Browser: a plain directory tree (no aggregate nodes).
+          // Workbench gallery: grouped Sources / Results / Workspace.
+          if (useFileBrowserState) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.directories,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                      letterSpacing: 1.2,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  '${sourceDirectories.length}',
-                  style: TextStyle(fontSize: 11, color: colorScheme.primary),
-                ),
-              ],
+                  const Spacer(),
+                  Text(
+                    '${sourceDirectories.length}',
+                    style: TextStyle(fontSize: 11, color: colorScheme.primary),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: sourceDirectories.isEmpty
+                  ? _buildEmptyState(colorScheme, l10n)
+                  : ListView.builder(
+                      itemCount: sourceDirectories.length,
+                      itemBuilder: (context, index) {
+                        final path = sourceDirectories[index];
+                        return DirectoryTreeItem(
+                          key: ValueKey(path),
+                          path: path,
+                          isRoot: true,
+                          useFileBrowserState: useFileBrowserState,
+                          onRemove: (p, name) => _confirmRemove(context, appState, p, name),
+                        );
+                      },
+                    ),
+            ),
+          ] else
+            Expanded(
+              child: _buildGalleryGroups(context, appState, galleryState, colorScheme, l10n, sourceDirectories),
+            ),
+        ],
+    );
+  }
+
+  Widget _buildGalleryGroups(
+    BuildContext context,
+    AppState appState,
+    GalleryState galleryState,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+    List<String> sourceDirectories,
+  ) {
+    final resultRoots = galleryState.resultRootDirectories;
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        // SOURCES — the aggregate "All Sources" view is the head of the group,
+        // with the browsable source-folder tree nested beneath it.
+        _buildSectionHeader(colorScheme, l10n.sectionSources, count: sourceDirectories.length),
+        _buildFixedNode(
+          context,
+          icon: Icons.photo_library_outlined,
+          label: l10n.allSources,
+          isSelected: galleryState.viewMode == GalleryViewMode.all,
+          onTap: () => galleryState.setViewMode(GalleryViewMode.all),
+          colorScheme: colorScheme,
+          count: galleryState.galleryImages.length,
+        ),
+        if (sourceDirectories.isEmpty)
+          _buildInlineHint(colorScheme, l10n.noFolders)
+        else
+          ...sourceDirectories.map((path) => DirectoryTreeItem(
+                key: ValueKey(path),
+                path: path,
+                isRoot: true,
+                useFileBrowserState: false,
+                onRemove: (p, name) => _confirmRemove(context, appState, p, name),
+              )),
+
+        const Divider(height: 16),
+
+        // RESULTS — the result cache is also a real folder tree, now browsable.
+        _buildSectionHeader(colorScheme, l10n.sectionResults, count: resultRoots.length),
+        _buildFixedNode(
+          context,
+          icon: Icons.auto_awesome_motion,
+          label: l10n.allResults,
+          isSelected: galleryState.viewMode == GalleryViewMode.processed,
+          onTap: () => galleryState.setViewMode(GalleryViewMode.processed),
+          colorScheme: colorScheme,
+          count: galleryState.processedImages.length,
+        ),
+        if (resultRoots.isEmpty)
+          _buildInlineHint(colorScheme, l10n.noResultsYet)
+        else
+          ...resultRoots.map((path) => ResultTreeItem(key: ValueKey(path), path: path, isRoot: true)),
+
+        const Divider(height: 16),
+
+        // WORKSPACE — transient drop zone.
+        _buildSectionHeader(colorScheme, l10n.sectionWorkspace),
+        _buildFixedNode(
+          context,
+          icon: Icons.workspaces_outline,
+          label: l10n.tempWorkspace,
+          isSelected: galleryState.viewMode == GalleryViewMode.temp,
+          onTap: () => galleryState.setViewMode(GalleryViewMode.temp),
+          colorScheme: colorScheme,
+          count: galleryState.droppedImages.length,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(ColorScheme colorScheme, String label, {int? count}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+      child: Row(
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 1.2,
             ),
           ),
-          Expanded(
-            child: sourceDirectories.isEmpty
-                ? _buildEmptyState(colorScheme, l10n)
-                : ListView.builder(
-                    itemCount: sourceDirectories.length,
-                    itemBuilder: (context, index) {
-                      final path = sourceDirectories[index];
-                      return DirectoryTreeItem(
-                        key: ValueKey(path),
-                        path: path,
-                        isRoot: true,
-                        useFileBrowserState: useFileBrowserState,
-                        onRemove: (p, name) => _confirmRemove(context, appState, p, name),
-                      );
-                    },
-                  ),
-          ),
+          const Spacer(),
+          if (count != null)
+            Text('$count', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInlineHint(ColorScheme colorScheme, String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 16, 10),
+      child: Text(text, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
     );
   }
 
@@ -169,6 +248,7 @@ class FolderList extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
     required ColorScheme colorScheme,
+    int? count,
   }) {
     return ListTile(
       leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 20),
@@ -180,6 +260,15 @@ class FolderList extends StatelessWidget {
           color: isSelected ? colorScheme.primary : colorScheme.onSurface,
         ),
       ),
+      trailing: count != null
+          ? Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected ? colorScheme.primary : colorScheme.outline,
+              ),
+            )
+          : null,
       selected: isSelected,
       dense: true,
       onTap: onTap,
