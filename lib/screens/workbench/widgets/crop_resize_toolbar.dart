@@ -135,7 +135,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancelLabel)),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
               child: Text(overwriteLabel),
             ),
           ],
@@ -332,7 +332,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.aspect_ratio, size: 20, color: Colors.grey),
+        Icon(Icons.aspect_ratio, size: 20, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
         Flexible(
           child: SingleChildScrollView(
@@ -403,10 +403,10 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.photo_size_select_large, size: 20, color: Colors.grey),
+        Icon(Icons.photo_size_select_large, size: 20, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
         _buildDimensionField(_widthController, compact ? null : l10n.width),
-        const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text("×", style: TextStyle(color: Colors.grey))),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text("×", style: TextStyle(color: colorScheme.onSurfaceVariant))),
         _buildDimensionField(_heightController, compact ? null : l10n.height),
         const SizedBox(width: 4),
         IconButton(
@@ -437,17 +437,17 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
             tooltip: l10n.sampling,
             onSelected: (v) => uiState.setSamplingMethod(v),
             itemBuilder: (context) => [
-              _buildSamplingItem('lanczos', 'Lanczos', uiState.samplingMethod),
-              _buildSamplingItem('cubic', 'Cubic', uiState.samplingMethod),
-              _buildSamplingItem('linear', 'Linear', uiState.samplingMethod),
-              _buildSamplingItem('nearest', 'Nearest', uiState.samplingMethod),
+              _buildSamplingItem(context, 'lanczos', 'Lanczos', uiState.samplingMethod),
+              _buildSamplingItem(context, 'cubic', 'Cubic', uiState.samplingMethod),
+              _buildSamplingItem(context, 'linear', 'Linear', uiState.samplingMethod),
+              _buildSamplingItem(context, 'nearest', 'Nearest', uiState.samplingMethod),
             ],
           ),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildSamplingItem(String value, String label, String current) {
+  PopupMenuItem<String> _buildSamplingItem(BuildContext context, String value, String label, String current) {
     return PopupMenuItem(
       value: value,
       child: Row(
@@ -455,7 +455,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           Text(label, style: const TextStyle(fontSize: 13)),
           if (value == current) ...[
             const Spacer(),
-            const Icon(Icons.check, size: 16, color: Colors.blue),
+            Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.primary),
           ],
         ],
       ),
@@ -493,23 +493,27 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildMobileAction(
-              icon: Icons.close, 
-              label: l10n.cancel, 
+              context,
+              icon: Icons.close,
+              label: l10n.cancel,
               onTap: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
             ),
             _buildMobileAction(
-              icon: Icons.aspect_ratio, 
-              label: l10n.aspectRatio, 
+              context,
+              icon: Icons.aspect_ratio,
+              label: l10n.aspectRatio,
               onTap: () => _showMobileRatioSheet(context, l10n, uiState),
             ),
             _buildMobileAction(
-              icon: Icons.photo_size_select_large, 
-              label: l10n.resize, 
+              context,
+              icon: Icons.photo_size_select_large,
+              label: l10n.resize,
               onTap: () => _showMobileResizeDialog(context, l10n, uiState),
             ),
             _buildMobileAction(
-              icon: Icons.check_circle_outline, 
-              label: l10n.save, 
+              context,
+              icon: Icons.check_circle_outline,
+              label: l10n.save,
               color: colorScheme.primary,
               onTap: () => _showMobileSaveSheet(context, l10n),
             ),
@@ -519,7 +523,8 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     );
   }
 
-  Widget _buildMobileAction({required IconData icon, required String label, required VoidCallback onTap, Color? color}) {
+  Widget _buildMobileAction(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap, Color? color}) {
+    final fg = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -528,9 +533,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color ?? Colors.grey[700], size: 24),
+            Icon(icon, color: fg, size: 24),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 10, color: color ?? Colors.grey[700], fontWeight: FontWeight.w500)),
+            Text(label, style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -642,8 +647,8 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.save, color: Colors.red),
-              title: Text(l10n.overwriteSource, style: const TextStyle(color: Colors.red)),
+              leading: Icon(Icons.save, color: Theme.of(context).colorScheme.error),
+              title: Text(l10n.overwriteSource, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(context);
                 _handleSave(overwrite: true);

@@ -44,7 +44,10 @@ class MaskEditorToolbar extends StatelessWidget {
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      color: colorScheme.surface,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+      ),
       child: Row(
         children: [
           // Primary High-Frequency Actions
@@ -61,7 +64,7 @@ class MaskEditorToolbar extends StatelessWidget {
             child: Row(
               children: [
                 if (!isNarrow) ...[
-                  const Icon(Icons.line_weight, size: 16, color: Colors.grey),
+                  Icon(Icons.line_weight, size: 16, color: colorScheme.onSurfaceVariant),
                   Expanded(
                     flex: 2,
                     child: Slider(
@@ -73,7 +76,7 @@ class MaskEditorToolbar extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.opacity, size: 16, color: Colors.grey),
+                  Icon(Icons.opacity, size: 16, color: colorScheme.onSurfaceVariant),
                   Expanded(
                     flex: 1,
                     child: Slider(
@@ -173,8 +176,8 @@ class MaskEditorToolbar extends StatelessWidget {
                 PopupMenuItem(
                   value: 'clear',
                   child: ListTile(
-                    leading: const Icon(Icons.delete_outline, color: Colors.red),
-                    title: Text(l10n.clear, style: const TextStyle(color: Colors.red)),
+                    leading: Icon(Icons.delete_outline, color: colorScheme.error),
+                    title: Text(l10n.clear, style: TextStyle(color: colorScheme.error)),
                     dense: true,
                   ),
                 ),
@@ -269,7 +272,7 @@ class MaskEditorToolbar extends StatelessWidget {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
               width: isSelected ? 2 : 1,
             ),
           ),
