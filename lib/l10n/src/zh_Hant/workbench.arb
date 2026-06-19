@@ -1,6 +1,9 @@
 {
   "workbench": "工作台",
   "imageProcessing": "圖片處理",
+  "wbModeImage": "圖像",
+  "wbModeVideo": "影片",
+  "wbTools": "工具",
   "sourceGallery": "來源圖庫",
   "sourceExplorer": "來源瀏覽器",
   "tempWorkspace": "臨時工作區",

@@ -1,6 +1,9 @@
 {
   "workbench": "Workbench",
   "imageProcessing": "Image Processing",
+  "wbModeImage": "Image",
+  "wbModeVideo": "Video",
+  "wbTools": "Tools",
   "sourceGallery": "Source Gallery",
   "sourceExplorer": "Source Explorer",
   "tempWorkspace": "Temp Workspace",

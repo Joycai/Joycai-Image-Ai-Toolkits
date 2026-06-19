@@ -558,6 +558,9 @@
   "filesAppSuffix": " (ファイル App)",
   "getStarted": "始める",
   "workbench": "ワークベンチ",
+  "wbModeImage": "画像",
+  "wbModeVideo": "動画",
+  "wbTools": "ツール",
   "directories": "ディレクトリ",
   "noImagesSelected": "画像が選択されていません",
   "@removeFolderConfirmMessage": {

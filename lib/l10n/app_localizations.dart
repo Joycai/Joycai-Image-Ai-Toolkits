@@ -2393,6 +2393,24 @@ abstract class AppLocalizations {
   /// **'Image Processing'**
   String get imageProcessing;
 
+  /// No description provided for @wbModeImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get wbModeImage;
+
+  /// No description provided for @wbModeVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get wbModeVideo;
+
+  /// No description provided for @wbTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get wbTools;
+
   /// No description provided for @sourceGallery.
   ///
   /// In en, this message translates to:

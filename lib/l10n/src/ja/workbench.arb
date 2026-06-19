@@ -1,6 +1,9 @@
 {
   "workbench": "ワークベンチ",
   "imageProcessing": "画像処理",
+  "wbModeImage": "画像",
+  "wbModeVideo": "動画",
+  "wbTools": "ツール",
   "sourceGallery": "ソースギャラリー",
   "sourceExplorer": "ソースエクスプローラー",
   "tempWorkspace": "一時ワークスペース",

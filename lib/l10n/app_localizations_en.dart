@@ -1252,6 +1252,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageProcessing => 'Image Processing';
 
   @override
+  String get wbModeImage => 'Image';
+
+  @override
+  String get wbModeVideo => 'Video';
+
+  @override
+  String get wbTools => 'Tools';
+
+  @override
   String get sourceGallery => 'Source Gallery';
 
   @override

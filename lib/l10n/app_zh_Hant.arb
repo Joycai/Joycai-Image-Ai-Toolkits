@@ -558,6 +558,9 @@
   "filesAppSuffix": " (檔案 App)",
   "getStarted": "開始使用",
   "workbench": "工作台",
+  "wbModeImage": "圖像",
+  "wbModeVideo": "影片",
+  "wbTools": "工具",
   "directories": "目錄",
   "noImagesSelected": "未選取圖片",
   "@removeFolderConfirmMessage": {

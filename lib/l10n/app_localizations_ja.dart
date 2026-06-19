@@ -1225,6 +1225,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageProcessing => '画像処理';
 
   @override
+  String get wbModeImage => '画像';
+
+  @override
+  String get wbModeVideo => '動画';
+
+  @override
+  String get wbTools => 'ツール';
+
+  @override
   String get sourceGallery => 'ソースギャラリー';
 
   @override

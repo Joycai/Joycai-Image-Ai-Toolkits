@@ -1222,6 +1222,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageProcessing => '图片处理';
 
   @override
+  String get wbModeImage => '图像';
+
+  @override
+  String get wbModeVideo => '视频';
+
+  @override
+  String get wbTools => '工具';
+
+  @override
   String get sourceGallery => '源图库';
 
   @override
@@ -2812,6 +2821,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageProcessing => '圖片處理';
+
+  @override
+  String get wbModeImage => '圖像';
+
+  @override
+  String get wbModeVideo => '影片';
+
+  @override
+  String get wbTools => '工具';
 
   @override
   String get sourceGallery => '來源圖庫';
