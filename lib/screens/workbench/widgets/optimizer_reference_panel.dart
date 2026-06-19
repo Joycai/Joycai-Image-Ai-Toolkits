@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
+import 'config_section_header.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
@@ -11,24 +12,32 @@ class OptimizerReferencePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
     final images = workbenchUIState.optimizerReferenceImages;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            l10n.images,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2),
-          ),
+        ConfigSectionHeader(
+          l10n.referenceImages,
+          padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
+          trailing: images.isEmpty
+              ? null
+              : Text('${images.length}', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
         ),
         if (images.isEmpty)
           Expanded(
             child: Center(
-              child: Text(
-                l10n.noImagesSelected,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.collections_outlined, size: 40, color: colorScheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.noImagesSelected,
+                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                  ),
+                ],
               ),
             ),
           )

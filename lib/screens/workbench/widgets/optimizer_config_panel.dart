@@ -6,6 +6,7 @@ import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/chat_model_selector.dart';
+import 'config_section_header.dart';
 
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
@@ -75,21 +76,13 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          l10n.config.toUpperCase(),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.2),
-        ),
-        const SizedBox(height: 16),
-
+        const SizedBox(height: 4),
         ChatModelSelector(
           selectedModelId: widget.selectedModelDbId,
           label: l10n.refinerModel,
           onChanged: widget.onModelChanged,
           models: appState.multimodalModels,
         ),
-
-        const SizedBox(height: 24),
-
         _buildSysPromptSection(l10n, colorScheme),
       ],
     );
@@ -106,32 +99,23 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Text(
-              l10n.systemPrompt,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const Spacer(),
-            _ModeToggle(
-              useCustom: widget.useCustomSysPrompt,
-              presetLabel: l10n.preset,
-              customLabel: l10n.custom,
-              onChanged: (useCustom) {
-                widget.onUseCustomChanged(useCustom);
-                if (!useCustom) {
-                  // Switching back to preset: clear the effective prompt so the
-                  // dropdown shows unselected until the user picks one again.
-                  widget.onSysPromptChanged(null);
-                }
-              },
-            ),
-          ],
+        ConfigSectionHeader(
+          l10n.systemPrompt,
+          trailing: _ModeToggle(
+            useCustom: widget.useCustomSysPrompt,
+            presetLabel: l10n.preset,
+            customLabel: l10n.custom,
+            onChanged: (useCustom) {
+              widget.onUseCustomChanged(useCustom);
+              if (!useCustom) {
+                // Switching back to preset: clear the effective prompt so the
+                // dropdown shows unselected until the user picks one again.
+                widget.onSysPromptChanged(null);
+              }
+            },
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         if (widget.useCustomSysPrompt)
           _buildCustomEditor(l10n, colorScheme)
         else ...[

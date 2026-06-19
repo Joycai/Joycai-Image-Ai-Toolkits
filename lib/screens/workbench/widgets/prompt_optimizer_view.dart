@@ -21,6 +21,7 @@ class PromptOptimizerView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final taskService = Provider.of<TaskQueueService>(context);
     final isRefining = taskService.queue.any(
       (t) => t.type == TaskType.promptRefine && t.status == TaskStatus.processing,
@@ -44,7 +45,7 @@ class PromptOptimizerView extends StatelessWidget {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.arrow_downward_rounded, color: Colors.grey, size: 20),
+                      : Icon(Icons.arrow_downward_rounded, color: colorScheme.outline, size: 20),
                 ),
                 Expanded(flex: 3, child: _buildOutputSection(l10n, appState, true, isRefining)),
               ],
@@ -67,7 +68,7 @@ class PromptOptimizerView extends StatelessWidget {
                           height: 28,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.arrow_forward_rounded, color: Colors.grey, size: 32),
+                      : Icon(Icons.arrow_forward_rounded, color: colorScheme.outline, size: 32),
                 ),
               ),
               Expanded(child: _buildOutputSection(l10n, appState, false, isRefining)),
