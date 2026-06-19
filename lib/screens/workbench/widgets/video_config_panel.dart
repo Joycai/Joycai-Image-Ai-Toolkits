@@ -12,6 +12,8 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/markdown_editor.dart';
+import 'config_action_bar.dart';
+import 'config_section_header.dart';
 
 class VideoConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -111,11 +113,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // Model Selection
         _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
 
-        const Divider(height: 32),
-
-        // Prompt
-        Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)), 
-        const SizedBox(height: 8),
+        ConfigSectionHeader(l10n.prompt),
         MarkdownEditor(
           controller: _promptController,
           label: l10n.prompt,
@@ -127,11 +125,8 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           expand: false,
         ),
 
-        const Divider(height: 32),
-
-        // Frame Controls
-        Text(l10n.frames, style: const TextStyle(fontWeight: FontWeight.bold)), 
-        const SizedBox(height: 12),
+        ConfigSectionHeader(l10n.frames),
+        const SizedBox(height: 6),
         Builder(
           builder: (context) {
             final cs = Theme.of(context).colorScheme;
@@ -168,41 +163,61 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           },
         ),
 
-        const SizedBox(height: 20),
-
-        // Reference Images
-        Text(l10n.referenceImages, style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
+        ConfigSectionHeader(l10n.referenceImages),
+        const SizedBox(height: 6),
         _ReferenceImagesTarget(
           images: uiState.videoReferenceImages,
           onDrop: (img) => uiState.addVideoReferenceImage(img),
           onRemove: (img) => uiState.removeVideoReferenceImage(img),
           dropHint: l10n.dropVideoReferenceHere,
         ),
-
-        const SizedBox(height: 32),
-
-        // Submit Button
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _promptController.text.isEmpty ? null : _handleSubmit,   
-            icon: const Icon(Icons.movie_outlined),
-            label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
       ],
     );
 
-    return SingleChildScrollView(
-      controller: widget.scrollController,
-      padding: const EdgeInsets.all(16),
-      child: content,
+    // Primary action — pinned at the top on the mobile bottom sheet (mirroring
+    // the image panel), or at the bottom of the scroll on desktop.
+    final generateButton = SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
+        icon: const Icon(Icons.movie_outlined),
+        label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+
+    if (widget.scrollController != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: generateButton,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: content,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: content,
+          ),
+        ),
+        ConfigActionBar(child: generateButton),
+      ],
     );
   }
 
@@ -222,8 +237,18 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     AppState appState,
     WorkbenchUIState uiState,
   ) {
+    String? collapsedModelName;
+    if (!_isModelSettingsExpanded && selectedModelDbId != null) {
+      final match = videoModels.cast<LLMModel?>().firstWhere(
+        (m) => m?.id == selectedModelDbId,
+        orElse: () => null,
+      );
+      collapsedModelName = match?.modelName;
+    }
+
     return CollapsibleCard(
       title: l10n.modelSelection,
+      subtitle: collapsedModelName,
       isExpanded: _isModelSettingsExpanded,
       onToggle: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
       content: Column(

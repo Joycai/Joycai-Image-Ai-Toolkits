@@ -13,6 +13,8 @@ import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
+import 'widgets/config_action_bar.dart';
+import 'widgets/config_section_header.dart';
 
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -142,8 +144,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               ),
             ),
 
-            // Model Selection Section
-            _buildSectionHeader(l10n.modelSelection, colorScheme),
+            // Model Selection Section — the section is self-titled (collapsible),
+            // so no separate header above it (matches the video panel).
+            const SizedBox(height: 8),
             ModelSelectionSection(
               availableModels: imageModels.map((m) => m.toMap()).toList(),
               channels: allChannels.map((c) => c.toMap()).toList(),
@@ -170,8 +173,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
             const SizedBox(height: 8),
             SwitchListTile(
-              title: const Text("Use Streaming", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              subtitle: const Text("Real-time AI response (if supported)", style: TextStyle(fontSize: 11)),
+              title: Text(l10n.useStreaming, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              subtitle: Text(l10n.useStreamingDesc, style: const TextStyle(fontSize: 11)),
               value: useStream,
               onChanged: (v) => _updateConfig(useStream: v),
               secondary: const Icon(Icons.stream, size: 20),
@@ -179,22 +182,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               dense: true,
             ),
 
-            _buildSectionHeader(l10n.prompt, colorScheme),
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              alignment: WrapAlignment.spaceBetween,
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                Text(l10n.prompt, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildPromptPicker(colorScheme, l10n),
-                  ],
-                ),
-              ],
-            ),
+            ConfigSectionHeader(l10n.prompt, trailing: _buildPromptPicker(colorScheme, l10n)),
             const SizedBox(height: 4),
             MarkdownEditor(
               controller: _promptController,
@@ -343,18 +331,18 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             ],
           );
         } else {
-          // Desktop sidebar: Process button at bottom of scrollable content
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                content,
-                const SizedBox(height: 10),
-                processButton,
-              ],
-            ),
+          // Desktop sidebar: content scrolls; the Process button is docked at
+          // the bottom so it's always reachable without scrolling to the end.
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: content,
+                ),
+              ),
+              ConfigActionBar(child: processButton),
+            ],
           );
         }
       },
@@ -509,20 +497,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             child: Text(message, style: TextStyle(fontSize: 11, color: colorScheme.onTertiaryContainer)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String label, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 4),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: colorScheme.primary,
-          letterSpacing: 1.0,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }
