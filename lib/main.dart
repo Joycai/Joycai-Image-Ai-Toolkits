@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -79,12 +80,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.light),
-        fontFamily: 'NotoSansSC',
+        textTheme: GoogleFonts.ibmPlexSansTextTheme(ThemeData(brightness: Brightness.light).textTheme),
+        fontFamily: GoogleFonts.ibmPlexSans().fontFamily,
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.dark),
-        fontFamily: 'NotoSansSC',
+        textTheme: GoogleFonts.ibmPlexSansTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
+        fontFamily: GoogleFonts.ibmPlexSans().fontFamily,
       ),
       localizationsDelegates: const [
         AppLocalizations.delegate,

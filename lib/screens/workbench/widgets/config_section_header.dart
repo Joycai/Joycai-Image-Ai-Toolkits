@@ -29,7 +29,7 @@ class ConfigSectionHeader extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
-                color: colorScheme.onSurfaceVariant,
+                color: colorScheme.primary,
               ),
             ),
           ),

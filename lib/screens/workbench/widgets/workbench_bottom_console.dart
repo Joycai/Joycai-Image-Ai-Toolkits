@@ -15,9 +15,34 @@ class WorkbenchBottomConsole extends StatefulWidget {
   State<WorkbenchBottomConsole> createState() => _WorkbenchBottomConsoleState();
 }
 
-class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
+class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
+    with SingleTickerProviderStateMixin {
   double _height = 200;
   bool _heightInitialized = false;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseOpacity;
+  late Animation<double> _pulseScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _pulseOpacity = Tween<double>(begin: 1.0, end: 0.4).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _pulseScale = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +197,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
     if (isProcessing) color = colorScheme.primary;
     if (hasErrors) color = colorScheme.error;
 
-    return Container(
+    final dot = Container(
       width: 8,
       height: 8,
       decoration: BoxDecoration(
@@ -182,6 +207,17 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole> {
             ? [BoxShadow(color: color.withAlpha(100), blurRadius: 4, spreadRadius: 1)]
             : null,
       ),
+    );
+
+    if (!isProcessing) return dot;
+
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) => Transform.scale(
+        scale: _pulseScale.value,
+        child: Opacity(opacity: _pulseOpacity.value, child: child),
+      ),
+      child: dot,
     );
   }
 

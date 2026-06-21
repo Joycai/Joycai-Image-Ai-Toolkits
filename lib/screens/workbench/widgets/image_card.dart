@@ -214,44 +214,47 @@ class _ImageCardState extends State<ImageCard> {
           children: [
             _buildThumbnail(context, colorScheme),
 
-            if (_isHovering && _dimensions.isNotEmpty)
+            if (_dimensions.isNotEmpty)
               Positioned(
-                top: 4,
-                right: 4,
+                top: 7,
+                left: 7,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withAlpha((255 * 0.6).round()),
-                    borderRadius: BorderRadius.circular(4),
+                    color: Colors.black.withAlpha(158),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     _dimensions,
-                    style: const TextStyle(color: Colors.white, fontSize: 9),
+                    style: const TextStyle(color: Color(0xFFD6D9E0), fontSize: 9.5),
                   ),
                 ),
               ),
 
-            if (_isHovering || widget.isSelected || isMobile)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha((255 * 0.6).round()),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(9, 14, 9, 7),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0xD0060708)],
                   ),
-                  child: Text(
-                    widget.imageFile.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    textAlign: TextAlign.center,
+                ),
+                child: Text(
+                  widget.imageFile.name,
+                  style: const TextStyle(
+                    color: Color(0xFFE8EAEF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
+            ),
 
             // Overlay Buttons — bottom-center pill above name label
             if ((_isHovering || isMobile) && !isVideo)
@@ -292,18 +295,17 @@ class _ImageCardState extends State<ImageCard> {
 
             if (widget.isSelected)
               Positioned(
-                top: 8,
-                right: 8,
+                top: 7,
+                right: 7,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check_circle,
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
                     color: colorScheme.primary,
-                    size: 24,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(90), blurRadius: 6, offset: const Offset(0, 2))],
                   ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 15),
                 ),
               ),
           ],

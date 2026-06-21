@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_channel.dart';
+import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../workbench_layout.dart';
 
@@ -29,8 +32,27 @@ class WorkbenchTopBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
     final concurrencyLimit = context.select<AppState, int>((s) => s.concurrencyLimit);
+    final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
+    final allChannels = context.select<AppState, List<LLMChannel>>((s) => s.allChannels);
+    final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final isNarrow = Responsive.isNarrow(context);
     final isMobile = Responsive.isMobile(context);
+
+    // Derive active channel name for the trailing chip.
+    String? channelName;
+    if (lastSelectedModelId != null && imageModels.isNotEmpty && allChannels.isNotEmpty) {
+      final dbId = int.tryParse(lastSelectedModelId);
+      LLMModel? model;
+      if (dbId != null) {
+        try { model = imageModels.firstWhere((m) => m.id == dbId); } catch (_) {}
+      }
+      if (model != null) {
+        try {
+          final ch = allChannels.firstWhere((c) => c.id == model!.channelId);
+          channelName = ch.displayName;
+        } catch (_) {}
+      }
+    }
 
     // Primary creation modes — the headline functions of the workbench.
     final primary = <_WbDest>[
@@ -101,6 +123,7 @@ class WorkbenchTopBar extends StatelessWidget {
                               ...tools.map((t) => _ToolButton(
                                     dest: t,
                                     selected: active == t.index,
+                                    showLabel: !isNarrow,
                                     onTap: () => tabController.animateTo(t.index),
                                   )),
                           ],
@@ -118,7 +141,32 @@ class WorkbenchTopBar extends StatelessWidget {
                     icon: const Icon(Icons.tune),
                     tooltip: l10n.modelSelection,
                     onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
+                  )
+                else if (channelName != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.bolt, size: 15, color: colorScheme.primary),
+                        const SizedBox(width: 5),
+                        Text(
+                          channelName,
+                          style: GoogleFonts.ibmPlexMono(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
               ],
             ),
           ),
@@ -280,21 +328,24 @@ class _PrimarySegment extends StatelessWidget {
 class _ToolButton extends StatelessWidget {
   final _WbDest dest;
   final bool selected;
+  final bool showLabel;
   final VoidCallback onTap;
 
   const _ToolButton({
     required this.dest,
     required this.selected,
     required this.onTap,
+    this.showLabel = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final iconColor = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Tooltip(
-        message: dest.label,
+        message: showLabel ? '' : dest.label,
         child: Material(
           color: selected ? colorScheme.primary.withAlpha(28) : Colors.transparent,
           borderRadius: BorderRadius.circular(9),
@@ -302,12 +353,26 @@ class _ToolButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(9),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(9),
-              child: Icon(
-                dest.icon,
-                size: 20,
-                color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              ),
+              padding: showLabel
+                  ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                  : const EdgeInsets.all(9),
+              child: showLabel
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(dest.icon, size: 18, color: iconColor),
+                        const SizedBox(width: 5),
+                        Text(
+                          dest.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: iconColor,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Icon(dest.icon, size: 20, color: iconColor),
             ),
           ),
         ),
