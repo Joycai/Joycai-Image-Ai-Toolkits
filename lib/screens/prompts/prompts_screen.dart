@@ -259,107 +259,257 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   // --- Desktop/Tablet Layout ---
   Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
-
-    // Per-category counts for the User Prompts list (tag filter applies there).
     final tagCounts = _computeTagCounts();
+    final isCategories = _tabController.index == 2;
 
-    final bool showSidebar = !isTablet && _tabController.index == 0;
-    final bool showTabletFilter =
-        isTablet && _tabController.index == 0 && _tags.isNotEmpty;
-
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(_isSelectionMode ? l10n.selectionModeCount(_selectedIds.length) : l10n.promptLibrary,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
-        centerTitle: false,
-        leading: _isSelectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _clearSelection) : null,
-        actions: _isSelectionMode ? [] : [
-          _buildSearchField(l10n, width: isTablet ? 200 : 300),
-          const SizedBox(width: 8),
-          _buildImportExportActions(l10n),
-          const SizedBox(width: 8),
-          Padding(
-            padding: EdgeInsets.only(right: isTablet ? 12 : 16),
-            child: isTablet
-                ? IconButton.filled(
-                    onPressed: _handleAddAction,
-                    icon: const Icon(Icons.add),
-                    tooltip: _addLabel(l10n),
-                  )
-                : FilledButton.icon(
-                    onPressed: _handleAddAction,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(_addLabel(l10n)),
+    return Row(
+      children: [
+        // ── Left sidebar: header + category filter ──────────────────────────
+        SizedBox(
+          width: isTablet ? 190 : 220,
+          child: Column(
+            children: [
+              // 60px sidebar header
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLow,
+                  border: Border(
+                    bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
                   ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
-        ),
-      ),
-      body: Row(
-        children: [
-          // Navigation Rail / Sidebar
-          NavigationRail(
-            selectedIndex: _tabController.index,
-            onDestinationSelected: (index) => setState(() => _tabController.index = index),
-            labelType: NavigationRailLabelType.all,
-            backgroundColor: colorScheme.surfaceContainerLow,
-            destinations: [
-              NavigationRailDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: Text(l10n.userPrompts)),
-              NavigationRailDestination(icon: const Icon(Icons.auto_fix_high_outlined), selectedIcon: const Icon(Icons.auto_fix_high), label: Text(l10n.systemTemplates)),
-              NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(l10n.categoriesTab)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 22, color: colorScheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n.promptLibrary,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Manage categories button
+                    Tooltip(
+                      message: l10n.categoriesTab,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => setState(() {
+                          _tabController.index = isCategories ? 0 : 2;
+                          _clearSelection();
+                        }),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: isCategories
+                                ? colorScheme.primary.withAlpha(28)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.category_outlined,
+                            size: 18,
+                            color: isCategories
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Category filter list
+              Expanded(
+                child: PromptsSidebar(
+                  tags: _tags,
+                  selectedFilterTagIds: _selectedFilterTagIds,
+                  tagCounts: tagCounts,
+                  totalCount: _userPrompts.length,
+                  matchAll: _filterMatchAll,
+                  onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
+                  onTagToggle: (id) {
+                    setState(() {
+                      if (_selectedFilterTagIds.contains(id)) {
+                        _selectedFilterTagIds.remove(id);
+                      } else {
+                        _selectedFilterTagIds.add(id);
+                      }
+                    });
+                  },
+                  onClear: () => setState(() => _selectedFilterTagIds.clear()),
+                ),
+              ),
             ],
           ),
-          const VerticalDivider(width: 1),
-          // Tag Sidebar — desktop only, User Prompts tab only
-          if (showSidebar) ...[
-            SizedBox(
-              width: 260,
-              child: PromptsSidebar(
-                tags: _tags,
-                selectedFilterTagIds: _selectedFilterTagIds,
-                tagCounts: tagCounts,
-                totalCount: _userPrompts.length,
-                matchAll: _filterMatchAll,
-                onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
-                onTagToggle: (id) {
-                  setState(() {
-                    if (_selectedFilterTagIds.contains(id)) {
-                      _selectedFilterTagIds.remove(id);
-                    } else {
-                      _selectedFilterTagIds.add(id);
-                    }
-                  });
-                },
-                onClear: () => setState(() => _selectedFilterTagIds.clear()),
-              ),
-            ),
-            const VerticalDivider(width: 1),
-          ],
-          // Main Content
-          Expanded(
-            child: Container(
-              color: colorScheme.surface,
-              child: Column(
-                children: [
-                  // Tablet: horizontal category filter replaces the sidebar
-                  if (showTabletFilter) _buildMobileFilterBar(colorScheme),
-                  Expanded(
-                    child: _buildConstrainedContent(
-                      _buildTabViews(l10n)[_tabController.index],
-                    ),
+        ),
+        const VerticalDivider(width: 1),
+
+        // ── Right main: 60px header + content ──────────────────────────────
+        Expanded(
+          child: Column(
+            children: [
+              // 60px main header
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
                   ),
-                ],
+                ),
+                child: _buildDesktopHeader(l10n, colorScheme, isTablet: isTablet, isCategories: isCategories),
               ),
+              // Tablet: horizontal category filter when on user prompts tab
+              if (isTablet && _tabController.index == 0 && _tags.isNotEmpty)
+                _buildMobileFilterBar(colorScheme),
+              // Main content
+              Expanded(
+                child: _buildConstrainedContent(
+                  _buildTabViews(l10n)[_tabController.index],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopHeader(
+    AppLocalizations l10n,
+    ColorScheme colorScheme, {
+    bool isTablet = false,
+    bool isCategories = false,
+  }) {
+    // ── Selection mode ──────────────────────────────────────────────────────
+    if (_isSelectionMode) {
+      return Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _clearSelection,
+            tooltip: l10n.cancel,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            l10n.nSelected(_selectedIds.length),
+            style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            icon: const Icon(Icons.category_outlined, size: 16),
+            label: Text(l10n.categorize),
+            onPressed: _handleBulkCategorize,
+          ),
+          const SizedBox(width: 4),
+          TextButton.icon(
+            icon: Icon(Icons.delete_outline, size: 16, color: colorScheme.error),
+            label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+            onPressed: _handleBulkDelete,
+          ),
+        ],
+      );
+    }
+
+    // ── Categories tab ──────────────────────────────────────────────────────
+    if (isCategories) {
+      return Row(
+        children: [
+          Icon(Icons.category, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Text(
+            l10n.categoriesTab,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: _handleAddAction,
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(l10n.addCategory),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              minimumSize: const Size(0, 38),
             ),
           ),
         ],
+      );
+    }
+
+    // ── User / System prompts ───────────────────────────────────────────────
+    return Row(
+      children: [
+        _buildTabToggle(l10n, colorScheme),
+        const Spacer(),
+        _buildSearchField(l10n, width: isTablet ? 180 : 250),
+        const SizedBox(width: 10),
+        _buildImportExportActions(l10n),
+        const SizedBox(width: 10),
+        FilledButton.icon(
+          onPressed: _handleAddAction,
+          icon: const Icon(Icons.add, size: 18),
+          label: Text(_addLabel(l10n)),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            minimumSize: const Size(0, 38),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabToggle(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(140),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToggleBtn(l10n.userPrompts, 0, colorScheme),
+          _buildToggleBtn(l10n.systemTemplates, 1, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleBtn(String label, int index, ColorScheme colorScheme) {
+    final selected = _tabController.index == index;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: selected ? colorScheme.surface : Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        boxShadow: selected
+            ? [BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 4, offset: const Offset(0, 1))]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(7),
+          onTap: () => setState(() {
+            _tabController.index = index;
+            _clearSelection();
+          }),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -382,14 +532,9 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   String _addLabel(AppLocalizations l10n) {
-    switch (_tabController.index) {
-      case 1:
-        return l10n.newTemplate;
-      case 2:
-        return l10n.addCategory;
-      default:
-        return l10n.newPrompt;
-    }
+    if (_tabController.index == 1) return l10n.newTemplate;
+    if (_tabController.index == 2) return l10n.addCategory;
+    return l10n.newPrompt;
   }
 
   List<Widget> _buildTabViews(AppLocalizations l10n) {

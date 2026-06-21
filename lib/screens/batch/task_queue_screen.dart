@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
@@ -20,10 +22,13 @@ class TaskQueueScreen extends StatelessWidget {
 
     if (isNarrow) {
       return _buildMobileLayout(context, appState, l10n);
-    } else {
-      return _buildDesktopLayout(context, appState, l10n);
     }
+    return _buildDesktopLayout(context, appState, l10n);
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Mobile layout (unchanged structure, kept for all narrow screens)
+  // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildMobileLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
     final tasks = appState.taskQueue.queue;
@@ -64,188 +69,174 @@ class TaskQueueScreen extends StatelessWidget {
     );
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Desktop layout — design-aligned: inline header + flat task list
+  // ──────────────────────────────────────────────────────────────────────────
+
   Widget _buildDesktopLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
     final tasks = appState.taskQueue.queue;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.taskQueueManager, style: const TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
-        ),
-      ),
-      body: Row(
-        children: [
-          // Left Sidebar: Summary & Controls
-          Container(
-            width: 300,
-            color: colorScheme.surfaceContainerLow,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    l10n.taskSummary,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      fontSize: 12,
-                      letterSpacing: 1.2,
+    final running = tasks.where((t) => t.status == TaskStatus.processing).length;
+    final queued = tasks.where((t) => t.status == TaskStatus.pending).length;
+    final done = tasks.where((t) => t.status == TaskStatus.completed).length;
+    final failed = tasks.where((t) => t.status == TaskStatus.failed).length;
+
+    final parts = <String>[];
+    if (running > 0) parts.add('$running running');
+    if (queued > 0) parts.add('$queued queued');
+    if (done > 0) parts.add('$done done');
+    if (failed > 0) parts.add('$failed failed');
+    final subtitle = parts.isEmpty ? l10n.noTasksInQueue : parts.join(' · ');
+
+    return Column(
+      children: [
+        // ── 60px inline header ──────────────────────────────────────────────
+        Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.checklist, size: 24, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.taskQueueManager,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.ibmPlexMono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
+                ],
+              ),
+              const Spacer(),
+              // Concurrency settings
+              IconButton(
+                icon: const Icon(Icons.tune, size: 20),
+                tooltip: l10n.concurrencyLimit(appState.taskQueue.concurrencyLimit),
+                onPressed: () => _showConcurrencyDialog(context, l10n, appState),
+              ),
+              const SizedBox(width: 4),
+              // Pause all (cancel pending)
+              OutlinedButton.icon(
+                onPressed: queued == 0
+                    ? null
+                    : () => _handleBulkAction('cancel_pending', appState.taskQueue),
+                icon: const Icon(Icons.pause, size: 18),
+                label: Text(l10n.cancelAllPending),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: colorScheme.outlineVariant),
+                  foregroundColor: colorScheme.onSurfaceVariant,
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 0),
+                  minimumSize: const Size(0, 38),
                 ),
-                _buildSummaryStat(l10n.pendingTasks, _getCount(tasks, TaskStatus.pending), Colors.orange),
-                _buildSummaryStat(l10n.processingTasks, _getCount(tasks, TaskStatus.processing), Colors.blue),
-                _buildSummaryStat(l10n.completedTasks, _getCount(tasks, TaskStatus.completed), Colors.green),
-                _buildSummaryStat(l10n.failedTasks, _getCount(tasks, TaskStatus.failed), Colors.red),
-                
-                const Spacer(),
-                const Divider(height: 1),
-                
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.concurrencyLimit(appState.taskQueue.concurrencyLimit),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      Slider(
-                        value: appState.taskQueue.concurrencyLimit.toDouble(),
-                        min: 1,
-                        max: 10,
-                        divisions: 9,
-                        onChanged: (v) => appState.taskQueue.updateConcurrency(v.round()),
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: () => _handleBulkAction('clear_completed', appState.taskQueue),
-                        icon: const Icon(Icons.cleaning_services_outlined, size: 18),
-                        label: Text(l10n.clearCompleted),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () => _handleBulkAction('cancel_pending', appState.taskQueue),
-                        icon: const Icon(Icons.cancel_presentation_outlined, size: 18),
-                        label: Text(l10n.cancelAllPending),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: tasks.isEmpty
-                            ? null
-                            : () async {
-                                final confirmed = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Text(l10n.clearAll),
-                                    content: Text(l10n.clearAllConfirm),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx, false),
-                                        child: Text(l10n.cancel),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () => Navigator.pop(ctx, true),
-                                        style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
-                                        child: Text(l10n.clearAll),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirmed == true) {
-                                  _handleBulkAction('clear_all', appState.taskQueue);
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.errorContainer,
-                          foregroundColor: colorScheme.error,
-                        ),
-                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                        label: Text(l10n.clearAll),
-                      ),
-                    ],
+              ),
+              const SizedBox(width: 8),
+              // Clear done
+              OutlinedButton.icon(
+                onPressed: done == 0 && failed == 0
+                    ? null
+                    : () => _handleBulkAction('clear_completed', appState.taskQueue),
+                icon: const Icon(Icons.clear_all, size: 18),
+                label: Text(l10n.clearCompleted),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: (done > 0 || failed > 0)
+                        ? colorScheme.error.withAlpha(160)
+                        : colorScheme.outlineVariant,
                   ),
+                  foregroundColor: (done > 0 || failed > 0)
+                      ? colorScheme.error
+                      : colorScheme.onSurfaceVariant,
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 0),
+                  minimumSize: const Size(0, 38),
                 ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Task list ────────────────────────────────────────────────────────
+        Expanded(
+          child: tasks.isEmpty
+              ? _buildEmptyState(colorScheme, l10n)
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  itemCount: tasks.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 11),
+                  itemBuilder: (context, index) {
+                    final task = tasks[tasks.length - 1 - index];
+                    return _TaskTile(task: task);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _showConcurrencyDialog(BuildContext context, AppLocalizations l10n, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final queue = Provider.of<AppState>(dialogContext).taskQueue;
+          return AlertDialog(
+            title: Text(l10n.concurrencyLimit(queue.concurrencyLimit)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Slider(
+                  value: queue.concurrencyLimit.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  onChanged: (v) {
+                    queue.updateConcurrency(v.round());
+                    setDialogState(() {});
+                  },
+                ),
+                Text(queue.concurrencyLimit.toString()),
               ],
             ),
-          ),
-          const VerticalDivider(width: 1),
-          // Right Pane: Task List
-          Expanded(
-            child: Container(
-              color: colorScheme.surface,
-              child: tasks.isEmpty
-                  ? _buildEmptyState(colorScheme, l10n)
-                  : Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 900),
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(24),
-                          itemCount: tasks.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final task = tasks[tasks.length - 1 - index];
-                            return _TaskTile(task: task);
-                          },
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(l10n.close),
+              ),
+            ],
+          );
+        },
       ),
     );
-  }
-
-  Widget _buildSummaryStat(String label, int count, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
-          Text(
-            '$count',
-            style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _getCount(List<TaskItem> tasks, TaskStatus status) {
-    return tasks.where((t) => t.status == status).length;
   }
 
   void _handleBulkAction(String action, TaskQueueService queue) {
     if (action == 'clear_completed') {
-      final toRemove = queue.queue.where((t) => t.status == TaskStatus.completed).map((t) => t.id).toList();
-      for (var id in toRemove) {
-        queue.removeTask(id);
-      }
+      final toRemove = queue.queue
+          .where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.failed || t.status == TaskStatus.cancelled)
+          .map((t) => t.id)
+          .toList();
+      for (final id in toRemove) { queue.removeTask(id); }
     } else if (action == 'cancel_pending') {
       final toCancel = queue.queue.where((t) => t.status == TaskStatus.pending).map((t) => t.id).toList();
-      for (var id in toCancel) {
-        queue.cancelTask(id);
-      }
+      for (final id in toCancel) { queue.cancelTask(id); }
     } else if (action == 'clear_all') {
       final toRemove = queue.queue.where((t) => t.status != TaskStatus.processing).map((t) => t.id).toList();
-      for (var id in toRemove) {
-        queue.removeTask(id);
-      }
+      for (final id in toRemove) { queue.removeTask(id); }
     }
   }
 
@@ -265,9 +256,12 @@ class TaskQueueScreen extends StatelessWidget {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Task Tile — design-aligned card
+// ════════════════════════════════════════════════════════════════════════════
+
 class _TaskTile extends StatefulWidget {
   final TaskItem task;
-
   const _TaskTile({required this.task});
 
   @override
@@ -285,6 +279,158 @@ class _TaskTileState extends State<_TaskTile> {
     final task = widget.task;
     final isMobile = Responsive.isMobile(context);
 
+    if (isMobile) {
+      return _buildMobileTile(context, colorScheme, appState, l10n, task);
+    }
+    return _buildDesktopTile(context, colorScheme, appState, l10n, task);
+  }
+
+  // ── Desktop tile — matches design card spec ────────────────────────────────
+  Widget _buildDesktopTile(
+    BuildContext context,
+    ColorScheme colorScheme,
+    AppState appState,
+    AppLocalizations l10n,
+    TaskItem task,
+  ) {
+    final (icon, iconColor) = _taskIcon(task, colorScheme);
+    final name = _taskDisplayName(task);
+    final modelLabel = _shortModelId(task.modelId);
+    final subText = _taskSubtitle(task, l10n);
+
+    return GestureDetector(
+      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(
+            color: _isExpanded
+                ? colorScheme.primary.withAlpha(90)
+                : colorScheme.outlineVariant.withAlpha(80),
+          ),
+          borderRadius: BorderRadius.circular(13),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Card header row ────────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Status / type icon
+                Icon(icon, size: 24, color: iconColor),
+                const SizedBox(width: 15),
+
+                // Name + model chip + status pill
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          if (modelLabel.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                modelLabel,
+                                style: GoogleFonts.ibmPlexMono(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          if (task.channelTag != null) ...[
+                            const SizedBox(width: 6),
+                            _buildChannelBadge(task),
+                          ],
+                          const Spacer(),
+                          _buildStatusPill(task, colorScheme),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      // Progress bar + subtitle
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: task.status == TaskStatus.processing
+                                    ? (task.progress)
+                                    : (task.status == TaskStatus.completed ? 1.0 : 0.0),
+                                minHeight: 7,
+                                backgroundColor: colorScheme.surfaceContainerHighest,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  task.status == TaskStatus.failed
+                                      ? colorScheme.error
+                                      : colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 11),
+                          SizedBox(
+                            width: 100,
+                            child: Text(
+                              subText,
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.ibmPlexMono(
+                                fontSize: 11,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 11),
+
+                // More / actions button
+                _buildMoreButton(context, task, appState, l10n, colorScheme),
+              ],
+            ),
+
+            // ── Expanded details ────────────────────────────────────────────
+            if (_isExpanded) _buildExpandedDetails(context, task, colorScheme, l10n),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Mobile tile (simplified) ───────────────────────────────────────────────
+  Widget _buildMobileTile(
+    BuildContext context,
+    ColorScheme colorScheme,
+    AppState appState,
+    AppLocalizations l10n,
+    TaskItem task,
+  ) {
+    final (icon, iconColor) = _taskIcon(task, colorScheme);
+    final name = _taskDisplayName(task);
+    final modelLabel = _shortModelId(task.modelId);
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -295,248 +441,41 @@ class _TaskTileState extends State<_TaskTile> {
         borderRadius: BorderRadius.circular(12),
         onTap: () => setState(() => _isExpanded = !_isExpanded),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isMobile)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildStatusBadge(task, colorScheme),
-                        const Spacer(),
-                        if (task.status == TaskStatus.pending)
-                          IconButton(
-                            icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                            tooltip: l10n.cancelTask,
-                            onPressed: () => appState.taskQueue.cancelTask(task.id),
-                          ),
-                        if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            tooltip: l10n.removeFromList,
-                            onPressed: () => appState.taskQueue.removeTask(task.id),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (task.channelTag != null) ...[
-                          _buildChannelBadge(task),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            l10n.taskId(task.id.substring(0, 8)),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 13),
-                          ),
-                        ),
-                        Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
-                      ],
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  children: [
-                    _buildStatusBadge(task, colorScheme),
-                    const SizedBox(width: 12),
-                    if (task.channelTag != null) ...[
-                      _buildChannelBadge(task),
-                      const SizedBox(width: 8),
-                    ],
-                    Expanded(
-                      child: Text(
-                        l10n.taskId(task.id.substring(0, 8)),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace'),
-                      ),
-                    ),
-                    Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey, size: 20),
-                    const SizedBox(width: 8),
-                    if (task.status == TaskStatus.pending)
-                      IconButton(
-                        icon: const Icon(Icons.cancel_outlined, color: Colors.red),
-                        tooltip: l10n.cancelTask,
-                        onPressed: () => appState.taskQueue.cancelTask(task.id),
-                      ),
-                    if (task.status == TaskStatus.completed || task.status == TaskStatus.failed || task.status == TaskStatus.cancelled)
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: l10n.removeFromList,
-                        onPressed: () => appState.taskQueue.removeTask(task.id),
-                      ),
-                  ],
-                ),
-              if (task.status == TaskStatus.processing && task.progress != null) ...[
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: task.progress,
-                    minHeight: 4,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      task.type == TaskType.imageDownload ? Colors.teal : colorScheme.primary
-                    ),
-                  ),
-                ),
-              ],
-              if (_isExpanded) ...[
-                const Divider(height: 24),
-                if (isMobile)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (task.type == TaskType.imageProcess)
-                        _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
-                      else
-                        _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
-                      _buildInfoRow(
-                        task.type == TaskType.imageProcess ? Icons.image : Icons.link,
-                        task.type == TaskType.imageProcess ? l10n.images : 'URLs',
-                        l10n.filesCount(task.imagePaths.length),
-                      ),
-                      _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
-                      _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
-                      if (task.type == TaskType.imageProcess)
-                        _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
-                      else
-                        _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
-                      _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
-                    ],
-                  )
-                else
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (task.type == TaskType.imageProcess)
-                              _buildInfoRow(Icons.model_training, l10n.model, task.modelId)
-                            else
-                              _buildInfoRow(Icons.language, l10n.url, task.parameters['url'] ?? 'N/A'),
-                            _buildInfoRow(
-                              task.type == TaskType.imageProcess ? Icons.image : Icons.link,
-                              task.type == TaskType.imageProcess ? l10n.images : 'URLs',
-                              l10n.filesCount(task.imagePaths.length),
-                            ),
-                            _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildInfoRow(Icons.auto_awesome, l10n.processResults, l10n.filesCount(task.resultPaths.length)),
-                            if (task.type == TaskType.imageProcess)
-                              _buildInfoRow(Icons.aspect_ratio, l10n.config, '${task.parameters['aspectRatio']} | ${task.parameters['imageSize']}')
-                            else
-                              _buildInfoRow(Icons.label_outline, l10n.prefix, task.parameters['prefix'] ?? 'N/A'),
-                            _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 8),
-                if (task.type == TaskType.imageProcess)
-                  _buildInfoRow(
-                    Icons.description_outlined,
-                    l10n.prompt,
-                    task.parameters['prompt'] ?? 'N/A',
-                    trailing: IconButton(
-                      icon: const Icon(Icons.copy, size: 14),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        final prompt = task.parameters['prompt'] ?? '';
-                        Clipboard.setData(ClipboardData(text: prompt));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.copiedToClipboard(
-                              prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
-                            )),
-                          ),
-                        );
-                      },
-                      color: colorScheme.primary,
-                      tooltip: 'Copy Prompt',
-                    ),
-                  ),
-                if (task.resultPaths.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 80,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: task.resultPaths.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(task.resultPaths[index]),
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-                if (task.logs.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha((255 * 0.05).round()),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              Row(
+                children: [
+                  Icon(icon, size: 22, color: iconColor),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(l10n.latestLog, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                            IconButton(
-                              icon: const Icon(Icons.copy, size: 12),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () {
-                                final log = task.logs.join('\n');
-                                Clipboard.setData(ClipboardData(text: log));
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs copied to clipboard.')));
-                              },
-                              tooltip: 'Copy Logs',
-                            ),
-                          ],
-                        ),
-                        Text(
-                          task.logs.last,
-                          style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        if (modelLabel.isNotEmpty)
+                          Text(modelLabel, style: GoogleFonts.ibmPlexMono(fontSize: 10, color: colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
+                  _buildStatusPill(task, colorScheme),
+                  const SizedBox(width: 4),
+                  _buildMoreButton(context, task, appState, l10n, colorScheme),
                 ],
+              ),
+              if (task.status == TaskStatus.processing && task.progress != null) ...[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: task.progress,
+                    minHeight: 6,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                  ),
+                ),
               ],
+              if (_isExpanded) _buildExpandedDetails(context, task, colorScheme, l10n),
             ],
           ),
         ),
@@ -544,102 +483,248 @@ class _TaskTileState extends State<_TaskTile> {
     );
   }
 
-  Widget _buildChannelBadge(TaskItem task) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Color(task.channelColor ?? 0xFF607D8B).withValues(alpha: 0.5)),
+  Widget _buildMoreButton(
+    BuildContext context,
+    TaskItem task,
+    AppState appState,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final canCancel = task.status == TaskStatus.pending;
+    final canRemove = task.status == TaskStatus.completed ||
+        task.status == TaskStatus.failed ||
+        task.status == TaskStatus.cancelled;
+
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert, size: 19, color: colorScheme.onSurfaceVariant),
+      iconSize: 34,
+      constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+      padding: EdgeInsets.zero,
+      style: ButtonStyle(
+        fixedSize: const WidgetStatePropertyAll(Size(34, 34)),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+        overlayColor: WidgetStatePropertyAll(colorScheme.onSurface.withAlpha(20)),
       ),
-      child: Text(
-        task.channelTag!,
-        style: TextStyle(
-          fontSize: 10, 
-          color: Color(task.channelColor ?? 0xFF607D8B),
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      onSelected: (val) {
+        if (val == 'cancel') appState.taskQueue.cancelTask(task.id);
+        if (val == 'remove') appState.taskQueue.removeTask(task.id);
+        if (val == 'copy_prompt') {
+          final prompt = task.parameters['prompt'] ?? '';
+          Clipboard.setData(ClipboardData(text: prompt));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.copiedToClipboard(prompt.length > 30 ? '${prompt.substring(0, 30)}…' : prompt))),
+          );
+        }
+      },
+      itemBuilder: (context) => [
+        if (canCancel)
+          PopupMenuItem(
+            value: 'cancel',
+            child: ListTile(
+              leading: Icon(Icons.cancel_outlined, size: 18, color: colorScheme.error),
+              title: Text(l10n.cancelTask, style: TextStyle(color: colorScheme.error)),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        if (canRemove)
+          PopupMenuItem(
+            value: 'remove',
+            child: ListTile(
+              leading: Icon(Icons.delete_outline, size: 18, color: colorScheme.onSurface),
+              title: Text(l10n.removeFromList),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        if (task.parameters.containsKey('prompt'))
+          PopupMenuItem(
+            value: 'copy_prompt',
+            child: ListTile(
+              leading: const Icon(Icons.copy_outlined, size: 18),
+              title: const Text('Copy prompt'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildStatusBadge(TaskItem task, ColorScheme colorScheme) {
-    Color color;
-    IconData icon;
-    String label = task.status.name.toUpperCase();
-    final status = task.status;
+  Widget _buildExpandedDetails(
+    BuildContext context,
+    TaskItem task,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(height: 22, color: colorScheme.outlineVariant.withAlpha(80)),
+        _buildInfoRow(Icons.timer_outlined, l10n.started, _formatTime(task.startTime), colorScheme),
+        _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatTime(task.endTime), colorScheme),
+        if (task.type == TaskType.imageProcess)
+          _buildInfoRow(Icons.aspect_ratio, l10n.config,
+              '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim(), colorScheme),
+        if (task.parameters.containsKey('prompt'))
+          _buildInfoRow(Icons.description_outlined, l10n.prompt, task.parameters['prompt'] ?? '', colorScheme),
+        if (task.resultPaths.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: task.resultPaths.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, i) => ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(task.resultPaths[i]),
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 72,
+                    height: 72,
+                    color: colorScheme.surfaceContainerHighest,
+                    child: Icon(Icons.broken_image, size: 20, color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (task.logs.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withAlpha(60),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              task.logs.last,
+              style: GoogleFonts.ibmPlexMono(fontSize: 11, color: colorScheme.onSurfaceVariant),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 
-    switch (status) {
-      case TaskStatus.pending:
-        color = Colors.orange;
-        icon = Icons.hourglass_empty;
-        break;
-      case TaskStatus.processing:
-        color = Colors.blue;
-        icon = Icons.sync;
-        break;
-      case TaskStatus.completed:
-        color = Colors.green;
-        icon = Icons.check_circle;
-        break;
-      case TaskStatus.failed:
-        color = Colors.red;
-        icon = Icons.error;
-        break;
-      case TaskStatus.cancelled:
-        color = Colors.grey;
-        icon = Icons.cancel;
-        break;
-    }
-
-    if (task.type == TaskType.imageDownload) {
-      color = (status == TaskStatus.completed) ? Colors.teal : (status == TaskStatus.processing ? Colors.cyan : color);
-      if (status == TaskStatus.processing || status == TaskStatus.completed) {
-        icon = (status == TaskStatus.completed) ? Icons.cloud_done : Icons.cloud_download;
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha((255 * 0.1).round()),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withAlpha((255 * 0.5).round())),
-      ),
+  Widget _buildInfoRow(IconData icon, String label, String value, ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            task.type == TaskType.imageDownload ? '[DL] $label' : label,
-            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Text('$label: ', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Widget? trailing}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: Colors.grey),
-          const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
-          if (trailing != null) ...[
-            const SizedBox(width: 4),
-            trailing,
-          ],
-        ],
+  Widget _buildChannelBadge(TaskItem task) {
+    final color = Color(task.channelColor ?? 0xFF607D8B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        task.channelTag!,
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
       ),
     );
   }
 
+  Widget _buildStatusPill(TaskItem task, ColorScheme colorScheme) {
+    final (color, label) = switch (task.status) {
+      TaskStatus.pending => (Colors.orange, 'PENDING'),
+      TaskStatus.processing => (colorScheme.primary, 'RUNNING'),
+      TaskStatus.completed => (Colors.green, 'DONE'),
+      TaskStatus.failed => (colorScheme.error, 'FAILED'),
+      TaskStatus.cancelled => (colorScheme.onSurfaceVariant, 'CANCELLED'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(28),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withAlpha(90)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  (IconData, Color) _taskIcon(TaskItem task, ColorScheme colorScheme) {
+    final baseColor = switch (task.status) {
+      TaskStatus.pending => Colors.orange,
+      TaskStatus.processing => colorScheme.primary,
+      TaskStatus.completed => Colors.green,
+      TaskStatus.failed => colorScheme.error,
+      TaskStatus.cancelled => colorScheme.onSurfaceVariant,
+    };
+    final icon = switch (task.type) {
+      TaskType.imageProcess => Icons.image_outlined,
+      TaskType.imageDownload => Icons.cloud_download_outlined,
+      TaskType.promptRefine => Icons.auto_fix_high,
+      TaskType.aiRename => Icons.drive_file_rename_outline,
+      TaskType.videoGenerate => Icons.movie_outlined,
+    };
+    return (icon, baseColor);
+  }
+
+  String _taskDisplayName(TaskItem task) {
+    if (task.imagePaths.isNotEmpty) {
+      return p.basename(task.imagePaths.first);
+    }
+    return switch (task.type) {
+      TaskType.imageProcess => 'Image Process',
+      TaskType.imageDownload => task.parameters['url'] ?? 'Download',
+      TaskType.promptRefine => 'Prompt Refine',
+      TaskType.aiRename => 'AI Rename',
+      TaskType.videoGenerate => 'Video Generate',
+    };
+  }
+
+  String _shortModelId(String modelId) {
+    if (modelId.length <= 26) return modelId;
+    return '${modelId.substring(0, 24)}…';
+  }
+
+  String _taskSubtitle(TaskItem task, AppLocalizations l10n) {
+    final count = task.imagePaths.length;
+    final countStr = count > 0 ? '$count ${count == 1 ? "item" : "items"}' : '';
+    return switch (task.status) {
+      TaskStatus.pending => 'Waiting${countStr.isNotEmpty ? " · $countStr" : ""}',
+      TaskStatus.processing => task.progress != null
+          ? '${(task.progress! * 100).round()}%${countStr.isNotEmpty ? " · $countStr" : ""}'
+          : '···',
+      TaskStatus.completed => _formatTime(task.endTime),
+      TaskStatus.failed => 'Failed',
+      TaskStatus.cancelled => 'Cancelled',
+    };
+  }
+
   String _formatTime(DateTime? time) {
     if (time == null) return '--:--:--';
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}';
+    return '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}:'
+        '${time.second.toString().padLeft(2, '0')}';
   }
 }
