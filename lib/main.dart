@@ -139,6 +139,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _NavDef(icon: Icons.auto_awesome_outlined, selectedIcon: Icons.auto_awesome,     label: l10n.prompts,     screen: const PromptsScreen(),         hideOnMobile: false),
       _NavDef(icon: Icons.memory_outlined,      selectedIcon: Icons.memory,            label: l10n.models,      screen: const ModelsScreen(),          hideOnMobile: false),
       _NavDef(icon: Icons.analytics_outlined,   selectedIcon: Icons.analytics,         label: l10n.usage,       screen: const TokenUsageScreen(),      hideOnMobile: false),
+      _NavDef(icon: Icons.settings_outlined,    selectedIcon: Icons.settings,          label: l10n.settings,    screen: const SettingsScreen(),        hideOnMobile: false, isSettings: true),
     ];
   }
 
@@ -360,6 +361,7 @@ class _NavDef {
   final Widget screen;
   final bool hideOnMobile;
   final bool showBadge;
+  final bool isSettings;
 
   const _NavDef({
     required this.icon,
@@ -368,6 +370,7 @@ class _NavDef {
     required this.screen,
     this.hideOnMobile = false,
     this.showBadge = false,
+    this.isSettings = false,
   });
 }
 
@@ -410,7 +413,7 @@ class _AppNavRail extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 12),
-                  ...definitions.asMap().entries.map((e) {
+                  ...definitions.asMap().entries.where((e) => !e.value.isSettings).map((e) {
                     final idx = e.key;
                     final d = e.value;
                     final isSelected = selectedIndex == idx;
