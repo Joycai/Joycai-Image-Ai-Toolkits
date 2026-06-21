@@ -5,7 +5,6 @@
   "stepAppearance": "外観",
   "stepStorage": "ストレージ",
   "stepApi": "インテリジェンス (API)",
-  "finish": "完了",
   "setupCompleteMessage": "すべての準備が整いました！創作をお楽しみください。",
   "skip": "スキップ",
   "storageLocationDesc": "生成された画像が保存される場所を選択します。",

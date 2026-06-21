@@ -15,6 +15,5 @@
   "clearDataForModel": "要清除 {modelId} 的資料嗎？",
   "clearModelDataWarning": "這將刪除與模型「{modelId}」相關的所有用量記錄。",
   "clearModelData": "清除模型資料",
-  "usageByGroup": "按群組分類的用量",
-  "clearAll": "全部清除"
+  "usageByGroup": "按群組分類的用量"
 }

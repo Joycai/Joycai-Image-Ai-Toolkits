@@ -22,7 +22,6 @@
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
   "removeFromList": "从列表中移除",
-  "model": "模型",
   "images": "图像",
   "filesCount": "{count} 个文件",
   "@filesCount": {

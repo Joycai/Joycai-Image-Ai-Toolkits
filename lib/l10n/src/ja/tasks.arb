@@ -25,7 +25,6 @@
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
   "removeFromList": "リストから削除",
-  "model": "モデル",
   "images": "画像",
   "filesCount": "{count} 個のファイル",
   "@filesCount": {

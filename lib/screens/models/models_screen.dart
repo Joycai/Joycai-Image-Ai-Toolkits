@@ -71,86 +71,142 @@ class _ModelsScreenState extends State<ModelsScreen> {
   // --- Tablet Layout (iPad) ---
   Widget _buildTabletLayout(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.modelManager, style: const TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
-        ),
-      ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          final channels = appState.allChannels;
-          _ensureSelection(channels);
-          
-          return Row(
-            children: [
-              // Sidebar
-              Container(
-                width: 280,
-                color: colorScheme.surfaceContainerLow,
-                child: _buildChannelSidebar(l10n, appState, channels),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final channels = appState.allChannels;
+        _ensureSelection(channels);
+        final modelCount = appState.allModels.length;
+
+        return Column(
+          children: [
+            _buildScreenHeader(l10n, colorScheme, appState, modelCount, channels.length),
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 280,
+                    color: colorScheme.surfaceContainerLow,
+                    child: _buildChannelSidebar(l10n, appState, channels),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: Container(
+                      color: colorScheme.surface,
+                      child: _buildChannelDetailView(l10n, appState),
+                    ),
+                  ),
+                ],
               ),
-              const VerticalDivider(width: 1),
-              // Detail
-              Expanded(
-                child: Container(
-                  color: colorScheme.surface,
-                  child: _buildChannelDetailView(l10n, appState),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   // --- Desktop Layout ---
   Widget _buildDesktopLayout(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.modelManager, style: const TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: false,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
-        ),
-      ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          final channels = appState.allChannels;
-          _ensureSelection(channels);
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final channels = appState.allChannels;
+        _ensureSelection(channels);
+        final modelCount = appState.allModels.length;
 
-          return Row(
-            children: [
-              // Sidebar with enhanced surface
-              Container(
-                width: 320,
-                color: colorScheme.surfaceContainerLow,
-                child: _buildChannelSidebar(l10n, appState, channels, isDesktop: true),
+        return Column(
+          children: [
+            _buildScreenHeader(l10n, colorScheme, appState, modelCount, channels.length),
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 320,
+                    color: colorScheme.surfaceContainerLow,
+                    child: _buildChannelSidebar(l10n, appState, channels, isDesktop: true),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: Container(
+                      color: colorScheme.surface,
+                      child: _buildChannelDetailView(l10n, appState, isDesktop: true),
+                    ),
+                  ),
+                ],
               ),
-              const VerticalDivider(width: 1),
-              // Content Area
-              Expanded(
-                child: Container(
-                  color: colorScheme.surface,
-                  child: _buildChannelDetailView(l10n, appState, isDesktop: true),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildScreenHeader(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    AppState appState,
+    int modelCount,
+    int channelCount,
+  ) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.memory, size: 24, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.modelManager,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+              Text(
+                l10n.modelsAndChannelsCount(modelCount, channelCount),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
                 ),
               ),
             ],
-          );
-        },
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _showChannelDialog(l10n, appState),
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [colorScheme.primary, const Color(0xFFB794F6)],
+                ),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, size: 18, color: Colors.white),
+                  const SizedBox(width: 7),
+                  Text(
+                    l10n.addChannel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

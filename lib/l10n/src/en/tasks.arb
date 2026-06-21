@@ -22,7 +22,6 @@
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
   "removeFromList": "Remove from list",
-  "model": "Model",
   "images": "Images",
   "filesCount": "{count} files",
   "@filesCount": {

@@ -15,6 +15,5 @@
   "clearDataForModel": "{modelId}のデータをクリアしますか？",
   "clearModelDataWarning": "これにより、モデル「{modelId}」に関連するすべての使用状況レコードが削除されます。",
   "clearModelData": "モデルデータをクリア",
-  "usageByGroup": "グループ別の使用状況",
-  "clearAll": "すべてクリア"
+  "usageByGroup": "グループ別の使用状況"
 }

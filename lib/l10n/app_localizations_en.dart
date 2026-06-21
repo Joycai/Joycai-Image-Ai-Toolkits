@@ -103,6 +103,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get featureLimitedOnMobile => 'Feature Limited on Mobile';
+
+  @override
+  String get fileBrowserDesktopOnlyDesc =>
+      'Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.';
+
+  @override
+  String get fileBrowseriOSHint =>
+      'Please use the system \'Files\' app to manage your generated images.';
+
+  @override
+  String get fileBrowserAndroidHint =>
+      'Please use your device\'s file manager to organize files.';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -234,6 +249,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get more => 'More';
+
+  @override
   String get downloader => 'Downloader';
 
   @override
@@ -344,6 +362,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openRawImage => 'Open Raw Image';
 
   @override
+  String get results => 'Results';
+
+  @override
+  String downloaderFoundSelected(int found, int selected) {
+    return '$found found · $selected selected';
+  }
+
+  @override
   String get usage => 'Usage';
 
   @override
@@ -398,9 +424,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usageByGroup => 'Usage by Group';
-
-  @override
-  String get clearAll => 'Clear All';
 
   @override
   String get models => 'Models';
@@ -591,12 +614,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchModels => 'Search model name or ID...';
 
   @override
-  String get selectAll => 'Select All';
-
-  @override
-  String get deselectAll => 'Deselect All';
-
-  @override
   String modelsDiscovered(int count) {
     return '$count models discovered';
   }
@@ -734,6 +751,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get model => 'Model';
+
+  @override
+  String modelsAndChannelsCount(int models, int channels) {
+    return '$models models · $channels channels';
+  }
+
+  @override
+  String get deselectAll => 'Deselect All';
 
   @override
   String get prompts => 'Prompts';
@@ -1126,6 +1151,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearCompleted => 'Clear Completed';
 
   @override
+  String get clearAll => 'Clear All';
+
+  @override
   String get clearAllConfirm =>
       'This will remove all non-running tasks. This action cannot be undone.';
 
@@ -1311,6 +1339,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResultsYet => 'No results yet';
+
+  @override
+  String get selectAll => 'Select All';
 
   @override
   String get importFromGallery => 'Import from Gallery';

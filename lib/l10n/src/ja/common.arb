@@ -38,5 +38,6 @@
     "apply": "適用",
     "metadata": "メタデータ",
     "filterPrompts": "プロンプトをフィルター...",
-    "shareFailed": "共有に失敗しました: {error}"
+    "shareFailed": "共有に失敗しました: {error}",
+    "more": "もっと見る"
 }

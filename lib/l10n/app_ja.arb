@@ -29,6 +29,10 @@
   "addToSelection": "選択に追加",
   "removeFromSelection": "選択から削除",
   "imagesSelected": "{count}個選択済み",
+  "featureLimitedOnMobile": "モバイルでは機能が制限されています",
+  "fileBrowserDesktopOnlyDesc": "OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。",
+  "fileBrowseriOSHint": "生成した画像の管理には、システムの「ファイル」アプリをご使用ください。",
+  "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",
@@ -69,6 +73,7 @@
   "metadata": "メタデータ",
   "filterPrompts": "プロンプトをフィルター...",
   "shareFailed": "共有に失敗しました: {error}",
+  "more": "もっと見る",
   "downloader": "ダウンローダー",
   "imageDownloader": "画像ダウンローダー",
   "url": "URL",
@@ -102,6 +107,18 @@
   "noCookieHistory": "クッキー履歴が保存されていません",
   "pasteFromClipboard": "クリップボードから貼り付け",
   "openRawImage": "元の画像を開く",
+  "results": "結果",
+  "downloaderFoundSelected": "{found}件見つかりました · {selected}件選択中",
+  "@downloaderFoundSelected": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
+  },
   "usage": "使用状況",
   "tokenUsageMetrics": "トークン使用状況メトリクス",
   "clearAllUsage": "すべての使用状況データをクリアしますか？",
@@ -119,7 +136,6 @@
   "clearModelDataWarning": "これにより、モデル「{modelId}」に関連するすべての使用状況レコードが削除されます。",
   "clearModelData": "モデルデータをクリア",
   "usageByGroup": "グループ別の使用状況",
-  "clearAll": "すべてクリア",
   "models": "モデル",
   "modelManagement": "モデル管理",
   "feeManagement": "料金管理",
@@ -180,8 +196,6 @@
   "discoveringModels": "モデルを検出中...",
   "selectModelsToAdd": "追加するモデルを選択",
   "searchModels": "モデル名またはIDを検索...",
-  "selectAll": "すべて選択",
-  "deselectAll": "すべて選択解除",
   "modelsDiscovered": "{count}個のモデルを検出",
   "addSelected": "選択したものを追加({count})",
   "alreadyAdded": "既に追加済み",
@@ -224,6 +238,18 @@
   "tokenBilling": "トークン請求",
   "requestBilling": "リクエスト請求",
   "model": "モデル",
+  "modelsAndChannelsCount": "{models}モデル · {channels}チャンネル",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "すべて選択解除",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",
@@ -389,13 +415,14 @@
   "canceledTasks": "キャンセル済み",
   "clearCompleted": "完了済みをクリア",
   "clearFailed": "失敗をクリア",
+  "clearAll": "すべてクリア",
   "clearAllConfirm": "実行中でないすべてのタスクを削除します。この操作は元に戻せません。",
   "cancelAll": "すべてキャンセル",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
   "removeFromList": "リストから削除",
   "images": "画像",
-  "filesCount": "{count} ファイル",
+  "filesCount": "{count} 個のファイル",
   "@filesCount": {
     "placeholders": {
       "count": {
@@ -403,7 +430,7 @@
       }
     }
   },
-  "runningCount": "{count} 実行中",
+  "runningCount": "{count} 個実行中",
   "@runningCount": {
     "placeholders": {
       "count": {
@@ -411,7 +438,7 @@
       }
     }
   },
-  "plannedCount": "{count} 計画中",
+  "plannedCount": "{count} 個計画済み",
   "@plannedCount": {
     "placeholders": {
       "count": {
@@ -419,7 +446,7 @@
       }
     }
   },
-  "latestLog": "最新のログ:",
+  "latestLog": "最新ログ:",
   "taskCompletedNotification": "タスク完了",
   "taskFailedNotification": "タスク失敗",
   "taskCanceledNotification": "タスクキャンセル",
@@ -444,7 +471,7 @@
   "pauseQueue": "キューを一時停止",
   "resumeQueue": "キューを再開",
   "queueSettings": "キュー設定",
-  "concurrencyLimit": "同時実行制限: {limit}",
+  "concurrencyLimit": "並列処理制限: {limit}",
   "@concurrencyLimit": {
     "placeholders": {
       "limit": {
@@ -462,6 +489,7 @@
   },
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
+  "getStarted": "始める",
   "stepAppearance": "外観",
   "stepStorage": "ストレージ",
   "stepApi": "インテリジェンス (API)",
@@ -476,41 +504,108 @@
   "filenamePrefix": "ファイル名のプレフィックス",
   "openaiEndpointHint": "ヒント: OpenAI互換のエンドポイントは通常「/v1」で終わります",
   "googleEndpointHint": "ヒント: Google GenAIのエンドポイントは通常「/v1beta」で終わります（内部処理）",
+  "workbench": "ワークベンチ",
   "imageProcessing": "画像処理",
+  "wbModeImage": "画像",
+  "wbModeVideo": "動画",
+  "wbTools": "ツール",
   "sourceGallery": "ソースギャラリー",
   "sourceExplorer": "ソースエクスプローラー",
   "tempWorkspace": "一時ワークスペース",
   "processResults": "処理結果",
   "resultCache": "結果キャッシュ",
+  "sectionSources": "ソース",
+  "sectionResults": "結果",
+  "sectionWorkspace": "ワークスペース",
+  "allSources": "すべてのソース",
+  "allResults": "すべての結果",
+  "backToAll": "すべてに戻る",
+  "directories": "ディレクトリ",
   "addFolder": "フォルダを追加",
   "noFolders": "フォルダが追加されていません",
   "clickAddFolder": "「フォルダを追加」をクリックして、画像のスキャンを開始します。",
   "noImagesFound": "画像が見つかりません",
   "noResultsYet": "結果がありません",
+  "selectAll": "すべて選択",
   "importFromGallery": "ギャラリーからインポート",
   "takePhoto": "写真を撮る",
   "clearTempWorkspace": "ワークスペースをクリア",
   "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
+  "noImagesSelected": "画像が選択されていません",
   "selectSourceDirectory": "ソースディレクトリを選択",
   "removeFolderTooltip": "フォルダを削除",
   "removeFolderConfirmTitle": "フォルダを削除しますか？",
   "removeFolderConfirmMessage": "リストから「{folderName}」を削除してもよろしいですか？",
+  "@removeFolderConfirmMessage": {
+    "placeholders": {
+      "folderName": {
+        "type": "String"
+      }
+    }
+  },
+  "thumbnailSize": "サムネイルサイズ",
+  "deleteFile": "ファイルを削除",
   "deleteFileConfirmTitle": "ファイルを削除しますか？",
   "deleteFileConfirmMessage": "「{filename}」を削除してもよろしいですか？",
+  "@deleteFileConfirmMessage": {
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
   "moveToTrash": "ゴミ箱に移動",
   "permanentlyDelete": "完全に削除",
   "deleteSuccess": "削除に成功しました",
   "deleteFailed": "削除に失敗しました: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "modelSelection": "モデル選択",
   "selectAModel": "モデルを選択",
+  "aspectRatio": "アスペクト比",
+  "resolution": "解像度",
+  "quality": "品質",
+  "optionAuto": "自動",
+  "qualityLow": "低",
+  "qualityMedium": "中",
+  "qualityHigh": "高",
+  "referenceImagesNotSupported": "このモデルは参照画像に対応していません。選択した画像は無視されます。",
+  "referenceImagesLimited": "このモデルは参照画像を最大 {count} 枚まで使用できます。残りは無視されます。",
+  "@referenceImagesLimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "prompt": "プロンプト",
   "promptHint": "プロンプトをここに入力...",
+  "prefixHint": "例：result",
   "processPrompt": "プロンプトを処理",
   "processImages": "{count}枚の画像を処理",
+  "@processImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "useStreaming": "ストリーミングを使用",
+  "useStreamingDesc": "リアルタイム AI 応答（対応時）",
   "taskSubmitted": "タスクがキューに送信されました",
+  "comparator": "比較ツール",
   "compareModeSync": "同期モード",
   "compareModeSwap": "スワップモード",
+  "sendToComparator": "比較ツールに送信",
   "sendToComparatorRaw": "Before (RAW) として設定",
   "sendToComparatorAfter": "After (結果) として設定",
+  "sendToSelection": "選択に追加",
+  "sendToOptimizer": "プロンプト最適化に送信",
   "optimizePromptWithImage": "画像からプロンプトを最適化",
   "selectFromLibrary": "ライブラリから選択",
   "metadataSelectedNone": "画像メタデータが選択されていません",
@@ -529,102 +624,16 @@
   "height": "高さ",
   "sampling": "サンプリング",
   "drawMask": "マスクを描画",
+  "maskEditor": "マスクエディタ",
   "brushSize": "ブラシサイズ",
   "maskColor": "マスクの色",
   "maskOpacity": "マスクの不透明度",
+  "undo": "元に戻す",
   "saveToTemp": "ワークスペースに保存",
   "saveMaskToTemp": "マスクをワークスペースに保存",
   "binaryMode": "バイナリモード",
   "maskSaved": "マスクがワークスペースに保存されました",
   "maskSaveError": "マスク保存エラー: {error}",
-  "promptOptimizer": "プロンプト最適化",
-  "refinerModel": "リファイナーモデル",
-  "systemPrompt": "システムプロンプト",
-  "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
-  "roughPrompt": "ラフなプロンプト / アイデア",
-  "optimizedPrompt": "最適化されたプロンプト",
-  "applyToWorkbench": "ワークベンチに適用",
-  "promptApplied": "プロンプトがワークベンチに適用されました",
-  "refineFailed": "最適化に失敗しました: {error}",
-  "executionLogs": "実行ログ",
-  "saveToPhotos": "写真に保存",
-  "saveToGallery": "ギャラリーに保存",
-  "savedToPhotos": "写真に保存されました",
-  "saveFailed": "保存に失敗しました: {error}",
-  "iosSandboxActive": "iOSサンドボックス有効",
-  "iosSandboxDesc": "iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。",
-  "mobileSandboxActive": "モバイルストレージの制限",
-  "mobileSandboxDesc": "モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。",
-  "filesAppSuffix": " (ファイル App)",
-  "getStarted": "始める",
-  "workbench": "ワークベンチ",
-  "wbModeImage": "画像",
-  "wbModeVideo": "動画",
-  "wbTools": "ツール",
-  "sectionSources": "ソース",
-  "sectionResults": "結果",
-  "sectionWorkspace": "ワークスペース",
-  "allSources": "すべてのソース",
-  "allResults": "すべての結果",
-  "backToAll": "すべてに戻る",
-  "directories": "ディレクトリ",
-  "noImagesSelected": "画像が選択されていません",
-  "@removeFolderConfirmMessage": {
-    "placeholders": {
-      "folderName": {
-        "type": "String"
-      }
-    }
-  },
-  "thumbnailSize": "サムネイルサイズ",
-  "deleteFile": "ファイルを削除",
-  "@deleteFileConfirmMessage": {
-    "placeholders": {
-      "filename": {
-        "type": "String"
-      }
-    }
-  },
-  "@deleteFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "aspectRatio": "アスペクト比",
-  "resolution": "解像度",
-  "quality": "品質",
-  "optionAuto": "自動",
-  "qualityLow": "低",
-  "qualityMedium": "中",
-  "qualityHigh": "高",
-  "referenceImagesNotSupported": "このモデルは参照画像に対応していません。選択した画像は無視されます。",
-  "referenceImagesLimited": "このモデルは参照画像を最大 {count} 枚まで使用できます。残りは無視されます。",
-  "@referenceImagesLimited": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "prompt": "プロンプト",
-  "prefixHint": "例：result",
-  "@processImages": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "useStreaming": "ストリーミングを使用",
-  "useStreamingDesc": "リアルタイム AI 応答（対応時）",
-  "comparator": "比較ツール",
-  "sendToComparator": "比較ツールに送信",
-  "sendToSelection": "選択に追加",
-  "sendToOptimizer": "プロンプト最適化に送信",
-  "maskEditor": "マスクエディタ",
-  "undo": "元に戻す",
   "@maskSaveError": {
     "placeholders": {
       "error": {
@@ -632,8 +641,17 @@
       }
     }
   },
+  "promptOptimizer": "プロンプト最適化",
+  "refinerModel": "リファイナーモデル",
+  "systemPrompt": "システムプロンプト",
   "preset": "プリセット",
   "customSysPromptHint": "このセッション用のカスタムシステムプロンプトを入力...",
+  "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
+  "roughPrompt": "ラフなプロンプト / アイデア",
+  "optimizedPrompt": "最適化されたプロンプト",
+  "applyToWorkbench": "ワークベンチに適用",
+  "promptApplied": "プロンプトがワークベンチに適用されました",
+  "refineFailed": "最適化に失敗しました: {error}",
   "@refineFailed": {
     "placeholders": {
       "error": {
@@ -653,6 +671,11 @@
   "dropVideoReferenceHere": "スタイル/内容参照用の画像をここにドロップ",
   "dropFirstFrameHere": "開始フレーム画像をここにドロップ",
   "dropLastFrameHere": "終了フレーム画像をここにドロップ",
+  "executionLogs": "実行ログ",
+  "saveToPhotos": "写真に保存",
+  "saveToGallery": "ギャラリーに保存",
+  "savedToPhotos": "写真に保存されました",
+  "saveFailed": "保存に失敗しました: {error}",
   "@saveFailed": {
     "placeholders": {
       "error": {
@@ -660,6 +683,11 @@
       }
     }
   },
+  "iosSandboxActive": "iOSサンドボックス有効",
+  "iosSandboxDesc": "iOSでは、上部のツールバーにある「ギャラリーからインポート」ボタンを使用して、一時ワークスペースに画像を追加してください。",
+  "mobileSandboxActive": "モバイルストレージの制限",
+  "mobileSandboxDesc": "モバイルデバイスでは、OSによって直接のフォルダアクセスが制限される場合があります。上部のツールバーにある「ギャラリーからインポート」ボタンを使用することをお勧めします。",
+  "filesAppSuffix": " (ファイル App)",
   "tapToPick": "タップして選択",
   "goToGallery": "ギャラリーへ",
   "binaryModeActive": "バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示"

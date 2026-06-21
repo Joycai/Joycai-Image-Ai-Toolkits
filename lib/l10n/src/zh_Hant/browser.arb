@@ -28,5 +28,9 @@
   "applyRenames": "套用重新命名",
   "addToSelection": "新增至選取項目",
   "removeFromSelection": "從選取項目中移除",
-  "imagesSelected": "已選取 {count} 個"
+  "imagesSelected": "已選取 {count} 個",
+  "featureLimitedOnMobile": "功能受限於行動裝置",
+  "fileBrowserDesktopOnlyDesc": "由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。",
+  "fileBrowseriOSHint": "請使用系統「檔案」App 來管理您產生的圖像。",
+  "fileBrowserAndroidHint": "請使用裝置的檔案管理員來整理檔案。"
 }

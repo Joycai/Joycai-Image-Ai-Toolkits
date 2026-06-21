@@ -87,8 +87,6 @@
   "discoveringModels": "Discovering Models...",
   "selectModelsToAdd": "Select models to add",
   "searchModels": "Search model name or ID...",
-  "selectAll": "Select All",
-  "deselectAll": "Deselect All",
   "modelsDiscovered": "{count} models discovered",
   "@modelsDiscovered": {
     "placeholders": {
@@ -151,5 +149,17 @@
   "pricePerRequest": "Price per Request",
   "tokenBilling": "Token Billing",
   "requestBilling": "Request Billing",
-  "model": "Model"
+  "model": "Model",
+  "modelsAndChannelsCount": "{models} models · {channels} channels",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "Deselect All"
 }

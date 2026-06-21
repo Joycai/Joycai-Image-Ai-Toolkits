@@ -5,7 +5,6 @@
   "stepAppearance": "Appearance",
   "stepStorage": "Storage",
   "stepApi": "Intelligence (API)",
-  "finish": "Finish",
   "setupCompleteMessage": "You are all set! Enjoy creating.",
   "skip": "Skip",
   "storageLocationDesc": "Select where generated images will be saved.",

@@ -52,5 +52,17 @@
   "cookieHistory": "Cookie History",
   "noCookieHistory": "No cookie history saved",
   "pasteFromClipboard": "Paste from Clipboard",
-  "openRawImage": "Open Raw Image"
+  "openRawImage": "Open Raw Image",
+  "results": "Results",
+  "downloaderFoundSelected": "{found} found · {selected} selected",
+  "@downloaderFoundSelected": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
+  }
 }

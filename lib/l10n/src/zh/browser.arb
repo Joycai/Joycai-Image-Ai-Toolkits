@@ -42,5 +42,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "featureLimitedOnMobile": "功能受限于移动端",
+  "fileBrowserDesktopOnlyDesc": "由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。",
+  "fileBrowseriOSHint": "请使用系统文件 App 来管理您的生成图像。",
+  "fileBrowserAndroidHint": "请使用设备的文件管理器来整理文件。"
 }

@@ -30,12 +30,12 @@ import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await NotificationService().init();
 
   LLMService().registerProvider('google-genai', GoogleGenAIProvider());
   LLMService().registerProvider('openai-api', OpenAIAPIProvider());
-  
+
   ModelDiscoveryService().registerProvider('google-genai', GoogleDiscoveryProvider());
   ModelDiscoveryService().registerProvider('openai-api', OpenAIAPIProvider());
 
@@ -109,7 +109,6 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  bool _isRailExtended = false;
   bool _wizardShown = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -131,65 +130,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  // Define all possible nav items
-  List<({Icon icon, Icon selectedIcon, String label, Widget screen, bool hideOnMobile})> _getNavDefinitions(AppLocalizations l10n) {
+  List<_NavDef> _getNavDefinitions(AppLocalizations l10n) {
     return [
-      (
-        icon: const Icon(Icons.work_outline),
-        selectedIcon: const Icon(Icons.work),
-        label: l10n.workbench,
-        screen: const WorkbenchScreen(),
-        hideOnMobile: false,
-      ),
-      (
-        icon: const Icon(Icons.folder_copy_outlined),
-        selectedIcon: const Icon(Icons.folder_copy),
-        label: l10n.fileBrowser,
-        screen: const FileBrowserScreen(),
-        hideOnMobile: true,
-      ),
-      (
-        icon: const Icon(Icons.assignment_outlined),
-        selectedIcon: const Icon(Icons.assignment),
-        label: l10n.tasks,
-        screen: const TaskQueueScreen(),
-        hideOnMobile: false,
-      ),
-      (
-        icon: const Icon(Icons.cloud_download_outlined),
-        selectedIcon: const Icon(Icons.cloud_download),
-        label: l10n.downloader,
-        screen: const ImageDownloaderScreen(),
-        hideOnMobile: true,
-      ),
-      (
-        icon: const Icon(Icons.notes_outlined),
-        selectedIcon: const Icon(Icons.notes),
-        label: l10n.prompts,
-        screen: const PromptsScreen(),
-        hideOnMobile: false,
-      ),
-      (
-        icon: const Icon(Icons.analytics_outlined),
-        selectedIcon: const Icon(Icons.analytics),
-        label: l10n.usage,
-        screen: const TokenUsageScreen(),
-        hideOnMobile: false,
-      ),
-      (
-        icon: const Icon(Icons.model_training_outlined),
-        selectedIcon: const Icon(Icons.model_training),
-        label: l10n.models,
-        screen: const ModelsScreen(),
-        hideOnMobile: false,
-      ),
-      (
-        icon: const Icon(Icons.settings_outlined),
-        selectedIcon: const Icon(Icons.settings),
-        label: l10n.settings,
-        screen: const SettingsScreen(),
-        hideOnMobile: false,
-      ),
+      _NavDef(icon: Icons.dashboard_outlined,   selectedIcon: Icons.dashboard,         label: l10n.workbench,   screen: const WorkbenchScreen(),       hideOnMobile: false),
+      _NavDef(icon: Icons.folder_open_outlined, selectedIcon: Icons.folder_open,       label: l10n.fileBrowser, screen: const FileBrowserScreen(),     hideOnMobile: true),
+      _NavDef(icon: Icons.checklist_outlined,   selectedIcon: Icons.checklist,         label: l10n.tasks,       screen: const TaskQueueScreen(),       hideOnMobile: false, showBadge: true),
+      _NavDef(icon: Icons.cloud_download_outlined, selectedIcon: Icons.cloud_download, label: l10n.downloader,  screen: const ImageDownloaderScreen(), hideOnMobile: true),
+      _NavDef(icon: Icons.auto_awesome_outlined, selectedIcon: Icons.auto_awesome,     label: l10n.prompts,     screen: const PromptsScreen(),         hideOnMobile: false),
+      _NavDef(icon: Icons.memory_outlined,      selectedIcon: Icons.memory,            label: l10n.models,      screen: const ModelsScreen(),          hideOnMobile: false),
+      _NavDef(icon: Icons.analytics_outlined,   selectedIcon: Icons.analytics,         label: l10n.usage,       screen: const TokenUsageScreen(),      hideOnMobile: false),
     ];
   }
 
@@ -199,26 +148,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isMobileUI = Responsive.isMobile(context);
     final isMobilePlatform = Platform.isAndroid || Platform.isIOS;
+    final taskQueue = context.watch<TaskQueueService>();
 
-    // Filter items based on platform
     final allDefinitions = _getNavDefinitions(l10n);
-    final filteredDefinitions = isMobilePlatform 
+    final filteredDefinitions = isMobilePlatform
         ? allDefinitions.where((d) => !d.hideOnMobile).toList()
         : allDefinitions;
 
     final screens = filteredDefinitions.map((d) => d.screen).toList();
-    final navItems = filteredDefinitions.map((d) => (
-      icon: d.icon,
-      selectedIcon: d.selectedIcon,
-      label: d.label,
-    )).toList();
 
-    // Mapping logic for active index
-    // If current index is out of bounds for filtered list (e.g. switched from desktop to mobile via dev tools?)
-    // But here we care about platform. If platform is mobile, index must be mapped.
     int displayIndex = appState.activeScreenIndex;
     if (isMobilePlatform) {
-      // Find the index of the screen in the filtered list
       final currentScreen = allDefinitions[appState.activeScreenIndex].screen;
       displayIndex = screens.indexOf(currentScreen);
       if (displayIndex == -1) {
@@ -229,146 +169,180 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       }
     }
 
-    // Split for mobile UI (NavigationBar): first 4 items + "More"
-    final primaryItems = navItems.take(4).toList();
-    final secondaryItems = navItems.skip(4).toList();
+    // Badge count: pending + running tasks
+    final taskBadge = taskQueue.queue
+        .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
+        .length;
+
+    void onNavSelect(int filteredIdx) {
+      final targetScreen = filteredDefinitions[filteredIdx].screen;
+      final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
+      appState.navigateToScreen(originalIndex);
+    }
+
+    // Mobile: first 4 in bottom bar, rest in drawer
+    final primaryItems = filteredDefinitions.take(4).toList();
+    final secondaryItems = filteredDefinitions.skip(4).toList();
 
     return Stack(
       children: [
         Scaffold(
           key: _scaffoldKey,
-          drawer: isMobileUI ? _buildMobileDrawer(secondaryItems, l10n, filteredDefinitions, displayIndex) : null,
+          drawer: isMobileUI
+              ? _buildMobileDrawer(l10n, filteredDefinitions, secondaryItems, displayIndex, appState, allDefinitions, taskBadge)
+              : null,
           body: SafeArea(
             child: Row(
               children: [
-                if (!isMobileUI)
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                          child: IntrinsicHeight(
-                            child: NavigationRail(
-                              extended: _isRailExtended,
-                              selectedIndex: displayIndex,
-                              onDestinationSelected: (int index) {
-                                // Map back to original index
-                                final targetScreen = filteredDefinitions[index].screen;
-                                final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
-                                appState.navigateToScreen(originalIndex);
-                              },
-                              leading: IconButton(
-                                icon: Icon(_isRailExtended ? Icons.menu_open : Icons.menu),
-                                onPressed: () => setState(() => _isRailExtended = !_isRailExtended),
-                              ),
-                              labelType: _isRailExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-                              destinations: navItems
-                                  .map((d) => NavigationRailDestination(
-                                        icon: d.icon,
-                                        selectedIcon: d.selectedIcon,
-                                        label: Text(d.label),
-                                      ))
-                                  .toList(),
-                            ),
-                          ),
-                        ),
-                      );
-                    }
+                if (!isMobileUI) ...[
+                  _AppNavRail(
+                    definitions: filteredDefinitions,
+                    selectedIndex: displayIndex,
+                    taskBadge: taskBadge,
+                    onSelect: onNavSelect,
+                    onSettings: () {
+                      final idx = allDefinitions.indexWhere((d) => d.screen is SettingsScreen);
+                      if (idx != -1) appState.navigateToScreen(idx);
+                    },
+                    isSettingsActive: filteredDefinitions[displayIndex].screen is SettingsScreen,
+                    l10n: l10n,
                   ),
-                if (!isMobileUI) const VerticalDivider(thickness: 1, width: 1),
-                Expanded(
-                  child: screens[displayIndex],
-                ),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80),
+                  ),
+                ],
+                Expanded(child: screens[displayIndex]),
               ],
             ),
           ),
           bottomNavigationBar: isMobileUI
               ? NavigationBar(
-                  selectedIndex: displayIndex < 4 ? displayIndex : 4,
+                  selectedIndex: displayIndex < primaryItems.length ? displayIndex : primaryItems.length,
                   onDestinationSelected: (int index) {
-                    if (index < 4) {
-                      final targetScreen = filteredDefinitions[index].screen;
-                      final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
-                      appState.navigateToScreen(originalIndex);
+                    if (index < primaryItems.length) {
+                      onNavSelect(index);
                     } else {
                       _scaffoldKey.currentState?.openDrawer();
                     }
                   },
                   destinations: [
-                    ...primaryItems.map((d) => NavigationDestination(
-                          icon: d.icon,
-                          selectedIcon: d.selectedIcon,
-                          label: d.label,
-                        )),
-                    const NavigationDestination(
-                      icon: Icon(Icons.more_horiz_outlined),
-                      selectedIcon: Icon(Icons.more_horiz),
-                      label: "More", 
+                    ...primaryItems.asMap().entries.map((e) {
+                      final d = e.value;
+                      return NavigationDestination(
+                        icon: d.showBadge && taskBadge > 0
+                            ? Badge(label: Text('$taskBadge'), child: Icon(d.icon))
+                            : Icon(d.icon),
+                        selectedIcon: d.showBadge && taskBadge > 0
+                            ? Badge(label: Text('$taskBadge'), child: Icon(d.selectedIcon))
+                            : Icon(d.selectedIcon),
+                        label: d.label,
+                      );
+                    }),
+                    NavigationDestination(
+                      icon: const Icon(Icons.more_horiz_outlined),
+                      selectedIcon: const Icon(Icons.more_horiz),
+                      label: l10n.more,
                     ),
                   ],
                 )
               : null,
         ),
-        // The workbench has its own integrated bottom status bar, so the
-        // floating capsule would be redundant there — show it only elsewhere.
         if (appState.activeScreenIndex != 0) const TaskCapsuleMonitor(),
       ],
     );
   }
 
-  Widget _buildMobileDrawer(List<dynamic> items, AppLocalizations l10n, List<dynamic> filteredDefinitions, int displayIndex) {
-    final appState = Provider.of<AppState>(context, listen: false);
-    final allDefinitions = _getNavDefinitions(l10n);
-    // Primary item count determines the offset for secondary (drawer) items.
-    final primaryCount = filteredDefinitions.length - items.length;
+  Widget _buildMobileDrawer(
+    AppLocalizations l10n,
+    List<_NavDef> filteredDefinitions,
+    List<_NavDef> secondaryItems,
+    int displayIndex,
+    AppState appState,
+    List<_NavDef> allDefinitions,
+    int taskBadge,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryCount = filteredDefinitions.length - secondaryItems.length;
 
     return Drawer(
+      width: 270,
+      backgroundColor: colorScheme.surfaceContainerLow,
       child: Column(
         children: [
-          DrawerHeader(
+          // Header
+          Container(
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
             ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.auto_awesome, size: 48, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.appTitle,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [colorScheme.primary, const Color(0xFFB794F6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
-              ),
+                  child: const Icon(Icons.auto_awesome, size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.appTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          ...items.asMap().entries.map((entry) {
-            final index = entry.key + primaryCount;
-            final d = entry.value;
-            final isSelected = displayIndex == index;
-            return ListTile(
-              leading: isSelected ? d.selectedIcon : d.icon,
-              title: Text(d.label),
-              selected: isSelected,
+          // Secondary nav items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+              children: secondaryItems.asMap().entries.map((entry) {
+                final idx = entry.key + primaryCount;
+                final d = entry.value;
+                final isSelected = displayIndex == idx;
+                return _DrawerItem(
+                  icon: isSelected ? d.selectedIcon : d.icon,
+                  label: d.label,
+                  isSelected: isSelected,
+                  badge: d.showBadge && taskBadge > 0 ? taskBadge : 0,
+                  onTap: () {
+                    final targetScreen = filteredDefinitions[idx].screen;
+                    final originalIndex = allDefinitions.indexWhere((dd) => dd.screen == targetScreen);
+                    appState.navigateToScreen(originalIndex);
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          // Settings at bottom
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
+            child: _DrawerItem(
+              icon: Icons.settings_outlined,
+              label: l10n.settings,
+              isSelected: filteredDefinitions[displayIndex].screen is SettingsScreen,
+              badge: 0,
               onTap: () {
-                final targetScreen = filteredDefinitions[index].screen;
-                final originalIndex = allDefinitions.indexWhere((d) => d.screen == targetScreen);
-                appState.navigateToScreen(originalIndex);
+                final idx = allDefinitions.indexWhere((d) => d.screen is SettingsScreen);
+                if (idx != -1) appState.navigateToScreen(idx);
                 Navigator.pop(context);
               },
-            );
-          }),
-          const Spacer(),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Joycai Toolkits",
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ),
         ],
@@ -377,3 +351,265 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 }
 
+// ── Nav definition ─────────────────────────────────────────────────────────
+
+class _NavDef {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final Widget screen;
+  final bool hideOnMobile;
+  final bool showBadge;
+
+  const _NavDef({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.screen,
+    this.hideOnMobile = false,
+    this.showBadge = false,
+  });
+}
+
+// ── Custom app-level nav rail ───────────────────────────────────────────────
+
+class _AppNavRail extends StatelessWidget {
+  final List<_NavDef> definitions;
+  final int selectedIndex;
+  final int taskBadge;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onSettings;
+  final bool isSettingsActive;
+  final AppLocalizations l10n;
+
+  const _AppNavRail({
+    required this.definitions,
+    required this.selectedIndex,
+    required this.taskBadge,
+    required this.onSelect,
+    required this.onSettings,
+    required this.isSettingsActive,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isTablet = Responsive.isTablet(context) && !Responsive.isDesktop(context);
+    final railWidth = isTablet ? 64.0 : 78.0;
+    final showLabels = !isTablet;
+
+    return Container(
+      width: railWidth,
+      color: colorScheme.surfaceContainerLow,
+      child: Column(
+        children: [
+          // Main nav items
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  ...definitions.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final d = e.value;
+                    final isSelected = selectedIndex == idx;
+                    final badge = d.showBadge && taskBadge > 0 ? taskBadge : 0;
+                    return _RailItem(
+                      icon: isSelected ? d.selectedIcon : d.icon,
+                      label: d.label,
+                      isSelected: isSelected,
+                      showLabel: showLabels,
+                      badge: badge,
+                      railWidth: railWidth,
+                      onTap: () => onSelect(idx),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          // Settings pinned at bottom
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _RailItem(
+              icon: isSettingsActive ? Icons.settings : Icons.settings_outlined,
+              label: l10n.settings,
+              isSelected: isSettingsActive,
+              showLabel: showLabels,
+              badge: 0,
+              railWidth: railWidth,
+              onTap: onSettings,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RailItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final bool showLabel;
+  final int badge;
+  final double railWidth;
+  final VoidCallback onTap;
+
+  const _RailItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.showLabel,
+    required this.badge,
+    required this.railWidth,
+    required this.onTap,
+  });
+
+  @override
+  State<_RailItem> createState() => _RailItemState();
+}
+
+class _RailItemState extends State<_RailItem> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = widget.isSelected
+        ? colorScheme.primary
+        : _hovering
+            ? colorScheme.onSurfaceVariant
+            : colorScheme.onSurfaceVariant.withAlpha(140);
+    final bgColor = widget.isSelected
+        ? colorScheme.primary.withAlpha(28)
+        : _hovering
+            ? colorScheme.onSurfaceVariant.withAlpha(16)
+            : Colors.transparent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            width: widget.railWidth - 16,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(widget.icon, size: 22, color: color),
+                    if (widget.badge > 0)
+                      Positioned(
+                        top: -5,
+                        right: -8,
+                        child: Container(
+                          constraints: const BoxConstraints(minWidth: 15),
+                          height: 15,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.badge > 99 ? '99+' : '${widget.badge}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (widget.showLabel) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                      letterSpacing: 0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mobile drawer item ─────────────────────────────────────────────────────
+
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final int badge;
+  final VoidCallback onTap;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.badge,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final bg = isSelected ? colorScheme.primary.withAlpha(24) : Colors.transparent;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Row(
+          children: [
+            badge > 0
+                ? Badge(label: Text('$badge'), child: Icon(icon, size: 22, color: color))
+                : Icon(icon, size: 22, color: color),
+            const SizedBox(width: 13),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

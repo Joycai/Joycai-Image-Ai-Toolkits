@@ -59,8 +59,6 @@
   "discoveringModels": "モデルを検出中...",
   "selectModelsToAdd": "追加するモデルを選択",
   "searchModels": "モデル名またはIDを検索...",
-  "selectAll": "すべて選択",
-  "deselectAll": "すべて選択解除",
   "modelsDiscovered": "{count}個のモデルを検出",
   "addSelected": "選択したものを追加({count})",
   "alreadyAdded": "既に追加済み",
@@ -102,5 +100,17 @@
   "pricePerRequest": "リクエストあたりの価格",
   "tokenBilling": "トークン請求",
   "requestBilling": "リクエスト請求",
-  "model": "モデル"
+  "model": "モデル",
+  "modelsAndChannelsCount": "{models}モデル · {channels}チャンネル",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "すべて選択解除"
 }

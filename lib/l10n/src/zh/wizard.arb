@@ -5,7 +5,6 @@
   "stepAppearance": "外观",
   "stepStorage": "存储",
   "stepApi": "智能 (API)",
-  "finish": "完成",
   "setupCompleteMessage": "设置完成！尽情创作吧。",
   "skip": "跳过",
   "storageLocationDesc": "选择生成图像的保存位置。",

@@ -28,5 +28,9 @@
   "applyRenames": "名前の変更を適用",
   "addToSelection": "選択に追加",
   "removeFromSelection": "選択から削除",
-  "imagesSelected": "{count}個選択済み"
+  "imagesSelected": "{count}個選択済み",
+  "featureLimitedOnMobile": "モバイルでは機能が制限されています",
+  "fileBrowserDesktopOnlyDesc": "OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。",
+  "fileBrowseriOSHint": "生成した画像の管理には、システムの「ファイル」アプリをご使用ください。",
+  "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。"
 }

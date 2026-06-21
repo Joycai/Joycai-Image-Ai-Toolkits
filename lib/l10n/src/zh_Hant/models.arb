@@ -59,8 +59,6 @@
   "discoveringModels": "正在探索模型...",
   "selectModelsToAdd": "選取要新增的模型",
   "searchModels": "搜尋模型名稱或 ID...",
-  "selectAll": "全選",
-  "deselectAll": "取消全選",
   "modelsDiscovered": "已探索 {count} 個模型",
   "addSelected": "新增選取的 ({count})",
   "alreadyAdded": "已新增",
@@ -102,5 +100,17 @@
   "pricePerRequest": "每次請求價格",
   "tokenBilling": "Token 計費",
   "requestBilling": "請求計費",
-  "model": "模型"
+  "model": "模型",
+  "modelsAndChannelsCount": "{models} 個模型 · {channels} 個頻道",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "取消全部選取"
 }

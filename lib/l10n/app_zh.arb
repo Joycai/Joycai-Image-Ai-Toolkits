@@ -43,6 +43,10 @@
       }
     }
   },
+  "featureLimitedOnMobile": "功能受限于移动端",
+  "fileBrowserDesktopOnlyDesc": "由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。",
+  "fileBrowseriOSHint": "请使用系统文件 App 来管理您的生成图像。",
+  "fileBrowserAndroidHint": "请使用设备的文件管理器来整理文件。",
   "appTitle": "Joycai Image AI 工具集",
   "save": "保存",
   "update": "更新",
@@ -112,6 +116,7 @@
       }
     }
   },
+  "more": "更多",
   "downloader": "下载器",
   "imageDownloader": "图像下载器",
   "url": "地址",
@@ -166,6 +171,18 @@
   "noCookieHistory": "未保存 Cookie 历史",
   "pasteFromClipboard": "从剪贴板粘贴",
   "openRawImage": "打开原始图像",
+  "results": "结果",
+  "downloaderFoundSelected": "发现 {found} 张 · 已选 {selected} 张",
+  "@downloaderFoundSelected": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
+  },
   "usage": "用量",
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",
@@ -197,7 +214,6 @@
   },
   "clearModelData": "清除模型数据",
   "usageByGroup": "按费率组统计",
-  "clearAll": "清除全部",
   "models": "模型",
   "modelManagement": "模型管理",
   "feeManagement": "费用管理",
@@ -286,8 +302,6 @@
   "discoveringModels": "正在发现模型...",
   "selectModelsToAdd": "选择要添加的模型",
   "searchModels": "搜索模型名称或 ID...",
-  "selectAll": "全选",
-  "deselectAll": "取消全选",
   "modelsDiscovered": "发现 {count} 个模型",
   "@modelsDiscovered": {
     "placeholders": {
@@ -351,6 +365,18 @@
   "tokenBilling": "Token 计费",
   "requestBilling": "按次计费",
   "model": "模型",
+  "modelsAndChannelsCount": "{models} 个模型 · {channels} 个频道",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "取消全选",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",
@@ -521,6 +547,7 @@
   "completedTasks": "已完成",
   "failedTasks": "失败",
   "clearCompleted": "清除已完成",
+  "clearAll": "清除全部",
   "clearAllConfirm": "此操作将删除所有未运行的任务，且无法撤销。",
   "cancelAllPending": "取消所有等待中",
   "cancelTask": "取消任务",
@@ -625,6 +652,7 @@
   "clickAddFolder": "点击“添加文件夹”开始扫描图像。",
   "noImagesFound": "未找到图像",
   "noResultsYet": "暂无结果",
+  "selectAll": "全选",
   "importFromGallery": "从系统图库导入",
   "takePhoto": "拍摄照片",
   "clearTempWorkspace": "清空工作区",

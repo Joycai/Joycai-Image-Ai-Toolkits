@@ -9,15 +9,8 @@ import 'widgets/data_section.dart';
 
 enum SettingsCategory { appearance, connectivity, application, data }
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  SettingsCategory _selectedCategory = SettingsCategory.appearance;
 
   @override
   Widget build(BuildContext context) {
@@ -25,21 +18,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return ResponsiveBuilder(
       mobile: _SettingsMobileView(l10n: l10n),
-      tablet: _SettingsSplitView(
-        l10n: l10n,
-        selectedCategory: _selectedCategory,
-        onCategoryChanged: (cat) => setState(() => _selectedCategory = cat),
-        isTablet: true,
-      ),
-      desktop: _SettingsSplitView(
-        l10n: l10n,
-        selectedCategory: _selectedCategory,
-        onCategoryChanged: (cat) => setState(() => _selectedCategory = cat),
-        isTablet: false,
-      ),
+      tablet: _SettingsSingleColumnView(l10n: l10n),
+      desktop: _SettingsSingleColumnView(l10n: l10n),
     );
   }
 }
+
+// ── Mobile: list → push to detail ──────────────────────────────────────────
 
 class _SettingsMobileView extends StatelessWidget {
   final AppLocalizations l10n;
@@ -50,9 +35,7 @@ class _SettingsMobileView extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
-            title: Text(l10n.settings),
-          ),
+          SliverAppBar.large(title: Text(l10n.settings)),
           SliverList(
             delegate: SliverChildListDelegate([
               _buildCategoryTile(context, SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance, Colors.blue),
@@ -100,10 +83,14 @@ class _SettingsDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content;
     switch (category) {
-      case SettingsCategory.appearance: content = const AppearanceSection(); break;
-      case SettingsCategory.connectivity: content = const ConnectivitySection(isMobile: true); break;
-      case SettingsCategory.application: content = const ApplicationSection(); break;
-      case SettingsCategory.data: content = const DataSection(isMobile: true); break;
+      case SettingsCategory.appearance:
+        content = const AppearanceSection();
+      case SettingsCategory.connectivity:
+        content = const ConnectivitySection(isMobile: true);
+      case SettingsCategory.application:
+        content = const ApplicationSection();
+      case SettingsCategory.data:
+        content = const DataSection(isMobile: true);
     }
 
     return Scaffold(
@@ -116,95 +103,130 @@ class _SettingsDetailPage extends StatelessWidget {
   }
 }
 
-class _SettingsSplitView extends StatelessWidget {
-  final AppLocalizations l10n;
-  final SettingsCategory selectedCategory;
-  final Function(SettingsCategory) onCategoryChanged;
-  final bool isTablet;
+// ── Desktop / Tablet: 60px header + single scrollable column ───────────────
 
-  const _SettingsSplitView({
-    required this.l10n,
-    required this.selectedCategory,
-    required this.onCategoryChanged,
-    required this.isTablet,
-  });
+class _SettingsSingleColumnView extends StatelessWidget {
+  final AppLocalizations l10n;
+  const _SettingsSingleColumnView({required this.l10n});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      body: Row(
-        children: [
-          // Sidebar (Master)
-          Container(
-            width: isTablet ? 280 : 320,
-            color: colorScheme.surfaceContainerLow,
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  title: Text(l10n.settings),
-                  floating: true,
-                  backgroundColor: Colors.transparent,
-                ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    const SizedBox(height: 8),
-                    _buildSidebarTile(SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance, Colors.blue),
-                    _buildSidebarTile(SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity, Colors.green),
-                    _buildSidebarTile(SettingsCategory.application, Icons.settings_applications_outlined, l10n.application, Colors.orange),
-                    _buildSidebarTile(SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement, Colors.purple),
-                  ]),
-                ),
-              ],
-            ),
+    return Column(
+      children: [
+        // 60px screen header
+        Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
           ),
-          const VerticalDivider(width: 1),
-          // Content (Detail)
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _buildDetailContent(context),
-            ),
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined, size: 24, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              Text(
+                l10n.settings,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarTile(SettingsCategory category, IconData icon, String label, Color color) {
-    final isSelected = selectedCategory == category;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: ListTile(
-        selected: isSelected,
-        leading: Icon(icon, size: 20, color: isSelected ? null : color),
-        title: Text(label, style: const TextStyle(fontSize: 14)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        selectedTileColor: color.withAlpha(40),
-        onTap: () => onCategoryChanged(category),
-      ),
-    );
-  }
-
-  Widget _buildDetailContent(BuildContext context) {
-    Widget section;
-    switch (selectedCategory) {
-      case SettingsCategory.appearance: section = const AppearanceSection(); break;
-      case SettingsCategory.connectivity: section = const ConnectivitySection(); break;
-      case SettingsCategory.application: section = const ApplicationSection(); break;
-      case SettingsCategory.data: section = const DataSection(); break;
-    }
-
-    return SingleChildScrollView(
-      key: ValueKey(selectedCategory),
-      padding: const EdgeInsets.all(32),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: section,
         ),
-      ),
+        // Scrollable sections
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionBlock(
+                      icon: Icons.palette_outlined,
+                      title: l10n.appearance,
+                      color: Colors.blue,
+                      child: const AppearanceSection(),
+                    ),
+                    const SizedBox(height: 32),
+                    _SectionBlock(
+                      icon: Icons.lan_outlined,
+                      title: l10n.connectivity,
+                      color: Colors.green,
+                      child: const ConnectivitySection(),
+                    ),
+                    const SizedBox(height: 32),
+                    _SectionBlock(
+                      icon: Icons.settings_applications_outlined,
+                      title: l10n.application,
+                      color: Colors.orange,
+                      child: const ApplicationSection(),
+                    ),
+                    const SizedBox(height: 32),
+                    _SectionBlock(
+                      icon: Icons.storage_outlined,
+                      title: l10n.dataManagement,
+                      color: Colors.purple,
+                      child: const DataSection(),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionBlock extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final Widget child;
+
+  const _SectionBlock({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color.withAlpha(30),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 11),
+            Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        child,
+      ],
     );
   }
 }

@@ -25,7 +25,6 @@
   "cancelAllPending": "取消所有待處理",
   "cancelTask": "取消任務",
   "removeFromList": "從清單中移除",
-  "model": "模型",
   "images": "圖片",
   "filesCount": "{count} 個檔案",
   "@filesCount": {

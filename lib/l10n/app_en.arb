@@ -43,6 +43,10 @@
       }
     }
   },
+  "featureLimitedOnMobile": "Feature Limited on Mobile",
+  "fileBrowserDesktopOnlyDesc": "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
+  "fileBrowseriOSHint": "Please use the system 'Files' app to manage your generated images.",
+  "fileBrowserAndroidHint": "Please use your device's file manager to organize files.",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",
@@ -112,6 +116,7 @@
       }
     }
   },
+  "more": "More",
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",
@@ -166,6 +171,18 @@
   "noCookieHistory": "No cookie history saved",
   "pasteFromClipboard": "Paste from Clipboard",
   "openRawImage": "Open Raw Image",
+  "results": "Results",
+  "downloaderFoundSelected": "{found} found · {selected} selected",
+  "@downloaderFoundSelected": {
+    "placeholders": {
+      "found": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
+  },
   "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",
@@ -197,7 +214,6 @@
   },
   "clearModelData": "Clear Model Data",
   "usageByGroup": "Usage by Group",
-  "clearAll": "Clear All",
   "models": "Models",
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",
@@ -286,8 +302,6 @@
   "discoveringModels": "Discovering Models...",
   "selectModelsToAdd": "Select models to add",
   "searchModels": "Search model name or ID...",
-  "selectAll": "Select All",
-  "deselectAll": "Deselect All",
   "modelsDiscovered": "{count} models discovered",
   "@modelsDiscovered": {
     "placeholders": {
@@ -351,6 +365,18 @@
   "tokenBilling": "Token Billing",
   "requestBilling": "Request Billing",
   "model": "Model",
+  "modelsAndChannelsCount": "{models} models · {channels} channels",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "Deselect All",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",
@@ -521,6 +547,7 @@
   "completedTasks": "Completed",
   "failedTasks": "Failed",
   "clearCompleted": "Clear Completed",
+  "clearAll": "Clear All",
   "clearAllConfirm": "This will remove all non-running tasks. This action cannot be undone.",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
@@ -625,6 +652,7 @@
   "clickAddFolder": "Click \"Add Folder\" to start scanning for images.",
   "noImagesFound": "No images found",
   "noResultsYet": "No results yet",
+  "selectAll": "Select All",
   "importFromGallery": "Import from Gallery",
   "takePhoto": "Take Photo",
   "clearTempWorkspace": "Clear Workspace",

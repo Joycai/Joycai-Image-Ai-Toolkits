@@ -281,6 +281,30 @@ abstract class AppLocalizations {
   /// **'{count} selected'**
   String imagesSelected(int count);
 
+  /// No description provided for @featureLimitedOnMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Limited on Mobile'**
+  String get featureLimitedOnMobile;
+
+  /// No description provided for @fileBrowserDesktopOnlyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.'**
+  String get fileBrowserDesktopOnlyDesc;
+
+  /// No description provided for @fileBrowseriOSHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please use the system \'Files\' app to manage your generated images.'**
+  String get fileBrowseriOSHint;
+
+  /// No description provided for @fileBrowserAndroidHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please use your device\'s file manager to organize files.'**
+  String get fileBrowserAndroidHint;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -527,6 +551,12 @@ abstract class AppLocalizations {
   /// **'Share failed: {error}'**
   String shareFailed(String error);
 
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:
@@ -725,6 +755,18 @@ abstract class AppLocalizations {
   /// **'Open Raw Image'**
   String get openRawImage;
 
+  /// No description provided for @results.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get results;
+
+  /// No description provided for @downloaderFoundSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{found} found · {selected} selected'**
+  String downloaderFoundSelected(int found, int selected);
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:
@@ -826,12 +868,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Usage by Group'**
   String get usageByGroup;
-
-  /// No description provided for @clearAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get clearAll;
 
   /// No description provided for @models.
   ///
@@ -1193,18 +1229,6 @@ abstract class AppLocalizations {
   /// **'Search model name or ID...'**
   String get searchModels;
 
-  /// No description provided for @selectAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Select All'**
-  String get selectAll;
-
-  /// No description provided for @deselectAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Deselect All'**
-  String get deselectAll;
-
   /// No description provided for @modelsDiscovered.
   ///
   /// In en, this message translates to:
@@ -1456,6 +1480,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Model'**
   String get model;
+
+  /// No description provided for @modelsAndChannelsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{models} models · {channels} channels'**
+  String modelsAndChannelsCount(int models, int channels);
+
+  /// No description provided for @deselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get deselectAll;
 
   /// No description provided for @prompts.
   ///
@@ -2183,6 +2219,12 @@ abstract class AppLocalizations {
   /// **'Clear Completed'**
   String get clearCompleted;
 
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
   /// No description provided for @clearAllConfirm.
   ///
   /// In en, this message translates to:
@@ -2512,6 +2554,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No results yet'**
   String get noResultsYet;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
 
   /// No description provided for @importFromGallery.
   ///

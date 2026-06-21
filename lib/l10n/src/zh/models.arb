@@ -87,8 +87,6 @@
   "discoveringModels": "正在发现模型...",
   "selectModelsToAdd": "选择要添加的模型",
   "searchModels": "搜索模型名称或 ID...",
-  "selectAll": "全选",
-  "deselectAll": "取消全选",
   "modelsDiscovered": "发现 {count} 个模型",
   "@modelsDiscovered": {
     "placeholders": {
@@ -151,5 +149,17 @@
   "pricePerRequest": "单次请求价格",
   "tokenBilling": "Token 计费",
   "requestBilling": "按次计费",
-  "model": "模型"
+  "model": "模型",
+  "modelsAndChannelsCount": "{models} 个模型 · {channels} 个频道",
+  "@modelsAndChannelsCount": {
+    "placeholders": {
+      "models": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deselectAll": "取消全选"
 }

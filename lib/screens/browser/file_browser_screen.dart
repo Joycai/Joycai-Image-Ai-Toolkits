@@ -58,20 +58,20 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               Icon(Icons.desktop_access_disabled_outlined, size: 80, color: colorScheme.outline.withAlpha(100)),
               const SizedBox(height: 24),
               Text(
-                "Feature Limited on Mobile",
+                l10n.featureLimitedOnMobile,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
+              Text(
+                l10n.fileBrowserDesktopOnlyDesc,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 32),
               Text(
-                Platform.isIOS 
-                  ? "Please use the system 'Files' app to manage your generated images."
-                  : "Please use your device's file manager to organize files.",
+                Platform.isIOS
+                    ? l10n.fileBrowseriOSHint
+                    : l10n.fileBrowserAndroidHint,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: colorScheme.primary, fontWeight: FontWeight.w500),
               ),
@@ -94,34 +94,86 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       child: const UnifiedSidebar(useFileBrowserState: true),
     );
 
+    final fileCount = fileBrowserState.filteredFiles.length;
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.fileBrowser, style: const TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: colorScheme.surface,
-        centerTitle: false,
-        leading: isNarrow ? Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
           ),
-        ) : null,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(100)),
+          child: Row(
+            children: [
+              if (isNarrow)
+                Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+              Icon(Icons.folder_open, size: 24, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.fileBrowser,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  Text(
+                    l10n.filesCount(fileCount),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurfaceVariant,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              if (!isNarrow) ...[
+                IconButton(
+                  icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
+                      ? Icons.view_list
+                      : Icons.grid_view),
+                  onPressed: () => fileBrowserState.setViewMode(
+                    fileBrowserState.viewMode == BrowserViewMode.grid
+                        ? BrowserViewMode.list
+                        : BrowserViewMode.grid,
+                  ),
+                  tooltip: l10n.switchViewMode,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => fileBrowserState.refresh(),
+                  tooltip: l10n.refresh,
+                ),
+                const SizedBox(width: 4),
+                _GradientButton(
+                  icon: Icons.auto_fix_high,
+                  label: l10n.aiBatchRename,
+                  onPressed: () => _showAiRenameDialog(context),
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
       drawer: isNarrow ? Drawer(child: sidebar) : null,
       body: Row(
         children: [
-          // Sidebar (Fixed for desktop wide)
           if (!isNarrow) ...[
             sidebar,
             const VerticalDivider(width: 1),
           ],
-          // Main Content
           Expanded(
             child: Container(
               color: colorScheme.surface,
@@ -245,6 +297,53 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       position: position,
       workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
       onRefresh: () => state.refresh(),
+    );
+  }
+}
+
+/// Gradient-filled button matching the design's accent → accent2 gradient style.
+class _GradientButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final ColorScheme colorScheme;
+
+  const _GradientButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colorScheme.primary, const Color(0xFFB794F6)],
+          ),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

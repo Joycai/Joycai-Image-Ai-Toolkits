@@ -100,7 +100,6 @@
   "sendToComparatorRaw": "設為原始圖 (RAW)",
   "sendToComparatorAfter": "設為處理後 (Result)",
   "sendToSelection": "新增至選取項目",
-  "removeFromSelection": "從選取項目中移除",
   "sendToOptimizer": "發送到提示詞優化器",
   "optimizePromptWithImage": "使用圖片優化提示詞",
   "selectFromLibrary": "從庫中選取",

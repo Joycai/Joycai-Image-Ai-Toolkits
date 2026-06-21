@@ -300,21 +300,82 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.selectedModelDbId = appState.chatModels.first.id;
     }
 
-    final controlPanel = Column(
+    final colorScheme = Theme.of(context).colorScheme;
+    final discoveredCount = state.discoveredImages.length;
+    final selectedCount = state.discoveredImages.where((i) => i.isSelected).length;
+
+    // 60px left panel header
+    final leftHeader = Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          if (isNarrow)
+            IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              tooltip: l10n.settings,
+            ),
+          Icon(Icons.cloud_download, size: 24, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          Text(
+            l10n.imageDownloader,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+
+    // 60px right panel header
+    final rightHeader = Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          Text(
+            l10n.results,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+          ),
+          if (discoveredCount > 0) ...[
+            const SizedBox(width: 10),
+            Text(
+              l10n.downloaderFoundSelected(discoveredCount, selectedCount),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurfaceVariant,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    // Left panel column (header + optional iOS banner + control panel)
+    final leftPanelContent = Column(
       children: [
+        leftHeader,
         if (Platform.isIOS)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: Theme.of(context).colorScheme.primaryContainer.withAlpha(100),
+            color: colorScheme.primaryContainer.withAlpha(100),
             child: Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+                Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     l10n.iosOutputRecommend,
-                    style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
                   ),
                 ),
               ],
@@ -339,42 +400,39 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text(l10n.imageDownloader, style: const TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant.withAlpha(100)),
-        ),
-        leading: isNarrow ? IconButton(
-          icon: const Icon(Icons.tune),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ) : null,
-      ),
-      drawer: isNarrow ? Drawer(width: 350, child: SafeArea(child: controlPanel)) : null,
-      body: Row(
-        children: [
-          if (!isNarrow) ...[
-            Container(
-              width: 350, 
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: controlPanel,
+      backgroundColor: colorScheme.surface,
+      drawer: isNarrow
+          ? Drawer(width: 350, child: SafeArea(child: leftPanelContent))
+          : null,
+      body: isNarrow
+          ? Column(
+              children: [
+                leftHeader,
+                Expanded(
+                  child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  width: 350,
+                  color: colorScheme.surfaceContainerLow,
+                  child: leftPanelContent,
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: Column(
+                    children: [
+                      rightHeader,
+                      Expanded(
+                        child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.surface,
-              child: DownloaderResultsArea(
-                onAddToQueue: _addToQueue,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

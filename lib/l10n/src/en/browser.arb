@@ -42,5 +42,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "featureLimitedOnMobile": "Feature Limited on Mobile",
+  "fileBrowserDesktopOnlyDesc": "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
+  "fileBrowseriOSHint": "Please use the system 'Files' app to manage your generated images.",
+  "fileBrowserAndroidHint": "Please use your device's file manager to organize files."
 }

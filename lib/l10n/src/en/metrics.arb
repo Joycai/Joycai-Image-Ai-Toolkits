@@ -29,6 +29,5 @@
     }
   },
   "clearModelData": "Clear Model Data",
-  "usageByGroup": "Usage by Group",
-  "clearAll": "Clear All"
+  "usageByGroup": "Usage by Group"
 }

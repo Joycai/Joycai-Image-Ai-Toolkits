@@ -103,6 +103,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get featureLimitedOnMobile => '功能受限于移动端';
+
+  @override
+  String get fileBrowserDesktopOnlyDesc =>
+      '由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。';
+
+  @override
+  String get fileBrowseriOSHint => '请使用系统文件 App 来管理您的生成图像。';
+
+  @override
+  String get fileBrowserAndroidHint => '请使用设备的文件管理器来整理文件。';
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -234,6 +247,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get more => '更多';
+
+  @override
   String get downloader => '下载器';
 
   @override
@@ -339,6 +355,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openRawImage => '打开原始图像';
 
   @override
+  String get results => '结果';
+
+  @override
+  String downloaderFoundSelected(int found, int selected) {
+    return '发现 $found 张 · 已选 $selected 张';
+  }
+
+  @override
   String get usage => '用量';
 
   @override
@@ -392,9 +416,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get usageByGroup => '按费率组统计';
-
-  @override
-  String get clearAll => '清除全部';
 
   @override
   String get models => '模型';
@@ -585,12 +606,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchModels => '搜索模型名称或 ID...';
 
   @override
-  String get selectAll => '全选';
-
-  @override
-  String get deselectAll => '取消全选';
-
-  @override
   String modelsDiscovered(int count) {
     return '发现 $count 个模型';
   }
@@ -721,6 +736,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get model => '模型';
+
+  @override
+  String modelsAndChannelsCount(int models, int channels) {
+    return '$models 个模型 · $channels 个频道';
+  }
+
+  @override
+  String get deselectAll => '取消全选';
 
   @override
   String get prompts => '提示词';
@@ -1102,6 +1125,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearCompleted => '清除已完成';
 
   @override
+  String get clearAll => '清除全部';
+
+  @override
   String get clearAllConfirm => '此操作将删除所有未运行的任务，且无法撤销。';
 
   @override
@@ -1280,6 +1306,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noResultsYet => '暂无结果';
+
+  @override
+  String get selectAll => '全选';
 
   @override
   String get importFromGallery => '从系统图库导入';
@@ -1731,6 +1760,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get featureLimitedOnMobile => '功能受限於行動裝置';
+
+  @override
+  String get fileBrowserDesktopOnlyDesc =>
+      '由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。';
+
+  @override
+  String get fileBrowseriOSHint => '請使用系統「檔案」App 來管理您產生的圖像。';
+
+  @override
+  String get fileBrowserAndroidHint => '請使用裝置的檔案管理員來整理檔案。';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -1859,6 +1901,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get more => '更多';
+
+  @override
   String get downloader => '下載器';
 
   @override
@@ -1964,6 +2009,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get openRawImage => '開啟原始圖片';
 
   @override
+  String get results => '結果';
+
+  @override
+  String downloaderFoundSelected(int found, int selected) {
+    return '發現 $found 張 · 已選 $selected 張';
+  }
+
+  @override
   String get usage => '用量';
 
   @override
@@ -2017,9 +2070,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get usageByGroup => '按群組分類的用量';
-
-  @override
-  String get clearAll => '清除全部';
 
   @override
   String get models => '模型';
@@ -2210,12 +2260,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get searchModels => '搜尋模型名稱或 ID...';
 
   @override
-  String get selectAll => '全選';
-
-  @override
-  String get deselectAll => '取消全選';
-
-  @override
   String modelsDiscovered(int count) {
     return '已探索 $count 個模型';
   }
@@ -2346,6 +2390,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get model => '模型';
+
+  @override
+  String modelsAndChannelsCount(int models, int channels) {
+    return '$models 個模型 · $channels 個頻道';
+  }
+
+  @override
+  String get deselectAll => '取消全部選取';
 
   @override
   String get prompts => '提示';
@@ -2728,10 +2780,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get clearCompleted => '清除已完成';
 
   @override
+  String get clearAll => '清除全部';
+
+  @override
   String get clearAllConfirm => '此操作將刪除所有未運行的任務，且無法復原。';
 
   @override
-  String get cancelAllPending => '全部取消待辦';
+  String get cancelAllPending => '取消所有待處理';
 
   @override
   String get cancelTask => '取消任務';
@@ -2754,7 +2809,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String plannedCount(int count) {
-    return '$count 個計畫中';
+    return '$count 個已計劃';
   }
 
   @override
@@ -2781,12 +2836,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String concurrencyLimit(int limit) {
-    return '並行限制：$limit';
+    return '並行限制: $limit';
   }
 
   @override
   String retryCount(int count) {
-    return '重試次數：$count';
+    return '重試次數: $count';
   }
 
   @override
@@ -2905,6 +2960,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get noResultsYet => '尚無結果';
+
+  @override
+  String get selectAll => '全選';
 
   @override
   String get importFromGallery => '從圖庫匯入';

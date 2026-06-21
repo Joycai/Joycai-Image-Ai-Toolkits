@@ -100,7 +100,6 @@
   "sendToComparatorRaw": "Before (RAW) として設定",
   "sendToComparatorAfter": "After (結果) として設定",
   "sendToSelection": "選択に追加",
-  "removeFromSelection": "選択から削除",
   "sendToOptimizer": "プロンプト最適化に送信",
   "optimizePromptWithImage": "画像からプロンプトを最適化",
   "selectFromLibrary": "ライブラリから選択",

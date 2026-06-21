@@ -29,6 +29,5 @@
     }
   },
   "clearModelData": "清除模型数据",
-  "usageByGroup": "按费率组统计",
-  "clearAll": "清除全部"
+  "usageByGroup": "按费率组统计"
 }

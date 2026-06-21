@@ -103,6 +103,19 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get featureLimitedOnMobile => 'モバイルでは機能が制限されています';
+
+  @override
+  String get fileBrowserDesktopOnlyDesc =>
+      'OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。';
+
+  @override
+  String get fileBrowseriOSHint => '生成した画像の管理には、システムの「ファイル」アプリをご使用ください。';
+
+  @override
+  String get fileBrowserAndroidHint => 'ファイルの整理には、デバイスのファイルマネージャーをご使用ください。';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -234,6 +247,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get more => 'もっと見る';
+
+  @override
   String get downloader => 'ダウンローダー';
 
   @override
@@ -340,6 +356,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get openRawImage => '元の画像を開く';
 
   @override
+  String get results => '結果';
+
+  @override
+  String downloaderFoundSelected(int found, int selected) {
+    return '$found件見つかりました · $selected件選択中';
+  }
+
+  @override
   String get usage => '使用状況';
 
   @override
@@ -393,9 +417,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get usageByGroup => 'グループ別の使用状況';
-
-  @override
-  String get clearAll => 'すべてクリア';
 
   @override
   String get models => 'モデル';
@@ -586,12 +607,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get searchModels => 'モデル名またはIDを検索...';
 
   @override
-  String get selectAll => 'すべて選択';
-
-  @override
-  String get deselectAll => 'すべて選択解除';
-
-  @override
   String modelsDiscovered(int count) {
     return '$count個のモデルを検出';
   }
@@ -722,6 +737,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get model => 'モデル';
+
+  @override
+  String modelsAndChannelsCount(int models, int channels) {
+    return '$modelsモデル · $channelsチャンネル';
+  }
+
+  @override
+  String get deselectAll => 'すべて選択解除';
 
   @override
   String get prompts => 'プロンプト';
@@ -1105,6 +1128,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get clearCompleted => '完了済みをクリア';
 
   @override
+  String get clearAll => 'すべてクリア';
+
+  @override
   String get clearAllConfirm => '実行中でないすべてのタスクを削除します。この操作は元に戻せません。';
 
   @override
@@ -1121,21 +1147,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String filesCount(int count) {
-    return '$count ファイル';
+    return '$count 個のファイル';
   }
 
   @override
   String runningCount(int count) {
-    return '$count 実行中';
+    return '$count 個実行中';
   }
 
   @override
   String plannedCount(int count) {
-    return '$count 計画中';
+    return '$count 個計画済み';
   }
 
   @override
-  String get latestLog => '最新のログ:';
+  String get latestLog => '最新ログ:';
 
   @override
   String get taskCompletedNotification => 'タスク完了';
@@ -1158,7 +1184,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String concurrencyLimit(int limit) {
-    return '同時実行制限: $limit';
+    return '並列処理制限: $limit';
   }
 
   @override
@@ -1283,6 +1309,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noResultsYet => '結果がありません';
+
+  @override
+  String get selectAll => 'すべて選択';
 
   @override
   String get importFromGallery => 'ギャラリーからインポート';
