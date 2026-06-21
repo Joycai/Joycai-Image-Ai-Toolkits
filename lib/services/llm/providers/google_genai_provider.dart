@@ -5,69 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
-import '../channel_dialect.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
 import '../model_discovery_service.dart';
 import '../model_family.dart';
+import 'google_auth.dart';
+import 'google_payload.dart';
 
-/// Builds the auth headers for Google's REST dialect.
-///
-/// Google's API key is passed in `x-goog-api-key`. The official Google host
-/// (`*.googleapis.com`) treats an `Authorization: Bearer <api-key>` header as an
-/// OAuth2 access token, fails to validate it, and returns 401 — so the bearer
-/// token is only sent to third-party relays that emulate the dialect and may
-/// expect OpenAI-style auth.
-///
-/// New API's Gemini format ([ChannelDialect.newApiGemini]) is the special case:
-/// it authenticates *purely* with an OpenAI-style bearer token and rejects
-/// requests carrying `x-goog-api-key`, so it gets the bearer header alone.
-@visibleForTesting
-Map<String, String> buildGoogleAuthHeaders(
-  String channelType,
-  String apiKey,
-  String endpoint,
-) {
-  if (ChannelDialect.isNewApiGemini(channelType)) {
-    return {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $apiKey",
-    };
-  }
-
-  final headers = {
-    "Content-Type": "application/json",
-    "x-goog-api-key": apiKey,
-  };
-  final host = Uri.tryParse(endpoint)?.host ?? '';
-  final isOfficialGoogle = host.endsWith('googleapis.com');
-  if (channelType != ChannelDialect.officialGoogle && !isOfficialGoogle) {
-    headers["Authorization"] = "Bearer $apiKey";
-  }
-  return headers;
-}
-
-/// Appends the API key as a `?key=` query parameter, matching Google's
-/// documented REST examples (e.g. `...:generateContent?key=$GEMINI_API_KEY`).
-///
-/// This is equivalent to the `x-goog-api-key` header but is the most robust
-/// form: it survives any proxy/relay that strips custom request headers.
-/// Existing query parameters (such as `alt=sse`) are preserved.
-///
-/// New API's Gemini format authenticates with a bearer token only, so the key
-/// is never leaked into the query string for that dialect.
-@visibleForTesting
-Uri appendGoogleKey(Uri url, String apiKey, {String? channelType}) {
-  if (apiKey.isEmpty) return url;
-  if (channelType != null && ChannelDialect.isNewApiGemini(channelType)) {
-    return url;
-  }
-  return url.replace(queryParameters: {
-    ...url.queryParameters,
-    'key': apiKey,
-  });
-}
+// Re-export the auth helpers so existing importers (and tests) of this file keep
+// access to buildGoogleAuthHeaders / appendGoogleKey.
+export 'google_auth.dart';
 
 class GoogleDiscoveryProvider implements IModelDiscoveryProvider {
   @override
@@ -116,7 +64,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'), config.apiKey, channelType: config.channelType);
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
-    final payload = _preparePayload(history, options, config.endpoint);
+    final payload = prepareGooglePayload(history, options, config.endpoint);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -159,7 +107,7 @@ class GoogleGenAIProvider implements ILLMProvider {
       List<Uint8List> images = [];
       Map<String, dynamic> metadata = {};
 
-      for (final chunk in _parseChunks(data, logger: logger)) {
+      for (final chunk in parseGoogleChunks(data, logger: logger)) {
         if (chunk.textPart != null) text += chunk.textPart!;
         if (chunk.imagePart != null) images.add(chunk.imagePart!);
         if (chunk.metadata != null) metadata = chunk.metadata!;
@@ -203,7 +151,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         config.apiKey, channelType: config.channelType);
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
-    final payload = _preparePayload(history, options, config.endpoint);
+    final payload = prepareGooglePayload(history, options, config.endpoint);
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -272,7 +220,7 @@ class GoogleGenAIProvider implements ILLMProvider {
             throw Exception(err['message']);
           }
 
-          yield* Stream.fromIterable(_parseChunks(chunkData, logger: logger));
+          yield* Stream.fromIterable(parseGoogleChunks(chunkData, logger: logger));
         } catch (e) {
           if (e is Exception) rethrow;
           // Ignore parse errors for empty/non-json lines
@@ -299,14 +247,14 @@ class GoogleGenAIProvider implements ILLMProvider {
         Uri.parse('$baseUrl/models/${config.modelId}:predictLongRunning'), config.apiKey, channelType: config.channelType);
     
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
-    final payload = _prepareVeoPayload(history, options);
+    final payload = prepareVeoPayload(history, options);
 
     // Debug logging for the user to see what's happening
     logger?.call('POST URL: $url', level: 'DEBUG');
     logger?.call('Headers: ${headers.keys.join(', ')}', level: 'DEBUG');
     
     // Log payload structure (without large data)
-    final safePayload = _getSafePayload(payload);
+    final safePayload = getSafePayload(payload);
     logger?.call('Payload Structure: ${jsonEncode(safePayload)}', level: 'DEBUG');
 
     final client = config.createClient();
@@ -349,23 +297,6 @@ class GoogleGenAIProvider implements ILLMProvider {
     } finally {
       client.close();
     }
-  }
-
-  Map<String, dynamic> _getSafePayload(Map<String, dynamic> payload) {
-    // Recursively strip 'data' fields for logging
-    final Map<String, dynamic> safe = {};
-    payload.forEach((key, value) {
-      if ( (key == 'data' || key == 'bytesBase64Encoded') && value is String && value.length > 100) {
-        safe[key] = '<BASE64_DATA (${value.length} chars)>';
-      } else if (value is Map<String, dynamic>) {
-        safe[key] = _getSafePayload(value);
-      } else if (value is List) {
-        safe[key] = value.map((e) => e is Map<String, dynamic> ? _getSafePayload(e) : e).toList();
-      } else {
-        safe[key] = value;
-      }
-    });
-    return safe;
   }
 
   @override
@@ -421,7 +352,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
-    final payload = _prepareImagenPayload(history, options);
+    final payload = prepareImagenPayload(history, options);
 
     final client = config.createClient();
     try {
@@ -431,7 +362,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
           'url': url.toString(),
           'headers': headers,
-          'body': _getSafePayload(payload),
+          'body': getSafePayload(payload),
         });
       }
 
@@ -474,249 +405,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
   }
 
-  Map<String, dynamic> _prepareImagenPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
-    final userMsg = history.lastWhere(
-      (m) => m.role == LLMRole.user,
-      orElse: () => history.last,
-    );
-
-    final parameters = <String, dynamic>{
-      'sampleCount': 1,
-      'personGeneration': 'allow_all',
-    };
-    if (options != null) {
-      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
-        parameters['aspectRatio'] = options['aspectRatio'];
-      }
-      if (options.containsKey('imageSize')) {
-        parameters['sampleImageSize'] = options['imageSize'];
-      }
-    }
-
-    return {
-      "instances": [
-        {"prompt": userMsg.content}
-      ],
-      "parameters": parameters,
-    };
-  }
-
-  Map<String, dynamic> _prepareVeoPayload(List<LLMMessage> history, Map<String, dynamic>? options) {
-    final userMsg = history.lastWhere((m) => m.role == LLMRole.user);
-    
-    final instance = <String, dynamic>{
-      "prompt": userMsg.content,
-    };
-
-    final referenceImages = <Map<String, dynamic>>[];
-
-    for (var attachment in userMsg.attachments) {
-      String? b64Data;
-      if (attachment.path != null) {
-        b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
-      } else if (attachment.bytes != null) {
-        b64Data = base64Encode(attachment.bytes!);
-      }
-
-      if (b64Data != null) {
-        // // Some Google REST APIs (like Veo in Google AI Studio) expect fields directly,
-        // // without the 'inline_data' or 'inlineData' wrapper.
-        // // We'll use snake_case for mime_type as it's common in generativelanguage REST.
-        // final mediaData = {
-        //   "inlineData": {
-        //     "mimeType": attachment.mimeType,
-        //     "data": b64Data
-        //   }
-        // };
-
-        // Google Gen API doc is wrong, this code is get from ai studio, fuck google
-        final mediaDataLegacy = {
-            "mimeType": attachment.mimeType,
-            "bytesBase64Encoded": b64Data
-        };
-
-        switch (attachment.referenceType) {
-          case LLMReferenceType.firstFrame:
-            instance['image'] = mediaDataLegacy;
-            break;
-          case LLMReferenceType.lastFrame:
-            instance['lastFrame'] = mediaDataLegacy;
-            break;
-          case LLMReferenceType.asset:
-            referenceImages.add({
-              "image": mediaDataLegacy,
-              "referenceType": "asset"
-            });
-            break;
-          default:
-            referenceImages.add({
-              "image": mediaDataLegacy,
-              "referenceType": "asset"
-            });
-        }
-      }
-    }
-
-    if (referenceImages.isNotEmpty) {
-      instance['referenceImages'] = referenceImages;
-    }
-
-    final parameters = <String, dynamic>{};
-    if (options != null) {
-      // Keep parameters as camelCase for now as per LRO standard, 
-      // but switch if errors persist.
-      if (options.containsKey('resolution')) parameters['resolution'] = options['resolution'];
-      if (options.containsKey('aspectRatio')) parameters['aspectRatio'] = options['aspectRatio'];
-    }
-
-    return {
-      "instances": [instance],
-      if (parameters.isNotEmpty) "parameters": parameters,
-    };
-  }
-
-  Iterable<LLMResponseChunk> _parseChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
-    Map<String, dynamic>? metadata = chunkData['usageMetadata'];
-
-    // Check for prompt blocking (e.g. prohibited content)
-    if (chunkData['promptFeedback'] != null) {
-      final feedback = chunkData['promptFeedback'] as Map<String, dynamic>;
-      final blockReason = feedback['blockReason'];
-      if (blockReason != null) {
-        final msg = 'Google GenAI Blocked: $blockReason';
-        logger?.call(msg, level: 'ERROR');
-        
-        // If we have metadata, yield it before throwing so tokens can be recorded if needed
-        if (metadata != null) {
-          yield LLMResponseChunk(metadata: metadata);
-        }
-        throw Exception(msg);
-      }
-    }
-
-    final candidates = chunkData['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) {
-      if (metadata != null) {
-        yield LLMResponseChunk(metadata: metadata);
-      }
-      return;
-    }
-
-    for (var candidate in candidates) {
-      final finishReason = candidate['finishReason'] as String?;
-      
-      // Handle Safety and other non-STOP reasons (Section 3.3)
-      if (finishReason != null && finishReason != 'STOP') {
-        String level = 'INFO';
-        if (finishReason == 'SAFETY') level = 'WARN';
-        if (finishReason == 'RECITATION') level = 'WARN';
-        if (finishReason == 'OTHER') level = 'ERROR';
-        
-        logger?.call('Generation finished with reason: $finishReason', level: level);
-        
-        if (finishReason == 'SAFETY') {
-          logger?.call('Content was flagged by safety filters.', level: 'WARN');
-          if (candidate['safetyRatings'] != null) {
-            final ratings = candidate['safetyRatings'] as List;
-            for (var r in ratings) {
-              if (r['probability'] != 'NEGLIGIBLE') {
-                logger?.call('Safety: ${r['category']} is ${r['probability']}', level: 'DEBUG');
-              }
-            }
-          }
-        }
-      }
-
-      final parts = candidate['content']?['parts'] as List?;
-      if (parts != null) {
-        for (var part in parts) {
-          final textPart = part['text'] as String?;
-          
-          // Spec prioritizes inlineData (Section 2)
-          final inlineData = part['inlineData'] ?? part['inline_data'];
-          final imgData = inlineData?['data'];
-
-          yield LLMResponseChunk(
-            textPart: textPart,
-            imagePart: imgData != null ? base64Decode(imgData as String) : null,
-            metadata: metadata,
-          );
-        }
-      }
-    }
-  }
-
   Map<String, String> _getHeaders(String channelType, String apiKey, String endpoint) =>
       buildGoogleAuthHeaders(channelType, apiKey, endpoint);
 
-  Map<String, dynamic> _preparePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
-    final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
-    final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
-
-    Map<String, dynamic>? systemInstruction;
-    if (systemMessages.isNotEmpty) {
-      systemInstruction = {
-        "parts": systemMessages.map((m) => {"text": m.content}).toList()
-      };
-    }
-
-    final contents = conversationMessages.map((msg) {
-      final parts = <Map<String, dynamic>>[];
-
-      if (msg.content.isNotEmpty) {
-        parts.add({"text": msg.content});
-      }
-
-      for (var attachment in msg.attachments) {
-        String? b64Data;
-        if (attachment.path != null) {
-          b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
-        } else if (attachment.bytes != null) {
-          b64Data = base64Encode(attachment.bytes!);
-        }
-
-        if (b64Data != null) {
-          parts.add({
-            "inline_data": {
-              "mime_type": attachment.mimeType,
-              "data": b64Data
-            }
-          });
-        }
-      }
-
-      return {
-        "role": msg.role == LLMRole.user ? "user" : "model",
-        "parts": parts
-      };
-    }).toList();
-
-    final generationConfig = <String, dynamic>{};
-    if (options != null) {
-      final imageConfig = <String, dynamic>{};
-      // personGeneration is Only for Imagen model
-      // Only add aspectRatio if it's not "not_set"
-      // if (endpoint?.contains("aabao") == false) {
-      //   imageConfig['personGeneration'] = "ALLOW_ALL";
-      // }
-      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
-        imageConfig['aspectRatio'] = options['aspectRatio'];
-      }
-      if (options.containsKey('imageSize')) imageConfig['imageSize'] = options['imageSize'];
-      if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
-    }
-
-    return {
-      // ignore: use_null_aware_elements
-      if (systemInstruction != null) "system_instruction": systemInstruction,
-      "contents": contents,
-      "generationConfig": generationConfig,
-      "safetySettings": [
-        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-      ]
-    };
-  }
 }

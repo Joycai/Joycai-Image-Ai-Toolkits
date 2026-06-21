@@ -24,6 +24,9 @@ import 'file_browser_state.dart';
 import 'gallery_state.dart';
 import 'workbench_ui_state.dart';
 
+part 'app_state_data.dart';
+part 'app_state_workbench.dart';
+
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
@@ -280,7 +283,7 @@ class AppState extends ChangeNotifier {
     }
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
-    await _loadImageParams();
+    await loadImageParams();
     lastVideoModelId = await _db.getSetting('last_video_model_id');
     lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
     lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));
@@ -344,6 +347,10 @@ class AppState extends ChangeNotifier {
     hasErrors = false;
     notifyListeners();
   }
+
+  /// Forwards to the protected [notifyListeners] so the `part of` extensions
+  /// ([AppStateData], [AppStateWorkbench]) can trigger rebuilds.
+  void notify() => notifyListeners();
 
   Future<void> setConcurrency(int limit) async {
     concurrencyLimit = limit;
@@ -440,311 +447,5 @@ class AppState extends ChangeNotifier {
     enableApiDebug = value;
     await _db.saveSetting('enable_api_debug', value.toString());
     notifyListeners();
-  }
-
-  // Prompt Tags Methods
-  Future<List<PromptTag>> getPromptTags() => _db.getPromptTags();
-  Future<int> addPromptTag(Map<String, dynamic> tag) async {
-    final id = await _db.addPromptTag(tag);
-    notifyListeners();
-    return id;
-  }
-  Future<void> updatePromptTag(int id, Map<String, dynamic> tag) async {        
-    await _db.updatePromptTag(id, tag);
-    notifyListeners();
-  }
-  Future<void> deletePromptTag(int id) async {
-    await _db.deletePromptTag(id);
-    notifyListeners();
-  }
-  Future<void> updateTagOrder(List<int> ids) => _db.updateTagOrder(ids);        
-
-  // Prompts Methods
-  Future<List<Prompt>> getPrompts() => _db.getPrompts();
-  Future<int> addPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
-    final id = await _db.addPrompt(prompt, tagIds: tagIds);
-    notifyListeners();
-    return id;
-  }
-  Future<void> updatePrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
-    await _db.updatePrompt(id, prompt, tagIds: tagIds);
-    notifyListeners();
-  }
-  Future<void> deletePrompt(int id) async {
-    await _db.deletePrompt(id);
-    notifyListeners();
-  }
-  Future<void> updatePromptOrder(List<int> ids) => _db.updatePromptOrder(ids);  
-
-  Future<void> deletePrompts(List<int> ids) async {
-    await _db.deletePrompts(ids);
-    notifyListeners();
-  }
-
-  Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) async {
-    await _db.updatePromptsTags(promptIds, tagIds);
-    notifyListeners();
-  }
-
-  // System Prompts Methods
-  Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _db.getSystemPrompts(type: type);
-  Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {
-    final id = await _db.addSystemPrompt(prompt, tagIds: tagIds);
-    notifyListeners();
-    return id;
-  }
-  Future<void> updateSystemPrompt(int id, Map<String, dynamic> prompt, {List<int>? tagIds}) async {
-    await _db.updateSystemPrompt(id, prompt, tagIds: tagIds);
-    notifyListeners();
-  }
-  Future<void> deleteSystemPrompt(int id) async {
-    await _db.deleteSystemPrompt(id);
-    notifyListeners();
-  }
-  Future<void> deleteSystemPrompts(List<int> ids) async {
-    await _db.deleteSystemPrompts(ids);
-    notifyListeners();
-  }
-  Future<void> updateSystemPromptsTags(List<int> promptIds, List<int> tagIds) async {
-    await _db.updateSystemPromptsTags(promptIds, tagIds);
-    notifyListeners();
-  }
-  Future<void> updateSystemPromptOrder(List<int> ids) => _db.updateSystemPromptOrder(ids);
-
-  Future<void> importPromptData(Map<String, dynamic> data, {bool replace = false}) async {
-    await _db.importPromptData(data, replace: replace);
-    notifyListeners();
-  }
-
-  Future<void> restoreBackup(Map<String, dynamic> data) async {
-    await _db.restoreBackup(data);
-    await loadSettings();
-    notifyListeners();
-  }
-
-  // Model, Channel & Pricing Group Management
-  Future<void> refreshDataCache() async {
-    _models = await _db.getModels();
-    _channels = await _db.getChannels();
-    _pricingGroups = await _db.getPricingGroups();
-    notifyListeners();
-  }
-
-  Future<int> addChannel(Map<String, dynamic> channel) async {
-    final id = await _db.addChannel(channel);
-    await refreshDataCache();
-    return id;
-  }
-
-  Future<void> updateChannel(int id, Map<String, dynamic> channel) async {      
-    await _db.updateChannel(id, channel);
-    await refreshDataCache();
-  }
-
-  Future<void> deleteChannel(int id) async {
-    await _db.deleteChannel(id);
-    await refreshDataCache();
-  }
-
-  Future<int> addModel(Map<String, dynamic> model) async {
-    final id = await _db.addModel(model);
-    await refreshDataCache();
-    return id;
-  }
-
-  Future<void> updateModel(int id, Map<String, dynamic> model) async {
-    await _db.updateModel(id, model);
-    await refreshDataCache();
-  }
-
-  Future<void> deleteModel(int id) async {
-    await _db.deleteModel(id);
-    await refreshDataCache();
-  }
-
-  Future<void> updateModelOrder(List<int> ids) async {
-    await _db.updateModelOrder(ids);
-    await refreshDataCache();
-  }
-
-  // Pricing Group Management
-  Future<int> addPricingGroup(Map<String, dynamic> group) async {
-    final id = await _db.addPricingGroup(group);
-    await refreshDataCache();
-    return id;
-  }
-
-  Future<void> updatePricingGroup(int id, Map<String, dynamic> group) async {   
-    await _db.updatePricingGroup(id, group);
-    await refreshDataCache();
-  }
-
-  Future<void> deletePricingGroup(int id) async {
-    await _db.deletePricingGroup(id);
-    await refreshDataCache();
-  }
-
-  Future<void> setIsMarkdownWorkbench(bool value) async {
-    isMarkdownWorkbench = value;
-    await _db.saveSetting('is_markdown_workbench', value.toString());
-    notifyListeners();
-  }
-
-  Future<void> setIsMarkdownRefinerSource(bool value) async {
-    isMarkdownRefinerSource = value;
-    await _db.saveSetting('is_markdown_refiner_source', value.toString());      
-    notifyListeners();
-  }
-
-  Future<void> setIsMarkdownRefinerTarget(bool value) async {
-    isMarkdownRefinerTarget = value;
-    await _db.saveSetting('is_markdown_refiner_target', value.toString());      
-    notifyListeners();
-  }
-
-  Future<void> updateWorkbenchConfig({
-    String? modelId,
-    String? prompt,
-    bool? useStream,
-  }) async {
-    if (modelId != null) {
-      lastSelectedModelId = modelId;
-      await _db.saveSetting('last_model_id', modelId);
-    }
-    if (prompt != null) {
-      lastPrompt = prompt;
-      await _db.saveSetting('last_prompt', prompt);
-    }
-    if (useStream != null) {
-      this.useStream = useStream;
-      await _db.saveSetting('workbench_use_stream', useStream.toString());
-    }
-    notifyListeners();
-  }
-
-  // --- Per-family image generation parameters ------------------------------
-
-  Future<void> _loadImageParams() async {
-    final raw = await _db.getSetting('workbench_image_params');
-    if (raw != null && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw) as Map<String, dynamic>;
-        _imageParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
-        return;
-      } catch (_) {/* fall through to legacy migration */}
-    }
-    // Migrate the old single-set params into the nanoBanana namespace.
-    final legacyAr = await _db.getSetting('last_aspect_ratio');
-    final legacyRes = await _db.getSetting('last_resolution');
-    final ns = ModelFamily.geminiImage.name;
-    if (legacyAr != null) _imageParamStore['$ns.aspectRatio'] = legacyAr;
-    if (legacyRes != null) _imageParamStore['$ns.imageSize'] = legacyRes;
-  }
-
-  String _familyKey(String modelId) =>
-      ModelFamilyClassifier.classify(modelId).name;
-
-  /// Current value for [spec] under the selected [modelId], validated against
-  /// the spec's options (falls back to the spec default).
-  String getImageParam(String modelId, ParamSpec spec) {
-    final stored = _imageParamStore['${_familyKey(modelId)}.${spec.key}'];
-    return spec.normalize(stored);
-  }
-
-  Future<void> setImageParam(String modelId, String paramKey, String value) async {
-    _imageParamStore = {
-      ..._imageParamStore,
-      '${_familyKey(modelId)}.$paramKey': value,
-    };
-    imageParamsRevision++;
-    await _db.saveSetting('workbench_image_params', jsonEncode(_imageParamStore));
-    notifyListeners();
-  }
-
-  /// Validated parameter map to send with a generation task for [modelId].
-  Map<String, dynamic> effectiveImageParams(String modelId) {
-    final caps = ModelCapabilities.forModel(modelId);
-    final result = <String, dynamic>{};
-    for (final spec in caps.imageParams) {
-      result[spec.key] = getImageParam(modelId, spec);
-    }
-    return result;
-  }
-
-  Future<void> updateVideoConfig({
-    String? modelId,
-    VeoResolution? resolution,
-    VeoAspectRatio? aspectRatio,
-    String? prompt,
-  }) async {
-    if (modelId != null) {
-      lastVideoModelId = modelId;
-      await _db.saveSetting('last_video_model_id', modelId);
-    }
-    if (resolution != null) {
-      lastVideoResolution = resolution;
-      await _db.saveSetting('last_video_resolution', resolution.value);
-    }
-    if (aspectRatio != null) {
-      lastVideoAspectRatio = aspectRatio;
-      await _db.saveSetting('last_video_aspect_ratio', aspectRatio.value);      
-    }
-    if (prompt != null) {
-      lastVideoPrompt = prompt;
-      await _db.saveSetting('last_video_prompt', prompt);
-    }
-    notifyListeners();
-  }
-
-  Future<void> submitTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
-    final prompt = params['prompt'] as String? ?? '';
-    final isVideoTask = params['taskType'] == TaskType.videoGenerate.name;      
-
-    List<String> imagePaths = [];
-    if (isVideoTask) {
-      // For video generation, collect all image inputs
-      final first = params['firstFramePath'] as String?;
-      final last = params['lastFramePath'] as String?;
-      final refs = params['referenceImagePaths'] as List<dynamic>?;
-
-      if (first != null) imagePaths.add(first);
-      if (last != null) imagePaths.add(last);
-      if (refs != null) imagePaths.addAll(refs.cast<String>());
-    } else {
-      imagePaths = galleryState.selectedImages.map((f) => f.path).toList();     
-    }
-
-    if (prompt.isEmpty && imagePaths.isEmpty) return;
-
-    if (isVideoTask && !isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
-      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
-      return;
-    }
-
-    params['imagePrefix'] = galleryState.imagePrefix;
-    params['retryCount'] = retryCount;
-
-    await taskQueue.addTask(
-      imagePaths,
-      modelIdentifier,
-      params,
-      modelIdDisplay: modelIdDisplay,
-      useStream: params['useStream'] ?? useStream,
-      type: params['taskType'] != null
-          ? TaskType.values.firstWhere((e) => e.name == params['taskType'])     
-          : TaskType.imageProcess,
-    );
-
-    addLog('Task submitted with ${imagePaths.length} input images.');
-  }
-
-  Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {
-    if (!isVideoCompatibleModel(modelIdentifier is int ? modelIdentifier : null)) {
-      addLog('Error: Selected model is not compatible with video generation.', level: 'ERROR');
-      return;
-    }
-
-    params['taskType'] = TaskType.videoGenerate.name;
-    await submitTask(modelIdentifier, params, modelIdDisplay: modelIdDisplay);  
   }
 }
