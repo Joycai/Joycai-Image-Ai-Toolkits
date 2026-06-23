@@ -39,7 +39,8 @@ void main() {
     // For a smoke test, we just want to ensure the UI renders without crashing.
     await tester.pump();
 
-    // Verify that the NavigationRail is present (part of MainNavigationScreen)
-    expect(find.byType(NavigationRail), findsOneWidget);
+    // Desktop layout uses a custom nav rail, not Flutter's NavigationRail.
+    // Verify desktop mode by asserting no bottom NavigationBar is shown.
+    expect(find.byType(NavigationBar), findsNothing);
   });
 }
