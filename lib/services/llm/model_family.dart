@@ -33,6 +33,11 @@ enum ModelFamily {
   /// (NewAPI, novicezk/midjourney-proxy, …). Async submit → poll → image URL.
   midjourney,
 
+  /// OpenAI-compatible video generation served at `/v1/videos`
+  /// (Sora 2, grok-imagine, Aliyun Wanxiang, Kling, Vidu, Jimeng, …). Async
+  /// submit → poll → mp4 URL. Routed through the OpenAI transport, not Google.
+  openaiVideo,
+
   /// Anything else routed through an OpenAI-compatible relay (Claude, etc.).
   /// Treated as a plain chat model with no provider-specific extensions.
   other,
@@ -49,6 +54,23 @@ class ModelFamilyClassifier {
         id.contains('midjourney') ||
         id.contains('niji')) {
       return ModelFamily.midjourney;
+    }
+
+    // --- OpenAI-compatible video (Sora-style /v1/videos) ---
+    // Matches the catalog NewAPI exposes under the openai-video format:
+    // sora-2, sora-2-pro, grok-imagine-*, wan2.5-{t2v,i2v}-*, kling-v*, viduq*,
+    // jimeng_* — plus any id with the `t2v` / `i2v` suffix convention.
+    if (id.startsWith('sora') ||
+        id.startsWith('grok-imagine') ||
+        id.startsWith('wan2.5') ||
+        id.startsWith('wan-') ||
+        id.startsWith('kling') ||
+        id.startsWith('viduq') ||
+        id.startsWith('vidu-') ||
+        id.startsWith('jimeng') ||
+        id.contains('-t2v') ||
+        id.contains('-i2v')) {
+      return ModelFamily.openaiVideo;
     }
 
     // --- Google families (order matters: most specific first) ---
@@ -103,7 +125,8 @@ class ModelFamilyClassifier {
   }
 
   /// True for long-running video generation.
-  static bool isVideo(ModelFamily f) => f == ModelFamily.geminiVideo;
+  static bool isVideo(ModelFamily f) =>
+      f == ModelFamily.geminiVideo || f == ModelFamily.openaiVideo;
 
   /// Convenience id-level helper used by the discovery/tagging UI.
   static String inferTag(String modelId) {

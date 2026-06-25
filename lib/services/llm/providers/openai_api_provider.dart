@@ -531,9 +531,14 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     Map<String, dynamic>? options,
     Function(String, {String level})? logger,
   }) async {
-    // Native OpenAI no longer exposes a supported video LRO surface here
-    // (Sora is intentionally out of scope). We keep a simulation hook for
-    // OpenAI-compatible providers that may add one, and for development.
+    final family = ModelFamilyClassifier.classify(config.modelId);
+
+    // Sora 2 / grok-imagine / Wanxiang / Kling / Vidu / Jimeng — all served
+    // under NewAPI's OpenAI-compatible `/v1/videos` surface.
+    if (family == ModelFamily.openaiVideo) {
+      return _submitOpenAIVideo(config, history, options: options, logger: logger);
+    }
+
     final isSimulation = options?['simulation'] == true || config.modelId.startsWith('mock-');
 
     if (isSimulation) {
@@ -543,7 +548,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
     throw UnsupportedError(
       'The model "${config.modelId}" on the OpenAI provider does not support long-running operations. '
-      'Video generation via LRO is currently provided by Google Veo models.'
+      'Use a sora-* / grok-imagine-* / wan2.5-* / kling-* model for video generation.'
     );
   }
 
@@ -572,8 +577,249 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       };
     }
 
+    // Sora-style video task ids start with `video_` (NewAPI / OpenAI Sora
+    // format). Also dispatch by model family for non-prefixed ids that some
+    // upstreams emit (e.g. Wanxiang).
+    final family = ModelFamilyClassifier.classify(config.modelId);
+    if (family == ModelFamily.openaiVideo || operationName.startsWith('video_')) {
+      return _checkOpenAIVideo(config, operationName, logger: logger);
+    }
+
     throw UnsupportedError('Operation "$operationName" is not recognized by OpenAI provider.');
   }
+
+  // ---------------------------------------------------------------------------
+  // OpenAI-compatible video (`/v1/videos`) — Sora 2, grok-imagine, Wanxiang…
+  // ---------------------------------------------------------------------------
+
+  /// Submit a video generation task. The endpoint is multipart/form-data so
+  /// that we can attach `input_reference` as a real file part (NewAPI also
+  /// accepts a Base64 string in that field, but file upload is the spec'd
+  /// shape and avoids inflating the request body unnecessarily).
+  ///
+  /// Reads from `options`:
+  ///   * `seconds` — clip duration (string or int, e.g. "5").
+  ///   * `videoQuality` — "standard" | "high".
+  ///   * `aspectRatio` — passed through verbatim if the upstream accepts it.
+  ///   * `resolution` — used together with aspectRatio to derive `size`.
+  /// And from the user message: `firstFramePath` (LLMReferenceType.firstFrame)
+  /// becomes `input_reference`; any other attachments become `images[]`.
+  Future<String> _submitOpenAIVideo(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    Function(String, {String level})? logger,
+  }) async {
+    final userMsg = history.lastWhere(
+      (m) => m.role == LLMRole.user,
+      orElse: () => history.last,
+    );
+    final prompt = userMsg.content;
+
+    final baseUrl = _baseUrl(config.endpoint);
+    final url = Uri.parse('$baseUrl/videos');
+
+    final size = _resolveVideoSize(options);
+    final seconds = _resolveSeconds(options);
+    final quality = _readString(options, 'videoQuality');
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer ${config.apiKey}';
+    request.fields['model'] = config.modelId;
+    request.fields['prompt'] = prompt;
+    if (seconds != null) request.fields['seconds'] = seconds;
+    if (size != null) request.fields['size'] = size;
+    if (quality != null && quality != 'standard') {
+      request.fields['quality'] = quality;
+    }
+
+    // First-frame attachment → input_reference. Anything beyond that goes
+    // into images[] (Sora spec caps at 7; the executor already trims to the
+    // capability ceiling).
+    LLMAttachment? firstFrame;
+    final extras = <LLMAttachment>[];
+    for (final att in userMsg.attachments) {
+      if (firstFrame == null && att.referenceType == LLMReferenceType.firstFrame) {
+        firstFrame = att;
+      } else {
+        extras.add(att);
+      }
+    }
+    firstFrame ??= userMsg.attachments.isNotEmpty ? userMsg.attachments.first : null;
+    if (firstFrame != null && extras.contains(firstFrame)) {
+      extras.remove(firstFrame);
+    }
+
+    if (firstFrame != null) {
+      final bytes = await _readAttachmentBytes(firstFrame);
+      if (bytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'input_reference',
+          bytes,
+          filename: 'first_frame.${_extForMime(firstFrame.mimeType)}',
+        ));
+      }
+    }
+    for (int i = 0; i < extras.length; i++) {
+      final att = extras[i];
+      final bytes = await _readAttachmentBytes(att);
+      if (bytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'images[]',
+          bytes,
+          filename: 'reference_$i.${_extForMime(att.mimeType)}',
+        ));
+      }
+    }
+
+    logger?.call('Submitting OpenAI video task to: ${url.host}', level: 'DEBUG');
+    final appState = AppState();
+    File? debugFile;
+    if (appState.enableApiDebug) {
+      debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Video Submit)', {
+        'url': url.toString(),
+        'fields': request.fields,
+        'files': request.files.map((f) => f.filename).toList(),
+      });
+    }
+
+    final client = config.createClient();
+    try {
+      final streamed = await client.send(request);
+      final response = await http.Response.fromStream(streamed);
+
+      if (debugFile != null) {
+        await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
+        await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+      }
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('OpenAI video submit failed: ${response.statusCode} - ${response.body}');
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final id = data['id']?.toString();
+      if (id == null || id.isEmpty) {
+        throw Exception('OpenAI video submit returned no id: ${response.body}');
+      }
+      logger?.call('OpenAI video task id: $id', level: 'DEBUG');
+      return id;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Poll a video task and translate the upstream `{status, progress, url}`
+  /// response into the Veo-shaped envelope the task executor already speaks.
+  /// This keeps the executor format-agnostic and reuses the existing download
+  /// path.
+  Future<Map<String, dynamic>> _checkOpenAIVideo(
+    LLMModelConfig config,
+    String taskId, {
+    Function(String, {String level})? logger,
+  }) async {
+    final baseUrl = _baseUrl(config.endpoint);
+    final url = Uri.parse('$baseUrl/videos/$taskId');
+    final headers = _getHeaders(config.apiKey);
+
+    final client = config.createClient();
+    try {
+      final response = await client.get(url, headers: headers);
+      if (response.statusCode != 200) {
+        throw Exception('OpenAI video fetch failed: ${response.statusCode} - ${response.body}');
+      }
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = data['status']?.toString() ?? '';
+
+      if (status == 'succeeded') {
+        // Prefer the explicit URL when the upstream supplies one; otherwise
+        // fall back to the dedicated /content endpoint (which streams the
+        // mp4 with the bearer token).
+        final videoUrl = data['url']?.toString() ?? '$baseUrl/videos/$taskId/content';
+        return {
+          'name': taskId,
+          'done': true,
+          'response': {
+            'generateVideoResponse': {
+              'generatedSamples': [
+                {
+                  'video': {'uri': videoUrl},
+                }
+              ],
+            },
+          },
+        };
+      }
+
+      if (status == 'failed') {
+        final err = data['error'];
+        final msg = err is Map ? (err['message'] ?? err.toString()) : (err?.toString() ?? 'unknown');
+        throw Exception('OpenAI video task $taskId failed: $msg');
+      }
+
+      // processing / queued — relay progress without marking done.
+      return {
+        'name': taskId,
+        'done': false,
+        'progress': data['progress'] ?? 0,
+        'status': status,
+      };
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Map the per-model aspectRatio + resolution options onto a Sora-compatible
+  /// `WxH` size string. Falls back to the upstream default if neither is set.
+  String? _resolveVideoSize(Map<String, dynamic>? options) {
+    if (options == null) return null;
+
+    // Explicit WxH wins.
+    final explicit = options['size'];
+    if (explicit is String && RegExp(r'^\d+x\d+$').hasMatch(explicit)) {
+      return explicit;
+    }
+
+    final aspect = options['aspectRatio']?.toString();
+    final resolution = options['resolution']?.toString() ?? '720p';
+
+    final is1080 = resolution.contains('1080');
+    switch (aspect) {
+      case '16:9':
+        return is1080 ? '1920x1080' : '1280x720';
+      case '9:16':
+        return is1080 ? '1080x1920' : '720x1280';
+      case '1:1':
+        return is1080 ? '1024x1024' : '720x720';
+      case '3:2':
+        return is1080 ? '1620x1080' : '1080x720';
+      case '2:3':
+        return is1080 ? '1080x1620' : '720x1080';
+      default:
+        return null;
+    }
+  }
+
+  String? _resolveSeconds(Map<String, dynamic>? options) {
+    final s = options?['seconds'];
+    if (s == null) return null;
+    return s.toString();
+  }
+
+  String? _readString(Map<String, dynamic>? options, String key) {
+    final v = options?[key];
+    if (v is String && v.isNotEmpty) return v;
+    return null;
+  }
+
+  Future<Uint8List?> _readAttachmentBytes(LLMAttachment att) async {
+    if (att.path != null) return File(att.path!).readAsBytes();
+    if (att.bytes != null) return att.bytes;
+    return null;
+  }
+
+  String _baseUrl(String endpoint) =>
+      endpoint.endsWith('/') ? endpoint.substring(0, endpoint.length - 1) : endpoint;
 
   Map<String, String> _getHeaders(String apiKey) {
     return {

@@ -47,10 +47,21 @@ class ModelCapabilities {
   /// the image parameter controls should be shown).
   final bool isImageGenerator;
 
+  /// True when the model's primary output is a generated video (Veo, Sora,
+  /// grok-imagine, Wanxiang, Kling, …). Drives whether the video panel renders
+  /// per-model controls beyond the shared resolution/aspect dropdowns.
+  final bool isVideoGenerator;
+
   /// The image-generation parameters this family understands. Empty for chat /
   /// multimodal / video models — which is what keeps the wrong controls from
   /// showing up for, say, a GPT-4o chat model or a `gemini-2.5-pro` text model.
   final List<ParamSpec> imageParams;
+
+  /// The video-generation parameters this family understands beyond the shared
+  /// resolution/aspect-ratio controls (e.g. Sora's `seconds`, `quality`).
+  /// Rendered by the video panel via the same per-model dropdown pattern as
+  /// `imageParams`. Empty for Veo (the existing fixed controls cover it).
+  final List<ParamSpec> videoParams;
 
   /// How many reference (input) images this family accepts for generation:
   ///  * `null` — supported with no enforced limit (e.g. nanoBanana).
@@ -60,7 +71,9 @@ class ModelCapabilities {
 
   const ModelCapabilities({
     this.isImageGenerator = false,
+    this.isVideoGenerator = false,
     this.imageParams = const [],
+    this.videoParams = const [],
     this.maxReferenceImages,
   });
 
@@ -97,7 +110,12 @@ class ModelCapabilities {
         return _openaiImage;
       case ModelFamily.midjourney:
         return _midjourney;
+      case ModelFamily.openaiVideo:
+        return _openaiVideo;
       case ModelFamily.geminiVideo:
+        // Veo's panel uses fixed VeoResolution/VeoAspectRatio enums; no extra
+        // capability-driven controls are needed (yet).
+        return const ModelCapabilities(isVideoGenerator: true);
       case ModelFamily.geminiChat:
       case ModelFamily.openaiChat:
       case ModelFamily.other:
@@ -269,6 +287,44 @@ class ModelCapabilities {
         ],
       ),
       _openaiQualityParam,
+    ],
+  );
+
+  /// Sora 2 / grok-imagine / Wanxiang / Kling / Vidu / Jimeng served via
+  /// NewAPI's OpenAI-compatible `/v1/videos` surface. Submit → poll → mp4 URL.
+  ///
+  /// Accepts up to one `input_reference` image (mapped from `firstFramePath`)
+  /// and up to 7 reference images (mapped to `images[]`). The shared
+  /// aspectRatio + resolution dropdowns in the video panel still drive the
+  /// upstream `size` field; the parameters below are the openaiVideo-only
+  /// extensions that wouldn't make sense for Veo.
+  static const _openaiVideo = ModelCapabilities(
+    isVideoGenerator: true,
+    maxReferenceImages: 7,
+    videoParams: [
+      ParamSpec(
+        key: 'seconds',
+        labelKey: 'videoSeconds',
+        control: ParamControl.segmented,
+        defaultValue: '5',
+        options: [
+          ParamOption('4'),
+          ParamOption('5'),
+          ParamOption('8'),
+          ParamOption('10'),
+          ParamOption('12'),
+        ],
+      ),
+      ParamSpec(
+        key: 'videoQuality',
+        labelKey: 'quality',
+        control: ParamControl.segmented,
+        defaultValue: 'standard',
+        options: [
+          ParamOption('standard'),
+          ParamOption('high'),
+        ],
+      ),
     ],
   );
 

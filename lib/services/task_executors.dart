@@ -361,10 +361,12 @@ Do not include any other text or markdown formatting.
     try {
       final db = DatabaseService();
       String? apiKey;
+      String? providerType;
       if (task.modelDbId != null) {
         final models = await db.getModels();
         final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
         if (model != null && model.channelId != null) {
+          providerType = model.type;
           final channel = await db.getChannel(model.channelId!);
           if (channel != null) {
             apiKey = channel.apiKey;
@@ -374,7 +376,15 @@ Do not include any other text or markdown formatting.
 
       final request = await client.getUrl(Uri.parse(url));
       if (apiKey != null) {
-        request.headers.add('x-goog-api-key', apiKey);
+        // Veo URIs sit on Google's CDN and want `x-goog-api-key`; OpenAI/Sora
+        // URIs sit on the relay and want `Authorization: Bearer`. The header
+        // each side doesn't recognise is silently ignored, so we add both for
+        // any non-Google provider rather than try to sniff the URL host.
+        if (providerType == 'google-genai') {
+          request.headers.add('x-goog-api-key', apiKey);
+        } else {
+          request.headers.add('Authorization', 'Bearer $apiKey');
+        }
       }
 
       final response = await request.close();

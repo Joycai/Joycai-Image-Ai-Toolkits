@@ -1629,6 +1629,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get videoAspectRatio => '视频比例';
 
   @override
+  String get videoSeconds => '时长';
+
+  @override
+  String get videoQualityStandard => '标准';
+
+  @override
+  String get videoQualityHigh => '高清';
+
+  @override
   String get openInSystemPlayer => '在系统播放器中打开';
 
   @override
@@ -3294,6 +3303,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get videoAspectRatio => '影片比例';
+
+  @override
+  String get videoSeconds => '時長';
+
+  @override
+  String get videoQualityStandard => '標準';
+
+  @override
+  String get videoQualityHigh => '高畫質';
 
   @override
   String get openInSystemPlayer => '在系統播放器中打開';

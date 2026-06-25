@@ -8,6 +8,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
+import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/collapsible_card.dart';
@@ -60,13 +61,16 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     if (selectedModel == null) return;
 
-    final params = {
+    final params = <String, dynamic>{
       'prompt': _promptController.text,
       'resolution': appState.lastVideoResolution.value,
       'aspectRatio': appState.lastVideoAspectRatio.value,
       'referenceImagePaths': uiState.videoReferenceImages.map((i) => i.path).toList(),
       'firstFramePath': uiState.videoFirstFrame?.path,
       'lastFramePath': uiState.videoLastFrame?.path,
+      // Per-family video extras (e.g. Sora's seconds / quality). Empty for
+      // families with no capability-driven controls.
+      ...appState.effectiveVideoParams(selectedModel.modelId),
     };
 
     appState.submitVideoTask(selectedModel.id, params, modelIdDisplay: selectedModel.modelName);
@@ -301,18 +305,137 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 child: DropdownButtonFormField<VeoAspectRatio>(
                   decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
                   initialValue: appState.lastVideoAspectRatio,
-                  items: VeoAspectRatio.values.map((v) => DropdownMenuItem(     
+                  items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
                     value: v,
                     child: Text(v.value),
                   )).toList(),
-                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v), 
+                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
                 ),
               ),
             ],
           ),
+          // Per-model extras (seconds / quality for openaiVideo; nothing for
+          // Veo). Rebuilds when the user changes a value or switches model.
+          if (selectedModelDbId != null) ...[
+            const SizedBox(height: 8),
+            _buildVideoParamControls(l10n, videoModels, selectedModelDbId, appState),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildVideoParamControls(
+    AppLocalizations l10n,
+    List<LLMModel> videoModels,
+    int selectedModelDbId,
+    AppState appState,
+  ) {
+    final model = videoModels.cast<LLMModel?>().firstWhere(
+      (m) => m?.id == selectedModelDbId,
+      orElse: () => null,
+    );
+    if (model == null) return const SizedBox.shrink();
+
+    final caps = ModelCapabilities.forModel(model.modelId);
+    if (caps.videoParams.isEmpty) return const SizedBox.shrink();
+
+    // Rebuild when a param changes.
+    context.select<AppState, int>((s) => s.videoParamsRevision);
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final spec in caps.videoParams) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(_videoParamLabel(l10n, spec.labelKey),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: _buildVideoParamControl(spec, model.modelId, appState, colorScheme, l10n),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoParamControl(
+    ParamSpec spec,
+    String modelId,
+    AppState appState,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    final current = appState.getVideoParam(modelId, spec);
+    switch (spec.control) {
+      case ParamControl.dropdown:
+        return DropdownButton<String>(
+          isExpanded: true,
+          value: current,
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+          underline: Container(height: 1, color: colorScheme.outlineVariant),
+          items: spec.options
+              .map((o) => DropdownMenuItem(
+                    value: o.value,
+                    child: Text(_videoOptionLabel(l10n, spec.key, o.value)),
+                  ))
+              .toList(),
+          onChanged: (v) {
+            if (v != null) appState.setVideoParam(modelId, spec.key, v);
+          },
+        );
+      case ParamControl.segmented:
+        return SegmentedButton<String>(
+          showSelectedIcon: false,
+          style: SegmentedButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            textStyle: const TextStyle(fontSize: 10),
+          ),
+          segments: spec.options
+              .map((o) => ButtonSegment(
+                    value: o.value,
+                    label: Text(_videoOptionLabel(l10n, spec.key, o.value)),
+                  ))
+              .toList(),
+          selected: {current},
+          onSelectionChanged: (v) => appState.setVideoParam(modelId, spec.key, v.first),
+        );
+    }
+  }
+
+  String _videoParamLabel(AppLocalizations l10n, String labelKey) {
+    switch (labelKey) {
+      case 'videoSeconds':
+        return l10n.videoSeconds;
+      case 'quality':
+        return l10n.quality;
+      default:
+        return labelKey;
+    }
+  }
+
+  String _videoOptionLabel(AppLocalizations l10n, String paramKey, String value) {
+    if (paramKey == 'videoQuality') {
+      switch (value) {
+        case 'standard':
+          return l10n.videoQualityStandard;
+        case 'high':
+          return l10n.videoQualityHigh;
+      }
+    }
+    if (paramKey == 'seconds') return '${value}s';
+    return value;
   }
 }
 

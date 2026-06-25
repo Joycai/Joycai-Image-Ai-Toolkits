@@ -3167,6 +3167,24 @@ abstract class AppLocalizations {
   /// **'Video Aspect Ratio'**
   String get videoAspectRatio;
 
+  /// No description provided for @videoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get videoSeconds;
+
+  /// No description provided for @videoQualityStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get videoQualityStandard;
+
+  /// No description provided for @videoQualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get videoQualityHigh;
+
   /// No description provided for @openInSystemPlayer.
   ///
   /// In en, this message translates to:

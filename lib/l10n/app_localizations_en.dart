@@ -1667,6 +1667,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoAspectRatio => 'Video Aspect Ratio';
 
   @override
+  String get videoSeconds => 'Duration';
+
+  @override
+  String get videoQualityStandard => 'Standard';
+
+  @override
+  String get videoQualityHigh => 'High';
+
+  @override
   String get openInSystemPlayer => 'Open in System Player';
 
   @override

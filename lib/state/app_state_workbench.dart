@@ -91,6 +91,45 @@ extension AppStateWorkbench on AppState {
     return result;
   }
 
+  // --- Per-family video generation parameters ------------------------------
+
+  Future<void> loadVideoParams() async {
+    final raw = await _db.getSetting('workbench_video_params');
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        _videoParamStore = decoded.map((k, v) => MapEntry(k, v.toString()));
+      } catch (_) {/* ignore malformed */}
+    }
+  }
+
+  String getVideoParam(String modelId, ParamSpec spec) {
+    final stored = _videoParamStore['${_familyKey(modelId)}.${spec.key}'];
+    return spec.normalize(stored);
+  }
+
+  Future<void> setVideoParam(String modelId, String paramKey, String value) async {
+    _videoParamStore = {
+      ..._videoParamStore,
+      '${_familyKey(modelId)}.$paramKey': value,
+    };
+    videoParamsRevision++;
+    await _db.saveSetting('workbench_video_params', jsonEncode(_videoParamStore));
+    notify();
+  }
+
+  /// Validated parameter map of video-only extras (seconds, quality, …) for
+  /// the model. Empty for families without [ModelCapabilities.videoParams]
+  /// (e.g. Veo, which still uses its fixed enums).
+  Map<String, dynamic> effectiveVideoParams(String modelId) {
+    final caps = ModelCapabilities.forModel(modelId);
+    final result = <String, dynamic>{};
+    for (final spec in caps.videoParams) {
+      result[spec.key] = getVideoParam(modelId, spec);
+    }
+    return result;
+  }
+
   Future<void> updateVideoConfig({
     String? modelId,
     VeoResolution? resolution,

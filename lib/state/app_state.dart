@@ -125,6 +125,12 @@ class AppState extends ChangeNotifier {
   // Bumped whenever an image param changes, so selectors can rebuild the
   // parameter controls without exposing the internal store.
   int imageParamsRevision = 0;
+  // Per-family video-generation parameter store (parallel to imageParamStore).
+  // Holds e.g. Sora's `seconds` / `videoQuality` under
+  // `openaiVideo.seconds` / `openaiVideo.videoQuality`. Veo currently has no
+  // capability-driven extras so it doesn't write here.
+  Map<String, String> _videoParamStore = {};
+  int videoParamsRevision = 0;
   String? lastVideoModelId;
   VeoResolution lastVideoResolution = VeoResolution.r720p;
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
@@ -158,13 +164,26 @@ class AppState extends ChangeNotifier {
 
   List<LLMModel> get videoModels => _models.where((m) =>
       m.tag == ModelTag.video.value &&
-      m.type == 'google-genai'
+      _supportsVideoForType(m)
   ).toList();
+
+  /// Video LRO is currently implemented by:
+  ///   * `google-genai` — Veo via `:predictLongRunning`
+  ///   * `openai-api` — Sora / grok-imagine / Wanxiang etc. via `/v1/videos`,
+  ///     gated on the model id classifying as [ModelFamily.openaiVideo] so
+  ///     that chat-only ids on the same channel don't slip into the picker.
+  bool _supportsVideoForType(LLMModel m) {
+    if (m.type == 'google-genai') return true;
+    if (m.type == 'openai-api') {
+      return ModelFamilyClassifier.classify(m.modelId) == ModelFamily.openaiVideo;
+    }
+    return false;
+  }
 
   bool isVideoCompatibleModel(int? modelDbId) {
     if (modelDbId == null) return false;
     final model = _models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
-    return model != null && model.type == 'google-genai';
+    return model != null && _supportsVideoForType(model);
   }
 
   Future<int> getDownloaderCacheSize() async {
@@ -284,6 +303,7 @@ class AppState extends ChangeNotifier {
 
     lastSelectedModelId = await _db.getSetting('last_model_id');
     await loadImageParams();
+    await loadVideoParams();
     lastVideoModelId = await _db.getSetting('last_video_model_id');
     lastVideoResolution = VeoResolution.fromString(await _db.getSetting('last_video_resolution'));
     lastVideoAspectRatio = VeoAspectRatio.fromString(await _db.getSetting('last_video_aspect_ratio'));

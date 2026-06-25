@@ -1634,6 +1634,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get videoAspectRatio => '動画アスペクト比';
 
   @override
+  String get videoSeconds => '長さ';
+
+  @override
+  String get videoQualityStandard => '標準';
+
+  @override
+  String get videoQualityHigh => '高画質';
+
+  @override
   String get openInSystemPlayer => 'システムプレイヤーで開く';
 
   @override
