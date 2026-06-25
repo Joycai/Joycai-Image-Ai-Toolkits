@@ -21,6 +21,7 @@ import 'screens/workbench/workbench_screen.dart';
 import 'services/llm/llm_service.dart';
 import 'services/llm/model_discovery_service.dart';
 import 'services/llm/providers/google_genai_provider.dart';
+import 'services/llm/providers/midjourney_proxy_provider.dart';
 import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'services/task_queue_service.dart';
@@ -33,11 +34,14 @@ void main() async {
 
   await NotificationService().init();
 
+  final midjourneyProvider = MidjourneyProxyProvider();
   LLMService().registerProvider('google-genai', GoogleGenAIProvider());
   LLMService().registerProvider('openai-api', OpenAIAPIProvider());
+  LLMService().registerProvider('midjourney-proxy', midjourneyProvider);
 
   ModelDiscoveryService().registerProvider('google-genai', GoogleDiscoveryProvider());
   ModelDiscoveryService().registerProvider('openai-api', OpenAIAPIProvider());
+  ModelDiscoveryService().registerProvider('midjourney-proxy', midjourneyProvider);
 
   final packageInfo = await PackageInfo.fromPlatform();
 

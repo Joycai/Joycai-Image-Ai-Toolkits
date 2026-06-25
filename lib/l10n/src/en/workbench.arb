@@ -69,6 +69,10 @@
   "qualityLow": "Low",
   "qualityMedium": "Medium",
   "qualityHigh": "High",
+  "mjVersion": "Version",
+  "mjMode": "Mode",
+  "mjStylize": "Stylize",
+  "mjChaos": "Chaos",
   "referenceImagesNotSupported": "This model does not support reference images. Selected images will be ignored.",
   "referenceImagesLimited": "This model accepts at most {count} reference image(s); the rest will be ignored.",
   "@referenceImagesLimited": {

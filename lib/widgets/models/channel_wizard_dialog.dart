@@ -28,12 +28,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   static const int _totalSteps = 5;
 
   // Step 1: Protocol
-  String _selectedProtocol = 'openai-api-rest'; // 'openai-api-rest', 'google-genai-rest'
+  String _selectedProtocol = 'openai-api-rest';
+  // 'openai-api-rest' | 'google-genai-rest' | ChannelDialect.midjourneyProxy
 
   // Step 2: Provider
-  String _selectedProvider = 'openai-official'; 
-  // OpenAI: 'openai-official', 'google-compatible', 'custom'
-  // Google: 'google-official', 'custom'
+  String _selectedProvider = 'openai-official';
+  // OpenAI: 'openai-official', 'google-compatible', 'newapi', 'custom'
+  // Google: 'google-official', 'newapi', 'custom'
+  // Midjourney: 'midjourney-proxy' (host URL only)
   final TextEditingController _customEndpointCtrl = TextEditingController();
 
   // Step 3: API Key
@@ -61,11 +63,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         // Reset provider selection when protocol changes
         if (_selectedProtocol == 'openai-api-rest') {
           _selectedProvider = 'openai-official';
+        } else if (_selectedProtocol == ChannelDialect.midjourneyProxy) {
+          _selectedProvider = 'midjourney-proxy';
         } else {
           _selectedProvider = 'google-official';
         }
       }
-      
+
       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       setState(() => _currentStep++);
     } else {
@@ -99,7 +103,15 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     // bearer-token auth (and, for Gemini, to skip Google's key conventions).
     String channelType = _selectedProtocol;
 
-    if (_selectedProvider == 'newapi') {
+    if (_selectedProtocol == ChannelDialect.midjourneyProxy) {
+      // MJ proxy: keep the host root verbatim; the provider builds /mj/* paths.
+      channelType = ChannelDialect.midjourneyProxy;
+      var raw = _customEndpointCtrl.text.trim();
+      while (raw.endsWith('/')) {
+        raw = raw.substring(0, raw.length - 1);
+      }
+      finalEndpoint = raw;
+    } else if (_selectedProvider == 'newapi') {
       if (_selectedProtocol == 'openai-api-rest') {
         channelType = ChannelDialect.newApiOpenAI;
         finalEndpoint = _resolveNewApiEndpoint(_customEndpointCtrl.text, '/v1');
@@ -233,7 +245,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   bool _isNextEnabled() {
-    final needsEndpoint = _selectedProvider == 'custom' || _selectedProvider == 'newapi';
+    final needsEndpoint = _selectedProvider == 'custom' ||
+        _selectedProvider == 'newapi' ||
+        _selectedProvider == 'midjourney-proxy';
     if (_currentStep == 1 && needsEndpoint && _customEndpointCtrl.text.trim().isEmpty) return false;
     if (_currentStep == 2 && _apiKeyCtrl.text.trim().isEmpty) return false;
     return true;
@@ -276,12 +290,48 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           isSelected: _selectedProtocol == 'google-genai-rest',
           onTap: () => setState(() => _selectedProtocol = 'google-genai-rest'),
         ),
+        const SizedBox(height: 16),
+        _buildSelectionCard(
+          title: l10n.protocolMidjourney,
+          subtitle: l10n.protocolMidjourneyDesc,
+          icon: Icons.brush_outlined,
+          isSelected: _selectedProtocol == ChannelDialect.midjourneyProxy,
+          onTap: () => setState(() => _selectedProtocol = ChannelDialect.midjourneyProxy),
+        ),
       ],
     );
   }
 
   Widget _buildProviderStep(AppLocalizations l10n) {
     final isOpenAIProtocol = _selectedProtocol == 'openai-api-rest';
+    final isMidjourneyProtocol = _selectedProtocol == ChannelDialect.midjourneyProxy;
+
+    if (isMidjourneyProtocol) {
+      // MJ proxy has a single provider shape — only the host root is needed.
+      return _buildStepContainer(
+        children: [
+          _buildSelectionCard(
+            title: l10n.protocolMidjourney,
+            subtitle: l10n.protocolMidjourneyDesc,
+            icon: Icons.brush_outlined,
+            isSelected: true,
+            onTap: () {},
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _customEndpointCtrl,
+            decoration: InputDecoration(
+              labelText: l10n.endpointUrl,
+              hintText: 'https://your-newapi.com',
+              border: const OutlineInputBorder(),
+              helperText: l10n.midjourneyEndpointHint,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      );
+    }
+
     List<Widget> providers = [];
     if (isOpenAIProtocol) {
       providers = [

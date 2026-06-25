@@ -654,6 +654,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolGoogleDesc => 'Google Gemini 官方 REST API';
 
   @override
+  String get protocolMidjourney => 'Midjourney 代理';
+
+  @override
+  String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 协议';
+
+  @override
+  String get midjourneyEndpointHint =>
+      '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
+
+  @override
   String get providerOpenAIOfficial => 'OpenAI 官方';
 
   @override
@@ -1393,6 +1403,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get qualityHigh => '高';
+
+  @override
+  String get mjVersion => '版本';
+
+  @override
+  String get mjMode => '模式';
+
+  @override
+  String get mjStylize => '风格化';
+
+  @override
+  String get mjChaos => '混乱度';
 
   @override
   String get referenceImagesNotSupported => '该模型不支持参考图，所选图片将被忽略。';
@@ -2308,6 +2330,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolGoogleDesc => '官方 Google Gemini REST API';
 
   @override
+  String get protocolMidjourney => 'Midjourney 代理';
+
+  @override
+  String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 介面';
+
+  @override
+  String get midjourneyEndpointHint =>
+      '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
+
+  @override
   String get providerOpenAIOfficial => 'OpenAI 官方';
 
   @override
@@ -3047,6 +3079,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get qualityHigh => '高';
+
+  @override
+  String get mjVersion => '版本';
+
+  @override
+  String get mjMode => '模式';
+
+  @override
+  String get mjStylize => '風格化';
+
+  @override
+  String get mjChaos => '混亂度';
 
   @override
   String get referenceImagesNotSupported => '此模型不支援參考圖，所選圖片將被忽略。';

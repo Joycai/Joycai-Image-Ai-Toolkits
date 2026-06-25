@@ -655,6 +655,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolGoogleDesc => '公式Google Gemini REST API';
 
   @override
+  String get protocolMidjourney => 'Midjourney プロキシ';
+
+  @override
+  String get protocolMidjourneyDesc =>
+      'midjourney-proxy / NewAPI の /mj/* インターフェース';
+
+  @override
+  String get midjourneyEndpointHint =>
+      'ホストのルートURL（例: https://your-newapi.com）を入力してください。/mj/* パスは自動的に追加されます。';
+
+  @override
   String get providerOpenAIOfficial => 'OpenAI公式';
 
   @override
@@ -1396,6 +1407,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get qualityHigh => '高';
+
+  @override
+  String get mjVersion => 'バージョン';
+
+  @override
+  String get mjMode => 'モード';
+
+  @override
+  String get mjStylize => 'スタイル化';
+
+  @override
+  String get mjChaos => 'カオス';
 
   @override
   String get referenceImagesNotSupported =>

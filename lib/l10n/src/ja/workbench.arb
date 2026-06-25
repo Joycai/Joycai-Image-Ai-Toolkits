@@ -69,6 +69,10 @@
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",
+  "mjVersion": "バージョン",
+  "mjMode": "モード",
+  "mjStylize": "スタイル化",
+  "mjChaos": "カオス",
   "referenceImagesNotSupported": "このモデルは参照画像に対応していません。選択した画像は無視されます。",
   "referenceImagesLimited": "このモデルは参照画像を最大 {count} 枚まで使用できます。残りは無視されます。",
   "@referenceImagesLimited": {

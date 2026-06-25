@@ -662,6 +662,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get protocolGoogleDesc => 'Official Google Gemini REST API';
 
   @override
+  String get protocolMidjourney => 'Midjourney Proxy';
+
+  @override
+  String get protocolMidjourneyDesc =>
+      'midjourney-proxy / NewAPI /mj/* surface';
+
+  @override
+  String get midjourneyEndpointHint =>
+      'Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.';
+
+  @override
   String get providerOpenAIOfficial => 'OpenAI Official';
 
   @override
@@ -1427,6 +1438,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qualityHigh => 'High';
+
+  @override
+  String get mjVersion => 'Version';
+
+  @override
+  String get mjMode => 'Mode';
+
+  @override
+  String get mjStylize => 'Stylize';
+
+  @override
+  String get mjChaos => 'Chaos';
 
   @override
   String get referenceImagesNotSupported =>

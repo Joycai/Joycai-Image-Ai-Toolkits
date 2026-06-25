@@ -69,6 +69,10 @@
   "qualityLow": "低",
   "qualityMedium": "中",
   "qualityHigh": "高",
+  "mjVersion": "版本",
+  "mjMode": "模式",
+  "mjStylize": "风格化",
+  "mjChaos": "混乱度",
   "referenceImagesNotSupported": "该模型不支持参考图，所选图片将被忽略。",
   "referenceImagesLimited": "该模型最多支持 {count} 张参考图，其余将被忽略。",
   "@referenceImagesLimited": {

@@ -229,6 +229,14 @@ class ModelSelectionSection extends StatelessWidget {
         return l10n.resolution;
       case 'quality':
         return l10n.quality;
+      case 'mjVersion':
+        return l10n.mjVersion;
+      case 'mjMode':
+        return l10n.mjMode;
+      case 'mjStylize':
+        return l10n.mjStylize;
+      case 'mjChaos':
+        return l10n.mjChaos;
       default:
         return labelKey;
     }

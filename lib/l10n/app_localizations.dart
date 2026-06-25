@@ -1313,6 +1313,24 @@ abstract class AppLocalizations {
   /// **'Official Google Gemini REST API'**
   String get protocolGoogleDesc;
 
+  /// No description provided for @protocolMidjourney.
+  ///
+  /// In en, this message translates to:
+  /// **'Midjourney Proxy'**
+  String get protocolMidjourney;
+
+  /// No description provided for @protocolMidjourneyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'midjourney-proxy / NewAPI /mj/* surface'**
+  String get protocolMidjourneyDesc;
+
+  /// No description provided for @midjourneyEndpointHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.'**
+  String get midjourneyEndpointHint;
+
   /// No description provided for @providerOpenAIOfficial.
   ///
   /// In en, this message translates to:
@@ -2716,6 +2734,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'High'**
   String get qualityHigh;
+
+  /// No description provided for @mjVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get mjVersion;
+
+  /// No description provided for @mjMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get mjMode;
+
+  /// No description provided for @mjStylize.
+  ///
+  /// In en, this message translates to:
+  /// **'Stylize'**
+  String get mjStylize;
+
+  /// No description provided for @mjChaos.
+  ///
+  /// In en, this message translates to:
+  /// **'Chaos'**
+  String get mjChaos;
 
   /// No description provided for @referenceImagesNotSupported.
   ///

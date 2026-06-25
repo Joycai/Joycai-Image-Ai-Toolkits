@@ -29,6 +29,10 @@ enum ModelFamily {
   /// OpenAI chat / reasoning models, e.g. `gpt-4o`, `gpt-5`, `o3`.
   openaiChat,
 
+  /// Midjourney / Niji image generation served through a midjourney-proxy
+  /// (NewAPI, novicezk/midjourney-proxy, …). Async submit → poll → image URL.
+  midjourney,
+
   /// Anything else routed through an OpenAI-compatible relay (Claude, etc.).
   /// Treated as a plain chat model with no provider-specific extensions.
   other,
@@ -38,6 +42,14 @@ class ModelFamilyClassifier {
   /// Classify a raw model id (case-insensitive).
   static ModelFamily classify(String modelId) {
     final id = modelId.toLowerCase();
+
+    // --- Midjourney family (matches MJ / Niji ids served via proxy) ---
+    if (id.startsWith('mj_') ||
+        id == 'mj' ||
+        id.contains('midjourney') ||
+        id.contains('niji')) {
+      return ModelFamily.midjourney;
+    }
 
     // --- Google families (order matters: most specific first) ---
     if (id.contains('veo')) return ModelFamily.geminiVideo;
@@ -86,7 +98,8 @@ class ModelFamilyClassifier {
   static bool isImageGeneration(ModelFamily f) {
     return f == ModelFamily.geminiImage ||
         f == ModelFamily.geminiImagen ||
-        f == ModelFamily.openaiImage;
+        f == ModelFamily.openaiImage ||
+        f == ModelFamily.midjourney;
   }
 
   /// True for long-running video generation.
@@ -98,7 +111,8 @@ class ModelFamilyClassifier {
     if (isVideo(family)) return 'video';
     if (family == ModelFamily.geminiImage ||
         family == ModelFamily.geminiImagen ||
-        family == ModelFamily.openaiImage) {
+        family == ModelFamily.openaiImage ||
+        family == ModelFamily.midjourney) {
       return 'image';
     }
     if (family == ModelFamily.geminiChat) return 'multimodal';

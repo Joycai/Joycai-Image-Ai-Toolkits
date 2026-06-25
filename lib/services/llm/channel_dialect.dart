@@ -29,6 +29,11 @@ class ChannelDialect {
   /// New API relay, Gemini native format (bearer-token auth).
   static const String newApiGemini = 'newapi-gemini';
 
+  /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface. The endpoint
+  /// is the host root (e.g. `https://your-newapi-host.com`); the provider
+  /// appends `/mj/submit/imagine` etc. Authenticated with bearer token.
+  static const String midjourneyProxy = 'midjourney-proxy';
+
   /// Channel dialects that speak the Google/Gemini wire format and are served
   /// by the `google-genai` provider.
   static const Set<String> _geminiDialects = {
@@ -37,12 +42,20 @@ class ChannelDialect {
     newApiGemini,
   };
 
+  /// Channel dialects served by the `midjourney-proxy` provider.
+  static const Set<String> _midjourneyDialects = {
+    midjourneyProxy,
+  };
+
   /// The registered [ILLMProvider] / discovery-provider key for [channelType].
   ///
-  /// Everything that is not a Gemini dialect is served by the OpenAI transport
-  /// (this includes [openAIRest] and [newApiOpenAI]).
-  static String providerType(String channelType) =>
-      _geminiDialects.contains(channelType) ? 'google-genai' : 'openai-api';
+  /// Everything that is not a Gemini or Midjourney dialect is served by the
+  /// OpenAI transport (this includes [openAIRest] and [newApiOpenAI]).
+  static String providerType(String channelType) {
+    if (_geminiDialects.contains(channelType)) return 'google-genai';
+    if (_midjourneyDialects.contains(channelType)) return 'midjourney-proxy';
+    return 'openai-api';
+  }
 
   /// True for New API's Gemini format, which authenticates with a bearer token
   /// (no `x-goog-api-key` header and no `?key=` query parameter).
