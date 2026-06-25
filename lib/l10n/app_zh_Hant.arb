@@ -700,5 +700,38 @@
   "filesAppSuffix": " (檔案 App)",
   "tapToPick": "點擊選取",
   "goToGallery": "前往圖庫",
-  "binaryModeActive": "二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩"
+  "binaryModeActive": "二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩",
+  "imageSizePickerTitle": "影像尺寸",
+  "imageSizeAuto": "自動",
+  "imageSizeAutoDesc": "由模型自行決定尺寸",
+  "imageSizePresets": "預設",
+  "imageSizeCustom": "自訂",
+  "imageSizeWidth": "寬度",
+  "imageSizeHeight": "高度",
+  "imageSizeSnapHint": "兩邊在套用時會自動對齊到 16 像素的整數倍。",
+  "sizeRuleMultiple16": "兩邊均為 16 的整數倍",
+  "sizeRuleMaxEdge": "長邊 {long}px ≤ 3840",
+  "@sizeRuleMaxEdge": {
+    "placeholders": {
+      "long": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleAspect": "長寬比 {ratio} ≤ 3:1",
+  "@sizeRuleAspect": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeRulePixels": "總像素 {mp} 落在 0.66–8.29 MP 區間",
+  "@sizeRulePixels": {
+    "placeholders": {
+      "mp": {
+        "type": "String"
+      }
+    }
+  }
 }

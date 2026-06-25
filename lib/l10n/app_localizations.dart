@@ -3286,6 +3286,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Binary mode active — background hidden for clean mask export'**
   String get binaryModeActive;
+
+  /// No description provided for @imageSizePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Size'**
+  String get imageSizePickerTitle;
+
+  /// No description provided for @imageSizeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get imageSizeAuto;
+
+  /// No description provided for @imageSizeAutoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the model choose the size'**
+  String get imageSizeAutoDesc;
+
+  /// No description provided for @imageSizePresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get imageSizePresets;
+
+  /// No description provided for @imageSizeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get imageSizeCustom;
+
+  /// No description provided for @imageSizeWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get imageSizeWidth;
+
+  /// No description provided for @imageSizeHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get imageSizeHeight;
+
+  /// No description provided for @imageSizeSnapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Both edges snap to multiples of 16 px on commit.'**
+  String get imageSizeSnapHint;
+
+  /// No description provided for @sizeRuleMultiple16.
+  ///
+  /// In en, this message translates to:
+  /// **'Both edges are multiples of 16'**
+  String get sizeRuleMultiple16;
+
+  /// No description provided for @sizeRuleMaxEdge.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest edge {long} px ≤ 3840'**
+  String sizeRuleMaxEdge(int long);
+
+  /// No description provided for @sizeRuleAspect.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect ratio {ratio} ≤ 3:1'**
+  String sizeRuleAspect(String ratio);
+
+  /// No description provided for @sizeRulePixels.
+  ///
+  /// In en, this message translates to:
+  /// **'Total {mp} within 0.66–8.29 MP'**
+  String sizeRulePixels(String mp);
 }
 
 class _AppLocalizationsDelegate

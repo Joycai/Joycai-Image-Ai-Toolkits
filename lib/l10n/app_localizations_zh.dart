@@ -1690,6 +1690,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get binaryModeActive => '二值化模式已启用 — 背景已隐藏以导出纯净蒙版';
+
+  @override
+  String get imageSizePickerTitle => '图像尺寸';
+
+  @override
+  String get imageSizeAuto => '自动';
+
+  @override
+  String get imageSizeAutoDesc => '由模型自行决定尺寸';
+
+  @override
+  String get imageSizePresets => '预设';
+
+  @override
+  String get imageSizeCustom => '自定义';
+
+  @override
+  String get imageSizeWidth => '宽度';
+
+  @override
+  String get imageSizeHeight => '高度';
+
+  @override
+  String get imageSizeSnapHint => '两边在提交时会自动对齐到 16 像素的整数倍。';
+
+  @override
+  String get sizeRuleMultiple16 => '两边均为 16 的整数倍';
+
+  @override
+  String sizeRuleMaxEdge(int long) {
+    return '长边 ${long}px ≤ 3840';
+  }
+
+  @override
+  String sizeRuleAspect(String ratio) {
+    return '长宽比 $ratio ≤ 3:1';
+  }
+
+  @override
+  String sizeRulePixels(String mp) {
+    return '总像素 $mp 在 0.66–8.29 MP 之间';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3366,4 +3408,46 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get binaryModeActive => '二值化模式已啟用 — 背景已隱藏以匯出純淨遮罩';
+
+  @override
+  String get imageSizePickerTitle => '影像尺寸';
+
+  @override
+  String get imageSizeAuto => '自動';
+
+  @override
+  String get imageSizeAutoDesc => '由模型自行決定尺寸';
+
+  @override
+  String get imageSizePresets => '預設';
+
+  @override
+  String get imageSizeCustom => '自訂';
+
+  @override
+  String get imageSizeWidth => '寬度';
+
+  @override
+  String get imageSizeHeight => '高度';
+
+  @override
+  String get imageSizeSnapHint => '兩邊在套用時會自動對齊到 16 像素的整數倍。';
+
+  @override
+  String get sizeRuleMultiple16 => '兩邊均為 16 的整數倍';
+
+  @override
+  String sizeRuleMaxEdge(int long) {
+    return '長邊 ${long}px ≤ 3840';
+  }
+
+  @override
+  String sizeRuleAspect(String ratio) {
+    return '長寬比 $ratio ≤ 3:1';
+  }
+
+  @override
+  String sizeRulePixels(String mp) {
+    return '總像素 $mp 落在 0.66–8.29 MP 區間';
+  }
 }

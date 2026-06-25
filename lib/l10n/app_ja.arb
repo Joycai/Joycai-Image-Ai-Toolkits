@@ -700,5 +700,38 @@
   "filesAppSuffix": " (ファイル App)",
   "tapToPick": "タップして選択",
   "goToGallery": "ギャラリーへ",
-  "binaryModeActive": "バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示"
+  "binaryModeActive": "バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示",
+  "imageSizePickerTitle": "画像サイズ",
+  "imageSizeAuto": "自動",
+  "imageSizeAutoDesc": "モデルにサイズを任せる",
+  "imageSizePresets": "プリセット",
+  "imageSizeCustom": "カスタム",
+  "imageSizeWidth": "幅",
+  "imageSizeHeight": "高さ",
+  "imageSizeSnapHint": "適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。",
+  "sizeRuleMultiple16": "両辺が 16 の倍数",
+  "sizeRuleMaxEdge": "長辺 {long}px ≤ 3840",
+  "@sizeRuleMaxEdge": {
+    "placeholders": {
+      "long": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeRuleAspect": "アスペクト比 {ratio} ≤ 3:1",
+  "@sizeRuleAspect": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeRulePixels": "総画素 {mp} は 0.66–8.29 MP の範囲内",
+  "@sizeRulePixels": {
+    "placeholders": {
+      "mp": {
+        "type": "String"
+      }
+    }
+  }
 }

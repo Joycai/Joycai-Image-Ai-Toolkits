@@ -1696,4 +1696,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get binaryModeActive => 'バイナリモード有効 — クリーンなマスクエクスポートのため背景非表示';
+
+  @override
+  String get imageSizePickerTitle => '画像サイズ';
+
+  @override
+  String get imageSizeAuto => '自動';
+
+  @override
+  String get imageSizeAutoDesc => 'モデルにサイズを任せる';
+
+  @override
+  String get imageSizePresets => 'プリセット';
+
+  @override
+  String get imageSizeCustom => 'カスタム';
+
+  @override
+  String get imageSizeWidth => '幅';
+
+  @override
+  String get imageSizeHeight => '高さ';
+
+  @override
+  String get imageSizeSnapHint => '適用時、両辺は 16 ピクセルの倍数に自動でスナップされます。';
+
+  @override
+  String get sizeRuleMultiple16 => '両辺が 16 の倍数';
+
+  @override
+  String sizeRuleMaxEdge(int long) {
+    return '長辺 ${long}px ≤ 3840';
+  }
+
+  @override
+  String sizeRuleAspect(String ratio) {
+    return 'アスペクト比 $ratio ≤ 3:1';
+  }
+
+  @override
+  String sizeRulePixels(String mp) {
+    return '総画素 $mp は 0.66–8.29 MP の範囲内';
+  }
 }

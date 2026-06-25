@@ -1731,4 +1731,47 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get binaryModeActive =>
       'Binary mode active — background hidden for clean mask export';
+
+  @override
+  String get imageSizePickerTitle => 'Image Size';
+
+  @override
+  String get imageSizeAuto => 'Auto';
+
+  @override
+  String get imageSizeAutoDesc => 'Let the model choose the size';
+
+  @override
+  String get imageSizePresets => 'Presets';
+
+  @override
+  String get imageSizeCustom => 'Custom';
+
+  @override
+  String get imageSizeWidth => 'Width';
+
+  @override
+  String get imageSizeHeight => 'Height';
+
+  @override
+  String get imageSizeSnapHint =>
+      'Both edges snap to multiples of 16 px on commit.';
+
+  @override
+  String get sizeRuleMultiple16 => 'Both edges are multiples of 16';
+
+  @override
+  String sizeRuleMaxEdge(int long) {
+    return 'Longest edge $long px ≤ 3840';
+  }
+
+  @override
+  String sizeRuleAspect(String ratio) {
+    return 'Aspect ratio $ratio ≤ 3:1';
+  }
+
+  @override
+  String sizeRulePixels(String mp) {
+    return 'Total $mp within 0.66–8.29 MP';
+  }
 }

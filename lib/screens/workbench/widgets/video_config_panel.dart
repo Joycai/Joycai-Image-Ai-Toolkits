@@ -411,6 +411,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           selected: {current},
           onSelectionChanged: (v) => appState.setVideoParam(modelId, spec.key, v.first),
         );
+      case ParamControl.customSize:
+        // Not currently used by any video family — video panels render their
+        // own resolution + aspect controls. Render a disabled placeholder
+        // rather than silently throw if a future family opts in.
+        return const SizedBox.shrink();
     }
   }
 

@@ -195,5 +195,26 @@
   "filesAppSuffix": " (文件 App)",
   "tapToPick": "点击选取",
   "goToGallery": "前往图库",
-  "binaryModeActive": "二值化模式已启用 — 背景已隐藏以导出纯净蒙版"
+  "binaryModeActive": "二值化模式已启用 — 背景已隐藏以导出纯净蒙版",
+  "imageSizePickerTitle": "图像尺寸",
+  "imageSizeAuto": "自动",
+  "imageSizeAutoDesc": "由模型自行决定尺寸",
+  "imageSizePresets": "预设",
+  "imageSizeCustom": "自定义",
+  "imageSizeWidth": "宽度",
+  "imageSizeHeight": "高度",
+  "imageSizeSnapHint": "两边在提交时会自动对齐到 16 像素的整数倍。",
+  "sizeRuleMultiple16": "两边均为 16 的整数倍",
+  "sizeRuleMaxEdge": "长边 {long}px ≤ 3840",
+  "@sizeRuleMaxEdge": {
+    "placeholders": { "long": { "type": "int" } }
+  },
+  "sizeRuleAspect": "长宽比 {ratio} ≤ 3:1",
+  "@sizeRuleAspect": {
+    "placeholders": { "ratio": { "type": "String" } }
+  },
+  "sizeRulePixels": "总像素 {mp} 在 0.66–8.29 MP 之间",
+  "@sizeRulePixels": {
+    "placeholders": { "mp": { "type": "String" } }
+  }
 }

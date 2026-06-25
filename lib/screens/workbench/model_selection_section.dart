@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../../widgets/dialogs/image_size_picker_dialog.dart';
 
 class ModelSelectionSection extends StatelessWidget {
   final List<Map<String, dynamic>> availableModels;
@@ -205,6 +206,39 @@ class ModelSelectionSection extends StatelessWidget {
               .toList(),
           selected: {current},
           onSelectionChanged: (v) => onImageParamChanged(modelId, spec.key, v.first),
+        );
+        break;
+      case ParamControl.customSize:
+        // Render as a button that displays the current value and opens the
+        // size-picker dialog. The dialog handles preset chips + free-form
+        // WxH input + per-rule live validation.
+        control = OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            minimumSize: const Size(0, 30),
+            visualDensity: VisualDensity.compact,
+            textStyle: const TextStyle(fontSize: 12),
+            alignment: Alignment.centerLeft,
+          ),
+          onPressed: () async {
+            final picked = await showImageSizePickerDialog(
+              context: context,
+              spec: spec,
+              currentValue: current,
+            );
+            if (picked != null) onImageParamChanged(modelId, spec.key, picked);
+          },
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _optionLabel(l10n, spec.key, current).replaceAll('x', '×'),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(Icons.tune, size: 14),
+            ],
+          ),
         );
         break;
     }

@@ -1,7 +1,13 @@
 import 'model_family.dart';
 
 /// How a parameter should be rendered in the workbench config UI.
-enum ParamControl { dropdown, segmented }
+///
+/// `customSize` is a specialised control for image-size parameters whose set
+/// of legal values isn't enumerable — the spec lists popular presets, but the
+/// dialog also lets the user type any WxH that satisfies the param's
+/// [ParamSpec.customValidator]. Used by gpt-image-2, where OpenAI accepts any
+/// pixel dimensions meeting four numeric constraints.
+enum ParamControl { dropdown, segmented, customSize }
 
 /// A single selectable option for a parameter.
 ///
@@ -25,20 +31,80 @@ class ParamSpec {
   final List<ParamOption> options;
   final String defaultValue;
 
+  /// Optional predicate that accepts user-typed values outside the discrete
+  /// [options] list (e.g. arbitrary WxH for gpt-image-2). When set,
+  /// [isValid] returns true if the value is either a known option *or* the
+  /// validator accepts it.
+  ///
+  /// Must be a pure / `const`-compatible top-level function so this class
+  /// stays `const`-constructible.
+  final bool Function(String value)? customValidator;
+
   const ParamSpec({
     required this.key,
     required this.labelKey,
     required this.control,
     required this.options,
     required this.defaultValue,
+    this.customValidator,
   });
 
-  bool isValid(String? value) => options.any((o) => o.value == value);
+  bool isValid(String? value) {
+    if (value == null) return false;
+    if (options.any((o) => o.value == value)) return true;
+    final validator = customValidator;
+    return validator != null && validator(value);
+  }
 
   /// Returns [value] when it is a valid option for this spec, otherwise the
   /// default. Guarantees the UI never tries to render an out-of-range value
   /// and the provider never receives one (important when switching families).
   String normalize(String? value) => isValid(value) ? value! : defaultValue;
+}
+
+// ---------------------------------------------------------------------------
+// gpt-image-2 size constraints
+// ---------------------------------------------------------------------------
+
+/// Validates a `WxH` size string against OpenAI's gpt-image-2 rules. Used by
+/// both the capability spec's [ParamSpec.customValidator] and the picker
+/// dialog's per-edge breakdown.
+///
+/// Rules (per OpenAI's published gpt-image-2 spec):
+///   * Both edges must be multiples of 16.
+///   * Max edge ≤ 3840 px.
+///   * Long-edge / short-edge ratio ≤ 3:1.
+///   * Total pixels in [655_360, 8_294_400] — equivalent to ~0.66 MP–~8.29 MP.
+bool isValidOpenAIImage2Size(String value) {
+  // Accept the `auto` sentinel separately (used by `_openaiImage2.defaultValue`).
+  if (value == 'auto') return true;
+  final match = RegExp(r'^(\d+)x(\d+)$').firstMatch(value);
+  if (match == null) return false;
+  final w = int.tryParse(match.group(1)!);
+  final h = int.tryParse(match.group(2)!);
+  if (w == null || h == null || w <= 0 || h <= 0) return false;
+  return checkOpenAIImage2SizeRules(w, h).every((r) => r.passes);
+}
+
+/// Per-rule breakdown for live feedback in the picker dialog. Each entry maps
+/// to a localized message key consumed by the UI layer.
+class SizeRuleResult {
+  final String labelKey;
+  final bool passes;
+  const SizeRuleResult(this.labelKey, this.passes);
+}
+
+List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
+  final long = w > h ? w : h;
+  final short = w > h ? h : w;
+  final pixels = w * h;
+  return [
+    SizeRuleResult('sizeRuleMultiple16', w % 16 == 0 && h % 16 == 0),
+    SizeRuleResult('sizeRuleMaxEdge', long <= 3840),
+    SizeRuleResult('sizeRuleAspect', short > 0 && (long / short) <= 3.0),
+    SizeRuleResult(
+        'sizeRulePixels', pixels >= 655360 && pixels <= 8294400),
+  ];
 }
 
 /// What a model family can do, and which parameters apply to it.
@@ -428,10 +494,11 @@ class ModelCapabilities {
     ],
   );
 
-  /// Native OpenAI image v2 (`gpt-image-2`). Same transport as gpt-image-1 but
-  /// with the expanded "popular sizes" set up to 4K (the API also accepts any
-  /// custom size meeting its constraints: edges multiples of 16, max edge
-  /// 3840px, ratio <= 3:1, 0.66–8.29 MP — the provider passes WxH through).
+  /// Native OpenAI image v2 (`gpt-image-2`). The size param renders as a
+  /// custom picker (preset chips + free WxH input). OpenAI accepts any
+  /// dimensions meeting four rules — see [isValidOpenAIImage2Size] — so the
+  /// preset list below is only quick-pick scaffolding; the dialog enforces
+  /// the actual constraints.
   static const _openaiImage2 = ModelCapabilities(
     isImageGenerator: true,
     maxReferenceImages: 16,
@@ -439,7 +506,7 @@ class ModelCapabilities {
       ParamSpec(
         key: 'imageSize',
         labelKey: 'resolution',
-        control: ParamControl.dropdown,
+        control: ParamControl.customSize,
         defaultValue: 'auto',
         options: [
           ParamOption('auto'),
@@ -451,6 +518,7 @@ class ModelCapabilities {
           ParamOption('3840x2160'),
           ParamOption('2160x3840'),
         ],
+        customValidator: isValidOpenAIImage2Size,
       ),
       _openaiQualityParam,
     ],
