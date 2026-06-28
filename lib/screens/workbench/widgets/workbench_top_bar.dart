@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
@@ -157,7 +156,7 @@ class WorkbenchTopBar extends StatelessWidget {
                         const SizedBox(width: 5),
                         Text(
                           channelName,
-                          style: GoogleFonts.ibmPlexMono(
+                          style: TextStyle(fontFamily: 'monospace',
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                             color: colorScheme.onSurfaceVariant,

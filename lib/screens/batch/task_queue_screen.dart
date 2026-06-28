@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -113,7 +112,7 @@ class TaskQueueScreen extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.ibmPlexMono(
+                    style: TextStyle(fontFamily: 'monospace',
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: colorScheme.onSurfaceVariant,
@@ -350,7 +349,7 @@ class _TaskTileState extends State<_TaskTile> {
                               ),
                               child: Text(
                                 modelLabel,
-                                style: GoogleFonts.ibmPlexMono(
+                                style: TextStyle(fontFamily: 'monospace',
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w500,
                                   color: colorScheme.onSurfaceVariant,
@@ -392,7 +391,7 @@ class _TaskTileState extends State<_TaskTile> {
                             child: Text(
                               subText,
                               textAlign: TextAlign.right,
-                              style: GoogleFonts.ibmPlexMono(
+                              style: TextStyle(fontFamily: 'monospace',
                                 fontSize: 11,
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -455,7 +454,7 @@ class _TaskTileState extends State<_TaskTile> {
                       children: [
                         Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                         if (modelLabel.isNotEmpty)
-                          Text(modelLabel, style: GoogleFonts.ibmPlexMono(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                          Text(modelLabel, style: TextStyle(fontFamily: 'monospace',fontSize: 10, color: colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -605,7 +604,7 @@ class _TaskTileState extends State<_TaskTile> {
             ),
             child: Text(
               task.logs.last,
-              style: GoogleFonts.ibmPlexMono(fontSize: 11, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(fontFamily: 'monospace',fontSize: 11, color: colorScheme.onSurfaceVariant),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),

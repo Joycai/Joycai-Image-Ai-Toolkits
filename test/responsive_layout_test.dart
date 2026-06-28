@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
@@ -11,10 +10,6 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    // Force GoogleFonts to load IBM Plex Sans from the bundled assets instead
-    // of fetching over the network (HTTP is blocked in the test binding, which
-    // otherwise throws and makes the tree never settle).
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   Future<void> testScreenAtSize(WidgetTester tester, Size size, String description) async {
