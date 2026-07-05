@@ -15,6 +15,7 @@ import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/markdown_editor.dart';
 import 'config_action_bar.dart';
 import 'config_section_header.dart';
+import 'queue_settings_dialog.dart';
 
 class VideoConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -180,17 +181,31 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     // Primary action — pinned at the top on the mobile bottom sheet (mirroring
     // the image panel), or at the bottom of the scroll on desktop.
-    final generateButton = SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
-        icon: const Icon(Icons.movie_outlined),
-        label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final generateButton = Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
+            icon: const Icon(Icons.movie_outlined),
+            label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        // Queue settings (concurrency / retry / prefix / safety thresholds),
+        // shared with the image workbench.
+        IconButton.filledTonal(
+          onPressed: () => showQueueSettingsDialog(context),
+          icon: const Icon(Icons.settings_outlined, size: 20),
+          tooltip: l10n.queueSettings,
+          style: IconButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+      ],
     );
 
     if (widget.scrollController != null) {

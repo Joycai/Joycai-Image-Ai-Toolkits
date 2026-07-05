@@ -1774,4 +1774,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String sizeRulePixels(String mp) {
     return 'Total $mp within 0.66–8.29 MP';
   }
+
+  @override
+  String get safetySettings => 'Safety Settings';
+
+  @override
+  String get safetySettingsDesc =>
+      'Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.';
+
+  @override
+  String get safetyCategoryHarassment => 'Harassment';
+
+  @override
+  String get safetyCategoryHateSpeech => 'Hate speech';
+
+  @override
+  String get safetyCategorySexuallyExplicit => 'Sexually explicit';
+
+  @override
+  String get safetyCategoryDangerousContent => 'Dangerous content';
+
+  @override
+  String get safetyThresholdBlockLowAndAbove => 'Block most';
+
+  @override
+  String get safetyThresholdBlockMediumAndAbove => 'Block some';
+
+  @override
+  String get safetyThresholdBlockOnlyHigh => 'Block few';
+
+  @override
+  String get safetyThresholdBlockNone => 'Block none';
+
+  @override
+  String get safetyThresholdOff => 'Filter off';
 }

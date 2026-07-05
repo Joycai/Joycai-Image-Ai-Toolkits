@@ -733,5 +733,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "safetySettings": "安全設定",
+  "safetySettingsDesc": "Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。",
+  "safetyCategoryHarassment": "騷擾內容",
+  "safetyCategoryHateSpeech": "仇恨言論",
+  "safetyCategorySexuallyExplicit": "露骨色情",
+  "safetyCategoryDangerousContent": "危險內容",
+  "safetyThresholdBlockLowAndAbove": "封鎖大部分",
+  "safetyThresholdBlockMediumAndAbove": "封鎖一部分",
+  "safetyThresholdBlockOnlyHigh": "封鎖少部分",
+  "safetyThresholdBlockNone": "全部不封鎖",
+  "safetyThresholdOff": "關閉過濾"
 }

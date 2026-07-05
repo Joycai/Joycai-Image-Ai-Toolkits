@@ -733,5 +733,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "safetySettings": "セーフティ設定",
+  "safetySettingsDesc": "Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。",
+  "safetyCategoryHarassment": "ハラスメント",
+  "safetyCategoryHateSpeech": "ヘイトスピーチ",
+  "safetyCategorySexuallyExplicit": "性的表現",
+  "safetyCategoryDangerousContent": "危険なコンテンツ",
+  "safetyThresholdBlockLowAndAbove": "ほとんどブロック",
+  "safetyThresholdBlockMediumAndAbove": "一部ブロック",
+  "safetyThresholdBlockOnlyHigh": "少しブロック",
+  "safetyThresholdBlockNone": "ブロックしない",
+  "safetyThresholdOff": "フィルタ無効"
 }

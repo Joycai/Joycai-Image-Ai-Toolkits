@@ -15,6 +15,7 @@ import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
 import 'widgets/config_section_header.dart';
+import 'widgets/queue_settings_dialog.dart';
 
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -26,8 +27,7 @@ class WorkbenchConfigPanel extends StatefulWidget {
 
 class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   late MarkdownTextEditingController _promptController;
-  late TextEditingController _prefixController;
-  
+
   bool _isModelSettingsExpanded = false;
 
   List<Prompt> _allUserPrompts = [];
@@ -38,14 +38,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     super.initState();
     final appState = Provider.of<AppState>(context, listen: false);
     _promptController = MarkdownTextEditingController(text: appState.lastPrompt);
-    _prefixController = TextEditingController(text: appState.imagePrefix);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrompts());
   }
 
   @override
   void dispose() {
     _promptController.dispose();
-    _prefixController.dispose();
     super.dispose();
   }
 
@@ -87,7 +85,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
-    final imagePrefix = context.select<AppState, String>((s) => s.imagePrefix);
     // Rebuild parameter controls when the stored image params change.
     context.select<AppState, int>((s) => s.imageParamsRevision);
 
@@ -118,10 +115,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         selection: TextSelection.collapsed(offset: lastPrompt.length),
       );
     }
-    if (_prefixController.text != imagePrefix) {
-      _prefixController.text = imagePrefix;
-    }
-
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
@@ -237,7 +230,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   const SizedBox(width: 10),
                   // Queue Settings
                   IconButton.filledTonal(
-                    onPressed: () => _showQueueSettings(context, l10n),
+                    onPressed: () => showQueueSettingsDialog(context),
                     icon: const Icon(Icons.settings_outlined, size: 20),
                     tooltip: l10n.queueSettings,
                     style: IconButton.styleFrom(
@@ -501,60 +494,4 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     );
   }
 
-  void _showQueueSettings(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final appState = Provider.of<AppState>(context);
-          return AlertDialog(
-            title: Text(l10n.queueSettings),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
-                Slider(
-                  value: appState.concurrencyLimit.toDouble(),
-                  min: 1,
-                  max: 8,
-                  divisions: 7,
-                  onChanged: (v) {
-                    appState.setConcurrency(v.toInt());
-                    setDialogState(() {});
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text(l10n.retryCount(appState.retryCount)),
-                Slider(
-                  value: appState.retryCount.toDouble(),
-                  min: 0,
-                  max: 5,
-                  divisions: 5,
-                  onChanged: (v) {
-                    appState.setRetryCount(v.toInt());
-                    setDialogState(() {});
-                  },
-                ),
-                const Divider(),
-                const SizedBox(height: 8),
-                Text(l10n.filenamePrefix, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _prefixController,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    border: const OutlineInputBorder(),
-                    hintText: l10n.prefixHint,
-                  ),
-                  onChanged: (v) => appState.setImagePrefix(v),
-                ),
-              ],
-            ),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.close))],
-          );
-        },
-      ),
-    );
-  }
 }

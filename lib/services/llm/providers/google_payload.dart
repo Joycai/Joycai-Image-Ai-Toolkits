@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../../../core/safety_settings.dart';
 import '../llm_types.dart';
 
 /// Pure request-payload builders and response parsing for the Google GenAI
@@ -202,7 +203,8 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 }
 
 /// Standard `:generateContent` request body: system instruction, multimodal
-/// contents, image-generation config and permissive safety settings.
+/// contents, image-generation config and per-request safety settings (from
+/// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
 Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
@@ -265,11 +267,7 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
     if (systemInstruction != null) "system_instruction": systemInstruction,
     "contents": contents,
     "generationConfig": generationConfig,
-    "safetySettings": [
-      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-    ]
+    "safetySettings":
+        SafetySettings.toApiList(options?[SafetySettings.paramKey]),
   };
 }

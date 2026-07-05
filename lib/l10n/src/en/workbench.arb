@@ -207,14 +207,37 @@
   "sizeRuleMultiple16": "Both edges are multiples of 16",
   "sizeRuleMaxEdge": "Longest edge {long} px ≤ 3840",
   "@sizeRuleMaxEdge": {
-    "placeholders": { "long": { "type": "int" } }
+    "placeholders": {
+      "long": {
+        "type": "int"
+      }
+    }
   },
   "sizeRuleAspect": "Aspect ratio {ratio} ≤ 3:1",
   "@sizeRuleAspect": {
-    "placeholders": { "ratio": { "type": "String" } }
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
   },
   "sizeRulePixels": "Total {mp} within 0.66–8.29 MP",
   "@sizeRulePixels": {
-    "placeholders": { "mp": { "type": "String" } }
-  }
+    "placeholders": {
+      "mp": {
+        "type": "String"
+      }
+    }
+  },
+  "safetySettings": "Safety Settings",
+  "safetySettingsDesc": "Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.",
+  "safetyCategoryHarassment": "Harassment",
+  "safetyCategoryHateSpeech": "Hate speech",
+  "safetyCategorySexuallyExplicit": "Sexually explicit",
+  "safetyCategoryDangerousContent": "Dangerous content",
+  "safetyThresholdBlockLowAndAbove": "Block most",
+  "safetyThresholdBlockMediumAndAbove": "Block some",
+  "safetyThresholdBlockOnlyHigh": "Block few",
+  "safetyThresholdBlockNone": "Block none",
+  "safetyThresholdOff": "Filter off"
 }

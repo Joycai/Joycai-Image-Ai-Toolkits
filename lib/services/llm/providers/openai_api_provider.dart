@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/safety_settings.dart';
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
@@ -67,6 +68,9 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.apiKey);
     final payload = _prepareChatPayload(config.modelId, history, options, isStreaming: false);
+    if (payload.containsKey('safety_settings')) {
+      logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+    }
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -155,6 +159,9 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.apiKey);
     final payload = _prepareChatPayload(config.modelId, history, options, isStreaming: true);
+    if (payload.containsKey('safety_settings')) {
+      logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
+    }
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -899,12 +906,8 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
   void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dynamic>? options) {
     payload["modalities"] = ["image", "text"];
 
-    payload["safety_settings"] = [
-      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-    ];
+    payload["safety_settings"] =
+        SafetySettings.toApiList(options?[SafetySettings.paramKey]);
 
     if (options != null) {
       final imageConfig = <String, dynamic>{};

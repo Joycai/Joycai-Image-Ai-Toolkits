@@ -182,6 +182,9 @@ extension AppStateWorkbench on AppState {
 
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
+    // Gemini safety thresholds travel with the task so payload builders can
+    // apply them per request (Map<String,String>, JSON-safe for persistence).
+    params[SafetySettings.paramKey] = Map<String, String>.from(safetyThresholds);
 
     await taskQueue.addTask(
       imagePaths,

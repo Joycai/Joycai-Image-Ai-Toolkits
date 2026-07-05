@@ -10,6 +10,7 @@ import '../llm_provider_interface.dart';
 import '../llm_types.dart';
 import '../model_discovery_service.dart';
 import '../model_family.dart';
+import '../../../core/safety_settings.dart';
 import 'google_auth.dart';
 import 'google_payload.dart';
 
@@ -65,6 +66,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = prepareGooglePayload(history, options, config.endpoint);
+    logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -152,6 +154,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = prepareGooglePayload(history, options, config.endpoint);
+    logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -248,6 +251,12 @@ class GoogleGenAIProvider implements ILLMProvider {
     
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
     final payload = prepareVeoPayload(history, options);
+
+    // Veo's :predictLongRunning surface has no safetySettings field — the
+    // user-configured thresholds only apply to generateContent models.
+    if (options?[SafetySettings.paramKey] != null) {
+      logger?.call('Safety settings not supported by Veo API — skipped.', level: 'DEBUG');
+    }
 
     // Debug logging for the user to see what's happening
     logger?.call('POST URL: $url', level: 'DEBUG');

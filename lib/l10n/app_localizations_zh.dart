@@ -1732,6 +1732,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String sizeRulePixels(String mp) {
     return '总像素 $mp 在 0.66–8.29 MP 之间';
   }
+
+  @override
+  String get safetySettings => '安全设置';
+
+  @override
+  String get safetySettingsDesc =>
+      'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
+
+  @override
+  String get safetyCategoryHarassment => '骚扰内容';
+
+  @override
+  String get safetyCategoryHateSpeech => '仇恨言论';
+
+  @override
+  String get safetyCategorySexuallyExplicit => '露骨色情';
+
+  @override
+  String get safetyCategoryDangerousContent => '危险内容';
+
+  @override
+  String get safetyThresholdBlockLowAndAbove => '屏蔽大部分';
+
+  @override
+  String get safetyThresholdBlockMediumAndAbove => '屏蔽一部分';
+
+  @override
+  String get safetyThresholdBlockOnlyHigh => '屏蔽少部分';
+
+  @override
+  String get safetyThresholdBlockNone => '全部不屏蔽';
+
+  @override
+  String get safetyThresholdOff => '关闭过滤';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3450,4 +3484,38 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String sizeRulePixels(String mp) {
     return '總像素 $mp 落在 0.66–8.29 MP 區間';
   }
+
+  @override
+  String get safetySettings => '安全設定';
+
+  @override
+  String get safetySettingsDesc =>
+      'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
+
+  @override
+  String get safetyCategoryHarassment => '騷擾內容';
+
+  @override
+  String get safetyCategoryHateSpeech => '仇恨言論';
+
+  @override
+  String get safetyCategorySexuallyExplicit => '露骨色情';
+
+  @override
+  String get safetyCategoryDangerousContent => '危險內容';
+
+  @override
+  String get safetyThresholdBlockLowAndAbove => '封鎖大部分';
+
+  @override
+  String get safetyThresholdBlockMediumAndAbove => '封鎖一部分';
+
+  @override
+  String get safetyThresholdBlockOnlyHigh => '封鎖少部分';
+
+  @override
+  String get safetyThresholdBlockNone => '全部不封鎖';
+
+  @override
+  String get safetyThresholdOff => '關閉過濾';
 }

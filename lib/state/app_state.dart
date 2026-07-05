@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../core/safety_settings.dart';
 import '../l10n/app_localizations.dart';
 import '../services/llm/model_capabilities.dart';
 import '../services/llm/model_family.dart';
@@ -97,6 +98,9 @@ class AppState extends ChangeNotifier {
   bool setupCompleted = true;
   int concurrencyLimit = 2;
   int retryCount = 0;
+  // Per-category Gemini safety thresholds (category → threshold), applied to
+  // every image/video generation request. See [SafetySettings].
+  Map<String, String> safetyThresholds = SafetySettings.defaults();
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
@@ -261,6 +265,14 @@ class AppState extends ChangeNotifier {
       retryCount = int.tryParse(savedRetry) ?? 0;
     }
 
+    final savedSafety = await _db.getSetting('safety_thresholds');
+    if (savedSafety != null && savedSafety.isNotEmpty) {
+      try {
+        safetyThresholds =
+            SafetySettings.normalize(jsonDecode(savedSafety) as Map);
+      } catch (_) {/* keep defaults on malformed data */}
+    }
+
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';
     isSidebarExpanded = (await _db.getSetting('is_sidebar_expanded') ?? 'true') == 'true';
@@ -384,6 +396,13 @@ class AppState extends ChangeNotifier {
     retryCount = count;
     await _db.saveSetting('retry_count', count.toString());
     addLog('Retry count set to $count');
+    notifyListeners();
+  }
+
+  Future<void> setSafetyThreshold(String category, String threshold) async {
+    safetyThresholds = {...safetyThresholds, category: threshold};
+    await _db.saveSetting('safety_thresholds', jsonEncode(safetyThresholds));
+    addLog('Safety threshold ${category.replaceFirst('HARM_CATEGORY_', '')} set to $threshold');
     notifyListeners();
   }
 

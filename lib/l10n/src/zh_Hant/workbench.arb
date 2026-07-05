@@ -204,14 +204,37 @@
   "sizeRuleMultiple16": "兩邊均為 16 的整數倍",
   "sizeRuleMaxEdge": "長邊 {long}px ≤ 3840",
   "@sizeRuleMaxEdge": {
-    "placeholders": { "long": { "type": "int" } }
+    "placeholders": {
+      "long": {
+        "type": "int"
+      }
+    }
   },
   "sizeRuleAspect": "長寬比 {ratio} ≤ 3:1",
   "@sizeRuleAspect": {
-    "placeholders": { "ratio": { "type": "String" } }
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
   },
   "sizeRulePixels": "總像素 {mp} 落在 0.66–8.29 MP 區間",
   "@sizeRulePixels": {
-    "placeholders": { "mp": { "type": "String" } }
-  }
+    "placeholders": {
+      "mp": {
+        "type": "String"
+      }
+    }
+  },
+  "safetySettings": "安全設定",
+  "safetySettingsDesc": "Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。",
+  "safetyCategoryHarassment": "騷擾內容",
+  "safetyCategoryHateSpeech": "仇恨言論",
+  "safetyCategorySexuallyExplicit": "露骨色情",
+  "safetyCategoryDangerousContent": "危險內容",
+  "safetyThresholdBlockLowAndAbove": "封鎖大部分",
+  "safetyThresholdBlockMediumAndAbove": "封鎖一部分",
+  "safetyThresholdBlockOnlyHigh": "封鎖少部分",
+  "safetyThresholdBlockNone": "全部不封鎖",
+  "safetyThresholdOff": "關閉過濾"
 }

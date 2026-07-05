@@ -862,5 +862,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "safetySettings": "安全设置",
+  "safetySettingsDesc": "Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。",
+  "safetyCategoryHarassment": "骚扰内容",
+  "safetyCategoryHateSpeech": "仇恨言论",
+  "safetyCategorySexuallyExplicit": "露骨色情",
+  "safetyCategoryDangerousContent": "危险内容",
+  "safetyThresholdBlockLowAndAbove": "屏蔽大部分",
+  "safetyThresholdBlockMediumAndAbove": "屏蔽一部分",
+  "safetyThresholdBlockOnlyHigh": "屏蔽少部分",
+  "safetyThresholdBlockNone": "全部不屏蔽",
+  "safetyThresholdOff": "关闭过滤"
 }

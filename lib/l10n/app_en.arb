@@ -862,5 +862,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "safetySettings": "Safety Settings",
+  "safetySettingsDesc": "Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.",
+  "safetyCategoryHarassment": "Harassment",
+  "safetyCategoryHateSpeech": "Hate speech",
+  "safetyCategorySexuallyExplicit": "Sexually explicit",
+  "safetyCategoryDangerousContent": "Dangerous content",
+  "safetyThresholdBlockLowAndAbove": "Block most",
+  "safetyThresholdBlockMediumAndAbove": "Block some",
+  "safetyThresholdBlockOnlyHigh": "Block few",
+  "safetyThresholdBlockNone": "Block none",
+  "safetyThresholdOff": "Filter off"
 }

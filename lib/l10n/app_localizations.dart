@@ -3358,6 +3358,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total {mp} within 0.66–8.29 MP'**
   String sizeRulePixels(String mp);
+
+  /// No description provided for @safetySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Settings'**
+  String get safetySettings;
+
+  /// No description provided for @safetySettingsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini content-filter thresholds, applied to every request (strict → permissive). Not supported by Veo/Imagen.'**
+  String get safetySettingsDesc;
+
+  /// No description provided for @safetyCategoryHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get safetyCategoryHarassment;
+
+  /// No description provided for @safetyCategoryHateSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate speech'**
+  String get safetyCategoryHateSpeech;
+
+  /// No description provided for @safetyCategorySexuallyExplicit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexually explicit'**
+  String get safetyCategorySexuallyExplicit;
+
+  /// No description provided for @safetyCategoryDangerousContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Dangerous content'**
+  String get safetyCategoryDangerousContent;
+
+  /// No description provided for @safetyThresholdBlockLowAndAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'Block most'**
+  String get safetyThresholdBlockLowAndAbove;
+
+  /// No description provided for @safetyThresholdBlockMediumAndAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'Block some'**
+  String get safetyThresholdBlockMediumAndAbove;
+
+  /// No description provided for @safetyThresholdBlockOnlyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Block few'**
+  String get safetyThresholdBlockOnlyHigh;
+
+  /// No description provided for @safetyThresholdBlockNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Block none'**
+  String get safetyThresholdBlockNone;
+
+  /// No description provided for @safetyThresholdOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter off'**
+  String get safetyThresholdOff;
 }
 
 class _AppLocalizationsDelegate

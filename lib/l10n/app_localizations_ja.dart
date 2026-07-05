@@ -1738,4 +1738,38 @@ class AppLocalizationsJa extends AppLocalizations {
   String sizeRulePixels(String mp) {
     return '総画素 $mp は 0.66–8.29 MP の範囲内';
   }
+
+  @override
+  String get safetySettings => 'セーフティ設定';
+
+  @override
+  String get safetySettingsDesc =>
+      'Gemini コンテンツフィルタのしきい値。各リクエストに適用されます（厳格 → 寛容）。Veo/Imagen は非対応。';
+
+  @override
+  String get safetyCategoryHarassment => 'ハラスメント';
+
+  @override
+  String get safetyCategoryHateSpeech => 'ヘイトスピーチ';
+
+  @override
+  String get safetyCategorySexuallyExplicit => '性的表現';
+
+  @override
+  String get safetyCategoryDangerousContent => '危険なコンテンツ';
+
+  @override
+  String get safetyThresholdBlockLowAndAbove => 'ほとんどブロック';
+
+  @override
+  String get safetyThresholdBlockMediumAndAbove => '一部ブロック';
+
+  @override
+  String get safetyThresholdBlockOnlyHigh => '少しブロック';
+
+  @override
+  String get safetyThresholdBlockNone => 'ブロックしない';
+
+  @override
+  String get safetyThresholdOff => 'フィルタ無効';
 }
