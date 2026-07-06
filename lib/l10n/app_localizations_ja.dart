@@ -684,6 +684,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerCustomDesc => 'セルフホストまたはサードパーティプロバイダー';
 
   @override
+  String get protocolXai => 'xAI (Grok) API';
+
+  @override
+  String get providerXaiOfficial => 'xAI 公式';
+
+  @override
+  String get providerXaiOfficialDesc =>
+      'api.x.ai · Grok チャット + ネイティブ Imagine 動画';
+
+  @override
   String get providerNewApiOpenAI => 'New API（OpenAI 形式）';
 
   @override

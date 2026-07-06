@@ -74,6 +74,9 @@ class _SetupWizardState extends State<SetupWizard> {
       case 'newapi-gemini':
         _endpointController.text = 'https://your-newapi-host.com/v1beta';
         break;
+      case 'xai-api-rest':
+        _endpointController.text = 'https://api.x.ai/v1';
+        break;
       default:
         _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
@@ -307,7 +310,7 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
     String endpointHint = "";
-    if (_channelType == 'openai-api-rest' || _channelType == 'newapi-openai') {
+    if (_channelType == 'openai-api-rest' || _channelType == 'newapi-openai' || _channelType == 'xai-api-rest') {
       endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
     } else {
       endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
@@ -339,6 +342,7 @@ class _SetupWizardState extends State<SetupWizard> {
               DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API')),
               DropdownMenuItem(value: 'newapi-openai', child: Text('New API (OpenAI format)')),
               DropdownMenuItem(value: 'newapi-gemini', child: Text('New API (Gemini format)')),
+              DropdownMenuItem(value: 'xai-api-rest', child: Text('xAI (Grok) API')),
             ],
             onChanged: (v) {
               setState(() {

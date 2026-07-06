@@ -124,6 +124,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         finalEndpoint = 'https://api.openai.com/v1';
       } else if (_selectedProvider == 'google-compatible') {
         finalEndpoint = 'https://generativelanguage.googleapis.com/v1beta/openai';
+      } else if (_selectedProvider == 'xai-official') {
+        // xAI: OpenAI-compatible chat, but native async video generation —
+        // the dedicated dialect tells the transport to use xAI's video API.
+        channelType = ChannelDialect.xaiApi;
+        finalEndpoint = 'https://api.x.ai/v1';
       } else {
         finalEndpoint = _customEndpointCtrl.text.trim();
       }
@@ -349,6 +354,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           icon: Icons.swap_horiz,
           isSelected: _selectedProvider == 'google-compatible',
           onTap: () => setState(() => _selectedProvider = 'google-compatible'),
+        ),
+        const SizedBox(height: 12),
+        _buildSelectionCard(
+          title: l10n.providerXaiOfficial,
+          subtitle: l10n.providerXaiOfficialDesc,
+          icon: Icons.rocket_launch_outlined,
+          isSelected: _selectedProvider == 'xai-official',
+          onTap: () => setState(() => _selectedProvider = 'xai-official'),
         ),
         const SizedBox(height: 12),
         _buildSelectionCard(

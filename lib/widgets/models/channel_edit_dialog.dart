@@ -131,7 +131,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     
     String endpointHint = "";
-    if (type == 'openai-api-rest' || type == 'newapi-openai') {
+    if (type == 'openai-api-rest' || type == 'newapi-openai' || type == 'xai-api-rest') {
       endpointHint = l10n.openaiV1Hint;
     } else {
       endpointHint = l10n.googleV1BetaHint;
@@ -154,6 +154,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
               DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API (Deprecated)')),
               DropdownMenuItem(value: 'newapi-openai', child: Text(l10n.providerNewApiOpenAI)),
               DropdownMenuItem(value: 'newapi-gemini', child: Text(l10n.providerNewApiGemini)),
+              DropdownMenuItem(value: 'xai-api-rest', child: Text(l10n.protocolXai)),
             ],
             onChanged: (v) => setState(() => type = v!),
             decoration: InputDecoration(

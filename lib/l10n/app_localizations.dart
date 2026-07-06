@@ -1367,6 +1367,24 @@ abstract class AppLocalizations {
   /// **'Self-hosted or 3rd party provider'**
   String get providerCustomDesc;
 
+  /// No description provided for @protocolXai.
+  ///
+  /// In en, this message translates to:
+  /// **'xAI (Grok) API'**
+  String get protocolXai;
+
+  /// No description provided for @providerXaiOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'xAI Official'**
+  String get providerXaiOfficial;
+
+  /// No description provided for @providerXaiOfficialDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'api.x.ai · Grok chat + native Imagine video'**
+  String get providerXaiOfficialDesc;
+
   /// No description provided for @providerNewApiOpenAI.
   ///
   /// In en, this message translates to:
