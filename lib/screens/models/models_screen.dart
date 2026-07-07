@@ -83,10 +83,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
             Expanded(
               child: Row(
                 children: [
-                  Container(
+                  // Material (not a colored Container): the sidebar's
+                  // ListTiles paint ink/selection on the nearest Material,
+                  // which a ColoredBox would hide (debug assertion).
+                  SizedBox(
                     width: 280,
-                    color: colorScheme.surfaceContainerLow,
-                    child: _buildChannelSidebar(l10n, appState, channels),
+                    child: Material(
+                      color: colorScheme.surfaceContainerLow,
+                      child: _buildChannelSidebar(l10n, appState, channels),
+                    ),
                   ),
                   const VerticalDivider(width: 1),
                   Expanded(
@@ -119,10 +124,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
             Expanded(
               child: Row(
                 children: [
-                  Container(
+                  SizedBox(
                     width: 320,
-                    color: colorScheme.surfaceContainerLow,
-                    child: _buildChannelSidebar(l10n, appState, channels, isDesktop: true),
+                    child: Material(
+                      color: colorScheme.surfaceContainerLow,
+                      child: _buildChannelSidebar(l10n, appState, channels, isDesktop: true),
+                    ),
                   ),
                   const VerticalDivider(width: 1),
                   Expanded(
