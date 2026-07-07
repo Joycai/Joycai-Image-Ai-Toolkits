@@ -34,6 +34,13 @@ class ChannelDialect {
   /// appends `/mj/submit/imagine` etc. Authenticated with bearer token.
   static const String midjourneyProxy = 'midjourney-proxy';
 
+  /// xAI native REST (`https://api.x.ai/v1`). Chat/completions are
+  /// OpenAI-compatible and go through the standard OpenAI transport, but
+  /// video generation uses xAI's own async surface:
+  /// `POST /videos/generations` → `GET /videos/{request_id}` (JSON, not the
+  /// Sora-style multipart `/videos` endpoint). Bearer-token auth.
+  static const String xaiApi = 'xai-api-rest';
+
   /// Channel dialects that speak the Google/Gemini wire format and are served
   /// by the `google-genai` provider.
   static const Set<String> _geminiDialects = {
@@ -61,4 +68,9 @@ class ChannelDialect {
   /// (no `x-goog-api-key` header and no `?key=` query parameter).
   static bool isNewApiGemini(String channelType) =>
       channelType == newApiGemini;
+
+  /// True for the xAI native dialect, which switches video generation from
+  /// the Sora-style `/videos` multipart surface to xAI's
+  /// `/videos/generations` JSON surface.
+  static bool isXai(String channelType) => channelType == xaiApi;
 }

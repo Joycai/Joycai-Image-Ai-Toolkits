@@ -682,6 +682,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerCustomDesc => '自建或第三方 API 服务商';
 
   @override
+  String get protocolXai => 'xAI (Grok) API';
+
+  @override
+  String get providerXaiOfficial => 'xAI 官方';
+
+  @override
+  String get providerXaiOfficialDesc => 'api.x.ai · Grok 聊天 + 原生 Imagine 视频';
+
+  @override
   String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
 
   @override
@@ -2441,6 +2450,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerCustomDesc => '自行託管或第三方供應商';
+
+  @override
+  String get protocolXai => 'xAI (Grok) API';
+
+  @override
+  String get providerXaiOfficial => 'xAI 官方';
+
+  @override
+  String get providerXaiOfficialDesc => 'api.x.ai · Grok 聊天 + 原生 Imagine 影片';
 
   @override
   String get providerNewApiOpenAI => 'New API（OpenAI 格式）';
