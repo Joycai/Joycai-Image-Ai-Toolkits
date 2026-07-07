@@ -56,6 +56,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     Function(String, {String level})? logger,
   }) async {
     final family = ModelFamilyClassifier.classify(config.modelId);
@@ -76,7 +77,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     final url = Uri.parse('${config.endpoint}/chat/completions');
     logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.apiKey);
-    final payload = _prepareChatPayload(config.modelId, history, options, isStreaming: false);
+    final payload = _prepareChatPayload(config.modelId, history, options, isStreaming: false, tools: tools);
     if (payload.containsKey('safety_settings')) {
       logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
     }
@@ -110,11 +111,42 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       final data = jsonDecode(response.body);
       String text = "";
       List<Uint8List> images = [];
+      final List<LLMToolCall> toolCalls = [];
 
       final message = data['choices']?[0]?['message'];
       if (message != null) {
         if (message['content'] != null) {
           text = message['content'];
+        }
+
+        // Native tool/function calls.
+        final rawToolCalls = message['tool_calls'];
+        if (rawToolCalls is List) {
+          for (int i = 0; i < rawToolCalls.length; i++) {
+            final tc = rawToolCalls[i];
+            final fn = tc is Map ? tc['function'] : null;
+            if (fn is! Map) continue;
+            Map<String, dynamic> args = {};
+            final rawArgs = fn['arguments'];
+            if (rawArgs is String && rawArgs.isNotEmpty) {
+              try {
+                final decoded = jsonDecode(rawArgs);
+                if (decoded is Map<String, dynamic>) args = decoded;
+              } catch (e) {
+                logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
+              }
+            } else if (rawArgs is Map<String, dynamic>) {
+              args = rawArgs;
+            }
+            toolCalls.add(LLMToolCall(
+              id: tc['id']?.toString() ?? 'call_$i',
+              name: fn['name']?.toString() ?? '',
+              arguments: args,
+            ));
+          }
+          if (toolCalls.isNotEmpty) {
+            logger?.call('Model requested ${toolCalls.length} tool call(s).', level: 'DEBUG');
+          }
         }
 
         // Some OpenAI-compat relays expose images via a structured field.
@@ -134,6 +166,7 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         text: text,
         generatedImages: images,
         metadata: data['usage'] ?? {},
+        toolCalls: toolCalls,
       );
     } finally {
       client.close();
@@ -1206,9 +1239,34 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     String modelId,
     List<LLMMessage> history,
     Map<String, dynamic>? options,
-    {required bool isStreaming}
+    {required bool isStreaming, List<LLMTool>? tools}
   ) {
     final messages = history.map((msg) {
+      // Tool result message.
+      if (msg.role == LLMRole.tool) {
+        return {
+          "role": "tool",
+          "tool_call_id": msg.toolCallId,
+          "content": msg.content,
+        };
+      }
+
+      // Assistant message carrying tool calls.
+      if (msg.role == LLMRole.assistant && msg.toolCalls.isNotEmpty) {
+        return {
+          "role": "assistant",
+          "content": msg.content.isEmpty ? null : msg.content,
+          "tool_calls": msg.toolCalls.map((tc) => {
+            "id": tc.id,
+            "type": "function",
+            "function": {
+              "name": tc.name,
+              "arguments": jsonEncode(tc.arguments),
+            },
+          }).toList(),
+        };
+      }
+
       dynamic content;
 
       if (msg.attachments.isEmpty) {
@@ -1249,6 +1307,18 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       "messages": messages,
       "stream": isStreaming,
     };
+
+    if (tools != null && tools.isNotEmpty) {
+      payload["tools"] = tools.map((t) => {
+        "type": "function",
+        "function": {
+          "name": t.name,
+          "description": t.description,
+          "parameters": t.parameters,
+        },
+      }).toList();
+      payload["tool_choice"] = "auto";
+    }
 
     if (isStreaming) {
       payload["stream_options"] = {"include_usage": true};

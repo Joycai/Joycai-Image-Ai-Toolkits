@@ -185,6 +185,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 
     final parts = candidate['content']?['parts'] as List?;
     if (parts != null) {
+      int callIndex = 0;
       for (var part in parts) {
         final textPart = part['text'] as String?;
 
@@ -192,9 +193,23 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
         final inlineData = part['inlineData'] ?? part['inline_data'];
         final imgData = inlineData?['data'];
 
+        // Native function calling. Google supplies no call id — synthesize one.
+        LLMToolCall? toolCall;
+        final functionCall = part['functionCall'] ?? part['function_call'];
+        if (functionCall is Map) {
+          final args = functionCall['args'];
+          toolCall = LLMToolCall(
+            id: 'call_${functionCall['name']}_${callIndex++}',
+            name: functionCall['name']?.toString() ?? '',
+            arguments: args is Map<String, dynamic> ? args : {},
+          );
+          logger?.call('Model requested tool call: ${toolCall.name}', level: 'DEBUG');
+        }
+
         yield LLMResponseChunk(
           textPart: textPart,
           imagePart: imgData != null ? base64Decode(imgData as String) : null,
+          toolCallPart: toolCall,
           metadata: metadata,
         );
       }
@@ -205,7 +220,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 /// Standard `:generateContent` request body: system instruction, multimodal
 /// contents, image-generation config and per-request safety settings (from
 /// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
-Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint) {
+Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint, {List<LLMTool>? tools}) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
 
@@ -217,10 +232,43 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
   }
 
   final contents = conversationMessages.map((msg) {
+    // Tool result message → functionResponse part (role "user" per the
+    // Gemini REST function-calling contract).
+    if (msg.role == LLMRole.tool) {
+      Map<String, dynamic> responsePayload;
+      try {
+        final decoded = jsonDecode(msg.content);
+        responsePayload = decoded is Map<String, dynamic> ? decoded : {"result": decoded};
+      } catch (_) {
+        responsePayload = {"result": msg.content};
+      }
+      return {
+        "role": "user",
+        "parts": [
+          {
+            "functionResponse": {
+              "name": msg.toolName ?? '',
+              "response": responsePayload,
+            }
+          }
+        ],
+      };
+    }
+
     final parts = <Map<String, dynamic>>[];
 
     if (msg.content.isNotEmpty) {
       parts.add({"text": msg.content});
+    }
+
+    // Assistant tool calls echoed back into history → functionCall parts.
+    for (final tc in msg.toolCalls) {
+      parts.add({
+        "functionCall": {
+          "name": tc.name,
+          "args": tc.arguments,
+        }
+      });
     }
 
     for (var attachment in msg.attachments) {
@@ -266,6 +314,16 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
     // ignore: use_null_aware_elements
     if (systemInstruction != null) "system_instruction": systemInstruction,
     "contents": contents,
+    if (tools != null && tools.isNotEmpty)
+      "tools": [
+        {
+          "functionDeclarations": tools.map((t) => {
+            "name": t.name,
+            "description": t.description,
+            "parameters": t.parameters,
+          }).toList(),
+        }
+      ],
     "generationConfig": generationConfig,
     "safetySettings":
         SafetySettings.toApiList(options?[SafetySettings.paramKey]),

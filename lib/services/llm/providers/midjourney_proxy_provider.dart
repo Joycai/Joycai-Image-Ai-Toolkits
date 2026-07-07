@@ -65,6 +65,7 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools, // Tool calling is not supported by Midjourney — ignored.
     Function(String, {String level})? logger,
   }) async {
     final result = await _runImagine(config, history, options: options, logger: logger);

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
-enum LLMRole { system, user, assistant }
+enum LLMRole { system, user, assistant, tool }
 
 enum LLMReferenceType { media, asset, firstFrame, lastFrame }
 
@@ -18,15 +18,60 @@ class LLMAttachment {
   LLMAttachment.fromBytes(this.bytes, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = null;
 }
 
+/// A tool (function) the model is allowed to call.
+///
+/// [parameters] is a JSON-Schema object describing the arguments, e.g.
+/// `{"type": "object", "properties": {...}, "required": [...]}`.
+class LLMTool {
+  final String name;
+  final String description;
+  final Map<String, dynamic> parameters;
+
+  LLMTool({
+    required this.name,
+    required this.description,
+    required this.parameters,
+  });
+}
+
+/// A tool invocation emitted by the model.
+class LLMToolCall {
+  /// Provider-assigned call id (OpenAI). Synthesized for providers that don't
+  /// supply one (Google).
+  final String id;
+  final String name;
+  final Map<String, dynamic> arguments;
+
+  LLMToolCall({
+    required this.id,
+    required this.name,
+    required this.arguments,
+  });
+}
+
 class LLMMessage {
   final LLMRole role;
   final String content;
   final List<LLMAttachment> attachments;
 
+  /// Tool calls carried by an assistant message (echoed back into history
+  /// during an agent loop).
+  final List<LLMToolCall> toolCalls;
+
+  /// For [LLMRole.tool] messages: which call this result answers.
+  final String? toolCallId;
+
+  /// For [LLMRole.tool] messages: the tool's name (required by Google's
+  /// functionResponse format).
+  final String? toolName;
+
   LLMMessage({
     required this.role,
     required this.content,
     this.attachments = const [],
+    this.toolCalls = const [],
+    this.toolCallId,
+    this.toolName,
   });
 }
 
@@ -102,12 +147,16 @@ class LLMResponse {
   final String? operationName;
   final Map<String, dynamic> metadata;
 
+  /// Tool calls requested by the model (empty when it answered directly).
+  final List<LLMToolCall> toolCalls;
+
   LLMResponse({
     required this.text,
     this.generatedImages = const [],
     this.videoUri,
     this.operationName,
     this.metadata = const {},
+    this.toolCalls = const [],
   });
 }
 
@@ -115,7 +164,8 @@ class LLMResponseChunk {
   final String? textPart;
   final Uint8List? imagePart;
   final Map<String, dynamic>? metadata;
+  final LLMToolCall? toolCallPart;
   final bool isDone;
 
-  LLMResponseChunk({this.textPart, this.imagePart, this.metadata, this.isDone = false});
+  LLMResponseChunk({this.textPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
 }

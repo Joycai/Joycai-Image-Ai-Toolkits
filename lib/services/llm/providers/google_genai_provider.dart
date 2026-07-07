@@ -54,6 +54,7 @@ class GoogleGenAIProvider implements ILLMProvider {
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     Function(String, {String level})? logger,
   }) async {
     // Imagen uses the dedicated `:predict` surface, not `:generateContent`.
@@ -65,7 +66,7 @@ class GoogleGenAIProvider implements ILLMProvider {
         Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'), config.apiKey, channelType: config.channelType);
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = _getHeaders(config.channelType, config.apiKey, config.endpoint);
-    final payload = prepareGooglePayload(history, options, config.endpoint);
+    final payload = prepareGooglePayload(history, options, config.endpoint, tools: tools);
     logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     logger?.call('Sending POST request...', level: 'DEBUG');
@@ -107,20 +108,23 @@ class GoogleGenAIProvider implements ILLMProvider {
       
       String text = "";
       List<Uint8List> images = [];
+      List<LLMToolCall> toolCalls = [];
       Map<String, dynamic> metadata = {};
 
       for (final chunk in parseGoogleChunks(data, logger: logger)) {
         if (chunk.textPart != null) text += chunk.textPart!;
         if (chunk.imagePart != null) images.add(chunk.imagePart!);
+        if (chunk.toolCallPart != null) toolCalls.add(chunk.toolCallPart!);
         if (chunk.metadata != null) metadata = chunk.metadata!;
       }
 
-      logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
+      logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}, Tool calls: ${toolCalls.length}', level: 'DEBUG');
 
       return LLMResponse(
         text: text,
         generatedImages: images,
         metadata: metadata,
+        toolCalls: toolCalls,
       );
     } finally {
       client.close();

@@ -27,8 +27,13 @@ class LLMService {
     String? sessionId,
     String? contextId,
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     bool useStream = true,
   }) async {
+    // Tool calling is only wired through the standard (non-streaming) path.
+    if (tools != null && tools.isNotEmpty) {
+      useStream = false;
+    }
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
@@ -97,6 +102,7 @@ class LLMService {
             config,
             fullHistory,
             options: options,
+            tools: tools,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
           ).timeout(const Duration(seconds: 120));
           if (response.text.isNotEmpty) {
