@@ -142,14 +142,24 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             const SizedBox(height: 8),
             ModelSelectionSection(
               availableModels: imageModels.map((m) => m.toMap()).toList(),
-              channels: allChannels.map((c) => c.toMap()).toList(),
+              // Only offer channels that actually serve image models — a
+              // chat-only channel (e.g. DeepSeek) has nothing selectable here.
+              channels: allChannels
+                  .where((c) => imageModels.any((m) => m.channelId == c.id))
+                  .map((c) => c.toMap())
+                  .toList(),
               selectedChannelId: selectedChannelId,
               selectedModelDbId: selectedModelDbId,
               isExpanded: _isModelSettingsExpanded,
               onToggleExpansion: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
               onChannelChanged: (val) {
                 final appState = Provider.of<AppState>(context, listen: false);
-                final firstInChannel = appState.getModelsForChannel(val).firstOrNull;
+                // Pick the first *image* model of the channel. Using the
+                // unfiltered model list here used to select a chat model,
+                // which imageModels can't resolve — the selection silently
+                // reverted and the channel appeared unclickable.
+                final firstInChannel =
+                    appState.imageModels.where((m) => m.channelId == val).firstOrNull;
                 final newDbId = firstInChannel?.id;
                 if (newDbId != null) {
                   _updateConfig(modelDbId: newDbId);

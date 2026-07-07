@@ -118,7 +118,9 @@ class ModelSelectionSection extends StatelessWidget {
   Widget _buildChannelDropdown(ColorScheme colorScheme) {
     return DropdownButton<int>(
       isExpanded: true,
-      value: selectedChannelId,
+      // Guard: the selected id must exist in the (filtered) channel list,
+      // otherwise DropdownButton throws an assertion error.
+      value: channels.any((c) => c['id'] == selectedChannelId) ? selectedChannelId : null,
       style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
       underline: Container(height: 1, color: colorScheme.outlineVariant),
       items: channels.map((c) => DropdownMenuItem<int>(
