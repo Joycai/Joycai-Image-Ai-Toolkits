@@ -802,8 +802,11 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
   ///   * `aspect_ratio` — e.g. "16:9" (from the shared `aspectRatio` option).
   ///   * `resolution` — "480p" | "720p" | "1080p" (mapped from `resolution`;
   ///     "4k" is clamped to "1080p").
-  ///   * `image` — image-to-video first frame, as a base64 data URI.
-  ///   * `reference_images` — reference-to-video guidance images.
+  ///   * `image` — image-to-video first frame: an object `{url: ...}` where
+  ///     `url` is a public URL or base64 data URI (per the REST schema —
+  ///     a bare string is rejected with a 422).
+  ///   * `reference_images` — reference-to-video guidance images, each an
+  ///     object `{url: ...}` like `image`.
   ///
   /// `image` and `reference_images` are mutually exclusive upstream (400
   /// otherwise), so the first frame wins and reference images are dropped
@@ -854,7 +857,9 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     if (firstFrame != null) {
       final bytes = await _readAttachmentBytes(firstFrame);
       if (bytes != null) {
-        payload['image'] = 'data:${firstFrame.mimeType};base64,${base64Encode(bytes)}';
+        payload['image'] = {
+          'url': 'data:${firstFrame.mimeType};base64,${base64Encode(bytes)}',
+        };
       }
       if (references.isNotEmpty) {
         logger?.call(
@@ -864,11 +869,11 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         );
       }
     } else if (references.isNotEmpty) {
-      final encoded = <String>[];
+      final encoded = <Map<String, String>>[];
       for (final att in references) {
         final bytes = await _readAttachmentBytes(att);
         if (bytes != null) {
-          encoded.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
+          encoded.add({'url': 'data:${att.mimeType};base64,${base64Encode(bytes)}'});
         }
       }
       if (encoded.isNotEmpty) payload['reference_images'] = encoded;
@@ -970,10 +975,11 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
         case 'expired':
           throw Exception('xAI video request $requestId expired before completing.');
         default:
-          // pending — relay without marking done.
+          // pending — relay progress (0-100) without marking done.
           return {
             'name': requestId,
             'done': false,
+            'progress': data['progress'] ?? 0,
             'status': status,
           };
       }
