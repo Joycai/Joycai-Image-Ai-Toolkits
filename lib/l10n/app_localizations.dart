@@ -767,6 +767,42 @@ abstract class AppLocalizations {
   /// **'{found} found · {selected} selected'**
   String downloaderFoundSelected(int found, int selected);
 
+  /// No description provided for @guideStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'1 · Enter a URL'**
+  String get guideStep1Title;
+
+  /// No description provided for @guideStep1Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a gallery or article page'**
+  String get guideStep1Desc;
+
+  /// No description provided for @guideStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'2 · Describe what to find'**
+  String get guideStep2Title;
+
+  /// No description provided for @guideStep2Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell the AI which images you need'**
+  String get guideStep2Desc;
+
+  /// No description provided for @guideStep3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'3 · Pick & download'**
+  String get guideStep3Title;
+
+  /// No description provided for @guideStep3Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Select results and queue the downloads'**
+  String get guideStep3Desc;
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:

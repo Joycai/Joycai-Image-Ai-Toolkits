@@ -370,6 +370,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get guideStep1Title => '1 · Enter a URL';
+
+  @override
+  String get guideStep1Desc => 'Paste a gallery or article page';
+
+  @override
+  String get guideStep2Title => '2 · Describe what to find';
+
+  @override
+  String get guideStep2Desc => 'Tell the AI which images you need';
+
+  @override
+  String get guideStep3Title => '3 · Pick & download';
+
+  @override
+  String get guideStep3Desc => 'Select results and queue the downloads';
+
+  @override
   String get usage => 'Usage';
 
   @override

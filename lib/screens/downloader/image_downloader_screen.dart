@@ -10,9 +10,12 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
-import 'widgets/downloader_control_panel.dart';
 import 'widgets/downloader_results_area.dart';
+import 'widgets/downloader_toolbar.dart';
 
+/// Image downloader. Toolbar layout: URL / requirement / model / action in a
+/// top bar, a slim options strip below it, and the full-width results grid —
+/// replacing the old fixed 350px left panel.
 class ImageDownloaderScreen extends StatefulWidget {
   const ImageDownloaderScreen({super.key});
 
@@ -25,10 +28,9 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
   late TextEditingController _requirementController;
   late TextEditingController _cookieController;
   late TextEditingController _prefixController;
-  late TextEditingController _manualHtmlController;
-  
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   bool _isAnalyzing = false;
+  bool _showLogs = false;
 
   @override
   void initState() {
@@ -38,12 +40,6 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     _requirementController = TextEditingController(text: state.requirement);
     _cookieController = TextEditingController(text: state.cookies);
     _prefixController = TextEditingController(text: state.prefix);
-    
-    String initialPreview = state.manualHtml;
-    if (state.manualHtml.length > 5000) {
-      initialPreview = '${state.manualHtml.substring(0, 5000)}... (truncated)';
-    }
-    _manualHtmlController = TextEditingController(text: initialPreview);
 
     _urlController.addListener(() => state.url = _urlController.text);
     _requirementController.addListener(() => state.requirement = _requirementController.text);
@@ -57,7 +53,6 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     _requirementController.dispose();
     _cookieController.dispose();
     _prefixController.dispose();
-    _manualHtmlController.dispose();
     super.dispose();
   }
 
@@ -68,12 +63,6 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       final state = Provider.of<AppState>(context, listen: false).downloaderState;
       final fullText = data!.text!;
       state.setState(manualHtml: fullText);
-      
-      String preview = fullText;
-      if (fullText.length > 5000) {
-        preview = '${fullText.substring(0, 5000)}... (truncated)';
-      }
-      _manualHtmlController.text = preview;
       state.addLog('Pasted HTML (${fullText.length} chars)');
     }
   }
@@ -89,7 +78,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       );
       return;
     }
-    
+
     if (_requirementController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.requirementRequired), backgroundColor: Colors.orange),
@@ -103,11 +92,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       );
       return;
     }
-    
+
     if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
-       state.selectedModelDbId = appState.chatModels.first.id;
+      state.selectedModelDbId = appState.chatModels.first.id;
     }
-    
+
     if (state.selectedModelDbId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,7 +112,10 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       return;
     }
 
-    setState(() => _isAnalyzing = true);
+    setState(() {
+      _isAnalyzing = true;
+      _showLogs = true;
+    });
     state.reset();
     state.addLog('Starting analysis...');
 
@@ -136,16 +128,18 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
         manualHtml: state.isManualHtml ? state.manualHtml : null,
         onLog: state.addLog,
       );
-      
+
       if (mounted) {
         state.setState(discoveredImages: results);
         if (results.isEmpty) {
           state.addLog('Analysis finished, but no matching images were found.');
         } else {
           state.addLog('Found ${results.length} images.');
+          // Collapse the log strip once results land so the grid gets space.
+          setState(() => _showLogs = false);
         }
       }
-      
+
       if (results.isNotEmpty && _cookieController.text.isNotEmpty) {
         try {
           final host = Uri.parse(_urlController.text).host;
@@ -166,17 +160,17 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
   Future<void> _saveOriginHtml() async {
     if (_urlController.text.isEmpty) return;
-    
+
     final appState = Provider.of<AppState>(context, listen: false);
     final state = appState.downloaderState;
     final l10n = AppLocalizations.of(context)!;
-    
+
     // On iOS we use the app's safe output directory (Result Cache)
     String? outputDir = await appState.getSetting('output_directory');
     if (Platform.isIOS && (outputDir == null || outputDir.isEmpty)) {
       outputDir = appState.galleryState.outputDirectory;
     }
-    
+
     if (!mounted) return;
 
     if (outputDir == null || outputDir.isEmpty) {
@@ -190,11 +184,11 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
         url: _urlController.text,
         cookies: _cookieController.text,
       );
-      
+
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'origin_$timestamp.html';
       final filePath = p.join(outputDir, fileName);
-      
+
       await File(filePath).writeAsString(html);
       state.addLog('HTML saved to: $filePath');
       if (mounted) {
@@ -241,7 +235,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     try {
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
-      
+
       String parsedCookies = "";
       int count = 0;
 
@@ -277,7 +271,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
       _cookieController.text = parsedCookies;
       state.setState(cookies: parsedCookies);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.cookieImportSuccess(count)), backgroundColor: Colors.green),
@@ -293,146 +287,85 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
     final state = appState.downloaderState;
-    final size = MediaQuery.of(context).size;
-    final isNarrow = size.width < 900;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {
       state.selectedModelDbId = appState.chatModels.first.id;
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final discoveredCount = state.discoveredImages.length;
-    final selectedCount = state.discoveredImages.where((i) => i.isSelected).length;
-
-    // 60px left panel header
-    final leftHeader = Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: Column(
         children: [
-          if (isNarrow)
-            IconButton(
-              icon: const Icon(Icons.tune),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              tooltip: l10n.settings,
-            ),
-          Icon(Icons.cloud_download, size: 24, color: colorScheme.primary),
-          const SizedBox(width: 12),
-          Text(
-            l10n.imageDownloader,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-          ),
-        ],
-      ),
-    );
-
-    // 60px right panel header
-    final rightHeader = Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
-        children: [
-          Text(
-            l10n.results,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
-          ),
-          if (discoveredCount > 0) ...[
-            const SizedBox(width: 10),
-            Text(
-              l10n.downloaderFoundSelected(discoveredCount, selectedCount),
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-
-    // Left panel column (header + optional iOS banner + control panel)
-    final leftPanelContent = Column(
-      children: [
-        leftHeader,
-        if (Platform.isIOS)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: colorScheme.primaryContainer.withAlpha(100),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n.iosOutputRecommend,
-                    style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        Expanded(
-          child: DownloaderControlPanel(
+          DownloaderToolbar(
             urlController: _urlController,
             requirementController: _requirementController,
-            cookieController: _cookieController,
-            prefixController: _prefixController,
-            manualHtmlController: _manualHtmlController,
             isAnalyzing: _isAnalyzing,
             onAnalyze: _analyze,
-            onSaveHtml: _saveOriginHtml,
-            onPasteHtml: _pasteHtml,
-            onImportCookie: _importCookieFile,
-          ),
-        ),
-      ],
-    );
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: colorScheme.surface,
-      drawer: isNarrow
-          ? Drawer(width: 350, child: SafeArea(child: leftPanelContent))
-          : null,
-      body: isNarrow
-          ? Column(
-              children: [
-                leftHeader,
-                Expanded(
-                  child: DownloaderResultsArea(onAddToQueue: _addToQueue),
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                Container(
-                  width: 350,
-                  color: colorScheme.surfaceContainerLow,
-                  child: leftPanelContent,
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: Column(
-                    children: [
-                      rightHeader,
-                      Expanded(
-                        child: DownloaderResultsArea(onAddToQueue: _addToQueue),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            onOpenAdvanced: () => showDownloaderAdvancedDialog(
+              context,
+              prefixController: _prefixController,
+              cookieController: _cookieController,
+              onImportCookie: _importCookieFile,
             ),
+          ),
+          if (Platform.isIOS)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: colorScheme.primaryContainer.withAlpha(100),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l10n.iosOutputRecommend,
+                      style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          SizedBox(
+            height: 40,
+            child: DownloaderOptionsStrip(
+              isAnalyzing: _isAnalyzing,
+              showLogs: _showLogs,
+              onToggleLogs: () => setState(() => _showLogs = !_showLogs),
+              onSaveHtml: _saveOriginHtml,
+              onPasteHtml: _pasteHtml,
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: _showLogs && state.logs.isNotEmpty ? 140 : 0,
+            child: _showLogs && state.logs.isNotEmpty
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withAlpha(120),
+                      border: Border(
+                        bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
+                      ),
+                    ),
+                    child: ListView.builder(
+                      reverse: true,
+                      itemCount: state.logs.length,
+                      itemBuilder: (context, i) => Text(
+                        state.logs[state.logs.length - 1 - i],
+                        style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          Expanded(
+            child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+          ),
+        ],
+      ),
     );
   }
 }

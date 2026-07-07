@@ -363,6 +363,24 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get guideStep1Title => '1 · 输入网址';
+
+  @override
+  String get guideStep1Desc => '粘贴图库或文章页面链接';
+
+  @override
+  String get guideStep2Title => '2 · 描述需求';
+
+  @override
+  String get guideStep2Desc => '告诉 AI 要寻找的图像';
+
+  @override
+  String get guideStep3Title => '3 · 挑选下载';
+
+  @override
+  String get guideStep3Desc => '批量选择并加入任务队列';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -2143,6 +2161,24 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String downloaderFoundSelected(int found, int selected) {
     return '發現 $found 張 · 已選 $selected 張';
   }
+
+  @override
+  String get guideStep1Title => '1 · 輸入網址';
+
+  @override
+  String get guideStep1Desc => '貼上圖庫或文章頁面連結';
+
+  @override
+  String get guideStep2Title => '2 · 描述需求';
+
+  @override
+  String get guideStep2Desc => '告訴 AI 要尋找的圖像';
+
+  @override
+  String get guideStep3Title => '3 · 挑選下載';
+
+  @override
+  String get guideStep3Desc => '批次選擇並加入任務佇列';
 
   @override
   String get usage => '用量';

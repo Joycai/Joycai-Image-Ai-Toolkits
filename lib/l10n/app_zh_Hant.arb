@@ -119,6 +119,12 @@
       }
     }
   },
+  "guideStep1Title": "1 · 輸入網址",
+  "guideStep1Desc": "貼上圖庫或文章頁面連結",
+  "guideStep2Title": "2 · 描述需求",
+  "guideStep2Desc": "告訴 AI 要尋找的圖像",
+  "guideStep3Title": "3 · 挑選下載",
+  "guideStep3Desc": "批次選擇並加入任務佇列",
   "usage": "用量",
   "tokenUsageMetrics": "Token 用量指標",
   "clearAllUsage": "要清除所有用量資料嗎？",

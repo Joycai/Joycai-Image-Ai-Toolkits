@@ -364,6 +364,24 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get guideStep1Title => '1 · URLを入力';
+
+  @override
+  String get guideStep1Desc => 'ギャラリーや記事ページを貼り付け';
+
+  @override
+  String get guideStep2Title => '2 · 要件を記述';
+
+  @override
+  String get guideStep2Desc => '探したい画像をAIに伝える';
+
+  @override
+  String get guideStep3Title => '3 · 選んでダウンロード';
+
+  @override
+  String get guideStep3Desc => 'まとめて選択してキューに追加';
+
+  @override
   String get usage => '使用状況';
 
   @override

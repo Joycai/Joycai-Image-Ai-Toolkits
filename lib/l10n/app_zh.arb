@@ -183,6 +183,12 @@
       }
     }
   },
+  "guideStep1Title": "1 · 输入网址",
+  "guideStep1Desc": "粘贴图库或文章页面链接",
+  "guideStep2Title": "2 · 描述需求",
+  "guideStep2Desc": "告诉 AI 要寻找的图像",
+  "guideStep3Title": "3 · 挑选下载",
+  "guideStep3Desc": "批量选择并加入任务队列",
   "usage": "用量",
   "tokenUsageMetrics": "Token 使用统计",
   "clearAllUsage": "清除所有使用数据？",
