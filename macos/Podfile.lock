@@ -1,21 +1,15 @@
 PODS:
   - FlutterMacOS (1.0.0)
-  - local_notifier (0.1.0):
-    - FlutterMacOS
 
 DEPENDENCIES:
   - FlutterMacOS (from `Flutter/ephemeral`)
-  - local_notifier (from `Flutter/ephemeral/.symlinks/plugins/local_notifier/macos`)
 
 EXTERNAL SOURCES:
   FlutterMacOS:
     :path: Flutter/ephemeral
-  local_notifier:
-    :path: Flutter/ephemeral/.symlinks/plugins/local_notifier/macos
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  local_notifier: ebf072651e35ae5e47280ad52e2707375cb2ae4e
 
 PODFILE CHECKSUM: b38685aafd6532e246df34e74e8d494a4518f174
 
