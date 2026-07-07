@@ -244,7 +244,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.category_outlined, size: 20),
           ),
-          style: const TextStyle(fontSize: 14),
+          // The style applies to the popup menu items too — it must carry an
+          // explicit color or the items render with the wrong default.
+          style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
         ),
         const SizedBox(height: 12),
         TextField(
