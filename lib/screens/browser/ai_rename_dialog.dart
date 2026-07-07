@@ -135,21 +135,33 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.selectRenameTemplate),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+        // A tight (fixed) width lets AlertDialog's IntrinsicWidth
+        // short-circuit instead of recursing into the ListView below —
+        // scrollables don't support intrinsic-dimension queries and the
+        // dialog silently fails to lay out (empty barrier) otherwise.
+        content: SizedBox(
+          width: 420,
           child: templates.isEmpty
-            ? Center(child: Text(l10n.noPromptsSaved))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: templates.length,
-                itemBuilder: (context, index) {
-                  final t = templates[index];
-                  return ListTile(
-                    title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-                    onTap: () => Navigator.pop(context, t),
-                  );
-                },
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: Text(l10n.noPromptsSaved)),
+              )
+            : ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: templates.length,
+                  itemBuilder: (context, index) {
+                    final t = templates[index];
+                    return ListTile(
+                      title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                      onTap: () => Navigator.pop(context, t),
+                    );
+                  },
+                ),
               ),
         ),
         actions: [
