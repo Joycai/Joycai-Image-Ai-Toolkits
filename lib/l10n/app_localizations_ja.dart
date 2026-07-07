@@ -1242,6 +1242,22 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get statusCancelled => 'キャンセル済み';
+
+  @override
+  String get retryTask => '再試行';
+
+  @override
+  String queuedPosition(int position) {
+    return '待機 $position 番目';
+  }
+
+  @override
+  String tookDuration(String duration) {
+    return '所要時間 $duration';
+  }
+
+  @override
   String retryCount(int count) {
     return '再試行回数: $count';
   }

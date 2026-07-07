@@ -75,6 +75,25 @@
       }
     }
   },
+  "filterAll": "All",
+  "statusCancelled": "Cancelled",
+  "retryTask": "Retry",
+  "queuedPosition": "#{position} in queue",
+  "@queuedPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "tookDuration": "took {duration}",
+  "@tookDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "retryCount": "Retry Count: {count}",
   "@retryCount": {
     "placeholders": {

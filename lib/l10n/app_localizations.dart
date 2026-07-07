@@ -2417,6 +2417,30 @@ abstract class AppLocalizations {
   /// **'Concurrency Limit: {limit}'**
   String concurrencyLimit(int limit);
 
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @retryTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryTask;
+
+  /// No description provided for @queuedPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'#{position} in queue'**
+  String queuedPosition(int position);
+
+  /// No description provided for @tookDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'took {duration}'**
+  String tookDuration(String duration);
+
   /// No description provided for @retryCount.
   ///
   /// In en, this message translates to:

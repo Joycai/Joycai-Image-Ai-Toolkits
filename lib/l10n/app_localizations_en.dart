@@ -1266,6 +1266,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get retryTask => 'Retry';
+
+  @override
+  String queuedPosition(int position) {
+    return '#$position in queue';
+  }
+
+  @override
+  String tookDuration(String duration) {
+    return 'took $duration';
+  }
+
+  @override
   String retryCount(int count) {
     return 'Retry Count: $count';
   }

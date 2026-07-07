@@ -1237,6 +1237,22 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get statusCancelled => '已取消';
+
+  @override
+  String get retryTask => '重试';
+
+  @override
+  String queuedPosition(int position) {
+    return '排队第 $position 位';
+  }
+
+  @override
+  String tookDuration(String duration) {
+    return '用时 $duration';
+  }
+
+  @override
   String retryCount(int count) {
     return '重试次数: $count';
   }
@@ -3038,6 +3054,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String concurrencyLimit(int limit) {
     return '並行限制: $limit';
+  }
+
+  @override
+  String get statusCancelled => '已取消';
+
+  @override
+  String get retryTask => '重試';
+
+  @override
+  String queuedPosition(int position) {
+    return '排隊第 $position 位';
+  }
+
+  @override
+  String tookDuration(String duration) {
+    return '耗時 $duration';
   }
 
   @override

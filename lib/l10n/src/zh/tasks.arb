@@ -75,6 +75,25 @@
       }
     }
   },
+  "filterAll": "全部",
+  "statusCancelled": "已取消",
+  "retryTask": "重试",
+  "queuedPosition": "排队第 {position} 位",
+  "@queuedPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "tookDuration": "用时 {duration}",
+  "@tookDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "retryCount": "重试次数: {count}",
   "@retryCount": {
     "placeholders": {
