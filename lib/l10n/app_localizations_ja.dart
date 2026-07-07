@@ -690,6 +690,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stepConnection => '接続とキー';
 
   @override
+  String get sectionAppearance => '外観';
+
+  @override
+  String get moreColors => 'その他の色';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override

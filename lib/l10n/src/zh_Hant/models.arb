@@ -84,6 +84,8 @@
   "providerCustomDesc": "自行託管或第三方供應商",
   "providerGroupOther": "其他",
   "stepConnection": "連線與金鑰",
+  "sectionAppearance": "外觀",
+  "moreColors": "更多顏色",
   "protocolXai": "xAI (Grok) API",
   "providerXaiOfficial": "xAI 官方",
   "providerXaiOfficialDesc": "api.x.ai · Grok 聊天 + 原生 Imagine 影片",

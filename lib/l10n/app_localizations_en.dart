@@ -698,6 +698,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepConnection => 'Endpoint & key';
 
   @override
+  String get sectionAppearance => 'Appearance';
+
+  @override
+  String get moreColors => 'More colors';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override

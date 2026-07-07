@@ -6,7 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
-import '../color_picker_widget.dart';
+import 'channel_form_sections.dart';
 
 /// A provider preset selectable on the wizard's first step. Merges the old
 /// protocol + provider steps: picking a preset implies both the channel
@@ -627,6 +627,18 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           l10n.apiKeyStorageNotice,
           style: TextStyle(fontSize: 12, color: colorScheme.outline),
         ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+          subtitle: Text(
+            l10n.enableDiscoveryDesc,
+            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+          ),
+          value: _enableDiscovery,
+          onChanged: (v) => setState(() => _enableDiscovery = v),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        ),
       ],
     );
   }
@@ -639,45 +651,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: _nameCtrl,
-          decoration: InputDecoration(
-            labelText: l10n.displayName,
-            hintText: l10n.nameHint,
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.label_outline),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SwitchListTile(
-          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
-          subtitle: Text(
-            l10n.enableDiscoveryDesc,
-            style: TextStyle(fontSize: 12, color: colorScheme.outline),
-          ),
-          value: _enableDiscovery,
-          onChanged: (v) => setState(() => _enableDiscovery = v),
-          contentPadding: EdgeInsets.zero,
-        ),
-        const Divider(height: 24),
-        Text(l10n.bindTag,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _tagCtrl,
-          decoration: InputDecoration(
-            labelText: l10n.tag,
-            hintText: l10n.tagHint,
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.tag),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ColorPickerWidget(
-          selectedColor: _tagColor,
+        ChannelSectionLabel(l10n.sectionAppearance),
+        ChannelAppearanceSection(
+          l10n: l10n,
+          nameCtrl: _nameCtrl,
+          tagCtrl: _tagCtrl,
+          tagColor: _tagColor,
           onColorChanged: (color) => setState(() => _tagColor = color),
-          showHexInput: true,
-          showColorWheel: true,
         ),
         const SizedBox(height: 20),
 

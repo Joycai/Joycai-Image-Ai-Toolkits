@@ -688,6 +688,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get stepConnection => '连接与密钥';
 
   @override
+  String get sectionAppearance => '外观';
+
+  @override
+  String get moreColors => '更多颜色';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override
@@ -2462,6 +2468,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get stepConnection => '連線與金鑰';
+
+  @override
+  String get sectionAppearance => '外觀';
+
+  @override
+  String get moreColors => '更多顏色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';

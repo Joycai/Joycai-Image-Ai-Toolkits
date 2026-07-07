@@ -1379,6 +1379,18 @@ abstract class AppLocalizations {
   /// **'Endpoint & key'**
   String get stepConnection;
 
+  /// No description provided for @sectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get sectionAppearance;
+
+  /// No description provided for @moreColors.
+  ///
+  /// In en, this message translates to:
+  /// **'More colors'**
+  String get moreColors;
+
   /// No description provided for @protocolXai.
   ///
   /// In en, this message translates to:
