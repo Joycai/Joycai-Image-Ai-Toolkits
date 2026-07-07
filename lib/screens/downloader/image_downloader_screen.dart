@@ -29,13 +29,14 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
   late TextEditingController _cookieController;
   late TextEditingController _prefixController;
 
-  bool _isAnalyzing = false;
   bool _showLogs = false;
 
   @override
   void initState() {
     super.initState();
     final state = Provider.of<AppState>(context, listen: false).downloaderState;
+    // Returning mid-analysis: reopen the live log panel.
+    _showLogs = state.isAnalyzing;
     _urlController = TextEditingController(text: state.url);
     _requirementController = TextEditingController(text: state.requirement);
     _cookieController = TextEditingController(text: state.cookies);
@@ -112,49 +113,22 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       return;
     }
 
-    setState(() {
-      _isAnalyzing = true;
-      _showLogs = true;
-    });
-    state.reset();
-    state.addLog('Starting analysis...');
+    setState(() => _showLogs = true);
 
+    // The analysis itself runs on DownloaderState so it survives screen
+    // switches; this State only reacts to the outcome if still mounted.
     try {
-      final results = await WebScraperService().discoverImages(
-        url: _urlController.text,
-        requirement: _requirementController.text,
-        modelIdentifier: state.selectedModelDbId!,
-        cookies: _cookieController.text,
-        manualHtml: state.isManualHtml ? state.manualHtml : null,
-        onLog: state.addLog,
-      );
-
-      if (mounted) {
-        state.setState(discoveredImages: results);
-        if (results.isEmpty) {
-          state.addLog('Analysis finished, but no matching images were found.');
-        } else {
-          state.addLog('Found ${results.length} images.');
-          // Collapse the log strip once results land so the grid gets space.
-          setState(() => _showLogs = false);
-        }
-      }
-
-      if (results.isNotEmpty && _cookieController.text.isNotEmpty) {
-        try {
-          final host = Uri.parse(_urlController.text).host;
-          if (host.isNotEmpty) state.saveCookie(host, _cookieController.text);
-        } catch (_) {}
+      await state.analyze();
+      if (mounted && state.discoveredImages.isNotEmpty) {
+        // Collapse the log strip once results land so the grid gets space.
+        setState(() => _showLogs = false);
       }
     } catch (e) {
-      state.addLog('Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Analysis failed: $e"), backgroundColor: Colors.red),
         );
       }
-    } finally {
-      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
@@ -300,7 +274,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
           DownloaderToolbar(
             urlController: _urlController,
             requirementController: _requirementController,
-            isAnalyzing: _isAnalyzing,
+            isAnalyzing: state.isAnalyzing,
             onAnalyze: _analyze,
             onOpenAdvanced: () => showDownloaderAdvancedDialog(
               context,
@@ -330,7 +304,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
           SizedBox(
             height: 40,
             child: DownloaderOptionsStrip(
-              isAnalyzing: _isAnalyzing,
+              isAnalyzing: state.isAnalyzing,
               showLogs: _showLogs,
               onToggleLogs: () => setState(() => _showLogs = !_showLogs),
               onSaveHtml: _saveOriginHtml,
@@ -343,7 +317,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
             child: _showLogs && state.logs.isNotEmpty
                 ? _DownloaderLogPanel(
                     logs: state.logs,
-                    isAnalyzing: _isAnalyzing,
+                    isAnalyzing: state.isAnalyzing,
                     onClose: () => setState(() => _showLogs = false),
                   )
                 : const SizedBox.shrink(),
