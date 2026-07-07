@@ -174,6 +174,8 @@ class ModelCapabilities {
         return _imagen;
       case ModelFamily.openaiImage:
         return _openaiImage;
+      case ModelFamily.xaiImage:
+        return _xaiImage;
       case ModelFamily.midjourney:
         return _midjourney;
       case ModelFamily.openaiVideo:
@@ -390,6 +392,48 @@ class ModelCapabilities {
           ParamOption('standard'),
           ParamOption('high'),
         ],
+      ),
+    ],
+  );
+
+  /// xAI Grok Imagine image (`grok-imagine-image*`). JSON
+  /// `/images/generations` + `/images/edits`; accepts one source `image` or
+  /// up to 3 `images[]` references (reference them as `<IMAGE_0>`… in the
+  /// prompt). `auto` lets the model pick the best ratio; for single-image
+  /// edits the output follows the input's ratio.
+  static const _xaiImage = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 3,
+    imageParams: [
+      ParamSpec(
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'not_set',
+        options: [
+          ParamOption('not_set'),
+          ParamOption('auto'),
+          ParamOption('1:1'),
+          ParamOption('2:3'),
+          ParamOption('3:2'),
+          ParamOption('3:4'),
+          ParamOption('4:3'),
+          ParamOption('9:16'),
+          ParamOption('16:9'),
+          ParamOption('1:2'),
+          ParamOption('2:1'),
+          ParamOption('9:19.5'),
+          ParamOption('19.5:9'),
+          ParamOption('9:20'),
+          ParamOption('20:9'),
+        ],
+      ),
+      ParamSpec(
+        key: 'imageSize',
+        labelKey: 'resolution',
+        control: ParamControl.segmented,
+        defaultValue: '1k',
+        options: [ParamOption('1k'), ParamOption('2k')],
       ),
     ],
   );
