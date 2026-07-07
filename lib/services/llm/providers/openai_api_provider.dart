@@ -940,7 +940,8 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     final client = config.createClient();
     try {
       final response = await client.get(url, headers: _getHeaders(config.apiKey));
-      if (response.statusCode != 200) {
+      // 200 = terminal result; 202 = accepted / still pending.
+      if (response.statusCode != 200 && response.statusCode != 202) {
         throw Exception('xAI video fetch failed: ${response.statusCode} - ${response.body}');
       }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
