@@ -364,6 +364,27 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get guideStep1Title => '1 · URLを入力';
+
+  @override
+  String get guideStep1Desc => 'ギャラリーや記事ページを貼り付け';
+
+  @override
+  String get guideStep2Title => '2 · 要件を記述';
+
+  @override
+  String get guideStep2Desc => '探したい画像をAIに伝える';
+
+  @override
+  String get guideStep3Title => '3 · 選んでダウンロード';
+
+  @override
+  String get guideStep3Desc => 'まとめて選択してキューに追加';
+
+  @override
+  String get copyLogs => 'ログをコピー';
+
+  @override
   String get usage => '使用状況';
 
   @override
@@ -682,6 +703,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get providerCustomDesc => 'セルフホストまたはサードパーティプロバイダー';
+
+  @override
+  String get providerGroupOther => 'その他';
+
+  @override
+  String get stepConnection => '接続とキー';
+
+  @override
+  String get sectionAppearance => '外観';
+
+  @override
+  String get moreColors => 'その他の色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';

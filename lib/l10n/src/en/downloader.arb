@@ -64,5 +64,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "guideStep1Title": "1 · Enter a URL",
+  "guideStep1Desc": "Paste a gallery or article page",
+  "guideStep2Title": "2 · Describe what to find",
+  "guideStep2Desc": "Tell the AI which images you need",
+  "guideStep3Title": "3 · Pick & download",
+  "guideStep3Desc": "Select results and queue the downloads",
+  "copyLogs": "Copy logs"
 }

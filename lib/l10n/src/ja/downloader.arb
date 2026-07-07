@@ -43,5 +43,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "guideStep1Title": "1 · URLを入力",
+  "guideStep1Desc": "ギャラリーや記事ページを貼り付け",
+  "guideStep2Title": "2 · 要件を記述",
+  "guideStep2Desc": "探したい画像をAIに伝える",
+  "guideStep3Title": "3 · 選んでダウンロード",
+  "guideStep3Desc": "まとめて選択してキューに追加",
+  "copyLogs": "ログをコピー"
 }

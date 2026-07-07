@@ -363,6 +363,27 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get guideStep1Title => '1 · 输入网址';
+
+  @override
+  String get guideStep1Desc => '粘贴图库或文章页面链接';
+
+  @override
+  String get guideStep2Title => '2 · 描述需求';
+
+  @override
+  String get guideStep2Desc => '告诉 AI 要寻找的图像';
+
+  @override
+  String get guideStep3Title => '3 · 挑选下载';
+
+  @override
+  String get guideStep3Desc => '批量选择并加入任务队列';
+
+  @override
+  String get copyLogs => '复制日志';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -680,6 +701,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providerCustomDesc => '自建或第三方 API 服务商';
+
+  @override
+  String get providerGroupOther => '其他';
+
+  @override
+  String get stepConnection => '连接与密钥';
+
+  @override
+  String get sectionAppearance => '外观';
+
+  @override
+  String get moreColors => '更多颜色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';
@@ -2133,6 +2166,27 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
+  String get guideStep1Title => '1 · 輸入網址';
+
+  @override
+  String get guideStep1Desc => '貼上圖庫或文章頁面連結';
+
+  @override
+  String get guideStep2Title => '2 · 描述需求';
+
+  @override
+  String get guideStep2Desc => '告訴 AI 要尋找的圖像';
+
+  @override
+  String get guideStep3Title => '3 · 挑選下載';
+
+  @override
+  String get guideStep3Desc => '批次選擇並加入任務佇列';
+
+  @override
+  String get copyLogs => '複製日誌';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -2450,6 +2504,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerCustomDesc => '自行託管或第三方供應商';
+
+  @override
+  String get providerGroupOther => '其他';
+
+  @override
+  String get stepConnection => '連線與金鑰';
+
+  @override
+  String get sectionAppearance => '外觀';
+
+  @override
+  String get moreColors => '更多顏色';
 
   @override
   String get protocolXai => 'xAI (Grok) API';

@@ -6,8 +6,12 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
-import '../color_picker_widget.dart';
+import 'channel_form_sections.dart';
 
+/// Edit-channel dialog. Desktop: a fixed-width two-column layout —
+/// connection (protocol, endpoint, key, discovery) on the left, appearance
+/// (name, tag, color) on the right — so everything fits without scrolling.
+/// Mobile: the same sections stacked in a fullscreen page.
 class ChannelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
@@ -29,7 +33,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   late TextEditingController epCtrl;
   late TextEditingController keyCtrl;
   late TextEditingController tagCtrl;
-  
+
   late String type;
   late bool discovery;
   late int tagColor;
@@ -42,7 +46,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     epCtrl = TextEditingController(text: channel?.endpoint ?? '');
     keyCtrl = TextEditingController(text: channel?.apiKey ?? '');
     tagCtrl = TextEditingController(text: channel?.tag ?? '');
-    
+
     type = channel?.type ?? 'google-genai-rest';
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
@@ -55,54 +59,6 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     keyCtrl.dispose();
     tagCtrl.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    final isMobile = Responsive.isMobile(context);
-    
-    if (isMobile) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.editChannel),
-          leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-          actions: [
-            TextButton(
-              onPressed: _save,
-              child: Text(l10n.save, style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        body: _buildContent(l10n),
-      );
-    }
-
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.edit_note, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Text(l10n.editChannel),
-        ],
-      ),
-      contentPadding: EdgeInsets.zero,
-      // A tight (fixed) width lets AlertDialog's IntrinsicWidth short-circuit
-      // instead of recursing into the scrollable content below — the content
-      // is not compatible with intrinsic-dimension queries.
-      content: SizedBox(
-        width: 550,
-        child: _buildContent(l10n),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        FilledButton.icon(
-          onPressed: _save,
-          icon: const Icon(Icons.save, size: 18),
-          label: Text(l10n.save),
-        ),
-      ],
-    );
   }
 
   Future<void> _save() async {
@@ -127,127 +83,213 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     }
   }
 
-  Widget _buildContent(AppLocalizations l10n) {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.editChannel),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _save,
+              child: Text(l10n.save,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ChannelSectionLabel(l10n.stepConnection),
+              _buildConnectionFields(l10n),
+              const Divider(height: 32),
+              ChannelSectionLabel(l10n.sectionAppearance),
+              ChannelAppearanceSection(
+                l10n: l10n,
+                nameCtrl: nameCtrl,
+                tagCtrl: tagCtrl,
+                tagColor: tagColor,
+                onColorChanged: (c) => setState(() => tagColor = c),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
-    
-    String endpointHint = "";
-    if (type == 'openai-api-rest' || type == 'newapi-openai' || type == 'xai-api-rest') {
+    return AlertDialog(
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      title: Row(
+        children: [
+          Icon(Icons.edit_note, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          Text(l10n.editChannel),
+          const Spacer(),
+          if (widget.channel != null)
+            Flexible(
+              child: Text(
+                widget.channel!.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13, color: colorScheme.outline),
+              ),
+            ),
+        ],
+      ),
+      contentPadding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      content: SizedBox(
+        width: 680,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+          // No IntrinsicHeight here: the appearance column contains a Wrap,
+          // whose intrinsic height is computed as a single run — under a
+          // tight intrinsic-derived height it overflows once it actually
+          // wraps. The divider is drawn as the left column's right border
+          // instead of a VerticalDivider (which needs a bounded height).
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(
+                        color: colorScheme.outlineVariant.withAlpha(120),
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ChannelSectionLabel(l10n.stepConnection),
+                      _buildConnectionFields(l10n),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ChannelSectionLabel(l10n.sectionAppearance),
+                    ChannelAppearanceSection(
+                      l10n: l10n,
+                      nameCtrl: nameCtrl,
+                      tagCtrl: tagCtrl,
+                      tagColor: tagColor,
+                      onColorChanged: (c) => setState(() => tagColor = c),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton.icon(
+          onPressed: _save,
+          icon: const Icon(Icons.save, size: 18),
+          label: Text(l10n.save),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConnectionFields(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    String endpointHint;
+    if (type == 'openai-api-rest' ||
+        type == 'newapi-openai' ||
+        type == 'xai-api-rest') {
       endpointHint = l10n.openaiV1Hint;
     } else {
       endpointHint = l10n.googleV1BetaHint;
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Protocol Section
-          _buildSectionHeader(l10n.stepProtocol),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: type,
-            isExpanded: true,
-            items: [
-              DropdownMenuItem(value: 'openai-api-rest', child: Text(l10n.protocolOpenAI)),
-              DropdownMenuItem(value: 'google-genai-rest', child: Text(l10n.protocolGoogle)),
-              DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API (Deprecated)')),
-              DropdownMenuItem(value: 'newapi-openai', child: Text(l10n.providerNewApiOpenAI)),
-              DropdownMenuItem(value: 'newapi-gemini', child: Text(l10n.providerNewApiGemini)),
-              DropdownMenuItem(value: 'xai-api-rest', child: Text(l10n.protocolXai)),
-            ],
-            onChanged: (v) => setState(() => type = v!),
-            decoration: InputDecoration(
-              labelText: l10n.channelType,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.category_outlined),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-          // Configuration Section
-          _buildSectionHeader(l10n.configuration),
-          const SizedBox(height: 12),
-          TextField(
-            controller: epCtrl,
-            decoration: InputDecoration(
-              labelText: l10n.endpointUrl,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.link),
-              helperText: endpointHint.isNotEmpty ? endpointHint : null,
-              helperMaxLines: 3,
-              helperStyle: TextStyle(color: colorScheme.outline, fontSize: 11),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ApiKeyField(
-            controller: keyCtrl,
-            label: l10n.apiKey,
-            onChanged: (v) {}
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
-            subtitle: Text(l10n.enableDiscoveryDesc, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
-            value: discovery,
-            onChanged: (v) => setState(() => discovery = v),
-            contentPadding: EdgeInsets.zero,
-          ),
-
-          const SizedBox(height: 24),
-          // Visual/Tags Section
-          _buildSectionHeader(l10n.stepConfig),
-          const SizedBox(height: 12),
-          TextField(
-            controller: nameCtrl,
-            decoration: InputDecoration(
-              labelText: l10n.displayName,
-              hintText: l10n.nameHint,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.label_outline),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: tagCtrl,
-            decoration: InputDecoration(
-              labelText: l10n.tag,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.tag),
-              hintText: l10n.tagHint,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.tagColor, style: TextStyle(fontSize: 12, color: colorScheme.outline, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          ColorPickerWidget(
-            selectedColor: tagColor,
-            onColorChanged: (color) {
-              setState(() => tagColor = color);
-            },
-            showHexInput: true,
-            showColorWheel: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-            letterSpacing: 1.2,
+        DropdownButtonFormField<String>(
+          initialValue: type,
+          isExpanded: true,
+          items: [
+            DropdownMenuItem(
+                value: 'openai-api-rest', child: Text(l10n.protocolOpenAI)),
+            DropdownMenuItem(
+                value: 'google-genai-rest', child: Text(l10n.protocolGoogle)),
+            const DropdownMenuItem(
+                value: 'official-google-genai-api',
+                child: Text('Official Google GenAI API (Deprecated)')),
+            DropdownMenuItem(
+                value: 'newapi-openai', child: Text(l10n.providerNewApiOpenAI)),
+            DropdownMenuItem(
+                value: 'newapi-gemini', child: Text(l10n.providerNewApiGemini)),
+            DropdownMenuItem(
+                value: 'xai-api-rest', child: Text(l10n.protocolXai)),
+          ],
+          onChanged: (v) => setState(() => type = v!),
+          decoration: InputDecoration(
+            labelText: l10n.channelType,
+            isDense: true,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.category_outlined, size: 20),
+          ),
+          // The style applies to the popup menu items too — it must carry an
+          // explicit color or the items render with the wrong default.
+          style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: epCtrl,
+          style: const TextStyle(fontSize: 14),
+          decoration: InputDecoration(
+            labelText: l10n.endpointUrl,
+            isDense: true,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.link, size: 20),
+            helperText: endpointHint,
+            helperMaxLines: 3,
+            helperStyle: TextStyle(color: colorScheme.outline, fontSize: 11),
           ),
         ),
+        const SizedBox(height: 12),
+        ApiKeyField(
+          controller: keyCtrl,
+          label: l10n.apiKey,
+          onChanged: (v) {},
+        ),
         const SizedBox(height: 4),
-        const Divider(height: 1),
+        SwitchListTile(
+          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+          subtitle: Text(
+            l10n.enableDiscoveryDesc,
+            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+          ),
+          value: discovery,
+          onChanged: (v) => setState(() => discovery = v),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        ),
       ],
     );
   }

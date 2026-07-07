@@ -58,10 +58,30 @@ class DownloaderResultsArea extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.image_search, size: 80, color: colorScheme.outlineVariant),
-                    const SizedBox(height: 24),
                     Text(l10n.noImagesDiscovered, style: Theme.of(context).textTheme.titleMedium),
-                    Text(l10n.enterUrlToStart, style: TextStyle(color: colorScheme.outline)),
+                    const SizedBox(height: 32),
+                    Wrap(
+                      spacing: 40,
+                      runSpacing: 24,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _GuideStep(
+                          icon: Icons.link,
+                          title: l10n.guideStep1Title,
+                          description: l10n.guideStep1Desc,
+                        ),
+                        _GuideStep(
+                          icon: Icons.chat_bubble_outline,
+                          title: l10n.guideStep2Title,
+                          description: l10n.guideStep2Desc,
+                        ),
+                        _GuideStep(
+                          icon: Icons.download_for_offline_outlined,
+                          title: l10n.guideStep3Title,
+                          description: l10n.guideStep3Desc,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               )
@@ -87,6 +107,52 @@ class DownloaderResultsArea extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+/// One column of the empty-state onboarding guide (icon + step title + hint).
+class _GuideStep extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _GuideStep({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 170,
+      child: Column(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withAlpha(90),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11.5, color: colorScheme.outline),
+          ),
+        ],
+      ),
     );
   }
 }
