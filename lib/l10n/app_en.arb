@@ -346,6 +346,8 @@
   "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
   "providerCustom": "Custom Provider",
   "providerCustomDesc": "Self-hosted or 3rd party provider",
+  "providerGroupOther": "Other",
+  "stepConnection": "Endpoint & key",
   "protocolXai": "xAI (Grok) API",
   "providerXaiOfficial": "xAI Official",
   "providerXaiOfficialDesc": "api.x.ai · Grok chat + native Imagine video",

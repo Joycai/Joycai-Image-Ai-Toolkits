@@ -682,6 +682,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerCustomDesc => '自建或第三方 API 服务商';
 
   @override
+  String get providerGroupOther => '其他';
+
+  @override
+  String get stepConnection => '连接与密钥';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override
@@ -2450,6 +2456,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerCustomDesc => '自行託管或第三方供應商';
+
+  @override
+  String get providerGroupOther => '其他';
+
+  @override
+  String get stepConnection => '連線與金鑰';
 
   @override
   String get protocolXai => 'xAI (Grok) API';

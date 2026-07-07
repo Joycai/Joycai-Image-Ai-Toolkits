@@ -8,6 +8,82 @@ import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../color_picker_widget.dart';
 
+/// A provider preset selectable on the wizard's first step. Merges the old
+/// protocol + provider steps: picking a preset implies both the channel
+/// dialect and (when known) the endpoint, so the flow is 3 steps instead
+/// of 5: provider → connection → config.
+class _ProviderPreset {
+  final String id;
+  final String channelType;
+
+  /// Non-null for hosted providers with a well-known endpoint; null when the
+  /// user must supply one (relays, proxies, custom).
+  final String? fixedEndpoint;
+
+  /// Version-path suffix auto-appended to New API hosts ('' = keep verbatim).
+  final String endpointSuffix;
+  final IconData icon;
+
+  const _ProviderPreset({
+    required this.id,
+    required this.channelType,
+    this.fixedEndpoint,
+    this.endpointSuffix = '',
+    required this.icon,
+  });
+
+  bool get needsEndpoint => fixedEndpoint == null;
+}
+
+const _presets = <_ProviderPreset>[
+  _ProviderPreset(
+    id: 'openai-official',
+    channelType: ChannelDialect.openAIRest,
+    fixedEndpoint: 'https://api.openai.com/v1',
+    icon: Icons.api,
+  ),
+  _ProviderPreset(
+    id: 'xai-official',
+    channelType: ChannelDialect.xaiApi,
+    fixedEndpoint: 'https://api.x.ai/v1',
+    icon: Icons.rocket_launch_outlined,
+  ),
+  _ProviderPreset(
+    id: 'google-compatible',
+    channelType: ChannelDialect.openAIRest,
+    fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    icon: Icons.swap_horiz,
+  ),
+  _ProviderPreset(
+    id: 'newapi-openai',
+    channelType: ChannelDialect.newApiOpenAI,
+    endpointSuffix: '/v1',
+    icon: Icons.hub_outlined,
+  ),
+  _ProviderPreset(
+    id: 'google-official',
+    channelType: ChannelDialect.googleRest,
+    fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
+    icon: Icons.auto_awesome,
+  ),
+  _ProviderPreset(
+    id: 'newapi-gemini',
+    channelType: ChannelDialect.newApiGemini,
+    endpointSuffix: '/v1beta',
+    icon: Icons.hub_outlined,
+  ),
+  _ProviderPreset(
+    id: 'midjourney-proxy',
+    channelType: ChannelDialect.midjourneyProxy,
+    icon: Icons.brush_outlined,
+  ),
+  _ProviderPreset(
+    id: 'custom',
+    channelType: ChannelDialect.openAIRest, // resolved by _customProtocol
+    icon: Icons.settings_input_component,
+  ),
+];
+
 class ChannelWizardDialog extends StatefulWidget {
   final AppLocalizations l10n;
   final AppState appState;
@@ -23,54 +99,47 @@ class ChannelWizardDialog extends StatefulWidget {
 }
 
 class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
-  final PageController _pageController = PageController();
   int _currentStep = 0;
-  static const int _totalSteps = 5;
+  static const int _totalSteps = 3;
 
-  // Step 1: Protocol
-  String _selectedProtocol = 'openai-api-rest';
-  // 'openai-api-rest' | 'google-genai-rest' | ChannelDialect.midjourneyProxy
+  String _selectedProviderId = 'openai-official';
 
-  // Step 2: Provider
-  String _selectedProvider = 'openai-official';
-  // OpenAI: 'openai-official', 'google-compatible', 'newapi', 'custom'
-  // Google: 'google-official', 'newapi', 'custom'
-  // Midjourney: 'midjourney-proxy' (host URL only)
-  final TextEditingController _customEndpointCtrl = TextEditingController();
+  /// Dialect for the `custom` preset (OpenAI- or Gemini-shaped REST).
+  String _customProtocol = ChannelDialect.openAIRest;
 
-  // Step 3: API Key
+  final TextEditingController _endpointCtrl = TextEditingController();
   final TextEditingController _apiKeyCtrl = TextEditingController();
-
-  // Step 4: Config
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _tagCtrl = TextEditingController();
   bool _enableDiscovery = true;
   int _tagColor = AppConstants.tagColors.first.toARGB32();
 
+  _ProviderPreset get _preset =>
+      _presets.firstWhere((p) => p.id == _selectedProviderId);
+
   @override
   void dispose() {
-    _pageController.dispose();
-    _customEndpointCtrl.dispose();
+    _endpointCtrl.dispose();
     _apiKeyCtrl.dispose();
     _nameCtrl.dispose();
     _tagCtrl.dispose();
     super.dispose();
   }
 
+  // --- Flow -----------------------------------------------------------------
+
+  bool _isNextEnabled() {
+    if (_currentStep == 1) {
+      if (_preset.needsEndpoint && _endpointCtrl.text.trim().isEmpty) {
+        return false;
+      }
+      if (_apiKeyCtrl.text.trim().isEmpty) return false;
+    }
+    return true;
+  }
+
   void _next() {
     if (_currentStep < _totalSteps - 1) {
-      if (_currentStep == 0) {
-        // Reset provider selection when protocol changes
-        if (_selectedProtocol == 'openai-api-rest') {
-          _selectedProvider = 'openai-official';
-        } else if (_selectedProtocol == ChannelDialect.midjourneyProxy) {
-          _selectedProvider = 'midjourney-proxy';
-        } else {
-          _selectedProvider = 'google-official';
-        }
-      }
-
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
       setState(() => _currentStep++);
     } else {
       _finish();
@@ -78,10 +147,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   void _back() {
-    if (_currentStep > 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-      setState(() => _currentStep--);
-    }
+    if (_currentStep > 0) setState(() => _currentStep--);
   }
 
   /// Normalizes a New API base URL to the correct versioned path. If the user
@@ -96,57 +162,36 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return '$base$suffix';
   }
 
-  Future<void> _finish() async {
-    String finalEndpoint = "";
-    // The persisted channel type usually mirrors the protocol, but the New API
-    // presets resolve to a dedicated dialect so the transport knows to use
-    // bearer-token auth (and, for Gemini, to skip Google's key conventions).
-    String channelType = _selectedProtocol;
-
-    if (_selectedProtocol == ChannelDialect.midjourneyProxy) {
-      // MJ proxy: keep the host root verbatim; the provider builds /mj/* paths.
-      channelType = ChannelDialect.midjourneyProxy;
-      var raw = _customEndpointCtrl.text.trim();
-      while (raw.endsWith('/')) {
-        raw = raw.substring(0, raw.length - 1);
-      }
-      finalEndpoint = raw;
-    } else if (_selectedProvider == 'newapi') {
-      if (_selectedProtocol == 'openai-api-rest') {
-        channelType = ChannelDialect.newApiOpenAI;
-        finalEndpoint = _resolveNewApiEndpoint(_customEndpointCtrl.text, '/v1');
-      } else {
-        channelType = ChannelDialect.newApiGemini;
-        finalEndpoint = _resolveNewApiEndpoint(_customEndpointCtrl.text, '/v1beta');
-      }
-    } else if (_selectedProtocol == 'openai-api-rest') {
-      if (_selectedProvider == 'openai-official') {
-        finalEndpoint = 'https://api.openai.com/v1';
-      } else if (_selectedProvider == 'google-compatible') {
-        finalEndpoint = 'https://generativelanguage.googleapis.com/v1beta/openai';
-      } else if (_selectedProvider == 'xai-official') {
-        // xAI: OpenAI-compatible chat, but native async video generation —
-        // the dedicated dialect tells the transport to use xAI's video API.
-        channelType = ChannelDialect.xaiApi;
-        finalEndpoint = 'https://api.x.ai/v1';
-      } else {
-        finalEndpoint = _customEndpointCtrl.text.trim();
-      }
-    } else {
-      if (_selectedProvider == 'google-official') {
-        finalEndpoint = 'https://generativelanguage.googleapis.com/v1beta';
-      } else {
-        finalEndpoint = _customEndpointCtrl.text.trim();
-      }
+  String _resolvedEndpoint() {
+    final preset = _preset;
+    if (preset.fixedEndpoint != null) return preset.fixedEndpoint!;
+    if (preset.endpointSuffix.isNotEmpty) {
+      return _resolveNewApiEndpoint(_endpointCtrl.text, preset.endpointSuffix);
     }
+    var raw = _endpointCtrl.text.trim();
+    while (raw.endsWith('/')) {
+      raw = raw.substring(0, raw.length - 1);
+    }
+    return raw;
+  }
 
+  String _resolvedChannelType() {
+    if (_selectedProviderId == 'custom') return _customProtocol;
+    return _preset.channelType;
+  }
+
+  Future<void> _finish() async {
     final data = {
-      'display_name': _nameCtrl.text.trim().isEmpty ? _selectedProvider : _nameCtrl.text.trim(),
-      'endpoint': finalEndpoint,
+      'display_name': _nameCtrl.text.trim().isEmpty
+          ? _selectedProviderId
+          : _nameCtrl.text.trim(),
+      'endpoint': _resolvedEndpoint(),
       'api_key': _apiKeyCtrl.text.trim(),
-      'type': channelType,
+      'type': _resolvedChannelType(),
       'enable_discovery': _enableDiscovery ? 1 : 0,
-      'tag': _tagCtrl.text.trim().isEmpty ? _selectedProvider.split('-').first : _tagCtrl.text.trim(),
+      'tag': _tagCtrl.text.trim().isEmpty
+          ? _selectedProviderId.split('-').first
+          : _tagCtrl.text.trim(),
       'tag_color': _tagColor,
     };
 
@@ -156,89 +201,124 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     }
   }
 
+  // --- Labels ---------------------------------------------------------------
+
+  String _providerTitle(AppLocalizations l10n, String id) {
+    switch (id) {
+      case 'openai-official':
+        return l10n.providerOpenAIOfficial;
+      case 'xai-official':
+        return l10n.providerXaiOfficial;
+      case 'google-compatible':
+        return l10n.providerGoogleCompatible;
+      case 'newapi-openai':
+        return l10n.providerNewApiOpenAI;
+      case 'google-official':
+        return l10n.providerGoogleOfficial;
+      case 'newapi-gemini':
+        return l10n.providerNewApiGemini;
+      case 'midjourney-proxy':
+        return l10n.protocolMidjourney;
+      default:
+        return l10n.providerCustom;
+    }
+  }
+
+  String _providerSubtitle(AppLocalizations l10n, _ProviderPreset p) {
+    switch (p.id) {
+      case 'openai-official':
+        return 'api.openai.com';
+      case 'xai-official':
+        return l10n.providerXaiOfficialDesc;
+      case 'google-compatible':
+        return l10n.providerGoogleCompatibleDesc;
+      case 'google-official':
+        return 'generativelanguage.googleapis.com';
+      case 'newapi-openai':
+      case 'newapi-gemini':
+        return l10n.providerNewApiDesc;
+      case 'midjourney-proxy':
+        return l10n.protocolMidjourneyDesc;
+      default:
+        return l10n.providerCustomDesc;
+    }
+  }
+
+  String _stepSubtitle(AppLocalizations l10n) {
+    switch (_currentStep) {
+      case 0:
+        return l10n.stepProvider;
+      case 1:
+        return l10n.stepConnection;
+      default:
+        return l10n.stepConfig;
+    }
+  }
+
+  // --- Build ----------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
     final isMobile = Responsive.isMobile(context);
-    
-    final dialog = AlertDialog(
-      title: _buildHeader(l10n),
-      contentPadding: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      content: SizedBox(
-        width: isMobile ? double.maxFinite : 550,
-        height: isMobile ? double.maxFinite : 500,
-        child: Column(
-          children: [
-            LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildProtocolStep(l10n),
-                  _buildProviderStep(l10n),
-                  _buildApiKeyStep(l10n),
-                  _buildConfigStep(l10n),
-                  _buildPreviewStep(l10n),
-                ],
-              ),
-            ),
-          ],
+
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+        child: KeyedSubtree(
+          key: ValueKey(_currentStep),
+          child: switch (_currentStep) {
+            0 => _buildProviderStep(l10n),
+            1 => _buildConnectionStep(l10n),
+            _ => _buildConfigStep(l10n),
+          },
         ),
       ),
-      actions: [
-        if (_currentStep > 0)
-          TextButton(onPressed: _back, child: Text(l10n.back))
-        else
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        
-        FilledButton(
-          onPressed: _isNextEnabled() ? _next : null,
-          child: Text(_currentStep == _totalSteps - 1 ? l10n.finish : l10n.next),
-        ),
-      ],
     );
 
     if (isMobile) {
       return Scaffold(
         appBar: AppBar(
           title: Text(l10n.addChannel),
-          leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         body: Column(
           children: [
-            LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildProtocolStep(l10n),
-                  _buildProviderStep(l10n),
-                  _buildApiKeyStep(l10n),
-                  _buildConfigStep(l10n),
-                  _buildPreviewStep(l10n),
-                ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _buildStepCaption(l10n),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  if (_currentStep > 0)
-                    Expanded(child: OutlinedButton(onPressed: _back, child: Text(l10n.back)))
-                  else
-                    Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel))),
-                  
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
+            Expanded(child: content),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    _buildStepDots(),
+                    const Spacer(),
+                    if (_currentStep > 0) ...[
+                      OutlinedButton(onPressed: _back, child: Text(l10n.back)),
+                      const SizedBox(width: 12),
+                    ],
+                    FilledButton(
                       onPressed: _isNextEnabled() ? _next : null,
-                      child: Text(_currentStep == _totalSteps - 1 ? l10n.finish : l10n.next),
+                      child: Text(_currentStep == _totalSteps - 1
+                          ? l10n.finish
+                          : l10n.next),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -246,192 +326,297 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       );
     }
 
-    return dialog;
+    return AlertDialog(
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+      title: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(l10n.addChannel),
+          const Spacer(),
+          _buildStepCaption(l10n),
+        ],
+      ),
+      contentPadding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 520),
+        child: SizedBox(width: 560, child: content),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      actions: [
+        Row(
+          children: [
+            _buildStepDots(),
+            const Spacer(),
+            if (_currentStep > 0)
+              TextButton(onPressed: _back, child: Text(l10n.back))
+            else
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l10n.cancel),
+              ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _isNextEnabled() ? _next : null,
+              child: Text(
+                  _currentStep == _totalSteps - 1 ? l10n.finish : l10n.next),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
-  bool _isNextEnabled() {
-    final needsEndpoint = _selectedProvider == 'custom' ||
-        _selectedProvider == 'newapi' ||
-        _selectedProvider == 'midjourney-proxy';
-    if (_currentStep == 1 && needsEndpoint && _customEndpointCtrl.text.trim().isEmpty) return false;
-    if (_currentStep == 2 && _apiKeyCtrl.text.trim().isEmpty) return false;
-    return true;
+  Widget _buildStepCaption(AppLocalizations l10n) {
+    return Text(
+      '${_currentStep + 1}/$_totalSteps · ${_stepSubtitle(l10n)}',
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.normal,
+        color: Theme.of(context).colorScheme.outline,
+      ),
+    );
   }
 
-  Widget _buildHeader(AppLocalizations l10n) {
-    String subtitle = "";
-    switch (_currentStep) {
-      case 0: subtitle = l10n.stepProtocol; break;
-      case 1: subtitle = l10n.stepProvider; break;
-      case 2: subtitle = l10n.stepApiKey; break;
-      case 3: subtitle = l10n.stepConfig; break;
-      case 4: subtitle = l10n.stepPreview; break;
-    }
+  Widget _buildStepDots() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < _totalSteps; i++) ...[
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: i == _currentStep ? 18 : 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: i == _currentStep
+                  ? colorScheme.primary
+                  : colorScheme.outlineVariant,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          if (i < _totalSteps - 1) const SizedBox(width: 5),
+        ],
+      ],
+    );
+  }
+
+  // --- Step 1: provider selection -------------------------------------------
+
+  Widget _buildProviderStep(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildGroupLabel(l10n.protocolOpenAI),
+        _buildProviderGrid(l10n, const [
+          'openai-official',
+          'xai-official',
+          'google-compatible',
+          'newapi-openai',
+        ]),
+        const SizedBox(height: 14),
+        _buildGroupLabel(l10n.protocolGoogle),
+        _buildProviderGrid(l10n, const ['google-official', 'newapi-gemini']),
+        const SizedBox(height: 14),
+        _buildGroupLabel(l10n.providerGroupOther),
+        _buildProviderGrid(l10n, const ['midjourney-proxy', 'custom']),
+      ],
+    );
+  }
+
+  Widget _buildGroupLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderGrid(AppLocalizations l10n, List<String> ids) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final twoColumns = constraints.maxWidth >= 440;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: twoColumns ? 2 : 1,
+            mainAxisExtent: 64,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: ids.length,
+          itemBuilder: (context, index) {
+            final preset = _presets.firstWhere((p) => p.id == ids[index]);
+            return _buildProviderCard(l10n, preset);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProviderCard(AppLocalizations l10n, _ProviderPreset preset) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = _selectedProviderId == preset.id;
+
+    return InkWell(
+      onTap: () => setState(() => _selectedProviderId = preset.id),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withAlpha(100),
+            width: isSelected ? 2 : 1,
+          ),
+          color:
+              isSelected ? colorScheme.primaryContainer.withAlpha(40) : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              preset.icon,
+              size: 20,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _providerTitle(l10n, preset.id),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  Text(
+                    _providerSubtitle(l10n, preset),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(fontSize: 11, color: colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              Icon(Icons.check_circle, color: colorScheme.primary, size: 18),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Step 2: connection ----------------------------------------------------
+
+  Widget _buildConnectionStep(AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final preset = _preset;
+    final isNewApi = preset.endpointSuffix.isNotEmpty;
+    final isCustom = preset.id == 'custom';
+    final isMidjourney = preset.id == 'midjourney-proxy';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.addChannel),
-        Text(subtitle, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.normal)),
-      ],
-    );
-  }
-
-  Widget _buildProtocolStep(AppLocalizations l10n) {
-    return _buildStepContainer(
-      children: [
-        _buildSelectionCard(
-          title: l10n.protocolOpenAI,
-          subtitle: l10n.protocolOpenAIDesc,
-          icon: Icons.api,
-          isSelected: _selectedProtocol == 'openai-api-rest',
-          onTap: () => setState(() => _selectedProtocol = 'openai-api-rest'),
-        ),
-        const SizedBox(height: 16),
-        _buildSelectionCard(
-          title: l10n.protocolGoogle,
-          subtitle: l10n.protocolGoogleDesc,
-          icon: Icons.auto_awesome,
-          isSelected: _selectedProtocol == 'google-genai-rest',
-          onTap: () => setState(() => _selectedProtocol = 'google-genai-rest'),
-        ),
-        const SizedBox(height: 16),
-        _buildSelectionCard(
-          title: l10n.protocolMidjourney,
-          subtitle: l10n.protocolMidjourneyDesc,
-          icon: Icons.brush_outlined,
-          isSelected: _selectedProtocol == ChannelDialect.midjourneyProxy,
-          onTap: () => setState(() => _selectedProtocol = ChannelDialect.midjourneyProxy),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProviderStep(AppLocalizations l10n) {
-    final isOpenAIProtocol = _selectedProtocol == 'openai-api-rest';
-    final isMidjourneyProtocol = _selectedProtocol == ChannelDialect.midjourneyProxy;
-
-    if (isMidjourneyProtocol) {
-      // MJ proxy has a single provider shape — only the host root is needed.
-      return _buildStepContainer(
-        children: [
-          _buildSelectionCard(
-            title: l10n.protocolMidjourney,
-            subtitle: l10n.protocolMidjourneyDesc,
-            icon: Icons.brush_outlined,
-            isSelected: true,
-            onTap: () {},
+        // Selected provider recap.
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withAlpha(80),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 16),
+          child: Row(
+            children: [
+              Icon(preset.icon, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                _providerTitle(l10n, preset.id),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              if (preset.fixedEndpoint != null)
+                Flexible(
+                  child: Text(
+                    preset.fixedEndpoint!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(fontSize: 11, color: colorScheme.outline),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (isCustom) ...[
+          Text(l10n.channelType,
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: ChannelDialect.openAIRest,
+                label: Text(l10n.protocolOpenAI,
+                    style: const TextStyle(fontSize: 12)),
+              ),
+              ButtonSegment(
+                value: ChannelDialect.googleRest,
+                label: Text(l10n.protocolGoogle,
+                    style: const TextStyle(fontSize: 12)),
+              ),
+            ],
+            selected: {_customProtocol},
+            onSelectionChanged: (v) =>
+                setState(() => _customProtocol = v.first),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        if (preset.needsEndpoint) ...[
           TextField(
-            controller: _customEndpointCtrl,
+            controller: _endpointCtrl,
             decoration: InputDecoration(
-              labelText: l10n.endpointUrl,
-              hintText: 'https://your-newapi.com',
+              labelText: isNewApi ? l10n.newApiBaseUrl : l10n.endpointUrl,
+              hintText: isNewApi || isMidjourney
+                  ? 'https://your-newapi-host.com'
+                  : 'https://your-api.com/v1',
               border: const OutlineInputBorder(),
-              helperText: l10n.midjourneyEndpointHint,
+              prefixIcon: const Icon(Icons.link),
+              helperText: isNewApi
+                  ? l10n.newApiBaseHint
+                  : isMidjourney
+                      ? l10n.midjourneyEndpointHint
+                      : (_customProtocol == ChannelDialect.googleRest
+                          ? l10n.googleV1BetaHint
+                          : l10n.openaiV1Hint),
+              helperMaxLines: 3,
             ),
             onChanged: (_) => setState(() {}),
           ),
+          const SizedBox(height: 16),
         ],
-      );
-    }
 
-    List<Widget> providers = [];
-    if (isOpenAIProtocol) {
-      providers = [
-        _buildSelectionCard(
-          title: l10n.providerOpenAIOfficial,
-          subtitle: "api.openai.com",
-          icon: Icons.cloud_outlined,
-          isSelected: _selectedProvider == 'openai-official',
-          onTap: () => setState(() => _selectedProvider = 'openai-official'),
-        ),
-        const SizedBox(height: 12),
-        _buildSelectionCard(
-          title: l10n.providerGoogleCompatible,
-          subtitle: l10n.providerGoogleCompatibleDesc,
-          icon: Icons.swap_horiz,
-          isSelected: _selectedProvider == 'google-compatible',
-          onTap: () => setState(() => _selectedProvider = 'google-compatible'),
-        ),
-        const SizedBox(height: 12),
-        _buildSelectionCard(
-          title: l10n.providerXaiOfficial,
-          subtitle: l10n.providerXaiOfficialDesc,
-          icon: Icons.rocket_launch_outlined,
-          isSelected: _selectedProvider == 'xai-official',
-          onTap: () => setState(() => _selectedProvider = 'xai-official'),
-        ),
-        const SizedBox(height: 12),
-        _buildSelectionCard(
-          title: l10n.providerNewApiOpenAI,
-          subtitle: l10n.providerNewApiDesc,
-          icon: Icons.hub_outlined,
-          isSelected: _selectedProvider == 'newapi',
-          onTap: () => setState(() => _selectedProvider = 'newapi'),
-        ),
-      ];
-    } else {
-      providers = [
-        _buildSelectionCard(
-          title: l10n.providerGoogleOfficial,
-          subtitle: "generativelanguage.googleapis.com",
-          icon: Icons.auto_awesome_outlined,
-          isSelected: _selectedProvider == 'google-official',
-          onTap: () => setState(() => _selectedProvider = 'google-official'),
-        ),
-        const SizedBox(height: 12),
-        _buildSelectionCard(
-          title: l10n.providerNewApiGemini,
-          subtitle: l10n.providerNewApiDesc,
-          icon: Icons.hub_outlined,
-          isSelected: _selectedProvider == 'newapi',
-          onTap: () => setState(() => _selectedProvider = 'newapi'),
-        ),
-      ];
-    }
-
-    final needsEndpoint = _selectedProvider == 'custom' || _selectedProvider == 'newapi';
-    final isNewApi = _selectedProvider == 'newapi';
-
-    providers.addAll([
-      const SizedBox(height: 12),
-      _buildSelectionCard(
-        title: l10n.providerCustom,
-        subtitle: l10n.providerCustomDesc,
-        icon: Icons.settings_input_component,
-        isSelected: _selectedProvider == 'custom',
-        onTap: () => setState(() => _selectedProvider = 'custom'),
-      ),
-      if (needsEndpoint) ...[
-        const SizedBox(height: 16),
-        TextField(
-          controller: _customEndpointCtrl,
-          decoration: InputDecoration(
-            labelText: isNewApi ? l10n.newApiBaseUrl : l10n.endpointUrl,
-            hintText: isNewApi ? "https://your-newapi-host.com" : "https://your-api.com/v1",
-            border: const OutlineInputBorder(),
-            helperText: isNewApi
-                ? l10n.newApiBaseHint
-                : (isOpenAIProtocol ? l10n.openaiV1Hint : l10n.googleV1BetaHint),
-          ),
-          onChanged: (_) => setState(() {}),
-        ),
-      ]
-    ]);
-
-    return _buildStepContainer(children: providers);
-  }
-
-  Widget _buildApiKeyStep(AppLocalizations l10n) {
-    return _buildStepContainer(
-      children: [
-        const SizedBox(height: 20),
-        Icon(Icons.vpn_key_outlined, size: 48, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 24),
-        Text(l10n.apiKey, style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
         ApiKeyField(
           controller: _apiKeyCtrl,
           label: l10n.enterApiKey,
@@ -440,15 +625,19 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         const SizedBox(height: 8),
         Text(
           l10n.apiKeyStorageNotice,
-          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
-          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: colorScheme.outline),
         ),
       ],
     );
   }
 
+  // --- Step 3: config + summary ----------------------------------------------
+
   Widget _buildConfigStep(AppLocalizations l10n) {
-    return _buildStepContainer(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
           controller: _nameCtrl,
@@ -456,18 +645,23 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
             labelText: l10n.displayName,
             hintText: l10n.nameHint,
             border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.label_outline),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SwitchListTile(
-          title: Text(l10n.enableDiscovery),
-          subtitle: Text(l10n.enableDiscoveryDesc),
+          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+          subtitle: Text(
+            l10n.enableDiscoveryDesc,
+            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+          ),
           value: _enableDiscovery,
           onChanged: (v) => setState(() => _enableDiscovery = v),
           contentPadding: EdgeInsets.zero,
         ),
-        const Divider(height: 32),
-        Text(l10n.bindTag, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const Divider(height: 24),
+        Text(l10n.bindTag,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 12),
         TextField(
           controller: _tagCtrl,
@@ -475,136 +669,67 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
             labelText: l10n.tag,
             hintText: l10n.tagHint,
             border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.tag),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         ColorPickerWidget(
           selectedColor: _tagColor,
-          onColorChanged: (color) {
-            setState(() => _tagColor = color);
-          },
+          onColorChanged: (color) => setState(() => _tagColor = color),
           showHexInput: true,
           showColorWheel: true,
         ),
-      ],
-    );
-  }
+        const SizedBox(height: 20),
 
-  Widget _buildPreviewStep(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return _buildStepContainer(
-      children: [
-        const SizedBox(height: 10),
+        // Summary of what will be created.
         Container(
-          padding: const EdgeInsets.all(20),
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer.withAlpha(30),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.primaryContainer.withAlpha(100)),
+            borderRadius: BorderRadius.circular(12),
+            border:
+                Border.all(color: colorScheme.primaryContainer.withAlpha(100)),
           ),
           child: Column(
             children: [
-              _buildPreviewRow(l10n.name, _nameCtrl.text.isEmpty ? _selectedProvider : _nameCtrl.text),
-              _buildPreviewRow("Protocol", _selectedProtocol),
-              _buildPreviewRow("Provider", _selectedProvider),
-              _buildPreviewRow("Discovery", _enableDiscovery ? "Enabled" : "Disabled"),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.tag, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Color(_tagColor),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      _tagCtrl.text.isEmpty ? _selectedProvider.split('-').first.toUpperCase() : _tagCtrl.text.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
+              _buildSummaryRow(
+                  l10n.name,
+                  _nameCtrl.text.trim().isEmpty
+                      ? _selectedProviderId
+                      : _nameCtrl.text.trim()),
+              _buildSummaryRow(
+                  l10n.stepProvider, _providerTitle(l10n, _selectedProviderId)),
+              _buildSummaryRow(l10n.endpointUrl, _resolvedEndpoint()),
+              _buildSummaryRow(l10n.channelType, _resolvedChannelType()),
             ],
           ),
         ),
-        const SizedBox(height: 48),
-        Text(l10n.previewReady, style: Theme.of(context).textTheme.bodyLarge),
-        const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildPreviewRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepContainer({required List<Widget> children}) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-            child: IntrinsicHeight(
-              child: Column(
-                children: children,
-              ),
-            ),
-          ),
-        );
-      }
-    );
-  }
-
-  Widget _buildSelectionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildSummaryRow(String label, String value) {
     final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha(100),
-            width: isSelected ? 2 : 1,
-          ),
-          color: isSelected ? colorScheme.primaryContainer.withAlpha(30) : null,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.outline, size: 28),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: colorScheme.primary, size: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

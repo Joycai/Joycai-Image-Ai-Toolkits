@@ -219,6 +219,8 @@
   "providerGoogleCompatibleDesc": "OpenAIエンドポイント経由のGoogle Gemini",
   "providerCustom": "カスタムプロバイダー",
   "providerCustomDesc": "セルフホストまたはサードパーティプロバイダー",
+  "providerGroupOther": "その他",
+  "stepConnection": "接続とキー",
   "protocolXai": "xAI (Grok) API",
   "providerXaiOfficial": "xAI 公式",
   "providerXaiOfficialDesc": "api.x.ai · Grok チャット + ネイティブ Imagine 動画",

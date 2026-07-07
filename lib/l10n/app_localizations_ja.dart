@@ -684,6 +684,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerCustomDesc => 'セルフホストまたはサードパーティプロバイダー';
 
   @override
+  String get providerGroupOther => 'その他';
+
+  @override
+  String get stepConnection => '接続とキー';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override

@@ -692,6 +692,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerCustomDesc => 'Self-hosted or 3rd party provider';
 
   @override
+  String get providerGroupOther => 'Other';
+
+  @override
+  String get stepConnection => 'Endpoint & key';
+
+  @override
   String get protocolXai => 'xAI (Grok) API';
 
   @override

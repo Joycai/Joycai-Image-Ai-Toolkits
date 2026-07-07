@@ -346,6 +346,8 @@
   "providerGoogleCompatibleDesc": "通过 OpenAI 适配端点访问 Gemini",
   "providerCustom": "自定义提供商",
   "providerCustomDesc": "自建或第三方 API 服务商",
+  "providerGroupOther": "其他",
+  "stepConnection": "连接与密钥",
   "protocolXai": "xAI (Grok) API",
   "providerXaiOfficial": "xAI 官方",
   "providerXaiOfficialDesc": "api.x.ai · Grok 聊天 + 原生 Imagine 视频",

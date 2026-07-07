@@ -1367,6 +1367,18 @@ abstract class AppLocalizations {
   /// **'Self-hosted or 3rd party provider'**
   String get providerCustomDesc;
 
+  /// No description provided for @providerGroupOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get providerGroupOther;
+
+  /// No description provided for @stepConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint & key'**
+  String get stepConnection;
+
   /// No description provided for @protocolXai.
   ///
   /// In en, this message translates to:
