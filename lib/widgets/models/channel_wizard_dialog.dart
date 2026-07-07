@@ -338,10 +338,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       ),
       contentPadding: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 520),
-        child: SizedBox(width: 560, child: content),
-      ),
+      // Fixed size so the dialog doesn't resize between steps; shorter steps
+      // simply leave whitespace below (content is top-aligned and scrolls
+      // when it exceeds the height).
+      content: SizedBox(width: 560, height: 520, child: content),
       actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       actions: [
         Row(
