@@ -381,6 +381,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get guideStep3Desc => '批量选择并加入任务队列';
 
   @override
+  String get copyLogs => '复制日志';
+
+  @override
   String get usage => '用量';
 
   @override
@@ -2179,6 +2182,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get guideStep3Desc => '批次選擇並加入任務佇列';
+
+  @override
+  String get copyLogs => '複製日誌';
 
   @override
   String get usage => '用量';

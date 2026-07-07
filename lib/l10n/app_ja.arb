@@ -125,6 +125,7 @@
   "guideStep2Desc": "探したい画像をAIに伝える",
   "guideStep3Title": "3 · 選んでダウンロード",
   "guideStep3Desc": "まとめて選択してキューに追加",
+  "copyLogs": "ログをコピー",
   "usage": "使用状況",
   "tokenUsageMetrics": "トークン使用状況メトリクス",
   "clearAllUsage": "すべての使用状況データをクリアしますか？",

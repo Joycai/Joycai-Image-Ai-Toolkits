@@ -803,6 +803,12 @@ abstract class AppLocalizations {
   /// **'Select results and queue the downloads'**
   String get guideStep3Desc;
 
+  /// No description provided for @copyLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy logs'**
+  String get copyLogs;
+
   /// No description provided for @usage.
   ///
   /// In en, this message translates to:

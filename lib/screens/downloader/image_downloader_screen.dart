@@ -339,30 +339,155 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
           ),
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            height: _showLogs && state.logs.isNotEmpty ? 140 : 0,
+            height: _showLogs && state.logs.isNotEmpty ? 168 : 0,
             child: _showLogs && state.logs.isNotEmpty
-                ? Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withAlpha(120),
-                      border: Border(
-                        bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-                      ),
-                    ),
-                    child: ListView.builder(
-                      reverse: true,
-                      itemCount: state.logs.length,
-                      itemBuilder: (context, i) => Text(
-                        state.logs[state.logs.length - 1 - i],
-                        style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
-                      ),
-                    ),
+                ? _DownloaderLogPanel(
+                    logs: state.logs,
+                    isAnalyzing: _isAnalyzing,
+                    onClose: () => setState(() => _showLogs = false),
                   )
                 : const SizedBox.shrink(),
           ),
           Expanded(
             child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Console-style log card: timestamps and messages split into muted / normal
+/// colors, error lines highlighted, a thin progress bar while analyzing, and
+/// copy / close actions in the header.
+class _DownloaderLogPanel extends StatelessWidget {
+  final List<String> logs;
+  final bool isAnalyzing;
+  final VoidCallback onClose;
+
+  const _DownloaderLogPanel({
+    required this.logs,
+    required this.isAnalyzing,
+    required this.onClose,
+  });
+
+  static final _lineRegex = RegExp(r'^\[(.+?)\]\s*(.*)$');
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh.withAlpha(150),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant.withAlpha(120)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 4, 0),
+            child: Row(
+              children: [
+                Icon(Icons.terminal, size: 14, color: colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.logs,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${logs.length}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                    color: colorScheme.outline,
+                  ),
+                ),
+                if (isAnalyzing) ...[
+                  const SizedBox(width: 10),
+                  const SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                  ),
+                ],
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Clipboard.setData(ClipboardData(text: logs.join('\n'))),
+                  icon: const Icon(Icons.copy, size: 13),
+                  tooltip: l10n.copyLogs,
+                  visualDensity: VisualDensity.compact,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close, size: 14),
+                  tooltip: l10n.close,
+                  visualDensity: VisualDensity.compact,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+          if (isAnalyzing)
+            const LinearProgressIndicator(minHeight: 2)
+          else
+            Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(120)),
+          Expanded(
+            child: ListView.builder(
+              reverse: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              itemCount: logs.length,
+              itemBuilder: (context, i) {
+                final line = logs[logs.length - 1 - i];
+                final isNewest = i == 0;
+                final match = _lineRegex.firstMatch(line);
+                final time = match?.group(1);
+                final message = match?.group(2) ?? line;
+                final isError = message.startsWith('Error') ||
+                    message.startsWith('Failed') ||
+                    message.contains('failed:');
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (time != null) ...[
+                        Text(
+                          time,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                            color: colorScheme.outline,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            fontWeight: isNewest ? FontWeight.w600 : FontWeight.normal,
+                            color: isError
+                                ? colorScheme.error
+                                : isNewest
+                                    ? colorScheme.onSurface
+                                    : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

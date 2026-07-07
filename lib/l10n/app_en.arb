@@ -189,6 +189,7 @@
   "guideStep2Desc": "Tell the AI which images you need",
   "guideStep3Title": "3 · Pick & download",
   "guideStep3Desc": "Select results and queue the downloads",
+  "copyLogs": "Copy logs",
   "usage": "Usage",
   "tokenUsageMetrics": "Token Usage Metrics",
   "clearAllUsage": "Clear All Usage Data?",

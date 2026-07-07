@@ -388,6 +388,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guideStep3Desc => 'Select results and queue the downloads';
 
   @override
+  String get copyLogs => 'Copy logs';
+
+  @override
   String get usage => 'Usage';
 
   @override

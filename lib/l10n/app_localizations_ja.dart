@@ -382,6 +382,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guideStep3Desc => 'まとめて選択してキューに追加';
 
   @override
+  String get copyLogs => 'ログをコピー';
+
+  @override
   String get usage => '使用状況';
 
   @override

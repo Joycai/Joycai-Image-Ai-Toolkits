@@ -49,5 +49,6 @@
   "guideStep2Title": "2 · 要件を記述",
   "guideStep2Desc": "探したい画像をAIに伝える",
   "guideStep3Title": "3 · 選んでダウンロード",
-  "guideStep3Desc": "まとめて選択してキューに追加"
+  "guideStep3Desc": "まとめて選択してキューに追加",
+  "copyLogs": "ログをコピー"
 }
