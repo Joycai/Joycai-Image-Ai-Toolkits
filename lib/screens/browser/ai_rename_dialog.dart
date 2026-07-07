@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -10,9 +9,8 @@ import 'package:uuid/uuid.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
+import '../../services/ai_rename_agent.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/llm_service.dart';
-import '../../services/llm/llm_types.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/chat_model_selector.dart';
@@ -46,9 +44,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       _taskSubscription = taskService.eventStream.listen((event) {
         if (_currentTaskId == null || event.taskId != _currentTaskId) return;
 
-        if (event.type == TaskEventType.textChunk) {
-          _handleTaskJsonUpdate(event.data as String);
-        } else if (event.type == TaskEventType.statusChanged) {
+        if (event.type == TaskEventType.statusChanged) {
           if (event.data == TaskStatus.completed || event.data == TaskStatus.failed || event.data == TaskStatus.cancelled) {
             if (mounted) setState(() => _isProcessing = false);
           }
@@ -62,38 +58,6 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     _taskSubscription?.cancel();
     _instructionController.dispose();
     super.dispose();
-  }
-
-  void _handleTaskJsonUpdate(String jsonText) {
-    try {
-      String cleanJson = jsonText.trim();
-      if (cleanJson.startsWith('```json')) {
-        cleanJson = cleanJson.substring(7, cleanJson.length - 3).trim();
-      } else if (cleanJson.startsWith('```')) {
-        cleanJson = cleanJson.substring(3, cleanJson.length - 3).trim();
-      }
-
-      final List<dynamic> suggestions = jsonDecode(cleanJson);
-      final List<Map<String, String>> proposed = [];
-
-      for (var s in suggestions) {
-        proposed.add({
-          'path': s['path'] as String,
-          'old_name': p.basename(s['path'] as String),
-          'new_name': s['new_name'] as String,
-        });
-      }
-
-      _detectConflicts(proposed).then((_) {
-        if (mounted) {
-          setState(() {
-            _proposedRenames = proposed;
-          });
-        }
-      });
-    } catch (_) {
-      // JSON might be partial or invalid during streaming, ignore
-    }
   }
 
   Future<void> _loadLastSettings() async {
@@ -219,59 +183,27 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     });
 
     try {
-      // Prepare the files list for the LLM
+      // Prepare the files list for the agent's list_files tool.
       final List<Map<String, String>> filesData = selectedFiles.map((f) => {
         'original_name': f.name,
         'path': f.path,
         'category': f.category.name,
       }).toList();
 
-      final String userInstructions = _instructionController.text.trim();
-      
-      // Construct structured messages
-      final List<LLMMessage> messages = [
-        LLMMessage(role: LLMRole.system, content: _selectedSystemPrompt!.content),
-        LLMMessage(role: LLMRole.user, content: """
-User Specific Instructions: ${userInstructions.isEmpty ? "No additional instructions." : userInstructions}
-
-Files to rename (JSON format):
-${jsonEncode(filesData)}
-
-Output ONLY a valid JSON array of objects. Do not include markdown code blocks.
-Example: [{"path": "...", "new_name": "..."}]
-"""),
-      ];
-
-      final response = await LLMService().request(
+      // Tool-use agent loop: the model reads files via list_files and stages
+      // renames via rename_file (dry-run — nothing touches disk here).
+      final proposals = await AiRenameAgent.collectProposals(
         modelIdentifier: _selectedModelDbId,
-        messages: messages,
-        useStream: false,
+        filesData: filesData,
+        systemPrompt: _selectedSystemPrompt!.content,
+        instructions: _instructionController.text.trim(),
       );
 
-      // Parse JSON from response
-      String jsonText = response.text.trim();
-      if (jsonText.startsWith('```json')) {
-        jsonText = jsonText.substring(7, jsonText.length - 3).trim();
-      } else if (jsonText.startsWith('```')) {
-        jsonText = jsonText.substring(3, jsonText.length - 3).trim();
-      }
-
-      final List<dynamic> suggestions = jsonDecode(jsonText);
-      final List<Map<String, String>> proposed = [];
-
-      bool isSafeFileName(String name) {
-        return !name.contains('..') && !name.contains('/') && !name.contains('\\') && !name.contains('\x00') && name.trim().isNotEmpty;
-      }
-
-      for (var s in suggestions) {
-        final newName = s['new_name'] as String;
-        if (!isSafeFileName(newName)) continue;
-        proposed.add({
-          'path': s['path'] as String,
-          'old_name': p.basename(s['path'] as String),
-          'new_name': newName,
-        });
-      }
+      final List<Map<String, String>> proposed = proposals.map((prop) => {
+        'path': prop.path,
+        'old_name': prop.oldName,
+        'new_name': prop.newName,
+      }).toList();
 
       await _detectConflicts(proposed);
 
@@ -332,31 +264,24 @@ Example: [{"path": "...", "new_name": "..."}]
     
     setState(() => _isProcessing = true);
     try {
-      final List<Map<String, String>> filesData = appState.fileBrowserState.selectedFiles.map((f) => {
-        'original_name': f.name,
-        'path': f.path,
-        'category': f.category.name,
-      }).toList();
-
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       final taskId = const Uuid().v4();
-      
+
       setState(() {
         _currentTaskId = taskId;
         _isProcessing = true; // Ensure UI reflects processing immediately
       });
 
-      // Submit to queue with full context
+      // Submit the user-confirmed proposals — the executor applies exactly
+      // what was previewed, without another LLM round-trip.
       await taskService.addTask(
         appState.fileBrowserState.selectedFiles.map((f) => f.path).toList(),
         _selectedModelDbId,
         {
-          'system_prompt': _selectedSystemPrompt?.content,
-          'instructions': _instructionController.text,
-          'filesData': filesData,
+          'proposals': _proposedRenames,
         },
         type: TaskType.aiRename,
-        useStream: false, 
+        useStream: false,
         id: taskId,
       );
       

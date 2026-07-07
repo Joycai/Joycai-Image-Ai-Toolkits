@@ -158,92 +158,60 @@ extension TaskExecutors on TaskQueueService {
     task.addLog('Refinement complete.');
   }
 
+  /// AI batch rename via a standard LLM tool-use agent loop.
+  ///
+  /// Two modes:
+  ///  * `parameters['proposals']` present — the user already confirmed these
+  ///    renames in the preview dialog; apply them directly without another
+  ///    LLM round-trip.
+  ///  * Otherwise — run [AiRenameAgent] (list_files / rename_file tools) to
+  ///    collect proposals, then apply them.
   Future<void> _executeAiRenameTask(TaskItem task) async {
     task.addLog('Start AI Batch Rename for ${task.imagePaths.length} files.');
 
-    final instructions = task.parameters['instructions'] ?? '';
-    final filesData = task.parameters['filesData'] as List<dynamic>;
+    List<RenameProposal> proposals;
 
-    String prompt;
-    if (instructions.contains('# Role') || instructions.contains('# Task')) {
-      prompt = "$instructions\n\nFiles to rename (Context):\n${jsonEncode(filesData)}";
+    final preConfirmed = task.parameters['proposals'];
+    if (preConfirmed is List && preConfirmed.isNotEmpty) {
+      proposals = preConfirmed
+          .whereType<Map>()
+          .map((m) => RenameProposal(
+                path: m['path']?.toString() ?? '',
+                oldName: m['old_name']?.toString() ?? '',
+                newName: m['new_name']?.toString() ?? '',
+              ))
+          .where((prop) => prop.path.isNotEmpty && prop.newName.isNotEmpty)
+          .toList();
+      task.addLog('Applying ${proposals.length} user-confirmed rename(s).');
     } else {
-      prompt = """
-You are a professional file renaming assistant.
-Instructions: $instructions
+      final filesData = (task.parameters['filesData'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, String>.from(e as Map))
+          .toList();
 
-Files to rename:
-${jsonEncode(filesData)}
-
-Output ONLY a valid JSON array of objects, where each object has 'path' and 'new_name' keys.
-Example: [{"path": "...", "new_name": "..."}]
-Do not include any other text or markdown formatting.
-""";
-    }
-
-    String jsonText = "";
-    final actualUseStream = await _shouldUseStream(task);
-
-    if (actualUseStream) {
-      final stream = LLMService().requestStream(
+      proposals = await AiRenameAgent.collectProposals(
         modelIdentifier: task.modelDbId ?? task.modelId,
-        messages: [LLMMessage(role: LLMRole.user, content: prompt)],
+        filesData: filesData,
+        systemPrompt: task.parameters['system_prompt'],
+        instructions: task.parameters['instructions'],
         contextId: task.id,
+        onLog: (msg) {
+          task.addLog(msg);
+          _emit(task.id, TaskEventType.textChunk, msg);
+          refreshQueue();
+        },
+        isCancelled: () => task.status == TaskStatus.cancelled,
       );
-
-      await for (final chunk in stream) {
-        if (task.status == TaskStatus.cancelled) break;
-        if (chunk.textPart != null) {
-          jsonText += chunk.textPart!;
-        }
-      }
-    } else {
-      final response = await LLMService().request(
-        modelIdentifier: task.modelDbId ?? task.modelId,
-        messages: [LLMMessage(role: LLMRole.user, content: prompt)],
-        options: task.parameters,
-        useStream: false,
-      );
-      jsonText = response.text;
+      task.addLog('Agent staged ${proposals.length} rename proposal(s).');
     }
 
     if (task.status == TaskStatus.cancelled) return;
 
-    _emit(task.id, TaskEventType.textChunk, jsonText);
+    final renamed = await AiRenameAgent.applyProposals(
+      proposals,
+      onLog: task.addLog,
+    );
 
-    // Parse and apply renames
-    jsonText = jsonText.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.substring(7, jsonText.length - 3).trim();
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.substring(3, jsonText.length - 3).trim();
-    }
-
-    final List<dynamic> suggestions = jsonDecode(jsonText);
-
-    bool isSafeFileName(String name) {
-      return !name.contains('..') && !name.contains('/') && !name.contains('\\') && !name.contains('\x00') && name.trim().isNotEmpty;
-    }
-
-    for (var s in suggestions) {
-      final oldPath = s['path'] as String;
-      final newName = s['new_name'] as String;
-
-      if (!isSafeFileName(newName)) {
-        task.addLog('Skipped unsafe rename suggestion: "$newName"');
-        continue;
-      }
-
-      final oldFile = File(oldPath);
-      final newPath = p.join(p.dirname(oldPath), newName);
-
-      if (await oldFile.exists()) {
-        await oldFile.rename(newPath);
-        task.addLog('Renamed: ${p.basename(oldPath)} -> $newName');
-      }
-    }
-
-    task.addLog('AI Rename complete.');
+    task.addLog('AI Rename complete. $renamed file(s) renamed.');
   }
 
   Future<void> _executeVideoGenerateTask(TaskItem task) async {

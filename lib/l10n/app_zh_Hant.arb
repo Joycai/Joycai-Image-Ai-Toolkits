@@ -496,6 +496,24 @@
       }
     }
   },
+  "statusCancelled": "已取消",
+  "retryTask": "重試",
+  "queuedPosition": "排隊第 {position} 位",
+  "@queuedPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "tookDuration": "耗時 {duration}",
+  "@tookDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "retryCount": "重試次數: {count}",
   "@retryCount": {
     "placeholders": {

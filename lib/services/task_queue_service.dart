@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/llm_model.dart';
 import '../models/task_item.dart';
+import 'ai_rename_agent.dart';
 import 'database_service.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
@@ -139,6 +140,23 @@ class TaskQueueService extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  /// Re-queues a failed or cancelled task for another attempt.
+  Future<void> retryTask(String taskId) async {
+    final index = _queue.indexWhere((t) => t.id == taskId);
+    if (index == -1) return;
+    final task = _queue[index];
+    if (task.status != TaskStatus.failed && task.status != TaskStatus.cancelled) return;
+
+    task.status = TaskStatus.pending;
+    task.progress = null;
+    task.startTime = null;
+    task.endTime = null;
+    task.addLog('Task re-queued by user.');
+    await DatabaseService().saveTask(task.toMap());
+    notifyListeners();
+    _attemptNextExecution();
   }
 
   Future<void> removeTask(String taskId) async {

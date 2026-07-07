@@ -157,59 +157,177 @@ class WebScraperService {
 
     onLog?.call('Found ${imagesMetadata.length} candidate images. Analyzing with LLM...');
 
-    // Prepare prompt for LLM
-    final prompt = '''
-Identify images from the following list that match this requirement: "$requirement"
-URL of the page: $url
+    final matchedUrlStrings = await _selectImagesWithLLM(
+      modelIdentifier: modelIdentifier,
+      requirement: requirement,
+      pageUrl: url,
+      imagesMetadata: imagesMetadata,
+      onLog: onLog,
+    );
+
+    onLog?.call('LLM analysis complete. Filtering results...');
+
+    final results = <DiscoveredImage>[];
+    final cacheDir = await _cacheDir;
+
+    for (var metadata in imagesMetadata) {
+      final imageUrl = metadata['url']!;
+      if (matchedUrlStrings.contains(imageUrl)) {
+        // Pre-cache thumbnail if possible
+        String? localPath;
+        try {
+          localPath = await _cacheThumbnail(imageUrl, cacheDir, formattedCookies);
+        } catch (e) {
+          onLog?.call('Failed to cache thumbnail for $imageUrl: $e');
+        }
+
+        results.add(DiscoveredImage(
+          url: imageUrl,
+          alt: metadata['alt'],
+          context: metadata['context'],
+          localCachePath: localPath,
+        ));
+      }
+    }
+
+    return results;
+  }
+
+  /// Asks the model to pick matching images via native tool calling.
+  ///
+  /// The model must submit its selection through the `select_images` tool;
+  /// URLs are validated against the candidate set and invalid entries are
+  /// reported back so the model can correct itself (up to [_maxSelectTurns]
+  /// turns). This replaces the old free-text JSON parsing, which broke
+  /// whenever the model added commentary around the array.
+  static const int _maxSelectTurns = 4;
+
+  Future<Set<String>> _selectImagesWithLLM({
+    required dynamic modelIdentifier,
+    required String requirement,
+    required String pageUrl,
+    required List<Map<String, String>> imagesMetadata,
+    Function(String)? onLog,
+  }) async {
+    final validUrls = imagesMetadata.map((m) => m['url']).whereType<String>().toSet();
+    final Set<String> selected = {};
+
+    final tools = [
+      LLMTool(
+        name: 'select_images',
+        description: 'Submit the URLs of the candidate images that match the requirement. '
+            'Every URL must be copied exactly from the candidate list. '
+            'Submit an empty array if nothing matches.',
+        parameters: {
+          'type': 'object',
+          'properties': {
+            'urls': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description': 'Matching image URLs, exactly as they appear in the candidate list.',
+            },
+          },
+          'required': ['urls'],
+        },
+      ),
+    ];
+
+    final messages = <LLMMessage>[
+      LLMMessage(
+        role: LLMRole.system,
+        content: 'You are an image curation assistant. Review the candidate images and '
+            'select the ones matching the user requirement by calling the select_images tool. '
+            'Do not answer in plain text — always submit your selection via the tool.',
+      ),
+      LLMMessage(
+        role: LLMRole.user,
+        content: '''
+Requirement: "$requirement"
+URL of the page: $pageUrl
 
 List of candidate images (JSON format):
 ${jsonEncode(imagesMetadata)}
 
-Return only a JSON array of the "url" strings of the images that match. No explanation.
-Example output: ["https://example.com/img1.jpg", "https://example.com/img2.png"]
-''';
+Call select_images with the URLs of the images that match the requirement.
+''',
+      ),
+    ];
 
-    final llmResponse = await LLMService().request(
-      modelIdentifier: modelIdentifier,
-      messages: [LLMMessage(role: LLMRole.user, content: prompt)],
-      useStream: false,
-    );
+    bool submitted = false;
 
-    onLog?.call('LLM analysis complete. Filtering results...');
-    
-    try {
-      final String jsonStr = _extractJsonArray(llmResponse.text);
-      final List<dynamic> matchedUrls = jsonDecode(jsonStr);
-      final List<String> matchedUrlStrings = matchedUrls.cast<String>();
+    for (int turn = 0; turn < _maxSelectTurns; turn++) {
+      final response = await LLMService().request(
+        modelIdentifier: modelIdentifier,
+        messages: messages,
+        tools: tools,
+        useStream: false,
+      );
 
-      final results = <DiscoveredImage>[];
-      final cacheDir = await _cacheDir;
-
-      for (var metadata in imagesMetadata) {
-        final imageUrl = metadata['url']!;
-        if (matchedUrlStrings.contains(imageUrl)) {
-          // Pre-cache thumbnail if possible
-          String? localPath;
-          try {
-            localPath = await _cacheThumbnail(imageUrl, cacheDir, formattedCookies);
-          } catch (e) {
-            onLog?.call('Failed to cache thumbnail for $imageUrl: $e');
-          }
-
-          results.add(DiscoveredImage(
-            url: imageUrl,
-            alt: metadata['alt'],
-            context: metadata['context'],
-            localCachePath: localPath,
-          ));
-        }
+      if (response.toolCalls.isEmpty) {
+        if (submitted) break; // Done: selection already received.
+        // The model answered in text instead of calling the tool — nudge once.
+        onLog?.call('Model replied without calling select_images; asking again...');
+        messages.add(LLMMessage(role: LLMRole.assistant, content: response.text));
+        messages.add(LLMMessage(
+          role: LLMRole.user,
+          content: 'Please submit your selection by calling the select_images tool.',
+        ));
+        continue;
       }
 
-      return results;
-    } catch (e) {
-      onLog?.call('Error parsing LLM response: $e');
-      throw Exception('Failed to parse LLM analysis results.');
+      messages.add(LLMMessage(
+        role: LLMRole.assistant,
+        content: response.text,
+        toolCalls: response.toolCalls,
+      ));
+
+      bool hadErrors = false;
+      for (final call in response.toolCalls) {
+        Map<String, dynamic> result;
+        if (call.name != 'select_images') {
+          result = {'status': 'error', 'message': 'Unknown tool. Use select_images.'};
+          hadErrors = true;
+        } else {
+          final rawUrls = call.arguments['urls'];
+          final urls = rawUrls is List ? rawUrls.map((u) => u.toString()).toList() : <String>[];
+          final invalid = urls.where((u) => !validUrls.contains(u)).toList();
+
+          selected.addAll(urls.where(validUrls.contains));
+          submitted = true;
+
+          if (invalid.isEmpty) {
+            result = {'status': 'ok', 'accepted': urls.length};
+          } else {
+            hadErrors = true;
+            result = {
+              'status': 'partial',
+              'accepted': urls.length - invalid.length,
+              'rejected': invalid,
+              'message': 'Rejected URLs are not in the candidate list. '
+                  'Copy URLs exactly as provided, then resubmit only the corrected ones if needed.',
+            };
+            onLog?.call('Rejected ${invalid.length} URL(s) not present in candidate list.');
+          }
+        }
+
+        messages.add(LLMMessage(
+          role: LLMRole.tool,
+          content: jsonEncode(result),
+          toolCallId: call.id,
+          toolName: call.name,
+        ));
+      }
+
+      // Selection received cleanly — no need for another round-trip.
+      if (submitted && !hadErrors) break;
     }
+
+    if (!submitted) {
+      throw Exception('The model did not submit a selection via the select_images tool.');
+    }
+
+    onLog?.call('Model selected ${selected.length} image(s).');
+    return selected;
   }
 
   static List<Map<String, String>> _extractImagesMetadataIsolate(Map<String, String> data) {
@@ -280,15 +398,6 @@ Example output: ["https://example.com/img1.jpg", "https://example.com/img2.png"]
         'context': 'Element: ${el.localName}, Parent: $parentClass $parentId',
       });
     } catch (_) {}
-  }
-
-  String _extractJsonArray(String text) {
-    final start = text.indexOf('[');
-    final end = text.lastIndexOf(']');
-    if (start != -1 && end != -1 && end > start) {
-      return text.substring(start, end + 1);
-    }
-    return '[]';
   }
 
   Future<String?> _cacheThumbnail(String url, Directory cacheDir, String? formattedCookies) async {
