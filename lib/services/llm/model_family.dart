@@ -38,6 +38,12 @@ enum ModelFamily {
   /// submit → poll → mp4 URL. Routed through the OpenAI transport, not Google.
   openaiVideo,
 
+  /// xAI Grok Imagine image generation (`grok-imagine-image*`). On native
+  /// xAI channels this uses xAI's JSON `/images/generations` + `/images/edits`
+  /// surface (single `image` or up to 3 `images[]` references); on relays it
+  /// falls back to the OpenAI-style Images API.
+  xaiImage,
+
   /// Anything else routed through an OpenAI-compatible relay (Claude, etc.).
   /// Treated as a plain chat model with no provider-specific extensions.
   other,
@@ -54,6 +60,13 @@ class ModelFamilyClassifier {
         id.contains('midjourney') ||
         id.contains('niji')) {
       return ModelFamily.midjourney;
+    }
+
+    // --- xAI Grok Imagine *image* models ---
+    // Must precede the video block: `grok-imagine-image*` also matches the
+    // `grok-imagine` video prefix below.
+    if (id.contains('grok-imagine-image')) {
+      return ModelFamily.xaiImage;
     }
 
     // --- OpenAI-compatible video (Sora-style /v1/videos) ---
@@ -121,6 +134,7 @@ class ModelFamilyClassifier {
     return f == ModelFamily.geminiImage ||
         f == ModelFamily.geminiImagen ||
         f == ModelFamily.openaiImage ||
+        f == ModelFamily.xaiImage ||
         f == ModelFamily.midjourney;
   }
 
@@ -135,6 +149,7 @@ class ModelFamilyClassifier {
     if (family == ModelFamily.geminiImage ||
         family == ModelFamily.geminiImagen ||
         family == ModelFamily.openaiImage ||
+        family == ModelFamily.xaiImage ||
         family == ModelFamily.midjourney) {
       return 'image';
     }
