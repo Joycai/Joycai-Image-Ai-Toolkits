@@ -100,7 +100,9 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
 
   Future<void> _maybeCreateCheckpoint(UsageStats currentStats) async {
     final last = await _db.getLatestUsageCheckpoint();
-    if (last == null || DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >= 1) {
+    if (last == null ||
+        DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >=
+            1) {
       await _db.saveUsageCheckpoint({
         'timestamp': DateTime.now().toIso8601String(),
         'total_input_tokens': currentStats.totalInput,
@@ -146,44 +148,72 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
 
     return Row(
       children: [
-        // Sidebar
-        Container(
+        // Sidebar. Material (not a colored Container): ListTile paints its
+        // selected/ink effects on the nearest Material ancestor, and a plain
+        // ColoredBox on top of it hides them (debug-mode assertion).
+        SizedBox(
           width: 250,
-          color: colorScheme.surfaceContainerLow,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(l10n.rangeLabel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2)),
-              ),
-              _buildPresetTile('today', l10n.today, Icons.today_outlined),
-              _buildPresetTile('week', l10n.lastWeek, Icons.date_range_outlined),
-              _buildPresetTile('month', l10n.lastMonth, Icons.calendar_month_outlined),
-              _buildPresetTile('year', l10n.thisYear, Icons.calendar_today_outlined),
-              const Spacer(),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () => _loadData(reset: true),
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: Text(l10n.refresh),
+          child: Material(
+            color: colorScheme.surfaceContainerLow,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    l10n.rangeLabel,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.2,
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _confirmClearAll,
-                      style: ElevatedButton.styleFrom(backgroundColor: colorScheme.errorContainer, foregroundColor: colorScheme.error),
-                      icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                      label: Text(l10n.clearAll),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                _buildPresetTile('today', l10n.today, Icons.today_outlined),
+                _buildPresetTile(
+                  'week',
+                  l10n.lastWeek,
+                  Icons.date_range_outlined,
+                ),
+                _buildPresetTile(
+                  'month',
+                  l10n.lastMonth,
+                  Icons.calendar_month_outlined,
+                ),
+                _buildPresetTile(
+                  'year',
+                  l10n.thisYear,
+                  Icons.calendar_today_outlined,
+                ),
+                const Spacer(),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _isLoading
+                            ? null
+                            : () => _loadData(reset: true),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: Text(l10n.refresh),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: _confirmClearAll,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.errorContainer,
+                          foregroundColor: colorScheme.error,
+                        ),
+                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                        label: Text(l10n.clearAll),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -202,28 +232,55 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
                           // Large Summary
                           Row(
                             children: [
-                              _buildBigStat(l10n.inputTokens, _stats.totalInput.toString(), Colors.blue),
+                              _buildBigStat(
+                                l10n.inputTokens,
+                                _stats.totalInput.toString(),
+                                Colors.blue,
+                              ),
                               const SizedBox(width: 24),
-                              _buildBigStat(l10n.outputTokens, _stats.totalOutput.toString(), Colors.green),
+                              _buildBigStat(
+                                l10n.outputTokens,
+                                _stats.totalOutput.toString(),
+                                Colors.green,
+                              ),
                               const SizedBox(width: 24),
-                              _buildBigStat(l10n.estimatedCost, '\$${_stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true),
+                              _buildBigStat(
+                                l10n.estimatedCost,
+                                '\$${_stats.totalCost.toStringAsFixed(4)}',
+                                Colors.orange,
+                                isBold: true,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 32),
 
                           if (_stats.groupCosts.isNotEmpty) ...[
-                            Text(l10n.usageByGroup, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(
+                              l10n.usageByGroup,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                             const SizedBox(height: 16),
                             Wrap(
                               spacing: 12,
                               runSpacing: 12,
                               children: _stats.groupCosts.entries.map((e) {
-                                final group = appState.allPricingGroups.cast<PricingGroup?>().firstWhere(
-                                  (g) => g?.id == e.key,
-                                  orElse: () => null
+                                final group = appState.allPricingGroups
+                                    .cast<PricingGroup?>()
+                                    .firstWhere(
+                                      (g) => g?.id == e.key,
+                                      orElse: () => null,
+                                    );
+                                if (group == null) {
+                                  return const SizedBox.shrink();
+                                }
+                                return _buildGroupCard(
+                                  group.name,
+                                  e.value,
+                                  colorScheme,
                                 );
-                                if (group == null) return const SizedBox.shrink();
-                                return _buildGroupCard(group.name, e.value, colorScheme);
                               }).toList(),
                             ),
                             const SizedBox(height: 32),
@@ -259,7 +316,12 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
     );
   }
 
-  Widget _buildBigStat(String label, String value, Color color, {bool isBold = false}) {
+  Widget _buildBigStat(
+    String label,
+    String value,
+    Color color, {
+    bool isBold = false,
+  }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -271,9 +333,23 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color.withAlpha(200))),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: color.withAlpha(200),
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 28, fontWeight: isBold ? FontWeight.bold : FontWeight.w300, color: color)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w300,
+                color: color,
+              ),
+            ),
           ],
         ),
       ),
@@ -290,9 +366,15 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(
+            name,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
           const SizedBox(width: 12),
-          Text('\$${cost.toStringAsFixed(4)}', style: const TextStyle(fontFamily: 'monospace')),
+          Text(
+            '\$${cost.toStringAsFixed(4)}',
+            style: const TextStyle(fontFamily: 'monospace'),
+          ),
         ],
       ),
     );
@@ -306,7 +388,10 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
         title: Text(l10n.clearAllUsage),
         content: Text(l10n.clearUsageWarning),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
