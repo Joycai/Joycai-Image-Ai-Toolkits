@@ -152,11 +152,24 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         width: 680,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
+          // No IntrinsicHeight here: the appearance column contains a Wrap,
+          // whose intrinsic height is computed as a single run — under a
+          // tight intrinsic-derived height it overflows once it actually
+          // wraps. The divider is drawn as the left column's right border
+          // instead of a VerticalDivider (which needs a bounded height).
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(
+                        color: colorScheme.outlineVariant.withAlpha(120),
+                      ),
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -165,27 +178,24 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
                     ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: VerticalDivider(width: 1),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ChannelSectionLabel(l10n.sectionAppearance),
+                    ChannelAppearanceSection(
+                      l10n: l10n,
+                      nameCtrl: nameCtrl,
+                      tagCtrl: tagCtrl,
+                      tagColor: tagColor,
+                      onColorChanged: (c) => setState(() => tagColor = c),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ChannelSectionLabel(l10n.sectionAppearance),
-                      ChannelAppearanceSection(
-                        l10n: l10n,
-                        nameCtrl: nameCtrl,
-                        tagCtrl: tagCtrl,
-                        tagColor: tagColor,
-                        onColorChanged: (c) => setState(() => tagColor = c),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

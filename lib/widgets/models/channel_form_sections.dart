@@ -153,7 +153,14 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
           }).toList(),
         ),
         const SizedBox(height: 10),
-        Row(
+        // Wrap (not Row + Spacer): the edit dialog's column can be < 300px
+        // wide, where chip + button don't fit on one line and a Row would
+        // overflow. Wrap flows the button onto a second line instead.
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -179,7 +186,6 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
                 ],
               ),
             ),
-            const Spacer(),
             TextButton.icon(
               onPressed: () => setState(() => _expanded = !_expanded),
               icon: const Icon(Icons.palette_outlined, size: 16),
