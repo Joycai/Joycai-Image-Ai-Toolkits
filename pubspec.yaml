@@ -11,33 +11,33 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  provider: ^6.1.1
-  uuid: ^4.2.1
-  file_picker: ^12.0.0-beta.5
-  sqflite: ^2.3.0
-  sqflite_common_ffi: ^2.3.0
-  path_provider: ^2.1.1
-  path: ^1.8.3
-  http: ^1.1.0
-  url_launcher: ^6.2.1
+  cupertino_icons: ^1.0.9
+  provider: ^6.1.5
+  uuid: ^4.5.3
+  file_picker: ^12.0.0-beta.7
+  sqflite: ^2.4.3
+  sqflite_common_ffi: ^2.4.2
+  path_provider: ^2.1.6
+  path: ^1.9.1
+  http: ^1.6.0
+  url_launcher: ^6.3.2
   photo_view: ^0.15.0
   intl: ^0.20.2
   shelf: ^1.4.2
   shelf_router: ^1.1.4
-  package_info_plus: ^10.1.0
-  flutter_markdown_plus: ^1.0.1
-  flutter_local_notifications: ^21.0.0
-  desktop_drop: ^0.7.0
-  html: ^0.15.4
-  crypto: ^3.0.6
-  share_plus: ^13.1.0
-  image_picker: ^1.2.1
+  package_info_plus: ^10.2.0
+  flutter_markdown_plus: ^1.0.11
+  flutter_local_notifications: ^22.0.0
+  desktop_drop: ^0.7.1
+  html: ^0.15.6
+  crypto: ^3.0.7
+  share_plus: ^13.2.0
+  image_picker: ^1.2.3
   image_size_getter: ^2.4.1
   gal: ^2.3.2
-  image: ^4.2.0
+  image: ^4.9.1
   extended_image: ^10.0.1
-  video_player: ^2.8.1
+  video_player: ^2.11.1
   video_player_win: ^3.2.2
   fc_native_video_thumbnail: ^3.0.1
 
@@ -46,7 +46,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
-  msix: ^3.16.1
+  msix: ^3.18.0
 
 flutter:
   uses-material-design: true
