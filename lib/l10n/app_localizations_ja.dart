@@ -1701,6 +1701,44 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get optChatHint => 'アイデアやラフなプロンプトを入力...';
+
+  @override
+  String get optSend => '送信 (Ctrl+Enter)';
+
+  @override
+  String get optNewSession => '新しい会話';
+
+  @override
+  String get optAgentWorking => '最適化中...';
+
+  @override
+  String get optToolListImages => '参照画像リストを確認しました';
+
+  @override
+  String optToolViewImage(String name) {
+    return '参照画像を確認しました：$name';
+  }
+
+  @override
+  String optPromptVersion(int version) {
+    return '最適化プロンプト v$version';
+  }
+
+  @override
+  String get optCopy => 'コピー';
+
+  @override
+  String get optPromptCopied => 'プロンプトをコピーしました';
+
+  @override
+  String get optEmptyChat =>
+      'ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。';
+
+  @override
+  String get optViewed => 'AI が閲覧済み';
+
+  @override
   String get videoGeneration => '動画生成';
 
   @override

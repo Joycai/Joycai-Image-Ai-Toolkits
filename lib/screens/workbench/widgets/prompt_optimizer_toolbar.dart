@@ -4,20 +4,16 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 
 class PromptOptimizerToolbar extends StatelessWidget {
-  final VoidCallback onRefine;
+  final VoidCallback onNewSession;
   final VoidCallback onApply;
-  final VoidCallback onClear;
   final bool isRefining;
-  final bool canRefine;
   final bool canApply;
 
   const PromptOptimizerToolbar({
     super.key,
-    required this.onRefine,
+    required this.onNewSession,
     required this.onApply,
-    required this.onClear,
     required this.isRefining,
-    required this.canRefine,
     required this.canApply,
   });
 
@@ -55,24 +51,14 @@ class PromptOptimizerToolbar extends StatelessWidget {
 
           if (!isMobile) ...[
             IconButton(
-              icon: const Icon(Icons.cleaning_services_outlined, size: 20),
-              onPressed: onClear,
-              tooltip: l10n.clear,
+              icon: const Icon(Icons.add_comment_outlined, size: 20),
+              onPressed: onNewSession,
+              tooltip: l10n.optNewSession,
               visualDensity: VisualDensity.compact,
             ),
             const VerticalDivider(width: 16, indent: 12, endIndent: 12),
           ],
 
-          FilledButton.icon(
-            onPressed: (isRefining || !canRefine) ? null : onRefine,
-            icon: const Icon(Icons.auto_fix_high, size: 18),
-            label: Text(l10n.refine, style: const TextStyle(fontSize: 12)),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-          ),
-          const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: canApply ? onApply : null,
             icon: const Icon(Icons.check, size: 18),
@@ -90,14 +76,14 @@ class PromptOptimizerToolbar extends StatelessWidget {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz),
               onSelected: (value) {
-                if (value == 'clear') onClear();
+                if (value == 'new_session') onNewSession();
               },
               itemBuilder: (context) => [
                 PopupMenuItem(
-                  value: 'clear',
+                  value: 'new_session',
                   child: ListTile(
-                    leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                    title: Text(l10n.clear, style: TextStyle(color: colorScheme.error)),
+                    leading: Icon(Icons.add_comment_outlined, color: colorScheme.error),
+                    title: Text(l10n.optNewSession, style: TextStyle(color: colorScheme.error)),
                     dense: true,
                   ),
                 ),

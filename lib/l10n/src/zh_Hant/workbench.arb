@@ -158,6 +158,31 @@
       }
     }
   },
+  "optChatHint": "描述你的想法或貼上粗略提示詞...",
+  "optSend": "傳送 (Ctrl+Enter)",
+  "optNewSession": "新對話",
+  "optAgentWorking": "優化中...",
+  "optToolListImages": "查看了參考圖清單",
+  "optToolViewImage": "查看了參考圖：{name}",
+  "@optToolViewImage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPromptVersion": "優化提示詞 v{version}",
+  "@optPromptVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optCopy": "複製",
+  "optPromptCopied": "提示詞已複製到剪貼簿",
+  "optEmptyChat": "傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。",
+  "optViewed": "AI 已查看",
   "videoGeneration": "影片生成",
   "referenceImages": "參考圖片",
   "firstFrame": "首幀",

@@ -105,7 +105,46 @@ extension TaskExecutors on TaskQueueService {
     }
   }
 
+  /// Prompt refinement.
+  ///
+  /// Two modes:
+  ///  * `parameters['sessionId']` present — one turn of the interactive
+  ///    [PromptOptimizerAgent]; the conversation lives in the in-memory
+  ///    session, images are attached on demand via tool calls.
+  ///  * Otherwise — legacy one-shot refinement (kept for tasks restored from
+  ///    the database).
   Future<void> _executePromptRefineTask(TaskItem task) async {
+    final sessionId = task.parameters['sessionId'] as String?;
+    if (sessionId != null) {
+      final session = PromptOptimizerAgent.sessions[sessionId];
+      if (session == null) {
+        throw Exception('Optimizer session is no longer available '
+            '(it does not survive an app restart). Start a new conversation.');
+      }
+
+      task.addLog('Start optimizer agent turn (${task.imagePaths.length} reference images).');
+      await PromptOptimizerAgent.runTurn(
+        session: session,
+        modelIdentifier: task.modelDbId ?? task.modelId,
+        systemPrompt: task.parameters['systemPrompt'],
+        referenceImages: task.imagePaths
+            .map((path) => {'path': path, 'name': p.basename(path)})
+            .toList(),
+        contextId: task.id,
+        onLog: (msg) {
+          task.addLog(msg);
+          refreshQueue();
+        },
+        isCancelled: () => task.status == TaskStatus.cancelled,
+      );
+
+      if (session.refinedPrompt != null) {
+        task.parameters['refinedPrompt'] = session.refinedPrompt;
+      }
+      task.addLog('Optimizer agent turn finished.');
+      return;
+    }
+
     task.addLog('Start prompt refinement.');
 
     final messages = <LLMMessage>[];

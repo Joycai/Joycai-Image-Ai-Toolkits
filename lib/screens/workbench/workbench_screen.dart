@@ -22,7 +22,6 @@ import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/drawing_canvas.dart';
-import '../../widgets/markdown_editor.dart';
 import '../../widgets/unified_sidebar.dart';
 import 'gallery.dart';
 import 'widgets/comparator_toolbar.dart';
@@ -57,8 +56,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   WorkbenchUIState? _workbenchUIState;
   int _lastKnownTabIndex = 0;
   StreamSubscription? _taskSubscription;
-  String? _activeRefineTaskId;
-  Timer? _promptSaveTimer;
 
   // Mask Editor State
   final List<DrawingPath> _maskPaths = [];
@@ -70,37 +67,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   Offset? _maskMousePosition;
   
   // Prompt Optimizer State
-  late MarkdownTextEditingController _optCurrentPromptCtrl;
-  final MarkdownTextEditingController _optRefinedPromptCtrl = MarkdownTextEditingController();
+  final TextEditingController _optInputCtrl = TextEditingController();
   List<SystemPrompt> _optAllSysPrompts = [];
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
   bool _optIsLoadingData = true;
 
   @override
-  void initState() {
-    super.initState();
-    // We'll initialize _appState in didChangeDependencies
-    _optCurrentPromptCtrl = MarkdownTextEditingController();
-    _optCurrentPromptCtrl.addListener(_onOptCurrentPromptChanged);
-  }
-
-  void _onOptCurrentPromptChanged() {
-    if (_appState != null && _optCurrentPromptCtrl.text != _appState!.lastPrompt) {
-      _appState!.lastPrompt = _optCurrentPromptCtrl.text;
-      _promptSaveTimer?.cancel();
-      _promptSaveTimer = Timer(const Duration(seconds: 1), () {
-        _appState!.updateWorkbenchConfig(prompt: _optCurrentPromptCtrl.text);
-      });
-    }
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_appState == null) {
       _appState = Provider.of<AppState>(context, listen: false);
-      _optCurrentPromptCtrl.text = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
+      _optInputCtrl.text = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
       _initTabController();
       
       _appState!.addListener(_onAppStateChanged);
@@ -118,16 +96,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   void _onTaskEvent(TaskEvent event) {
-    if (_activeRefineTaskId != null && event.taskId == _activeRefineTaskId) {
-      if (event.type == TaskEventType.textChunk) {
-        if (mounted) {
-          setState(() {
-            _optRefinedPromptCtrl.text += (event.data as String);
-          });
-        }
-      }
-    }
-
     if (event.type == TaskEventType.imageResult && event.taskType == TaskType.videoGenerate) {
       if (!mounted) return;
       final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
@@ -142,7 +110,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // If we have a fresh manual data transfer
     if (workbenchUIState.optimizerRoughPrompt.isNotEmpty) {
       setState(() {
-        _optCurrentPromptCtrl.text = workbenchUIState.optimizerRoughPrompt;
+        _optInputCtrl.text = workbenchUIState.optimizerRoughPrompt;
         // The images are used by the sidebar reference panel via Provider
       });
       // Reset the trigger in UI State to prevent overwriting on subsequent refreshes
@@ -190,50 +158,45 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
   }
 
-  Future<void> _handleRefine() async {
+  /// Sends one user turn of the optimizer conversation: the message is added
+  /// to the session immediately (so it shows in the chat), then a queue task
+  /// runs the agent turn against the current reference images.
+  Future<void> _handleOptimizerSend() async {
     final l10n = AppLocalizations.of(context)!;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    
+    final text = _optInputCtrl.text.trim();
+    if (text.isEmpty) return;
+
     if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
 
+    final session = workbenchUIState.optimizerSession;
+    session.addUserTurn(text);
+    _optInputCtrl.clear();
+
     try {
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
-      final taskId = const Uuid().v4();
-
-      setState(() {
-        _activeRefineTaskId = taskId;
-        _optRefinedPromptCtrl.clear();
-      });
-
       await taskService.addTask(
         workbenchUIState.optimizerReferenceImages.map((f) => f.path).toList(),
         workbenchUIState.optSelectedModelDbId!,
         {
+          'sessionId': session.id,
           'systemPrompt': workbenchUIState.optSelectedSysPrompt,
-          'roughPrompt': _optCurrentPromptCtrl.text,
         },
         type: TaskType.promptRefine,
-        useStream: true,
-        id: taskId,
+        useStream: false,
+        id: const Uuid().v4(),
       );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.taskSubmitted),
-          backgroundColor: Colors.blue,
-        ));
-      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
     }
   }
 
-  void _handleOptimizerApply() {
-    if (_appState == null) return;
-    _appState!.updateWorkbenchConfig(prompt: _optRefinedPromptCtrl.text);
+  void _handleOptimizerApply(String prompt) {
+    if (_appState == null || prompt.isEmpty) return;
+    _appState!.updateWorkbenchConfig(prompt: prompt);
     _appState!.setWorkbenchTab(0);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.promptApplied)));
   }
@@ -248,14 +211,15 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
          _tabController.animateTo(targetIndex);
       }
       
-      // Update optimizer prompt if switching to/from video tab
-      if (_tabController.index == 4) {
+      // Prefill the chat input with the current workspace prompt, but only
+      // for a pristine conversation — never clobber an ongoing draft or chat.
+      if (_tabController.index == 4 &&
+          _optInputCtrl.text.isEmpty &&
+          (_workbenchUIState?.optimizerSession.transcript.isEmpty ?? false)) {
         final currentWorkspacePrompt = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
-        if (_optCurrentPromptCtrl.text != currentWorkspacePrompt) {
-          setState(() {
-            _optCurrentPromptCtrl.text = currentWorkspacePrompt;
-          });
-        }
+        setState(() {
+          _optInputCtrl.text = currentWorkspacePrompt;
+        });
       }
     }
   }
@@ -353,10 +317,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   @override
   void dispose() {
-    _promptSaveTimer?.cancel();
-    _optCurrentPromptCtrl.removeListener(_onOptCurrentPromptChanged);
-    _optCurrentPromptCtrl.dispose();
-    _optRefinedPromptCtrl.dispose();
+    _optInputCtrl.dispose();
     _appState?.removeListener(_onAppStateChanged);
     _workbenchUIState?.removeListener(_onWorkbenchUIChanged);
     _taskSubscription?.cancel();
@@ -453,27 +414,41 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         break;
       case 4: // Prompt Optimizer
         final taskService = Provider.of<TaskQueueService>(context);
-        final isRefining = taskService.queue.any((t) => t.type == TaskType.promptRefine && t.status == TaskStatus.processing);
 
-        centerContent = Column(
-          children: [
-            PromptOptimizerToolbar(
-              onRefine: _handleRefine,
-              onApply: _handleOptimizerApply,
-              onClear: () => setState(() { _optCurrentPromptCtrl.clear(); _optRefinedPromptCtrl.clear(); }),
-              isRefining: isRefining,
-              canRefine: workbenchUIState.optSelectedSysPrompt != null,
-              canApply: _optRefinedPromptCtrl.text.isNotEmpty,
-            ),
-            Expanded(
-              child: _optIsLoadingData 
-                ? const Center(child: CircularProgressIndicator())
-                : PromptOptimizerView(
-                    currentPromptCtrl: _optCurrentPromptCtrl,
-                    refinedPromptCtrl: _optRefinedPromptCtrl,
-                  ),
-            ),
-          ],
+        centerContent = Consumer<WorkbenchUIState>(
+          builder: (context, wui, _) {
+            final session = wui.optimizerSession;
+            return ListenableBuilder(
+              listenable: session,
+              builder: (context, _) {
+                final isBusy = session.isRunning ||
+                    taskService.queue.any((t) =>
+                        t.type == TaskType.promptRefine &&
+                        t.parameters['sessionId'] == session.id &&
+                        (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
+                return Column(
+                  children: [
+                    PromptOptimizerToolbar(
+                      onNewSession: () => wui.newOptimizerSession(),
+                      onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
+                      isRefining: isBusy,
+                      canApply: session.refinedPrompt != null,
+                    ),
+                    Expanded(
+                      child: _optIsLoadingData
+                          ? const Center(child: CircularProgressIndicator())
+                          : PromptOptimizerChatView(
+                              inputCtrl: _optInputCtrl,
+                              onSend: _handleOptimizerSend,
+                              onApplyPrompt: _handleOptimizerApply,
+                              isBusy: isBusy,
+                            ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         );
         leftPanel = const OptimizerReferencePanel();
         showRightPanel = !isNarrow;

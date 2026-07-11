@@ -1735,6 +1735,44 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get optChatHint => 'Describe your idea or paste a rough prompt...';
+
+  @override
+  String get optSend => 'Send (Ctrl+Enter)';
+
+  @override
+  String get optNewSession => 'New Conversation';
+
+  @override
+  String get optAgentWorking => 'Optimizing...';
+
+  @override
+  String get optToolListImages => 'Checked the reference image list';
+
+  @override
+  String optToolViewImage(String name) {
+    return 'Viewed reference image: $name';
+  }
+
+  @override
+  String optPromptVersion(int version) {
+    return 'Optimized Prompt v$version';
+  }
+
+  @override
+  String get optCopy => 'Copy';
+
+  @override
+  String get optPromptCopied => 'Prompt copied to clipboard';
+
+  @override
+  String get optEmptyChat =>
+      'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.';
+
+  @override
+  String get optViewed => 'Viewed by AI';
+
+  @override
   String get videoGeneration => 'Video Generation';
 
   @override

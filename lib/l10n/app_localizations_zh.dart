@@ -1695,6 +1695,43 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get optChatHint => '描述你的想法或粘贴粗略提示词...';
+
+  @override
+  String get optSend => '发送 (Ctrl+Enter)';
+
+  @override
+  String get optNewSession => '新会话';
+
+  @override
+  String get optAgentWorking => '优化中...';
+
+  @override
+  String get optToolListImages => '查看了参考图列表';
+
+  @override
+  String optToolViewImage(String name) {
+    return '查看了参考图：$name';
+  }
+
+  @override
+  String optPromptVersion(int version) {
+    return '优化提示词 v$version';
+  }
+
+  @override
+  String get optCopy => '复制';
+
+  @override
+  String get optPromptCopied => '提示词已复制到剪贴板';
+
+  @override
+  String get optEmptyChat => '发送粗略提示词或想法开始优化。AI 会按需查看参考图，你可以多轮追问持续调整结果。';
+
+  @override
+  String get optViewed => 'AI 已查看';
+
+  @override
   String get videoGeneration => '视频生成';
 
   @override
@@ -3535,6 +3572,43 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String refineFailed(String error) {
     return '優化失敗: $error';
   }
+
+  @override
+  String get optChatHint => '描述你的想法或貼上粗略提示詞...';
+
+  @override
+  String get optSend => '傳送 (Ctrl+Enter)';
+
+  @override
+  String get optNewSession => '新對話';
+
+  @override
+  String get optAgentWorking => '優化中...';
+
+  @override
+  String get optToolListImages => '查看了參考圖清單';
+
+  @override
+  String optToolViewImage(String name) {
+    return '查看了參考圖：$name';
+  }
+
+  @override
+  String optPromptVersion(int version) {
+    return '優化提示詞 v$version';
+  }
+
+  @override
+  String get optCopy => '複製';
+
+  @override
+  String get optPromptCopied => '提示詞已複製到剪貼簿';
+
+  @override
+  String get optEmptyChat => '傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。';
+
+  @override
+  String get optViewed => 'AI 已查看';
 
   @override
   String get videoGeneration => '影片生成';
