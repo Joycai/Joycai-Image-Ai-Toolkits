@@ -1,10 +1,6 @@
 name: '🔨 Multi-Platform Build'
 
 on:
-  push:
-    tags:
-      - 'v[0-9]*.[0-9]*.[0-9]*'
-      - 'v[0-9]*.[0-9]*.[0-9]*.[0-9]*'
   workflow_dispatch:
 
 jobs:
@@ -111,11 +107,18 @@ jobs:
   release:
     name: Create GitHub Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Read Version from pubspec.yaml'
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d '+' -f1)
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: 'Download All Artifacts'
         uses: actions/download-artifact@v4
         with:
@@ -125,6 +128,8 @@ jobs:
       - name: 'Create Release'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: |
             artifacts/*.zip
             artifacts/*.tar.gz
