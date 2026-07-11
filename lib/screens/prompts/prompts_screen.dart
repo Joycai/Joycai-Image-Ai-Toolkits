@@ -5,7 +5,9 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/panel_resizer.dart';
 import 'prompts_io.dart';
 import 'widgets/prompt_dialogs.dart';
 import 'widgets/prompts_sidebar.dart';
@@ -21,8 +23,12 @@ class PromptsScreen extends StatefulWidget {
 }
 
 class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProviderStateMixin {
+  static const double _minSidebarWidth = 170;
+  static const double _maxSidebarWidth = 340;
+
   final TextEditingController _searchCtrl = TextEditingController();
   late TabController _tabController;
+  double _sidebarWidth = 230;
 
   List<Prompt> _userPrompts = [];
   List<SystemPrompt> _systemPrompts = [];
@@ -50,6 +56,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    _loadSidebarWidth();
+  }
+
+  Future<void> _loadSidebarWidth() async {
+    final saved = await DatabaseService().getSetting('prompts_sidebar_width');
+    final width = double.tryParse(saved ?? '');
+    if (width != null && mounted) {
+      setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
+    }
   }
 
   @override
@@ -256,126 +271,145 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  // --- Desktop/Tablet Layout ---
+  // --- Desktop/Tablet Layout (inset panels on a tinted canvas) ---
   Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     final tagCounts = _computeTagCounts();
     final isCategories = _tabController.index == 2;
 
-    return Row(
-      children: [
-        // ── Left sidebar: header + category filter ──────────────────────────
-        SizedBox(
-          width: isTablet ? 190 : 220,
-          child: Column(
-            children: [
-              // 60px sidebar header
-              Container(
-                height: 60,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerLow,
-                  border: Border(
-                    bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome, size: 22, color: colorScheme.primary),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        l10n.promptLibrary,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+    return Scaffold(
+      backgroundColor: colorScheme.surfaceContainer,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            // ── Left card: library header + category filter ────────────────
+            PanelCard(
+              width: _sidebarWidth,
+              child: Column(
+                children: [
+                  _buildSidebarHeader(l10n, colorScheme, isCategories: isCategories),
+                  // Category filter list
+                  Expanded(
+                    child: PromptsSidebar(
+                      tags: _tags,
+                      selectedFilterTagIds: _selectedFilterTagIds,
+                      tagCounts: tagCounts,
+                      totalCount: _userPrompts.length,
+                      matchAll: _filterMatchAll,
+                      onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
+                      onTagToggle: (id) {
+                        setState(() {
+                          if (_selectedFilterTagIds.contains(id)) {
+                            _selectedFilterTagIds.remove(id);
+                          } else {
+                            _selectedFilterTagIds.add(id);
+                          }
+                        });
+                      },
+                      onClear: () => setState(() => _selectedFilterTagIds.clear()),
                     ),
-                    // Manage categories button
-                    Tooltip(
-                      message: l10n.categoriesTab,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => setState(() {
-                          _tabController.index = isCategories ? 0 : 2;
-                          _clearSelection();
-                        }),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: isCategories
-                                ? colorScheme.primary.withAlpha(28)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.category_outlined,
-                            size: 18,
-                            color: isCategories
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          ),
+                  ),
+                ],
+              ),
+            ),
+            PanelResizer(
+              onDrag: (dx) => setState(() {
+                _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+              }),
+              onDragEnd: () => DatabaseService()
+                  .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString()),
+            ),
+
+            // ── Main card: 56px in-card header + content ────────────────────
+            Expanded(
+              child: PanelCard(
+                child: Column(
+                  children: [
+                    Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
                         ),
+                      ),
+                      child: _buildDesktopHeader(l10n, colorScheme,
+                          isTablet: isTablet, isCategories: isCategories),
+                    ),
+                    // Tablet: horizontal category filter when on user prompts tab
+                    if (isTablet && _tabController.index == 0 && _tags.isNotEmpty)
+                      _buildMobileFilterBar(colorScheme),
+                    // Main content
+                    Expanded(
+                      child: _buildConstrainedContent(
+                        _buildTabViews(l10n)[_tabController.index],
                       ),
                     ),
                   ],
                 ),
               ),
-              // Category filter list
-              Expanded(
-                child: PromptsSidebar(
-                  tags: _tags,
-                  selectedFilterTagIds: _selectedFilterTagIds,
-                  tagCounts: tagCounts,
-                  totalCount: _userPrompts.length,
-                  matchAll: _filterMatchAll,
-                  onMatchModeChanged: (val) => setState(() => _filterMatchAll = val),
-                  onTagToggle: (id) {
-                    setState(() {
-                      if (_selectedFilterTagIds.contains(id)) {
-                        _selectedFilterTagIds.remove(id);
-                      } else {
-                        _selectedFilterTagIds.add(id);
-                      }
-                    });
-                  },
-                  onClear: () => setState(() => _selectedFilterTagIds.clear()),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const VerticalDivider(width: 1),
+      ),
+    );
+  }
 
-        // ── Right main: 60px header + content ──────────────────────────────
-        Expanded(
-          child: Column(
-            children: [
-              // 60px main header
-              Container(
-                height: 60,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border(
-                    bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-                  ),
-                ),
-                child: _buildDesktopHeader(l10n, colorScheme, isTablet: isTablet, isCategories: isCategories),
-              ),
-              // Tablet: horizontal category filter when on user prompts tab
-              if (isTablet && _tabController.index == 0 && _tags.isNotEmpty)
-                _buildMobileFilterBar(colorScheme),
-              // Main content
-              Expanded(
-                child: _buildConstrainedContent(
-                  _buildTabViews(l10n)[_tabController.index],
-                ),
-              ),
-            ],
-          ),
+  Widget _buildSidebarHeader(
+    AppLocalizations l10n,
+    ColorScheme colorScheme, {
+    required bool isCategories,
+  }) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
         ),
-      ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.promptLibrary,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Manage categories button
+          Tooltip(
+            message: l10n.categoriesTab,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() {
+                _tabController.index = isCategories ? 0 : 2;
+                _clearSelection();
+              }),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isCategories
+                      ? colorScheme.primary.withAlpha(28)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.category_outlined,
+                  size: 18,
+                  color: isCategories
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

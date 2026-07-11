@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/panel_resizer.dart';
 import 'widgets/appearance_section.dart';
 import 'widgets/application_section.dart';
 import 'widgets/connectivity_section.dart';
@@ -18,9 +19,50 @@ class SettingsScreen extends StatelessWidget {
 
     return ResponsiveBuilder(
       mobile: _SettingsMobileView(l10n: l10n),
-      tablet: _SettingsSingleColumnView(l10n: l10n),
-      desktop: _SettingsSingleColumnView(l10n: l10n),
+      tablet: _SettingsTwoPaneView(l10n: l10n),
+      desktop: _SettingsTwoPaneView(l10n: l10n),
     );
+  }
+}
+
+// ── Shared category metadata (icons/colors match the mobile list) ──────────
+
+IconData _categoryIcon(SettingsCategory category) {
+  switch (category) {
+    case SettingsCategory.appearance:
+      return Icons.palette_outlined;
+    case SettingsCategory.connectivity:
+      return Icons.lan_outlined;
+    case SettingsCategory.application:
+      return Icons.settings_applications_outlined;
+    case SettingsCategory.data:
+      return Icons.storage_outlined;
+  }
+}
+
+Color _categoryColor(SettingsCategory category) {
+  switch (category) {
+    case SettingsCategory.appearance:
+      return Colors.blue;
+    case SettingsCategory.connectivity:
+      return Colors.green;
+    case SettingsCategory.application:
+      return Colors.orange;
+    case SettingsCategory.data:
+      return Colors.purple;
+  }
+}
+
+String _categoryLabel(SettingsCategory category, AppLocalizations l10n) {
+  switch (category) {
+    case SettingsCategory.appearance:
+      return l10n.appearance;
+    case SettingsCategory.connectivity:
+      return l10n.connectivity;
+    case SettingsCategory.application:
+      return l10n.application;
+    case SettingsCategory.data:
+      return l10n.dataManagement;
   }
 }
 
@@ -103,129 +145,161 @@ class _SettingsDetailPage extends StatelessWidget {
   }
 }
 
-// ── Desktop / Tablet: 60px header + single scrollable column ───────────────
+// ── Desktop / Tablet: inset-panel canvas with nav card + content card ───────
 
-class _SettingsSingleColumnView extends StatelessWidget {
+class _SettingsTwoPaneView extends StatefulWidget {
   final AppLocalizations l10n;
-  const _SettingsSingleColumnView({required this.l10n});
+  const _SettingsTwoPaneView({required this.l10n});
+
+  @override
+  State<_SettingsTwoPaneView> createState() => _SettingsTwoPaneViewState();
+}
+
+class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
+  // Transient UI state: which category is shown in the content card.
+  SettingsCategory _selected = SettingsCategory.appearance;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final navWidth = Responsive.isNarrow(context) ? 200.0 : 232.0;
 
+    return Scaffold(
+      backgroundColor: colorScheme.surfaceContainer,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            PanelCard(
+              width: navWidth,
+              child: _buildNavPane(colorScheme),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: PanelCard(
+                child: _buildContentPane(colorScheme),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavPane(ColorScheme colorScheme) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 60px screen header
+        // Screen title header, aligned with the content card's header row.
         Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
             border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
           ),
           child: Row(
             children: [
-              Icon(Icons.settings_outlined, size: 24, color: colorScheme.primary),
-              const SizedBox(width: 12),
+              Icon(Icons.settings_outlined, size: 22, color: colorScheme.primary),
+              const SizedBox(width: 10),
               Text(
-                l10n.settings,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                widget.l10n.settings,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ],
           ),
         ),
-        // Scrollable sections
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SectionBlock(
-                      icon: Icons.palette_outlined,
-                      title: l10n.appearance,
-                      color: Colors.blue,
-                      child: const AppearanceSection(),
-                    ),
-                    const SizedBox(height: 32),
-                    _SectionBlock(
-                      icon: Icons.lan_outlined,
-                      title: l10n.connectivity,
-                      color: Colors.green,
-                      child: const ConnectivitySection(),
-                    ),
-                    const SizedBox(height: 32),
-                    _SectionBlock(
-                      icon: Icons.settings_applications_outlined,
-                      title: l10n.application,
-                      color: Colors.orange,
-                      child: const ApplicationSection(),
-                    ),
-                    const SizedBox(height: 32),
-                    _SectionBlock(
-                      icon: Icons.storage_outlined,
-                      title: l10n.dataManagement,
-                      color: Colors.purple,
-                      child: const DataSection(),
-                    ),
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
-            ),
+          child: ListView(
+            padding: const EdgeInsets.all(8),
+            children: SettingsCategory.values
+                .map((category) => _buildNavTile(category, colorScheme))
+                .toList(),
           ),
         ),
       ],
     );
   }
-}
 
-class _SectionBlock extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color color;
-  final Widget child;
+  Widget _buildNavTile(SettingsCategory category, ColorScheme colorScheme) {
+    final isSelected = category == _selected;
+    final color = _categoryColor(category);
 
-  const _SectionBlock({
-    required this.icon,
-    required this.title,
-    required this.color,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: color.withAlpha(30),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(width: 11),
-            Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: ListTile(
+        dense: true,
+        selected: isSelected,
+        selectedTileColor: colorScheme.primaryContainer.withAlpha(90),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        leading: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withAlpha(30),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(_categoryIcon(category), color: color, size: 18),
         ),
-        const SizedBox(height: 14),
-        child,
+        title: Text(
+          _categoryLabel(category, widget.l10n),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? colorScheme.primary : null,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => setState(() => _selected = category),
+      ),
+    );
+  }
+
+  Widget _buildContentPane(ColorScheme colorScheme) {
+    Widget content;
+    switch (_selected) {
+      case SettingsCategory.appearance:
+        content = const AppearanceSection();
+      case SettingsCategory.connectivity:
+        content = const ConnectivitySection();
+      case SettingsCategory.application:
+        content = const ApplicationSection();
+      case SettingsCategory.data:
+        content = const DataSection();
+    }
+
+    return Column(
+      children: [
+        // Category title as an in-card header row.
+        Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+          ),
+          child: Row(
+            children: [
+              Icon(_categoryIcon(_selected), size: 22, color: _categoryColor(_selected)),
+              const SizedBox(width: 10),
+              Text(
+                _categoryLabel(_selected, widget.l10n),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            key: ValueKey(_selected),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: content,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -115,130 +115,131 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
 
-    final sidebar = Container(
-      width: isNarrow ? null : _sidebarWidth,
-      color: colorScheme.surfaceContainerLow,
-      child: const UnifiedSidebar(useFileBrowserState: true),
-    );
-
     final fileCount = fileBrowserState.filteredFiles.length;
     final selectedCount = fileBrowserState.selectedFiles.length;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-          ),
-          child: Row(
+    // Header lives inside the content card (its bottom border becomes an
+    // internal divider on the inset-panel canvas).
+    final header = Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          if (isNarrow)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            ),
+          Icon(Icons.folder_open, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isNarrow)
-                Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  ),
-                ),
-              Icon(Icons.folder_open, size: 22, color: colorScheme.primary),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.fileBrowser,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  ),
-                  Text(
-                    selectedCount > 0
-                        ? '${l10n.filesCount(fileCount)} · ${l10n.imagesSelected(selectedCount)}'
-                        : l10n.filesCount(fileCount),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
+              Text(
+                l10n.fileBrowser,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
-              const SizedBox(width: 16),
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: _buildSearchField(fileBrowserState, l10n, colorScheme),
+              Text(
+                selectedCount > 0
+                    ? '${l10n.filesCount(fileCount)} · ${l10n.imagesSelected(selectedCount)}'
+                    : l10n.filesCount(fileCount),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
-                    ? Icons.view_list
-                    : Icons.grid_view),
-                onPressed: () => fileBrowserState.setViewMode(
-                  fileBrowserState.viewMode == BrowserViewMode.grid
-                      ? BrowserViewMode.list
-                      : BrowserViewMode.grid,
-                ),
-                tooltip: l10n.switchViewMode,
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () => fileBrowserState.refresh(),
-                tooltip: l10n.refresh,
               ),
             ],
           ),
-        ),
-      ),
-      drawer: isNarrow ? Drawer(child: sidebar) : null,
-      body: Row(
-        children: [
-          if (!isNarrow) ...[
-            sidebar,
-            PanelResizer(
-              onDrag: (dx) => setState(() {
-                _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
-              }),
-              onDragEnd: () => DatabaseService()
-                  .saveSetting('browser_sidebar_width', _sidebarWidth.round().toString()),
-            ),
-          ],
-          Expanded(
-            child: Container(
-              color: colorScheme.surface,
-              child: Column(
-                children: [
-                  BrowserFilterBar(state: fileBrowserState),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        fileBrowserState.viewMode == BrowserViewMode.grid
-                            ? _buildFileGrid(context, fileBrowserState)
-                            : _buildFileListView(context, fileBrowserState),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 16,
-                          child: Center(
-                            child: BrowserSelectionBar(
-                              state: fileBrowserState,
-                              onAiRename: () => _showAiRenameDialog(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          const SizedBox(width: 16),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: _buildSearchField(fileBrowserState, l10n, colorScheme),
             ),
           ),
+          const Spacer(),
+          IconButton(
+            icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
+                ? Icons.view_list
+                : Icons.grid_view),
+            onPressed: () => fileBrowserState.setViewMode(
+              fileBrowserState.viewMode == BrowserViewMode.grid
+                  ? BrowserViewMode.list
+                  : BrowserViewMode.grid,
+            ),
+            tooltip: l10n.switchViewMode,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => fileBrowserState.refresh(),
+            tooltip: l10n.refresh,
+          ),
         ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: colorScheme.surfaceContainer,
+      drawer: isNarrow
+          ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
+          : null,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            if (!isNarrow) ...[
+              PanelCard(
+                width: _sidebarWidth,
+                child: const UnifiedSidebar(useFileBrowserState: true),
+              ),
+              PanelResizer(
+                onDrag: (dx) => setState(() {
+                  _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                }),
+                onDragEnd: () => DatabaseService()
+                    .saveSetting('browser_sidebar_width', _sidebarWidth.round().toString()),
+              ),
+            ],
+            Expanded(
+              child: PanelCard(
+                child: Column(
+                  children: [
+                    header,
+                    BrowserFilterBar(state: fileBrowserState),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          fileBrowserState.viewMode == BrowserViewMode.grid
+                              ? _buildFileGrid(context, fileBrowserState)
+                              : _buildFileListView(context, fileBrowserState),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 16,
+                            child: Center(
+                              child: BrowserSelectionBar(
+                                state: fileBrowserState,
+                                onAiRename: () => _showAiRenameDialog(context),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

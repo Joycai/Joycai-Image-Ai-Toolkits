@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Draggable divider between two panels. A hairline with a centered pill grip
-/// so the affordance is visible at rest; the whole 9px-wide strip (not just
-/// the grip) accepts the drag.
+/// Draggable gutter between two panel cards. No divider line — the boundary
+/// is formed by the canvas color showing through the 14px gap; only a pill
+/// grip floats in the middle. The whole strip accepts the drag.
 ///
 /// [axis] is the drag direction: [Axis.horizontal] (default) is a vertical
-/// divider between side-by-side panels, [Axis.vertical] a horizontal divider
+/// gutter between side-by-side panels, [Axis.vertical] a horizontal gutter
 /// between stacked panels (e.g. the bottom console).
 class PanelResizer extends StatefulWidget {
   /// Called with the drag delta along [axis] (dx when horizontal, dy when
@@ -39,9 +39,6 @@ class _PanelResizerState extends State<PanelResizer> {
     final colorScheme = Theme.of(context).colorScheme;
     final active = _hovering || _dragging;
 
-    final hairlineColor = active
-        ? colorScheme.primary.withAlpha(120)
-        : Theme.of(context).dividerColor;
     final gripColor = active ? colorScheme.primary : colorScheme.outlineVariant;
     final gripThickness = active ? 5.0 : 4.0;
 
@@ -60,30 +57,18 @@ class _PanelResizerState extends State<PanelResizer> {
         onVerticalDragEnd: _isHorizontalDrag ? null : (_) => _endDrag(),
         onVerticalDragCancel: _isHorizontalDrag ? null : () => setState(() => _dragging = false),
         child: SizedBox(
-          width: _isHorizontalDrag ? 9 : null,
-          height: _isHorizontalDrag ? null : 9,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: Center(
-                  child: Container(
-                    width: _isHorizontalDrag ? 1 : null,
-                    height: _isHorizontalDrag ? null : 1,
-                    color: hairlineColor,
-                  ),
-                ),
+          width: _isHorizontalDrag ? 14 : null,
+          height: _isHorizontalDrag ? null : 14,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: _isHorizontalDrag ? gripThickness : 40,
+              height: _isHorizontalDrag ? 40 : gripThickness,
+              decoration: BoxDecoration(
+                color: gripColor,
+                borderRadius: BorderRadius.circular(3),
               ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: _isHorizontalDrag ? gripThickness : 40,
-                height: _isHorizontalDrag ? 40 : gripThickness,
-                decoration: BoxDecoration(
-                  color: gripColor,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -93,5 +78,30 @@ class _PanelResizerState extends State<PanelResizer> {
   void _endDrag() {
     setState(() => _dragging = false);
     widget.onDragEnd?.call();
+  }
+}
+
+/// Rounded surface card hosting one panel of an inset layout. Pairs with
+/// [PanelResizer]: cards sit on a `surfaceContainer` canvas, separated by
+/// resizer gutters instead of divider lines.
+class PanelCard extends StatelessWidget {
+  final Widget child;
+  final double? width;
+
+  const PanelCard({super.key, required this.child, this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    // Material (not a decorated Container) so descendant ListTiles/InkWells
+    // paint their ink and selected tints on the card surface.
+    return SizedBox(
+      width: width,
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      ),
+    );
   }
 }

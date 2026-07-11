@@ -9,6 +9,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/panel_resizer.dart';
 
 /// Which subset of tasks the list shows.
 enum _TaskFilter { all, running, pending, done, failed }
@@ -32,7 +33,24 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     if (isNarrow) {
       return _buildMobileLayout(context, appState, l10n);
     }
-    return _buildDesktopLayout(context, appState, l10n);
+
+    final content = _buildDesktopContent(context, appState, l10n);
+
+    // Embedded presentation (workbench bottom-sheet console): render
+    // full-bleed on the sheet's own surface — no canvas padding, no card.
+    final inBottomSheet = context.findAncestorWidgetOfExactType<BottomSheet>() != null;
+    if (inBottomSheet) {
+      return content;
+    }
+
+    // Standalone desktop: a rounded panel card floating on the inset canvas.
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: PanelCard(child: content),
+      ),
+    );
   }
 
   // ── Shared: filtering + status-priority sorting ─────────────────────────────
@@ -112,9 +130,9 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     );
   }
 
-  // ── Desktop layout ──────────────────────────────────────────────────────────
+  // ── Desktop content (hosted in a PanelCard standalone, full-bleed in sheet) ─
 
-  Widget _buildDesktopLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
+  Widget _buildDesktopContent(BuildContext context, AppState appState, AppLocalizations l10n) {
     final queue = appState.taskQueue.queue;
     final tasks = _visibleTasks(queue);
     final colorScheme = Theme.of(context).colorScheme;
@@ -128,21 +146,21 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
     return Column(
       children: [
-        // ── 60px inline header ──────────────────────────────────────────────
+        // Header lives inside the top of the card (its bottom border becomes
+        // an internal divider on the inset-panel canvas).
         Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
             border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
           ),
           child: Row(
             children: [
-              Icon(Icons.checklist, size: 24, color: colorScheme.primary),
-              const SizedBox(width: 12),
+              Icon(Icons.checklist, size: 22, color: colorScheme.primary),
+              const SizedBox(width: 10),
               Text(
                 l10n.taskQueueManager,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
               const Spacer(),
               IconButton(
@@ -176,22 +194,31 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           ),
         ),
 
-        // ── Filter chips row ────────────────────────────────────────────────
+        // ── Filter chips toolbar ────────────────────────────────────────────
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(70))),
+          ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: _buildFilterChips(context, queue, l10n, colorScheme),
           ),
         ),
 
-        // ── Task list ───────────────────────────────────────────────────────
+        // ── Task list (full-bleed rows inside the card) ─────────────────────
         Expanded(
           child: tasks.isEmpty
               ? _buildEmptyState(colorScheme, l10n)
-              : _buildGroupedList(context, tasks, colorScheme,
-                  margin: const EdgeInsets.fromLTRB(20, 8, 20, 16), isMobile: false),
+              : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  itemCount: tasks.length,
+                  separatorBuilder: (_, _) => Divider(
+                      height: 1, thickness: 0.5, color: colorScheme.outlineVariant.withAlpha(70)),
+                  itemBuilder: (context, index) =>
+                      _TaskRow(task: tasks[index], isMobile: false),
+                ),
         ),
       ],
     );
@@ -413,7 +440,7 @@ class _TaskRowState extends State<_TaskRow> {
         onTap: () => setState(() => _isExpanded = !_isExpanded),
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: widget.isMobile ? 12 : 14,
+            horizontal: widget.isMobile ? 12 : 16,
             vertical: isProcessing ? 12 : 10,
           ),
           child: Column(

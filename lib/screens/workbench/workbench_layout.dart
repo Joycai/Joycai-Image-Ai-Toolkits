@@ -82,53 +82,56 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       value: WorkbenchLayoutState(_scaffoldKey),
       child: Scaffold(
         key: _scaffoldKey,
+        // Inset-panel canvas: panels are rounded cards floating on this
+        // tinted background, separated by resizer gutters instead of lines.
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         body: Column(
           children: [
             if (widget.topBar != null) widget.topBar!,
             Expanded(
-              child: Row(
-                children: [
-                  // Left Panel
-                  if (widget.leftPanel != null && widget.showLeftPanel && !isTablet) ...[
-                    SizedBox(
-                      width: _leftWidth,
-                      child: widget.leftPanel,
-                    ),
-                    PanelResizer(
-                      onDrag: (delta) {
-                        setState(() {
-                          _leftWidth = (_leftWidth + delta).clamp(200.0, 500.0);
-                        });
-                      },
-                      onDragEnd: () {
-                        Provider.of<AppState>(context, listen: false)
-                            .setSidebarWidth(_leftWidth);
-                      },
-                    ),
-                  ],
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(8, 8, 8, widget.bottomPanel == null ? 8 : 0),
+                child: Row(
+                  children: [
+                    // Left Panel
+                    if (widget.leftPanel != null && widget.showLeftPanel && !isTablet) ...[
+                      PanelCard(width: _leftWidth, child: widget.leftPanel!),
+                      PanelResizer(
+                        onDrag: (delta) {
+                          setState(() {
+                            _leftWidth = (_leftWidth + delta).clamp(200.0, 500.0);
+                          });
+                        },
+                        onDragEnd: () {
+                          Provider.of<AppState>(context, listen: false)
+                              .setSidebarWidth(_leftWidth);
+                        },
+                      ),
+                    ],
 
-                  // Center Content
-                  Expanded(
-                    child: widget.centerContent,
-                  ),
+                    // Center Content
+                    Expanded(
+                      child: PanelCard(child: widget.centerContent),
+                    ),
 
-                  // Right Panel
-                  if (widget.rightPanelBuilder != null && widget.showRightPanel && !isNarrow) ...[
-                    PanelResizer(
-                      onDrag: (delta) {
-                        setState(() {
-                          _rightWidth = (_rightWidth - delta).clamp(250.0, rightMaxWidth);
-                        });
-                      },
-                      onDragEnd: () => DatabaseService().saveSetting(
-                          'workbench_right_panel_width', _rightWidth.round().toString()),
-                    ),
-                    SizedBox(
-                      width: _rightWidth.clamp(250.0, rightMaxWidth),
-                      child: widget.rightPanelBuilder!(null),
-                    ),
+                    // Right Panel
+                    if (widget.rightPanelBuilder != null && widget.showRightPanel && !isNarrow) ...[
+                      PanelResizer(
+                        onDrag: (delta) {
+                          setState(() {
+                            _rightWidth = (_rightWidth - delta).clamp(250.0, rightMaxWidth);
+                          });
+                        },
+                        onDragEnd: () => DatabaseService().saveSetting(
+                            'workbench_right_panel_width', _rightWidth.round().toString()),
+                      ),
+                      PanelCard(
+                        width: _rightWidth.clamp(250.0, rightMaxWidth),
+                        child: widget.rightPanelBuilder!(null),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             if (widget.bottomPanel != null) widget.bottomPanel!,

@@ -22,9 +22,9 @@ class DownloaderResultsArea extends StatelessWidget {
 
     return Column(
       children: [
+        // Selection bar sits directly on the PanelCard surface — no fill.
         if (state.discoveredImages case [_, ...]) Container(
             padding: const EdgeInsets.all(16),
-            color: colorScheme.surface,
             child: Row(
               children: [
                 Text(

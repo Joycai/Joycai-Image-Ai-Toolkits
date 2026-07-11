@@ -5,6 +5,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../services/database_service.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
@@ -12,6 +13,7 @@ import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
+import '../../widgets/panel_resizer.dart';
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
@@ -21,16 +23,33 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
+  static const double _minSidebarWidth = 220;
+  static const double _maxSidebarWidth = 420;
+
   int? _selectedChannelId;
+  double _sidebarWidth = 300;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSidebarWidth();
+  }
+
+  Future<void> _loadSidebarWidth() async {
+    final saved = await DatabaseService().getSetting('models_sidebar_width');
+    final width = double.tryParse(saved ?? '');
+    if (width != null && mounted) {
+      setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return ResponsiveBuilder(
       mobile: _buildMobileLayout(l10n),
-      tablet: _buildTabletLayout(l10n),
-      desktop: _buildDesktopLayout(l10n),
+      desktop: _buildPanelLayout(l10n),
     );
   }
 
@@ -68,310 +87,281 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  // --- Tablet Layout (iPad) ---
-  Widget _buildTabletLayout(AppLocalizations l10n) {
+  // --- Inset Panel Layout (tablet + desktop) ---
+  //
+  // Master-detail on a `surfaceContainer` canvas: a channels card on the
+  // left (with the screen header and add-channel action) and a detail card
+  // on the right showing the selected channel and its models. The two cards
+  // are separated by a draggable PanelResizer gutter.
+  Widget _buildPanelLayout(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     return Consumer<AppState>(
       builder: (context, appState, child) {
         final channels = appState.allChannels;
         _ensureSelection(channels);
-        final modelCount = appState.allModels.length;
-
-        return Column(
-          children: [
-            _buildScreenHeader(l10n, colorScheme, appState, modelCount, channels.length),
-            Expanded(
-              child: Row(
-                children: [
-                  // Material (not a colored Container): the sidebar's
-                  // ListTiles paint ink/selection on the nearest Material,
-                  // which a ColoredBox would hide (debug assertion).
-                  SizedBox(
-                    width: 280,
-                    child: Material(
-                      color: colorScheme.surfaceContainerLow,
-                      child: _buildChannelSidebar(l10n, appState, channels),
-                    ),
-                  ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: Container(
-                      color: colorScheme.surface,
-                      child: _buildChannelDetailView(l10n, appState),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        final selectedChannel = channels.cast<LLMChannel?>().firstWhere(
+          (c) => c?.id == _selectedChannelId,
+          orElse: () => null,
         );
-      },
-    );
-  }
 
-  // --- Desktop Layout ---
-  Widget _buildDesktopLayout(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Consumer<AppState>(
-      builder: (context, appState, child) {
-        final channels = appState.allChannels;
-        _ensureSelection(channels);
-        final modelCount = appState.allModels.length;
-
-        return Column(
-          children: [
-            _buildScreenHeader(l10n, colorScheme, appState, modelCount, channels.length),
-            Expanded(
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 320,
-                    child: Material(
-                      color: colorScheme.surfaceContainerLow,
-                      child: _buildChannelSidebar(l10n, appState, channels, isDesktop: true),
-                    ),
-                  ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: Container(
-                      color: colorScheme.surface,
-                      child: _buildChannelDetailView(l10n, appState, isDesktop: true),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildScreenHeader(
-    AppLocalizations l10n,
-    ColorScheme colorScheme,
-    AppState appState,
-    int modelCount,
-    int channelCount,
-  ) {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.memory, size: 24, color: colorScheme.primary),
-          const SizedBox(width: 12),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.modelManager,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              Text(
-                l10n.modelsAndChannelsCount(modelCount, channelCount),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurfaceVariant,
-                  fontFamily: 'monospace',
+        return Scaffold(
+          backgroundColor: colorScheme.surfaceContainer,
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                PanelCard(
+                  width: _sidebarWidth,
+                  child: _buildChannelsPanel(l10n, appState, channels),
                 ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => _showChannelDialog(l10n, appState),
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [colorScheme.primary, const Color(0xFFB794F6)],
+                PanelResizer(
+                  onDrag: (dx) => setState(() {
+                    _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                  }),
+                  onDragEnd: () => DatabaseService()
+                      .saveSetting('models_sidebar_width', _sidebarWidth.round().toString()),
                 ),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 18, color: Colors.white),
-                  const SizedBox(width: 7),
-                  Text(
-                    l10n.addChannel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                    ),
+                Expanded(
+                  child: PanelCard(
+                    child: selectedChannel == null
+                        ? Center(
+                            child: Text(
+                              l10n.noModelsConfigured,
+                              style: TextStyle(color: colorScheme.outline),
+                            ),
+                          )
+                        : _buildDetailPanel(l10n, appState, selectedChannel),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   void _ensureSelection(List<LLMChannel> channels) {
-    if (_selectedChannelId == null && channels.isNotEmpty) {
+    if (channels.isEmpty) {
+      _selectedChannelId = null;
+      return;
+    }
+    if (_selectedChannelId == null || !channels.any((c) => c.id == _selectedChannelId)) {
       _selectedChannelId = channels.first.id;
     }
   }
 
-  // --- Common UI Components ---
+  // --- Channels Panel (left card) ---
 
-  Widget _buildChannelSidebar(AppLocalizations l10n, AppState appState, List<LLMChannel> channels, {bool isDesktop = false}) {
+  Widget _buildChannelsPanel(AppLocalizations l10n, AppState appState, List<LLMChannel> channels) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final modelCount = appState.allModels.length;
+
+    // Screen header lives inside the top of the card; its bottom border
+    // becomes an internal divider on the inset-panel canvas.
+    final header = Container(
+      height: 56,
+      padding: const EdgeInsets.only(left: 16, right: 8),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.memory, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.modelManager,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  l10n.modelsAndChannelsCount(modelCount, channels.length),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, size: 22),
+            onPressed: () => _showChannelDialog(l10n, appState),
+            tooltip: l10n.addChannel,
+          ),
+        ],
+      ),
+    );
+
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-          child: Row(
-            children: [
-              Expanded(child: Text(l10n.channelsTab, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold))),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, size: 22),
-                onPressed: () => _showChannelDialog(l10n, appState),
-                tooltip: l10n.addChannel,
-              ),
-            ],
-          ),
-        ),
+        header,
         Expanded(
-          child: channels.isEmpty 
-            ? Center(child: Text(l10n.noModelsConfigured, style: TextStyle(color: colorScheme.outline)))
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: channels.length,
-                itemBuilder: (context, index) {
-                  final channel = channels[index];
-                  final isSelected = channel.id == _selectedChannelId;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: ListTile(
-                      selected: isSelected,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      selectedTileColor: isDesktop ? colorScheme.secondaryContainer : colorScheme.primaryContainer.withAlpha(40),
-                      leading: _buildChannelIcon(channel),
-                      title: Text(channel.displayName, style: TextStyle(
-                        fontSize: 13, 
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      )),
-                      onTap: () => setState(() => _selectedChannelId = channel.id),
-                    ),
-                  );
-                },
-              ),
+          child: channels.isEmpty
+              ? Center(
+                  child: Text(
+                    l10n.noModelsConfigured,
+                    style: TextStyle(color: colorScheme.outline),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(8),
+                  itemCount: channels.length,
+                  itemBuilder: (context, index) {
+                    final channel = channels[index];
+                    final isSelected = channel.id == _selectedChannelId;
+                    final models = appState.getModelsForChannel(channel.id);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: ListTile(
+                        selected: isSelected,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        selectedTileColor: colorScheme.secondaryContainer,
+                        leading: _buildChannelIcon(channel),
+                        title: Text(
+                          channel.displayName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          l10n.countModels(models.length),
+                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        ),
+                        onTap: () => setState(() => _selectedChannelId = channel.id),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildChannelDetailView(AppLocalizations l10n, AppState appState, {bool isDesktop = false}) {
-    final selectedChannel = appState.allChannels.cast<LLMChannel?>().firstWhere(
-      (c) => c?.id == _selectedChannelId,
-      orElse: () => null,
+  // --- Detail Panel (right card) ---
+
+  Widget _buildDetailPanel(AppLocalizations l10n, AppState appState, LLMChannel channel) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final showActionLabels = Responsive.isDesktop(context);
+
+    final header = Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          _buildChannelIcon(channel, size: 28),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  channel.displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  channel.endpoint,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (channel.enableDiscovery) ...[
+            if (showActionLabels)
+              FilledButton.tonalIcon(
+                onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
+                icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+                label: Text(l10n.fetchModels),
+              )
+            else
+              IconButton.filledTonal(
+                icon: const Icon(Icons.auto_awesome_outlined, size: 20),
+                onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
+                tooltip: l10n.fetchModels,
+              ),
+            const SizedBox(width: 4),
+          ],
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () => _showChannelDialog(l10n, appState, channel: channel),
+            tooltip: l10n.edit,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 20),
+            color: colorScheme.error,
+            onPressed: () => _confirmDeleteChannel(l10n, channel, appState),
+            tooltip: l10n.delete,
+          ),
+        ],
+      ),
     );
 
-    if (selectedChannel == null) {
-      return Center(child: Text(l10n.noModelsConfigured));
-    }
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isDesktop ? 32 : 16),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildChannelHero(selectedChannel, l10n, appState),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.modelsTab, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  TextButton.icon(
-                    onPressed: () => _showModelDialog(l10n, appState, preChannelId: selectedChannel.id),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(l10n.addModel),
-                  ),
-                ],
+    return Column(
+      children: [
+        header,
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          l10n.modelsTab,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        TextButton.icon(
+                          onPressed: () =>
+                              _showModelDialog(l10n, appState, preChannelId: channel.id),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(l10n.addModel),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildModelsGrid(channel, l10n, appState),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              _buildModelsGrid(selectedChannel, l10n, appState, isDesktop: isDesktop),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildChannelHero(LLMChannel channel, AppLocalizations l10n, AppState appState) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                _buildChannelIcon(channel, size: 48),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(channel.displayName, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(channel.endpoint, style: TextStyle(color: colorScheme.outline, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                IconButton.filledTonal(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showChannelDialog(l10n, appState, channel: channel),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  color: colorScheme.error,
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDeleteChannel(l10n, channel, appState),
-                ),
-              ],
-            ),
-            const Divider(height: 40),
-            Row(
-              children: [
-                if (channel.enableDiscovery)
-                  FilledButton.icon(
-                    onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
-                    icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                    label: Text(l10n.fetchModels),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModelsGrid(LLMChannel channel, AppLocalizations l10n, AppState appState, {bool isDesktop = false}) {
+  Widget _buildModelsGrid(LLMChannel channel, AppLocalizations l10n, AppState appState) {
     final models = appState.getModelsForChannel(channel.id!);
     if (models.isEmpty) {
       return Container(
@@ -393,7 +383,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = isDesktop ? (constraints.maxWidth > 800 ? 2 : 1) : 1;
+        final crossAxisCount = constraints.maxWidth > 800 ? 2 : 1;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -494,7 +484,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       itemBuilder: (context, index) {
         final channel = appState.allChannels[index];
         final models = appState.getModelsForChannel(channel.id);
-        
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           clipBehavior: Clip.antiAlias,
@@ -690,7 +680,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   void _showDiscoveryDialog(AppLocalizations l10n, LLMChannel channel, AppState appState) async {
     final type = ChannelDialect.providerType(channel.type);
-    
+
     final config = LLMModelConfig(
       modelId: 'discovery',
       type: type,

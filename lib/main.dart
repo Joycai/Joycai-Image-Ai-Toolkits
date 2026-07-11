@@ -190,13 +190,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       children: [
         Scaffold(
           key: _scaffoldKey,
+          // Inset-panel canvas shared with every screen: the nav rail floats
+          // transparently on it, screens lay their cards over it.
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
           drawer: isMobileUI
               ? _buildMobileDrawer(l10n, filteredDefinitions, secondaryItems, displayIndex, appState, allDefinitions, taskBadge)
               : null,
           body: SafeArea(
             child: Row(
               children: [
-                if (!isMobileUI) ...[
+                if (!isMobileUI)
                   _AppNavRail(
                     definitions: filteredDefinitions,
                     selectedIndex: displayIndex,
@@ -209,12 +212,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     isSettingsActive: filteredDefinitions[displayIndex].screen is SettingsScreen,
                     l10n: l10n,
                   ),
-                  VerticalDivider(
-                    width: 1,
-                    thickness: 1,
-                    color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80),
-                  ),
-                ],
                 Expanded(child: screens[displayIndex]),
               ],
             ),
@@ -398,14 +395,15 @@ class _AppNavRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isTablet = Responsive.isTablet(context) && !Responsive.isDesktop(context);
     final railWidth = isTablet ? 64.0 : 78.0;
     final showLabels = !isTablet;
 
     return Container(
       width: railWidth,
-      color: colorScheme.surfaceContainerLow,
+      // Transparent: floats on the shared surfaceContainer canvas, matching
+      // the inset-panel look of the screens beside it.
+      color: Colors.transparent,
       child: Column(
         children: [
           // Main nav items

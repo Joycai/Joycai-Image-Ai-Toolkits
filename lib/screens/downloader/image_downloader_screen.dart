@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/panel_resizer.dart';
 import 'widgets/downloader_results_area.dart';
 import 'widgets/downloader_toolbar.dart';
 
@@ -267,65 +268,73 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.selectedModelDbId = appState.chatModels.first.id;
     }
 
+    // Inset-panel canvas: the whole screen is a single rounded card (header
+    // toolbar, options strip, log console, results grid) floating on the
+    // tinted surfaceContainer background.
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Column(
-        children: [
-          DownloaderToolbar(
-            urlController: _urlController,
-            requirementController: _requirementController,
-            isAnalyzing: state.isAnalyzing,
-            onAnalyze: _analyze,
-            onOpenAdvanced: () => showDownloaderAdvancedDialog(
-              context,
-              prefixController: _prefixController,
-              cookieController: _cookieController,
-              onImportCookie: _importCookieFile,
-            ),
-          ),
-          if (Platform.isIOS)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: colorScheme.primaryContainer.withAlpha(100),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      l10n.iosOutputRecommend,
-                      style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
-                    ),
-                  ),
-                ],
+      backgroundColor: colorScheme.surfaceContainer,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: PanelCard(
+          child: Column(
+            children: [
+              DownloaderToolbar(
+                urlController: _urlController,
+                requirementController: _requirementController,
+                isAnalyzing: state.isAnalyzing,
+                onAnalyze: _analyze,
+                onOpenAdvanced: () => showDownloaderAdvancedDialog(
+                  context,
+                  prefixController: _prefixController,
+                  cookieController: _cookieController,
+                  onImportCookie: _importCookieFile,
+                ),
               ),
-            ),
-          SizedBox(
-            height: 40,
-            child: DownloaderOptionsStrip(
-              isAnalyzing: state.isAnalyzing,
-              showLogs: _showLogs,
-              onToggleLogs: () => setState(() => _showLogs = !_showLogs),
-              onSaveHtml: _saveOriginHtml,
-              onPasteHtml: _pasteHtml,
-            ),
+              if (Platform.isIOS)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: colorScheme.primaryContainer.withAlpha(100),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          l10n.iosOutputRecommend,
+                          style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              SizedBox(
+                height: 40,
+                child: DownloaderOptionsStrip(
+                  isAnalyzing: state.isAnalyzing,
+                  showLogs: _showLogs,
+                  onToggleLogs: () => setState(() => _showLogs = !_showLogs),
+                  onSaveHtml: _saveOriginHtml,
+                  onPasteHtml: _pasteHtml,
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: _showLogs && state.logs.isNotEmpty ? 168 : 0,
+                child: _showLogs && state.logs.isNotEmpty
+                    ? _DownloaderLogPanel(
+                        logs: state.logs,
+                        isAnalyzing: state.isAnalyzing,
+                        onClose: () => setState(() => _showLogs = false),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              Expanded(
+                child: DownloaderResultsArea(onAddToQueue: _addToQueue),
+              ),
+            ],
           ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: _showLogs && state.logs.isNotEmpty ? 168 : 0,
-            child: _showLogs && state.logs.isNotEmpty
-                ? _DownloaderLogPanel(
-                    logs: state.logs,
-                    isAnalyzing: state.isAnalyzing,
-                    onClose: () => setState(() => _showLogs = false),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          Expanded(
-            child: DownloaderResultsArea(onAddToQueue: _addToQueue),
-          ),
-        ],
+        ),
       ),
     );
   }
