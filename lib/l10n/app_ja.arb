@@ -715,6 +715,31 @@
       }
     }
   },
+  "optChatHint": "アイデアやラフなプロンプトを入力...",
+  "optSend": "送信 (Ctrl+Enter)",
+  "optNewSession": "新しい会話",
+  "optAgentWorking": "最適化中...",
+  "optToolListImages": "参照画像リストを確認しました",
+  "optToolViewImage": "参照画像を確認しました：{name}",
+  "@optToolViewImage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPromptVersion": "最適化プロンプト v{version}",
+  "@optPromptVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optCopy": "コピー",
+  "optPromptCopied": "プロンプトをコピーしました",
+  "optEmptyChat": "ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。",
+  "optViewed": "AI が閲覧済み",
   "videoGeneration": "動画生成",
   "referenceImages": "参照画像",
   "firstFrame": "最初のフレーム",

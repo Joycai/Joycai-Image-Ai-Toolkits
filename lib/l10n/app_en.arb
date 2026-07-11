@@ -844,6 +844,31 @@
       }
     }
   },
+  "optChatHint": "Describe your idea or paste a rough prompt...",
+  "optSend": "Send (Ctrl+Enter)",
+  "optNewSession": "New Conversation",
+  "optAgentWorking": "Optimizing...",
+  "optToolListImages": "Checked the reference image list",
+  "optToolViewImage": "Viewed reference image: {name}",
+  "@optToolViewImage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optPromptVersion": "Optimized Prompt v{version}",
+  "@optPromptVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optCopy": "Copy",
+  "optPromptCopied": "Prompt copied to clipboard",
+  "optEmptyChat": "Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.",
+  "optViewed": "Viewed by AI",
   "videoGeneration": "Video Generation",
   "referenceImages": "Reference Images",
   "firstFrame": "First Frame",

@@ -3287,6 +3287,72 @@ abstract class AppLocalizations {
   /// **'Refine failed: {error}'**
   String refineFailed(String error);
 
+  /// No description provided for @optChatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your idea or paste a rough prompt...'**
+  String get optChatHint;
+
+  /// No description provided for @optSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send (Ctrl+Enter)'**
+  String get optSend;
+
+  /// No description provided for @optNewSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New Conversation'**
+  String get optNewSession;
+
+  /// No description provided for @optAgentWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimizing...'**
+  String get optAgentWorking;
+
+  /// No description provided for @optToolListImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked the reference image list'**
+  String get optToolListImages;
+
+  /// No description provided for @optToolViewImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewed reference image: {name}'**
+  String optToolViewImage(String name);
+
+  /// No description provided for @optPromptVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimized Prompt v{version}'**
+  String optPromptVersion(int version);
+
+  /// No description provided for @optCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get optCopy;
+
+  /// No description provided for @optPromptCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt copied to clipboard'**
+  String get optPromptCopied;
+
+  /// No description provided for @optEmptyChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.'**
+  String get optEmptyChat;
+
+  /// No description provided for @optViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewed by AI'**
+  String get optViewed;
+
   /// No description provided for @videoGeneration.
   ///
   /// In en, this message translates to:

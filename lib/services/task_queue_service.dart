@@ -14,6 +14,7 @@ import 'ai_rename_agent.dart';
 import 'database_service.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
+import 'prompt_optimizer_agent.dart';
 import 'web_scraper_service.dart';
 
 // Re-export the task data model so existing importers of this file keep working.

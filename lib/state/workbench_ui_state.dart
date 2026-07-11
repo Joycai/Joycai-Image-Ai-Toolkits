@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_image.dart';
+import '../services/prompt_optimizer_agent.dart';
 
 class WorkbenchUIState extends ChangeNotifier {
+  WorkbenchUIState() {
+    PromptOptimizerAgent.sessions[optimizerSession.id] = optimizerSession;
+  }
+
   // Preview State
   List<AppImage> previewImages = [];
   int activePreviewIndex = 0;
@@ -19,6 +24,10 @@ class WorkbenchUIState extends ChangeNotifier {
   // Prompt Optimizer State
   String optimizerRoughPrompt = "";
   List<AppImage> optimizerReferenceImages = [];
+
+  /// Interactive optimizer conversation. Replaced (not mutated) when the user
+  /// starts a new conversation, so widgets watching this state re-subscribe.
+  PromptOptimizerSession optimizerSession = PromptOptimizerSession();
 
   // Optimizer Config State (persisted across tab switches)
   int? optSelectedModelDbId;
@@ -53,6 +62,16 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   // Optimizer Methods
+  /// Starts a fresh optimizer conversation. The old session is deliberately
+  /// not disposed — chat widgets may still be unsubscribing from it — it is
+  /// simply dropped from the agent registry and garbage-collected.
+  void newOptimizerSession() {
+    PromptOptimizerAgent.sessions.remove(optimizerSession.id);
+    optimizerSession = PromptOptimizerSession();
+    PromptOptimizerAgent.sessions[optimizerSession.id] = optimizerSession;
+    notifyListeners();
+  }
+
   void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
   void setOptimizerTag(int? id) { optSelectedTagId = id; notifyListeners(); }
   void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
