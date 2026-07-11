@@ -26,6 +26,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   final TextEditingController _instructionController = TextEditingController();
   final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
+  String? _batchProgress; // "current/total" while a multi-batch run is going
   int? _selectedModelDbId;
   SystemPrompt? _selectedSystemPrompt;
   List<Map<String, String>> _proposedRenames = [];
@@ -165,7 +166,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
     if (_selectedSystemPrompt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a system template first.")),
+        SnackBar(content: Text(l10n.selectTemplateFirst)),
       );
       return;
     }
@@ -178,6 +179,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
     setState(() {
       _isProcessing = true;
+      _batchProgress = null;
       _proposedRenames = [];
       _conflicts = {};
     });
@@ -197,6 +199,12 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         filesData: filesData,
         systemPrompt: _selectedSystemPrompt!.content,
         instructions: _instructionController.text.trim(),
+        onBatchProgress: (current, total) {
+          if (mounted && total > 1) {
+            setState(() => _batchProgress = '$current/$total');
+          }
+        },
+        isCancelled: () => !mounted,
       );
 
       final List<Map<String, String>> proposed = proposals.map((prop) => {
@@ -241,15 +249,16 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       final dir = p.dirname(oldPath);
       final newPath = p.join(dir, newName);
 
-      // Conflict 1: Multiple files target the same name
+      // Conflict 1: Multiple files target the same name.
+      // Values are stable keys, mapped to localized text at build time.
       if (targetNames.contains(newPath)) {
-        conflicts[oldPath] = "Duplicate target name";
+        conflicts[oldPath] = 'duplicate';
       }
       targetNames.add(newPath);
 
       // Conflict 2: Target name already exists on disk and is not one of our source files
       if (await File(newPath).exists() && !proposed.any((p) => p['path'] == newPath)) {
-        conflicts[oldPath] = "File already exists on disk";
+        conflicts[oldPath] = 'exists';
       }
     }
     _conflicts = conflicts;
@@ -306,6 +315,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final fileCount = appState.fileBrowserState.selectedFiles.length;
 
     final chatModels = appState.chatModels;
     // Safety check: ensure the selected PK actually exists in the current list of chat models
@@ -314,110 +324,132 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.auto_fix_high, color: Colors.blue),
-          const SizedBox(width: 8),
-          Expanded(child: Text(l10n.aiBatchRename, overflow: TextOverflow.ellipsis)),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.auto_fix_high, size: 22, color: colorScheme.onPrimaryContainer),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.aiBatchRename, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.imagesSelected(fileCount),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                    color: colorScheme.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       content: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 900,
+          maxWidth: 640,
           maxHeight: MediaQuery.of(context).size.height * 0.8,
-          minWidth: Responsive.isMobile(context) ? 0 : 600,
+          minWidth: Responsive.isMobile(context) ? 0 : 560,
         ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: ChatModelSelector(
-                      selectedModelId: effectiveModelDbId,
-                      label: l10n.model,
-                      onChanged: (v) => setState(() => _selectedModelDbId = v),
-                    ),
-                  ),
-                ],
+              ChatModelSelector(
+                selectedModelId: effectiveModelDbId,
+                label: l10n.model,
+                onChanged: (v) => setState(() => _selectedModelDbId = v),
               ),
               const SizedBox(height: 16),
-              
-              // NEW: System Template Selection View
+
+              // System template: the whole card opens the picker.
               Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withAlpha(100),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: colorScheme.outlineVariant),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.psychology, size: 20, color: colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _selectedSystemPrompt?.title ?? "No Template Selected",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              Material(
+                color: colorScheme.surfaceContainerHighest.withAlpha(80),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _showTemplatePicker,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.psychology_outlined, size: 22, color: colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedSystemPrompt?.title ?? l10n.noTemplateSelected,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (_selectedSystemPrompt != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  _selectedSystemPrompt!.content,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                                ),
+                              ],
+                            ],
                           ),
-                          if (_selectedSystemPrompt != null)
-                            Text(
-                              _selectedSystemPrompt!.content,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                            ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.unfold_more, size: 18, color: colorScheme.outline),
+                      ],
                     ),
-                    TextButton.icon(
-                      onPressed: _showTemplatePicker,
-                      icon: const Icon(Icons.edit, size: 16),
-                      label: Text(l10n.edit, style: const TextStyle(fontSize: 12)),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-
               const SizedBox(height: 16),
-              
-              // Specific Instructions
-              Text("Additional Instructions (Optional)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 8),
+
               TextField(
                 controller: _instructionController,
+                minLines: 2,
+                maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: "e.g. Keep original extensions, convert to Pinyin...",
-                  border: const OutlineInputBorder(),
+                  labelText: l10n.additionalInstructions,
+                  hintText: l10n.aiRenameInstructionsHint,
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   fillColor: colorScheme.surface,
                   filled: true,
                 ),
-                maxLines: 2,
               ),
-              
               const SizedBox(height: 20),
-              Center(
+
+              SizedBox(
+                width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: _isProcessing ? null : _generateSuggestions,
-                  icon: _isProcessing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.bolt),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: _isProcessing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.bolt),
                   label: Text(l10n.generateSuggestions),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              if (_proposedRenames.isEmpty)
-                SizedBox(
-                  height: 100,
-                  child: Center(child: Text(l10n.noSuggestions, style: TextStyle(color: colorScheme.outline))),
-                )
-              else
-                _buildPreviewList(colorScheme, l10n),
+              const SizedBox(height: 20),
+
+              _buildPreviewSection(colorScheme, l10n),
             ],
           ),
         ),
@@ -435,49 +467,180 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     );
   }
 
-  Widget _buildPreviewList(ColorScheme colorScheme, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: List.generate(_proposedRenames.length, (index) {
-        final item = _proposedRenames[index];
-        final hasConflict = _conflicts.containsKey(item['path']);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (index > 0) const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item['old_name']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      const Icon(Icons.arrow_forward, size: 12, color: Colors.blue),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          item['new_name']!, 
-                          style: TextStyle(
-                            fontSize: 13, 
-                            fontWeight: FontWeight.bold,
-                            color: hasConflict ? Colors.red : Colors.green,
-                          ),
-                        ),
-                      ),
-                      if (hasConflict) 
-                        Tooltip(message: _conflicts[item['path']], child: const Icon(Icons.error_outline, color: Colors.red, size: 16))
-                      else
-                        const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                    ],
+  Widget _buildPreviewSection(ColorScheme colorScheme, AppLocalizations l10n) {
+    // Waiting on the agent loop.
+    if (_isProcessing && _proposedRenames.isEmpty) {
+      return _buildPreviewPlaceholder(
+        colorScheme,
+        children: [
+          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),
+          const SizedBox(height: 12),
+          Text(
+            _batchProgress == null
+                ? l10n.generatingSuggestions
+                : '${l10n.generatingSuggestions} ($_batchProgress)',
+            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+          ),
+        ],
+      );
+    }
+
+    if (_proposedRenames.isEmpty) {
+      return _buildPreviewPlaceholder(
+        colorScheme,
+        children: [
+          Icon(Icons.drive_file_rename_outline, size: 32, color: colorScheme.outlineVariant),
+          const SizedBox(height: 8),
+          Text(l10n.noSuggestions, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+        ],
+      );
+    }
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: colorScheme.surfaceContainerHighest.withAlpha(80),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${l10n.renamePreviewTitle} (${_proposedRenames.length})',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+                if (_conflicts.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.error_outline, size: 13, color: colorScheme.onErrorContainer),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.conflictsFound(_conflicts.length),
+                          style: TextStyle(fontSize: 11, color: colorScheme.onErrorContainer),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
+          ),
+          const Divider(height: 1),
+          for (int i = 0; i < _proposedRenames.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 48),
+            _buildPreviewItem(i, colorScheme, l10n),
           ],
-        );
-      }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewPlaceholder(ColorScheme colorScheme, {required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      height: 130,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(50),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: children),
+    );
+  }
+
+  Widget _buildPreviewItem(int index, ColorScheme colorScheme, AppLocalizations l10n) {
+    final item = _proposedRenames[index];
+    final conflictKey = _conflicts[item['path']];
+    final hasConflict = conflictKey != null;
+    final conflictText = switch (conflictKey) {
+      'duplicate' => l10n.conflictDuplicateTarget,
+      'exists' => l10n.fileAlreadyExists,
+      _ => conflictKey,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text('${index + 1}', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['old_name']!,
+                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.subdirectory_arrow_right,
+                      size: 14,
+                      color: hasConflict ? colorScheme.error : colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        item['new_name']!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: hasConflict ? colorScheme.error : colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                if (hasConflict)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 18, top: 3),
+                    child: Text(
+                      conflictText!,
+                      style: TextStyle(fontSize: 11, color: colorScheme.error),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: hasConflict
+                ? Icon(Icons.error_outline, size: 16, color: colorScheme.error)
+                : const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+          ),
+        ],
+      ),
     );
   }
 }

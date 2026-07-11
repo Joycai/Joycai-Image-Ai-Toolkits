@@ -12,10 +12,10 @@ class UnifiedSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+    // Transparent: the hosting PanelCard (desktop) or Drawer (narrow/mobile)
+    // provides the background surface.
     return Material(
-      color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.2).round()),
+      color: Colors.transparent,
       child: FolderList(useFileBrowserState: useFileBrowserState),
     );
   }

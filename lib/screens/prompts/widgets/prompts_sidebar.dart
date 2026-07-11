@@ -37,8 +37,9 @@ class PromptsSidebar extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final allSelected = selectedFilterTagIds.isEmpty;
 
+    // Transparent: the hosting PanelCard's surface is the background.
     return Container(
-      color: colorScheme.surfaceContainerLow,
+      color: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,19 +1,27 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/pricing_group.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/panel_resizer.dart';
 import 'usage_list.dart';
 import 'usage_stats.dart';
 
-/// Desktop/wide layout for the token-usage tab: a range sidebar plus large
-/// summary stats, per-group cost cards and a paged list.
+/// Desktop/wide layout for the token-usage view, following the inset-panel
+/// design: a row of compact summary stat cards sits on the canvas above the
+/// main card, which hosts the range filters in its header and the per-group
+/// costs plus the paged record list in its body.
 class UsageViewDesktop extends StatefulWidget {
-  const UsageViewDesktop({super.key});
+  /// Optional control (e.g. the usage / fee-groups switcher) embedded at the
+  /// right end of the main card header.
+  final Widget? viewSwitcher;
+
+  const UsageViewDesktop({super.key, this.viewSwitcher});
 
   @override
   State<UsageViewDesktop> createState() => _UsageViewDesktopState();
@@ -144,213 +152,248 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
 
-    return Row(
+    return Column(
       children: [
-        // Sidebar. Material (not a colored Container): ListTile paints its
-        // selected/ink effects on the nearest Material ancestor, and a plain
-        // ColoredBox on top of it hides them (debug-mode assertion).
-        SizedBox(
-          width: 250,
-          child: Material(
-            color: colorScheme.surfaceContainerLow,
+        // Compact summary stat cards on the canvas, above the main card.
+        Row(
+          children: [
+            _buildStatCard(
+              l10n.inputTokens,
+              _stats.totalInput.toString(),
+              Icons.input,
+              Colors.blue,
+            ),
+            const SizedBox(width: 8),
+            _buildStatCard(
+              l10n.outputTokens,
+              _stats.totalOutput.toString(),
+              Icons.output,
+              Colors.green,
+            ),
+            const SizedBox(width: 8),
+            _buildStatCard(
+              l10n.requests,
+              _stats.totalRequestCount.toString(),
+              Icons.repeat,
+              Colors.purple,
+            ),
+            const SizedBox(width: 8),
+            _buildStatCard(
+              l10n.estimatedCost,
+              '\$${_stats.totalCost.toStringAsFixed(4)}',
+              Icons.attach_money,
+              Colors.orange,
+              isBold: true,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Main card: header with range filters + actions, body with per-group
+        // costs and the paged usage record list.
+        Expanded(
+          child: PanelCard(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    l10n.rangeLabel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                _buildPresetTile('today', l10n.today, Icons.today_outlined),
-                _buildPresetTile(
-                  'week',
-                  l10n.lastWeek,
-                  Icons.date_range_outlined,
-                ),
-                _buildPresetTile(
-                  'month',
-                  l10n.lastMonth,
-                  Icons.calendar_month_outlined,
-                ),
-                _buildPresetTile(
-                  'year',
-                  l10n.thisYear,
-                  Icons.calendar_today_outlined,
-                ),
-                const Spacer(),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _isLoading
-                            ? null
-                            : () => _loadData(reset: true),
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: Text(l10n.refresh),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: _confirmClearAll,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.errorContainer,
-                          foregroundColor: colorScheme.error,
-                        ),
-                        icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                        label: Text(l10n.clearAll),
-                      ),
-                    ],
-                  ),
+                _buildHeader(l10n, colorScheme),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildBody(l10n, colorScheme),
                 ),
               ],
             ),
           ),
         ),
-        const VerticalDivider(width: 1),
-        // Content
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(32),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1000),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Large Summary
-                          Row(
-                            children: [
-                              _buildBigStat(
-                                l10n.inputTokens,
-                                _stats.totalInput.toString(),
-                                Colors.blue,
-                              ),
-                              const SizedBox(width: 24),
-                              _buildBigStat(
-                                l10n.outputTokens,
-                                _stats.totalOutput.toString(),
-                                Colors.green,
-                              ),
-                              const SizedBox(width: 24),
-                              _buildBigStat(
-                                l10n.estimatedCost,
-                                '\$${_stats.totalCost.toStringAsFixed(4)}',
-                                Colors.orange,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 32),
-
-                          if (_stats.groupCosts.isNotEmpty) ...[
-                            Text(
-                              l10n.usageByGroup,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: _stats.groupCosts.entries.map((e) {
-                                final group = appState.allPricingGroups
-                                    .cast<PricingGroup?>()
-                                    .firstWhere(
-                                      (g) => g?.id == e.key,
-                                      orElse: () => null,
-                                    );
-                                if (group == null) {
-                                  return const SizedBox.shrink();
-                                }
-                                return _buildGroupCard(
-                                  group.name,
-                                  e.value,
-                                  colorScheme,
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 32),
-                          ],
-
-                          const Divider(),
-                          const SizedBox(height: 16),
-                          UsageList(
-                            usageData: _pagedUsageData,
-                            shrinkWrap: true,
-                            onRefresh: () => _loadData(reset: true),
-                            hasMore: _hasMore,
-                            isLoadingMore: _isLoadingMore,
-                            onLoadMore: () => _loadData(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-        ),
       ],
     );
   }
 
-  Widget _buildPresetTile(String id, String label, IconData icon) {
-    final isSelected = _activePreset == id;
-    return ListTile(
-      selected: isSelected,
-      leading: Icon(icon, size: 20),
-      title: Text(label, style: const TextStyle(fontSize: 14)),
-      onTap: () => _updateRange(id),
+  /// Header row inside the top of the main card (file-browser pattern):
+  /// title + active range subtitle, range presets, refresh/clear actions and
+  /// the optional view switcher.
+  Widget _buildHeader(AppLocalizations l10n, ColorScheme colorScheme) {
+    final fmt = DateFormat('yyyy-MM-dd');
+
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.analytics_outlined, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.tokenUsageMetrics,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${fmt.format(_dateRange.start)} – ${fmt.format(_dateRange.end)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(value: 'today', label: Text(l10n.today)),
+              ButtonSegment(value: 'week', label: Text(l10n.lastWeek)),
+              ButtonSegment(value: 'month', label: Text(l10n.lastMonth)),
+              ButtonSegment(value: 'year', label: Text(l10n.thisYear)),
+            ],
+            selected: {_activePreset},
+            onSelectionChanged: _isLoading
+                ? null
+                : (selection) => _updateRange(selection.first),
+            showSelectedIcon: false,
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            onPressed: _isLoading ? null : () => _loadData(reset: true),
+            tooltip: l10n.refresh,
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_sweep_outlined, size: 20, color: colorScheme.error),
+            onPressed: _confirmClearAll,
+            tooltip: l10n.clearAll,
+          ),
+          if (widget.viewSwitcher != null) ...[
+            const SizedBox(width: 8),
+            widget.viewSwitcher!,
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildBigStat(
+  Widget _buildBody(AppLocalizations l10n, ColorScheme colorScheme) {
+    final appState = Provider.of<AppState>(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_stats.groupCosts.isNotEmpty) ...[
+                Text(
+                  l10n.usageByGroup,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: _stats.groupCosts.entries.map((e) {
+                    final group = appState.allPricingGroups
+                        .cast<PricingGroup?>()
+                        .firstWhere(
+                          (g) => g?.id == e.key,
+                          orElse: () => null,
+                        );
+                    if (group == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return _buildGroupCard(group.name, e.value, colorScheme);
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(90)),
+                const SizedBox(height: 16),
+              ],
+              UsageList(
+                usageData: _pagedUsageData,
+                shrinkWrap: true,
+                onRefresh: () => _loadData(reset: true),
+                hasMore: _hasMore,
+                isLoadingMore: _isLoadingMore,
+                onLoadMore: () => _loadData(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compact summary stat card sitting directly on the canvas.
+  Widget _buildStatCard(
     String label,
     String value,
+    IconData icon,
     Color color, {
     bool isBold = false,
   }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: color.withAlpha(15),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withAlpha(40)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: color.withAlpha(200),
+      child: PanelCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: color),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.w300,
-                color: color,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+                        color: color,
+                        fontFamily: 'monospace',
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

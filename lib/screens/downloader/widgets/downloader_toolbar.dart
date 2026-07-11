@@ -114,10 +114,11 @@ class DownloaderToolbar extends StatelessWidget {
       ],
     );
 
+    // Header row of the downloader card: no fill of its own — the PanelCard
+    // surface shows through; the bottom border is the internal divider.
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
         ),
@@ -202,7 +203,6 @@ class DownloaderOptionsStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
         ),

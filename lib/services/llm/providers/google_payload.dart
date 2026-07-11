@@ -202,6 +202,8 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
             id: 'call_${functionCall['name']}_${callIndex++}',
             name: functionCall['name']?.toString() ?? '',
             arguments: args is Map<String, dynamic> ? args : {},
+            thoughtSignature:
+                (part['thoughtSignature'] ?? part['thought_signature'])?.toString(),
           );
           logger?.call('Model requested tool call: ${toolCall.name}', level: 'DEBUG');
         }
@@ -262,12 +264,15 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
     }
 
     // Assistant tool calls echoed back into history → functionCall parts.
+    // Gemini requires the thoughtSignature captured from the original response
+    // to be replayed verbatim on the same part.
     for (final tc in msg.toolCalls) {
       parts.add({
         "functionCall": {
           "name": tc.name,
           "args": tc.arguments,
-        }
+        },
+        if (tc.thoughtSignature != null) "thoughtSignature": tc.thoughtSignature,
       });
     }
 

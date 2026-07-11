@@ -9,15 +9,17 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/browser_file.dart';
+import '../../services/database_service.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/panel_resizer.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
 import 'widgets/browser_filter_bar.dart';
-import 'widgets/browser_toolbar.dart';
+import 'widgets/browser_selection_bar.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
 
@@ -29,6 +31,31 @@ class FileBrowserScreen extends StatefulWidget {
 }
 
 class _FileBrowserScreenState extends State<FileBrowserScreen> {
+  static const double _minSidebarWidth = 180;
+  static const double _maxSidebarWidth = 420;
+
+  final TextEditingController _searchController = TextEditingController();
+  double _sidebarWidth = 260;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSidebarWidth();
+  }
+
+  Future<void> _loadSidebarWidth() async {
+    final saved = await DatabaseService().getSetting('browser_sidebar_width');
+    final width = double.tryParse(saved ?? '');
+    if (width != null && mounted) {
+      setState(() => _sidebarWidth = width.clamp(_minSidebarWidth, _maxSidebarWidth));
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,116 +115,169 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
 
-    final sidebar = Container(
-      width: isNarrow ? null : 300,
-      color: colorScheme.surfaceContainerLow,
-      child: const UnifiedSidebar(useFileBrowserState: true),
-    );
-
     final fileCount = fileBrowserState.filteredFiles.length;
+    final selectedCount = fileBrowserState.selectedFiles.length;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-          ),
-          child: Row(
-            children: [
-              if (isNarrow)
-                Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  ),
-                ),
-              Icon(Icons.folder_open, size: 24, color: colorScheme.primary),
-              const SizedBox(width: 12),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.fileBrowser,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                  Text(
-                    l10n.filesCount(fileCount),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              if (!isNarrow) ...[
-                IconButton(
-                  icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
-                      ? Icons.view_list
-                      : Icons.grid_view),
-                  onPressed: () => fileBrowserState.setViewMode(
-                    fileBrowserState.viewMode == BrowserViewMode.grid
-                        ? BrowserViewMode.list
-                        : BrowserViewMode.grid,
-                  ),
-                  tooltip: l10n.switchViewMode,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => fileBrowserState.refresh(),
-                  tooltip: l10n.refresh,
-                ),
-                const SizedBox(width: 4),
-                _GradientButton(
-                  icon: Icons.auto_fix_high,
-                  label: l10n.aiBatchRename,
-                  onPressed: () => _showAiRenameDialog(context),
-                  colorScheme: colorScheme,
-                ),
-              ],
-            ],
-          ),
-        ),
+    // Header lives inside the content card (its bottom border becomes an
+    // internal divider on the inset-panel canvas).
+    final header = Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
       ),
-      drawer: isNarrow ? Drawer(child: sidebar) : null,
-      body: Row(
+      child: Row(
         children: [
-          if (!isNarrow) ...[
-            sidebar,
-            const VerticalDivider(width: 1),
-          ],
-          Expanded(
-            child: Container(
-              color: colorScheme.surface,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: BrowserToolbar(
-                      state: fileBrowserState,
-                      onAiRename: () => _showAiRenameDialog(context),
-                    ),
-                  ),
-                  BrowserFilterBar(state: fileBrowserState),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: fileBrowserState.viewMode == BrowserViewMode.grid
-                        ? _buildFileGrid(context, fileBrowserState)
-                        : _buildFileListView(context, fileBrowserState),
-                  ),
-                ],
+          if (isNarrow)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
             ),
+          Icon(Icons.folder_open, size: 22, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.fileBrowser,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
+              Text(
+                selectedCount > 0
+                    ? '${l10n.filesCount(fileCount)} · ${l10n.imagesSelected(selectedCount)}'
+                    : l10n.filesCount(fileCount),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 280),
+              child: _buildSearchField(fileBrowserState, l10n, colorScheme),
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
+                ? Icons.view_list
+                : Icons.grid_view),
+            onPressed: () => fileBrowserState.setViewMode(
+              fileBrowserState.viewMode == BrowserViewMode.grid
+                  ? BrowserViewMode.list
+                  : BrowserViewMode.grid,
+            ),
+            tooltip: l10n.switchViewMode,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => fileBrowserState.refresh(),
+            tooltip: l10n.refresh,
           ),
         ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: colorScheme.surfaceContainer,
+      drawer: isNarrow
+          ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
+          : null,
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            if (!isNarrow) ...[
+              PanelCard(
+                width: _sidebarWidth,
+                child: const UnifiedSidebar(useFileBrowserState: true),
+              ),
+              PanelResizer(
+                onDrag: (dx) => setState(() {
+                  _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                }),
+                onDragEnd: () => DatabaseService()
+                    .saveSetting('browser_sidebar_width', _sidebarWidth.round().toString()),
+              ),
+            ],
+            Expanded(
+              child: PanelCard(
+                child: Column(
+                  children: [
+                    header,
+                    BrowserFilterBar(state: fileBrowserState),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          fileBrowserState.viewMode == BrowserViewMode.grid
+                              ? _buildFileGrid(context, fileBrowserState)
+                              : _buildFileListView(context, fileBrowserState),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 16,
+                            child: Center(
+                              child: BrowserSelectionBar(
+                                state: fileBrowserState,
+                                onAiRename: () => _showAiRenameDialog(context),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField(FileBrowserState state, AppLocalizations l10n, ColorScheme colorScheme) {
+    return SizedBox(
+      height: 36,
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => state.setSearchQuery(v),
+        style: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(
+          hintText: l10n.searchFilesHint,
+          hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+          prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.outline),
+          suffixIcon: state.searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  onPressed: () {
+                    _searchController.clear();
+                    state.setSearchQuery('');
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          ),
+        ),
       ),
     );
   }
@@ -297,53 +377,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       position: position,
       workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
       onRefresh: () => state.refresh(),
-    );
-  }
-}
-
-/// Gradient-filled button matching the design's accent → accent2 gradient style.
-class _GradientButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final ColorScheme colorScheme;
-
-  const _GradientButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colorScheme.primary, const Color(0xFFB794F6)],
-          ),
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: Colors.white),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -67,7 +67,10 @@ class WorkbenchTopBar extends StatelessWidget {
     ];
 
     return Container(
-      color: colorScheme.surface,
+      // Transparent so the bar floats on the inset-panel canvas on desktop
+      // (mobile puts this inside an app-bar slot where the scaffold shows
+      // through, which was surface-colored anyway).
+      color: Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

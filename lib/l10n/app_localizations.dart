@@ -257,11 +257,71 @@ abstract class AppLocalizations {
   /// **'No suggestions generated yet'**
   String get noSuggestions;
 
+  /// No description provided for @searchFilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files…'**
+  String get searchFilesHint;
+
+  /// No description provided for @deselectAllDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all directories'**
+  String get deselectAllDirectories;
+
   /// No description provided for @applyRenames.
   ///
   /// In en, this message translates to:
   /// **'Apply Renames'**
   String get applyRenames;
+
+  /// No description provided for @additionalInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Instructions (Optional)'**
+  String get additionalInstructions;
+
+  /// No description provided for @aiRenameInstructionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Keep original extensions, convert to Pinyin...'**
+  String get aiRenameInstructionsHint;
+
+  /// No description provided for @noTemplateSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No template selected'**
+  String get noTemplateSelected;
+
+  /// No description provided for @selectTemplateFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a rename template first.'**
+  String get selectTemplateFirst;
+
+  /// No description provided for @generatingSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating suggestions…'**
+  String get generatingSuggestions;
+
+  /// No description provided for @renamePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Preview'**
+  String get renamePreviewTitle;
+
+  /// No description provided for @conflictsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} conflict(s)'**
+  String conflictsFound(int count);
+
+  /// No description provided for @conflictDuplicateTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate target name'**
+  String get conflictDuplicateTarget;
 
   /// No description provided for @addToSelection.
   ///

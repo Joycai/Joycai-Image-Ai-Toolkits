@@ -32,7 +32,24 @@
   "rulesInstructions": "Renaming Rules / Instructions",
   "generateSuggestions": "Generate Suggestions",
   "noSuggestions": "No suggestions generated yet",
+  "searchFilesHint": "Search files…",
+  "deselectAllDirectories": "Deselect all directories",
   "applyRenames": "Apply Renames",
+  "additionalInstructions": "Additional Instructions (Optional)",
+  "aiRenameInstructionsHint": "e.g. Keep original extensions, convert to Pinyin...",
+  "noTemplateSelected": "No template selected",
+  "selectTemplateFirst": "Please select a rename template first.",
+  "generatingSuggestions": "Generating suggestions…",
+  "renamePreviewTitle": "Rename Preview",
+  "conflictsFound": "{count} conflict(s)",
+  "@conflictsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictDuplicateTarget": "Duplicate target name",
   "addToSelection": "Add to Selection",
   "removeFromSelection": "Remove from Selection",
   "imagesSelected": "{count} selected",

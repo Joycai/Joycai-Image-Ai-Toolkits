@@ -40,8 +40,14 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     
     if (currentCounter != _lastRefreshCounter) {
       _lastRefreshCounter = currentCounter;
-      _subDirectories = null;
-      if (_isExpanded) _loadSubDirectories();
+      if (_isExpanded) {
+        // Reload in place, keeping the stale list rendered until fresh data
+        // arrives — nulling it first unmounts every child DirectoryTreeItem,
+        // which destroys their expansion state (deep branches collapse).
+        _loadSubDirectories(force: true);
+      } else {
+        _subDirectories = null;
+      }
     }
   }
 
@@ -72,8 +78,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     }
   }
 
-  Future<void> _loadSubDirectories() async {
-    if (_subDirectories != null) return;
+  Future<void> _loadSubDirectories({bool force = false}) async {
+    if (_subDirectories != null && !force) return;
 
     setState(() => _isLoading = true);
     try {
@@ -152,6 +158,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         ListTile(
           dense: true,
           selected: highlight, // Background highlight: inclusion (browser) / viewing (gallery)
+          selectedTileColor: theme.colorScheme.primaryContainer.withAlpha(90),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -243,6 +251,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             child: Column(
               children: _subDirectories!.map((dir) {
                 return DirectoryTreeItem(
+                  // Keyed by path so expansion state follows the directory
+                  // when siblings are added/removed across refreshes.
+                  key: ValueKey(dir.path),
                   path: dir.path,
                   isRoot: false,
                   useFileBrowserState: widget.useFileBrowserState,
