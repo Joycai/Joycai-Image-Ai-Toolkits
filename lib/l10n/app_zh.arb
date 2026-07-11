@@ -32,7 +32,24 @@
   "rulesInstructions": "重命名规则 / 指令",
   "generateSuggestions": "生成建议",
   "noSuggestions": "尚未生成建议",
+  "searchFilesHint": "搜索文件名…",
+  "deselectAllDirectories": "取消全部目录选择",
   "applyRenames": "应用重命名",
+  "additionalInstructions": "补充指令（可选）",
+  "aiRenameInstructionsHint": "例如：保留原扩展名、转换为拼音…",
+  "noTemplateSelected": "未选择模板",
+  "selectTemplateFirst": "请先选择一个重命名模板。",
+  "generatingSuggestions": "正在生成建议…",
+  "renamePreviewTitle": "重命名预览",
+  "conflictsFound": "{count} 个冲突",
+  "@conflictsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictDuplicateTarget": "目标文件名重复",
   "addToSelection": "添加到选中列表",
   "removeFromSelection": "从选中列表移除",
   "imagesSelected": "已选 {count} 项",

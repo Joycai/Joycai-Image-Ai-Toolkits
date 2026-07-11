@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/responsive.dart';
+import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/panel_resizer.dart';
 
 class WorkbenchLayoutState {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -48,9 +50,18 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   @override
   void initState() {
     super.initState();
-    // Restore persisted sidebar width so the layout matches the last session.
+    // Restore persisted panel widths so the layout matches the last session.
     final appState = Provider.of<AppState>(context, listen: false);
     _leftWidth = appState.sidebarWidth.clamp(200.0, 500.0);
+    _loadRightWidth();
+  }
+
+  Future<void> _loadRightWidth() async {
+    final saved = await DatabaseService().getSetting('workbench_right_panel_width');
+    final width = double.tryParse(saved ?? '');
+    if (width != null && mounted) {
+      setState(() => _rightWidth = width);
+    }
   }
 
   @override
@@ -83,13 +94,13 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                       width: _leftWidth,
                       child: widget.leftPanel,
                     ),
-                    _ResizableDivider(
-                      onResize: (delta) {
+                    PanelResizer(
+                      onDrag: (delta) {
                         setState(() {
                           _leftWidth = (_leftWidth + delta).clamp(200.0, 500.0);
                         });
                       },
-                      onResizeEnd: () {
+                      onDragEnd: () {
                         Provider.of<AppState>(context, listen: false)
                             .setSidebarWidth(_leftWidth);
                       },
@@ -103,12 +114,14 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
                   // Right Panel
                   if (widget.rightPanelBuilder != null && widget.showRightPanel && !isNarrow) ...[
-                    _ResizableDivider(
-                      onResize: (delta) {
+                    PanelResizer(
+                      onDrag: (delta) {
                         setState(() {
                           _rightWidth = (_rightWidth - delta).clamp(250.0, rightMaxWidth);
                         });
                       },
+                      onDragEnd: () => DatabaseService().saveSetting(
+                          'workbench_right_panel_width', _rightWidth.round().toString()),
                     ),
                     SizedBox(
                       width: _rightWidth.clamp(250.0, rightMaxWidth),
@@ -181,43 +194,3 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   }
 }
 
-class _ResizableDivider extends StatefulWidget {
-  final Function(double) onResize;
-  final VoidCallback? onResizeEnd;
-
-  const _ResizableDivider({required this.onResize, this.onResizeEnd});
-
-  @override
-  State<_ResizableDivider> createState() => _ResizableDividerState();
-}
-
-class _ResizableDividerState extends State<_ResizableDivider> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: GestureDetector(
-        onHorizontalDragUpdate: (details) => widget.onResize(details.delta.dx),
-        onHorizontalDragEnd: (_) => widget.onResizeEnd?.call(),
-        child: Container(
-          width: 10,
-          color: Colors.transparent,
-          child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: _isHovering ? 2 : 1,
-              height: double.infinity,
-              color: _isHovering ? colorScheme.primary : colorScheme.outlineVariant.withAlpha(100),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

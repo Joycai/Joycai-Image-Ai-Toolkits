@@ -67,6 +67,7 @@ class FileBrowserState extends ChangeNotifier {
   Set<BrowserFile> selectedFiles = {};
   
   FileCategory currentFilter = FileCategory.all;
+  String searchQuery = '';
   BrowserViewMode viewMode = BrowserViewMode.grid;
   BrowserSortField sortField = BrowserSortField.date;
   bool sortAscending = false;
@@ -158,6 +159,13 @@ class FileBrowserState extends ChangeNotifier {
     refresh();
   }
 
+  Future<void> clearActiveDirectories() async {
+    if (activeDirectories.isEmpty) return;
+    activeDirectories = [];
+    await _db.saveSetting('browser_active_directories', '');
+    refresh();
+  }
+
   Future<void> setExclusiveDirectory(String path) async {
     activeDirectories = [path];
     await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
@@ -212,6 +220,11 @@ class FileBrowserState extends ChangeNotifier {
     _applyFilterAndSort();
   }
 
+  void setSearchQuery(String query) {
+    searchQuery = query.trim();
+    _applyFilterAndSort();
+  }
+
   void setSortField(BrowserSortField field) {
     sortField = field;
     _db.saveSetting('browser_sort_field', field.name);
@@ -229,6 +242,11 @@ class FileBrowserState extends ChangeNotifier {
       filteredFiles = List.from(allFiles);
     } else {
       filteredFiles = allFiles.where((f) => f.category == currentFilter).toList();
+    }
+
+    if (searchQuery.isNotEmpty) {
+      final q = searchQuery.toLowerCase();
+      filteredFiles = filteredFiles.where((f) => f.name.toLowerCase().contains(q)).toList();
     }
 
     // Apply sorting

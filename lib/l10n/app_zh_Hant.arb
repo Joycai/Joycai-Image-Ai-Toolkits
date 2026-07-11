@@ -25,7 +25,24 @@
   "rulesInstructions": "重新命名規則/說明",
   "generateSuggestions": "產生建議",
   "noSuggestions": "尚未產生建議",
+  "searchFilesHint": "搜尋檔案名稱…",
+  "deselectAllDirectories": "取消全部目錄選擇",
   "applyRenames": "套用重新命名",
+  "additionalInstructions": "補充指令（可選）",
+  "aiRenameInstructionsHint": "例如：保留原始副檔名、轉換為拼音…",
+  "noTemplateSelected": "未選擇模板",
+  "selectTemplateFirst": "請先選擇一個重新命名模板。",
+  "generatingSuggestions": "正在產生建議…",
+  "renamePreviewTitle": "重新命名預覽",
+  "conflictsFound": "{count} 個衝突",
+  "@conflictsFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictDuplicateTarget": "目標檔名重複",
   "addToSelection": "新增至選取項目",
   "removeFromSelection": "從選取項目中移除",
   "imagesSelected": "已選取 {count} 個",

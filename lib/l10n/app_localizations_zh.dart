@@ -89,7 +89,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noSuggestions => '尚未生成建议';
 
   @override
+  String get searchFilesHint => '搜索文件名…';
+
+  @override
+  String get deselectAllDirectories => '取消全部目录选择';
+
+  @override
   String get applyRenames => '应用重命名';
+
+  @override
+  String get additionalInstructions => '补充指令（可选）';
+
+  @override
+  String get aiRenameInstructionsHint => '例如：保留原扩展名、转换为拼音…';
+
+  @override
+  String get noTemplateSelected => '未选择模板';
+
+  @override
+  String get selectTemplateFirst => '请先选择一个重命名模板。';
+
+  @override
+  String get generatingSuggestions => '正在生成建议…';
+
+  @override
+  String get renamePreviewTitle => '重命名预览';
+
+  @override
+  String conflictsFound(int count) {
+    return '$count 个冲突';
+  }
+
+  @override
+  String get conflictDuplicateTarget => '目标文件名重复';
 
   @override
   String get addToSelection => '添加到选中列表';
@@ -1911,7 +1943,39 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get noSuggestions => '尚未產生建議';
 
   @override
+  String get searchFilesHint => '搜尋檔案名稱…';
+
+  @override
+  String get deselectAllDirectories => '取消全部目錄選擇';
+
+  @override
   String get applyRenames => '套用重新命名';
+
+  @override
+  String get additionalInstructions => '補充指令（可選）';
+
+  @override
+  String get aiRenameInstructionsHint => '例如：保留原始副檔名、轉換為拼音…';
+
+  @override
+  String get noTemplateSelected => '未選擇模板';
+
+  @override
+  String get selectTemplateFirst => '請先選擇一個重新命名模板。';
+
+  @override
+  String get generatingSuggestions => '正在產生建議…';
+
+  @override
+  String get renamePreviewTitle => '重新命名預覽';
+
+  @override
+  String conflictsFound(int count) {
+    return '$count 個衝突';
+  }
+
+  @override
+  String get conflictDuplicateTarget => '目標檔名重複';
 
   @override
   String get addToSelection => '新增至選取項目';

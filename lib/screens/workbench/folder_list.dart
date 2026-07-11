@@ -77,7 +77,7 @@ class FolderList extends StatelessWidget {
                 ),
               ),
             )
-          else
+          else if (!useFileBrowserState)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: FilledButton.icon(
@@ -90,13 +90,14 @@ class FolderList extends StatelessWidget {
                 ),
               ),
             ),
-          const Divider(height: 1),
+          if (!useFileBrowserState) const Divider(height: 1),
 
-          // File Browser: a plain directory tree (no aggregate nodes).
+          // File Browser: a plain directory tree (no aggregate nodes), with a
+          // compact header row hosting the add-folder / deselect-all actions.
           // Workbench gallery: grouped Sources / Results / Workspace.
           if (useFileBrowserState) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
               child: Row(
                 children: [
                   Text(
@@ -108,14 +109,30 @@ class FolderList extends StatelessWidget {
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 6),
                   Text(
                     '${sourceDirectories.length}',
                     style: TextStyle(fontSize: 11, color: colorScheme.primary),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.remove_done, size: 18),
+                    tooltip: l10n.deselectAllDirectories,
+                    onPressed: appState.fileBrowserState.activeDirectories.isEmpty
+                        ? null
+                        : () => appState.fileBrowserState.clearActiveDirectories(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                    tooltip: l10n.addFolder,
+                    onPressed: () => _pickDirectory(context, appState),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
             ),
+            const Divider(height: 1),
             Expanded(
               child: sourceDirectories.isEmpty
                   ? _buildEmptyState(colorScheme, l10n)

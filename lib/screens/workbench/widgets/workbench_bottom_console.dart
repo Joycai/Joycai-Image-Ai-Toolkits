@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/task_queue_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/log_console.dart';
+import '../../../widgets/panel_resizer.dart';
 import '../../batch/task_queue_screen.dart';
 
 class WorkbenchBottomConsole extends StatefulWidget {
@@ -164,24 +165,13 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
 
         // Expanded Console (Desktop/Tablet only)
         if (!isMobile && isConsoleExpanded) ...[
-          GestureDetector(
-            onVerticalDragUpdate: (details) {
-              setState(() {
-                _height = (_height - details.delta.dy).clamp(100.0, 600.0);
-              });
-              Provider.of<AppState>(context, listen: false).setConsoleHeight(_height);
-            },
-            child: MouseRegion(
-              cursor: SystemMouseCursors.resizeUpDown,
-              child: Container(
-                height: 6,
-                width: double.infinity,
-                color: colorScheme.outlineVariant.withAlpha(180),
-                child: Center(
-                  child: Icon(Icons.drag_handle, size: 14, color: colorScheme.outline),
-                ),
-              ),
-            ),
+          PanelResizer(
+            axis: Axis.vertical,
+            onDrag: (dy) => setState(() {
+              _height = (_height - dy).clamp(100.0, 600.0);
+            }),
+            onDragEnd: () =>
+                Provider.of<AppState>(context, listen: false).setConsoleHeight(_height),
           ),
           SizedBox(
             height: _height,

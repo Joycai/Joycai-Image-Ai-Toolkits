@@ -89,7 +89,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noSuggestions => 'No suggestions generated yet';
 
   @override
+  String get searchFilesHint => 'Search files…';
+
+  @override
+  String get deselectAllDirectories => 'Deselect all directories';
+
+  @override
   String get applyRenames => 'Apply Renames';
+
+  @override
+  String get additionalInstructions => 'Additional Instructions (Optional)';
+
+  @override
+  String get aiRenameInstructionsHint =>
+      'e.g. Keep original extensions, convert to Pinyin...';
+
+  @override
+  String get noTemplateSelected => 'No template selected';
+
+  @override
+  String get selectTemplateFirst => 'Please select a rename template first.';
+
+  @override
+  String get generatingSuggestions => 'Generating suggestions…';
+
+  @override
+  String get renamePreviewTitle => 'Rename Preview';
+
+  @override
+  String conflictsFound(int count) {
+    return '$count conflict(s)';
+  }
+
+  @override
+  String get conflictDuplicateTarget => 'Duplicate target name';
 
   @override
   String get addToSelection => 'Add to Selection';

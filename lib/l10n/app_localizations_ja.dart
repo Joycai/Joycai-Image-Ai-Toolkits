@@ -89,7 +89,39 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noSuggestions => 'まだ提案は生成されていません';
 
   @override
+  String get searchFilesHint => 'ファイル名を検索…';
+
+  @override
+  String get deselectAllDirectories => 'すべてのディレクトリ選択を解除';
+
+  @override
   String get applyRenames => '名前の変更を適用';
+
+  @override
+  String get additionalInstructions => '追加指示（任意）';
+
+  @override
+  String get aiRenameInstructionsHint => '例：元の拡張子を保持、ピンインに変換…';
+
+  @override
+  String get noTemplateSelected => 'テンプレート未選択';
+
+  @override
+  String get selectTemplateFirst => '先に名前変更テンプレートを選択してください。';
+
+  @override
+  String get generatingSuggestions => '提案を生成中…';
+
+  @override
+  String get renamePreviewTitle => '名前変更プレビュー';
+
+  @override
+  String conflictsFound(int count) {
+    return '$count件の競合';
+  }
+
+  @override
+  String get conflictDuplicateTarget => '変更後のファイル名が重複しています';
 
   @override
   String get addToSelection => '選択に追加';

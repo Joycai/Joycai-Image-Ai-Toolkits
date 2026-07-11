@@ -449,7 +449,9 @@ class AppState extends ChangeNotifier {
   Timer? _sidebarWidthSaveTimer;
 
   Future<void> setSidebarWidth(double width) async {
-    sidebarWidth = width.clamp(280.0, 800.0);
+    // Keep in sync with WorkbenchLayout's drag clamp (200–500) — the wider
+    // save range used to snap a 250px sidebar back to 280 on restart.
+    sidebarWidth = width.clamp(200.0, 500.0);
     notifyListeners();
 
     _sidebarWidthSaveTimer?.cancel();
