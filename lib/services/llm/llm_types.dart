@@ -42,10 +42,16 @@ class LLMToolCall {
   final String name;
   final Map<String, dynamic> arguments;
 
+  /// Gemini thought signature attached to the functionCall part. Must be
+  /// echoed back verbatim when the call is replayed into history, or the API
+  /// rejects the request with INVALID_ARGUMENT.
+  final String? thoughtSignature;
+
   LLMToolCall({
     required this.id,
     required this.name,
     required this.arguments,
+    this.thoughtSignature,
   });
 }
 
