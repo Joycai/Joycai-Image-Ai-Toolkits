@@ -99,6 +99,18 @@ class FontService {
   static bool isDownloadable(String key) => _fonts.containsKey(key);
   static DownloadableFont? meta(String key) => _fonts[key];
 
+  /// The installed OS UI font to use for the "system default" choice. A null
+  /// [ThemeData.fontFamily] does NOT map to the OS font on desktop — the engine
+  /// substitutes its own default (e.g. Segoe UI on Windows), which renders CJK
+  /// text differently from the real system font. Naming the installed family
+  /// explicitly gets the genuine system look; the engine resolves it from the
+  /// OS font collection without bundling. Mobile keeps the engine default.
+  static String? get systemFontFamily {
+    if (Platform.isWindows) return 'Microsoft YaHei';
+    if (Platform.isMacOS) return 'PingFang SC';
+    return null;
+  }
+
   Future<Directory> _fontsDir() async {
     final base = await AppPaths.getDataDirectory();
     final dir = Directory(p.join(base, 'fonts'));

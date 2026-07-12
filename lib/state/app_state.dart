@@ -121,10 +121,13 @@ class AppState extends ChangeNotifier {
   // platform default", which maps to a null [ThemeData.fontFamily].
   String fontFamily = 'NotoSansSC';
 
-  /// The value to feed into [ThemeData.fontFamily]: null for the OS default,
-  /// otherwise the bundled family name declared in pubspec.yaml.
-  String? get themeFontFamily =>
-      fontFamily == AppConstants.systemFontKey ? null : fontFamily;
+  /// The value to feed into [ThemeData.fontFamily]. For the "system" choice
+  /// this resolves to the platform's installed UI font (e.g. Microsoft YaHei),
+  /// since a null family would fall back to the engine default rather than the
+  /// real OS font. Otherwise it's the selected family name.
+  String? get themeFontFamily => fontFamily == AppConstants.systemFontKey
+      ? FontService.systemFontFamily
+      : fontFamily;
 
   // Language configuration
   Locale? locale;

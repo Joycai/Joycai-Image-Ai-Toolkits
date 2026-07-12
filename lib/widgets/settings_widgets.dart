@@ -227,8 +227,10 @@ class FontSelector extends StatelessWidget {
                   label: label,
                   icon: isSystem ? Icons.desktop_windows : Icons.font_download,
                   isSelected: isSelected,
-                  // Preview each option in its own family (null = OS default).
-                  fontFamily: isSystem ? null : choice.key,
+                  // Preview each option in its own family (the system option
+                  // previews in the resolved OS font).
+                  fontFamily:
+                      isSystem ? FontService.systemFontFamily : choice.key,
                   onTap: () => _selectFont(context, choice.key),
                 );
               },
