@@ -122,5 +122,23 @@
       }
     }
   },
-  "deselectAll": "すべて選択解除"
+  "deselectAll": "すべて選択解除",
+  "capabilities": "機能",
+  "supportsStreaming": "ストリーミング対応",
+  "supportsStreamingDesc": "モデルがサーバー送信イベント（SSE）に対応する場合は有効化",
+  "supportsStandardRequest": "標準リクエスト対応",
+  "supportsStandardRequestDesc": "標準的な JSON/REST リクエストの場合は有効化",
+  "contextWindow": "コンテキストウィンドウ",
+  "contextUnlimited": "無制限",
+  "contextUnlimitedDesc": "すべての候補を1回のリクエストで送信（バッチ分割なし）",
+  "contextMax": "最大コンテキスト",
+  "contextTokens": "{size} tokens",
+  "@contextTokens": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "contextWindowHint": "コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。"
 }

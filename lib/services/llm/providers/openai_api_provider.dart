@@ -113,7 +113,8 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
       List<Uint8List> images = [];
       final List<LLMToolCall> toolCalls = [];
 
-      final message = data['choices']?[0]?['message'];
+      final choice = data['choices']?[0];
+      final message = choice?['message'];
       if (message != null) {
         if (message['content'] != null) {
           text = message['content'];
@@ -162,10 +163,16 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
       logger?.call('Parse complete. Text length: ${text.length}, Images: ${images.length}', level: 'DEBUG');
 
+      final metadata = <String, dynamic>{
+        ...?(data['usage'] as Map?)?.cast<String, dynamic>(),
+      };
+      final finishReason = choice?['finish_reason'];
+      if (finishReason != null) metadata['finish_reason'] = finishReason;
+
       return LLMResponse(
         text: text,
         generatedImages: images,
-        metadata: data['usage'] ?? {},
+        metadata: metadata,
         toolCalls: toolCalls,
       );
     } finally {

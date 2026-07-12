@@ -830,6 +830,41 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deselectAll => '取消全选';
 
   @override
+  String get capabilities => '能力';
+
+  @override
+  String get supportsStreaming => '支持流式传输';
+
+  @override
+  String get supportsStreamingDesc => '如果模型支持服务器推送事件（SSE）请启用';
+
+  @override
+  String get supportsStandardRequest => '支持标准请求';
+
+  @override
+  String get supportsStandardRequestDesc => '启用标准 JSON/REST 请求';
+
+  @override
+  String get contextWindow => '上下文大小';
+
+  @override
+  String get contextUnlimited => '不限制';
+
+  @override
+  String get contextUnlimitedDesc => '一次性发送所有候选图片（不分批）';
+
+  @override
+  String get contextMax => '最大上下文';
+
+  @override
+  String contextTokens(String size) {
+    return '$size tokens';
+  }
+
+  @override
+  String get contextWindowHint => '更大的上下文可让每次请求分析更多图片。';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -2716,6 +2751,41 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get deselectAll => '取消全部選取';
+
+  @override
+  String get capabilities => '能力';
+
+  @override
+  String get supportsStreaming => '支援串流傳輸';
+
+  @override
+  String get supportsStreamingDesc => '若模型支援伺服器推送事件（SSE）請啟用';
+
+  @override
+  String get supportsStandardRequest => '支援標準請求';
+
+  @override
+  String get supportsStandardRequestDesc => '啟用標準 JSON/REST 請求';
+
+  @override
+  String get contextWindow => '上下文大小';
+
+  @override
+  String get contextUnlimited => '不限制';
+
+  @override
+  String get contextUnlimitedDesc => '一次性傳送所有候選圖片（不分批）';
+
+  @override
+  String get contextMax => '最大上下文';
+
+  @override
+  String contextTokens(String size) {
+    return '$size tokens';
+  }
+
+  @override
+  String get contextWindowHint => '更大的上下文可讓每次請求分析更多圖片。';
 
   @override
   String get prompts => '提示';

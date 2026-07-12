@@ -171,5 +171,23 @@
       }
     }
   },
-  "deselectAll": "取消全选"
+  "deselectAll": "取消全选",
+  "capabilities": "能力",
+  "supportsStreaming": "支持流式传输",
+  "supportsStreamingDesc": "如果模型支持服务器推送事件（SSE）请启用",
+  "supportsStandardRequest": "支持标准请求",
+  "supportsStandardRequestDesc": "启用标准 JSON/REST 请求",
+  "contextWindow": "上下文大小",
+  "contextUnlimited": "不限制",
+  "contextUnlimitedDesc": "一次性发送所有候选图片（不分批）",
+  "contextMax": "最大上下文",
+  "contextTokens": "{size} tokens",
+  "@contextTokens": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "contextWindowHint": "更大的上下文可让每次请求分析更多图片。"
 }

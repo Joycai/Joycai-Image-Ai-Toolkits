@@ -50,6 +50,7 @@ class DatabaseMigration {
       // polluted the workbench model selector.
       await db.delete('llm_models', where: 'channel_id IS NULL');
     }
+    if (oldVersion < 26) await _createV26Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -75,7 +76,12 @@ class DatabaseMigration {
     await _createV20Tables(db);
     await _createV22Tables(db);
     await _createV24Tables(db);
+    await _createV26Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV26Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'context_window', 'INTEGER');
   }
 
   static Future<void> _createV24Tables(Database db) async {

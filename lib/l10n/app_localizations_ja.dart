@@ -833,6 +833,41 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deselectAll => 'すべて選択解除';
 
   @override
+  String get capabilities => '機能';
+
+  @override
+  String get supportsStreaming => 'ストリーミング対応';
+
+  @override
+  String get supportsStreamingDesc => 'モデルがサーバー送信イベント（SSE）に対応する場合は有効化';
+
+  @override
+  String get supportsStandardRequest => '標準リクエスト対応';
+
+  @override
+  String get supportsStandardRequestDesc => '標準的な JSON/REST リクエストの場合は有効化';
+
+  @override
+  String get contextWindow => 'コンテキストウィンドウ';
+
+  @override
+  String get contextUnlimited => '無制限';
+
+  @override
+  String get contextUnlimitedDesc => 'すべての候補を1回のリクエストで送信（バッチ分割なし）';
+
+  @override
+  String get contextMax => '最大コンテキスト';
+
+  @override
+  String contextTokens(String size) {
+    return '$size tokens';
+  }
+
+  @override
+  String get contextWindowHint => 'コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

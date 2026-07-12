@@ -848,6 +848,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deselectAll => 'Deselect All';
 
   @override
+  String get capabilities => 'Capabilities';
+
+  @override
+  String get supportsStreaming => 'Supports Streaming';
+
+  @override
+  String get supportsStreamingDesc =>
+      'Enable if the model supports server-sent events';
+
+  @override
+  String get supportsStandardRequest => 'Supports Standard Request';
+
+  @override
+  String get supportsStandardRequestDesc =>
+      'Enable for standard JSON/REST requests';
+
+  @override
+  String get contextWindow => 'Context Window';
+
+  @override
+  String get contextUnlimited => 'Unlimited';
+
+  @override
+  String get contextUnlimitedDesc =>
+      'Send all candidates in one request (no batching)';
+
+  @override
+  String get contextMax => 'Max context';
+
+  @override
+  String contextTokens(String size) {
+    return '$size tokens';
+  }
+
+  @override
+  String get contextWindowHint =>
+      'Larger context lets more images be analyzed per request.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override
