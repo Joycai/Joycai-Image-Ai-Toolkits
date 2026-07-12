@@ -1054,6 +1054,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get themeDark => 'ダーク';
 
   @override
+  String get font => 'フォント';
+
+  @override
+  String get fontSystem => 'システムデフォルト';
+
+  @override
+  String get fontDownloadTitle => 'フォントをダウンロード';
+
+  @override
+  String get fontDownloadPrompt =>
+      'このフォントはアプリに同梱されていないため、使用する前に一度ダウンロードする必要があります。';
+
+  @override
+  String get fontDownloadAction => 'ダウンロード';
+
+  @override
+  String get fontDownloading => 'フォントをダウンロード中…';
+
+  @override
+  String get fontDownloadFailed => 'フォントのダウンロードに失敗しました。接続を確認して再試行してください。';
+
+  @override
   String get googleGenAiSettings => 'Google GenAI REST設定';
 
   @override
