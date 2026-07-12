@@ -1051,6 +1051,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeDark => '深色模式';
 
   @override
+  String get font => '字体';
+
+  @override
+  String get fontSystem => '系统默认';
+
+  @override
+  String get fontDownloadTitle => '下载字体';
+
+  @override
+  String get fontDownloadPrompt => '该字体未随应用打包，首次使用前需要下载一次。';
+
+  @override
+  String get fontDownloadAction => '下载';
+
+  @override
+  String get fontDownloading => '正在下载字体…';
+
+  @override
+  String get fontDownloadFailed => '字体下载失败，请检查网络后重试。';
+
+  @override
   String get googleGenAiSettings => 'Google GenAI REST 设置';
 
   @override
@@ -2972,6 +2993,27 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get themeDark => '深色';
+
+  @override
+  String get font => '字型';
+
+  @override
+  String get fontSystem => '系統預設';
+
+  @override
+  String get fontDownloadTitle => '下載字型';
+
+  @override
+  String get fontDownloadPrompt => '此字型未隨應用程式打包，首次使用前需要下載一次。';
+
+  @override
+  String get fontDownloadAction => '下載';
+
+  @override
+  String get fontDownloading => '正在下載字型…';
+
+  @override
+  String get fontDownloadFailed => '字型下載失敗，請檢查網路後重試。';
 
   @override
   String get googleGenAiSettings => 'Google GenAI REST 設定';

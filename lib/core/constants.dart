@@ -90,6 +90,17 @@ class AppConstants {
     'Rose': Colors.pink,
   };
 
+  // Font selection. [systemFontKey] is a sentinel meaning "use the platform
+  // default font"; every other key is a family name bundled in pubspec.yaml.
+  // Brand names are intentionally not localized.
+  static const String systemFontKey = 'system';
+  static const List<({String key, String label})> fontChoices = [
+    (key: systemFontKey, label: ''), // label resolved from l10n at build time
+    (key: 'NotoSansSC', label: 'Noto Sans SC'),
+    (key: 'HarmonyOSSansSC', label: 'HarmonyOS Sans'),
+    (key: 'MiSans', label: 'MiSans'),
+  ];
+
   // Material 3 standard color palette for tags
   static const List<Color> tagColors = [
     // Primary colors

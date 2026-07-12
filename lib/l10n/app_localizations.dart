@@ -2069,6 +2069,48 @@ abstract class AppLocalizations {
   /// **'Dark'**
   String get themeDark;
 
+  /// No description provided for @font.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get font;
+
+  /// No description provided for @fontSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System Default'**
+  String get fontSystem;
+
+  /// No description provided for @fontDownloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Font'**
+  String get fontDownloadTitle;
+
+  /// No description provided for @fontDownloadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'This font isn\'t bundled with the app and needs to be downloaded once before it can be used.'**
+  String get fontDownloadPrompt;
+
+  /// No description provided for @fontDownloadAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get fontDownloadAction;
+
+  /// No description provided for @fontDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading font…'**
+  String get fontDownloading;
+
+  /// No description provided for @fontDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Font download failed. Check your connection and try again.'**
+  String get fontDownloadFailed;
+
   /// No description provided for @googleGenAiSettings.
   ///
   /// In en, this message translates to:

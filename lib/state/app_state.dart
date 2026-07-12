@@ -16,6 +16,7 @@ import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/tag.dart';
 import '../services/database_service.dart';
+import '../services/font_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/task_queue_service.dart';
@@ -115,6 +116,15 @@ class AppState extends ChangeNotifier {
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
   Color themeSeedColor = Colors.blueGrey;
+  // Font family key. Defaults to the bundled NotoSansSC to preserve the
+  // existing look. The sentinel [AppConstants.systemFontKey] means "use the
+  // platform default", which maps to a null [ThemeData.fontFamily].
+  String fontFamily = 'NotoSansSC';
+
+  /// The value to feed into [ThemeData.fontFamily]: null for the OS default,
+  /// otherwise the bundled family name declared in pubspec.yaml.
+  String? get themeFontFamily =>
+      fontFamily == AppConstants.systemFontKey ? null : fontFamily;
 
   // Language configuration
   Locale? locale;
@@ -302,6 +312,11 @@ class AppState extends ChangeNotifier {
       } catch (_) {}
     }
 
+    fontFamily = await _db.getSetting('font_family') ?? 'NotoSansSC';
+    // Register an on-demand font up front if it was previously downloaded, so
+    // the saved preference renders on launch instead of falling back.
+    await FontService.instance.ensureLoadedIfPresent(fontFamily);
+
     // Load locale
     final savedLocale = await _db.getSetting('locale');
     if (savedLocale != null && savedLocale.isNotEmpty) {
@@ -414,7 +429,13 @@ class AppState extends ChangeNotifier {
 
   Future<void> setThemeSeedColor(Color color) async {
     themeSeedColor = color;
-    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());     
+    await _db.saveSetting('theme_seed_color', color.toARGB32().toString());
+    notifyListeners();
+  }
+
+  Future<void> setFontFamily(String family) async {
+    fontFamily = family;
+    await _db.saveSetting('font_family', family);
     notifyListeners();
   }
 

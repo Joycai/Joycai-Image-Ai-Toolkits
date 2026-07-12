@@ -21,6 +21,8 @@ class AppearanceSection extends StatelessWidget {
         const SizedBox(height: 32),
         ThemeColorSelector(appState: appState, l10n: l10n),
         const SizedBox(height: 32),
+        FontSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 32),
         LanguageSelector(appState: appState, l10n: l10n),
       ],
     );
