@@ -10,7 +10,13 @@ class LLMModel {
   final int sortOrder;
   final int? channelId;
   final int? feeGroupId;
-  
+
+  /// Maximum context window (in tokens) the model supports. Used to size
+  /// batched requests — e.g. how many candidate images the image downloader
+  /// shows the model per call. Null means "unknown"; callers fall back to a
+  /// conservative default.
+  final int? contextWindow;
+
   // Performance metrics
   final double? estMeanMs;
   final double? estSdMs;
@@ -28,6 +34,7 @@ class LLMModel {
     this.sortOrder = 0,
     this.channelId,
     this.feeGroupId,
+    this.contextWindow,
     this.estMeanMs,
     this.estSdMs,
     this.tasksSinceUpdate = 0,
@@ -46,6 +53,7 @@ class LLMModel {
       sortOrder: map['sort_order'] as int? ?? 0,
       channelId: map['channel_id'] as int?,
       feeGroupId: map['fee_group_id'] as int?,
+      contextWindow: map['context_window'] as int?,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
       tasksSinceUpdate: map['tasks_since_update'] as int? ?? 0,
@@ -64,6 +72,7 @@ class LLMModel {
       'sort_order': sortOrder,
       'channel_id': channelId,
       'fee_group_id': feeGroupId,
+      'context_window': contextWindow,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,

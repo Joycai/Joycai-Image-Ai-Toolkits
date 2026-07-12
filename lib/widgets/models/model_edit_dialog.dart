@@ -27,12 +27,19 @@ class ModelEditDialog extends StatefulWidget {
 class _ModelEditDialogState extends State<ModelEditDialog> {
   late TextEditingController idCtrl;
   late TextEditingController nameCtrl;
-  
+
   int? channelId;
   late String tag;
   int? feeGroupId;
   late bool supportsStream;
   late bool supportsStandard;
+
+  /// Context-window slider presets (tokens): 4K … 1M.
+  static const List<int> _contextSizes = [
+    4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576,
+  ];
+  late bool unlimitedContext;
+  late double contextSizeIdx;
 
   @override
   void initState() {
@@ -40,12 +47,36 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final model = widget.model;
     idCtrl = TextEditingController(text: model?.modelId ?? '');
     nameCtrl = TextEditingController(text: model?.modelName ?? '');
-    
+
     channelId = model?.channelId ?? widget.preChannelId ?? (widget.appState.allChannels.isNotEmpty ? widget.appState.allChannels.first.id : null);
     tag = model?.tag ?? 'chat';
     feeGroupId = model?.feeGroupId;
     supportsStream = model?.supportsStream ?? true;
     supportsStandard = model?.supportsStandard ?? true;
+
+    // Context window: null = not configured, 0 = unlimited, >0 = token limit.
+    final cw = model?.contextWindow;
+    unlimitedContext = cw != null && cw <= 0;
+    contextSizeIdx = (cw != null && cw > 0 ? _nearestSizeIndex(cw) : 1).toDouble();
+  }
+
+  int _nearestSizeIndex(int tokens) {
+    int best = 0;
+    int bestDiff = (tokens - _contextSizes[0]).abs();
+    for (int i = 1; i < _contextSizes.length; i++) {
+      final diff = (tokens - _contextSizes[i]).abs();
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  String _formatTokens(int tokens) {
+    if (tokens >= 1048576) return '${tokens ~/ 1048576}M';
+    if (tokens >= 1024) return '${tokens ~/ 1024}K';
+    return '$tokens';
   }
 
   @override
@@ -127,20 +158,64 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           ),
           
           const SizedBox(height: 24),
-          _buildSectionHeader("Capabilities"),
+          _buildSectionHeader(l10n.contextWindow),
           const SizedBox(height: 8),
           SwitchListTile(
-            title: const Text("Supports Streaming", style: TextStyle(fontSize: 13)),
-            subtitle: const Text("Enable if the model supports server-sent events", style: TextStyle(fontSize: 11)),
-            value: supportsStream, 
+            title: Text(l10n.contextUnlimited, style: const TextStyle(fontSize: 13)),
+            subtitle: Text(l10n.contextUnlimitedDesc, style: const TextStyle(fontSize: 11)),
+            value: unlimitedContext,
+            onChanged: (v) => setState(() => unlimitedContext = v),
+            secondary: const Icon(Icons.all_inclusive),
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (!unlimitedContext) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.memory_outlined, size: 18, color: colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Text(l10n.contextMax, style: const TextStyle(fontSize: 13)),
+                  const Spacer(),
+                  Text(
+                    l10n.contextTokens(_formatTokens(_contextSizes[contextSizeIdx.round()])),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                  ),
+                ],
+              ),
+            ),
+            Slider(
+              value: contextSizeIdx,
+              min: 0,
+              max: (_contextSizes.length - 1).toDouble(),
+              divisions: _contextSizes.length - 1,
+              label: _formatTokens(_contextSizes[contextSizeIdx.round()]),
+              onChanged: (v) => setState(() => contextSizeIdx = v),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                l10n.contextWindowHint,
+                style: TextStyle(color: colorScheme.outline, fontSize: 11),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+          _buildSectionHeader(l10n.capabilities),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            title: Text(l10n.supportsStreaming, style: const TextStyle(fontSize: 13)),
+            subtitle: Text(l10n.supportsStreamingDesc, style: const TextStyle(fontSize: 11)),
+            value: supportsStream,
             onChanged: (v) => setState(() => supportsStream = v),
             secondary: const Icon(Icons.stream),
             contentPadding: EdgeInsets.zero,
           ),
           SwitchListTile(
-            title: const Text("Supports Standard Request", style: TextStyle(fontSize: 13)),
-            subtitle: const Text("Enable for standard JSON/REST requests", style: TextStyle(fontSize: 11)),
-            value: supportsStandard, 
+            title: Text(l10n.supportsStandardRequest, style: const TextStyle(fontSize: 13)),
+            subtitle: Text(l10n.supportsStandardRequestDesc, style: const TextStyle(fontSize: 11)),
+            value: supportsStandard,
             onChanged: (v) => setState(() => supportsStandard = v),
             secondary: const Icon(Icons.http),
             contentPadding: EdgeInsets.zero,
@@ -203,6 +278,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               'supports_standard': supportsStandard ? 1 : 0,
               'fee_group_id': feeGroupId,
               'channel_id': channelId,
+              'context_window': unlimitedContext ? 0 : _contextSizes[contextSizeIdx.round()],
             };
             
             if (widget.model == null) {

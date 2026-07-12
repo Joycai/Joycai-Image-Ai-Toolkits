@@ -171,5 +171,23 @@
       }
     }
   },
-  "deselectAll": "Deselect All"
+  "deselectAll": "Deselect All",
+  "capabilities": "Capabilities",
+  "supportsStreaming": "Supports Streaming",
+  "supportsStreamingDesc": "Enable if the model supports server-sent events",
+  "supportsStandardRequest": "Supports Standard Request",
+  "supportsStandardRequestDesc": "Enable for standard JSON/REST requests",
+  "contextWindow": "Context Window",
+  "contextUnlimited": "Unlimited",
+  "contextUnlimitedDesc": "Send all candidates in one request (no batching)",
+  "contextMax": "Max context",
+  "contextTokens": "{size} tokens",
+  "@contextTokens": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "contextWindowHint": "Larger context lets more images be analyzed per request."
 }

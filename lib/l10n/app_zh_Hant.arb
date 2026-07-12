@@ -284,6 +284,24 @@
     }
   },
   "deselectAll": "取消全部選取",
+  "capabilities": "能力",
+  "supportsStreaming": "支援串流傳輸",
+  "supportsStreamingDesc": "若模型支援伺服器推送事件（SSE）請啟用",
+  "supportsStandardRequest": "支援標準請求",
+  "supportsStandardRequestDesc": "啟用標準 JSON/REST 請求",
+  "contextWindow": "上下文大小",
+  "contextUnlimited": "不限制",
+  "contextUnlimitedDesc": "一次性傳送所有候選圖片（不分批）",
+  "contextMax": "最大上下文",
+  "contextTokens": "{size} tokens",
+  "@contextTokens": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "contextWindowHint": "更大的上下文可讓每次請求分析更多圖片。",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

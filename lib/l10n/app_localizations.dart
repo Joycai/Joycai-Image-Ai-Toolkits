@@ -1655,6 +1655,72 @@ abstract class AppLocalizations {
   /// **'Deselect All'**
   String get deselectAll;
 
+  /// No description provided for @capabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Capabilities'**
+  String get capabilities;
+
+  /// No description provided for @supportsStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports Streaming'**
+  String get supportsStreaming;
+
+  /// No description provided for @supportsStreamingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable if the model supports server-sent events'**
+  String get supportsStreamingDesc;
+
+  /// No description provided for @supportsStandardRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports Standard Request'**
+  String get supportsStandardRequest;
+
+  /// No description provided for @supportsStandardRequestDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable for standard JSON/REST requests'**
+  String get supportsStandardRequestDesc;
+
+  /// No description provided for @contextWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Context Window'**
+  String get contextWindow;
+
+  /// No description provided for @contextUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get contextUnlimited;
+
+  /// No description provided for @contextUnlimitedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Send all candidates in one request (no batching)'**
+  String get contextUnlimitedDesc;
+
+  /// No description provided for @contextMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max context'**
+  String get contextMax;
+
+  /// No description provided for @contextTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} tokens'**
+  String contextTokens(String size);
+
+  /// No description provided for @contextWindowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger context lets more images be analyzed per request.'**
+  String get contextWindowHint;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

@@ -8,6 +8,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 
 import '../core/app_paths.dart';
+import 'database_service.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 
@@ -157,11 +158,13 @@ class WebScraperService {
 
     onLog?.call('Found ${imagesMetadata.length} candidate images. Analyzing with LLM...');
 
+    final contextWindow = await _resolveContextWindow(modelIdentifier);
     final matchedUrlStrings = await _selectImagesWithLLM(
       modelIdentifier: modelIdentifier,
       requirement: requirement,
       pageUrl: url,
       imagesMetadata: imagesMetadata,
+      contextWindow: contextWindow,
       onLog: onLog,
     );
 
@@ -200,34 +203,131 @@ class WebScraperService {
   /// reported back so the model can correct itself (up to [_maxSelectTurns]
   /// turns). This replaces the old free-text JSON parsing, which broke
   /// whenever the model added commentary around the array.
-  static const int _maxSelectTurns = 4;
+  static const int _maxSelectTurns = 3;
+
+  /// Fallback batch size used when the model's context window is unknown. Large
+  /// candidate lists overflow the context window of small local models
+  /// (e.g. Ollama's default 4096-token window), so the model burns its whole
+  /// generation budget before it can emit a tool call. Splitting the list into
+  /// small batches keeps every request comfortably inside a modest context.
+  static const int _defaultBatchSize = 10;
+
+  /// Sentinel batch size meaning "no splitting" — used when a model is marked
+  /// as having an unlimited context window.
+  static const int _unlimitedBatchSize = 1 << 30;
+
+  /// Reads the configured context window for [modelIdentifier] (a DB id), or
+  /// null when it isn't a stored model or the field is unset.
+  Future<int?> _resolveContextWindow(dynamic modelIdentifier) async {
+    if (modelIdentifier is! int) return null;
+    try {
+      final models = await DatabaseService().getModels();
+      for (final m in models) {
+        if (m.id == modelIdentifier) return m.contextWindow;
+      }
+    } catch (_) {
+      // Best effort — fall back to the default batch size.
+    }
+    return null;
+  }
+
+  /// Derives how many candidate images to show per request from the model's
+  /// context window. Roughly one image per 512 tokens, leaving the rest of the
+  /// window for the model's reasoning and the tool call, clamped to a sane range.
+  ///
+  /// `null` context window means "not configured" → conservative default.
+  /// A value of `0` (or negative) means "unlimited" → everything in one batch.
+  int _batchSizeFor(int? contextWindow) {
+    if (contextWindow == null) return _defaultBatchSize;
+    if (contextWindow <= 0) return _unlimitedBatchSize;
+    return (contextWindow ~/ 512).clamp(4, 40);
+  }
 
   Future<Set<String>> _selectImagesWithLLM({
     required dynamic modelIdentifier,
     required String requirement,
     required String pageUrl,
     required List<Map<String, String>> imagesMetadata,
+    int? contextWindow,
     Function(String)? onLog,
   }) async {
-    final validUrls = imagesMetadata.map((m) => m['url']).whereType<String>().toSet();
     final Set<String> selected = {};
+    final batchSize = _batchSizeFor(contextWindow);
+    final totalBatches = (imagesMetadata.length / batchSize).ceil();
+
+    int failures = 0;
+    Object? lastError;
+    for (int b = 0; b < totalBatches; b++) {
+      final start = b * batchSize;
+      final end = (start + batchSize).clamp(0, imagesMetadata.length);
+      final batch = imagesMetadata.sublist(start, end);
+
+      onLog?.call('Analyzing batch ${b + 1}/$totalBatches (${batch.length} images)...');
+      try {
+        final picked = await _selectImagesInBatch(
+          modelIdentifier: modelIdentifier,
+          requirement: requirement,
+          pageUrl: pageUrl,
+          batch: batch,
+          onLog: onLog,
+        );
+        selected.addAll(picked);
+      } catch (e) {
+        failures++;
+        lastError = e;
+        // Keep processing the remaining batches rather than aborting everything.
+        onLog?.call('Batch ${b + 1}/$totalBatches failed: $e');
+      }
+    }
+
+    // Only surface an error when the model never produced a single selection.
+    if (failures == totalBatches && lastError != null) {
+      throw Exception('Image selection failed for every batch. Last error: $lastError');
+    }
+
+    onLog?.call('Model selected ${selected.length} image(s) across $totalBatches batch(es).');
+    return selected;
+  }
+
+  /// Runs the tool-calling conversation for a single batch of candidates.
+  ///
+  /// Candidates are presented as a compact, numbered list and the model selects
+  /// by integer id rather than echoing long URLs. This keeps the prompt small
+  /// and removes the "URL not copied exactly" failure mode.
+  Future<Set<String>> _selectImagesInBatch({
+    required dynamic modelIdentifier,
+    required String requirement,
+    required String pageUrl,
+    required List<Map<String, String>> batch,
+    Function(String)? onLog,
+  }) async {
+    final buffer = StringBuffer();
+    for (int i = 0; i < batch.length; i++) {
+      final m = batch[i];
+      final alt = (m['alt'] ?? '').trim();
+      final ctx = (m['context'] ?? '')
+          .replaceFirst('Element: img, Parent:', '')
+          .trim();
+      buffer.writeln('[$i] url: ${m['url'] ?? ''}');
+      if (alt.isNotEmpty) buffer.writeln('    alt: $alt');
+      if (ctx.isNotEmpty) buffer.writeln('    container: $ctx');
+    }
 
     final tools = [
       LLMTool(
         name: 'select_images',
-        description: 'Submit the URLs of the candidate images that match the requirement. '
-            'Every URL must be copied exactly from the candidate list. '
-            'Submit an empty array if nothing matches.',
+        description: 'Submit the id numbers of the candidate images that match the '
+            'requirement. Submit an empty array if none match.',
         parameters: {
           'type': 'object',
           'properties': {
-            'urls': {
+            'ids': {
               'type': 'array',
-              'items': {'type': 'string'},
-              'description': 'Matching image URLs, exactly as they appear in the candidate list.',
+              'items': {'type': 'integer'},
+              'description': 'The [id] numbers of matching images.',
             },
           },
-          'required': ['urls'],
+          'required': ['ids'],
         },
       ),
     ];
@@ -243,16 +343,17 @@ class WebScraperService {
         role: LLMRole.user,
         content: '''
 Requirement: "$requirement"
-URL of the page: $pageUrl
+Page: $pageUrl
 
-List of candidate images (JSON format):
-${jsonEncode(imagesMetadata)}
+Candidate images:
+${buffer.toString().trim()}
 
-Call select_images with the URLs of the images that match the requirement.
+Call select_images with the id numbers of the images that match the requirement.
 ''',
       ),
     ];
 
+    final Set<String> selected = {};
     bool submitted = false;
 
     for (int turn = 0; turn < _maxSelectTurns; turn++) {
@@ -265,12 +366,21 @@ Call select_images with the URLs of the images that match the requirement.
 
       if (response.toolCalls.isEmpty) {
         if (submitted) break; // Done: selection already received.
+        // A "length" finish reason means the model ran out of tokens before it
+        // could emit a tool call — nudging again only makes the prompt longer
+        // and repeats the failure, so fail fast with an actionable message.
+        if (response.metadata['finish_reason'] == 'length') {
+          throw Exception('Model output was cut off before a tool call '
+              '(context/length limit reached). Increase the model context window '
+              '(e.g. Ollama num_ctx / OLLAMA_CONTEXT_LENGTH) or use a model that '
+              'reasons less verbosely.');
+        }
         // The model answered in text instead of calling the tool — nudge once.
         onLog?.call('Model replied without calling select_images; asking again...');
         messages.add(LLMMessage(role: LLMRole.assistant, content: response.text));
         messages.add(LLMMessage(
           role: LLMRole.user,
-          content: 'Please submit your selection by calling the select_images tool.',
+          content: 'Please submit your selection by calling the select_images tool with id numbers.',
         ));
         continue;
       }
@@ -288,25 +398,31 @@ Call select_images with the URLs of the images that match the requirement.
           result = {'status': 'error', 'message': 'Unknown tool. Use select_images.'};
           hadErrors = true;
         } else {
-          final rawUrls = call.arguments['urls'];
-          final urls = rawUrls is List ? rawUrls.map((u) => u.toString()).toList() : <String>[];
-          final invalid = urls.where((u) => !validUrls.contains(u)).toList();
+          final rawIds = call.arguments['ids'];
+          final ids = rawIds is List
+              ? rawIds.map((e) => int.tryParse(e.toString())).whereType<int>().toList()
+              : <int>[];
+          final invalid = ids.where((id) => id < 0 || id >= batch.length).toList();
+          final valid = ids.where((id) => id >= 0 && id < batch.length).toList();
 
-          selected.addAll(urls.where(validUrls.contains));
+          for (final id in valid) {
+            final url = batch[id]['url'];
+            if (url != null) selected.add(url);
+          }
           submitted = true;
 
           if (invalid.isEmpty) {
-            result = {'status': 'ok', 'accepted': urls.length};
+            result = {'status': 'ok', 'accepted': valid.length};
           } else {
             hadErrors = true;
             result = {
               'status': 'partial',
-              'accepted': urls.length - invalid.length,
+              'accepted': valid.length,
               'rejected': invalid,
-              'message': 'Rejected URLs are not in the candidate list. '
-                  'Copy URLs exactly as provided, then resubmit only the corrected ones if needed.',
+              'message': 'Rejected ids are out of range. '
+                  'Valid ids are 0..${batch.length - 1}.',
             };
-            onLog?.call('Rejected ${invalid.length} URL(s) not present in candidate list.');
+            onLog?.call('Rejected ${invalid.length} out-of-range id(s).');
           }
         }
 
@@ -326,7 +442,6 @@ Call select_images with the URLs of the images that match the requirement.
       throw Exception('The model did not submit a selection via the select_images tool.');
     }
 
-    onLog?.call('Model selected ${selected.length} image(s).');
     return selected;
   }
 

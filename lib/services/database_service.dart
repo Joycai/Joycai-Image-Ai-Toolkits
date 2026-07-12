@@ -68,7 +68,7 @@ class DatabaseService {
       db = await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 25,
+          version: 26,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
