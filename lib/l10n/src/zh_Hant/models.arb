@@ -140,5 +140,8 @@
       }
     }
   },
-  "contextWindowHint": "更大的上下文可讓每次請求分析更多圖片。"
+  "contextWindowHint": "更大的上下文可讓每次請求分析更多圖片。",
+  "agentBehavior": "代理行為",
+  "forceViewAllImages": "檢視全部參考圖",
+  "forceViewAllImagesDesc": "代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。"
 }

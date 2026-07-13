@@ -69,6 +69,7 @@
   "update": "Update",
   "cancel": "Cancel",
   "close": "Close",
+  "expandEditor": "Expand editor",
   "back": "Back",
   "next": "Next",
   "finish": "Finish",
@@ -429,6 +430,9 @@
     }
   },
   "contextWindowHint": "Larger context lets more images be analyzed per request.",
+  "agentBehavior": "Agent Behavior",
+  "forceViewAllImages": "View all reference images",
+  "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models.",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

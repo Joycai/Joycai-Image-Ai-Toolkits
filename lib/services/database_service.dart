@@ -68,7 +68,7 @@ class DatabaseService {
       db = await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 26,
+          version: 27,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -78,7 +78,7 @@ class DatabaseService {
       // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
       db = await openDatabase(
         dbPath,
-        version: 25,
+        version: 27,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );

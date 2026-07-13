@@ -163,6 +163,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get close => '閉じる';
 
   @override
+  String get expandEditor => '拡大編集';
+
+  @override
   String get back => '戻る';
 
   @override
@@ -866,6 +869,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contextWindowHint => 'コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。';
+
+  @override
+  String get agentBehavior => 'エージェント動作';
+
+  @override
+  String get forceViewAllImages => 'すべての参考画像を確認';
+
+  @override
+  String get forceViewAllImagesDesc =>
+      'エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。';
 
   @override
   String get prompts => 'プロンプト';

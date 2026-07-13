@@ -163,6 +163,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get close => '关闭';
 
   @override
+  String get expandEditor => '放大编辑';
+
+  @override
   String get back => '返回';
 
   @override
@@ -863,6 +866,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contextWindowHint => '更大的上下文可让每次请求分析更多图片。';
+
+  @override
+  String get agentBehavior => '代理行为';
+
+  @override
+  String get forceViewAllImages => '查看全部参考图';
+
+  @override
+  String get forceViewAllImagesDesc => '代理必须查看所有参考图后才能提交结果，推荐为本地小模型开启。';
 
   @override
   String get prompts => '提示词';
@@ -2110,6 +2122,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get close => '關閉';
 
   @override
+  String get expandEditor => '放大編輯';
+
+  @override
   String get back => '返回';
 
   @override
@@ -2807,6 +2822,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get contextWindowHint => '更大的上下文可讓每次請求分析更多圖片。';
+
+  @override
+  String get agentBehavior => '代理行為';
+
+  @override
+  String get forceViewAllImages => '檢視全部參考圖';
+
+  @override
+  String get forceViewAllImagesDesc => '代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。';
 
   @override
   String get prompts => '提示';
