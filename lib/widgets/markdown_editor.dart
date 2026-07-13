@@ -152,6 +152,11 @@ class MarkdownEditor extends StatefulWidget {
   final bool expand;
   final bool selectable;
 
+  /// Shows an "expand editor" action that opens the same controller in a
+  /// large dialog (fullscreen on mobile) — for editing long prompts
+  /// comfortably. Disabled inside the pop-out itself.
+  final bool allowExpand;
+
   const MarkdownEditor({
     super.key,
     required this.controller,
@@ -165,6 +170,7 @@ class MarkdownEditor extends StatefulWidget {
     this.isRefined = false,
     this.expand = false,
     this.selectable = true,
+    this.allowExpand = true,
   });
 
   @override
@@ -215,27 +221,41 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
               ),
           ],
         ),
-        if (widget.isMarkdown || widget.isRefined)
-          SegmentedButton<bool>(
-            segments: [
-              ButtonSegment(
-                value: false,
-                label: Text(l10n.edit),
-                icon: const Icon(Icons.edit, size: 16),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.isMarkdown || widget.isRefined)
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    label: Text(l10n.edit),
+                    icon: const Icon(Icons.edit, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text(l10n.preview),
+                    icon: const Icon(Icons.visibility, size: 16),
+                  ),
+                ],
+                selected: {_isPreview},
+                onSelectionChanged: (v) => setState(() => _isPreview = v.first),
+                style: SegmentedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
               ),
-              ButtonSegment(
-                value: true,
-                label: Text(l10n.preview),
-                icon: const Icon(Icons.visibility, size: 16),
+            if (widget.allowExpand) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.open_in_full, size: 16),
+                onPressed: _openLargeEditor,
+                tooltip: l10n.expandEditor,
+                visualDensity: VisualDensity.compact,
               ),
             ],
-            selected: {_isPreview},
-            onSelectionChanged: (v) => setState(() => _isPreview = v.first),
-            style: SegmentedButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(fontSize: 11),
-            ),
-          ),
+          ],
+        ),
       ],
     );
 
@@ -271,6 +291,92 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             else
               Flexible(child: _buildEditorContent(colorScheme)),
           ],
+        );
+      },
+    );
+  }
+
+  /// Opens the same controller in a large pop-out editor: a fullscreen dialog
+  /// on narrow screens, a large centered dialog elsewhere. Text stays in sync
+  /// automatically because the controller is shared.
+  void _openLargeEditor() {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isCompact = MediaQuery.of(context).size.width < 600;
+    bool localMarkdown = widget.isMarkdown;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final body = StatefulBuilder(
+          builder: (dialogContext, setLocal) {
+            return Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_note, size: 22, color: colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        tooltip: l10n.close,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: MarkdownEditor(
+                      controller: widget.controller,
+                      label: widget.label,
+                      hint: widget.hint,
+                      isMarkdown: localMarkdown,
+                      onMarkdownChanged: (v) {
+                        setLocal(() => localMarkdown = v);
+                        widget.onMarkdownChanged(v);
+                      },
+                      onChanged: widget.onChanged,
+                      isRefined: widget.isRefined,
+                      selectable: widget.selectable,
+                      initiallyPreview: _isPreview,
+                      expand: true,
+                      allowExpand: false,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (isCompact) {
+          return Dialog.fullscreen(child: body);
+        }
+        final screen = MediaQuery.of(dialogContext).size;
+        return Dialog(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: SizedBox(
+            width: (screen.width * 0.8).clamp(0.0, 1000.0),
+            height: screen.height * 0.85,
+            child: body,
+          ),
         );
       },
     );

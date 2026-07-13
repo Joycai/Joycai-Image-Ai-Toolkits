@@ -132,7 +132,7 @@ class PromptOptimizerAgent {
       name: 'view_image',
       description: 'Look at one reference image, identified by its id from '
           'list_reference_images. The image is attached to the conversation '
-          'right after this call. Only view images that are actually relevant.',
+          'right after this call. Call it once per image you need to see.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -172,18 +172,28 @@ class PromptOptimizerAgent {
   ///
   /// [referenceImages] entries must contain `path` and `name`; ids exposed to
   /// the model are their 1-based positions in this list.
+  ///
+  /// [forceViewAllImages] (per-model setting) makes viewing every reference
+  /// image a hard requirement before submit_prompt — for small local models
+  /// that otherwise look at one image and stop.
   static Future<void> runTurn({
     required PromptOptimizerSession session,
     required dynamic modelIdentifier,
     String? systemPrompt,
     required List<Map<String, String>> referenceImages,
+    bool forceViewAllImages = false,
     String? contextId,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
   }) async {
     session._setRunning(true);
+    // Weak local models tend to issue a single tool call per turn, so viewing
+    // every reference image one by one needs list + N views + submit turns.
+    final maxTurns = _maxTurns > referenceImages.length + 4
+        ? _maxTurns
+        : referenceImages.length + 4;
     try {
-      for (int turn = 0; turn < _maxTurns; turn++) {
+      for (int turn = 0; turn < maxTurns; turn++) {
         if (isCancelled?.call() ?? false) return;
 
         final LLMResponse response;
@@ -193,7 +203,11 @@ class PromptOptimizerAgent {
             messages: [
               LLMMessage(
                 role: LLMRole.system,
-                content: _buildSystemPrompt(systemPrompt, referenceImages.length),
+                content: _buildSystemPrompt(
+                  systemPrompt,
+                  referenceImages.length,
+                  forceViewAllImages,
+                ),
               ),
               ...session.history,
             ],
@@ -239,7 +253,8 @@ class PromptOptimizerAgent {
 
         for (final call in response.toolCalls) {
           if (isCancelled?.call() ?? false) return;
-          final result = _executeTool(call, referenceImages, session, pendingViews, onLog);
+          final result = _executeTool(
+              call, referenceImages, session, pendingViews, forceViewAllImages, onLog);
           session.history.add(LLMMessage(
             role: LLMRole.tool,
             content: jsonEncode(result),
@@ -258,7 +273,7 @@ class PromptOptimizerAgent {
           ));
         }
       }
-      onLog?.call('Reached the maximum of $_maxTurns agent turns — stopping.');
+      onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
     } finally {
       session._setRunning(false);
     }
@@ -269,6 +284,7 @@ class PromptOptimizerAgent {
     List<Map<String, String>> referenceImages,
     PromptOptimizerSession session,
     List<Map<String, String>> pendingViews,
+    bool forceViewAllImages,
     void Function(String message)? onLog,
   ) {
     switch (call.name) {
@@ -330,9 +346,17 @@ class PromptOptimizerAgent {
           text: image['name'] ?? '',
           toolName: 'view_image',
         ));
+        final unviewed = [
+          for (int i = 0; i < referenceImages.length; i++)
+            if (!session.viewedImagePaths.contains(referenceImages[i]['path']))
+              i + 1,
+        ];
         return {
           'status': 'ok',
           'note': 'Image #$id is attached in the next message.',
+          if (forceViewAllImages && unviewed.isNotEmpty)
+            'reminder': 'Still unviewed image ids: ${unviewed.join(', ')}. '
+                'View them all before calling submit_prompt.',
         };
 
       case 'submit_prompt':
@@ -359,10 +383,24 @@ class PromptOptimizerAgent {
     }
   }
 
-  static String _buildSystemPrompt(String? template, int referenceImageCount) {
+  static String _buildSystemPrompt(
+    String? template,
+    int referenceImageCount,
+    bool forceViewAllImages,
+  ) {
     final base = (template == null || template.trim().isEmpty)
         ? 'You are an expert prompt engineer for AI image and video generation.'
         : template.trim();
+    // Per-model setting: smaller local models look at one image and submit
+    // straight away, so viewing every image can be made a hard requirement.
+    final viewStep = forceViewAllImages && referenceImageCount > 0
+        ? '1. MANDATORY: first call list_reference_images, then call '
+            'view_image for EVERY image id from 1 to $referenceImageCount, '
+            'one call per image. You must have viewed ALL '
+            '$referenceImageCount reference image(s) before calling '
+            'submit_prompt — never skip an image and never submit early.\n'
+        : '1. If reference images could be relevant, inspect them with '
+            'list_reference_images and view_image first.\n';
     return '$base\n\n'
         '---\n'
         'You are working inside an interactive prompt-optimization chat. The '
@@ -375,8 +413,7 @@ class PromptOptimizerAgent {
         '- submit_prompt: deliver an optimized prompt. This is the ONLY way to '
         'deliver a result — never paste the final prompt as plain chat text.\n'
         'Workflow:\n'
-        '1. If reference images could be relevant, inspect them with '
-        'list_reference_images and view_image first.\n'
+        '$viewStep'
         '2. Call submit_prompt with the complete optimized prompt (plus a '
         'short note describing what you changed).\n'
         '3. Afterwards you may reply with a brief comment, or ask one '

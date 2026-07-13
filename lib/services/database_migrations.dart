@@ -51,6 +51,7 @@ class DatabaseMigration {
       await db.delete('llm_models', where: 'channel_id IS NULL');
     }
     if (oldVersion < 26) await _createV26Tables(db);
+    if (oldVersion < 27) await _createV27Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -77,7 +78,12 @@ class DatabaseMigration {
     await _createV22Tables(db);
     await _createV24Tables(db);
     await _createV26Tables(db);
+    await _createV27Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  static Future<void> _createV27Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'force_view_all_images', 'INTEGER DEFAULT 0');
   }
 
   static Future<void> _createV26Tables(Database db) async {

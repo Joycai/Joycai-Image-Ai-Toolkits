@@ -395,6 +395,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @expandEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand editor'**
+  String get expandEditor;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:
@@ -1720,6 +1726,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Larger context lets more images be analyzed per request.'**
   String get contextWindowHint;
+
+  /// No description provided for @agentBehavior.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent Behavior'**
+  String get agentBehavior;
+
+  /// No description provided for @forceViewAllImages.
+  ///
+  /// In en, this message translates to:
+  /// **'View all reference images'**
+  String get forceViewAllImages;
+
+  /// No description provided for @forceViewAllImagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents must view every reference image before delivering a result. Recommended for small local models.'**
+  String get forceViewAllImagesDesc;
 
   /// No description provided for @prompts.
   ///

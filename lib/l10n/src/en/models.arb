@@ -189,5 +189,8 @@
       }
     }
   },
-  "contextWindowHint": "Larger context lets more images be analyzed per request."
+  "contextWindowHint": "Larger context lets more images be analyzed per request.",
+  "agentBehavior": "Agent Behavior",
+  "forceViewAllImages": "View all reference images",
+  "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models."
 }

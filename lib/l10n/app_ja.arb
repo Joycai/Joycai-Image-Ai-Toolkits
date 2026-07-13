@@ -55,6 +55,7 @@
   "update": "更新",
   "cancel": "キャンセル",
   "close": "閉じる",
+  "expandEditor": "拡大編集",
   "back": "戻る",
   "next": "次へ",
   "finish": "完了",
@@ -302,6 +303,9 @@
     }
   },
   "contextWindowHint": "コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。",
+  "agentBehavior": "エージェント動作",
+  "forceViewAllImages": "すべての参考画像を確認",
+  "forceViewAllImagesDesc": "エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

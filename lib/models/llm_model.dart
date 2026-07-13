@@ -17,6 +17,11 @@ class LLMModel {
   /// conservative default.
   final int? contextWindow;
 
+  /// When true, agent workflows (prompt optimizer) instruct the model that it
+  /// MUST view every reference image before delivering a result. Meant for
+  /// small local models that otherwise look at one image and stop.
+  final bool forceViewAllImages;
+
   // Performance metrics
   final double? estMeanMs;
   final double? estSdMs;
@@ -35,6 +40,7 @@ class LLMModel {
     this.channelId,
     this.feeGroupId,
     this.contextWindow,
+    this.forceViewAllImages = false,
     this.estMeanMs,
     this.estSdMs,
     this.tasksSinceUpdate = 0,
@@ -54,6 +60,7 @@ class LLMModel {
       channelId: map['channel_id'] as int?,
       feeGroupId: map['fee_group_id'] as int?,
       contextWindow: map['context_window'] as int?,
+      forceViewAllImages: (map['force_view_all_images'] ?? 0) == 1,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
       tasksSinceUpdate: map['tasks_since_update'] as int? ?? 0,
@@ -73,6 +80,7 @@ class LLMModel {
       'channel_id': channelId,
       'fee_group_id': feeGroupId,
       'context_window': contextWindow,
+      'force_view_all_images': forceViewAllImages ? 1 : 0,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,

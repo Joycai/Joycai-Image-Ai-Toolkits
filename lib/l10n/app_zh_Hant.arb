@@ -55,6 +55,7 @@
   "update": "更新",
   "cancel": "取消",
   "close": "關閉",
+  "expandEditor": "放大編輯",
   "back": "返回",
   "next": "下一步",
   "finish": "完成",
@@ -302,6 +303,9 @@
     }
   },
   "contextWindowHint": "更大的上下文可讓每次請求分析更多圖片。",
+  "agentBehavior": "代理行為",
+  "forceViewAllImages": "檢視全部參考圖",
+  "forceViewAllImagesDesc": "代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

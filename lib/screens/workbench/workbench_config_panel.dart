@@ -199,55 +199,47 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               expand: false, // Don't expand inside scrollable
             ),
             const SizedBox(height: 16),
+          ],
+        );
 
-            const SizedBox(height: 12),
-            // Action Zone Container
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+        // Secondary actions — pinned together with the Process button so they
+        // stay reachable no matter how long the prompt gets.
+        final secondaryActions = Row(
+          children: [
+            // Send to Optimizer
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  final appState = Provider.of<AppState>(context, listen: false);
+                  final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+
+                  workbenchUIState.sendToOptimizer(
+                    _promptController.text,
+                    appState.selectedImages,
+                  );
+
+                  appState.setWorkbenchTab(4);
+
+                  if (widget.scrollController != null) {
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.auto_fix_high, size: 18),
+                label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-              child: Row(
-                children: [
-                  // Send to Optimizer
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        final appState = Provider.of<AppState>(context, listen: false);
-                        final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-
-                        workbenchUIState.sendToOptimizer(
-                          _promptController.text,
-                          appState.selectedImages,
-                        );
-
-                        appState.setWorkbenchTab(4);
-
-                        if (widget.scrollController != null) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: const Icon(Icons.auto_fix_high, size: 18),
-                      label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Queue Settings
-                  IconButton.filledTonal(
-                    onPressed: () => showQueueSettingsDialog(context),
-                    icon: const Icon(Icons.settings_outlined, size: 20),
-                    tooltip: l10n.queueSettings,
-                    style: IconButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ],
+            ),
+            const SizedBox(width: 10),
+            // Queue Settings
+            IconButton.filledTonal(
+              onPressed: () => showQueueSettingsDialog(context),
+              icon: const Icon(Icons.settings_outlined, size: 20),
+              tooltip: l10n.queueSettings,
+              style: IconButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ],
@@ -316,13 +308,21 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         );
 
         if (widget.scrollController != null) {
-          // Mobile bottom sheet: pin Process button at top so it's always visible
+          // Mobile bottom sheet: pin the action zone at the top so both the
+          // Process button and the optimizer entry are always visible.
           return Column(
             mainAxisSize: MainAxisSize.max,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: processButton,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    processButton,
+                    const SizedBox(height: 10),
+                    secondaryActions,
+                  ],
+                ),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -334,8 +334,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             ],
           );
         } else {
-          // Desktop sidebar: content scrolls; the Process button is docked at
-          // the bottom so it's always reachable without scrolling to the end.
+          // Desktop sidebar: content scrolls; the whole action zone (optimizer
+          // + queue settings + Process) is docked at the bottom so it stays
+          // reachable no matter how long the prompt gets.
           return Column(
             children: [
               Expanded(
@@ -344,7 +345,16 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   child: content,
                 ),
               ),
-              ConfigActionBar(child: processButton),
+              ConfigActionBar(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    secondaryActions,
+                    const SizedBox(height: 10),
+                    processButton,
+                  ],
+                ),
+              ),
             ],
           );
         }

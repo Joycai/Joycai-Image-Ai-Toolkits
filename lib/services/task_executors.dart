@@ -123,10 +123,22 @@ extension TaskExecutors on TaskQueueService {
       }
 
       task.addLog('Start optimizer agent turn (${task.imagePaths.length} reference images).');
+
+      // Per-model agent setting: force viewing every reference image.
+      bool forceViewAll = false;
+      if (task.modelDbId != null) {
+        final models = await DatabaseService().getModels();
+        final model = models
+            .cast<LLMModel?>()
+            .firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
+        forceViewAll = model?.forceViewAllImages ?? false;
+      }
+
       await PromptOptimizerAgent.runTurn(
         session: session,
         modelIdentifier: task.modelDbId ?? task.modelId,
         systemPrompt: task.parameters['systemPrompt'],
+        forceViewAllImages: forceViewAll,
         referenceImages: task.imagePaths
             .map((path) => {'path': path, 'name': p.basename(path)})
             .toList(),
