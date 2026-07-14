@@ -22,10 +22,12 @@ lib/
   state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState
   services/             # all business logic
     llm/                # LLMService facade + GoogleGenAIProvider + OpenAIAPIProvider; model discovery
-    repositories/       # SQLite DAOs: model, prompt, task, usage
+    repositories/       # SQLite DAOs: model, prompt, task, usage, assistant session
     database_service.dart         # SQLite via sqflite/sqflite_common_ffi
     database_migrations.dart      # schema migrations
     task_queue_service.dart       # concurrency queue, Stream<TaskEvent>, ETA estimation
+    prompt_optimizer_agent.dart   # Prompt Assistant agent: tool loop, modes (system prompt / knowledge base), session persistence + compaction
+    knowledge_base_service.dart   # local knowledge-base folder access (README.md entry, paged reads)
     web_scraper_service.dart      # HTML image extraction with cookie support
   screens/              # workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
   models/               # LLMModel, LLMChannel, PricingGroup, Prompt, PromptTag, AppImage, BrowserFile, LogEntry
