@@ -73,5 +73,11 @@
   "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
   "openLogFolder": "Open Log Folder",
   "iosOutputRecommend": "Recommended: Leave as default on iOS. The app's folder is visible in the 'Files' app.",
-  "downloaderCacheCleared": "Downloader cache cleared."
+  "downloaderCacheCleared": "Downloader cache cleared.",
+  "knowledgeBaseFolder": "Knowledge Base Folder",
+  "kbOpenFolder": "Open Folder",
+  "kbInvalidDir": "Folder not found",
+  "kbMissingEntry": "README.md entry file not found in the folder",
+  "assistantRetention": "Assistant Conversations to Keep",
+  "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically"
 }

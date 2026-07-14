@@ -16,6 +16,7 @@ import '../../../state/workbench_ui_state.dart';
 class PromptOptimizerChatView extends StatefulWidget {
   final TextEditingController inputCtrl;
   final VoidCallback onSend;
+  final VoidCallback onRetry;
   final void Function(String prompt) onApplyPrompt;
   final bool isBusy;
 
@@ -23,6 +24,7 @@ class PromptOptimizerChatView extends StatefulWidget {
     super.key,
     required this.inputCtrl,
     required this.onSend,
+    required this.onRetry,
     required this.onApplyPrompt,
     required this.isBusy,
   });
@@ -129,13 +131,14 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       itemCount: session.transcript.length,
       itemBuilder: (context, index) {
         final entry = session.transcript[index];
+        final isLast = index == session.transcript.length - 1;
         return Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 780),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildEntry(entry, l10n, colorScheme),
+              child: _buildEntry(entry, isLast, l10n, colorScheme),
             ),
           ),
         );
@@ -143,7 +146,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
-  Widget _buildEntry(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildEntry(OptimizerChatEntry entry, bool isLast, AppLocalizations l10n, ColorScheme colorScheme) {
     switch (entry.kind) {
       case OptimizerEntryKind.user:
         return Align(
@@ -183,12 +186,22 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         );
 
       case OptimizerEntryKind.tool:
-        final label = entry.toolName == 'view_image'
-            ? l10n.optToolViewImage(entry.text)
-            : l10n.optToolListImages;
-        final icon = entry.toolName == 'view_image'
-            ? Icons.visibility_outlined
-            : Icons.checklist_rtl;
+        final String label;
+        final IconData icon;
+        switch (entry.toolName) {
+          case 'view_image':
+            label = l10n.optToolViewImage(entry.text);
+            icon = Icons.visibility_outlined;
+          case 'read_knowledge_file':
+            label = l10n.optToolReadKnowledge(entry.text);
+            icon = Icons.menu_book_outlined;
+          case 'list_knowledge_files':
+            label = l10n.optToolListKnowledge;
+            icon = Icons.folder_outlined;
+          default:
+            label = l10n.optToolListImages;
+            icon = Icons.checklist_rtl;
+        }
         return Align(
           alignment: Alignment.centerLeft,
           child: Padding(
@@ -213,20 +226,64 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       case OptimizerEntryKind.prompt:
         return _buildPromptCard(entry, l10n, colorScheme);
 
+      case OptimizerEntryKind.notice:
+        final noticeText = switch (entry.text) {
+          PromptOptimizerAgent.compactedNoticeToken => l10n.optCompactedNotice,
+          PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
+          _ => entry.text,
+        };
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline, size: 13, color: colorScheme.outline),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    noticeText,
+                    style: TextStyle(fontSize: 11, color: colorScheme.outline, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
       case OptimizerEntryKind.error:
         return Align(
           alignment: Alignment.centerLeft,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 640),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: SelectableText(
-              entry.text,
-              style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 12, height: 1.4),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                constraints: const BoxConstraints(maxWidth: 640),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SelectableText(
+                  entry.text,
+                  style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 12, height: 1.4),
+                ),
+              ),
+              // The failed turn's context (user message, tool results) is
+              // still in the session history — retrying just re-runs the
+              // agent turn without re-reading knowledge or images.
+              if (isLast && !widget.isBusy)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: OutlinedButton.icon(
+                    onPressed: widget.onRetry,
+                    icon: const Icon(Icons.refresh, size: 15),
+                    label: Text(l10n.optRetry, style: const TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
+                  ),
+                ),
+            ],
           ),
         );
     }

@@ -16,6 +16,22 @@ class LLMAttachment {
 
   LLMAttachment.fromFile(File file, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = file.path, bytes = null;
   LLMAttachment.fromBytes(this.bytes, this.mimeType, {this.referenceType = LLMReferenceType.media}) : path = null;
+
+  /// Persistence: only file-backed attachments are serialized (bytes are
+  /// intentionally not stored — the file is re-read on demand at replay time).
+  Map<String, dynamic>? toJson() => path == null
+      ? null
+      : {'path': path, 'mime': mimeType, 'ref': referenceType.name};
+
+  static LLMAttachment? fromJson(Map<String, dynamic> json) {
+    final path = json['path'] as String?;
+    if (path == null) return null;
+    return LLMAttachment.fromFile(
+      File(path),
+      json['mime'] as String? ?? 'image/jpeg',
+      referenceType: LLMReferenceType.values.asNameMap()[json['ref']] ?? LLMReferenceType.media,
+    );
+  }
 }
 
 /// A tool (function) the model is allowed to call.
@@ -53,6 +69,22 @@ class LLMToolCall {
     required this.arguments,
     this.thoughtSignature,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'arguments': arguments,
+        // Gemini rejects replayed histories whose thought signatures are
+        // missing, so it must round-trip through persistence.
+        if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+      };
+
+  factory LLMToolCall.fromJson(Map<String, dynamic> json) => LLMToolCall(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        arguments: (json['arguments'] as Map?)?.cast<String, dynamic>() ?? {},
+        thoughtSignature: json['thoughtSignature'] as String?,
+      );
 }
 
 class LLMMessage {
@@ -79,6 +111,32 @@ class LLMMessage {
     this.toolCallId,
     this.toolName,
   });
+
+  Map<String, dynamic> toJson() => {
+        'role': role.name,
+        'content': content,
+        if (attachments.isNotEmpty)
+          'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
+        if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
+        if (toolCallId != null) 'toolCallId': toolCallId,
+        if (toolName != null) 'toolName': toolName,
+      };
+
+  factory LLMMessage.fromJson(Map<String, dynamic> json) => LLMMessage(
+        role: LLMRole.values.asNameMap()[json['role']] ?? LLMRole.user,
+        content: json['content'] as String? ?? '',
+        attachments: [
+          for (final a in (json['attachments'] as List? ?? []))
+            if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
+              LLMAttachment.fromJson(a.cast<String, dynamic>())!,
+        ],
+        toolCalls: [
+          for (final c in (json['toolCalls'] as List? ?? []))
+            if (c is Map) LLMToolCall.fromJson(c.cast<String, dynamic>()),
+        ],
+        toolCallId: json['toolCallId'] as String?,
+        toolName: json['toolName'] as String?,
+      );
 }
 
 class LLMModelConfig {
@@ -93,7 +151,7 @@ class LLMModelConfig {
   final String billingMode; // 'token' or 'request'
   final double requestFee;
   final Map<String, dynamic> extraParams;
-  
+
   // Proxy settings
   final bool proxyEnabled;
   final String? proxyUrl;

@@ -136,7 +136,7 @@
   "sendToComparatorRaw": "設為原始圖 (RAW)",
   "sendToComparatorAfter": "設為處理後 (Result)",
   "sendToSelection": "新增至選取項目",
-  "sendToOptimizer": "發送到提示詞優化器",
+  "sendToOptimizer": "發送到提示詞助手",
   "optimizePromptWithImage": "使用圖片優化提示詞",
   "selectFromLibrary": "從庫中選取",
   "metadataSelectedNone": "未選取圖片中繼資料",
@@ -172,7 +172,7 @@
       }
     }
   },
-  "promptOptimizer": "提示詞優化器",
+  "promptOptimizer": "提示詞助手",
   "refinerModel": "優化模型",
   "systemPrompt": "系統提示詞",
   "preset": "預設",
@@ -215,6 +215,8 @@
   "optPromptCopied": "提示詞已複製到剪貼簿",
   "optEmptyChat": "傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。",
   "optViewed": "AI 已查看",
+  "optRemoveImage": "移除圖片",
+  "optEmptyImagesHint": "在圖庫中右鍵圖片，選擇「發送到提示詞助手」即可加入此處。",
   "videoGeneration": "影片生成",
   "referenceImages": "參考圖片",
   "firstFrame": "首幀",
@@ -293,5 +295,25 @@
   "safetyThresholdBlockMediumAndAbove": "封鎖一部分",
   "safetyThresholdBlockOnlyHigh": "封鎖少部分",
   "safetyThresholdBlockNone": "全部不封鎖",
-  "safetyThresholdOff": "關閉過濾"
+  "safetyThresholdOff": "關閉過濾",
+  "optModeSystemPrompt": "系統提示詞",
+  "optModeKnowledge": "知識庫",
+  "knowledgeBase": "知識庫",
+  "optKbNotConfigured": "知識庫未設定或無效，請先在設定中選擇知識庫資料夾。",
+  "optModeSwitchConfirm": "切換模式將開始新的對話，是否繼續？",
+  "optToolListKnowledge": "瀏覽了知識庫檔案列表",
+  "optToolReadKnowledge": "閱讀知識庫：{name}",
+  "@optToolReadKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optHistory": "歷史對話",
+  "optNoHistory": "尚無已儲存的對話",
+  "optDeleteSessionConfirm": "確定永久刪除該對話？",
+  "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
+  "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
+  "optRetry": "重試"
 }

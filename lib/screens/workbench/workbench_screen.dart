@@ -17,6 +17,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../../services/knowledge_base_service.dart';
+import '../../services/prompt_optimizer_agent.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
@@ -72,6 +74,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   List<SystemPrompt> _optFilteredSysPrompts = [];
   List<PromptTag> _optTags = [];
   bool _optIsLoadingData = true;
+  KbStatus _kbStatus = KbStatus.notSet;
+  String? _kbPath;
 
   @override
   void didChangeDependencies() {
@@ -119,8 +123,21 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   // Optimizer Helpers
+  Future<void> _refreshKbStatus() async {
+    final kb = KnowledgeBaseService();
+    final path = await kb.getRoot();
+    final status = await kb.validate(path);
+    if (mounted) {
+      setState(() {
+        _kbPath = path;
+        _kbStatus = status;
+      });
+    }
+  }
+
   Future<void> _loadOptimizerData() async {
     if (_appState == null) return;
+    await _refreshKbStatus();
     try {
       final refinerPrompts = await _appState!.getSystemPrompts(type: 'refiner');
       final tags = await _appState!.getPromptTags();
@@ -173,9 +190,58 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     final session = workbenchUIState.optimizerSession;
+
+    // Knowledge mode requires a valid knowledge base before sending.
+    if (session.mode == AssistantMode.knowledgeBase) {
+      await _refreshKbStatus();
+      if (_kbStatus != KbStatus.ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
+          );
+        }
+        return;
+      }
+    }
+
     session.addUserTurn(text);
     _optInputCtrl.clear();
 
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  /// Re-runs the agent turn after a failure. The pending user message and any
+  /// completed tool results are still in the session history, so nothing has
+  /// to be typed or re-read again.
+  Future<void> _handleOptimizerRetry() async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+    if (session.isRunning || session.history.isEmpty) return;
+
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      return;
+    }
+    if (session.mode == AssistantMode.knowledgeBase) {
+      await _refreshKbStatus();
+      if (_kbStatus != KbStatus.ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
+          );
+        }
+        return;
+      }
+    }
+
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  Future<void> _enqueueAssistantTurn(
+    WorkbenchUIState workbenchUIState,
+    PromptOptimizerSession session,
+  ) async {
     try {
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       await taskService.addTask(
@@ -183,15 +249,150 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         workbenchUIState.optSelectedModelDbId!,
         {
           'sessionId': session.id,
-          'systemPrompt': workbenchUIState.optSelectedSysPrompt,
+          'mode': session.mode.name,
+          if (session.mode == AssistantMode.systemPrompt)
+            'systemPrompt': workbenchUIState.optSelectedSysPrompt,
         },
         type: TaskType.promptRefine,
         useStream: false,
         id: const Uuid().v4(),
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
+      }
     }
+  }
+
+  /// Bottom sheet listing persisted assistant conversations with restore /
+  /// rename / delete actions.
+  Future<void> _showAssistantHistory() async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final sessions = await workbenchUIState.listAssistantSessions();
+    if (!mounted) return;
+    if (sessions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.optNoHistory)));
+      return;
+    }
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: sessions.length,
+            itemBuilder: (itemContext, index) {
+              final meta = sessions[index];
+              final isCurrent = meta.id == workbenchUIState.optimizerSession.id;
+              final colorScheme = Theme.of(itemContext).colorScheme;
+              return ListTile(
+                dense: true,
+                selected: isCurrent,
+                leading: Icon(
+                  meta.mode == AssistantMode.knowledgeBase ? Icons.menu_book_outlined : Icons.tune,
+                  size: 18,
+                ),
+                title: Text(
+                  (meta.title == null || meta.title!.isEmpty) ? meta.id : meta.title!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  meta.updatedAt.toLocal().toString().substring(0, 16),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      tooltip: l10n.rename,
+                      onPressed: () async {
+                        final ctrl = TextEditingController(text: meta.title ?? '');
+                        final newTitle = await showDialog<String>(
+                          context: sheetContext,
+                          builder: (dialogContext) => AlertDialog(
+                            title: Text(l10n.rename),
+                            content: TextField(controller: ctrl, autofocus: true),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(l10n.cancel)),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
+                                child: Text(l10n.confirm),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (newTitle != null && newTitle.isNotEmpty) {
+                          await workbenchUIState.renameAssistantSession(meta.id, newTitle);
+                          final refreshed = await workbenchUIState.listAssistantSessions();
+                          sessions..clear()..addAll(refreshed);
+                          setSheetState(() {});
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
+                      tooltip: l10n.delete,
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: sheetContext,
+                          builder: (dialogContext) => AlertDialog(
+                            content: Text(l10n.optDeleteSessionConfirm),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(l10n.cancel)),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(dialogContext, true),
+                                child: Text(l10n.delete),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          await workbenchUIState.deleteAssistantSession(meta.id);
+                          sessions.removeAt(index);
+                          setSheetState(() {});
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                onTap: isCurrent
+                    ? null
+                    : () async {
+                        Navigator.pop(sheetContext);
+                        await workbenchUIState.restoreAssistantSession(meta.id);
+                      },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleAssistantModeChange(AssistantMode next) async {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+    if (session.mode == next) return;
+    if (session.transcript.isNotEmpty) {
+      final l10n = AppLocalizations.of(context)!;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: Text(l10n.optModeSwitchConfirm),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.confirm)),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    workbenchUIState.setAssistantMode(next);
   }
 
   void _handleOptimizerApply(String prompt) {
@@ -211,6 +412,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
          _tabController.animateTo(targetIndex);
       }
       
+      // Re-validate the knowledge base whenever the assistant tab is opened
+      // (the user may have just changed the folder in Settings).
+      if (_tabController.index == 4) _refreshKbStatus();
+
       // Prefill the chat input with the current workspace prompt, but only
       // for a pristine conversation — never clobber an ongoing draft or chat.
       if (_tabController.index == 4 &&
@@ -430,6 +635,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                   children: [
                     PromptOptimizerToolbar(
                       onNewSession: () => wui.newOptimizerSession(),
+                      onHistory: _showAssistantHistory,
                       onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
                       isRefining: isBusy,
                       canApply: session.refinedPrompt != null,
@@ -440,6 +646,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                           : PromptOptimizerChatView(
                               inputCtrl: _optInputCtrl,
                               onSend: _handleOptimizerSend,
+                              onRetry: _handleOptimizerRetry,
                               onApplyPrompt: _handleOptimizerApply,
                               isBusy: isBusy,
                             ),
@@ -503,6 +710,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               selectedTagId: workbenchUIState.optSelectedTagId,
               selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
               useCustomSysPrompt: workbenchUIState.optUseCustomSysPrompt,
+              mode: workbenchUIState.assistantMode,
+              kbStatus: _kbStatus,
+              kbPath: _kbPath,
+              onModeChanged: _handleAssistantModeChange,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
               onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),

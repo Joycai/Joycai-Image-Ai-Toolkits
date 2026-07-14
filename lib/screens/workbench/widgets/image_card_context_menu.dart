@@ -149,6 +149,20 @@ void showImageCardContextMenu(
           appState.setWorkbenchTab(5); // Video Generation
         },
       ),
+      PopupMenuItem(
+        child: ListTile(
+          leading: Icon(Icons.assistant_outlined, size: 18, color: colorScheme.primary),
+          title: Text(l10n.sendToOptimizer),
+          dense: true,
+        ),
+        onTap: () {
+          // With an active multi-selection send the whole set, mirroring the
+          // share action's behavior.
+          final toSend = isPartOfSelection ? appState.selectedImages : [imageFile];
+          workbenchUIState.addAssistantImages(toSend);
+          appState.setWorkbenchTab(4); // Prompt Assistant
+        },
+      ),
     ]);
   }
 

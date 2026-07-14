@@ -623,6 +623,12 @@ abstract class AppLocalizations {
   /// **'More'**
   String get more;
 
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
   /// No description provided for @downloader.
   ///
   /// In en, this message translates to:
@@ -2465,6 +2471,42 @@ abstract class AppLocalizations {
   /// **'Downloader cache cleared.'**
   String get downloaderCacheCleared;
 
+  /// No description provided for @knowledgeBaseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base Folder'**
+  String get knowledgeBaseFolder;
+
+  /// No description provided for @kbOpenFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Folder'**
+  String get kbOpenFolder;
+
+  /// No description provided for @kbInvalidDir.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder not found'**
+  String get kbInvalidDir;
+
+  /// No description provided for @kbMissingEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'README.md entry file not found in the folder'**
+  String get kbMissingEntry;
+
+  /// No description provided for @assistantRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant Conversations to Keep'**
+  String get assistantRetention;
+
+  /// No description provided for @assistantRetentionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Older prompt assistant conversations beyond this count are deleted automatically'**
+  String get assistantRetentionDesc;
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:
@@ -3266,7 +3308,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendToOptimizer.
   ///
   /// In en, this message translates to:
-  /// **'Send to Prompt Optimizer'**
+  /// **'Send to Prompt Assistant'**
   String get sendToOptimizer;
 
   /// No description provided for @optimizePromptWithImage.
@@ -3440,7 +3482,7 @@ abstract class AppLocalizations {
   /// No description provided for @promptOptimizer.
   ///
   /// In en, this message translates to:
-  /// **'Prompt Optimizer'**
+  /// **'Prompt Assistant'**
   String get promptOptimizer;
 
   /// No description provided for @refinerModel.
@@ -3568,6 +3610,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Viewed by AI'**
   String get optViewed;
+
+  /// No description provided for @optRemoveImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove image'**
+  String get optRemoveImage;
+
+  /// No description provided for @optEmptyImagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.'**
+  String get optEmptyImagesHint;
 
   /// No description provided for @videoGeneration.
   ///
@@ -3874,6 +3928,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filter off'**
   String get safetyThresholdOff;
+
+  /// No description provided for @optModeSystemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt'**
+  String get optModeSystemPrompt;
+
+  /// No description provided for @optModeKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base'**
+  String get optModeKnowledge;
+
+  /// No description provided for @knowledgeBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base'**
+  String get knowledgeBase;
+
+  /// No description provided for @optKbNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge base is not configured or invalid — choose its folder in Settings first.'**
+  String get optKbNotConfigured;
+
+  /// No description provided for @optModeSwitchConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching the mode starts a new conversation. Continue?'**
+  String get optModeSwitchConfirm;
+
+  /// No description provided for @optToolListKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Browsed knowledge base files'**
+  String get optToolListKnowledge;
+
+  /// No description provided for @optToolReadKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Read knowledge: {name}'**
+  String optToolReadKnowledge(String name);
+
+  /// No description provided for @optHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation History'**
+  String get optHistory;
+
+  /// No description provided for @optNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved conversations yet'**
+  String get optNoHistory;
+
+  /// No description provided for @optDeleteSessionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this conversation permanently?'**
+  String get optDeleteSessionConfirm;
+
+  /// No description provided for @optCompactedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier messages were compacted into a summary to save context.'**
+  String get optCompactedNotice;
+
+  /// No description provided for @optImageMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Some reference images of this conversation no longer exist — re-add them to continue using them.'**
+  String get optImageMissing;
+
+  /// No description provided for @optRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get optRetry;
 }
 
 class _AppLocalizationsDelegate

@@ -73,5 +73,11 @@
   "apiDebugDesc": "トラブルシューティングのために生のAPIリクエストとレスポンスをファイルに記録します。警告：マスクされていない場合、APIキーなどの機密データが記録される可能性があります。",
   "openLogFolder": "ログフォルダを開く",
   "iosOutputRecommend": "推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。",
-  "downloaderCacheCleared": "ダウンローダーのキャッシュがクリアされました。"
+  "downloaderCacheCleared": "ダウンローダーのキャッシュがクリアされました。",
+  "knowledgeBaseFolder": "ナレッジベースフォルダ",
+  "kbOpenFolder": "フォルダを開く",
+  "kbInvalidDir": "フォルダが見つかりません",
+  "kbMissingEntry": "フォルダに README.md が見つかりません",
+  "assistantRetention": "アシスタント会話の保持数",
+  "assistantRetentionDesc": "この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます"
 }

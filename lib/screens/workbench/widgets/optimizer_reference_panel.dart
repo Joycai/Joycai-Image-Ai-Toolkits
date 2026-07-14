@@ -38,6 +38,15 @@ class OptimizerReferencePanel extends StatelessWidget {
                     l10n.noImagesSelected,
                     style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      l10n.optEmptyImagesHint,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: colorScheme.outline, fontSize: 11),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -86,6 +95,22 @@ class OptimizerReferencePanel extends StatelessWidget {
                                 ),
                               ),
                             ),
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: Tooltip(
+                              message: l10n.optRemoveImage,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(6),
+                                onTap: () => workbenchUIState.removeAssistantImage(image),
+                                child: _Badge(
+                                  icon: Icons.close,
+                                  background: colorScheme.surface.withValues(alpha: 0.85),
+                                  foreground: colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
