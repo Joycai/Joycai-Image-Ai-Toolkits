@@ -314,5 +314,6 @@
   "optNoHistory": "尚無已儲存的對話",
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
-  "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。"
+  "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
+  "optRetry": "重試"
 }

@@ -1911,6 +1911,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optNoHistory => '保存された会話はまだありません';
 
   @override
+  String get optRetry => '再試行';
+
+  @override
   String get optDeleteSessionConfirm => 'この会話を完全に削除しますか？';
 
   @override

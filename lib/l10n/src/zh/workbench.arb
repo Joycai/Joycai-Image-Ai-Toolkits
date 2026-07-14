@@ -317,5 +317,6 @@
   "optNoHistory": "暂无已保存的会话",
   "optDeleteSessionConfirm": "确定永久删除该会话？",
   "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
-  "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。"
+  "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。",
+  "optRetry": "重试"
 }

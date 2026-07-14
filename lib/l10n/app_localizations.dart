@@ -3665,6 +3665,12 @@ abstract class AppLocalizations {
   /// **'No saved conversations yet'**
   String get optNoHistory;
 
+  /// No description provided for @optRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get optRetry;
+
   /// No description provided for @optDeleteSessionConfirm.
   ///
   /// In en, this message translates to:

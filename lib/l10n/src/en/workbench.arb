@@ -317,5 +317,6 @@
   "optNoHistory": "No saved conversations yet",
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
-  "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them."
+  "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
+  "optRetry": "Retry"
 }

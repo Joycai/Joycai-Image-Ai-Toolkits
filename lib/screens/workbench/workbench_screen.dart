@@ -207,6 +207,41 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     session.addUserTurn(text);
     _optInputCtrl.clear();
 
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  /// Re-runs the agent turn after a failure. The pending user message and any
+  /// completed tool results are still in the session history, so nothing has
+  /// to be typed or re-read again.
+  Future<void> _handleOptimizerRetry() async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+    if (session.isRunning || session.history.isEmpty) return;
+
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      return;
+    }
+    if (session.mode == AssistantMode.knowledgeBase) {
+      await _refreshKbStatus();
+      if (_kbStatus != KbStatus.ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
+          );
+        }
+        return;
+      }
+    }
+
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  Future<void> _enqueueAssistantTurn(
+    WorkbenchUIState workbenchUIState,
+    PromptOptimizerSession session,
+  ) async {
     try {
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       await taskService.addTask(
@@ -223,7 +258,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         id: const Uuid().v4(),
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
+      }
     }
   }
 
@@ -608,6 +646,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                           : PromptOptimizerChatView(
                               inputCtrl: _optInputCtrl,
                               onSend: _handleOptimizerSend,
+                              onRetry: _handleOptimizerRetry,
                               onApplyPrompt: _handleOptimizerApply,
                               isBusy: isBusy,
                             ),

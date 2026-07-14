@@ -1952,6 +1952,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optNoHistory => 'No saved conversations yet';
 
   @override
+  String get optRetry => 'Retry';
+
+  @override
   String get optDeleteSessionConfirm => 'Delete this conversation permanently?';
 
   @override

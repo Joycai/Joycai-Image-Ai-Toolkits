@@ -910,5 +910,6 @@
   "optNoHistory": "保存された会話はまだありません",
   "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
   "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
-  "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。"
+  "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
+  "optRetry": "再試行"
 }

@@ -1899,6 +1899,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optNoHistory => '暂无已保存的会话';
 
   @override
+  String get optRetry => '重试';
+
+  @override
   String get optDeleteSessionConfirm => '确定永久删除该会话？';
 
   @override
@@ -3958,6 +3961,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optNoHistory => '尚無已儲存的對話';
+
+  @override
+  String get optRetry => '重試';
 
   @override
   String get optDeleteSessionConfirm => '確定永久刪除該對話？';
