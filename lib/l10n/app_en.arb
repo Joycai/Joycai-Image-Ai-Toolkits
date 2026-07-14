@@ -222,6 +222,8 @@
   "inputTokens": "Input Tokens",
   "cachedInputTokens": "Cached Input",
   "outputTokens": "Output Tokens",
+  "cacheHitRate": "Cache Hit Rate",
+  "cacheHitRateHint": "Share of input tokens served from the prompt cache",
   "estimatedCost": "Estimated Cost",
   "clearDataForModel": "Clear Data for {modelId}?",
   "@clearDataForModel": {
@@ -408,6 +410,15 @@
   "pricePerRequest": "Price per Request",
   "tokenBilling": "Token Billing",
   "requestBilling": "Request Billing",
+  "feeGroupModelCount": "{count} models",
+  "@feeGroupModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feeGroupUnused": "Not used by any model",
   "model": "Model",
   "modelsAndChannelsCount": "{models} models · {channels} channels",
   "@modelsAndChannelsCount": {

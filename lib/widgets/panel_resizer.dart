@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// Height of the header row that lives inside the top of a [PanelCard].
+///
+/// Tabs drawn in a header have to fill it exactly for their indicator to land
+/// on the header's bottom border, so the number is shared rather than repeated.
+const double kPanelHeaderHeight = 56;
+
 /// Draggable gutter between two panel cards. No divider line — the boundary
 /// is formed by the canvas color showing through the 14px gap; only a pill
 /// grip floats in the middle. The whole strip accepts the drag.

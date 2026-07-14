@@ -6,6 +6,7 @@ import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
 import 'usage_list.dart';
 import 'usage_stats.dart';
+import 'usage_summary.dart';
 
 /// Mobile/narrow layout for the token-usage tab: preset chips, compact summary
 /// cards and a paged list.
@@ -181,28 +182,13 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
           ),
         ),
 
-        // Summary Cards
+        // Summary cards — the same component the desktop view uses, stacked.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _buildStatCard(l10n.inputTokens, _stats.totalInput.toString(), Colors.blue),
-                  const SizedBox(width: 8),
-                  _buildStatCard(l10n.cachedInputTokens, _stats.totalCache.toString(), Colors.teal),
-                  const SizedBox(width: 8),
-                  _buildStatCard(l10n.outputTokens, _stats.totalOutput.toString(), Colors.green),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Use expanded: false here because it's in a Column, not a Row
-              _buildStatCard(l10n.estimatedCost, '\$${_stats.totalCost.toStringAsFixed(4)}', Colors.orange, isBold: true, expanded: false),
-            ],
-          ),
+          child: UsageSummary(stats: _stats, compact: true),
         ),
 
-        const Divider(height: 24),
+        const SizedBox(height: 16),
 
         Expanded(
           child: _isLoading
@@ -228,25 +214,4 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color, {bool isBold = false, bool expanded = true}) {
-    final card = Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 16, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: color)),
-          ],
-        ),
-      ),
-    );
-
-    if (expanded) {
-      return Expanded(child: card);
-    }
-    return SizedBox(width: double.infinity, child: card);
-  }
 }

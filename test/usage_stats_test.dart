@@ -134,4 +134,40 @@ void main() {
       expect(stats.totalOutput, 8);
     });
   });
+
+  group('cacheHitRate', () {
+    test('is the cached share of every prompt token in range', () {
+      // input and cache are stored disjoint, so the denominator is their sum —
+      // dividing by input alone would let the rate exceed 100%.
+      final stats = calculateStats([
+        tokenRow(input: 750, cache: 250, output: 40),
+      ], []);
+
+      expect(stats.cacheHitRate, closeTo(0.25, 1e-9));
+    });
+
+    test('ignores output tokens', () {
+      // Output is not a prompt token and can never be served from the cache.
+      final stats = calculateStats([tokenRow(input: 50, cache: 50, output: 999999)], []);
+
+      expect(stats.cacheHitRate, closeTo(0.5, 1e-9));
+    });
+
+    test('is null when the range holds no prompt tokens', () {
+      // Request-billed image jobs never ask the cache for anything; reporting
+      // 0% would read as a cache that always misses.
+      final stats = calculateStats([
+        {'billing_mode': 'request', 'request_count': 3, 'request_price': 0.02},
+      ], []);
+
+      expect(stats.cacheHitRate, isNull);
+      expect(UsageStats.empty().cacheHitRate, isNull);
+    });
+
+    test('reaches 1.0 when every prompt token was cached', () {
+      final stats = calculateStats([tokenRow(input: 0, cache: 400)], []);
+
+      expect(stats.cacheHitRate, 1.0);
+    });
+  });
 }

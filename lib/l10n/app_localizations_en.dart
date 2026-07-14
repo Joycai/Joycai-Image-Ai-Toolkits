@@ -470,6 +470,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outputTokens => 'Output Tokens';
 
   @override
+  String get cacheHitRate => 'Cache Hit Rate';
+
+  @override
+  String get cacheHitRateHint =>
+      'Share of input tokens served from the prompt cache';
+
+  @override
   String get estimatedCost => 'Estimated Cost';
 
   @override
@@ -867,6 +874,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requestBilling => 'Request Billing';
+
+  @override
+  String feeGroupModelCount(int count) {
+    return '$count models';
+  }
+
+  @override
+  String get feeGroupUnused => 'Not used by any model';
 
   @override
   String get model => 'Model';

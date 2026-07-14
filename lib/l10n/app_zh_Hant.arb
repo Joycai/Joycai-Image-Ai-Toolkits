@@ -158,6 +158,8 @@
   "inputTokens": "輸入 Token",
   "cachedInputTokens": "快取輸入",
   "outputTokens": "輸出 Token",
+  "cacheHitRate": "快取命中率",
+  "cacheHitRateHint": "命中快取的輸入 Token 佔全部輸入 Token 的比例",
   "estimatedCost": "預估成本",
   "clearDataForModel": "要清除 {modelId} 的資料嗎？",
   "clearModelDataWarning": "這將刪除與模型「{modelId}」相關的所有用量記錄。",
@@ -281,6 +283,15 @@
   "pricePerRequest": "每次請求價格",
   "tokenBilling": "Token 計費",
   "requestBilling": "請求計費",
+  "feeGroupModelCount": "{count} 個模型",
+  "@feeGroupModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feeGroupUnused": "沒有模型在使用",
   "model": "模型",
   "modelsAndChannelsCount": "{models} 個模型 · {channels} 個頻道",
   "@modelsAndChannelsCount": {

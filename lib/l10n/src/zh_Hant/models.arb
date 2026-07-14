@@ -117,6 +117,15 @@
   "pricePerRequest": "每次請求價格",
   "tokenBilling": "Token 計費",
   "requestBilling": "請求計費",
+  "feeGroupModelCount": "{count} 個模型",
+  "@feeGroupModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feeGroupUnused": "沒有模型在使用",
   "model": "模型",
   "modelsAndChannelsCount": "{models} 個模型 · {channels} 個頻道",
   "@modelsAndChannelsCount": {

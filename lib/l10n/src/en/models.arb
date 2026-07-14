@@ -166,6 +166,15 @@
   "pricePerRequest": "Price per Request",
   "tokenBilling": "Token Billing",
   "requestBilling": "Request Billing",
+  "feeGroupModelCount": "{count} models",
+  "@feeGroupModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feeGroupUnused": "Not used by any model",
   "model": "Model",
   "modelsAndChannelsCount": "{models} models · {channels} channels",
   "@modelsAndChannelsCount": {

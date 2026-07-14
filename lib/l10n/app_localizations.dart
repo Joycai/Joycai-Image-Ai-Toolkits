@@ -959,6 +959,18 @@ abstract class AppLocalizations {
   /// **'Output Tokens'**
   String get outputTokens;
 
+  /// No description provided for @cacheHitRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Hit Rate'**
+  String get cacheHitRate;
+
+  /// No description provided for @cacheHitRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share of input tokens served from the prompt cache'**
+  String get cacheHitRateHint;
+
   /// No description provided for @estimatedCost.
   ///
   /// In en, this message translates to:
@@ -1696,6 +1708,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Request Billing'**
   String get requestBilling;
+
+  /// No description provided for @feeGroupModelCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} models'**
+  String feeGroupModelCount(int count);
+
+  /// No description provided for @feeGroupUnused.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used by any model'**
+  String get feeGroupUnused;
 
   /// No description provided for @model.
   ///

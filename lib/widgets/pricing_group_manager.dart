@@ -132,6 +132,7 @@ class PricingGroupManager extends StatelessWidget {
   /// rounded corners instead of painting on the card behind.
   Widget _buildList(BuildContext context, List<PricingGroup> groups, AppState appState, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
+    final modelsByGroup = _modelsByGroup(appState);
 
     return Material(
       color: Colors.transparent,
@@ -147,7 +148,14 @@ class PricingGroupManager extends StatelessWidget {
             children: [
               for (var i = 0; i < groups.length; i++) ...[
                 if (i > 0) Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(70)),
-                _buildGroupRow(context, groups[i], appState, l10n, compact: compact),
+                _buildGroupRow(
+                  context,
+                  groups[i],
+                  appState,
+                  l10n,
+                  models: modelsByGroup[groups[i].id] ?? const [],
+                  compact: compact,
+                ),
               ],
             ],
           );
@@ -156,11 +164,28 @@ class PricingGroupManager extends StatelessWidget {
     );
   }
 
+  /// Display names of the models pointing at each group, by group id.
+  ///
+  /// A group only means something through the models it prices, so the row
+  /// says which ones — and a group no model uses says that, which is otherwise
+  /// invisible from this screen.
+  Map<int, List<String>> _modelsByGroup(AppState appState) {
+    final map = <int, List<String>>{};
+    for (final model in appState.allModels) {
+      final groupId = model.feeGroupId;
+      if (groupId != null) {
+        (map[groupId] ??= []).add(model.modelName);
+      }
+    }
+    return map;
+  }
+
   Widget _buildGroupRow(
     BuildContext context,
     PricingGroup group,
     AppState appState,
     AppLocalizations l10n, {
+    required List<String> models,
     required bool compact,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -209,6 +234,7 @@ class PricingGroupManager extends StatelessWidget {
     );
 
     final prices = _buildPrices(context, group, l10n, compact: compact);
+    final consumers = _buildConsumers(context, models, l10n);
 
     return InkWell(
       onTap: () => _showGroupEditor(context, appState, l10n, group: group),
@@ -219,6 +245,8 @@ class PricingGroupManager extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [Expanded(child: identity), actions]),
+                  const SizedBox(height: 8),
+                  consumers,
                   const SizedBox(height: 10),
                   prices,
                 ],
@@ -227,11 +255,77 @@ class PricingGroupManager extends StatelessWidget {
                 children: [
                   Expanded(flex: 4, child: identity),
                   const SizedBox(width: 16),
+                  // The gap between a name and its prices used to be air. The
+                  // row is wide because this fills it, not the other way round.
+                  Expanded(flex: 4, child: consumers),
+                  const SizedBox(width: 16),
                   Expanded(flex: 5, child: Align(alignment: Alignment.centerRight, child: prices)),
                   const SizedBox(width: 8),
                   actions,
                 ],
               ),
+      ),
+    );
+  }
+
+  /// The models billed by this group: a count, and as many names as fit.
+  Widget _buildConsumers(BuildContext context, List<String> models, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (models.isEmpty) {
+      // Worth saying out loud: an orphaned group prices nothing, and nothing
+      // else on this screen would ever tell you.
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.link_off, size: 13, color: colorScheme.outline),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              l10n.feeGroupUnused,
+              style: TextStyle(
+                fontSize: 11,
+                color: colorScheme.outline,
+                fontStyle: FontStyle.italic,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Tooltip(
+      message: models.join('\n'),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.memory_outlined, size: 13, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.feeGroupModelCount(models.length),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  models.join(', '),
+                  style: TextStyle(fontSize: 10.5, color: colorScheme.outline),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -370,18 +464,16 @@ class PricingGroupManager extends StatelessWidget {
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         builder: (context) => _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: true),
       );
     } else {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(group == null ? l10n.addFeeGroup : l10n.editFeeGroup),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: false),
-          ),
-        ),
+        builder: (context) => _PricingGroupEditor(appState: appState, l10n: l10n, group: group, isMobile: false),
       );
     }
   }
@@ -445,125 +537,302 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     super.dispose();
   }
 
+  bool get _isToken => billingMode == 'token';
+
+  /// Accent for the current mode — the same one the group's row and icon tile
+  /// use in the list, so the editor reads as that row opened up.
+  Color get _modeAccent => _isToken ? _inputAccent : _requestAccent;
+
   @override
   Widget build(BuildContext context) {
-    final l10n = widget.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final content = SingleChildScrollView(
-      padding: widget.isMobile ? const EdgeInsets.all(24) : EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.isMobile) ...[
-            Text(
-              widget.group == null ? l10n.addFeeGroup : l10n.editFeeGroup,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-          ],
-          TextField(
-            controller: nameCtrl,
-            decoration: InputDecoration(
-              labelText: l10n.groupName,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.label_outline),
-            ),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: billingMode,
-            items: [
-              DropdownMenuItem(value: 'token', child: Text(l10n.perToken)),
-              DropdownMenuItem(value: 'request', child: Text(l10n.perRequest)),
-            ],
-            onChanged: (v) => setState(() => billingMode = v!),
-            decoration: InputDecoration(
-              labelText: l10n.billingMode,
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.payments_outlined),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (billingMode == 'token') ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _buildPriceField(inputPriceCtrl, l10n.inputPrice, "\$/M")),
-                const SizedBox(width: 16),
-                Expanded(child: _buildPriceField(outputPriceCtrl, l10n.outputPrice, "\$/M")),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Full width rather than sharing the row above, so its hint — the
-            // part that explains the empty-means-inherit rule — has room.
-            _buildPriceField(
-              cacheInputPriceCtrl,
-              l10n.cacheInputPrice,
-              "\$/M",
-              hintText: inputPriceCtrl.text.trim().isEmpty ? null : inputPriceCtrl.text.trim(),
-              helperText: l10n.cacheInputPriceHint,
-            ),
-          ] else
-            _buildPriceField(requestPriceCtrl, l10n.requestPrice, "\$/Req"),
-
-          if (widget.isMobile) ...[
-            const SizedBox(height: 40),
-            FilledButton(
-              onPressed: _save,
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              child: Text(widget.group == null ? l10n.add : l10n.save),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-              child: Text(l10n.cancel),
-            ),
-          ],
-        ],
+    final body = Flexible(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        child: _buildForm(colorScheme),
       ),
     );
 
-    if (widget.isMobile) return content;
+    if (widget.isMobile) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildGrabber(colorScheme),
+            _buildHeader(colorScheme),
+            body,
+            _buildFooter(colorScheme),
+          ],
+        ),
+      );
+    }
+
+    return Dialog(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 640),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(colorScheme),
+            body,
+            _buildFooter(colorScheme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrabber(ColorScheme colorScheme) {
+    return Container(
+      width: 36,
+      height: 4,
+      margin: const EdgeInsets.only(top: 10, bottom: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.outlineVariant,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  // --- Header -------------------------------------------------------------
+
+  Widget _buildHeader(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final accent = _modeAccent;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 14, 10, 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: accent.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(_isToken ? Icons.token_outlined : Icons.ads_click, size: 21, color: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.group == null ? l10n.addFeeGroup : l10n.editFeeGroup,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _isToken ? l10n.tokenBilling : l10n.requestBilling,
+                  style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Form ---------------------------------------------------------------
+
+  Widget _buildForm(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        content,
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            const SizedBox(width: 12),
-            FilledButton(
-              onPressed: _save,
-              child: Text(widget.group == null ? l10n.add : l10n.save),
-            ),
-          ],
+        _sectionHeader(l10n.basicInfo),
+        const SizedBox(height: 14),
+        TextField(
+          controller: nameCtrl,
+          decoration: InputDecoration(
+            labelText: l10n.groupName,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.label_outline),
+          ),
         ),
+        const SizedBox(height: 16),
+        Text(
+          l10n.billingMode,
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 8),
+        // Segmented rather than a dropdown: there are only two modes and each
+        // one rewrites the price fields below, so the choice should be visible
+        // next to what it changes instead of hidden behind a menu.
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                value: 'token',
+                icon: const Icon(Icons.token_outlined, size: 17),
+                label: Text(l10n.perToken, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              ButtonSegment(
+                value: 'request',
+                icon: const Icon(Icons.ads_click, size: 17),
+                label: Text(l10n.perRequest, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+            selected: {billingMode},
+            onSelectionChanged: (s) => setState(() => billingMode = s.first),
+            showSelectedIcon: false,
+            style: ButtonStyle(
+              // Copied off the theme rather than built from scratch: this
+              // replaces the button's whole text style, and the app's font is
+              // user-selectable, so a bare TextStyle would drop it.
+              textStyle: WidgetStatePropertyAll(
+                Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        _sectionHeader(l10n.priceConfig),
+        const SizedBox(height: 14),
+        if (_isToken) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildPriceField(inputPriceCtrl, l10n.priceLabelInput, '\$/M', _inputAccent, Icons.input)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildPriceField(outputPriceCtrl, l10n.priceLabelOutput, '\$/M', _outputAccent, Icons.output)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Full width rather than sharing the row above, so its hint — the
+          // part that explains the empty-means-inherit rule — has room.
+          _buildPriceField(
+            cacheInputPriceCtrl,
+            l10n.priceLabelCache,
+            '\$/M',
+            _cacheAccent,
+            Icons.bolt,
+            hintText: inputPriceCtrl.text.trim().isEmpty ? null : inputPriceCtrl.text.trim(),
+            helperText: l10n.cacheInputPriceHint,
+          ),
+        ] else
+          _buildPriceField(requestPriceCtrl, l10n.priceLabelRequest, '\$/Req', _requestAccent, Icons.repeat),
       ],
     );
   }
 
+  /// A price input styled as the editable twin of its pill in the group row:
+  /// same accent, same icon, same monospace number.
   Widget _buildPriceField(
     TextEditingController ctrl,
     String label,
-    String suffix, {
+    String suffix,
+    Color accent,
+    IconData icon, {
     String? hintText,
     String? helperText,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
+        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: accent, width: 2)),
+        floatingLabelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700),
+        prefixIcon: Icon(icon, size: 18, color: accent),
+        prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         hintText: hintText,
+        hintStyle: TextStyle(
+          fontFamily: 'monospace',
+          fontStyle: FontStyle.italic,
+          color: colorScheme.outline,
+        ),
         helperText: helperText,
         helperMaxLines: 2,
         suffixText: suffix,
-        suffixStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        suffixStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Divider(height: 1),
+      ],
+    );
+  }
+
+  // --- Footer -------------------------------------------------------------
+
+  Widget _buildFooter(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final saveLabel = widget.group == null ? l10n.add : l10n.save;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 10, 16, widget.isMobile ? 16 : 10),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (widget.isMobile) ...[
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                child: Text(l10n.cancel),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _save,
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                icon: const Icon(Icons.save, size: 18),
+                label: Text(saveLabel),
+              ),
+            ),
+          ] else ...[
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.save, size: 18),
+              label: Text(saveLabel),
+            ),
+          ],
+        ],
       ),
     );
   }
