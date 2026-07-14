@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 
 class PromptOptimizerToolbar extends StatelessWidget {
   final VoidCallback onNewSession;
+  final VoidCallback onHistory;
   final VoidCallback onApply;
   final bool isRefining;
   final bool canApply;
@@ -12,6 +13,7 @@ class PromptOptimizerToolbar extends StatelessWidget {
   const PromptOptimizerToolbar({
     super.key,
     required this.onNewSession,
+    required this.onHistory,
     required this.onApply,
     required this.isRefining,
     required this.canApply,
@@ -51,6 +53,12 @@ class PromptOptimizerToolbar extends StatelessWidget {
 
           if (!isMobile) ...[
             IconButton(
+              icon: const Icon(Icons.history, size: 20),
+              onPressed: onHistory,
+              tooltip: l10n.optHistory,
+              visualDensity: VisualDensity.compact,
+            ),
+            IconButton(
               icon: const Icon(Icons.add_comment_outlined, size: 20),
               onPressed: onNewSession,
               tooltip: l10n.optNewSession,
@@ -77,8 +85,17 @@ class PromptOptimizerToolbar extends StatelessWidget {
               icon: const Icon(Icons.more_horiz),
               onSelected: (value) {
                 if (value == 'new_session') onNewSession();
+                if (value == 'history') onHistory();
               },
               itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'history',
+                  child: ListTile(
+                    leading: const Icon(Icons.history),
+                    title: Text(l10n.optHistory),
+                    dense: true,
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'new_session',
                   child: ListTile(

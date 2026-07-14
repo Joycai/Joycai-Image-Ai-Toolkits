@@ -183,12 +183,22 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         );
 
       case OptimizerEntryKind.tool:
-        final label = entry.toolName == 'view_image'
-            ? l10n.optToolViewImage(entry.text)
-            : l10n.optToolListImages;
-        final icon = entry.toolName == 'view_image'
-            ? Icons.visibility_outlined
-            : Icons.checklist_rtl;
+        final String label;
+        final IconData icon;
+        switch (entry.toolName) {
+          case 'view_image':
+            label = l10n.optToolViewImage(entry.text);
+            icon = Icons.visibility_outlined;
+          case 'read_knowledge_file':
+            label = l10n.optToolReadKnowledge(entry.text);
+            icon = Icons.menu_book_outlined;
+          case 'list_knowledge_files':
+            label = l10n.optToolListKnowledge;
+            icon = Icons.folder_outlined;
+          default:
+            label = l10n.optToolListImages;
+            icon = Icons.checklist_rtl;
+        }
         return Align(
           alignment: Alignment.centerLeft,
           child: Padding(
@@ -212,6 +222,31 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
       case OptimizerEntryKind.prompt:
         return _buildPromptCard(entry, l10n, colorScheme);
+
+      case OptimizerEntryKind.notice:
+        final noticeText = switch (entry.text) {
+          PromptOptimizerAgent.compactedNoticeToken => l10n.optCompactedNotice,
+          PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
+          _ => entry.text,
+        };
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline, size: 13, color: colorScheme.outline),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    noticeText,
+                    style: TextStyle(fontSize: 11, color: colorScheme.outline, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
 
       case OptimizerEntryKind.error:
         return Align(

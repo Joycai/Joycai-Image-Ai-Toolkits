@@ -73,5 +73,11 @@
   "apiDebugDesc": "將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。",
   "openLogFolder": "開啟記錄資料夾",
   "iosOutputRecommend": "建議：在 iOS 上保留預設值。應用程式的資料夾可在「檔案」應用程式中看到。",
-  "downloaderCacheCleared": "下載器快取已清除。"
+  "downloaderCacheCleared": "下載器快取已清除。",
+  "knowledgeBaseFolder": "知識庫資料夾",
+  "kbOpenFolder": "開啟資料夾",
+  "kbInvalidDir": "資料夾不存在",
+  "kbMissingEntry": "資料夾中缺少入口檔案 README.md",
+  "assistantRetention": "助手對話保留數量",
+  "assistantRetentionDesc": "超出數量的較舊提示詞助手對話將被自動刪除"
 }

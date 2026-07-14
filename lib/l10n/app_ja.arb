@@ -92,6 +92,7 @@
   "filterPrompts": "プロンプトをフィルター...",
   "shareFailed": "共有に失敗しました: {error}",
   "more": "もっと見る",
+  "confirm": "確認",
   "downloader": "ダウンローダー",
   "imageDownloader": "画像ダウンローダー",
   "url": "URL",
@@ -461,6 +462,12 @@
   "openLogFolder": "ログフォルダを開く",
   "iosOutputRecommend": "推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。",
   "downloaderCacheCleared": "ダウンローダーのキャッシュがクリアされました。",
+  "knowledgeBaseFolder": "ナレッジベースフォルダ",
+  "kbOpenFolder": "フォルダを開く",
+  "kbInvalidDir": "フォルダが見つかりません",
+  "kbMissingEntry": "フォルダに README.md が見つかりません",
+  "assistantRetention": "アシスタント会話の保持数",
+  "assistantRetentionDesc": "この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます",
   "tasks": "タスク",
   "taskQueueManager": "タスクキューマネージャー",
   "noTasksInQueue": "キューにタスクがありません",
@@ -725,7 +732,7 @@
   "sendToComparatorRaw": "Before (RAW) として設定",
   "sendToComparatorAfter": "After (結果) として設定",
   "sendToSelection": "選択に追加",
-  "sendToOptimizer": "プロンプト最適化に送信",
+  "sendToOptimizer": "プロンプトアシスタントに送信",
   "optimizePromptWithImage": "画像からプロンプトを最適化",
   "selectFromLibrary": "ライブラリから選択",
   "metadataSelectedNone": "画像メタデータが選択されていません",
@@ -761,7 +768,7 @@
       }
     }
   },
-  "promptOptimizer": "プロンプト最適化",
+  "promptOptimizer": "プロンプトアシスタント",
   "refinerModel": "リファイナーモデル",
   "systemPrompt": "システムプロンプト",
   "preset": "プリセット",
@@ -804,6 +811,8 @@
   "optPromptCopied": "プロンプトをコピーしました",
   "optEmptyChat": "ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。",
   "optViewed": "AI が閲覧済み",
+  "optRemoveImage": "画像を削除",
+  "optEmptyImagesHint": "ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。",
   "videoGeneration": "動画生成",
   "referenceImages": "参照画像",
   "firstFrame": "最初のフレーム",
@@ -882,5 +891,24 @@
   "safetyThresholdBlockMediumAndAbove": "一部ブロック",
   "safetyThresholdBlockOnlyHigh": "少しブロック",
   "safetyThresholdBlockNone": "ブロックしない",
-  "safetyThresholdOff": "フィルタ無効"
+  "safetyThresholdOff": "フィルタ無効",
+  "optModeSystemPrompt": "システムプロンプト",
+  "optModeKnowledge": "ナレッジベース",
+  "knowledgeBase": "ナレッジベース",
+  "optKbNotConfigured": "ナレッジベースが未設定または無効です。設定でフォルダを選択してください。",
+  "optModeSwitchConfirm": "モードを切り替えると新しい会話が開始されます。続行しますか？",
+  "optToolListKnowledge": "ナレッジベースのファイル一覧を確認",
+  "optToolReadKnowledge": "ナレッジを読み込み: {name}",
+  "@optToolReadKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optHistory": "会話履歴",
+  "optNoHistory": "保存された会話はまだありません",
+  "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
+  "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
+  "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。"
 }

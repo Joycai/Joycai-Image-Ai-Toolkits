@@ -139,7 +139,7 @@
   "sendToLastFrame": "设置为视频尾帧",
   "sendToVideoReferences": "添加到视频参考图",
   "sendToSelection": "添加到选中列表",
-  "sendToOptimizer": "发送到提示词优化器",
+  "sendToOptimizer": "发送到提示词助手",
   "optimizePromptWithImage": "以此图优化提示词",
   "selectFromLibrary": "从库中选择",
   "metadataSelectedNone": "未选中图像元数据",
@@ -175,7 +175,7 @@
       }
     }
   },
-  "promptOptimizer": "提示词优化器",
+  "promptOptimizer": "提示词助手",
   "refinerModel": "优化模型",
   "systemPrompt": "系统提示词",
   "preset": "预设",
@@ -218,6 +218,8 @@
   "optPromptCopied": "提示词已复制到剪贴板",
   "optEmptyChat": "发送粗略提示词或想法开始优化。AI 会按需查看参考图，你可以多轮追问持续调整结果。",
   "optViewed": "AI 已查看",
+  "optRemoveImage": "移除图片",
+  "optEmptyImagesHint": "在图库中右键图片，选择“发送到提示词助手”即可添加到这里。",
   "videoGeneration": "视频生成",
   "referenceImages": "参考图片",
   "firstFrame": "首帧",
@@ -296,5 +298,24 @@
   "safetyThresholdBlockMediumAndAbove": "屏蔽一部分",
   "safetyThresholdBlockOnlyHigh": "屏蔽少部分",
   "safetyThresholdBlockNone": "全部不屏蔽",
-  "safetyThresholdOff": "关闭过滤"
+  "safetyThresholdOff": "关闭过滤",
+  "optModeSystemPrompt": "系统提示词",
+  "optModeKnowledge": "知识库",
+  "knowledgeBase": "知识库",
+  "optKbNotConfigured": "知识库未配置或无效，请先在设置中选择知识库文件夹。",
+  "optModeSwitchConfirm": "切换模式将开始新会话，是否继续？",
+  "optToolListKnowledge": "浏览了知识库文件列表",
+  "optToolReadKnowledge": "阅读知识库：{name}",
+  "@optToolReadKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optHistory": "历史会话",
+  "optNoHistory": "暂无已保存的会话",
+  "optDeleteSessionConfirm": "确定永久删除该会话？",
+  "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
+  "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。"
 }

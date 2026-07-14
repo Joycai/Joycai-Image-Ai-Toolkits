@@ -135,6 +135,7 @@
     }
   },
   "more": "More",
+  "confirm": "Confirm",
   "downloader": "Downloader",
   "imageDownloader": "Image Downloader",
   "url": "URL",
@@ -595,6 +596,12 @@
   "openLogFolder": "Open Log Folder",
   "iosOutputRecommend": "Recommended: Leave as default on iOS. The app's folder is visible in the 'Files' app.",
   "downloaderCacheCleared": "Downloader cache cleared.",
+  "knowledgeBaseFolder": "Knowledge Base Folder",
+  "kbOpenFolder": "Open Folder",
+  "kbInvalidDir": "Folder not found",
+  "kbMissingEntry": "README.md entry file not found in the folder",
+  "assistantRetention": "Assistant Conversations to Keep",
+  "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically",
   "tasks": "Tasks",
   "taskQueueManager": "Task Queue Manager",
   "noTasksInQueue": "No tasks in queue",
@@ -854,7 +861,7 @@
   "sendToLastFrame": "Set as Last Frame (Video)",
   "sendToVideoReferences": "Add to Video References",
   "sendToSelection": "Add to Selection",
-  "sendToOptimizer": "Send to Prompt Optimizer",
+  "sendToOptimizer": "Send to Prompt Assistant",
   "optimizePromptWithImage": "Optimize Prompt with Image",
   "selectFromLibrary": "Select from Library",
   "metadataSelectedNone": "No image metadata selected",
@@ -890,7 +897,7 @@
       }
     }
   },
-  "promptOptimizer": "Prompt Optimizer",
+  "promptOptimizer": "Prompt Assistant",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",
   "preset": "Preset",
@@ -933,6 +940,8 @@
   "optPromptCopied": "Prompt copied to clipboard",
   "optEmptyChat": "Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.",
   "optViewed": "Viewed by AI",
+  "optRemoveImage": "Remove image",
+  "optEmptyImagesHint": "Right-click an image in the gallery and choose \"Send to Prompt Assistant\" to add it here.",
   "videoGeneration": "Video Generation",
   "referenceImages": "Reference Images",
   "firstFrame": "First Frame",
@@ -1011,5 +1020,24 @@
   "safetyThresholdBlockMediumAndAbove": "Block some",
   "safetyThresholdBlockOnlyHigh": "Block few",
   "safetyThresholdBlockNone": "Block none",
-  "safetyThresholdOff": "Filter off"
+  "safetyThresholdOff": "Filter off",
+  "optModeSystemPrompt": "System Prompt",
+  "optModeKnowledge": "Knowledge Base",
+  "knowledgeBase": "Knowledge Base",
+  "optKbNotConfigured": "Knowledge base is not configured or invalid — choose its folder in Settings first.",
+  "optModeSwitchConfirm": "Switching the mode starts a new conversation. Continue?",
+  "optToolListKnowledge": "Browsed knowledge base files",
+  "optToolReadKnowledge": "Read knowledge: {name}",
+  "@optToolReadKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "optHistory": "Conversation History",
+  "optNoHistory": "No saved conversations yet",
+  "optDeleteSessionConfirm": "Delete this conversation permanently?",
+  "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
+  "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them."
 }

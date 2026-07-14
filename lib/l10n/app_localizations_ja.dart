@@ -1860,6 +1860,72 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optViewed => 'AI が閲覧済み';
 
   @override
+  String get optRemoveImage => '画像を削除';
+
+  @override
+  String get optEmptyImagesHint =>
+      'ギャラリーで画像を右クリックし、「プロンプトアシスタントに送信」を選択すると追加できます。';
+
+  @override
+  String get optModeSystemPrompt => 'システムプロンプト';
+
+  @override
+  String get optModeKnowledge => 'ナレッジベース';
+
+  @override
+  String get knowledgeBase => 'ナレッジベース';
+
+  @override
+  String get optKbNotConfigured => 'ナレッジベースが未設定または無効です。設定でフォルダを選択してください。';
+
+  @override
+  String get optModeSwitchConfirm => 'モードを切り替えると新しい会話が開始されます。続行しますか？';
+
+  @override
+  String get optToolListKnowledge => 'ナレッジベースのファイル一覧を確認';
+
+  @override
+  String get knowledgeBaseFolder => 'ナレッジベースフォルダ';
+
+  @override
+  String get kbOpenFolder => 'フォルダを開く';
+
+  @override
+  String get kbInvalidDir => 'フォルダが見つかりません';
+
+  @override
+  String get kbMissingEntry => 'フォルダに README.md が見つかりません';
+
+  @override
+  String get confirm => '確認';
+
+  @override
+  String optToolReadKnowledge(String name) {
+    return 'ナレッジを読み込み: $name';
+  }
+
+  @override
+  String get optHistory => '会話履歴';
+
+  @override
+  String get optNoHistory => '保存された会話はまだありません';
+
+  @override
+  String get optDeleteSessionConfirm => 'この会話を完全に削除しますか？';
+
+  @override
+  String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';
+
+  @override
+  String get optImageMissing => 'この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。';
+
+  @override
+  String get assistantRetention => 'アシスタント会話の保持数';
+
+  @override
+  String get assistantRetentionDesc => 'この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます';
+
+  @override
   String get videoGeneration => '動画生成';
 
   @override

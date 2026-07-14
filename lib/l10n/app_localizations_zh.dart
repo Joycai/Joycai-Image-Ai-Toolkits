@@ -1848,6 +1848,72 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optViewed => 'AI 已查看';
 
   @override
+  String get optRemoveImage => '移除图片';
+
+  @override
+  String get optEmptyImagesHint =>
+      '在图库中右键图片，选择“发送到提示词助手”即可添加到这里。';
+
+  @override
+  String get optModeSystemPrompt => '系统提示词';
+
+  @override
+  String get optModeKnowledge => '知识库';
+
+  @override
+  String get knowledgeBase => '知识库';
+
+  @override
+  String get optKbNotConfigured => '知识库未配置或无效，请先在设置中选择知识库文件夹。';
+
+  @override
+  String get optModeSwitchConfirm => '切换模式将开始新会话，是否继续？';
+
+  @override
+  String get optToolListKnowledge => '浏览了知识库文件列表';
+
+  @override
+  String get knowledgeBaseFolder => '知识库文件夹';
+
+  @override
+  String get kbOpenFolder => '打开文件夹';
+
+  @override
+  String get kbInvalidDir => '文件夹不存在';
+
+  @override
+  String get kbMissingEntry => '文件夹中缺少入口文件 README.md';
+
+  @override
+  String get confirm => '确认';
+
+  @override
+  String optToolReadKnowledge(String name) {
+    return '阅读知识库：$name';
+  }
+
+  @override
+  String get optHistory => '历史会话';
+
+  @override
+  String get optNoHistory => '暂无已保存的会话';
+
+  @override
+  String get optDeleteSessionConfirm => '确定永久删除该会话？';
+
+  @override
+  String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
+
+  @override
+  String get optImageMissing => '该会话的部分参考图已不存在，可重新添加后继续使用。';
+
+  @override
+  String get assistantRetention => '助手会话保留数量';
+
+  @override
+  String get assistantRetentionDesc => '超出数量的较旧提示词助手会话将被自动删除';
+
+  @override
   String get videoGeneration => '视频生成';
 
   @override
@@ -3841,6 +3907,72 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optViewed => 'AI 已查看';
+
+  @override
+  String get optRemoveImage => '移除圖片';
+
+  @override
+  String get optEmptyImagesHint =>
+      '在圖庫中右鍵圖片，選擇「發送到提示詞助手」即可加入此處。';
+
+  @override
+  String get optModeSystemPrompt => '系統提示詞';
+
+  @override
+  String get optModeKnowledge => '知識庫';
+
+  @override
+  String get knowledgeBase => '知識庫';
+
+  @override
+  String get optKbNotConfigured => '知識庫未設定或無效，請先在設定中選擇知識庫資料夾。';
+
+  @override
+  String get optModeSwitchConfirm => '切換模式將開始新的對話，是否繼續？';
+
+  @override
+  String get optToolListKnowledge => '瀏覽了知識庫檔案列表';
+
+  @override
+  String get knowledgeBaseFolder => '知識庫資料夾';
+
+  @override
+  String get kbOpenFolder => '開啟資料夾';
+
+  @override
+  String get kbInvalidDir => '資料夾不存在';
+
+  @override
+  String get kbMissingEntry => '資料夾中缺少入口檔案 README.md';
+
+  @override
+  String get confirm => '確認';
+
+  @override
+  String optToolReadKnowledge(String name) {
+    return '閱讀知識庫：$name';
+  }
+
+  @override
+  String get optHistory => '歷史對話';
+
+  @override
+  String get optNoHistory => '尚無已儲存的對話';
+
+  @override
+  String get optDeleteSessionConfirm => '確定永久刪除該對話？';
+
+  @override
+  String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';
+
+  @override
+  String get optImageMissing => '該對話的部分參考圖已不存在，可重新加入後繼續使用。';
+
+  @override
+  String get assistantRetention => '助手對話保留數量';
+
+  @override
+  String get assistantRetentionDesc => '超出數量的較舊提示詞助手對話將被自動刪除';
 
   @override
   String get videoGeneration => '影片生成';

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
+import '../../../services/knowledge_base_service.dart';
+import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/chat_model_selector.dart';
 import 'config_section_header.dart';
@@ -13,12 +15,16 @@ class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedTagId;
   final String? selectedSysPrompt;
   final bool useCustomSysPrompt;
+  final AssistantMode mode;
+  final KbStatus kbStatus;
+  final String? kbPath;
   final List<PromptTag> tags;
   final List<SystemPrompt> filteredSysPrompts;
   final Function(int?) onModelChanged;
   final Function(int?) onTagChanged;
   final Function(String?) onSysPromptChanged;
   final Function(bool) onUseCustomChanged;
+  final Function(AssistantMode) onModeChanged;
   final ScrollController? scrollController;
 
   const OptimizerConfigPanel({
@@ -27,12 +33,16 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.selectedTagId,
     required this.selectedSysPrompt,
     required this.useCustomSysPrompt,
+    required this.mode,
+    required this.kbStatus,
+    this.kbPath,
     required this.tags,
     required this.filteredSysPrompts,
     required this.onModelChanged,
     required this.onTagChanged,
     required this.onSysPromptChanged,
     required this.onUseCustomChanged,
+    required this.onModeChanged,
     this.scrollController,
   });
 
@@ -77,13 +87,18 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 4),
+        _buildModeSelector(l10n, colorScheme),
+        const SizedBox(height: 12),
         ChatModelSelector(
           selectedModelId: widget.selectedModelDbId,
           label: l10n.refinerModel,
           onChanged: widget.onModelChanged,
           models: appState.multimodalModels,
         ),
-        _buildSysPromptSection(l10n, colorScheme),
+        if (widget.mode == AssistantMode.systemPrompt)
+          _buildSysPromptSection(l10n, colorScheme)
+        else
+          _buildKnowledgeStatus(l10n, colorScheme),
       ],
     );
 
@@ -91,6 +106,86 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       controller: widget.scrollController,
       padding: const EdgeInsets.all(16),
       child: content,
+    );
+  }
+
+  Widget _buildModeSelector(AppLocalizations l10n, ColorScheme colorScheme) {
+    final kbSelectable = widget.kbStatus == KbStatus.ok;
+    return SegmentedButton<AssistantMode>(
+      segments: [
+        ButtonSegment(
+          value: AssistantMode.systemPrompt,
+          icon: const Icon(Icons.tune, size: 16),
+          label: Text(l10n.optModeSystemPrompt, style: const TextStyle(fontSize: 12)),
+        ),
+        ButtonSegment(
+          value: AssistantMode.knowledgeBase,
+          icon: const Icon(Icons.menu_book_outlined, size: 16),
+          label: Text(l10n.optModeKnowledge, style: const TextStyle(fontSize: 12)),
+          enabled: kbSelectable || widget.mode == AssistantMode.knowledgeBase,
+        ),
+      ],
+      selected: {widget.mode},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) {
+        final next = selection.first;
+        if (next != widget.mode) widget.onModeChanged(next);
+      },
+    );
+  }
+
+  Widget _buildKnowledgeStatus(AppLocalizations l10n, ColorScheme colorScheme) {
+    final ok = widget.kbStatus == KbStatus.ok;
+    final String text;
+    switch (widget.kbStatus) {
+      case KbStatus.ok:
+        text = widget.kbPath ?? '';
+      case KbStatus.notSet:
+        text = l10n.optKbNotConfigured;
+      case KbStatus.missingDir:
+        text = l10n.kbInvalidDir;
+      case KbStatus.missingEntry:
+        text = l10n.kbMissingEntry;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: ok
+              ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+              : colorScheme.errorContainer.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  ok ? Icons.menu_book_outlined : Icons.warning_amber_outlined,
+                  size: 16,
+                  color: ok ? colorScheme.primary : colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.knowledgeBase,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

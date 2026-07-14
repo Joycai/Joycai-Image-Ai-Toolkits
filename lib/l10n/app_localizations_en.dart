@@ -1901,6 +1901,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optViewed => 'Viewed by AI';
 
   @override
+  String get optRemoveImage => 'Remove image';
+
+  @override
+  String get optEmptyImagesHint =>
+      'Right-click an image in the gallery and choose "Send to Prompt Assistant" to add it here.';
+
+  @override
+  String get optModeSystemPrompt => 'System Prompt';
+
+  @override
+  String get optModeKnowledge => 'Knowledge Base';
+
+  @override
+  String get knowledgeBase => 'Knowledge Base';
+
+  @override
+  String get optKbNotConfigured => 'Knowledge base is not configured or invalid — choose its folder in Settings first.';
+
+  @override
+  String get optModeSwitchConfirm => 'Switching the mode starts a new conversation. Continue?';
+
+  @override
+  String get optToolListKnowledge => 'Browsed knowledge base files';
+
+  @override
+  String get knowledgeBaseFolder => 'Knowledge Base Folder';
+
+  @override
+  String get kbOpenFolder => 'Open Folder';
+
+  @override
+  String get kbInvalidDir => 'Folder not found';
+
+  @override
+  String get kbMissingEntry => 'README.md entry file not found in the folder';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String optToolReadKnowledge(String name) {
+    return 'Read knowledge: $name';
+  }
+
+  @override
+  String get optHistory => 'Conversation History';
+
+  @override
+  String get optNoHistory => 'No saved conversations yet';
+
+  @override
+  String get optDeleteSessionConfirm => 'Delete this conversation permanently?';
+
+  @override
+  String get optCompactedNotice => 'Earlier messages were compacted into a summary to save context.';
+
+  @override
+  String get optImageMissing => 'Some reference images of this conversation no longer exist — re-add them to continue using them.';
+
+  @override
+  String get assistantRetention => 'Assistant Conversations to Keep';
+
+  @override
+  String get assistantRetentionDesc => 'Older prompt assistant conversations beyond this count are deleted automatically';
+
+  @override
   String get videoGeneration => 'Video Generation';
 
   @override

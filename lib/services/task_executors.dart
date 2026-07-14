@@ -122,7 +122,7 @@ extension TaskExecutors on TaskQueueService {
             '(it does not survive an app restart). Start a new conversation.');
       }
 
-      task.addLog('Start optimizer agent turn (${task.imagePaths.length} reference images).');
+      task.addLog('Start assistant agent turn (${task.imagePaths.length} reference images, mode: ${session.mode.name}).');
 
       // Per-model agent setting: force viewing every reference image.
       bool forceViewAll = false;
@@ -134,11 +134,29 @@ extension TaskExecutors on TaskQueueService {
         forceViewAll = model?.forceViewAllImages ?? false;
       }
 
+      // Knowledge mode: resolve and validate the knowledge base, and pre-read
+      // its entry file (the file map) for injection into the system prompt.
+      String? knowledgeRoot;
+      String? knowledgeEntry;
+      if (session.mode == AssistantMode.knowledgeBase) {
+        final kb = KnowledgeBaseService();
+        knowledgeRoot = await kb.getRoot();
+        final status = await kb.validate(knowledgeRoot);
+        if (status != KbStatus.ok) {
+          throw Exception('Knowledge base unavailable ($status). '
+              'Configure its folder in Settings before using knowledge mode.');
+        }
+        knowledgeEntry = kb.readEntry(knowledgeRoot!);
+        task.addLog('Knowledge base: $knowledgeRoot');
+      }
+
       await PromptOptimizerAgent.runTurn(
         session: session,
         modelIdentifier: task.modelDbId ?? task.modelId,
         systemPrompt: task.parameters['systemPrompt'],
         forceViewAllImages: forceViewAll,
+        knowledgeRoot: knowledgeRoot,
+        knowledgeEntryContent: knowledgeEntry,
         referenceImages: task.imagePaths
             .map((path) => {'path': path, 'name': p.basename(path)})
             .toList(),

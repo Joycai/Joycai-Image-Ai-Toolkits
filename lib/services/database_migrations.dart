@@ -53,6 +53,7 @@ class DatabaseMigration {
     if (oldVersion < 26) await _createV26Tables(db);
     if (oldVersion < 27) await _createV27Tables(db);
     if (oldVersion < 28) await _createV28Tables(db);
+    if (oldVersion < 29) await _createV29Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -81,7 +82,41 @@ class DatabaseMigration {
     await _createV26Tables(db);
     await _createV27Tables(db);
     await _createV28Tables(db);
+    await _createV29Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Prompt-assistant conversations (sessions + raw LLM messages), so chats
+  /// survive app restarts. Messages store attachments as file paths only and
+  /// tool calls as JSON (incl. Gemini thought signatures). `compacted` rows
+  /// were replaced by an `is_summary` row but are kept for full-history view.
+  static Future<void> _createV29Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS assistant_sessions (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        mode TEXT NOT NULL DEFAULT 'systemPrompt',
+        ref_images TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS assistant_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        seq INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        compacted INTEGER NOT NULL DEFAULT 0,
+        is_summary INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        UNIQUE(session_id, seq)
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_assistant_messages_session '
+      'ON assistant_messages (session_id, seq)',
+    );
   }
 
   /// Recently submitted workbench prompts, kept per medium (image / video).
