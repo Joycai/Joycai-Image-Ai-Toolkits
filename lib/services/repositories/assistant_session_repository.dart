@@ -92,7 +92,7 @@ class AssistantSessionRepository {
       await db.update(
         'assistant_sessions',
         {
-          if (title != null) 'title': title,
+          'title': ?title,
           'ref_images': jsonEncode(refImages),
           'updated_at': now,
         },
