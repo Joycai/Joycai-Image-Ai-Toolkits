@@ -464,6 +464,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inputTokens => 'Input Tokens';
 
   @override
+  String get cachedInputTokens => 'Cached Input';
+
+  @override
   String get outputTokens => 'Output Tokens';
 
   @override
@@ -639,6 +642,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inputPrice => 'Input Price (\$/M Tokens)';
 
   @override
+  String get cacheInputPrice => 'Cached Input Price (\$/M Tokens)';
+
+  @override
+  String get cacheInputPriceHint =>
+      'Leave empty to bill cache hits at the input price';
+
+  @override
+  String get cachePriceFollowsInput =>
+      'Cache hits are billed at the input price';
+
+  @override
   String get outputPrice => 'Output Price (\$/M Tokens)';
 
   @override
@@ -646,6 +660,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get priceConfig => 'Price Config';
+
+  @override
+  String get priceLabelInput => 'Input';
+
+  @override
+  String get priceLabelCache => 'Cache';
+
+  @override
+  String get priceLabelOutput => 'Output';
+
+  @override
+  String get priceLabelRequest => 'Request';
 
   @override
   String get addFeeGroup => 'Add Fee Group';

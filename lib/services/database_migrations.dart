@@ -54,6 +54,7 @@ class DatabaseMigration {
     if (oldVersion < 27) await _createV27Tables(db);
     if (oldVersion < 28) await _createV28Tables(db);
     if (oldVersion < 29) await _createV29Tables(db);
+    if (oldVersion < 30) await _createV30Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -83,7 +84,27 @@ class DatabaseMigration {
     await _createV27Tables(db);
     await _createV28Tables(db);
     await _createV29Tables(db);
+    await _createV30Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Separate pricing for prompt-cache hits.
+  ///
+  /// `fee_groups.cache_input_price` is deliberately nullable with no default:
+  /// NULL means "unset", which bills cache hits at the plain input price, and
+  /// that must stay distinct from an explicit 0.0 (a free cache).
+  ///
+  /// On `token_usage`, `input_tokens` and `cache_tokens` are disjoint — the
+  /// providers report cached tokens inside their prompt total, so the cached
+  /// part is subtracted out at record time and the two columns sum to the full
+  /// input. `cache_price` snapshots the resolved rate the same way
+  /// `input_price` / `output_price` already do; NULL on pre-v30 rows, which
+  /// all carry `cache_tokens = 0` and so cost nothing either way.
+  static Future<void> _createV30Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'fee_groups', 'cache_input_price', 'REAL');
+    await _addColumnIfNotExists(db, 'token_usage', 'cache_tokens', 'INTEGER DEFAULT 0');
+    await _addColumnIfNotExists(db, 'token_usage', 'cache_price', 'REAL');
+    await _addColumnIfNotExists(db, 'usage_checkpoints', 'total_cache_tokens', 'INTEGER DEFAULT 0');
   }
 
   /// Prompt-assistant conversations (sessions + raw LLM messages), so chats

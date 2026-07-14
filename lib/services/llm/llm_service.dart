@@ -237,24 +237,47 @@ class LLMService {
 
   Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId}) async {
     final db = DatabaseService();
-    
+
     // Standardize metadata keys (OpenAI vs Google)
-    final inputTokens = metadata['promptTokenCount'] ?? metadata['prompt_tokens'] ?? 0;
-    final outputTokens = metadata['candidatesTokenCount'] ?? metadata['completion_tokens'] ?? 0;
+    final promptTokens = _asTokenCount(metadata['promptTokenCount'] ?? metadata['prompt_tokens']);
+    final outputTokens = _asTokenCount(metadata['candidatesTokenCount'] ?? metadata['completion_tokens']);
+    final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     await db.recordTokenUsage({
       'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
       'model_id': modelId,
       'model_pk': modelDbId,
       'timestamp': DateTime.now().toIso8601String(),
-      'input_tokens': inputTokens,
+      // Both providers count cached tokens inside their prompt total, so the
+      // cached part is subtracted out here — input_tokens and cache_tokens are
+      // stored disjoint and sum back to the full input.
+      'input_tokens': promptTokens - cacheTokens,
+      'cache_tokens': cacheTokens,
       'output_tokens': outputTokens,
       'input_price': config.inputFee,
+      'cache_price': config.effectiveCacheInputFee,
       'output_price': config.outputFee,
       'request_count': 1,
       'request_price': config.requestFee,
       'billing_mode': config.billingMode,
     });
+  }
+
+  /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google)
+  /// or `prompt_tokens_details.cached_tokens` (OpenAI). Clamped to [promptTokens]
+  /// so a malformed payload can never drive the uncached remainder negative.
+  int _extractCacheTokens(Map<String, dynamic> metadata, int promptTokens) {
+    final details = metadata['prompt_tokens_details'];
+    final raw = metadata['cachedContentTokenCount'] ??
+        (details is Map ? details['cached_tokens'] : null);
+    return _asTokenCount(raw).clamp(0, promptTokens);
+  }
+
+  /// Token counts arrive as int, double or String depending on provider and
+  /// transport; anything unparseable counts as zero.
+  int _asTokenCount(dynamic value) {
+    final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
+    return (count == null || count < 0) ? 0 : count;
   }
 
   void clearSession(String sessionId) {

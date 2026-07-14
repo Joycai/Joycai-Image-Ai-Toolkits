@@ -114,6 +114,7 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
       await _db.saveUsageCheckpoint({
         'timestamp': DateTime.now().toIso8601String(),
         'total_input_tokens': currentStats.totalInput,
+        'total_cache_tokens': currentStats.totalCache,
         'total_output_tokens': currentStats.totalOutput,
         'total_request_count': currentStats.totalRequestCount,
         'total_cost': currentStats.totalCost,
@@ -163,6 +164,13 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
               _stats.totalInput.toString(),
               Icons.input,
               Colors.blue,
+            ),
+            const SizedBox(width: 8),
+            _buildStatCard(
+              l10n.cachedInputTokens,
+              _stats.totalCache.toString(),
+              Icons.bolt,
+              Colors.teal,
             ),
             const SizedBox(width: 8),
             _buildStatCard(
