@@ -10,6 +10,7 @@
   "lastMonth": "先月",
   "thisYear": "今年",
   "inputTokens": "入力トークン",
+  "cachedInputTokens": "キャッシュ入力",
   "outputTokens": "出力トークン",
   "estimatedCost": "推定コスト",
   "clearDataForModel": "{modelId}のデータをクリアしますか？",

@@ -456,6 +456,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get inputTokens => '入力トークン';
 
   @override
+  String get cachedInputTokens => 'キャッシュ入力';
+
+  @override
   String get outputTokens => '出力トークン';
 
   @override
@@ -631,6 +634,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get inputPrice => '入力価格（\$/Mトークン）';
 
   @override
+  String get cacheInputPrice => '入力価格・キャッシュヒット（\$/Mトークン）';
+
+  @override
+  String get cacheInputPriceHint => '未入力の場合、キャッシュヒットは「入力価格」で課金されます';
+
+  @override
+  String get cachePriceFollowsInput => 'キャッシュヒットは「入力価格」で課金されます';
+
+  @override
   String get outputPrice => '出力価格（\$/Mトークン）';
 
   @override
@@ -638,6 +650,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get priceConfig => '価格設定';
+
+  @override
+  String get priceLabelInput => '入力';
+
+  @override
+  String get priceLabelCache => 'キャッシュ';
+
+  @override
+  String get priceLabelOutput => '出力';
+
+  @override
+  String get priceLabelRequest => 'リクエスト';
 
   @override
   String get addFeeGroup => '料金グループを追加';

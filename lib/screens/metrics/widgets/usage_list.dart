@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
+import 'usage_stats.dart';
 
 /// Paged list of token-usage records, shared by the mobile and desktop views.
 /// Set [shrinkWrap] when embedding inside another scroll view.
@@ -73,13 +74,15 @@ class UsageList extends StatelessWidget {
               child: Row(
                 children: [
                   if (billingMode == 'token') ...[
-                    const Icon(Icons.input, size: 10, color: Colors.blue),
-                    const SizedBox(width: 2),
-                    Text('${row['input_tokens']}', style: const TextStyle(fontSize: 11)),
+                    _buildTokenChip(Icons.input, Colors.blue, row['input_tokens']),
+                    // Only rows that actually hit the cache carry the extra chip,
+                    // keeping the common no-cache row as compact as before.
+                    if ((row['cache_tokens'] as int? ?? 0) > 0) ...[
+                      const SizedBox(width: 8),
+                      _buildTokenChip(Icons.bolt, Colors.teal, row['cache_tokens']),
+                    ],
                     const SizedBox(width: 8),
-                    const Icon(Icons.output, size: 10, color: Colors.green),
-                    const SizedBox(width: 2),
-                    Text('${row['output_tokens']}', style: const TextStyle(fontSize: 11)),
+                    _buildTokenChip(Icons.output, Colors.green, row['output_tokens']),
                   ] else ...[
                     const Icon(Icons.repeat, size: 10, color: Colors.purple),
                     const SizedBox(width: 2),
@@ -105,18 +108,19 @@ class UsageList extends StatelessWidget {
     return Expanded(child: list);
   }
 
+  Widget _buildTokenChip(IconData icon, Color color, Object? tokens) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 10, color: color),
+        const SizedBox(width: 2),
+        Text('${tokens ?? 0}', style: const TextStyle(fontSize: 11)),
+      ],
+    );
+  }
+
   Widget _buildCostBadge(Map<String, dynamic> row) {
-    final billingMode = row['billing_mode'] as String? ?? 'token';
-    double cost = 0.0;
-    if (billingMode == 'token') {
-      final inPrice = (row['input_price'] ?? 0.0) as num;
-      final outPrice = (row['output_price'] ?? 0.0) as num;
-      cost = ((row['input_tokens'] ?? 0) * inPrice.toDouble() / 1000000) +
-             ((row['output_tokens'] ?? 0) * outPrice.toDouble() / 1000000);
-    } else {
-      final reqPrice = (row['request_price'] ?? 0.0) as num;
-      cost = (row['request_count'] ?? 1) * reqPrice.toDouble();
-    }
+    final cost = calculateRowCost(row);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

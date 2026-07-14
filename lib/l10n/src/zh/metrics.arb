@@ -10,6 +10,7 @@
   "lastMonth": "最近一月",
   "thisYear": "今年",
   "inputTokens": "输入 Token",
+  "cachedInputTokens": "缓存输入",
   "outputTokens": "输出 Token",
   "estimatedCost": "预估成本",
   "clearDataForModel": "清除 {modelId} 的数据？",
