@@ -673,6 +673,38 @@
   },
   "prompt": "提示詞",
   "promptHint": "在此輸入提示詞...",
+  "promptHistory": "歷史紀錄",
+  "noPromptHistory": "尚無歷史紀錄",
+  "noPromptHistoryDesc": "送出過的提示詞會顯示在這裡。",
+  "usePrompt": "使用此提示詞",
+  "applyPromptWarning": "將取代編輯器中目前的提示詞。",
+  "clearPromptHistory": "清除歷史紀錄",
+  "clearPromptHistoryConfirm": "確定清除全部歷史紀錄嗎？此操作無法復原。",
+  "timeJustNow": "剛剛",
+  "timeMinutesAgo": "{count} 分鐘前",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count} 小時前",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count} 天前",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prefixHint": "例如：result",
   "processPrompt": "處理提示詞",
   "processImages": "處理 {count} 張圖片",

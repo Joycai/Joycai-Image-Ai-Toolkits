@@ -50,6 +50,25 @@ extension AppStateData on AppState {
     notify();
   }
 
+  // Prompt History Methods
+  Future<void> loadPromptHistory() async {
+    imagePromptHistory = await _db.getPromptHistory(PromptHistoryType.image);
+    videoPromptHistory = await _db.getPromptHistory(PromptHistoryType.video);
+    notify();
+  }
+
+  /// Record a submitted prompt and refresh the in-memory lists so the pickers
+  /// in both config panels pick it up without a reload.
+  Future<void> recordPromptHistory(PromptHistoryType type, String content) async {
+    await _db.addPromptHistory(type, content);
+    await loadPromptHistory();
+  }
+
+  Future<void> clearPromptHistory(PromptHistoryType type) async {
+    await _db.clearPromptHistory(type);
+    await loadPromptHistory();
+  }
+
   // System Prompts Methods
   Future<List<SystemPrompt>> getSystemPrompts({String? type}) => _db.getSystemPrompts(type: type);
   Future<int> addSystemPrompt(Map<String, dynamic> prompt, {List<int>? tagIds}) async {

@@ -1646,6 +1646,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptHint => 'Enter prompt here...';
 
   @override
+  String get promptHistory => 'Prompt History';
+
+  @override
+  String get noPromptHistory => 'No recent prompts';
+
+  @override
+  String get noPromptHistoryDesc => 'Prompts you submit will appear here.';
+
+  @override
+  String get usePrompt => 'Use This Prompt';
+
+  @override
+  String get applyPromptWarning =>
+      'This will replace the prompt currently in the editor.';
+
+  @override
+  String get clearPromptHistory => 'Clear History';
+
+  @override
+  String get clearPromptHistoryConfirm =>
+      'Remove all recent prompts? This cannot be undone.';
+
+  @override
+  String get timeJustNow => 'Just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count h ago';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count d ago';
+  }
+
+  @override
   String get prefixHint => 'e.g. result';
 
   @override

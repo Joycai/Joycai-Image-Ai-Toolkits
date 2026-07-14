@@ -52,6 +52,7 @@ class DatabaseMigration {
     }
     if (oldVersion < 26) await _createV26Tables(db);
     if (oldVersion < 27) await _createV27Tables(db);
+    if (oldVersion < 28) await _createV28Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -79,7 +80,27 @@ class DatabaseMigration {
     await _createV24Tables(db);
     await _createV26Tables(db);
     await _createV27Tables(db);
+    await _createV28Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Recently submitted workbench prompts, kept per medium (image / video).
+  ///
+  /// Trimmed to the newest few rows per type on every write, so the index
+  /// covers the only query this table serves: newest-first within a type.
+  static Future<void> _createV28Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS prompt_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        used_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_prompt_history_type_used '
+      'ON prompt_history (type, used_at DESC)',
+    );
   }
 
   static Future<void> _createV27Tables(Database db) async {

@@ -1598,6 +1598,45 @@ class AppLocalizationsZh extends AppLocalizations {
   String get promptHint => '在此输入提示词...';
 
   @override
+  String get promptHistory => '历史记录';
+
+  @override
+  String get noPromptHistory => '暂无历史记录';
+
+  @override
+  String get noPromptHistoryDesc => '提交过的提示词会显示在这里。';
+
+  @override
+  String get usePrompt => '使用该提示词';
+
+  @override
+  String get applyPromptWarning => '将替换编辑器中当前的提示词。';
+
+  @override
+  String get clearPromptHistory => '清空历史记录';
+
+  @override
+  String get clearPromptHistoryConfirm => '确定清空全部历史记录吗？此操作无法撤销。';
+
+  @override
+  String get timeJustNow => '刚刚';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count 分钟前';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count 小时前';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count 天前';
+  }
+
+  @override
   String get prefixHint => '例如：result';
 
   @override
@@ -3561,6 +3600,45 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get promptHint => '在此輸入提示詞...';
+
+  @override
+  String get promptHistory => '歷史紀錄';
+
+  @override
+  String get noPromptHistory => '尚無歷史紀錄';
+
+  @override
+  String get noPromptHistoryDesc => '送出過的提示詞會顯示在這裡。';
+
+  @override
+  String get usePrompt => '使用此提示詞';
+
+  @override
+  String get applyPromptWarning => '將取代編輯器中目前的提示詞。';
+
+  @override
+  String get clearPromptHistory => '清除歷史紀錄';
+
+  @override
+  String get clearPromptHistoryConfirm => '確定清除全部歷史紀錄嗎？此操作無法復原。';
+
+  @override
+  String get timeJustNow => '剛剛';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count 分鐘前';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count 小時前';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count 天前';
+  }
 
   @override
   String get prefixHint => '例如：result';

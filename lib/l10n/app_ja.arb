@@ -673,6 +673,38 @@
   },
   "prompt": "プロンプト",
   "promptHint": "プロンプトをここに入力...",
+  "promptHistory": "プロンプト履歴",
+  "noPromptHistory": "履歴はまだありません",
+  "noPromptHistoryDesc": "送信したプロンプトがここに表示されます。",
+  "usePrompt": "このプロンプトを使う",
+  "applyPromptWarning": "エディタの現在のプロンプトを置き換えます。",
+  "clearPromptHistory": "履歴を消去",
+  "clearPromptHistoryConfirm": "すべての履歴を消去しますか？この操作は取り消せません。",
+  "timeJustNow": "たった今",
+  "timeMinutesAgo": "{count} 分前",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count} 時間前",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count} 日前",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prefixHint": "例：result",
   "processPrompt": "プロンプトを処理",
   "processImages": "{count}枚の画像を処理",

@@ -84,6 +84,38 @@
   },
   "prompt": "Prompt",
   "promptHint": "Enter prompt here...",
+  "promptHistory": "Prompt History",
+  "noPromptHistory": "No recent prompts",
+  "noPromptHistoryDesc": "Prompts you submit will appear here.",
+  "usePrompt": "Use This Prompt",
+  "applyPromptWarning": "This will replace the prompt currently in the editor.",
+  "clearPromptHistory": "Clear History",
+  "clearPromptHistoryConfirm": "Remove all recent prompts? This cannot be undone.",
+  "timeJustNow": "Just now",
+  "timeMinutesAgo": "{count} min ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count} h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count} d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prefixHint": "e.g. result",
   "processPrompt": "Process Prompt",
   "processImages": "Process {count} Images",

@@ -8,10 +8,12 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
+import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/collapsible_card.dart';
+import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
 import 'config_action_bar.dart';
 import 'config_section_header.dart';
@@ -118,7 +120,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // Model Selection
         _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
 
-        ConfigSectionHeader(l10n.prompt),
+        ConfigSectionHeader(
+          l10n.prompt,
+          trailing: PromptHistoryButton(
+            entries: appState.videoPromptHistory,
+            type: PromptHistoryType.video,
+            onApply: (content) {
+              _promptController.text = content;
+              appState.updateVideoConfig(prompt: content);
+            },
+          ),
+        ),
         MarkdownEditor(
           controller: _promptController,
           label: l10n.prompt,

@@ -6,11 +6,13 @@ import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
+import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/dialogs/library_dialog.dart';
+import '../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
@@ -85,6 +87,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
+    final promptHistory = context.select<AppState, List<PromptHistoryEntry>>((s) => s.imagePromptHistory);
     // Rebuild parameter controls when the stored image params change.
     context.select<AppState, int>((s) => s.imageParamsRevision);
 
@@ -185,7 +188,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               dense: true,
             ),
 
-            ConfigSectionHeader(l10n.prompt, trailing: _buildPromptPicker(colorScheme, l10n)),
+            ConfigSectionHeader(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
             const SizedBox(height: 4),
             MarkdownEditor(
               controller: _promptController,
@@ -362,12 +365,25 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     );
   }
 
-  Widget _buildPromptPicker(ColorScheme colorScheme, AppLocalizations l10n) {
-    return TextButton.icon(
-      onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
-      icon: const Icon(Icons.library_books_outlined, size: 16),
-      label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
-      style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+  Widget _buildPromptActions(List<PromptHistoryEntry> history, AppLocalizations l10n) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PromptHistoryButton(
+          entries: history,
+          type: PromptHistoryType.image,
+          onApply: (content) {
+            _promptController.text = content;
+            _updateConfig(prompt: content);
+          },
+        ),
+        TextButton.icon(
+          onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
+          icon: const Icon(Icons.library_books_outlined, size: 16),
+          label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
+          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+        ),
+      ],
     );
   }
 
