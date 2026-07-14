@@ -429,6 +429,9 @@ class PromptOptimizerAgent {
             ],
             tools: tools,
             contextId: contextId,
+            // Transient relay/proxy disconnects (e.g. errno 10054) should not
+            // kill the whole agent turn — retry a couple of times.
+            options: const {'retryCount': 2},
             useStream: false,
           );
         } catch (e) {
@@ -635,6 +638,7 @@ class PromptOptimizerAgent {
           LLMMessage(role: LLMRole.user, content: _serializeForSummary(head)),
         ],
         contextId: contextId,
+        options: const {'retryCount': 2},
         useStream: false,
       );
       summaryText = response.text.trim();
