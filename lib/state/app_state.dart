@@ -14,6 +14,7 @@ import '../models/llm_model.dart';
 import '../models/log_entry.dart';
 import '../models/pricing_group.dart';
 import '../models/prompt.dart';
+import '../models/prompt_history_entry.dart';
 import '../models/tag.dart';
 import '../services/database_service.dart';
 import '../services/font_service.dart';
@@ -153,6 +154,10 @@ class AppState extends ChangeNotifier {
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
   String lastPrompt = "";
   String lastVideoPrompt = "";
+  // Recently submitted prompts, newest first, capped per medium. Rewritten as
+  // fresh lists by [loadPromptHistory] so selectors see the change.
+  List<PromptHistoryEntry> imagePromptHistory = [];
+  List<PromptHistoryEntry> videoPromptHistory = [];
   bool useStream = true;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
@@ -355,6 +360,7 @@ class AppState extends ChangeNotifier {
     _pricingGroups = await _db.getPricingGroups();
 
     await downloaderState.loadCookieHistory();
+    await loadPromptHistory();
 
     settingsLoaded = true;
     notifyListeners();

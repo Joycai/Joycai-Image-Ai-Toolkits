@@ -1,12 +1,17 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../models/prompt.dart';
+import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
 import '../database_service.dart';
 
 class PromptRepository {
+  /// How many recent prompts are kept per [PromptHistoryType].
+  static const int promptHistoryLimit = 10;
+
   final DatabaseService _dbService = DatabaseService();
 
   Future<Database> get _db async => await _dbService.database;
@@ -125,6 +130,76 @@ class PromptRepository {
       batch.update('prompts', {'sort_order': i}, where: 'id = ?', whereArgs: [ids[i]]);
     }
     await batch.commit(noResult: true);
+  }
+
+  // Prompt History Methods
+
+  /// The most recently submitted prompts for [type], newest first.
+  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) async {
+    return getPromptHistoryFrom(await _db, type);
+  }
+
+  /// Body of [getPromptHistory], split out so it can run against any executor.
+  @visibleForTesting
+  static Future<List<PromptHistoryEntry>> getPromptHistoryFrom(
+      DatabaseExecutor db, PromptHistoryType type) async {
+    final maps = await db.query(
+      'prompt_history',
+      where: 'type = ?',
+      whereArgs: [type.name],
+      orderBy: 'used_at DESC, id DESC',
+      limit: promptHistoryLimit,
+    );
+    return maps.map((m) => PromptHistoryEntry.fromMap(m)).toList();
+  }
+
+  /// Record [content] as the newest entry for [type].
+  ///
+  /// Re-submitting a prompt bumps the existing row to the top instead of
+  /// spending one of the [promptHistoryLimit] slots on a duplicate — iterating
+  /// on one prompt is the common case, and would otherwise flush the list.
+  Future<void> addPromptHistory(PromptHistoryType type, String content) async {
+    final db = await _db;
+    await db.transaction((txn) => addPromptHistoryInto(txn, type, content));
+  }
+
+  /// Body of [addPromptHistory], split out so it can run against any executor.
+  ///
+  /// Callers are responsible for the surrounding transaction; the bump and the
+  /// trim must not be observable half-applied.
+  @visibleForTesting
+  static Future<void> addPromptHistoryInto(
+      DatabaseExecutor txn, PromptHistoryType type, String content) async {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return;
+
+    await txn.delete(
+      'prompt_history',
+      where: 'type = ? AND content = ?',
+      whereArgs: [type.name, trimmed],
+    );
+    await txn.insert('prompt_history', {
+      'type': type.name,
+      'content': trimmed,
+      'used_at': DateTime.now().toIso8601String(),
+    });
+    // `id` breaks ties: two submits can share a millisecond, and dropping the
+    // wrong row would evict the prompt just written.
+    await txn.delete(
+      'prompt_history',
+      where: '''type = ? AND id NOT IN (
+        SELECT id FROM prompt_history
+        WHERE type = ?
+        ORDER BY used_at DESC, id DESC
+        LIMIT ?
+      )''',
+      whereArgs: [type.name, type.name, promptHistoryLimit],
+    );
+  }
+
+  Future<void> clearPromptHistory(PromptHistoryType type) async {
+    final db = await _db;
+    await db.delete('prompt_history', where: 'type = ?', whereArgs: [type.name]);
   }
 
   Future<int> addPromptTag(PromptTag tag) async {

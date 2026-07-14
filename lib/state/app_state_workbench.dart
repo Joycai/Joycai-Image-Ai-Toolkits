@@ -197,7 +197,25 @@ extension AppStateWorkbench on AppState {
           : TaskType.imageProcess,
     );
 
+    // Recorded only once the task is actually queued, so a rejected submit
+    // doesn't leave a prompt in the history. Empty prompts are dropped by the
+    // repository, which keeps image-only submissions out of the list.
+    final historyType = _promptHistoryTypeFor(params['taskType'] as String?);
+    if (historyType != null) {
+      await recordPromptHistory(historyType, prompt);
+    }
+
     addLog('Task submitted with ${imagePaths.length} input images.');
+  }
+
+  /// The history bucket a task's prompt belongs in, or null for task types with
+  /// no prompt field of their own (rename, refine, download).
+  PromptHistoryType? _promptHistoryTypeFor(String? taskType) {
+    if (taskType == null || taskType == TaskType.imageProcess.name) {
+      return PromptHistoryType.image;
+    }
+    if (taskType == TaskType.videoGenerate.name) return PromptHistoryType.video;
+    return null;
   }
 
   Future<void> submitVideoTask(dynamic modelIdentifier, Map<String, dynamic> params, {String? modelIdDisplay}) async {

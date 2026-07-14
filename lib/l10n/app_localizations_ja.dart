@@ -1609,6 +1609,45 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptHint => 'プロンプトをここに入力...';
 
   @override
+  String get promptHistory => 'プロンプト履歴';
+
+  @override
+  String get noPromptHistory => '履歴はまだありません';
+
+  @override
+  String get noPromptHistoryDesc => '送信したプロンプトがここに表示されます。';
+
+  @override
+  String get usePrompt => 'このプロンプトを使う';
+
+  @override
+  String get applyPromptWarning => 'エディタの現在のプロンプトを置き換えます。';
+
+  @override
+  String get clearPromptHistory => '履歴を消去';
+
+  @override
+  String get clearPromptHistoryConfirm => 'すべての履歴を消去しますか？この操作は取り消せません。';
+
+  @override
+  String get timeJustNow => 'たった今';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count 分前';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count 時間前';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count 日前';
+  }
+
+  @override
   String get prefixHint => '例：result';
 
   @override

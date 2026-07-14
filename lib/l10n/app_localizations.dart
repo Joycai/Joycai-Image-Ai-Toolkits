@@ -3101,6 +3101,72 @@ abstract class AppLocalizations {
   /// **'Enter prompt here...'**
   String get promptHint;
 
+  /// No description provided for @promptHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt History'**
+  String get promptHistory;
+
+  /// No description provided for @noPromptHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent prompts'**
+  String get noPromptHistory;
+
+  /// No description provided for @noPromptHistoryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts you submit will appear here.'**
+  String get noPromptHistoryDesc;
+
+  /// No description provided for @usePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Use This Prompt'**
+  String get usePrompt;
+
+  /// No description provided for @applyPromptWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace the prompt currently in the editor.'**
+  String get applyPromptWarning;
+
+  /// No description provided for @clearPromptHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear History'**
+  String get clearPromptHistory;
+
+  /// No description provided for @clearPromptHistoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all recent prompts? This cannot be undone.'**
+  String get clearPromptHistoryConfirm;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String timeMinutesAgo(int count);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h ago'**
+  String timeHoursAgo(int count);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d ago'**
+  String timeDaysAgo(int count);
+
   /// No description provided for @prefixHint.
   ///
   /// In en, this message translates to:

@@ -84,6 +84,38 @@
   },
   "prompt": "提示词",
   "promptHint": "在此输入提示词...",
+  "promptHistory": "历史记录",
+  "noPromptHistory": "暂无历史记录",
+  "noPromptHistoryDesc": "提交过的提示词会显示在这里。",
+  "usePrompt": "使用该提示词",
+  "applyPromptWarning": "将替换编辑器中当前的提示词。",
+  "clearPromptHistory": "清空历史记录",
+  "clearPromptHistoryConfirm": "确定清空全部历史记录吗？此操作无法撤销。",
+  "timeJustNow": "刚刚",
+  "timeMinutesAgo": "{count} 分钟前",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count} 小时前",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count} 天前",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prefixHint": "例如：result",
   "processPrompt": "处理提示词",
   "processImages": "处理 {count} 张图像",

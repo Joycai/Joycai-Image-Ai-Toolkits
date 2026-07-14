@@ -12,6 +12,7 @@ import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../models/pricing_group.dart';
 import '../models/prompt.dart';
+import '../models/prompt_history_entry.dart';
 import '../models/tag.dart';
 import 'database_migrations.dart';
 import 'repositories/model_repository.dart';
@@ -52,7 +53,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 27;
+  static const int dbVersion = 28;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -220,6 +221,11 @@ class DatabaseService {
   Future<void> updatePromptsTags(List<int> promptIds, List<int> tagIds) => PromptRepository().updatePromptsTags(promptIds, tagIds);
   Future<List<Prompt>> getPrompts() => PromptRepository().getPrompts();
   Future<void> updatePromptOrder(List<int> ids) => PromptRepository().updatePromptOrder(ids);
+
+  // Prompt History Methods
+  Future<List<PromptHistoryEntry>> getPromptHistory(PromptHistoryType type) => PromptRepository().getPromptHistory(type);
+  Future<void> addPromptHistory(PromptHistoryType type, String content) => PromptRepository().addPromptHistory(type, content);
+  Future<void> clearPromptHistory(PromptHistoryType type) => PromptRepository().clearPromptHistory(type);
 
   // LLM Models Methods
   Future<int> addModel(Map<String, dynamic> model) => ModelRepository().addModel(LLMModel.fromMap(model));
