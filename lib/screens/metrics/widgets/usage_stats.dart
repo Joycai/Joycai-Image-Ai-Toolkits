@@ -31,6 +31,20 @@ class UsageStats {
         totalCost: 0.0,
         groupCosts: {},
       );
+
+  /// Share of prompt tokens that were served from the provider's cache, 0–1.
+  ///
+  /// [totalInput] and [totalCache] are disjoint, so their sum is every prompt
+  /// token sent in the range and the cached part divided by it is the hit rate.
+  ///
+  /// Null when the range holds no prompt tokens at all — a range of only
+  /// request-billed image jobs never asked the cache for anything, and "0%"
+  /// would report that as a cache that always misses.
+  double? get cacheHitRate {
+    final promptTokens = totalInput + totalCache;
+    if (promptTokens == 0) return null;
+    return totalCache / promptTokens;
+  }
 }
 
 /// Cost of a single usage row, from the prices snapshotted onto it at record

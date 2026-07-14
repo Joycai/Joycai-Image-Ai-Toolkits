@@ -12,6 +12,8 @@
   "inputTokens": "入力トークン",
   "cachedInputTokens": "キャッシュ入力",
   "outputTokens": "出力トークン",
+  "cacheHitRate": "キャッシュヒット率",
+  "cacheHitRateHint": "入力トークンのうちプロンプトキャッシュから提供された割合",
   "estimatedCost": "推定コスト",
   "clearDataForModel": "{modelId}のデータをクリアしますか？",
   "clearModelDataWarning": "これにより、モデル「{modelId}」に関連するすべての使用状況レコードが削除されます。",

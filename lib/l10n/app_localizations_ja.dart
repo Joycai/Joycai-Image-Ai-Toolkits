@@ -462,6 +462,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get outputTokens => '出力トークン';
 
   @override
+  String get cacheHitRate => 'キャッシュヒット率';
+
+  @override
+  String get cacheHitRateHint => '入力トークンのうちプロンプトキャッシュから提供された割合';
+
+  @override
   String get estimatedCost => '推定コスト';
 
   @override
@@ -850,6 +856,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get requestBilling => 'リクエスト請求';
+
+  @override
+  String feeGroupModelCount(int count) {
+    return '$count 個のモデル';
+  }
+
+  @override
+  String get feeGroupUnused => '使用しているモデルなし';
 
   @override
   String get model => 'モデル';

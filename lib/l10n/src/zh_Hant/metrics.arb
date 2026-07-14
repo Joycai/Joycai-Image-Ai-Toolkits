@@ -12,6 +12,8 @@
   "inputTokens": "輸入 Token",
   "cachedInputTokens": "快取輸入",
   "outputTokens": "輸出 Token",
+  "cacheHitRate": "快取命中率",
+  "cacheHitRateHint": "命中快取的輸入 Token 佔全部輸入 Token 的比例",
   "estimatedCost": "預估成本",
   "clearDataForModel": "要清除 {modelId} 的資料嗎？",
   "clearModelDataWarning": "這將刪除與模型「{modelId}」相關的所有用量記錄。",

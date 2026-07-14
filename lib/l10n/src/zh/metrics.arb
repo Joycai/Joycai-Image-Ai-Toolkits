@@ -12,6 +12,8 @@
   "inputTokens": "输入 Token",
   "cachedInputTokens": "缓存输入",
   "outputTokens": "输出 Token",
+  "cacheHitRate": "缓存命中率",
+  "cacheHitRateHint": "命中缓存的输入 Token 占全部输入 Token 的比例",
   "estimatedCost": "预估成本",
   "clearDataForModel": "清除 {modelId} 的数据？",
   "@clearDataForModel": {

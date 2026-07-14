@@ -461,6 +461,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get outputTokens => '输出 Token';
 
   @override
+  String get cacheHitRate => '缓存命中率';
+
+  @override
+  String get cacheHitRateHint => '命中缓存的输入 Token 占全部输入 Token 的比例';
+
+  @override
   String get estimatedCost => '预估成本';
 
   @override
@@ -847,6 +853,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get requestBilling => '按次计费';
+
+  @override
+  String feeGroupModelCount(int count) {
+    return '$count 个模型';
+  }
+
+  @override
+  String get feeGroupUnused => '没有模型在使用';
 
   @override
   String get model => '模型';
@@ -2557,6 +2571,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get outputTokens => '輸出 Token';
 
   @override
+  String get cacheHitRate => '快取命中率';
+
+  @override
+  String get cacheHitRateHint => '命中快取的輸入 Token 佔全部輸入 Token 的比例';
+
+  @override
   String get estimatedCost => '預估成本';
 
   @override
@@ -2943,6 +2963,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get requestBilling => '請求計費';
+
+  @override
+  String feeGroupModelCount(int count) {
+    return '$count 個模型';
+  }
+
+  @override
+  String get feeGroupUnused => '沒有模型在使用';
 
   @override
   String get model => '模型';

@@ -11,17 +11,14 @@ import '../../../state/app_state.dart';
 import '../../../widgets/panel_resizer.dart';
 import 'usage_list.dart';
 import 'usage_stats.dart';
+import 'usage_summary.dart';
 
 /// Desktop/wide layout for the token-usage view, following the inset-panel
 /// design: a row of compact summary stat cards sits on the canvas above the
 /// main card, which hosts the range filters in its header and the per-group
 /// costs plus the paged record list in its body.
 class UsageViewDesktop extends StatefulWidget {
-  /// Optional control (e.g. the usage / fee-groups switcher) embedded at the
-  /// right end of the main card header.
-  final Widget? viewSwitcher;
-
-  const UsageViewDesktop({super.key, this.viewSwitcher});
+  const UsageViewDesktop({super.key});
 
   @override
   State<UsageViewDesktop> createState() => _UsageViewDesktopState();
@@ -156,46 +153,8 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
 
     return Column(
       children: [
-        // Compact summary stat cards on the canvas, above the main card.
-        Row(
-          children: [
-            _buildStatCard(
-              l10n.inputTokens,
-              _stats.totalInput.toString(),
-              Icons.input,
-              Colors.blue,
-            ),
-            const SizedBox(width: 8),
-            _buildStatCard(
-              l10n.cachedInputTokens,
-              _stats.totalCache.toString(),
-              Icons.bolt,
-              Colors.teal,
-            ),
-            const SizedBox(width: 8),
-            _buildStatCard(
-              l10n.outputTokens,
-              _stats.totalOutput.toString(),
-              Icons.output,
-              Colors.green,
-            ),
-            const SizedBox(width: 8),
-            _buildStatCard(
-              l10n.requests,
-              _stats.totalRequestCount.toString(),
-              Icons.repeat,
-              Colors.purple,
-            ),
-            const SizedBox(width: 8),
-            _buildStatCard(
-              l10n.estimatedCost,
-              '\$${_stats.totalCost.toStringAsFixed(4)}',
-              Icons.attach_money,
-              Colors.orange,
-              isBold: true,
-            ),
-          ],
-        ),
+        // Summary cards on the canvas, above the main card.
+        UsageSummary(stats: _stats),
         const SizedBox(height: 8),
         // Main card: header with range filters + actions, body with per-group
         // costs and the paged usage record list.
@@ -217,46 +176,38 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
     );
   }
 
-  /// Header row inside the top of the main card (file-browser pattern):
-  /// title + active range subtitle, range presets, refresh/clear actions and
-  /// the optional view switcher.
+  /// Header row inside the top of the main card: everything here acts on the
+  /// records below it — the range the filters resolved to, the presets
+  /// themselves, and the refresh/clear actions. The view tabs live outside the
+  /// card, on the canvas.
   Widget _buildHeader(AppLocalizations l10n, ColorScheme colorScheme) {
     final fmt = DateFormat('yyyy-MM-dd');
 
     return Container(
-      height: 56,
+      height: kPanelHeaderHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
       ),
       child: Row(
         children: [
-          Icon(Icons.analytics_outlined, size: 22, color: colorScheme.primary),
-          const SizedBox(width: 10),
+          const Spacer(),
+          // Reads as the caption of the presets beside it rather than as a
+          // subtitle of the screen — it is what the active preset resolved to.
           Flexible(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.tokenUsageMetrics,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '${fmt.format(_dateRange.start)} – ${fmt.format(_dateRange.end)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: Text(
+              '${fmt.format(_dateRange.start)} – ${fmt.format(_dateRange.end)}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurfaceVariant,
+                fontFamily: 'monospace',
+              ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 12),
           SegmentedButton<String>(
             segments: [
               ButtonSegment(value: 'today', label: Text(l10n.today)),
@@ -285,10 +236,6 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
             onPressed: _confirmClearAll,
             tooltip: l10n.clearAll,
           ),
-          if (widget.viewSwitcher != null) ...[
-            const SizedBox(width: 8),
-            widget.viewSwitcher!,
-          ],
         ],
       ),
     );
@@ -341,64 +288,6 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
                 hasMore: _hasMore,
                 isLoadingMore: _isLoadingMore,
                 onLoadMore: () => _loadData(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Compact summary stat card sitting directly on the canvas.
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color, {
-    bool isBold = false,
-  }) {
-    return Expanded(
-      child: PanelCard(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: color),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-                        color: color,
-                        fontFamily: 'monospace',
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

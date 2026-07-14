@@ -166,6 +166,15 @@
   "pricePerRequest": "单次请求价格",
   "tokenBilling": "Token 计费",
   "requestBilling": "按次计费",
+  "feeGroupModelCount": "{count} 个模型",
+  "@feeGroupModelCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feeGroupUnused": "没有模型在使用",
   "model": "模型",
   "modelsAndChannelsCount": "{models} 个模型 · {channels} 个频道",
   "@modelsAndChannelsCount": {

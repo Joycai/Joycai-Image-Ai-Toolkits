@@ -12,6 +12,8 @@
   "inputTokens": "Input Tokens",
   "cachedInputTokens": "Cached Input",
   "outputTokens": "Output Tokens",
+  "cacheHitRate": "Cache Hit Rate",
+  "cacheHitRateHint": "Share of input tokens served from the prompt cache",
   "estimatedCost": "Estimated Cost",
   "clearDataForModel": "Clear Data for {modelId}?",
   "@clearDataForModel": {
