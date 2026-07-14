@@ -147,6 +147,11 @@ class LLMModelConfig {
   final String endpoint;
   final String apiKey;
   final double inputFee;
+
+  /// Rate for cached input tokens, or null when the fee group leaves it unset —
+  /// in which case cache hits bill at [inputFee]. Read via [effectiveCacheInputFee].
+  final double? cacheInputFee;
+
   final double outputFee;
   final String billingMode; // 'token' or 'request'
   final double requestFee;
@@ -166,6 +171,7 @@ class LLMModelConfig {
     required this.endpoint,
     required this.apiKey,
     this.inputFee = 0.0,
+    this.cacheInputFee,
     this.outputFee = 0.0,
     this.billingMode = 'token',
     this.requestFee = 0.0,
@@ -175,6 +181,9 @@ class LLMModelConfig {
     this.proxyUsername,
     this.proxyPassword,
   });
+
+  /// Rate actually charged per cached input token.
+  double get effectiveCacheInputFee => cacheInputFee ?? inputFee;
 
   http.Client createClient() {
     if (!proxyEnabled || proxyUrl == null || proxyUrl!.isEmpty) {

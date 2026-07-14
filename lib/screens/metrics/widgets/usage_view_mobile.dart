@@ -190,6 +190,8 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
                 children: [
                   _buildStatCard(l10n.inputTokens, _stats.totalInput.toString(), Colors.blue),
                   const SizedBox(width: 8),
+                  _buildStatCard(l10n.cachedInputTokens, _stats.totalCache.toString(), Colors.teal),
+                  const SizedBox(width: 8),
                   _buildStatCard(l10n.outputTokens, _stats.totalOutput.toString(), Colors.green),
                 ],
               ),

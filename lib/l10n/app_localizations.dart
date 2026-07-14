@@ -947,6 +947,12 @@ abstract class AppLocalizations {
   /// **'Input Tokens'**
   String get inputTokens;
 
+  /// No description provided for @cachedInputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached Input'**
+  String get cachedInputTokens;
+
   /// No description provided for @outputTokens.
   ///
   /// In en, this message translates to:
@@ -1277,6 +1283,24 @@ abstract class AppLocalizations {
   /// **'Input Price (\$/M Tokens)'**
   String get inputPrice;
 
+  /// No description provided for @cacheInputPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached Input Price (\$/M Tokens)'**
+  String get cacheInputPrice;
+
+  /// No description provided for @cacheInputPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to bill cache hits at the input price'**
+  String get cacheInputPriceHint;
+
+  /// No description provided for @cachePriceFollowsInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache hits are billed at the input price'**
+  String get cachePriceFollowsInput;
+
   /// No description provided for @outputPrice.
   ///
   /// In en, this message translates to:
@@ -1294,6 +1318,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Price Config'**
   String get priceConfig;
+
+  /// No description provided for @priceLabelInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Input'**
+  String get priceLabelInput;
+
+  /// No description provided for @priceLabelCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache'**
+  String get priceLabelCache;
+
+  /// No description provided for @priceLabelOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get priceLabelOutput;
+
+  /// No description provided for @priceLabelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get priceLabelRequest;
 
   /// No description provided for @addFeeGroup.
   ///

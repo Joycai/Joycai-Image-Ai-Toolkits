@@ -27,6 +27,7 @@ class LLMConfigResolver {
     // Fetch Pricing Group
     final pricingGroupId = modelData.feeGroupId;
     double inputFee = 0.0;
+    double? cacheInputFee;
     double outputFee = 0.0;
     String billingMode = 'token';
     double requestFee = 0.0;
@@ -36,6 +37,7 @@ class LLMConfigResolver {
       final group = pricingGroups.cast<PricingGroup?>().firstWhere((g) => g?.id == pricingGroupId, orElse: () => null);
       if (group != null) {
         inputFee = group.inputPrice;
+        cacheInputFee = group.cacheInputPrice;
         outputFee = group.outputPrice;
         billingMode = group.billingMode;
         requestFee = group.requestPrice;
@@ -73,6 +75,7 @@ class LLMConfigResolver {
       endpoint: endpoint,
       apiKey: apiKey,
       inputFee: inputFee,
+      cacheInputFee: cacheInputFee,
       outputFee: outputFee,
       billingMode: billingMode,
       requestFee: requestFee,

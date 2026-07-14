@@ -455,6 +455,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get inputTokens => '输入 Token';
 
   @override
+  String get cachedInputTokens => '缓存输入';
+
+  @override
   String get outputTokens => '输出 Token';
 
   @override
@@ -630,6 +633,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get inputPrice => '输入价格 (\$/M Tokens)';
 
   @override
+  String get cacheInputPrice => '输入价格·命中缓存 (\$/M Tokens)';
+
+  @override
+  String get cacheInputPriceHint => '留空则缓存命中按“输入价格”计费';
+
+  @override
+  String get cachePriceFollowsInput => '缓存命中按“输入价格”计费';
+
+  @override
   String get outputPrice => '输出价格 (\$/M Tokens)';
 
   @override
@@ -637,6 +649,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get priceConfig => '价格配置';
+
+  @override
+  String get priceLabelInput => '输入';
+
+  @override
+  String get priceLabelCache => '缓存';
+
+  @override
+  String get priceLabelOutput => '输出';
+
+  @override
+  String get priceLabelRequest => '请求';
 
   @override
   String get addFeeGroup => '添加费率组';
@@ -2527,6 +2551,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get inputTokens => '輸入 Token';
 
   @override
+  String get cachedInputTokens => '快取輸入';
+
+  @override
   String get outputTokens => '輸出 Token';
 
   @override
@@ -2702,6 +2729,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get inputPrice => '輸入價格（美元/百萬 Token）';
 
   @override
+  String get cacheInputPrice => '輸入價格·命中快取（美元/百萬 Token）';
+
+  @override
+  String get cacheInputPriceHint => '留空則快取命中依「輸入價格」計費';
+
+  @override
+  String get cachePriceFollowsInput => '快取命中依「輸入價格」計費';
+
+  @override
   String get outputPrice => '輸出價格（美元/百萬 Token）';
 
   @override
@@ -2709,6 +2745,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get priceConfig => '價格設定';
+
+  @override
+  String get priceLabelInput => '輸入';
+
+  @override
+  String get priceLabelCache => '快取';
+
+  @override
+  String get priceLabelOutput => '輸出';
+
+  @override
+  String get priceLabelRequest => '請求';
 
   @override
   String get addFeeGroup => '新增費用群組';

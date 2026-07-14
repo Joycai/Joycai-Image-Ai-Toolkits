@@ -53,6 +53,52 @@ void main() {
       expect(config.endpoint, 'https://test.com');
       expect(config.inputFee, 0.5);
       expect(config.outputFee, 1.0);
+      // The group left the cache rate unset, so cache hits bill as plain input.
+      expect(config.cacheInputFee, isNull);
+      expect(config.effectiveCacheInputFee, 0.5);
+    });
+
+    test('resolves a configured cache rate, keeping 0.0 distinct from unset', () async {
+      final db = DatabaseService();
+      final channelId = await db.addChannel({
+        'display_name': 'Cache Channel',
+        'type': 'openai-api',
+        'endpoint': 'https://cache.test',
+        'api_key': 'key-cache',
+      });
+
+      final freeCacheGroup = await db.addPricingGroup({
+        'name': 'Free Cache',
+        'billing_mode': 'token',
+        'input_price': 2.0,
+        'cache_input_price': 0.0,
+        'output_price': 8.0,
+      });
+      final discountGroup = await db.addPricingGroup({
+        'name': 'Discounted Cache',
+        'billing_mode': 'token',
+        'input_price': 2.0,
+        'cache_input_price': 0.25,
+        'output_price': 8.0,
+      });
+
+      Future<void> expectCacheFee(int groupId, String modelId, double expected) async {
+        final modelPk = await db.addModel({
+          'model_id': modelId,
+          'model_name': modelId,
+          'type': 'chat',
+          'tag': 'chat',
+          'channel_id': channelId,
+          'fee_group_id': groupId,
+        });
+        final config = await LLMConfigResolver().resolveConfig(modelPk);
+        expect(config.effectiveCacheInputFee, expected);
+      }
+
+      // An explicit 0.0 must survive the round trip as a real free-cache rate
+      // and not decay into "unset", which would bill it at the input price.
+      await expectCacheFee(freeCacheGroup, 'free-cache-model', 0.0);
+      await expectCacheFee(discountGroup, 'discount-cache-model', 0.25);
     });
 
     test('deleting a channel deletes its models without leaving orphans', () async {
