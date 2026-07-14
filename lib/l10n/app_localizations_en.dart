@@ -1218,6 +1218,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importAndReplace => 'Import & Replace';
 
   @override
+  String get importErrorPromptsOnly =>
+      'This is a prompt library export, not a full backup. Import it from the Prompts screen instead.';
+
+  @override
+  String get importErrorNotABackup =>
+      'This file is not a valid backup. Choose a file exported with Export Settings.';
+
+  @override
+  String get importErrorNewerSchema =>
+      'This backup was created by a newer version of the app. Please update before importing it.';
+
+  @override
   String get importMode => 'Import Mode';
 
   @override

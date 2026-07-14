@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,10 +19,60 @@ import 'repositories/prompt_repository.dart';
 import 'repositories/task_repository.dart';
 import 'repositories/usage_repository.dart';
 
+/// Why a backup file was rejected before any data was touched.
+enum BackupFormatError {
+  /// A prompt-library export was passed to the full-backup restore.
+  promptsOnly,
+
+  /// The file carries none of the tables a full backup is made of.
+  notABackup,
+
+  /// Written by a newer app whose schema this build cannot read.
+  newerSchema,
+}
+
+/// Thrown by [DatabaseService.restoreBackup] when a file cannot be restored.
+///
+/// Raised before the restore transaction opens, so the database is untouched.
+class BackupFormatException implements Exception {
+  BackupFormatException(this.error, {this.fileVersion, this.appVersion});
+
+  final BackupFormatError error;
+  final int? fileVersion;
+  final int? appVersion;
+
+  @override
+  String toString() => 'BackupFormatException(${error.name})';
+}
+
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
   static Future<Database>? _databaseFuture;
+
+  /// Schema version of this build. Also stamped into full backups so a file
+  /// from a newer app can be rejected instead of failing mid-restore.
+  static const int dbVersion = 27;
+
+  /// Settings holding absolute paths from the machine that made the backup.
+  /// Excluded when the user opts out of directories.
+  static const Set<String> _directorySettingKeys = {
+    'output_directory',
+    'browser_source_directories',
+    'browser_active_directories',
+    'result_cache_directory',
+  };
+
+  /// Table keys that only a full backup carries.
+  static const Set<String> _backupTableKeys = {
+    'settings',
+    'llm_channels',
+    'llm_models',
+    'fee_groups',
+    'downloader_cookies',
+    'token_usage',
+    'source_directories',
+  };
 
   factory DatabaseService() => _instance;
 
@@ -68,7 +119,7 @@ class DatabaseService {
       db = await databaseFactoryFfi.openDatabase(
         dbPath,
         options: OpenDatabaseOptions(
-          version: 27,
+          version: dbVersion,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         ),
@@ -78,7 +129,7 @@ class DatabaseService {
       // This avoids the 'native_assets' Null check operator bug on Flutter 3.38+ macOS Debug
       db = await openDatabase(
         dbPath,
-        version: 27,
+        version: dbVersion,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -299,8 +350,7 @@ class DatabaseService {
     final settingsRows = await db.query('settings');
     var filteredSettings = settingsRows;
     if (!includeDirectories) {
-      final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
-      filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
+      filteredSettings = settingsRows.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
     }
 
     final channels = await db.query('llm_channels');
@@ -322,6 +372,8 @@ class DatabaseService {
     }).toList();
 
     final Map<String, dynamic> data = {
+      'export_type': 'full_backup',
+      'schema_version': dbVersion,
       'settings': filteredSettings,
       'llm_channels': sanitizedChannels,
       'llm_models': await db.query('llm_models'),
@@ -351,11 +403,16 @@ class DatabaseService {
     bool includeDirectories = true,
   }) async {
     await txn.delete('settings');
-    await txn.delete('llm_channels');
+
+    // llm_models references both llm_channels and fee_groups without a cascade,
+    // so children must go first or `PRAGMA foreign_keys = ON` aborts the delete.
     await txn.delete('llm_models');
+    await txn.delete('llm_channels');
     await txn.delete('fee_groups');
-    await txn.delete('tasks');
-    await txn.delete('downloader_cookies');
+
+    // `tasks` and `downloader_cookies` are deliberately kept. Both are local
+    // data no backup carries -- task history is never exported, and cookies are
+    // redacted on export -- so clearing them destroys what no restore replaces.
 
     if (includeUsage) {
       await txn.delete('token_usage');
@@ -375,141 +432,195 @@ class DatabaseService {
     }
   }
 
+  /// Reject a file that cannot be restored, before the database is touched.
+  void _validateBackup(Map<String, dynamic> data) {
+    if (data['export_type'] == 'prompts_only') {
+      throw BackupFormatException(BackupFormatError.promptsOnly);
+    }
+    if (!_backupTableKeys.any(data.containsKey)) {
+      throw BackupFormatException(BackupFormatError.notABackup);
+    }
+    final fileVersion = data['schema_version'];
+    if (fileVersion is int && fileVersion > dbVersion) {
+      throw BackupFormatException(
+        BackupFormatError.newerSchema,
+        fileVersion: fileVersion,
+        appVersion: dbVersion,
+      );
+    }
+  }
+
+  /// Restore a full backup produced by [getAllDataRaw].
+  ///
+  /// Throws [BackupFormatException] if [data] is not a full backup this build
+  /// can read; the database is left untouched in that case.
   Future<void> restoreBackup(Map<String, dynamic> data, {
     bool includePrompts = true,
     bool includeUsage = true,
     bool includeDirectories = true,
   }) async {
+    _validateBackup(data);
+
     final db = await database;
 
     await db.transaction((txn) async {
-      await clearAllData(txn,
+      await restoreBackupInto(txn, data,
         includePrompts: includePrompts,
         includeUsage: includeUsage,
         includeDirectories: includeDirectories,
       );
-
-      final channelIdMap = await _importChannels(txn, data['llm_channels']);    
-      final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
-      final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
-
-      if (data['downloader_cookies'] != null) {
-        await _importSimpleTable(txn, 'downloader_cookies', data['downloader_cookies']);
-      }
-
-      if (includeUsage && data['token_usage'] != null) {
-        await _importTokenUsage(txn, data['token_usage'], modelIdMap);
-      }
-
-      if (includeUsage && data['usage_checkpoints'] != null) {
-        final checkpoints = (data['usage_checkpoints'] as List<dynamic>).map((row) {
-          return Map<String, dynamic>.from(row)..remove('id');
-        }).toList();
-        await _importSimpleTable(txn, 'usage_checkpoints', checkpoints);
-      }
-
-      if (includePrompts) {
-        final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
-        await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
-        await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);      
-      }
-
-      if (data['settings'] != null) {
-        final List<dynamic> settingsRows = data['settings'];
-        var filteredSettings = settingsRows;
-        if (!includeDirectories) {
-          final dirKeys = {'output_directory', 'browser_source_directories', 'browser_active_directories'};
-          filteredSettings = settingsRows.where((row) => !dirKeys.contains(row['key'])).toList();
-        }
-        await _importSimpleTable(txn, 'settings', filteredSettings);
-      }
-
-      if (includeDirectories && data['source_directories'] != null) {
-        await _importSimpleTable(txn, 'source_directories', data['source_directories']);
-      }
     });
+  }
+
+  /// Body of [restoreBackup], split out so it can run against any executor.
+  ///
+  /// Callers are responsible for the surrounding transaction and for validating
+  /// [data] first; [restoreBackup] does both.
+  @visibleForTesting
+  Future<void> restoreBackupInto(DatabaseExecutor txn, Map<String, dynamic> data, {
+    bool includePrompts = true,
+    bool includeUsage = true,
+    bool includeDirectories = true,
+  }) async {
+    // API keys are redacted on export, so carry the live ones across the wipe
+    // rather than overwriting working keys with the blanks from the file.
+    final preservedKeys = await _collectChannelKeys(txn);
+
+    await clearAllData(txn,
+      includePrompts: includePrompts,
+      includeUsage: includeUsage,
+      includeDirectories: includeDirectories,
+    );
+
+    final channelIdMap = await _importChannels(txn, data['llm_channels'], preservedKeys);
+    final pricingGroupIdMap = await _importPricingGroups(txn, data['fee_groups']);
+    final modelIdMap = await _importModels(txn, data['llm_models'], channelIdMap, pricingGroupIdMap);
+
+    if (data['downloader_cookies'] != null) {
+      await _importCookies(txn, data['downloader_cookies']);
+    }
+
+    if (includeUsage && data['token_usage'] != null) {
+      await _importTokenUsage(txn, data['token_usage'], modelIdMap);
+    }
+
+    if (includeUsage && data['usage_checkpoints'] != null) {
+      final checkpoints = (data['usage_checkpoints'] as List<dynamic>).map((row) {
+        return Map<String, dynamic>.from(row)..remove('id');
+      }).toList();
+      await _importSimpleTable(txn, 'usage_checkpoints', checkpoints);
+    }
+
+    if (includePrompts) {
+      final tagIdMap = await _importPromptTags(txn, data['prompt_tags'] ?? data['tags']);
+      await _importPrompts(txn, data['prompts'] ?? data['user_prompts'], tagIdMap);
+      await _importSystemPrompts(txn, data['system_prompts'], tagIdMap);
+    }
+
+    if (data['settings'] != null) {
+      final List<dynamic> settingsRows = data['settings'];
+      var filteredSettings = settingsRows;
+      if (!includeDirectories) {
+        filteredSettings = settingsRows.where((row) => !_directorySettingKeys.contains(row['key'])).toList();
+      }
+      await _importSimpleTable(txn, 'settings', filteredSettings);
+    }
+
+    if (includeDirectories && data['source_directories'] != null) {
+      await _importSimpleTable(txn, 'source_directories', data['source_directories']);
+    }
   }
 
   Future<void> importPromptData(Map<String, dynamic> data, {bool replace = false}) async {
     final db = await database;
     await db.transaction((txn) async {
-      if (replace) {
-        await txn.delete('prompts');
-        await txn.delete('prompt_tag_refs');
-        await txn.delete('system_prompts');
-        await txn.delete('prompt_tags');
-      }
-
-      // Import Tags first to get new IDs
-      final Map<int, int> tagIdMap = {};
-      if (data['tags'] != null) {
-        for (var t in data['tags']) {
-          final oldId = t['id'] as int;
-          final Map<String, dynamic> row = Map.from(t)..remove('id');
-          // Check if tag exists by name
-          final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
-          if (existing.isNotEmpty) {
-            tagIdMap[oldId] = existing.first['id'] as int;
-          } else {
-            final newId = await txn.insert('prompt_tags', row);
-            tagIdMap[oldId] = newId;
-          }
-        }
-      }
-
-      // Import User Prompts
-      if (data['user_prompts'] != null) {
-        for (var p in data['user_prompts']) {
-          final Map<String, dynamic> row = Map.from(p)..remove('id');
-          final List<dynamic>? tags = row['tags'];
-          row.remove('tags');
-          row.remove('tag_name');
-          row.remove('tag_color');
-          row.remove('tag_is_system');
-          row.remove('tag_id');
-
-          final newPromptId = await txn.insert('prompts', row);
-          if (tags != null) {
-            for (var t in tags) {
-              final oldTagId = t['id'] as int;
-              final newTagId = tagIdMap[oldTagId];
-              if (newTagId != null) {
-                await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
-              }
-            }
-          }
-        }
-      }
-
-      // Import System Prompts
-      if (data['system_prompts'] != null) {
-        for (var p in data['system_prompts']) {
-          final Map<String, dynamic> row = Map.from(p)..remove('id');
-          final List<dynamic>? tags = row['tags'];
-          row.remove('tags');
-
-          final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
-          if (existing.isNotEmpty) {
-            if (!replace) continue;
-            // Delete existing prompt and its tag refs when replacing
-            final existingId = existing.first['id'] as int;
-            await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [existingId]);
-            await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
-          }
-
-          final newPromptId = await txn.insert('system_prompts', row);
-          if (tags != null) {
-            for (var t in tags) {
-              final oldTagId = t['id'] as int;
-              final newTagId = tagIdMap[oldTagId];
-              if (newTagId != null) {
-                await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
-              }
-            }
-          }
-        }
-      }
+      await importPromptDataInto(txn, data, replace: replace);
     });
+  }
+
+  /// Body of [importPromptData], split out so it can run against any executor.
+  @visibleForTesting
+  Future<void> importPromptDataInto(DatabaseExecutor txn, Map<String, dynamic> data, {bool replace = false}) async {
+    if (replace) {
+      // `prompts.tag_id` references `prompt_tags`, so prompts must go first.
+      await txn.delete('prompts');
+      await txn.delete('prompt_tag_refs');
+      await txn.delete('system_prompts');
+      await txn.delete('prompt_tags');
+    }
+
+    // Import Tags first to get new IDs
+    final Map<int, int> tagIdMap = {};
+    if (data['tags'] != null) {
+      for (var t in data['tags']) {
+        final oldId = t['id'] as int;
+        final Map<String, dynamic> row = Map.from(t)..remove('id');
+        // Check if tag exists by name
+        final existing = await txn.query('prompt_tags', where: 'name = ?', whereArgs: [row['name']]);
+        if (existing.isNotEmpty) {
+          tagIdMap[oldId] = existing.first['id'] as int;
+        } else {
+          final newId = await txn.insert('prompt_tags', row);
+          tagIdMap[oldId] = newId;
+        }
+      }
+    }
+
+    // Import User Prompts
+    if (data['user_prompts'] != null) {
+      for (var p in data['user_prompts']) {
+        final Map<String, dynamic> row = Map.from(p)..remove('id');
+        final List<dynamic>? tags = row['tags'];
+        final originalTagId = row['tag_id'] as int?;
+        row.remove('tags');
+        row.remove('tag_name');
+        row.remove('tag_color');
+        row.remove('tag_is_system');
+        // Legacy column with a live foreign key: remap onto this database's
+        // tags, dropping the link when the tag did not come across.
+        row['tag_id'] = originalTagId == null ? null : tagIdMap[originalTagId];
+
+        final newPromptId = await txn.insert('prompts', row);
+        if (tags != null) {
+          for (var t in tags) {
+            final oldTagId = t['id'] as int;
+            final newTagId = tagIdMap[oldTagId];
+            if (newTagId != null) {
+              await txn.insert('prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+            }
+          }
+        }
+      }
+    }
+
+    // Import System Prompts
+    if (data['system_prompts'] != null) {
+      for (var p in data['system_prompts']) {
+        final Map<String, dynamic> row = Map.from(p)..remove('id');
+        final List<dynamic>? tags = row['tags'];
+        row.remove('tags');
+
+        final existing = await txn.query('system_prompts', where: 'title = ? AND type = ?', whereArgs: [row['title'], row['type']]);
+        if (existing.isNotEmpty) {
+          if (!replace) continue;
+          // Delete existing prompt and its tag refs when replacing
+          final existingId = existing.first['id'] as int;
+          await txn.delete('system_prompt_tag_refs', where: 'prompt_id = ?', whereArgs: [existingId]);
+          await txn.delete('system_prompts', where: 'id = ?', whereArgs: [existingId]);
+        }
+
+        final newPromptId = await txn.insert('system_prompts', row);
+        if (tags != null) {
+          for (var t in tags) {
+            final oldTagId = t['id'] as int;
+            final newTagId = tagIdMap[oldTagId];
+            if (newTagId != null) {
+              await txn.insert('system_prompt_tag_refs', {'prompt_id': newPromptId, 'tag_id': newTagId});
+            }
+          }
+        }
+      }
+    }
   }
 
   Future<void> _importTokenUsage(DatabaseExecutor txn, List<dynamic>? rows, Map<int, int> modelIdMap) async {
@@ -570,6 +681,13 @@ class DatabaseService {
       row.remove('tag_color');
       row.remove('tag_is_system');
 
+      // `tag_id` is a legacy column with a live foreign key. The exporter's tag
+      // ids are meaningless here, so remap them; an unknown tag becomes null
+      // rather than a dangling reference that would abort the restore.
+      if (originalTagId != null) {
+        row['tag_id'] = tagIdMap[originalTagId];
+      }
+
       final newPromptId = await txn.insert('prompts', row);
 
       if (tagsFromData != null) {
@@ -619,16 +737,55 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
-  Future<Map<int, int>> _importChannels(DatabaseExecutor txn, List<dynamic>? rows) async {
+  /// Identity of a channel across a wipe, since primary keys are reassigned.
+  String _channelIdentity(Map<String, dynamic> row) =>
+      '${row['type']} ${row['endpoint']} ${row['display_name']}';
+
+  /// Snapshot the API keys currently in the database, keyed by channel identity.
+  Future<Map<String, String>> _collectChannelKeys(DatabaseExecutor txn) async {
+    final rows = await txn.query('llm_channels',
+        columns: ['display_name', 'endpoint', 'type', 'api_key']);
+    final Map<String, String> keys = {};
+    for (final row in rows) {
+      final apiKey = row['api_key'] as String? ?? '';
+      if (apiKey.isEmpty) continue;
+      keys[_channelIdentity(row)] = apiKey;
+    }
+    return keys;
+  }
+
+  Future<Map<int, int>> _importChannels(
+    DatabaseExecutor txn,
+    List<dynamic>? rows,
+    Map<String, String> preservedKeys,
+  ) async {
     final Map<int, int> idMap = {};
     if (rows == null) return idMap;
     for (var c in rows) {
       final oldId = c['id'] as int;
       final Map<String, dynamic> row = Map.from(c)..remove('id');
+      // Redacted export: fall back to the key this machine already had.
+      if ((row['api_key'] as String? ?? '').isEmpty) {
+        row['api_key'] = preservedKeys[_channelIdentity(row)] ?? '';
+      }
       final newId = await txn.insert('llm_channels', row);
       idMap[oldId] = newId;
     }
     return idMap;
+  }
+
+  /// Merge cookies from a backup, keeping existing ones where the file is
+  /// redacted. `host` is a natural key, so rows are upserted rather than wiped.
+  Future<void> _importCookies(DatabaseExecutor txn, List<dynamic>? rows) async {
+    if (rows == null || rows.isEmpty) return;
+    final batch = txn.batch();
+    for (var r in rows) {
+      final Map<String, dynamic> row = Map<String, dynamic>.from(r as Map);
+      if ((row['cookies'] as String? ?? '').isEmpty) continue;
+      batch.insert('downloader_cookies', row,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<Map<int, int>> _importPricingGroups(DatabaseExecutor txn, List<dynamic>? rows) async {

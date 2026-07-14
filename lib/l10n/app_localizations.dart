@@ -2339,6 +2339,24 @@ abstract class AppLocalizations {
   /// **'Import & Replace'**
   String get importAndReplace;
 
+  /// No description provided for @importErrorPromptsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a prompt library export, not a full backup. Import it from the Prompts screen instead.'**
+  String get importErrorPromptsOnly;
+
+  /// No description provided for @importErrorNotABackup.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not a valid backup. Choose a file exported with Export Settings.'**
+  String get importErrorNotABackup;
+
+  /// No description provided for @importErrorNewerSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was created by a newer version of the app. Please update before importing it.'**
+  String get importErrorNewerSchema;
+
   /// No description provided for @importMode.
   ///
   /// In en, this message translates to:

@@ -1192,6 +1192,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get importAndReplace => 'インポートして置換';
 
   @override
+  String get importErrorPromptsOnly =>
+      'これはプロンプトライブラリのエクスポートファイルであり、完全なバックアップではありません。プロンプト画面からインポートしてください。';
+
+  @override
+  String get importErrorNotABackup =>
+      'このファイルは有効なバックアップではありません。「設定をエクスポート」で作成したファイルを選択してください。';
+
+  @override
+  String get importErrorNewerSchema =>
+      'このバックアップは新しいバージョンのアプリで作成されました。アプリを更新してからインポートしてください。';
+
+  @override
   String get importMode => 'インポートモード';
 
   @override

@@ -1187,6 +1187,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importAndReplace => '导入并替换';
 
   @override
+  String get importErrorPromptsOnly => '这是提示词库导出文件，不是完整备份。请在提示词页面导入。';
+
+  @override
+  String get importErrorNotABackup => '该文件不是有效的备份文件。请选择通过“导出设置”生成的文件。';
+
+  @override
+  String get importErrorNewerSchema => '该备份由更高版本的应用创建。请先升级应用后再导入。';
+
+  @override
   String get importMode => '导入模式';
 
   @override
@@ -3141,6 +3150,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get importAndReplace => '匯入並取代';
+
+  @override
+  String get importErrorPromptsOnly => '這是提示詞庫匯出檔案，不是完整備份。請在提示詞頁面匯入。';
+
+  @override
+  String get importErrorNotABackup => '該檔案不是有效的備份檔案。請選擇透過「匯出設定」產生的檔案。';
+
+  @override
+  String get importErrorNewerSchema => '該備份由更新版本的應用程式建立。請先升級應用程式後再匯入。';
 
   @override
   String get importMode => '匯入模式';
