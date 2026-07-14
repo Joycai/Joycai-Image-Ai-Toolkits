@@ -2,7 +2,7 @@
 
 Cross-platform Flutter desktop/mobile app for AI image processing with Google Gemini/Veo and OpenAI. Designed for artists and designers working with AI-generated media.
 
-**Version:** 3.1.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.44.2
+**Version:** 3.2.0 · **Dart SDK:** ^3.11.0 · **Tested on Flutter:** 3.44.2
 
 ## Key Commands
 
