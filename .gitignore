@@ -46,3 +46,4 @@ app.*.map.json
 
 # additional
 /feature_plan/
+/develop_src/
