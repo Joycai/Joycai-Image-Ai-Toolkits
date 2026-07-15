@@ -5,11 +5,12 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
 import 'usage_list.dart';
+import 'usage_range.dart';
 import 'usage_stats.dart';
 import 'usage_summary.dart';
 
-/// Mobile/narrow layout for the token-usage tab: preset chips, compact summary
-/// cards and a paged list.
+/// Mobile/narrow layout for the token-usage tab: a pinned filter bar over a
+/// single scroll of summary cards and records.
 class UsageViewMobile extends StatefulWidget {
   const UsageViewMobile({super.key});
 
@@ -27,10 +28,8 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
   int _currentPage = 0;
   static const int _pageSize = 50;
 
-  DateTimeRange _dateRange = DateTimeRange(
-    start: DateTime.now().subtract(const Duration(days: 7)),
-    end: DateTime.now(),
-  );
+  String _activePreset = 'week';
+  DateTimeRange _dateRange = usageRangeForPreset('week');
 
   @override
   void initState() {
@@ -96,26 +95,9 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
   }
 
   void _updateRange(String preset) {
-    final now = DateTime.now();
-    DateTime start;
-    switch (preset) {
-      case 'today':
-        start = DateTime(now.year, now.month, now.day);
-        break;
-      case 'week':
-        start = now.subtract(const Duration(days: 7));
-        break;
-      case 'month':
-        start = DateTime(now.year, now.month - 1, now.day);
-        break;
-      case 'year':
-        start = DateTime(now.year - 1, now.month, now.day);
-        break;
-      default:
-        start = now.subtract(const Duration(days: 7));
-    }
     setState(() {
-      _dateRange = DateTimeRange(start: start, end: now);
+      _dateRange = usageRangeForPreset(preset);
+      _activePreset = preset;
     });
     _loadData(reset: true);
   }
@@ -148,70 +130,89 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
-        // Filter Bar
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildPresetChip('today', l10n.today),
-                      const SizedBox(width: 4),
-                      _buildPresetChip('week', l10n.lastWeek),
-                      const SizedBox(width: 4),
-                      _buildPresetChip('month', l10n.lastMonth),
-                      const SizedBox(width: 4),
-                      _buildPresetChip('year', l10n.thisYear),
-                    ],
-                  ),
-                ),
-              ),
-              IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: () => _loadData(reset: true)),
-              IconButton(
-                icon: const Icon(Icons.delete_sweep_outlined, size: 20, color: Colors.red),
-                onPressed: _confirmClearAll,
-                tooltip: l10n.clearAll,
-              ),
-            ],
-          ),
-        ),
-
-        // Summary cards — the same component the desktop view uses, stacked.
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: UsageSummary(stats: _stats, compact: true),
-        ),
-
-        const SizedBox(height: 16),
-
+        _buildFilterBar(l10n),
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : UsageList(
-                  usageData: _pagedUsageData,
-                  onRefresh: () => _loadData(reset: true),
-                  hasMore: _hasMore,
-                  isLoadingMore: _isLoadingMore,
-                  onLoadMore: () => _loadData(),
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: UsageSummary(
+                          stats: _stats,
+                          rangeLabel: usagePresetLabel(l10n, _activePreset),
+                          compact: true,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Records step up a tone for the same reason the compact
+                      // summary cards do: this view is hosted on a card at
+                      // tablet width, and surface on surface has no edge.
+                      Material(
+                        color: colorScheme.surfaceContainerHigh,
+                        child: UsageList(
+                          usageData: _pagedUsageData,
+                          onRefresh: () => _loadData(reset: true),
+                          hasMore: _hasMore,
+                          isLoadingMore: _isLoadingMore,
+                          onLoadMore: () => _loadData(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
         ),
       ],
     );
   }
 
-  Widget _buildPresetChip(String id, String label) {
-    return ActionChip(
+  Widget _buildFilterBar(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final preset in usagePresets) ...[
+                    _buildPresetChip(preset, usagePresetLabel(l10n, preset)),
+                    const SizedBox(width: 4),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            onPressed: _isLoading ? null : () => _loadData(reset: true),
+            tooltip: l10n.refresh,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined, size: 20, color: Colors.red),
+            onPressed: _confirmClearAll,
+            tooltip: l10n.clearAll,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Selectable, not just tappable: the chips are the only thing on this view
+  /// that says which range every number below them covers.
+  Widget _buildPresetChip(String preset, String label) {
+    return ChoiceChip(
       label: Text(label, style: const TextStyle(fontSize: 11)),
-      onPressed: () => _updateRange(id),
+      selected: _activePreset == preset,
+      onSelected: (_) => _updateRange(preset),
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
     );
   }
-
 }

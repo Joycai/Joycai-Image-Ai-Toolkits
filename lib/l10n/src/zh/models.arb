@@ -161,6 +161,7 @@
   "bindTag": "绑定标签",
   "previewReady": "准备好添加此渠道了吗？",
   "feeGroupDesc": "定义模型的计费标准，以便准确计算使用成本。",
+  "feeGroupEditorSubtitle": "配置模型的计费标准",
   "noFeeGroups": "尚未创建费率组",
   "pricePerMillion": "每百万 Token 价格",
   "pricePerRequest": "单次请求价格",

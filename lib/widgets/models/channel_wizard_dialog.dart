@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../app_segmented_control.dart';
 import 'channel_form_sections.dart';
 
 /// A provider preset selectable on the wizard's first step. Merges the old
@@ -572,23 +573,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               style:
                   const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          SegmentedButton<String>(
-            showSelectedIcon: false,
+          AppSegmentedControl<String>(
             segments: [
-              ButtonSegment(
-                value: ChannelDialect.openAIRest,
-                label: Text(l10n.protocolOpenAI,
-                    style: const TextStyle(fontSize: 12)),
-              ),
-              ButtonSegment(
-                value: ChannelDialect.googleRest,
-                label: Text(l10n.protocolGoogle,
-                    style: const TextStyle(fontSize: 12)),
-              ),
+              AppSegment(value: ChannelDialect.openAIRest, label: l10n.protocolOpenAI),
+              AppSegment(value: ChannelDialect.googleRest, label: l10n.protocolGoogle),
             ],
-            selected: {_customProtocol},
-            onSelectionChanged: (v) =>
-                setState(() => _customProtocol = v.first),
+            value: _customProtocol,
+            onChanged: (v) => setState(() => _customProtocol = v),
+            expand: true,
           ),
           const SizedBox(height: 20),
         ],

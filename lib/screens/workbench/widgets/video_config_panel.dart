@@ -12,6 +12,7 @@ import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
@@ -423,20 +424,16 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           },
         );
       case ParamControl.segmented:
-        return SegmentedButton<String>(
-          showSelectedIcon: false,
-          style: SegmentedButton.styleFrom(
-            visualDensity: VisualDensity.compact,
-            textStyle: const TextStyle(fontSize: 10),
-          ),
+        return AppSegmentedControl<String>(
           segments: spec.options
-              .map((o) => ButtonSegment(
+              .map((o) => AppSegment(
                     value: o.value,
-                    label: Text(_videoOptionLabel(l10n, spec.key, o.value)),
+                    label: _videoOptionLabel(l10n, spec.key, o.value),
                   ))
               .toList(),
-          selected: {current},
-          onSelectionChanged: (v) => appState.setVideoParam(modelId, spec.key, v.first),
+          value: current,
+          onChanged: (v) => appState.setVideoParam(modelId, spec.key, v),
+          compact: true,
         );
       case ParamControl.customSize:
         // Not currently used by any video family — video panels render their

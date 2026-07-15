@@ -18,5 +18,13 @@
   "clearDataForModel": "要清除 {modelId} 的資料嗎？",
   "clearModelDataWarning": "這將刪除與模型「{modelId}」相關的所有用量記錄。",
   "clearModelData": "清除模型資料",
-  "usageByGroup": "按群組分類的用量"
+  "usageByGroup": "按群組分類的用量",
+  "usageColumnDetail": "明細",
+  "usageColumnTime": "時間",
+  "usageColumnCost": "成本",
+  "yesterday": "昨天",
+  "usageRecordCount": "{count} 筆",
+  "usageItemCount": "{count} 項",
+  "noUsageInRange": "所選時間範圍內沒有用量資料。",
+  "loadMore": "載入更多"
 }

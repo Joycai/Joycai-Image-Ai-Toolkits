@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -331,7 +332,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   onPressed: () => widget.onApplyPrompt(entry.text),
                   icon: const Icon(Icons.check, size: 15),
                   label: Text(l10n.apply, style: const TextStyle(fontSize: 12)),
-                  style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                  style: tonalButtonStyle(Theme.of(context).colorScheme)
+                      .copyWith(visualDensity: VisualDensity.compact),
                 ),
               ],
             ),

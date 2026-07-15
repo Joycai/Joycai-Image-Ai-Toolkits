@@ -1,34 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/fee_group_palette.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pricing_group.dart';
 import '../state/app_state.dart';
+import 'app_icon_button.dart';
+import 'app_segmented_control.dart';
 
 enum PricingGroupManagerMode {
   section,
   fullPage
 }
 
-/// Accent colors for the three token price kinds. Deliberately the same hues the
-/// usage screens use for their input / cache / output stats, so a price here and
-/// a token count there read as the same thing.
+/// Accent colors for the three token price kinds, used by the editor's price
+/// fields. Deliberately the same hues the usage screens use for their input /
+/// cache / output stats, so a rate here and a token count there read as the
+/// same thing.
 const Color _inputAccent = Colors.blue;
 const Color _cacheAccent = Colors.teal;
 const Color _outputAccent = Colors.green;
 const Color _requestAccent = Colors.purple;
 
-/// Below this width a group row stacks its prices under the name instead of
-/// lining them up beside it.
-const double _compactWidth = 620;
+/// Narrowest a group card gets before its name starts truncating.
+const double _minCardWidth = 320;
+const double _cardSpacing = 12;
 
 /// Lists fee groups and hosts their editor.
 ///
-/// Groups render as full-width rows rather than a card grid: a group is little
-/// more than a name and three short numbers, so rows keep the prices aligned in
-/// scannable columns and give long names room, where fixed-height cards clipped
-/// them.
+/// A group is a name, a billing mode, the models it prices and up to three
+/// rates — more than a row can line up in columns without either squeezing the
+/// names or hiding the models behind a tooltip. Each group gets a card, and its
+/// identity colour ([feeGroupAccent]) is the same one its bar carries in the
+/// usage tab, so the expensive bar there is findable here.
 class PricingGroupManager extends StatelessWidget {
   final PricingGroupManagerMode mode;
 
@@ -106,67 +111,78 @@ class PricingGroupManager extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(
-                l10n.feeGroupDesc,
-                style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Named again under the tab that already names it: the tab is
+                  // where you were going, this is the top of what you found —
+                  // and it is what the button on the right adds to.
+                  Text(
+                    l10n.feeGroups,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    l10n.feeGroupDesc,
+                    style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton.tonalIcon(
+            FilledButton.icon(
               onPressed: () => _showGroupEditor(context, appState, l10n),
               icon: const Icon(Icons.add, size: 18),
               label: Text(l10n.addFeeGroup),
-              style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         list,
       ],
     );
   }
 
-  /// The rows, hosted on a bordered Material so ink splashes clip to the
-  /// rounded corners instead of painting on the card behind.
+  /// The cards, in as many columns as fit.
   Widget _buildList(BuildContext context, List<PricingGroup> groups, AppState appState, AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
     final modelsByGroup = _modelsByGroup(appState);
 
-    return Material(
-      color: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(90)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < _compactWidth;
-          return Column(
-            children: [
-              for (var i = 0; i < groups.length; i++) ...[
-                if (i > 0) Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(70)),
-                _buildGroupRow(
-                  context,
-                  groups[i],
-                  appState,
-                  l10n,
-                  models: modelsByGroup[groups[i].id] ?? const [],
-                  compact: compact,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Capped at four: wider than that a card is mostly empty space between
+        // a short name and three short numbers.
+        final columns = ((constraints.maxWidth + _cardSpacing) / (_minCardWidth + _cardSpacing))
+            .floor()
+            .clamp(1, 4);
+        final cardWidth = (constraints.maxWidth - _cardSpacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: _cardSpacing,
+          runSpacing: _cardSpacing,
+          children: [
+            for (final group in groups)
+              SizedBox(
+                width: cardWidth,
+                child: _GroupCard(
+                  group: group,
+                  models: modelsByGroup[group.id] ?? const [],
+                  onEdit: () => _showGroupEditor(context, appState, l10n, group: group),
+                  onDelete: () => _confirmDelete(context, appState, l10n, group),
                 ),
-              ],
-            ],
-          );
-        },
-      ),
+              ),
+          ],
+        );
+      },
     );
   }
 
   /// Display names of the models pointing at each group, by group id.
   ///
-  /// A group only means something through the models it prices, so the row
+  /// A group only means something through the models it prices, so the card
   /// says which ones — and a group no model uses says that, which is otherwise
   /// invisible from this screen.
   Map<int, List<String>> _modelsByGroup(AppState appState) {
@@ -178,232 +194,6 @@ class PricingGroupManager extends StatelessWidget {
       }
     }
     return map;
-  }
-
-  Widget _buildGroupRow(
-    BuildContext context,
-    PricingGroup group,
-    AppState appState,
-    AppLocalizations l10n, {
-    required List<String> models,
-    required bool compact,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isToken = group.billingMode == 'token';
-    final accent = isToken ? _inputAccent : _requestAccent;
-
-    final identity = Row(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: accent.withAlpha(25),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(isToken ? Icons.token_outlined : Icons.ads_click, size: 19, color: accent),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                group.name,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isToken ? l10n.tokenBilling : l10n.requestBilling,
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    final actions = IconButton(
-      icon: const Icon(Icons.delete_outline, size: 18),
-      visualDensity: VisualDensity.compact,
-      tooltip: l10n.delete,
-      onPressed: () => _confirmDelete(context, appState, l10n, group),
-    );
-
-    final prices = _buildPrices(context, group, l10n, compact: compact);
-    final consumers = _buildConsumers(context, models, l10n);
-
-    return InkWell(
-      onTap: () => _showGroupEditor(context, appState, l10n, group: group),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 12 : 10),
-        child: compact
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [Expanded(child: identity), actions]),
-                  const SizedBox(height: 8),
-                  consumers,
-                  const SizedBox(height: 10),
-                  prices,
-                ],
-              )
-            : Row(
-                children: [
-                  Expanded(flex: 4, child: identity),
-                  const SizedBox(width: 16),
-                  // The gap between a name and its prices used to be air. The
-                  // row is wide because this fills it, not the other way round.
-                  Expanded(flex: 4, child: consumers),
-                  const SizedBox(width: 16),
-                  Expanded(flex: 5, child: Align(alignment: Alignment.centerRight, child: prices)),
-                  const SizedBox(width: 8),
-                  actions,
-                ],
-              ),
-      ),
-    );
-  }
-
-  /// The models billed by this group: a count, and as many names as fit.
-  Widget _buildConsumers(BuildContext context, List<String> models, AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (models.isEmpty) {
-      // Worth saying out loud: an orphaned group prices nothing, and nothing
-      // else on this screen would ever tell you.
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.link_off, size: 13, color: colorScheme.outline),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              l10n.feeGroupUnused,
-              style: TextStyle(
-                fontSize: 11,
-                color: colorScheme.outline,
-                fontStyle: FontStyle.italic,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Tooltip(
-      message: models.join('\n'),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.memory_outlined, size: 13, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.feeGroupModelCount(models.length),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  models.join(', '),
-                  style: TextStyle(fontSize: 10.5, color: colorScheme.outline),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPrices(BuildContext context, PricingGroup group, AppLocalizations l10n, {required bool compact}) {
-    if (group.billingMode != 'token') {
-      return Wrap(
-        alignment: compact ? WrapAlignment.start : WrapAlignment.end,
-        children: [
-          _pricePill(context, l10n.priceLabelRequest, group.requestPrice, _requestAccent, unit: 'Req'),
-        ],
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: compact ? WrapAlignment.start : WrapAlignment.end,
-      children: [
-        _pricePill(context, l10n.priceLabelInput, group.inputPrice, _inputAccent),
-        // Always shown, even when unset: an inherited rate is still the rate the
-        // user gets billed, so hiding it would just raise the question.
-        _pricePill(
-          context,
-          l10n.priceLabelCache,
-          group.effectiveCacheInputPrice,
-          _cacheAccent,
-          inherited: group.cacheInputPrice == null,
-          tooltip: group.cacheInputPrice == null ? l10n.cachePriceFollowsInput : null,
-        ),
-        _pricePill(context, l10n.priceLabelOutput, group.outputPrice, _outputAccent),
-      ],
-    );
-  }
-
-  /// One price chip. [inherited] renders the value muted — it is not configured
-  /// on this group, it is following the input price.
-  Widget _pricePill(
-    BuildContext context,
-    String label,
-    double price,
-    Color accent, {
-    String unit = 'M',
-    bool inherited = false,
-    String? tooltip,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = inherited ? colorScheme.outline : accent;
-
-    final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withAlpha(inherited ? 12 : 22),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '\$${price.toStringAsFixed(4)}/$unit',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'monospace',
-              fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
-              color: inherited ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    return tooltip == null ? pill : Tooltip(message: tooltip, child: pill);
   }
 
   Widget _buildEmptyState(BuildContext context, AppState appState, AppLocalizations l10n) {
@@ -479,6 +269,305 @@ class PricingGroupManager extends StatelessWidget {
   }
 }
 
+/// One fee group. Tap anywhere to edit; the delete button waits for hover so
+/// the card's face stays the group rather than the controls for it.
+class _GroupCard extends StatefulWidget {
+  final PricingGroup group;
+  final List<String> models;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _GroupCard({
+    required this.group,
+    required this.models,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_GroupCard> createState() => _GroupCardState();
+}
+
+class _GroupCardState extends State<_GroupCard> {
+  bool _hovering = false;
+
+  bool get _isToken => widget.group.billingMode == 'token';
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final accent = feeGroupAccent(widget.group.id);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: Material(
+        color: colorScheme.surfaceContainerHigh,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: _hovering ? accent.withAlpha(120) : colorScheme.outlineVariant.withAlpha(90),
+          ),
+        ),
+        child: InkWell(
+          onTap: widget.onEdit,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // The group's colour, along the top edge where it can be picked
+              // out from across the grid without tinting the card's contents.
+              Container(height: 3, color: accent),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildIdentity(colorScheme, l10n, accent),
+                    const SizedBox(height: 10),
+                    _buildConsumers(colorScheme, l10n),
+                    const SizedBox(height: 12),
+                    Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(90)),
+                    const SizedBox(height: 12),
+                    // A floor, not a height: everything above this line is
+                    // one line tall, so the price block is the only reason two
+                    // cards in a row would end at different heights — a
+                    // request group's single rate is shorter than a token
+                    // group's three stacked ones.
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 38),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildPrices(colorScheme, l10n),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdentity(ColorScheme colorScheme, AppLocalizations l10n, Color accent) {
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: accent.withAlpha(35),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(_isToken ? Icons.token_outlined : Icons.ads_click, size: 18, color: accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.group.name,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  _buildModeBadge(l10n, accent),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      l10n.feeGroupModelCount(widget.models.length),
+                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Reserved, not conjured on hover: a button that appears from nowhere
+        // would reflow the name it sits beside.
+        SizedBox(
+          width: 28,
+          child: _hovering
+              ? IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 17),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: l10n.delete,
+                  onPressed: widget.onDelete,
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModeBadge(AppLocalizations l10n, Color accent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: accent.withAlpha(30),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        _isToken ? l10n.tokenBilling : l10n.requestBilling,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: accent),
+      ),
+    );
+  }
+
+  /// The models this group bills.
+  Widget _buildConsumers(ColorScheme colorScheme, AppLocalizations l10n) {
+    if (widget.models.isEmpty) {
+      // Worth saying out loud: an orphaned group prices nothing, and nothing
+      // else on this screen would ever tell you.
+      return Row(
+        children: [
+          Icon(Icons.link_off, size: 13, color: colorScheme.outline),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              l10n.feeGroupUnused,
+              style: TextStyle(
+                fontSize: 11,
+                color: colorScheme.outline,
+                fontStyle: FontStyle.italic,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Tooltip(
+      message: widget.models.join('\n'),
+      child: Text(
+        widget.models.join(', '),
+        style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: colorScheme.outline),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildPrices(ColorScheme colorScheme, AppLocalizations l10n) {
+    final group = widget.group;
+
+    if (!_isToken) {
+      return Row(
+        children: [
+          Text(
+            l10n.priceLabelRequest,
+            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+          ),
+          const Spacer(),
+          _priceValue(colorScheme, group.requestPrice, unit: 'Req', large: true),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _priceColumn(colorScheme, l10n.priceLabelInput, group.inputPrice),
+        _priceColumn(
+          colorScheme,
+          l10n.priceLabelCache,
+          group.effectiveCacheInputPrice,
+          // Always shown, even when unset: an inherited rate is still the rate
+          // the user gets billed, so hiding it would just raise the question.
+          inherited: group.cacheInputPrice == null,
+          tooltip: group.cacheInputPrice == null ? l10n.cachePriceFollowsInput : null,
+        ),
+        _priceColumn(colorScheme, l10n.priceLabelOutput, group.outputPrice),
+      ],
+    );
+  }
+
+  /// One rate under its name. [inherited] renders the value muted — it is not
+  /// configured on this group, it is following the input price.
+  Widget _priceColumn(
+    ColorScheme colorScheme,
+    String label,
+    double price, {
+    bool inherited = false,
+    String? tooltip,
+  }) {
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 10.5, color: colorScheme.onSurfaceVariant),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 3),
+        _priceValue(colorScheme, price, inherited: inherited),
+      ],
+    );
+
+    return Expanded(child: tooltip == null ? column : Tooltip(message: tooltip, child: column));
+  }
+
+  Widget _priceValue(
+    ColorScheme colorScheme,
+    double price, {
+    String unit = 'M',
+    bool large = false,
+    bool inherited = false,
+  }) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      // One Text, two spans: the unit is smaller than the rate but part of the
+      // same number, and two Texts in a Row would let a line break fall between
+      // them.
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '\$${price.toStringAsFixed(4)}'),
+            // A rate with no unit is not a rate: $0.78 per million tokens and
+            // $0.78 per request differ by six orders of magnitude, and the
+            // number alone cannot say which it is.
+            TextSpan(
+              text: '/$unit',
+              style: TextStyle(
+                fontSize: large ? 10 : 9,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: large ? 16 : 12.5,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'monospace',
+          fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
+          color: inherited ? colorScheme.outline : colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
 class _PricingGroupEditor extends StatefulWidget {
   final AppState appState;
   final AppLocalizations l10n;
@@ -539,9 +628,11 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
 
   bool get _isToken => billingMode == 'token';
 
-  /// Accent for the current mode — the same one the group's row and icon tile
-  /// use in the list, so the editor reads as that row opened up.
-  Color get _modeAccent => _isToken ? _inputAccent : _requestAccent;
+  /// The group's own colour, so the editor reads as the card you clicked,
+  /// opened up. A group being added has no identity yet — nothing to match, so
+  /// it borrows the app's.
+  Color _accent(ColorScheme colorScheme) =>
+      widget.group == null ? colorScheme.primary : feeGroupAccent(widget.group!.id);
 
   @override
   Widget build(BuildContext context) {
@@ -603,44 +694,53 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
 
   Widget _buildHeader(ColorScheme colorScheme) {
     final l10n = widget.l10n;
-    final accent = _modeAccent;
+    final accent = _accent(colorScheme);
+    final isAdd = widget.group == null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 10, 14),
+      padding: const EdgeInsets.fromLTRB(20, 16, 14, 16),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: accent.withAlpha(25),
+              color: accent.withAlpha(35),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(_isToken ? Icons.token_outlined : Icons.ads_click, size: 21, color: accent),
+            child: Icon(isAdd ? Icons.add_moderator : Icons.shield_outlined, size: 22, color: accent),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.group == null ? l10n.addFeeGroup : l10n.editFeeGroup,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  isAdd ? l10n.addFeeGroup : l10n.editFeeGroup,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
+                // What the dialog is for, not which mode is selected: the mode
+                // is a control 100px below, and a header that echoes it says
+                // nothing the user cannot already see and change.
                 Text(
-                  _isToken ? l10n.tokenBilling : l10n.requestBilling,
-                  style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                  l10n.feeGroupEditorSubtitle,
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
+          const SizedBox(width: 8),
+          AppIconButton(
+            icon: Icons.close,
+            tooltip: l10n.cancel,
+            size: 34,
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -658,56 +758,41 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader(l10n.basicInfo),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         TextField(
           controller: nameCtrl,
+          style: const TextStyle(fontWeight: FontWeight.w600),
           decoration: InputDecoration(
-            labelText: l10n.groupName,
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.label_outline),
+            // A hint, not a label: under a "Basic Info" heading with a tag
+            // icon in the field, a floating "Group Name" label only crowds the
+            // name it is labelling.
+            hintText: l10n.groupName,
+            hintStyle: TextStyle(color: colorScheme.outline, fontWeight: FontWeight.w400),
+            border: _fieldBorder(colorScheme),
+            enabledBorder: _fieldBorder(colorScheme),
+            focusedBorder: _fieldBorder(colorScheme, color: colorScheme.primary, width: 2),
+            prefixIcon: Icon(Icons.label_outline, size: 19, color: colorScheme.onSurfaceVariant),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          l10n.billingMode,
-          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 22),
+        _sectionHeader(l10n.billingMode),
+        const SizedBox(height: 12),
         // Segmented rather than a dropdown: there are only two modes and each
         // one rewrites the price fields below, so the choice should be visible
         // next to what it changes instead of hidden behind a menu.
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<String>(
-            segments: [
-              ButtonSegment(
-                value: 'token',
-                icon: const Icon(Icons.token_outlined, size: 17),
-                label: Text(l10n.perToken, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-              ButtonSegment(
-                value: 'request',
-                icon: const Icon(Icons.ads_click, size: 17),
-                label: Text(l10n.perRequest, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-            ],
-            selected: {billingMode},
-            onSelectionChanged: (s) => setState(() => billingMode = s.first),
-            showSelectedIcon: false,
-            style: ButtonStyle(
-              // Copied off the theme rather than built from scratch: this
-              // replaces the button's whole text style, and the app's font is
-              // user-selectable, so a bare TextStyle would drop it.
-              textStyle: WidgetStatePropertyAll(
-                Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
+        AppSegmentedControl<String>(
+          segments: [
+            AppSegment(value: 'token', label: l10n.perToken, icon: Icons.token_outlined),
+            AppSegment(value: 'request', label: l10n.perRequest, icon: Icons.ads_click),
+          ],
+          value: billingMode,
+          onChanged: (mode) => setState(() => billingMode = mode),
+          expand: true,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
         _sectionHeader(l10n.priceConfig),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         if (_isToken) ...[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,7 +820,18 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     );
   }
 
-  /// A price input styled as the editable twin of its pill in the group row:
+  /// The rounded outline every field in this editor wears.
+  OutlineInputBorder _fieldBorder(ColorScheme colorScheme, {Color? color, double width = 1}) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: color ?? colorScheme.outlineVariant.withAlpha(120),
+        width: width,
+      ),
+    );
+  }
+
+  /// A price input styled as the editable twin of its column on the group card:
   /// same accent, same icon, same monospace number.
   Widget _buildPriceField(
     TextEditingController ctrl,
@@ -751,44 +847,48 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600, fontSize: 14),
+      style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 17),
       decoration: InputDecoration(
         labelText: label,
-        border: const OutlineInputBorder(),
-        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: accent, width: 2)),
-        floatingLabelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700),
-        prefixIcon: Icon(icon, size: 18, color: accent),
-        prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        // Always up, never sitting in the field: the label rides the border so
+        // the rate below it has the whole field to itself, and an empty cache
+        // field still says which rate it is empty of.
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        border: _fieldBorder(colorScheme),
+        enabledBorder: _fieldBorder(colorScheme),
+        focusedBorder: _fieldBorder(colorScheme, color: accent, width: 2),
+        labelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 15),
+        floatingLabelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 15),
+        prefixIcon: Icon(icon, size: 19, color: accent),
+        prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
         hintText: hintText,
         hintStyle: TextStyle(
           fontFamily: 'monospace',
           fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
           color: colorScheme.outline,
         ),
         helperText: helperText,
         helperMaxLines: 2,
+        helperStyle: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant),
         suffixText: suffix,
-        suffixStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
+        suffixStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       ),
     );
   }
 
+  /// Names a group of fields. No rule under it and no shouting: it is a label
+  /// on the form, not a heading competing with the dialog's own title.
   Widget _sectionHeader(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Divider(height: 1),
-      ],
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 

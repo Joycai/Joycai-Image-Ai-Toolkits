@@ -32,5 +32,27 @@
     }
   },
   "clearModelData": "Clear Model Data",
-  "usageByGroup": "Usage by Group"
+  "usageByGroup": "Usage by Group",
+  "usageColumnDetail": "Detail",
+  "usageColumnTime": "Time",
+  "usageColumnCost": "Cost",
+  "yesterday": "Yesterday",
+  "usageRecordCount": "{count} records",
+  "@usageRecordCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usageItemCount": "{count} items",
+  "@usageItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noUsageInRange": "No usage data in the selected range.",
+  "loadMore": "Load More"
 }

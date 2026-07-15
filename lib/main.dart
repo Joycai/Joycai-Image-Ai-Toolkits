@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import 'core/app_theme.dart';
 import 'core/responsive.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
@@ -81,14 +82,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       locale: locale,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.light),
+      theme: buildAppTheme(
+        seedColor: themeSeedColor,
+        brightness: Brightness.light,
         fontFamily: fontFamily,
       ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: themeSeedColor, brightness: Brightness.dark),
+      darkTheme: buildAppTheme(
+        seedColor: themeSeedColor,
+        brightness: Brightness.dark,
         fontFamily: fontFamily,
       ),
       localizationsDelegates: const [

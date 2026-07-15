@@ -496,6 +496,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usageByGroup => 'Usage by Group';
 
   @override
+  String get usageColumnDetail => 'Detail';
+
+  @override
+  String get usageColumnTime => 'Time';
+
+  @override
+  String get usageColumnCost => 'Cost';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String usageRecordCount(int count) {
+    return '$count records';
+  }
+
+  @override
+  String usageItemCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get noUsageInRange => 'No usage data in the selected range.';
+
+  @override
+  String get loadMore => 'Load More';
+
+  @override
   String get models => 'Models';
 
   @override
@@ -859,6 +887,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get feeGroupDesc =>
       'Define billing standards for models to accurately calculate usage costs.';
+
+  @override
+  String get feeGroupEditorSubtitle => 'Configure how a model is billed';
 
   @override
   String get noFeeGroups => 'No fee groups created yet';

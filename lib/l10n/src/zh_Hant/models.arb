@@ -112,6 +112,7 @@
   "bindTag": "綁定標籤",
   "previewReady": "準備好新增此通道了嗎？",
   "feeGroupDesc": "定義模型的計費標準，以準確計算使用成本。",
+  "feeGroupEditorSubtitle": "設定模型的計費標準",
   "noFeeGroups": "尚未建立費用群組",
   "pricePerMillion": "每百萬 Token 價格",
   "pricePerRequest": "每次請求價格",

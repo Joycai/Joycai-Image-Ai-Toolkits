@@ -4,6 +4,7 @@ import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
 import '../services/font_service.dart';
 import '../state/app_state.dart';
+import 'app_segmented_control.dart';
 
 class ThemeSelector extends StatelessWidget {
   final AppState appState;
@@ -26,17 +27,15 @@ class ThemeSelector extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 500),
           child: SizedBox(
             width: double.infinity,
-            child: SegmentedButton<ThemeMode>(
+            child: AppSegmentedControl<ThemeMode>(
               segments: [
-                ButtonSegment(value: ThemeMode.system, label: Text(l10n.themeAuto), icon: const Icon(Icons.brightness_auto, size: 18)),
-                ButtonSegment(value: ThemeMode.light, label: Text(l10n.themeLight), icon: const Icon(Icons.light_mode, size: 18)),
-                ButtonSegment(value: ThemeMode.dark, label: Text(l10n.themeDark), icon: const Icon(Icons.dark_mode, size: 18)),
+                AppSegment(value: ThemeMode.system, label: l10n.themeAuto, icon: Icons.brightness_auto),
+                AppSegment(value: ThemeMode.light, label: l10n.themeLight, icon: Icons.light_mode),
+                AppSegment(value: ThemeMode.dark, label: l10n.themeDark, icon: Icons.dark_mode),
               ],
-              selected: {appState.themeMode},
-              showSelectedIcon: false,
-              onSelectionChanged: (Set<ThemeMode> newSelection) {
-                appState.setThemeMode(newSelection.first);
-              },
+              value: appState.themeMode,
+              onChanged: appState.setThemeMode,
+              expand: true,
             ),
           ),
         ),

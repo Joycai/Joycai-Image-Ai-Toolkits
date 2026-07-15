@@ -487,6 +487,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get usageByGroup => 'グループ別の使用状況';
 
   @override
+  String get usageColumnDetail => '内訳';
+
+  @override
+  String get usageColumnTime => '時刻';
+
+  @override
+  String get usageColumnCost => 'コスト';
+
+  @override
+  String get yesterday => '昨日';
+
+  @override
+  String usageRecordCount(int count) {
+    return '$count 件';
+  }
+
+  @override
+  String usageItemCount(int count) {
+    return '$count 項目';
+  }
+
+  @override
+  String get noUsageInRange => '選択した期間の使用状況データはありません。';
+
+  @override
+  String get loadMore => 'さらに読み込む';
+
+  @override
   String get models => 'モデル';
 
   @override
@@ -841,6 +869,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get feeGroupDesc => 'モデルの請求基準を定義して、使用コストを正確に計算します。';
+
+  @override
+  String get feeGroupEditorSubtitle => 'モデルの請求基準を設定します';
 
   @override
   String get noFeeGroups => 'まだ料金グループが作成されていません';

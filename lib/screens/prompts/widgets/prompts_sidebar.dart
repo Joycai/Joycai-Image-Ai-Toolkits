@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
+import '../../../widgets/app_segmented_control.dart';
 
 class PromptsSidebar extends StatelessWidget {
   final List<PromptTag> tags;
@@ -45,13 +46,14 @@ class PromptsSidebar extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            // A quiet label over the list, not a heading competing with the
+            // panel's own title two rows above it.
             child: Text(
-              l10n.categoriesTab.toUpperCase(),
+              l10n.categoriesTab,
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-                fontSize: 12,
-                letterSpacing: 1.2,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12.5,
               ),
             ),
           ),
@@ -100,19 +102,15 @@ class PromptsSidebar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: SegmentedButton<bool>(
-                      style: ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
-                      ),
+                    child: AppSegmentedControl<bool>(
                       segments: [
-                        ButtonSegment(value: false, label: Text(l10n.matchAny)),
-                        ButtonSegment(value: true, label: Text(l10n.matchAllTags)),
+                        AppSegment(value: false, label: l10n.matchAny),
+                        AppSegment(value: true, label: l10n.matchAllTags),
                       ],
-                      selected: {matchAll},
-                      onSelectionChanged: (s) => onMatchModeChanged!(s.first),
-                      showSelectedIcon: false,
+                      value: matchAll,
+                      onChanged: onMatchModeChanged!,
+                      expand: true,
+                      compact: true,
                     ),
                   ),
                 ],
