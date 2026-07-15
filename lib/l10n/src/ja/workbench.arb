@@ -360,9 +360,16 @@
       }
     }
   },
-  "kbScaffoldCreate": "サンプルナレッジベースを作成",
-  "kbScaffoldFill": "不足しているサンプルファイルを追加",
-  "kbScaffoldConfirm": "{path} にサンプルナレッジベースのファイルを作成します。既存のファイルが上書きされることはありません。続行しますか？",
+  "kbScaffoldAlreadyInit": "初期化済みです。このフォルダには {name} があり、変更されません。",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "初期化",
+  "kbScaffoldConfirm": "{path} をナレッジベースとして初期化します。サンプルのルールファイルが作成されます。続行しますか？",
   "@kbScaffoldConfirm": {
     "placeholders": {
       "path": {
@@ -370,18 +377,14 @@
       }
     }
   },
-  "kbScaffoldDone": "ナレッジベースの準備が完了しました：{created} 件作成、{skipped} 件スキップ。",
+  "kbScaffoldDone": "ナレッジベースを初期化しました：{created} 件作成。",
   "@kbScaffoldDone": {
     "placeholders": {
       "created": {
         "type": "int"
-      },
-      "skipped": {
-        "type": "int"
       }
     }
   },
-  "kbScaffoldNoop": "作成するものはありません。サンプルファイルはすべて存在します。",
   "kbScaffoldFailed": "ナレッジベースを作成できませんでした：{error}",
   "@kbScaffoldFailed": {
     "placeholders": {

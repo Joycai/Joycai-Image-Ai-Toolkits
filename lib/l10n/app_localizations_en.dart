@@ -2263,24 +2263,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get kbScaffoldCreate => 'Create sample knowledge base';
+  String kbScaffoldAlreadyInit(String name) {
+    return 'Already initialized — this folder has a $name and will not be touched.';
+  }
 
   @override
-  String get kbScaffoldFill => 'Add missing sample files';
+  String get kbScaffoldCreate => 'Initialize knowledge base';
 
   @override
   String kbScaffoldConfirm(String path) {
-    return 'Create sample knowledge base files in $path? Existing files are never overwritten.';
+    return 'Initialize $path as a knowledge base? Sample rule files will be created there.';
   }
 
   @override
-  String kbScaffoldDone(int created, int skipped) {
-    return 'Knowledge base ready: $created file(s) created, $skipped skipped.';
+  String kbScaffoldDone(int created) {
+    return 'Knowledge base initialized: $created file(s) created.';
   }
-
-  @override
-  String get kbScaffoldNoop =>
-      'Nothing to create — all sample files already exist.';
 
   @override
   String kbScaffoldFailed(String error) {

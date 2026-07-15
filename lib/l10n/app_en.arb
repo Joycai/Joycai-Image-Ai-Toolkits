@@ -1134,9 +1134,16 @@
       }
     }
   },
-  "kbScaffoldCreate": "Create sample knowledge base",
-  "kbScaffoldFill": "Add missing sample files",
-  "kbScaffoldConfirm": "Create sample knowledge base files in {path}? Existing files are never overwritten.",
+  "kbScaffoldAlreadyInit": "Already initialized — this folder has a {name} and will not be touched.",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "Initialize knowledge base",
+  "kbScaffoldConfirm": "Initialize {path} as a knowledge base? Sample rule files will be created there.",
   "@kbScaffoldConfirm": {
     "placeholders": {
       "path": {
@@ -1144,18 +1151,14 @@
       }
     }
   },
-  "kbScaffoldDone": "Knowledge base ready: {created} file(s) created, {skipped} skipped.",
+  "kbScaffoldDone": "Knowledge base initialized: {created} file(s) created.",
   "@kbScaffoldDone": {
     "placeholders": {
       "created": {
         "type": "int"
-      },
-      "skipped": {
-        "type": "int"
       }
     }
   },
-  "kbScaffoldNoop": "Nothing to create — all sample files already exist.",
   "kbScaffoldFailed": "Could not create the knowledge base: {error}",
   "@kbScaffoldFailed": {
     "placeholders": {

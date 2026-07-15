@@ -360,9 +360,16 @@
       }
     }
   },
-  "kbScaffoldCreate": "建立範例知識庫",
-  "kbScaffoldFill": "補齊缺少的範例檔案",
-  "kbScaffoldConfirm": "將在 {path} 中建立範例知識庫檔案。已存在的檔案不會被覆蓋。是否繼續？",
+  "kbScaffoldAlreadyInit": "已初始化——該資料夾已有 {name}，不會被更動。",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "初始化",
+  "kbScaffoldConfirm": "將把 {path} 初始化為知識庫，並在其中建立範例規則檔案。是否繼續？",
   "@kbScaffoldConfirm": {
     "placeholders": {
       "path": {
@@ -370,18 +377,14 @@
       }
     }
   },
-  "kbScaffoldDone": "知識庫已就緒：新增 {created} 個檔案，略過 {skipped} 個。",
+  "kbScaffoldDone": "知識庫已初始化：新增 {created} 個檔案。",
   "@kbScaffoldDone": {
     "placeholders": {
       "created": {
         "type": "int"
-      },
-      "skipped": {
-        "type": "int"
       }
     }
   },
-  "kbScaffoldNoop": "無需建立，範例檔案均已存在。",
   "kbScaffoldFailed": "建立知識庫失敗：{error}",
   "@kbScaffoldFailed": {
     "placeholders": {

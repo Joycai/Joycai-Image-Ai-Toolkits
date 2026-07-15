@@ -79,11 +79,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   KbStatus _kbStatus = KbStatus.notSet;
   String? _kbPath;
 
-  /// Whether the configured base came from the starter template. Drives whether
-  /// filling in missing starter files is offered — a knowledge base the user
-  /// built themselves must not be topped up with files it never asked for.
-  bool _kbScaffolded = false;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -134,12 +129,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final kb = KnowledgeBaseService();
     final path = await kb.getRoot();
     final status = await kb.validate(path);
-    final scaffolded = status == KbStatus.ok && KnowledgeBaseStarter.looksScaffolded(path!);
     if (mounted) {
       setState(() {
         _kbPath = path;
         _kbStatus = status;
-        _kbScaffolded = scaffolded;
       });
     }
   }
@@ -408,9 +401,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     workbenchUIState.setAssistantMode(next);
   }
 
-  /// Ensures a usable knowledge-base root, then fills in any missing starter
-  /// file. Never overwrites, so it is safe to offer even when the base is
-  /// already valid.
+  /// Ensures a usable knowledge-base root, then initializes it with the starter
+  /// files. Only ever acts on a folder that is not already a knowledge base —
+  /// the button is disabled at [KbStatus.ok], and both the picker path below
+  /// and [KnowledgeBaseStarter.scaffold] re-check independently.
   Future<void> _handleScaffoldKb() async {
     final l10n = AppLocalizations.of(context)!;
     final kb = KnowledgeBaseService();
@@ -425,6 +419,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       stored = picked;
     }
     final root = stored;
+
+    // The status that enabled the button describes the *previous* root. A
+    // freshly picked folder may already be someone's knowledge base, so refuse
+    // before touching it — with a real explanation rather than a raw error.
+    if (KnowledgeBaseStarter.isInitialized(root)) {
+      await _refreshKbStatus();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)),
+      ));
+      return;
+    }
 
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
@@ -443,11 +449,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final result = await KnowledgeBaseStarter.scaffold(root);
       await _refreshKbStatus();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result.isNoop
-            ? l10n.kbScaffoldNoop
-            : l10n.kbScaffoldDone(result.created.length, result.skipped.length)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kbScaffoldDone(result.created.length))),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -795,7 +799,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               mode: workbenchUIState.assistantMode,
               kbStatus: _kbStatus,
               kbPath: _kbPath,
-              kbScaffolded: _kbScaffolded,
               onModeChanged: _handleAssistantModeChange,
               onScaffoldKb: _handleScaffoldKb,
               tags: _optTags,

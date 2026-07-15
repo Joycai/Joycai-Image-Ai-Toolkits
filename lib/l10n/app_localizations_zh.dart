@@ -2197,23 +2197,22 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get kbScaffoldCreate => '创建示例知识库';
+  String kbScaffoldAlreadyInit(String name) {
+    return '已初始化——该文件夹已有 $name，不会被改动。';
+  }
 
   @override
-  String get kbScaffoldFill => '补充缺失的示例文件';
+  String get kbScaffoldCreate => '初始化';
 
   @override
   String kbScaffoldConfirm(String path) {
-    return '将在 $path 中创建示例知识库文件。已存在的文件不会被覆盖。是否继续？';
+    return '将把 $path 初始化为知识库，并在其中创建示例规则文件。是否继续？';
   }
 
   @override
-  String kbScaffoldDone(int created, int skipped) {
-    return '知识库已就绪：新建 $created 个文件，跳过 $skipped 个。';
+  String kbScaffoldDone(int created) {
+    return '知识库已初始化：新建 $created 个文件。';
   }
-
-  @override
-  String get kbScaffoldNoop => '无需创建，示例文件均已存在。';
 
   @override
   String kbScaffoldFailed(String error) {
@@ -4402,23 +4401,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get kbScaffoldCreate => '建立範例知識庫';
+  String kbScaffoldAlreadyInit(String name) {
+    return '已初始化——該資料夾已有 $name，不會被更動。';
+  }
 
   @override
-  String get kbScaffoldFill => '補齊缺少的範例檔案';
+  String get kbScaffoldCreate => '初始化';
 
   @override
   String kbScaffoldConfirm(String path) {
-    return '將在 $path 中建立範例知識庫檔案。已存在的檔案不會被覆蓋。是否繼續？';
+    return '將把 $path 初始化為知識庫，並在其中建立範例規則檔案。是否繼續？';
   }
 
   @override
-  String kbScaffoldDone(int created, int skipped) {
-    return '知識庫已就緒：新增 $created 個檔案，略過 $skipped 個。';
+  String kbScaffoldDone(int created) {
+    return '知識庫已初始化：新增 $created 個檔案。';
   }
-
-  @override
-  String get kbScaffoldNoop => '無需建立，範例檔案均已存在。';
 
   @override
   String kbScaffoldFailed(String error) {

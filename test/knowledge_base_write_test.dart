@@ -117,35 +117,68 @@ void main() {
       final result = await KnowledgeBaseStarter.scaffold(root.path);
       expect(result.created, hasLength(KnowledgeBaseStarter.files.length));
       expect(result.skipped, isEmpty);
-      expect(result.isNoop, isFalse);
       expect(await kb.validate(root.path), KbStatus.ok);
-    });
-
-    test('never overwrites existing files', () async {
-      await KnowledgeBaseStarter.scaffold(root.path);
-      const sentinel = '# my own rules — do not clobber';
-      File(p.join(root.path, 'always/output-rules.md')).writeAsStringSync(sentinel);
-
-      final second = await KnowledgeBaseStarter.scaffold(root.path);
-      expect(second.created, isEmpty);
-      expect(second.skipped, hasLength(KnowledgeBaseStarter.files.length));
-      expect(second.isNoop, isTrue);
-      expect(kb.readFullFile(root.path, 'always/output-rules.md'), sentinel);
-    });
-
-    test('fills only what is missing', () async {
-      await KnowledgeBaseStarter.scaffold(root.path);
-      File(p.join(root.path, 'templates/text-to-image.md')).deleteSync();
-
-      final third = await KnowledgeBaseStarter.scaffold(root.path);
-      expect(third.created, ['templates/text-to-image.md']);
-      expect(third.skipped, hasLength(KnowledgeBaseStarter.files.length - 1));
     });
 
     test('scaffolding an empty folder resolves missingEntry', () async {
       expect(await kb.validate(root.path), KbStatus.missingEntry);
       await KnowledgeBaseStarter.scaffold(root.path);
       expect(await kb.validate(root.path), KbStatus.ok);
+    });
+
+    group('initialization is one-shot', () {
+      test('isInitialized keys off the entry file', () {
+        expect(KnowledgeBaseStarter.isInitialized(root.path), isFalse);
+        File(p.join(root.path, 'README.md')).writeAsStringSync('# mine');
+        expect(KnowledgeBaseStarter.isInitialized(root.path), isTrue);
+      });
+
+      test('an entry file alone is enough to refuse — even with nothing else', () async {
+        File(p.join(root.path, 'README.md')).writeAsStringSync('# mine');
+        await expectLater(
+          KnowledgeBaseStarter.scaffold(root.path),
+          throwsA(isA<KbPathException>()),
+        );
+        // Refusing must not leave a half-built base behind.
+        expect(root.listSync(), hasLength(1));
+      });
+
+      test('re-initializing a starter base is refused, leaving edits intact', () async {
+        await KnowledgeBaseStarter.scaffold(root.path);
+        const sentinel = '# my own rules — do not clobber';
+        File(p.join(root.path, 'always/output-rules.md')).writeAsStringSync(sentinel);
+
+        await expectLater(
+          KnowledgeBaseStarter.scaffold(root.path),
+          throwsA(isA<KbPathException>()),
+        );
+        expect(kb.readFullFile(root.path, 'always/output-rules.md'), sentinel);
+      });
+
+      test('refuses even when starter files were deleted — the entry file rules', () async {
+        await KnowledgeBaseStarter.scaffold(root.path);
+        Directory(p.join(root.path, 'templates')).deleteSync(recursive: true);
+
+        await expectLater(
+          KnowledgeBaseStarter.scaffold(root.path),
+          throwsA(isA<KbPathException>()),
+        );
+        expect(Directory(p.join(root.path, 'templates')).existsSync(), isFalse);
+      });
+
+      test('a folder with starter-named files but no entry file still initializes', () async {
+        // The entry file is the signal, so this is not "initialized" — but the
+        // pre-existing file is still not clobbered.
+        const mine = '# not from the starter';
+        File(p.join(root.path, 'templates/text-to-image.md'))
+          ..createSync(recursive: true)
+          ..writeAsStringSync(mine);
+
+        final result = await KnowledgeBaseStarter.scaffold(root.path);
+        expect(result.skipped, ['templates/text-to-image.md']);
+        expect(result.created, contains('README.md'));
+        expect(kb.readFullFile(root.path, 'templates/text-to-image.md'), mine);
+      });
     });
 
     test('entry file map lists every other starter file', () {
@@ -214,23 +247,23 @@ void main() {
       expect(kb.readFullFile(root.path, 'style-guide.md'), '# 画风\n补充说明');
     });
 
-    test('is not mistaken for a starter base', () {
+    test('is never initialized over — not one file is touched', () async {
       seedCustomKb();
-      // Drives whether the UI offers to add starter files. A false positive
-      // here would bury the user's base in files its map never mentions.
-      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isFalse);
-    });
+      final before = {
+        for (final f in root.listSync(recursive: true).whereType<File>())
+          f.path: f.readAsStringSync(),
+      };
 
-    test('a starter base is recognised even with a starter file deleted', () async {
-      await KnowledgeBaseStarter.scaffold(root.path);
-      File(p.join(root.path, 'templates/text-to-image.md')).deleteSync();
-      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isTrue);
-    });
+      await expectLater(
+        KnowledgeBaseStarter.scaffold(root.path),
+        throwsA(isA<KbPathException>()),
+      );
 
-    test('an entry file alone is not a starter base', () {
-      File(p.join(root.path, 'README.md')).writeAsStringSync('# mine');
-      // Every valid base has an entry file, so it cannot be the signal.
-      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isFalse);
+      final after = {
+        for (final f in root.listSync(recursive: true).whereType<File>())
+          f.path: f.readAsStringSync(),
+      };
+      expect(after, before, reason: 'an initialized base must be left exactly as it was');
     });
 
     test('an entry file alone is a working base — no other file is required',

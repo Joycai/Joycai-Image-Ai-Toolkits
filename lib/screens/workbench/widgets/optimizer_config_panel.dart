@@ -19,11 +19,6 @@ class OptimizerConfigPanel extends StatefulWidget {
   final AssistantMode mode;
   final KbStatus kbStatus;
   final String? kbPath;
-
-  /// Whether the configured base came from the starter template. When false and
-  /// the base is valid, it is the user's own — offering to add starter files
-  /// would only litter it with files its file map never mentions.
-  final bool kbScaffolded;
   final List<PromptTag> tags;
   final List<SystemPrompt> filteredSysPrompts;
   final Function(int?) onModelChanged;
@@ -47,7 +42,6 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.mode,
     required this.kbStatus,
     this.kbPath,
-    this.kbScaffolded = false,
     required this.tags,
     required this.filteredSysPrompts,
     required this.onModelChanged,
@@ -201,46 +195,39 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                 color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
               ),
             ),
-            // Not offered on a valid base the user built themselves: nothing is
-            // "missing" from it, and adding starter files its file map never
-            // mentions would just be litter the agent can never read.
-            if (!ok || widget.kbScaffolded) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _scaffolding
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 6),
-                        child: SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+            const SizedBox(height: 8),
+            // Disabled once the base has an entry file: initializing is a
+            // one-time act, and KbStatus.ok means one is already there. Shown
+            // disabled rather than hidden so the action stays discoverable and
+            // its unavailability is explained. KnowledgeBaseStarter.scaffold
+            // refuses independently — this is only the first gate.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _scaffolding
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : Tooltip(
+                      message: ok
+                          ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)
+                          : '',
+                      child: FilledButton.tonalIcon(
+                        onPressed: ok ? null : _handleScaffold,
+                        icon: const Icon(Icons.auto_awesome_outlined, size: 15),
+                        label: Text(l10n.kbScaffoldCreate, style: const TextStyle(fontSize: 11)),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                      )
-                    : ok
-                        // Only reachable on a starter base, where this restores
-                        // a starter file the user deleted.
-                        ? TextButton(
-                            onPressed: _handleScaffold,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(l10n.kbScaffoldFill, style: const TextStyle(fontSize: 11)),
-                          )
-                        : FilledButton.tonalIcon(
-                            onPressed: _handleScaffold,
-                            icon: const Icon(Icons.auto_awesome_outlined, size: 15),
-                            label: Text(l10n.kbScaffoldCreate, style: const TextStyle(fontSize: 11)),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-              ),
-            ],
+                      ),
+                    ),
+            ),
           ],
         ),
       ),

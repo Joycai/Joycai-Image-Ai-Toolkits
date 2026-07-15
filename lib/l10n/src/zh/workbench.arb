@@ -363,9 +363,16 @@
       }
     }
   },
-  "kbScaffoldCreate": "创建示例知识库",
-  "kbScaffoldFill": "补充缺失的示例文件",
-  "kbScaffoldConfirm": "将在 {path} 中创建示例知识库文件。已存在的文件不会被覆盖。是否继续？",
+  "kbScaffoldAlreadyInit": "已初始化——该文件夹已有 {name}，不会被改动。",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "初始化",
+  "kbScaffoldConfirm": "将把 {path} 初始化为知识库，并在其中创建示例规则文件。是否继续？",
   "@kbScaffoldConfirm": {
     "placeholders": {
       "path": {
@@ -373,18 +380,14 @@
       }
     }
   },
-  "kbScaffoldDone": "知识库已就绪：新建 {created} 个文件，跳过 {skipped} 个。",
+  "kbScaffoldDone": "知识库已初始化：新建 {created} 个文件。",
   "@kbScaffoldDone": {
     "placeholders": {
       "created": {
         "type": "int"
-      },
-      "skipped": {
-        "type": "int"
       }
     }
   },
-  "kbScaffoldNoop": "无需创建，示例文件均已存在。",
   "kbScaffoldFailed": "创建知识库失败：{error}",
   "@kbScaffoldFailed": {
     "placeholders": {

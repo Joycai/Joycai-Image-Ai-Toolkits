@@ -2211,23 +2211,22 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get kbScaffoldCreate => 'サンプルナレッジベースを作成';
+  String kbScaffoldAlreadyInit(String name) {
+    return '初期化済みです。このフォルダには $name があり、変更されません。';
+  }
 
   @override
-  String get kbScaffoldFill => '不足しているサンプルファイルを追加';
+  String get kbScaffoldCreate => '初期化';
 
   @override
   String kbScaffoldConfirm(String path) {
-    return '$path にサンプルナレッジベースのファイルを作成します。既存のファイルが上書きされることはありません。続行しますか？';
+    return '$path をナレッジベースとして初期化します。サンプルのルールファイルが作成されます。続行しますか？';
   }
 
   @override
-  String kbScaffoldDone(int created, int skipped) {
-    return 'ナレッジベースの準備が完了しました：$created 件作成、$skipped 件スキップ。';
+  String kbScaffoldDone(int created) {
+    return 'ナレッジベースを初期化しました：$created 件作成。';
   }
-
-  @override
-  String get kbScaffoldNoop => '作成するものはありません。サンプルファイルはすべて存在します。';
 
   @override
   String kbScaffoldFailed(String error) {

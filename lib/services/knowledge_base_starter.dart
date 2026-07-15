@@ -9,12 +9,11 @@ class KbScaffoldResult {
   /// Relative paths actually written.
   final List<String> created;
 
-  /// Relative paths left untouched because they already existed.
+  /// Relative paths left untouched because they already existed. Only reachable
+  /// for a folder holding starter-named files but no entry file.
   final List<String> skipped;
 
   const KbScaffoldResult({required this.created, required this.skipped});
-
-  bool get isNoop => created.isEmpty;
 }
 
 /// Generates a starter knowledge base: a small tree of Chinese markdown files
@@ -42,24 +41,30 @@ class KnowledgeBaseStarter {
     'conditional/chinese-text-render.md': _chineseTextRender,
   };
 
-  /// Whether [root] looks like a knowledge base this class generated.
+  /// Whether [root] already holds a knowledge base, i.e. an entry file.
   ///
-  /// [entryFileName] is excluded on purpose — every valid knowledge base has
-  /// one, so it tells us nothing. A user's own knowledge base shares none of
-  /// the other names, which is what distinguishes "a starter base missing a
-  /// file" from "someone else's base entirely". Offering to fill in the latter
-  /// would bury it in files its file map never mentions, so the agent could
-  /// never read them anyway.
-  static bool looksScaffolded(String root) => files.keys
-      .where((relPath) => relPath != KnowledgeBaseService.entryFileName)
-      .any((relPath) => File(p.join(root, relPath)).existsSync());
+  /// This is the initialization guard. The entry file is the right signal
+  /// because it is the one thing every valid knowledge base has and the one
+  /// thing this class must never touch: it is the file map, and overwriting it
+  /// would orphan every file it points at.
+  static bool isInitialized(String root) =>
+      File(p.join(root, KnowledgeBaseService.entryFileName)).existsSync();
 
-  /// Writes any starter file that does not already exist under [root].
+  /// Initializes [root] as a knowledge base, writing the starter files.
   ///
-  /// Non-destructive by construction: an existing file is never opened for
-  /// writing, so running this against a populated knowledge base only fills in
-  /// what is missing.
+  /// Refuses outright when [root] is already initialized, rather than filling
+  /// in around it. Enforced here and not only in the UI: this is the layer that
+  /// must hold even if a caller reaches it without checking.
+  ///
+  /// Individual files are still never overwritten, so a folder holding
+  /// starter-named files but no entry file keeps them.
   static Future<KbScaffoldResult> scaffold(String root) async {
+    if (isInitialized(root)) {
+      throw KbPathException(
+        'This folder is already a knowledge base '
+        '(${KnowledgeBaseService.entryFileName} exists) — it cannot be initialized again.',
+      );
+    }
     final kb = KnowledgeBaseService();
     final created = <String>[];
     final skipped = <String>[];

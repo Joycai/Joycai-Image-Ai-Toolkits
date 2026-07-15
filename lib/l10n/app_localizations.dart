@@ -4211,35 +4211,29 @@ abstract class AppLocalizations {
   /// **'Write failed: {error}'**
   String kbEditFailed(String error);
 
+  /// No description provided for @kbScaffoldAlreadyInit.
+  ///
+  /// In en, this message translates to:
+  /// **'Already initialized — this folder has a {name} and will not be touched.'**
+  String kbScaffoldAlreadyInit(String name);
+
   /// No description provided for @kbScaffoldCreate.
   ///
   /// In en, this message translates to:
-  /// **'Create sample knowledge base'**
+  /// **'Initialize knowledge base'**
   String get kbScaffoldCreate;
-
-  /// No description provided for @kbScaffoldFill.
-  ///
-  /// In en, this message translates to:
-  /// **'Add missing sample files'**
-  String get kbScaffoldFill;
 
   /// No description provided for @kbScaffoldConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Create sample knowledge base files in {path}? Existing files are never overwritten.'**
+  /// **'Initialize {path} as a knowledge base? Sample rule files will be created there.'**
   String kbScaffoldConfirm(String path);
 
   /// No description provided for @kbScaffoldDone.
   ///
   /// In en, this message translates to:
-  /// **'Knowledge base ready: {created} file(s) created, {skipped} skipped.'**
-  String kbScaffoldDone(int created, int skipped);
-
-  /// No description provided for @kbScaffoldNoop.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing to create — all sample files already exist.'**
-  String get kbScaffoldNoop;
+  /// **'Knowledge base initialized: {created} file(s) created.'**
+  String kbScaffoldDone(int created);
 
   /// No description provided for @kbScaffoldFailed.
   ///
