@@ -394,9 +394,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get openRawImage => '元の画像を開く';
 
   @override
-  String get results => '結果';
-
-  @override
   String downloaderFoundSelected(int found, int selected) {
     return '$found件見つかりました · $selected件選択中';
   }
@@ -1443,6 +1440,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String concurrencyLimit(int limit) {
     return '並列処理制限: $limit';
+  }
+
+  @override
+  String taskTotalCount(int count) {
+    return '全 $count 件';
   }
 
   @override

@@ -126,7 +126,6 @@
   "noCookieHistory": "クッキー履歴が保存されていません",
   "pasteFromClipboard": "クリップボードから貼り付け",
   "openRawImage": "元の画像を開く",
-  "results": "結果",
   "downloaderFoundSelected": "{found}件見つかりました · {selected}件選択中",
   "@downloaderFoundSelected": {
     "placeholders": {
@@ -576,6 +575,14 @@
   "@concurrencyLimit": {
     "placeholders": {
       "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTotalCount": "全 {count} 件",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }

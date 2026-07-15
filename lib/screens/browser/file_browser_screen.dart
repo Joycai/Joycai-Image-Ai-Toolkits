@@ -14,6 +14,7 @@ import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/app_icon_button.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
@@ -121,7 +122,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     // Header lives inside the content card (its bottom border becomes an
     // internal divider on the inset-panel canvas).
     final header = Container(
-      height: 56,
+      height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
@@ -134,53 +135,55 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 icon: const Icon(Icons.menu),
                 onPressed: () => Scaffold.of(ctx).openDrawer(),
               ),
+            )
+          else ...[
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.folder_open_rounded, size: 22, color: colorScheme.primary),
             ),
-          Icon(Icons.folder_open, size: 22, color: colorScheme.primary),
-          const SizedBox(width: 10),
+            const SizedBox(width: 14),
+          ],
           Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 l10n.fileBrowser,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
               ),
-              Text(
-                selectedCount > 0
-                    ? '${l10n.filesCount(fileCount)} · ${l10n.imagesSelected(selectedCount)}'
-                    : l10n.filesCount(fileCount),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurfaceVariant,
-                  fontFamily: 'monospace',
-                ),
-              ),
+              const SizedBox(height: 3),
+              _buildHeaderSummary(fileCount, selectedCount, l10n, colorScheme),
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           Flexible(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 280),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: _buildSearchField(fileBrowserState, l10n, colorScheme),
             ),
           ),
           const Spacer(),
-          IconButton(
-            icon: Icon(fileBrowserState.viewMode == BrowserViewMode.grid
+          AppIconButton(
+            icon: fileBrowserState.viewMode == BrowserViewMode.grid
                 ? Icons.view_list
-                : Icons.grid_view),
+                : Icons.grid_view,
+            tooltip: l10n.switchViewMode,
             onPressed: () => fileBrowserState.setViewMode(
               fileBrowserState.viewMode == BrowserViewMode.grid
                   ? BrowserViewMode.list
                   : BrowserViewMode.grid,
             ),
-            tooltip: l10n.switchViewMode,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => fileBrowserState.refresh(),
+          const SizedBox(width: 8),
+          AppIconButton(
+            icon: Icons.refresh,
             tooltip: l10n.refresh,
+            onPressed: () => fileBrowserState.refresh(),
           ),
         ],
       ),
@@ -244,9 +247,39 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
+  /// What the folder holds, and how much of it you have picked. The selection
+  /// is in the primary colour because it is the half that changes as you work.
+  Widget _buildHeaderSummary(
+    int fileCount,
+    int selectedCount,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(fontSize: 12.5, color: colorScheme.onSurfaceVariant),
+        children: [
+          TextSpan(
+            text: l10n.filesCount(fileCount),
+            style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
+          ),
+          if (selectedCount > 0) ...[
+            TextSpan(text: '  ·  ', style: TextStyle(color: colorScheme.outline)),
+            TextSpan(
+              text: l10n.imagesSelected(selectedCount),
+              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   Widget _buildSearchField(FileBrowserState state, AppLocalizations l10n, ColorScheme colorScheme) {
     return SizedBox(
-      height: 36,
+      height: 40,
       child: TextField(
         controller: _searchController,
         onChanged: (v) => state.setSearchQuery(v),

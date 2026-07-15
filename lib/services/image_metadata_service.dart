@@ -21,7 +21,10 @@ class ImageMetadata {
     required this.sizeString,
   });
 
-  String get displayString => width > 0 ? "${width}x$height ($aspectRatio) | $sizeString" : sizeString;
+  /// The one-line badge an image card carries. Multiplication sign and middot
+  /// rather than "x" and a pipe: at the 9-10px this is drawn, a lowercase x
+  /// reads as part of the number beside it.
+  String get displayString => width > 0 ? "$width×$height ($aspectRatio) · $sizeString" : sizeString;
 
   Map<String, String> get params => {
     if (width > 0) "Width": "$width px",

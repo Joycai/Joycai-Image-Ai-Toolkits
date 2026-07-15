@@ -68,11 +68,14 @@ class _FileCardState extends State<FileCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             color: colorScheme.surfaceContainerHighest.withAlpha(widget.isSelected ? 100 : 50),
             border: Border.all(
-              color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-              width: widget.isSelected ? 2 : 1,
+              // Only a selected card is outlined. The thumbnails supply their
+              // own edges; a border on every one turns the grid into a mesh and
+              // leaves the selected card with nothing of its own to say.
+              color: widget.isSelected ? colorScheme.primary : Colors.transparent,
+              width: 2,
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -97,11 +100,15 @@ class _FileCardState extends State<FileCard> {
                                 ),
                   
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    color: Colors.black54,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                    color: Colors.black.withValues(alpha: 0.55),
                     child: Text(
                       widget.file.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontFamily: 'monospace',
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -109,18 +116,32 @@ class _FileCardState extends State<FileCard> {
                   ),
                 ],
               ),
+              // A pill that wraps the figures, not a band across the card's full
+              // width: the band reads as a caption the image happens to start
+              // under, and it dims the top of every thumbnail to say it.
               if (_dimensions.isNotEmpty)
                 Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                    color: Colors.black.withAlpha(100),
-                    child: Text(
-                      _dimensions,
-                      style: const TextStyle(color: Colors.white, fontSize: 8),
-                      textAlign: TextAlign.center,
+                  top: 6,
+                  left: 6,
+                  right: 6,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.62),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _dimensions,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),

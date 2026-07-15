@@ -401,9 +401,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openRawImage => 'Open Raw Image';
 
   @override
-  String get results => 'Results';
-
-  @override
   String downloaderFoundSelected(int found, int selected) {
     return '$found found · $selected selected';
   }
@@ -1477,6 +1474,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String concurrencyLimit(int limit) {
     return 'Concurrency Limit: $limit';
+  }
+
+  @override
+  String taskTotalCount(int count) {
+    return '$count total';
   }
 
   @override

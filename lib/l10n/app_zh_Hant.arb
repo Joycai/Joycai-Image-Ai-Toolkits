@@ -126,7 +126,6 @@
   "noCookieHistory": "未儲存任何 Cookie 歷史記錄",
   "pasteFromClipboard": "從剪貼簿貼上",
   "openRawImage": "開啟原始圖片",
-  "results": "結果",
   "downloaderFoundSelected": "發現 {found} 張 · 已選 {selected} 張",
   "@downloaderFoundSelected": {
     "placeholders": {
@@ -576,6 +575,14 @@
   "@concurrencyLimit": {
     "placeholders": {
       "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTotalCount": "共 {count} 個任務",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }

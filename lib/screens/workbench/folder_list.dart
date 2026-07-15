@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
+import '../../widgets/app_icon_button.dart';
+import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
 import 'widgets/result_tree_item.dart';
 
@@ -96,43 +98,52 @@ class FolderList extends StatelessWidget {
           // compact header row hosting the add-folder / deselect-all actions.
           // Workbench gallery: grouped Sources / Results / Workspace.
           if (useFileBrowserState) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+            Container(
+              height: kPanelHeaderHeight,
+              padding: const EdgeInsets.fromLTRB(14, 0, 10, 0),
               child: Row(
                 children: [
                   Text(
                     l10n.directories,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                      letterSpacing: 1.2,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${sourceDirectories.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'monospace',
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${sourceDirectories.length}',
-                    style: TextStyle(fontSize: 11, color: colorScheme.primary),
-                  ),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.remove_done, size: 18),
+                  AppIconButton(
+                    icon: Icons.remove_done,
                     tooltip: l10n.deselectAllDirectories,
+                    size: 34,
                     onPressed: appState.fileBrowserState.activeDirectories.isEmpty
                         ? null
                         : () => appState.fileBrowserState.clearActiveDirectories(),
-                    visualDensity: VisualDensity.compact,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                  const SizedBox(width: 6),
+                  AppIconButton(
+                    icon: Icons.create_new_folder_outlined,
                     tooltip: l10n.addFolder,
+                    size: 34,
                     onPressed: () => _pickDirectory(context, appState),
-                    visualDensity: VisualDensity.compact,
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(90)),
             Expanded(
               child: sourceDirectories.isEmpty
                   ? _buildEmptyState(colorScheme, l10n)

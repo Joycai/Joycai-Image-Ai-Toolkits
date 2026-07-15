@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -32,7 +33,9 @@ class ChatModelSelector extends StatelessWidget {
       initialValue: selectedModelId,
       decoration: InputDecoration(
         labelText: label ?? l10n.model,
-        border: const OutlineInputBorder(),
+        // The selector's corner matches the buttons it sits beside, rather than
+        // Material's default 4 — a toolbar of mixed radii reads as mixed parts.
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),

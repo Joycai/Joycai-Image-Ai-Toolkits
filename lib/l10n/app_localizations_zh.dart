@@ -393,9 +393,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openRawImage => '打开原始图像';
 
   @override
-  String get results => '结果';
-
-  @override
   String downloaderFoundSelected(int found, int selected) {
     return '发现 $found 张 · 已选 $selected 张';
   }
@@ -1433,6 +1430,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String concurrencyLimit(int limit) {
     return '并发限制: $limit';
+  }
+
+  @override
+  String taskTotalCount(int count) {
+    return '共 $count 个任务';
   }
 
   @override
@@ -2534,9 +2536,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get openRawImage => '開啟原始圖片';
 
   @override
-  String get results => '結果';
-
-  @override
   String downloaderFoundSelected(int found, int selected) {
     return '發現 $found 張 · 已選 $selected 張';
   }
@@ -3575,6 +3574,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String concurrencyLimit(int limit) {
     return '並行限制: $limit';
+  }
+
+  @override
+  String taskTotalCount(int count) {
+    return '共 $count 個任務';
   }
 
   @override

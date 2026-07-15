@@ -320,7 +320,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
               ),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                height: _showLogs && state.logs.isNotEmpty ? 168 : 0,
+                height: _showLogs && state.logs.isNotEmpty ? 196 : 0,
                 child: _showLogs && state.logs.isNotEmpty
                     ? _DownloaderLogPanel(
                         logs: state.logs,
@@ -372,22 +372,38 @@ class _DownloaderLogPanel extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 4, 0),
+            padding: const EdgeInsets.fromLTRB(10, 8, 6, 6),
             child: Row(
               children: [
-                Icon(Icons.terminal, size: 14, color: colorScheme.primary),
-                const SizedBox(width: 6),
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Icon(Icons.terminal, size: 15, color: colorScheme.primary),
+                ),
+                const SizedBox(width: 9),
                 Text(
                   l10n.logs,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '${logs.length}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                    color: colorScheme.outline,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.onSurface.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${logs.length}',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'monospace',
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (isAnalyzing) ...[
@@ -401,14 +417,14 @@ class _DownloaderLogPanel extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Clipboard.setData(ClipboardData(text: logs.join('\n'))),
-                  icon: const Icon(Icons.copy, size: 13),
+                  icon: const Icon(Icons.copy, size: 14),
                   tooltip: l10n.copyLogs,
                   visualDensity: VisualDensity.compact,
                   color: colorScheme.onSurfaceVariant,
                 ),
                 IconButton(
                   onPressed: onClose,
-                  icon: const Icon(Icons.close, size: 14),
+                  icon: const Icon(Icons.close, size: 15),
                   tooltip: l10n.close,
                   visualDensity: VisualDensity.compact,
                   color: colorScheme.onSurfaceVariant,

@@ -8,6 +8,10 @@ import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 
+/// Folders are amber everywhere in the app. It is the one colour in the tree
+/// that is not reporting state, which is exactly why a folder can keep it.
+const Color _folderAmber = Color(0xFFE0A64B);
+
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
@@ -152,15 +156,29 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     final folderName = p.basename(widget.path);
     final theme = Theme.of(context);
 
+    // A root is boxed so the eye can find where one tree ends and the next
+    // begins; below it, only the highlighted row is drawn. Nesting already says
+    // a child is a child — an outline on each one would say it twice.
+    final colorScheme = theme.colorScheme;
+    final Color? boxColor = highlight ? colorScheme.primary.withValues(alpha: 0.14) : null;
+    final Color borderColor = highlight
+        ? colorScheme.primary.withValues(alpha: 0.6)
+        : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
+        Container(
+          margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
+          decoration: BoxDecoration(
+            color: boxColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor),
+          ),
+          child: ListTile(
           dense: true,
-          selected: highlight, // Background highlight: inclusion (browser) / viewing (gallery)
-          selectedTileColor: theme.colorScheme.primaryContainer.withAlpha(90),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
+          contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -192,9 +210,11 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               Icon(
                 _isExpanded ? Icons.folder_open : Icons.folder,
                 size: 20,
-                color: isUnreachable 
-                  ? theme.colorScheme.error.withAlpha(100)
-                  : (isSelected ? theme.colorScheme.primary : theme.colorScheme.outline),
+                // Folders keep their own colour rather than tracking selection:
+                // the checkbox beside it and the box around it already report
+                // that, and a tree of grey folders reads as a tree of disabled
+                // ones.
+                color: isUnreachable ? colorScheme.error.withAlpha(100) : _folderAmber,
               ),
               const SizedBox(width: 8),
             ],
@@ -243,8 +263,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               appState.galleryState.setViewFolder(widget.path);
             }
           },
+          ),
         ),
-        
+
         if (_isExpanded && _subDirectories != null)
           Padding(
             padding: const EdgeInsets.only(left: 24.0),

@@ -190,7 +190,6 @@
   "noCookieHistory": "No cookie history saved",
   "pasteFromClipboard": "Paste from Clipboard",
   "openRawImage": "Open Raw Image",
-  "results": "Results",
   "downloaderFoundSelected": "{found} found · {selected} selected",
   "@downloaderFoundSelected": {
     "placeholders": {
@@ -716,6 +715,14 @@
   "@concurrencyLimit": {
     "placeholders": {
       "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTotalCount": "{count} total",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }
