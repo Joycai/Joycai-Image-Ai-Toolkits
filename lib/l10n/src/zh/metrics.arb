@@ -32,5 +32,13 @@
     }
   },
   "clearModelData": "清除模型数据",
-  "usageByGroup": "按费率组统计"
+  "usageByGroup": "按费率组统计",
+  "usageColumnDetail": "明细",
+  "usageColumnTime": "时间",
+  "usageColumnCost": "成本",
+  "yesterday": "昨天",
+  "usageRecordCount": "{count} 条",
+  "usageItemCount": "{count} 项",
+  "noUsageInRange": "所选时间范围内没有用量数据。",
+  "loadMore": "加载更多"
 }

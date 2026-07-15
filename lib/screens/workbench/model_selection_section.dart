@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../../widgets/app_segmented_control.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
 
 class ModelSelectionSection extends StatelessWidget {
@@ -194,20 +195,16 @@ class ModelSelectionSection extends StatelessWidget {
         );
         break;
       case ParamControl.segmented:
-        control = SegmentedButton<String>(
-          showSelectedIcon: false,
-          style: SegmentedButton.styleFrom(
-            visualDensity: VisualDensity.compact,
-            textStyle: const TextStyle(fontSize: 10),
-          ),
+        control = AppSegmentedControl<String>(
           segments: spec.options
-              .map((o) => ButtonSegment(
+              .map((o) => AppSegment(
                     value: o.value,
-                    label: Text(_optionLabel(l10n, spec.key, o.value)),
+                    label: _optionLabel(l10n, spec.key, o.value),
                   ))
               .toList(),
-          selected: {current},
-          onSelectionChanged: (v) => onImageParamChanged(modelId, spec.key, v.first),
+          value: current,
+          onChanged: (v) => onImageParamChanged(modelId, spec.key, v),
+          compact: true,
         );
         break;
       case ParamControl.customSize:

@@ -42,13 +42,11 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
             ),
           ),
           body: TabBarView(
-            children: [
-              const UsageViewMobile(),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
-                ),
+            children: const [
+              UsageViewMobile(),
+              SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: PricingGroupManager(mode: PricingGroupManagerMode.section),
               ),
             ],
           ),
@@ -151,16 +149,13 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
     return const PanelCard(child: UsageViewMobile());
   }
 
+  /// The groups fill the card rather than sitting in a centred column: they
+  /// are a grid now, and it is the grid that decides how many fit across.
   Widget _buildFeeGroupsCard() {
-    return PanelCard(
+    return const PanelCard(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: const PricingGroupManager(mode: PricingGroupManagerMode.section),
-          ),
-        ),
+        padding: EdgeInsets.all(24),
+        child: PricingGroupManager(mode: PricingGroupManagerMode.section),
       ),
     );
   }

@@ -44,7 +44,8 @@ void main() {
         home: Scaffold(
           body: Align(
             alignment: Alignment.topCenter,
-            child: UsageSummary(stats: data, compact: compact),
+            child: UsageSummary(
+              stats: data, rangeLabel: 'Last Week', compact: compact),
           ),
         ),
       ),
@@ -70,6 +71,9 @@ void main() {
       expect(find.text('55,319'), findsOneWidget);
       expect(find.text('\$2.3348'), findsOneWidget);
       expect(find.text('Cache Hit Rate'), findsOneWidget);
+      // The totals are totals over a period, so the period is on the card.
+      expect(find.text('63 Requests'), findsOneWidget);
+      expect(find.text('Last Week'), findsOneWidget);
     });
   }
 

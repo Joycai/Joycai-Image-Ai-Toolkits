@@ -7,6 +7,7 @@ import '../../../models/tag.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/chat_model_selector.dart';
 import 'config_section_header.dart';
 
@@ -111,26 +112,24 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   Widget _buildModeSelector(AppLocalizations l10n, ColorScheme colorScheme) {
     final kbSelectable = widget.kbStatus == KbStatus.ok;
-    return SegmentedButton<AssistantMode>(
+    return AppSegmentedControl<AssistantMode>(
       segments: [
-        ButtonSegment(
+        AppSegment(
           value: AssistantMode.systemPrompt,
-          icon: const Icon(Icons.tune, size: 16),
-          label: Text(l10n.optModeSystemPrompt, style: const TextStyle(fontSize: 12)),
+          label: l10n.optModeSystemPrompt,
+          icon: Icons.tune,
         ),
-        ButtonSegment(
+        AppSegment(
           value: AssistantMode.knowledgeBase,
-          icon: const Icon(Icons.menu_book_outlined, size: 16),
-          label: Text(l10n.optModeKnowledge, style: const TextStyle(fontSize: 12)),
+          label: l10n.optModeKnowledge,
+          icon: Icons.menu_book_outlined,
           enabled: kbSelectable || widget.mode == AssistantMode.knowledgeBase,
         ),
       ],
-      selected: {widget.mode},
-      showSelectedIcon: false,
-      onSelectionChanged: (selection) {
-        final next = selection.first;
-        if (next != widget.mode) widget.onModeChanged(next);
-      },
+      value: widget.mode,
+      onChanged: widget.onModeChanged,
+      expand: true,
+      compact: true,
     );
   }
 

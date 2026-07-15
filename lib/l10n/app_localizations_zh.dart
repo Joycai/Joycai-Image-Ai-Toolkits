@@ -486,6 +486,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usageByGroup => '按费率组统计';
 
   @override
+  String get usageColumnDetail => '明细';
+
+  @override
+  String get usageColumnTime => '时间';
+
+  @override
+  String get usageColumnCost => '成本';
+
+  @override
+  String get yesterday => '昨天';
+
+  @override
+  String usageRecordCount(int count) {
+    return '$count 条';
+  }
+
+  @override
+  String usageItemCount(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String get noUsageInRange => '所选时间范围内没有用量数据。';
+
+  @override
+  String get loadMore => '加载更多';
+
+  @override
   String get models => '模型';
 
   @override
@@ -838,6 +866,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feeGroupDesc => '定义模型的计费标准，以便准确计算使用成本。';
+
+  @override
+  String get feeGroupEditorSubtitle => '配置模型的计费标准';
 
   @override
   String get noFeeGroups => '尚未创建费率组';
@@ -2596,6 +2627,34 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get usageByGroup => '按群組分類的用量';
 
   @override
+  String get usageColumnDetail => '明細';
+
+  @override
+  String get usageColumnTime => '時間';
+
+  @override
+  String get usageColumnCost => '成本';
+
+  @override
+  String get yesterday => '昨天';
+
+  @override
+  String usageRecordCount(int count) {
+    return '$count 筆';
+  }
+
+  @override
+  String usageItemCount(int count) {
+    return '$count 項';
+  }
+
+  @override
+  String get noUsageInRange => '所選時間範圍內沒有用量資料。';
+
+  @override
+  String get loadMore => '載入更多';
+
+  @override
   String get models => '模型';
 
   @override
@@ -2948,6 +3007,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get feeGroupDesc => '定義模型的計費標準，以準確計算使用成本。';
+
+  @override
+  String get feeGroupEditorSubtitle => '設定模型的計費標準';
 
   @override
   String get noFeeGroups => '尚未建立費用群組';

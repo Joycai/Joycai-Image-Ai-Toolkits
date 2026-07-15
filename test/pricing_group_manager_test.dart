@@ -9,12 +9,13 @@ import 'package:joycai_image_ai_toolkits/widgets/pricing_group_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-/// Renders the fee-group list.
+/// Renders the fee-group grid.
 ///
-/// Each row lines a name up against three price pills, so these pump every
-/// breakpoint the project supports to catch overflow, and pin what the pills
-/// report — in particular that a group with no cache rate of its own shows the
-/// input rate it inherits rather than a free one.
+/// Each card packs a name, the models it prices and up to three rates into one
+/// column of a grid, so these pump every breakpoint the project supports to
+/// catch overflow, and pin what the cards report — in particular that a group
+/// with no cache rate of its own shows the input rate it inherits rather than a
+/// free one.
 void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late Directory dbDir;
@@ -201,9 +202,10 @@ void main() {
     await openEditor(tester, find.widgetWithText(FilledButton, 'Add Fee Group'));
 
     expect(find.text('Add Fee Group'), findsWidgets);
-    // The redesigned shell, not the old AlertDialog: segmented billing mode,
-    // short accent-labelled price fields, and a blank name to fill in.
-    expect(find.byType(SegmentedButton<String>), findsOneWidget);
+    // The redesigned shell, not the old AlertDialog: both billing modes on show
+    // at once, short accent-labelled price fields, and a blank name to fill in.
+    expect(find.text('Per Million Tokens'), findsOneWidget);
+    expect(find.text('Per Request'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Input'), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
 

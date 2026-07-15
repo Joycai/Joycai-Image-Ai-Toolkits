@@ -7,6 +7,8 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_segmented_control.dart';
 import '../../widgets/panel_resizer.dart';
 import 'prompts_io.dart';
 import 'widgets/prompt_dialogs.dart';
@@ -371,7 +373,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       ),
       child: Row(
         children: [
-          Icon(Icons.auto_awesome, size: 22, color: colorScheme.primary),
+          // The same rounded accent tile that fronts a heading elsewhere in the
+          // app, rather than a bare icon floating beside the words.
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(Icons.auto_awesome, size: 18, color: colorScheme.primary),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -380,33 +392,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Manage categories button
-          Tooltip(
-            message: l10n.categoriesTab,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: () => setState(() {
-                _tabController.index = isCategories ? 0 : 2;
-                _clearSelection();
-              }),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isCategories
-                      ? colorScheme.primary.withAlpha(28)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.category_outlined,
-                  size: 18,
-                  color: isCategories
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
+          // Manage categories: a toggle, so the box fills while its tab is
+          // open. Same box and size as the actions across the header — it is
+          // the same kind of thing, and was the odd one out at 32.
+          AppIconButton(
+            icon: Icons.filter_list,
+            tooltip: l10n.categoriesTab,
+            selected: isCategories,
+            onPressed: () => setState(() {
+              _tabController.index = isCategories ? 0 : 2;
+              _clearSelection();
+            }),
           ),
         ],
       ),
@@ -464,10 +460,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             onPressed: _handleAddAction,
             icon: const Icon(Icons.add, size: 18),
             label: Text(l10n.addCategory),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              minimumSize: const Size(0, 38),
-            ),
           ),
         ],
       );
@@ -486,65 +478,25 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           onPressed: _handleAddAction,
           icon: const Icon(Icons.add, size: 18),
           label: Text(_addLabel(l10n)),
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            minimumSize: const Size(0, 38),
-          ),
         ),
       ],
     );
   }
 
+  /// Which list the header is over. The same control the rest of the app uses
+  /// for a choice of two — this screen had grown its own, a track with a plain
+  /// raised chip, which said the same thing in a second dialect.
   Widget _buildTabToggle(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(140),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildToggleBtn(l10n.userPrompts, 0, colorScheme),
-          _buildToggleBtn(l10n.systemTemplates, 1, colorScheme),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleBtn(String label, int index, ColorScheme colorScheme) {
-    final selected = _tabController.index == index;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: selected ? colorScheme.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(7),
-        boxShadow: selected
-            ? [BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 4, offset: const Offset(0, 1))]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(7),
-          onTap: () => setState(() {
-            _tabController.index = index;
-            _clearSelection();
-          }),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AppSegmentedControl<int>(
+      segments: [
+        AppSegment(value: 0, label: l10n.userPrompts),
+        AppSegment(value: 1, label: l10n.systemTemplates),
+      ],
+      value: _tabController.index,
+      onChanged: (index) => setState(() {
+        _tabController.index = index;
+        _clearSelection();
+      }),
     );
   }
 
@@ -628,12 +580,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   }
 
   Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false, double width = 300}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: isMobile ? double.infinity : width,
-      height: 40,
+      height: 38,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100),
-        borderRadius: BorderRadius.circular(20),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        // Squared off to the same 10px as the boxed actions beside it. A pill
+        // here made the one field on the header the odd shape out.
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
       ),
       child: TextField(
         controller: _searchCtrl,
@@ -652,18 +609,24 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
+  /// Import and export, boxed rather than filled: they sit beside the one
+  /// button on this header that creates something, and three filled shapes in a
+  /// row would give equal weight to the two that only move files around.
   Widget _buildImportExportActions(AppLocalizations l10n) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton.filledTonal(
-          icon: const Icon(Icons.upload_file_outlined, size: 20),
+        // Bare arrows: the pair is import next to export, and the direction is
+        // the whole distinction. The document and the circle the two glyphs
+        // used to carry differed from each other more than the arrows did.
+        AppIconButton(
+          icon: Icons.file_upload_outlined,
           tooltip: l10n.importSettings,
           onPressed: () => _importPrompts(l10n),
         ),
-        const SizedBox(width: 4),
-        IconButton.filledTonal(
-          icon: const Icon(Icons.download_for_offline_outlined, size: 20),
+        const SizedBox(width: 6),
+        AppIconButton(
+          icon: Icons.file_download_outlined,
           tooltip: l10n.exportSettings,
           onPressed: () => _exportPrompts(l10n),
         ),
@@ -778,16 +741,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: SegmentedButton<String>(
+          child: AppSegmentedControl<String>(
             segments: [
-              ButtonSegment(value: 'refiner', label: Text(l10n.typeRefiner), icon: const Icon(Icons.auto_fix_high, size: 16)),
-              ButtonSegment(value: 'rename', label: Text(l10n.typeRename), icon: const Icon(Icons.drive_file_rename_outline, size: 16)),
+              AppSegment(value: 'refiner', label: l10n.typeRefiner, icon: Icons.auto_fix_high),
+              AppSegment(value: 'rename', label: l10n.typeRename, icon: Icons.drive_file_rename_outline),
             ],
-            selected: {_selectedSystemType},
-            onSelectionChanged: (val) {
-              setState(() => _selectedSystemType = val.first);
-            },
-            showSelectedIcon: false,
+            value: _selectedSystemType,
+            onChanged: (val) => setState(() => _selectedSystemType = val),
+            expand: true,
           ),
         ),
       ),

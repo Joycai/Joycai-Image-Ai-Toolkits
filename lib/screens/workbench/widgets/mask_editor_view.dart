@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -100,6 +101,7 @@ class _MaskEditorViewState extends State<MaskEditorView> {
               onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
               icon: const Icon(Icons.photo_library_outlined),
               label: Text(l10n.goToGallery),
+              style: tonalButtonStyle(colorScheme),
             ),
           ],
         ),

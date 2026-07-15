@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -295,6 +296,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
                 icon: const Icon(Icons.auto_awesome_outlined, size: 18),
                 label: Text(l10n.fetchModels),
+                style: tonalButtonStyle(Theme.of(context).colorScheme),
               )
             else
               IconButton.filledTonal(

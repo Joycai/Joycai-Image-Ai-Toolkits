@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'app_segmented_control.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
 class MarkdownTextEditingController extends TextEditingController {
@@ -225,25 +226,14 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.isMarkdown || widget.isRefined)
-              SegmentedButton<bool>(
+              AppSegmentedControl<bool>(
                 segments: [
-                  ButtonSegment(
-                    value: false,
-                    label: Text(l10n.edit),
-                    icon: const Icon(Icons.edit, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text(l10n.preview),
-                    icon: const Icon(Icons.visibility, size: 16),
-                  ),
+                  AppSegment(value: false, label: l10n.edit, icon: Icons.edit),
+                  AppSegment(value: true, label: l10n.preview, icon: Icons.visibility),
                 ],
-                selected: {_isPreview},
-                onSelectionChanged: (v) => setState(() => _isPreview = v.first),
-                style: SegmentedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 11),
-                ),
+                value: _isPreview,
+                onChanged: (v) => setState(() => _isPreview = v),
+                compact: true,
               ),
             if (widget.allowExpand) ...[
               const SizedBox(width: 4),

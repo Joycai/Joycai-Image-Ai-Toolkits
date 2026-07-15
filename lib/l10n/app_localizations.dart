@@ -1001,6 +1001,54 @@ abstract class AppLocalizations {
   /// **'Usage by Group'**
   String get usageByGroup;
 
+  /// No description provided for @usageColumnDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Detail'**
+  String get usageColumnDetail;
+
+  /// No description provided for @usageColumnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get usageColumnTime;
+
+  /// No description provided for @usageColumnCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get usageColumnCost;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @usageRecordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} records'**
+  String usageRecordCount(int count);
+
+  /// No description provided for @usageItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String usageItemCount(int count);
+
+  /// No description provided for @noUsageInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'No usage data in the selected range.'**
+  String get noUsageInRange;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load More'**
+  String get loadMore;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:
@@ -1678,6 +1726,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Define billing standards for models to accurately calculate usage costs.'**
   String get feeGroupDesc;
+
+  /// No description provided for @feeGroupEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure how a model is billed'**
+  String get feeGroupEditorSubtitle;
 
   /// No description provided for @noFeeGroups.
   ///

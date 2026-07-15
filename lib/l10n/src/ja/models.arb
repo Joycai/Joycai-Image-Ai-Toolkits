@@ -112,6 +112,7 @@
   "bindTag": "タグをバインド",
   "previewReady": "このチャンネルを追加する準備ができましたか？",
   "feeGroupDesc": "モデルの請求基準を定義して、使用コストを正確に計算します。",
+  "feeGroupEditorSubtitle": "モデルの請求基準を設定します",
   "noFeeGroups": "まだ料金グループが作成されていません",
   "pricePerMillion": "100万トークンあたりの価格",
   "pricePerRequest": "リクエストあたりの価格",

@@ -6,14 +6,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/token_usage_screen.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Covers the usage / fee-groups view tabs.
 ///
-/// They navigate between two pages while sharing a header with a range filter
-/// that only filters the current one, so what these pin is that the tabs stay
-/// distinct from that filter and actually swap the body.
+/// They navigate between two pages, and the usage page carries a range filter
+/// that only filters itself, so what these pin is that the tabs stay distinct
+/// from that filter and actually swap the body.
 void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
   late Directory dbDir;
@@ -126,12 +127,14 @@ void main() {
   testWidgets('the view tabs are not shaped like the range filter', (tester) async {
     await pumpScreen(tester, const Size(1920, 1080));
 
-    // The header holds exactly one SegmentedButton — the range presets. The
+    // The screen holds exactly one segmented control — the range presets. The
     // view tabs used to be a second one sitting right beside it, which is what
     // made navigation read as another filter.
-    expect(find.byType(SegmentedButton<String>), findsOneWidget);
-    expect(find.byType(SegmentedButton<int>), findsNothing);
-    expect(find.text('Last Week'), findsOneWidget);
+    expect(find.byType(AppSegmentedControl<String>), findsOneWidget);
+    expect(find.byType(AppSegmentedControl<int>), findsNothing);
+    // Twice on purpose: once as the preset button, once on the summary card
+    // naming the period its totals cover.
+    expect(find.text('Last Week'), findsNWidgets(2));
 
     // The old title echoed the nav rail's own label from the header's most
     // valuable slot; the tabs have it now.

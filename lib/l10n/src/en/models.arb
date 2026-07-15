@@ -161,6 +161,7 @@
   "bindTag": "Bind Tag",
   "previewReady": "Ready to add this channel?",
   "feeGroupDesc": "Define billing standards for models to accurately calculate usage costs.",
+  "feeGroupEditorSubtitle": "Configure how a model is billed",
   "noFeeGroups": "No fee groups created yet",
   "pricePerMillion": "Price per Million Tokens",
   "pricePerRequest": "Price per Request",
