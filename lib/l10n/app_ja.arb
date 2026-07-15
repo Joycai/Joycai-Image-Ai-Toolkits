@@ -946,5 +946,79 @@
   "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
   "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
   "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
-  "optRetry": "再試行"
+  "optRetry": "再試行",
+  "optModeKnowledgeEdit": "ナレッジ編集",
+  "optToolWriteKnowledge": "ナレッジ更新の提案：{name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "新規ファイル",
+  "kbEditProposedUpdate": "ファイル更新",
+  "kbEditApply": "書き込む",
+  "kbEditReject": "破棄",
+  "kbEditApplied": "ディスクに書き込みました",
+  "kbEditRejected": "破棄しました",
+  "kbEditFailedShort": "書き込みに失敗しました",
+  "kbEditShow": "内容を表示（{chars} 文字）",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "内容を隠す",
+  "kbEditShrinkWarning": "新しい内容は現在のファイルよりかなり短くなっています（{oldChars} → {newChars} 文字）。書き込む前に内容が完全か確認してください。",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "書き込みに失敗しました：{error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "サンプルナレッジベースを作成",
+  "kbScaffoldFill": "不足しているサンプルファイルを追加",
+  "kbScaffoldConfirm": "{path} にサンプルナレッジベースのファイルを作成します。既存のファイルが上書きされることはありません。続行しますか？",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "ナレッジベースの準備が完了しました：{created} 件作成、{skipped} 件スキップ。",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldNoop": "作成するものはありません。サンプルファイルはすべて存在します。",
+  "kbScaffoldFailed": "ナレッジベースを作成できませんでした：{error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

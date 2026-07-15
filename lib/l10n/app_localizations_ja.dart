@@ -2162,4 +2162,75 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optRetry => '再試行';
+
+  @override
+  String get optModeKnowledgeEdit => 'ナレッジ編集';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return 'ナレッジ更新の提案：$name';
+  }
+
+  @override
+  String get kbEditProposedCreate => '新規ファイル';
+
+  @override
+  String get kbEditProposedUpdate => 'ファイル更新';
+
+  @override
+  String get kbEditApply => '書き込む';
+
+  @override
+  String get kbEditReject => '破棄';
+
+  @override
+  String get kbEditApplied => 'ディスクに書き込みました';
+
+  @override
+  String get kbEditRejected => '破棄しました';
+
+  @override
+  String get kbEditFailedShort => '書き込みに失敗しました';
+
+  @override
+  String kbEditShow(int chars) {
+    return '内容を表示（$chars 文字）';
+  }
+
+  @override
+  String get kbEditHide => '内容を隠す';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return '新しい内容は現在のファイルよりかなり短くなっています（$oldChars → $newChars 文字）。書き込む前に内容が完全か確認してください。';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return '書き込みに失敗しました：$error';
+  }
+
+  @override
+  String get kbScaffoldCreate => 'サンプルナレッジベースを作成';
+
+  @override
+  String get kbScaffoldFill => '不足しているサンプルファイルを追加';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return '$path にサンプルナレッジベースのファイルを作成します。既存のファイルが上書きされることはありません。続行しますか？';
+  }
+
+  @override
+  String kbScaffoldDone(int created, int skipped) {
+    return 'ナレッジベースの準備が完了しました：$created 件作成、$skipped 件スキップ。';
+  }
+
+  @override
+  String get kbScaffoldNoop => '作成するものはありません。サンプルファイルはすべて存在します。';
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return 'ナレッジベースを作成できませんでした：$error';
+  }
 }

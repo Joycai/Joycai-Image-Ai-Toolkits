@@ -18,10 +18,23 @@ import 'repositories/assistant_session_repository.dart';
 ///    knowledge base folder: it reads rule/template files on demand
 ///    (progressive disclosure) and builds prompts according to them. Uses a
 ///    built-in system prompt; user presets do not apply.
-enum AssistantMode { systemPrompt, knowledgeBase }
+///  * [knowledgeEdit] — maintenance mode: everything [knowledgeBase] can do,
+///    plus proposing edits to the knowledge files themselves. Edits are staged
+///    for the user to preview and approve; the agent never writes to disk.
+///
+/// Persisted by name with a fallback, so adding a value stays backward
+/// compatible — an older build restoring a newer row degrades to
+/// [systemPrompt] rather than failing.
+enum AssistantMode { systemPrompt, knowledgeBase, knowledgeEdit }
+
+/// Lifecycle of a knowledge-base edit proposed by the agent.
+///
+/// [failed] is a real state, not defensive padding: the disk write happens when
+/// the user taps Apply, so it can fail long after the tool call returned ok.
+enum KbEditState { pending, applied, rejected, failed }
 
 /// Kinds of entries shown in the optimizer chat transcript.
-enum OptimizerEntryKind { user, assistant, tool, prompt, error, notice }
+enum OptimizerEntryKind { user, assistant, tool, prompt, error, notice, kbEdit }
 
 /// One rendered line of the optimizer conversation.
 class OptimizerChatEntry {
@@ -38,13 +51,46 @@ class OptimizerChatEntry {
   /// 'view_image').
   final String? toolName;
 
+  /// For [OptimizerEntryKind.kbEdit]: identifies this edit within the session.
+  final String? editId;
+
+  /// For [OptimizerEntryKind.kbEdit]: knowledge-base-relative target path.
+  final String? targetPath;
+
+  /// For [OptimizerEntryKind.kbEdit]: the full proposed file content.
+  final String? newContent;
+
+  /// For [OptimizerEntryKind.kbEdit]: content at staging time; null = create.
+  final String? oldContent;
+
+  /// For [OptimizerEntryKind.kbEdit]: approval state.
+  final KbEditState? editState;
+
   OptimizerChatEntry({
     required this.kind,
     required this.text,
     this.version,
     this.note,
     this.toolName,
+    this.editId,
+    this.targetPath,
+    this.newContent,
+    this.oldContent,
+    this.editState,
   });
+
+  OptimizerChatEntry copyWith({KbEditState? editState}) => OptimizerChatEntry(
+        kind: kind,
+        text: text,
+        version: version,
+        note: note,
+        toolName: toolName,
+        editId: editId,
+        targetPath: targetPath,
+        newContent: newContent,
+        oldContent: oldContent,
+        editState: editState ?? this.editState,
+      );
 }
 
 /// Conversation state for one prompt-assistant session.
@@ -70,6 +116,15 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// Fixed for the session's lifetime — switching modes starts a new
   /// conversation so the history semantics stay coherent.
   final AssistantMode mode;
+
+  /// True when the session needs a validated knowledge base to run at all.
+  /// Prefer this over comparing [mode] directly — the checks live in several
+  /// files and an omitted one leaves the mode silently inert.
+  bool get usesKnowledgeBase =>
+      mode == AssistantMode.knowledgeBase || mode == AssistantMode.knowledgeEdit;
+
+  /// True when the agent may propose knowledge-base edits.
+  bool get canWriteKnowledge => mode == AssistantMode.knowledgeEdit;
 
   /// Knowledge pages already returned to the model ('relPath#page'), so
   /// repeated reads return a short "already in context" note instead of the
@@ -119,6 +174,64 @@ class PromptOptimizerSession extends ChangeNotifier {
       version: promptVersions,
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
+  }
+
+  int _kbEditCounter = 0;
+
+  /// Stages a proposed knowledge-file edit for the user to approve. Nothing
+  /// touches disk here — same contract as [_stagePrompt].
+  String _stageKbEdit({
+    required String relPath,
+    required String newContent,
+    required String? oldContent,
+    String? note,
+  }) {
+    final editId = 'kbedit_${id}_${_kbEditCounter++}';
+    _addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.kbEdit,
+      text: relPath,
+      editId: editId,
+      targetPath: relPath,
+      newContent: newContent,
+      oldContent: oldContent,
+      editState: KbEditState.pending,
+      note: (note == null || note.trim().isEmpty) ? null : note.trim(),
+    ));
+    return editId;
+  }
+
+  /// Flips a staged edit to its terminal state. Rebuilds the transcript rather
+  /// than mutating the entry in place; because the length is unchanged, the
+  /// chat view re-renders without yanking the user's scroll position.
+  void _resolveKbEdit(String editId, KbEditState state) {
+    _transcript = [
+      for (final e in _transcript)
+        (e.kind == OptimizerEntryKind.kbEdit && e.editId == editId)
+            ? e.copyWith(editState: state)
+            : e,
+    ];
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  String stageKbEditForTest({
+    required String relPath,
+    required String newContent,
+    String? oldContent,
+    String? note,
+  }) =>
+      _stageKbEdit(
+        relPath: relPath,
+        newContent: newContent,
+        oldContent: oldContent,
+        note: note,
+      );
+
+  OptimizerChatEntry? _findKbEdit(String editId) {
+    for (final e in _transcript) {
+      if (e.kind == OptimizerEntryKind.kbEdit && e.editId == editId) return e;
+    }
+    return null;
   }
 
   void _setRunning(bool running) {
@@ -199,6 +312,18 @@ class PromptOptimizerSession extends ChangeNotifier {
                   kind: OptimizerEntryKind.tool,
                   text: path,
                   toolName: 'read_knowledge_file',
+                ));
+              case 'write_knowledge_file':
+                // Restored as a plain chip, never as an actionable kbEdit card.
+                // The approval outcome is not persisted (the transcript is
+                // derived from history, which only records that the call
+                // happened), and oldContent was captured at staging time — so
+                // re-offering Apply after a restart could overwrite newer
+                // content against a stale preview.
+                entries.add(OptimizerChatEntry(
+                  kind: OptimizerEntryKind.tool,
+                  text: call.arguments['path']?.toString() ?? '',
+                  toolName: 'write_knowledge_file',
                 ));
               case 'list_knowledge_files':
                 entries.add(OptimizerChatEntry(
@@ -359,6 +484,42 @@ class PromptOptimizerAgent {
     ),
   ];
 
+  /// Write tools, added only in [AssistantMode.knowledgeEdit].
+  ///
+  /// Deliberately just one tool, and no delete: the mode's invariant is that it
+  /// can only add or replace content, always behind a user-approved preview,
+  /// and can never destroy data.
+  static final List<LLMTool> _knowledgeWriteTools = [
+    LLMTool(
+      name: 'write_knowledge_file',
+      description: 'Propose creating or rewriting one knowledge-base markdown '
+          'file. The edit is STAGED for the user to review and approve — it is '
+          'NOT written to disk by this call. You must pass the COMPLETE new '
+          'file content (there is no patch/diff mode). Before rewriting an '
+          'existing file you must read it first with read_knowledge_file. '
+          'Whenever you add or rename a file, also update the entry file '
+          '(README.md) so the file map keeps matching the real tree.',
+      parameters: {
+        'type': 'object',
+        'properties': {
+          'path': {
+            'type': 'string',
+            'description': 'Relative path from the knowledge base root. Must end in .md.',
+          },
+          'content': {
+            'type': 'string',
+            'description': 'The complete new content of the file, not a fragment or a diff.',
+          },
+          'note': {
+            'type': 'string',
+            'description': 'Optional one-sentence summary of what this edit changes and why.',
+          },
+        },
+        'required': ['path', 'content'],
+      },
+    ),
+  ];
+
   /// Runs one agent turn: consumes the pending user message already appended
   /// to [session.history] and loops on tool calls until the model stops.
   ///
@@ -381,16 +542,21 @@ class PromptOptimizerAgent {
     bool Function()? isCancelled,
   }) async {
     session._setRunning(true);
-    final knowledgeMode = session.mode == AssistantMode.knowledgeBase;
+    final knowledgeMode = session.usesKnowledgeBase;
+    final editMode = session.canWriteKnowledge;
     if (knowledgeMode && (knowledgeRoot == null || knowledgeEntryContent == null)) {
       session._setRunning(false);
       throw StateError('Knowledge mode requires knowledgeRoot and knowledgeEntryContent.');
     }
-    final tools = knowledgeMode ? [..._tools, ..._knowledgeTools] : _tools;
+    final tools = editMode
+        ? [..._tools, ..._knowledgeTools, ..._knowledgeWriteTools]
+        : (knowledgeMode ? [..._tools, ..._knowledgeTools] : _tools);
     // Weak local models tend to issue a single tool call per turn, so viewing
     // every reference image one by one needs list + N views + submit turns.
     // Knowledge mode needs extra headroom for file listing/reading rounds.
-    final baseTurns = knowledgeMode ? 20 : _maxTurns;
+    // Edit mode needs more still — not because writes are expensive, but
+    // because the read-before-write rail forces a read round per file touched.
+    final baseTurns = editMode ? 24 : (knowledgeMode ? 20 : _maxTurns);
     final minTurns = referenceImages.length + (knowledgeMode ? 8 : 4);
     final maxTurns = baseTurns > minTurns ? baseTurns : minTurns;
     final repo = AssistantSessionRepository();
@@ -413,17 +579,26 @@ class PromptOptimizerAgent {
             messages: [
               LLMMessage(
                 role: LLMRole.system,
-                content: knowledgeMode
-                    ? _buildKnowledgeSystemPrompt(
+                // Rebuilt every request. knowledgeEntryContent is captured once
+                // per task, but staging means no edit can reach disk mid-turn,
+                // so the injected file map cannot go stale within a turn.
+                content: editMode
+                    ? _buildKnowledgeEditSystemPrompt(
                         knowledgeEntryContent!,
                         referenceImages.length,
                         forceViewAllImages,
                       )
-                    : _buildSystemPrompt(
-                        systemPrompt,
-                        referenceImages.length,
-                        forceViewAllImages,
-                      ),
+                    : knowledgeMode
+                        ? _buildKnowledgeSystemPrompt(
+                            knowledgeEntryContent!,
+                            referenceImages.length,
+                            forceViewAllImages,
+                          )
+                        : _buildSystemPrompt(
+                            systemPrompt,
+                            referenceImages.length,
+                            forceViewAllImages,
+                          ),
               ),
               ..._trimForSend(session.history),
             ],
@@ -594,6 +769,40 @@ class PromptOptimizerAgent {
         content: '${m.content} (attachment elided to save context — it was inspected earlier.)',
       );
     }
+    // A write's tool *result* is tiny, but the assistant message that requested
+    // it keeps the whole proposed file body in its tool-call arguments — which
+    // would otherwise be re-sent on every later request for the rest of the
+    // session. The staged content was already shown to the user, so the model
+    // does not need it back.
+    if (m.role == LLMRole.assistant &&
+        m.toolCalls.any((c) =>
+            c.name == 'write_knowledge_file' &&
+            (c.arguments['content']?.toString().length ?? 0) > 300)) {
+      return LLMMessage(
+        role: LLMRole.assistant,
+        content: m.content,
+        toolCalls: [
+          for (final c in m.toolCalls)
+            if (c.name == 'write_knowledge_file' &&
+                (c.arguments['content']?.toString().length ?? 0) > 300)
+              LLMToolCall(
+                // id and thoughtSignature must survive verbatim: the id keeps
+                // call/result pairing intact, and Gemini rejects the request
+                // outright if a thoughtSignature is not echoed back as-is.
+                id: c.id,
+                name: c.name,
+                thoughtSignature: c.thoughtSignature,
+                arguments: {
+                  ...c.arguments,
+                  'content': '(elided to save context — this edit was already '
+                      'staged and shown to the user.)',
+                },
+              )
+            else
+              c,
+        ],
+      );
+    }
     return m;
   }
 
@@ -677,6 +886,13 @@ class PromptOptimizerAgent {
           for (final call in m.toolCalls) {
             if (call.name == 'submit_prompt') {
               buffer.writeln('SUBMITTED PROMPT: ${call.arguments['prompt'] ?? ''}');
+            } else if (call.name == 'write_knowledge_file') {
+              // The generic branch below would jsonEncode the whole proposed
+              // file into the summarization prompt.
+              final body = call.arguments['content']?.toString() ?? '';
+              buffer.writeln('KB EDIT PROPOSED: ${call.arguments['path'] ?? ''} '
+                  '(${body.length} chars, content omitted)'
+                  '${call.arguments['note'] != null ? ' — ${call.arguments['note']}' : ''}');
             } else {
               buffer.writeln('TOOL CALL: ${call.name} ${jsonEncode(call.arguments)}');
             }
@@ -751,6 +967,62 @@ class PromptOptimizerAgent {
         } catch (e) {
           return {'status': 'error', 'message': 'Failed to read $relPath: $e'};
         }
+      case 'write_knowledge_file':
+        if (knowledgeRoot == null) return _kbUnavailable();
+        // The tool is only registered in edit mode, but a model can hallucinate
+        // a tool name it was never offered — the mode, not the tool list, is
+        // what decides whether this session may propose edits at all.
+        if (!session.canWriteKnowledge) {
+          return {
+            'status': 'error',
+            'message': 'This session is read-only. Knowledge files can only be '
+                'edited in the knowledge-base maintenance mode.',
+          };
+        }
+        final writePath = call.arguments['path']?.toString() ?? '';
+        final writeContent = call.arguments['content']?.toString() ?? '';
+        onLog?.call('Tool call: write_knowledge_file $writePath (${writeContent.length} chars)');
+        if (writePath.trim().isEmpty) {
+          return {'status': 'error', 'message': 'The path argument must not be empty.'};
+        }
+        if (writeContent.isEmpty) {
+          return {
+            'status': 'error',
+            'message': 'The content argument must not be empty. Pass the complete file content.',
+          };
+        }
+        try {
+          final kb = KnowledgeBaseService();
+          final existing = kb.readFullFile(knowledgeRoot, writePath);
+          // Read-before-write rail, enforced here rather than left to the
+          // system prompt: overwriting a file the model has not read is the
+          // cheapest way for it to silently destroy the user's rules.
+          if (existing != null &&
+              !session.readKnowledgePages.any((k) => k.startsWith('$writePath#'))) {
+            return {
+              'status': 'error',
+              'message': 'Read $writePath with read_knowledge_file first — you '
+                  'must not overwrite a file you have not read.',
+            };
+          }
+          session._stageKbEdit(
+            relPath: writePath,
+            newContent: writeContent,
+            oldContent: existing,
+            note: call.arguments['note']?.toString(),
+          );
+          return {
+            'status': 'ok',
+            'message': 'Edit to $writePath staged for user approval. It is NOT '
+                'written yet — do not assume it was applied, and do not re-read '
+                'the file expecting your new content.',
+          };
+        } on KbPathException catch (e) {
+          return {'status': 'error', 'message': e.message};
+        } catch (e) {
+          return {'status': 'error', 'message': 'Failed to stage edit for $writePath: $e'};
+        }
+
       case 'list_reference_images':
         onLog?.call('Tool call: list_reference_images (${referenceImages.length} images)');
         session._addEntry(OptimizerChatEntry(
@@ -842,7 +1114,8 @@ class PromptOptimizerAgent {
           'status': 'error',
           'message': 'Unknown tool "${call.name}". Available tools: '
               'list_reference_images, view_image, submit_prompt'
-              '${knowledgeRoot != null ? ', list_knowledge_files, read_knowledge_file' : ''}.',
+              '${knowledgeRoot != null ? ', list_knowledge_files, read_knowledge_file' : ''}'
+              '${session.canWriteKnowledge ? ', write_knowledge_file' : ''}.',
         };
     }
   }
@@ -851,6 +1124,43 @@ class PromptOptimizerAgent {
         'status': 'error',
         'message': 'The knowledge base is not available in this session.',
       };
+
+  /// Writes a staged edit to disk after the user approved it, and flips the
+  /// transcript card to its terminal state. This is the only path that mutates
+  /// the knowledge base — the agent never writes directly.
+  static Future<void> applyStagedKbEdit({
+    required PromptOptimizerSession session,
+    required String editId,
+  }) async {
+    final entry = session._findKbEdit(editId);
+    if (entry == null || entry.editState != KbEditState.pending) return;
+    final relPath = entry.targetPath!;
+    try {
+      final root = await KnowledgeBaseService().getRoot();
+      if (root == null) throw KbPathException('The knowledge base folder is not configured.');
+      await KnowledgeBaseService().writeFile(root, relPath, entry.newContent!);
+      // The file changed, so every cached page of it is now wrong — and page
+      // boundaries move on a rewrite, so partial eviction is meaningless.
+      // Without this the agent would be told "already in the conversation" and
+      // never see its own edit.
+      session.readKnowledgePages.removeWhere((k) => k.startsWith('$relPath#'));
+      session._resolveKbEdit(editId, KbEditState.applied);
+    } catch (_) {
+      session._resolveKbEdit(editId, KbEditState.failed);
+      rethrow;
+    }
+  }
+
+  /// Discards a staged edit. The read cache is deliberately left alone — the
+  /// file on disk never changed.
+  static void rejectStagedKbEdit({
+    required PromptOptimizerSession session,
+    required String editId,
+  }) {
+    final entry = session._findKbEdit(editId);
+    if (entry == null || entry.editState != KbEditState.pending) return;
+    session._resolveKbEdit(editId, KbEditState.rejected);
+  }
 
   static String _buildSystemPrompt(
     String? template,
@@ -934,6 +1244,56 @@ class PromptOptimizerAgent {
         'The user may reply with follow-up adjustments — apply the knowledge '
         'base rules again and deliver every revision through submit_prompt '
         'with the full prompt.';
+  }
+
+  /// System prompt for [AssistantMode.knowledgeEdit]. Built-in like the
+  /// knowledge-base prompt; user presets do not apply. The deliverable here is
+  /// a knowledge-base edit rather than a prompt, so the workflow leads with
+  /// write_knowledge_file instead of submit_prompt.
+  static String _buildKnowledgeEditSystemPrompt(
+    String entryContent,
+    int referenceImageCount,
+    bool forceViewAllImages,
+  ) {
+    final viewStep = forceViewAllImages && referenceImageCount > 0
+        ? '- MANDATORY: call list_reference_images, then view_image for EVERY '
+            'image id from 1 to $referenceImageCount before calling '
+            'submit_prompt — never skip an image and never submit early.\n'
+        : '- If reference images could be relevant, inspect them with '
+            'list_reference_images and view_image before relying on them.\n';
+    return 'You are a knowledge-base maintainer for a prompt-engineering '
+        'knowledge base — a folder of rule and template files whose entry file '
+        '(the file map) is included below. You help the user improve and extend '
+        'these files.\n\n'
+        '=== KNOWLEDGE BASE ENTRY (file map) ===\n'
+        '$entryContent\n'
+        '=== END OF ENTRY ===\n\n'
+        'Tools:\n'
+        '- list_knowledge_files / read_knowledge_file: browse and read '
+        'knowledge files on demand.\n'
+        '- write_knowledge_file: propose creating or rewriting one file. This '
+        'is how you deliver changes.\n'
+        '- list_reference_images / view_image: inspect the user\'s reference '
+        'images ($referenceImageCount available).\n'
+        '- submit_prompt: only if the user also asks for an actual prompt.\n'
+        'Workflow:\n'
+        '1. Use the file map to locate the files the request concerns, and read '
+        'them. Read only what you need — do NOT sweep the whole knowledge base.\n'
+        '2. You MUST read an existing file before rewriting it. Pass the '
+        'COMPLETE new content to write_knowledge_file — there is no patch mode, '
+        'and partial content would truncate the file.\n'
+        '3. Preserve what the user already wrote. Improve structure and add '
+        'what was asked for; do not silently drop existing rules, and never '
+        'invent rules the user did not ask for.\n'
+        '4. When you add, rename, or repurpose a file, update the entry file '
+        '(${KnowledgeBaseService.entryFileName}) in the same turn so its tables '
+        'keep matching the real tree — a file missing from the map is invisible '
+        'to the assistant.\n'
+        '$viewStep'
+        'Every edit is STAGED and shown to the user for approval — nothing you '
+        'write reaches disk until they accept it. So never claim a change has '
+        'been saved, and do not re-read a file expecting to find your own '
+        'pending edit. After staging, briefly tell the user what you changed.';
   }
 
   static int _fileSizeKb(String? path) {

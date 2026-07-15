@@ -19,6 +19,12 @@ class PromptOptimizerChatView extends StatefulWidget {
   final VoidCallback onSend;
   final VoidCallback onRetry;
   final void Function(String prompt) onApplyPrompt;
+
+  /// Writes a staged knowledge-base edit to disk after the user approves it.
+  final void Function(String editId) onApplyKbEdit;
+
+  /// Discards a staged knowledge-base edit.
+  final void Function(String editId) onRejectKbEdit;
   final bool isBusy;
 
   const PromptOptimizerChatView({
@@ -27,6 +33,8 @@ class PromptOptimizerChatView extends StatefulWidget {
     required this.onSend,
     required this.onRetry,
     required this.onApplyPrompt,
+    required this.onApplyKbEdit,
+    required this.onRejectKbEdit,
     required this.isBusy,
   });
 
@@ -38,6 +46,9 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   final ScrollController _scrollCtrl = ScrollController();
   PromptOptimizerSession? _session;
   int _lastTranscriptLength = 0;
+
+  /// Edit ids whose full proposed content is expanded. Purely presentational.
+  final Set<String> _expandedKbEdits = {};
 
   @override
   void dispose() {
@@ -199,6 +210,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           case 'list_knowledge_files':
             label = l10n.optToolListKnowledge;
             icon = Icons.folder_outlined;
+          case 'write_knowledge_file':
+            // Only reached for restored sessions — a live staged edit renders
+            // as an actionable kbEdit card instead.
+            label = l10n.optToolWriteKnowledge(entry.text);
+            icon = Icons.edit_note_outlined;
           default:
             label = l10n.optToolListImages;
             icon = Icons.checklist_rtl;
@@ -226,6 +242,9 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
       case OptimizerEntryKind.prompt:
         return _buildPromptCard(entry, l10n, colorScheme);
+
+      case OptimizerEntryKind.kbEdit:
+        return _buildKbEditCard(entry, l10n, colorScheme);
 
       case OptimizerEntryKind.notice:
         final noticeText = switch (entry.text) {
@@ -288,6 +307,205 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           ),
         );
     }
+  }
+
+  /// Preview card for a knowledge-base edit the agent proposed. Nothing has
+  /// been written yet — this card is the approval gate.
+  Widget _buildKbEditCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+    final state = entry.editState ?? KbEditState.pending;
+    final isCreate = entry.oldContent == null;
+    final pending = state == KbEditState.pending;
+    final editId = entry.editId!;
+    final expanded = _expandedKbEdits.contains(editId);
+    final content = entry.newContent ?? '';
+    // A model that truncates its output would silently gut the file; the length
+    // drop is the cheapest signal for the most destructive failure mode.
+    final suspiciousShrink = !isCreate &&
+        entry.oldContent!.length > 200 &&
+        content.length < entry.oldContent!.length ~/ 2;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: pending
+              ? colorScheme.primary.withValues(alpha: 0.45)
+              : colorScheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 10, 0),
+            child: Row(
+              children: [
+                Icon(
+                  isCreate ? Icons.note_add_outlined : Icons.edit_note_outlined,
+                  size: 15,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isCreate ? l10n.kbEditProposedCreate : l10n.kbEditProposedUpdate,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    entry.targetPath ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (entry.note != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+              child: Text(
+                entry.note!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          if (suspiciousShrink)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_outlined, size: 14, color: colorScheme.error),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      l10n.kbEditShrinkWarning(entry.oldContent!.length, content.length),
+                      style: TextStyle(fontSize: 11, color: colorScheme.error),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Collapsed by default: a knowledge file can run to thousands of
+          // characters and would bury the rest of the conversation.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 4, 14, 0),
+            child: Row(
+              children: [
+                // Flexible + ellipsis: the label carries a character count and
+                // is translated, so its width is not knowable up front — an
+                // unflexed child here would size past a narrow card.
+                Flexible(
+                  child: TextButton.icon(
+                    onPressed: () => setState(() {
+                      expanded ? _expandedKbEdits.remove(editId) : _expandedKbEdits.add(editId);
+                    }),
+                    icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 16),
+                    label: Text(
+                      expanded ? l10n.kbEditHide : l10n.kbEditShow(content.length),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (expanded)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+              padding: const EdgeInsets.all(10),
+              constraints: const BoxConstraints(maxHeight: 320),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  content,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.45,
+                    fontFamily: 'monospace',
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 10, 10),
+            child: pending
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => widget.onRejectKbEdit(editId),
+                        child: Text(l10n.kbEditReject, style: const TextStyle(fontSize: 12)),
+                      ),
+                      const SizedBox(width: 6),
+                      FilledButton.tonalIcon(
+                        onPressed: () => widget.onApplyKbEdit(editId),
+                        icon: const Icon(Icons.save_outlined, size: 15),
+                        label: Text(l10n.kbEditApply, style: const TextStyle(fontSize: 12)),
+                        style: tonalButtonStyle(colorScheme)
+                            .copyWith(visualDensity: VisualDensity.compact),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Icon(
+                        switch (state) {
+                          KbEditState.applied => Icons.check_circle_outline,
+                          KbEditState.rejected => Icons.cancel_outlined,
+                          _ => Icons.error_outline,
+                        },
+                        size: 14,
+                        color: state == KbEditState.failed
+                            ? colorScheme.error
+                            : colorScheme.outline,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          switch (state) {
+                            KbEditState.applied => l10n.kbEditApplied,
+                            KbEditState.rejected => l10n.kbEditRejected,
+                            _ => l10n.kbEditFailedShort,
+                          },
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: state == KbEditState.failed
+                                ? colorScheme.error
+                                : colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPromptCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {

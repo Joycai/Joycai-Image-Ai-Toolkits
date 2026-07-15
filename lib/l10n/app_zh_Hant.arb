@@ -946,5 +946,79 @@
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
-  "optRetry": "重試"
+  "optRetry": "重試",
+  "optModeKnowledgeEdit": "知識庫編輯",
+  "optToolWriteKnowledge": "建議更新知識庫：{name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "新增檔案",
+  "kbEditProposedUpdate": "更新檔案",
+  "kbEditApply": "寫入檔案",
+  "kbEditReject": "捨棄",
+  "kbEditApplied": "已寫入磁碟",
+  "kbEditRejected": "已捨棄",
+  "kbEditFailedShort": "寫入失敗",
+  "kbEditShow": "展開內容（{chars} 字元）",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "收合內容",
+  "kbEditShrinkWarning": "新內容比目前檔案短很多（{oldChars} → {newChars} 字元），請先確認內容完整再寫入。",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "寫入失敗：{error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "建立範例知識庫",
+  "kbScaffoldFill": "補齊缺少的範例檔案",
+  "kbScaffoldConfirm": "將在 {path} 中建立範例知識庫檔案。已存在的檔案不會被覆蓋。是否繼續？",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "知識庫已就緒：新增 {created} 個檔案，略過 {skipped} 個。",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldNoop": "無需建立，範例檔案均已存在。",
+  "kbScaffoldFailed": "建立知識庫失敗：{error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

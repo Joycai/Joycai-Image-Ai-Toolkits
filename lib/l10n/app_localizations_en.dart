@@ -2214,4 +2214,76 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optRetry => 'Retry';
+
+  @override
+  String get optModeKnowledgeEdit => 'Edit KB';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return 'Proposed knowledge update: $name';
+  }
+
+  @override
+  String get kbEditProposedCreate => 'New file';
+
+  @override
+  String get kbEditProposedUpdate => 'Update file';
+
+  @override
+  String get kbEditApply => 'Write file';
+
+  @override
+  String get kbEditReject => 'Discard';
+
+  @override
+  String get kbEditApplied => 'Written to disk';
+
+  @override
+  String get kbEditRejected => 'Discarded';
+
+  @override
+  String get kbEditFailedShort => 'Write failed';
+
+  @override
+  String kbEditShow(int chars) {
+    return 'Show content ($chars chars)';
+  }
+
+  @override
+  String get kbEditHide => 'Hide content';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return 'The new content is much shorter than the current file ($oldChars → $newChars chars). Check it is complete before writing.';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return 'Write failed: $error';
+  }
+
+  @override
+  String get kbScaffoldCreate => 'Create sample knowledge base';
+
+  @override
+  String get kbScaffoldFill => 'Add missing sample files';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return 'Create sample knowledge base files in $path? Existing files are never overwritten.';
+  }
+
+  @override
+  String kbScaffoldDone(int created, int skipped) {
+    return 'Knowledge base ready: $created file(s) created, $skipped skipped.';
+  }
+
+  @override
+  String get kbScaffoldNoop =>
+      'Nothing to create — all sample files already exist.';
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return 'Could not create the knowledge base: $error';
+  }
 }

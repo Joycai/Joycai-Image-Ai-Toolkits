@@ -118,6 +118,34 @@ class KnowledgeBaseService {
     return entries;
   }
 
+  /// Reads a knowledge file in full, unpaged. Returns null when it does not
+  /// exist — callers use that to distinguish a create from an overwrite.
+  String? readFullFile(String root, String relPath) {
+    final file = File(resolvePath(root, relPath));
+    return file.existsSync() ? file.readAsStringSync() : null;
+  }
+
+  /// Creates or overwrites a knowledge file, creating parent directories as
+  /// needed. Stricter than [resolvePath] alone: the target must be a markdown
+  /// file that [listFiles] would surface, and can never be the root itself.
+  Future<void> writeFile(String root, String relPath, String content) async {
+    final resolved = resolvePath(root, relPath);
+    if (p.equals(resolved, p.normalize(root))) {
+      throw KbPathException('The knowledge base root is not a file.');
+    }
+    if (!relPath.toLowerCase().endsWith('.md')) {
+      throw KbPathException('Only markdown (.md) files can be written.');
+    }
+    // Mirrors the dot-prefix skip in listFiles: a hidden file would be written
+    // but stay invisible to the agent afterwards.
+    if (p.split(relPath).any((segment) => segment.startsWith('.'))) {
+      throw KbPathException('Paths must not contain hidden (dot-prefixed) segments.');
+    }
+    final file = File(resolved);
+    await file.parent.create(recursive: true);
+    await file.writeAsString(content);
+  }
+
   /// Reads one page of a knowledge file. [page] is 1-based.
   KbReadResult readFile(String root, String relPath, {int page = 1}) {
     final resolved = resolvePath(root, relPath);

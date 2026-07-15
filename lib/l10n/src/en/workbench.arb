@@ -318,5 +318,79 @@
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
-  "optRetry": "Retry"
+  "optRetry": "Retry",
+  "optModeKnowledgeEdit": "Edit KB",
+  "optToolWriteKnowledge": "Proposed knowledge update: {name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "New file",
+  "kbEditProposedUpdate": "Update file",
+  "kbEditApply": "Write file",
+  "kbEditReject": "Discard",
+  "kbEditApplied": "Written to disk",
+  "kbEditRejected": "Discarded",
+  "kbEditFailedShort": "Write failed",
+  "kbEditShow": "Show content ({chars} chars)",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "Hide content",
+  "kbEditShrinkWarning": "The new content is much shorter than the current file ({oldChars} → {newChars} chars). Check it is complete before writing.",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "Write failed: {error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "Create sample knowledge base",
+  "kbScaffoldFill": "Add missing sample files",
+  "kbScaffoldConfirm": "Create sample knowledge base files in {path}? Existing files are never overwritten.",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "Knowledge base ready: {created} file(s) created, {skipped} skipped.",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldNoop": "Nothing to create — all sample files already exist.",
+  "kbScaffoldFailed": "Could not create the knowledge base: {error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

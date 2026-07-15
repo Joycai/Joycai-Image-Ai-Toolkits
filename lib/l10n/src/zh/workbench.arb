@@ -318,5 +318,79 @@
   "optDeleteSessionConfirm": "确定永久删除该会话？",
   "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
   "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。",
-  "optRetry": "重试"
+  "optRetry": "重试",
+  "optModeKnowledgeEdit": "知识库编辑",
+  "optToolWriteKnowledge": "建议更新知识库：{name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "新建文件",
+  "kbEditProposedUpdate": "更新文件",
+  "kbEditApply": "写入文件",
+  "kbEditReject": "放弃",
+  "kbEditApplied": "已写入磁盘",
+  "kbEditRejected": "已放弃",
+  "kbEditFailedShort": "写入失败",
+  "kbEditShow": "展开内容（{chars} 字符）",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "收起内容",
+  "kbEditShrinkWarning": "新内容比当前文件短很多（{oldChars} → {newChars} 字符），请先确认内容完整再写入。",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "写入失败：{error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "创建示例知识库",
+  "kbScaffoldFill": "补充缺失的示例文件",
+  "kbScaffoldConfirm": "将在 {path} 中创建示例知识库文件。已存在的文件不会被覆盖。是否继续？",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "知识库已就绪：新建 {created} 个文件，跳过 {skipped} 个。",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldNoop": "无需创建，示例文件均已存在。",
+  "kbScaffoldFailed": "创建知识库失败：{error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

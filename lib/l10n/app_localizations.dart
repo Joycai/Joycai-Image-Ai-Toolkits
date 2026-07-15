@@ -4132,6 +4132,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get optRetry;
+
+  /// No description provided for @optModeKnowledgeEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit KB'**
+  String get optModeKnowledgeEdit;
+
+  /// No description provided for @optToolWriteKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed knowledge update: {name}'**
+  String optToolWriteKnowledge(String name);
+
+  /// No description provided for @kbEditProposedCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'New file'**
+  String get kbEditProposedCreate;
+
+  /// No description provided for @kbEditProposedUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update file'**
+  String get kbEditProposedUpdate;
+
+  /// No description provided for @kbEditApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Write file'**
+  String get kbEditApply;
+
+  /// No description provided for @kbEditReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get kbEditReject;
+
+  /// No description provided for @kbEditApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Written to disk'**
+  String get kbEditApplied;
+
+  /// No description provided for @kbEditRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Discarded'**
+  String get kbEditRejected;
+
+  /// No description provided for @kbEditFailedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Write failed'**
+  String get kbEditFailedShort;
+
+  /// No description provided for @kbEditShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show content ({chars} chars)'**
+  String kbEditShow(int chars);
+
+  /// No description provided for @kbEditHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide content'**
+  String get kbEditHide;
+
+  /// No description provided for @kbEditShrinkWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The new content is much shorter than the current file ({oldChars} → {newChars} chars). Check it is complete before writing.'**
+  String kbEditShrinkWarning(int oldChars, int newChars);
+
+  /// No description provided for @kbEditFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Write failed: {error}'**
+  String kbEditFailed(String error);
+
+  /// No description provided for @kbScaffoldCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sample knowledge base'**
+  String get kbScaffoldCreate;
+
+  /// No description provided for @kbScaffoldFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Add missing sample files'**
+  String get kbScaffoldFill;
+
+  /// No description provided for @kbScaffoldConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sample knowledge base files in {path}? Existing files are never overwritten.'**
+  String kbScaffoldConfirm(String path);
+
+  /// No description provided for @kbScaffoldDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge base ready: {created} file(s) created, {skipped} skipped.'**
+  String kbScaffoldDone(int created, int skipped);
+
+  /// No description provided for @kbScaffoldNoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to create — all sample files already exist.'**
+  String get kbScaffoldNoop;
+
+  /// No description provided for @kbScaffoldFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the knowledge base: {error}'**
+  String kbScaffoldFailed(String error);
 }
 
 class _AppLocalizationsDelegate

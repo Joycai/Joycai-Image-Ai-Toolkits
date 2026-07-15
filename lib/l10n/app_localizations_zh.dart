@@ -2148,6 +2148,77 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optRetry => '重试';
+
+  @override
+  String get optModeKnowledgeEdit => '知识库编辑';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return '建议更新知识库：$name';
+  }
+
+  @override
+  String get kbEditProposedCreate => '新建文件';
+
+  @override
+  String get kbEditProposedUpdate => '更新文件';
+
+  @override
+  String get kbEditApply => '写入文件';
+
+  @override
+  String get kbEditReject => '放弃';
+
+  @override
+  String get kbEditApplied => '已写入磁盘';
+
+  @override
+  String get kbEditRejected => '已放弃';
+
+  @override
+  String get kbEditFailedShort => '写入失败';
+
+  @override
+  String kbEditShow(int chars) {
+    return '展开内容（$chars 字符）';
+  }
+
+  @override
+  String get kbEditHide => '收起内容';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return '新内容比当前文件短很多（$oldChars → $newChars 字符），请先确认内容完整再写入。';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return '写入失败：$error';
+  }
+
+  @override
+  String get kbScaffoldCreate => '创建示例知识库';
+
+  @override
+  String get kbScaffoldFill => '补充缺失的示例文件';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return '将在 $path 中创建示例知识库文件。已存在的文件不会被覆盖。是否继续？';
+  }
+
+  @override
+  String kbScaffoldDone(int created, int skipped) {
+    return '知识库已就绪：新建 $created 个文件，跳过 $skipped 个。';
+  }
+
+  @override
+  String get kbScaffoldNoop => '无需创建，示例文件均已存在。';
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return '创建知识库失败：$error';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4282,4 +4353,75 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRetry => '重試';
+
+  @override
+  String get optModeKnowledgeEdit => '知識庫編輯';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return '建議更新知識庫：$name';
+  }
+
+  @override
+  String get kbEditProposedCreate => '新增檔案';
+
+  @override
+  String get kbEditProposedUpdate => '更新檔案';
+
+  @override
+  String get kbEditApply => '寫入檔案';
+
+  @override
+  String get kbEditReject => '捨棄';
+
+  @override
+  String get kbEditApplied => '已寫入磁碟';
+
+  @override
+  String get kbEditRejected => '已捨棄';
+
+  @override
+  String get kbEditFailedShort => '寫入失敗';
+
+  @override
+  String kbEditShow(int chars) {
+    return '展開內容（$chars 字元）';
+  }
+
+  @override
+  String get kbEditHide => '收合內容';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return '新內容比目前檔案短很多（$oldChars → $newChars 字元），請先確認內容完整再寫入。';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return '寫入失敗：$error';
+  }
+
+  @override
+  String get kbScaffoldCreate => '建立範例知識庫';
+
+  @override
+  String get kbScaffoldFill => '補齊缺少的範例檔案';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return '將在 $path 中建立範例知識庫檔案。已存在的檔案不會被覆蓋。是否繼續？';
+  }
+
+  @override
+  String kbScaffoldDone(int created, int skipped) {
+    return '知識庫已就緒：新增 $created 個檔案，略過 $skipped 個。';
+  }
+
+  @override
+  String get kbScaffoldNoop => '無需建立，範例檔案均已存在。';
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return '建立知識庫失敗：$error';
+  }
 }
