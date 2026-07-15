@@ -113,20 +113,27 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   }
 
   Widget _buildEmptyState(AppLocalizations l10n, ColorScheme colorScheme) {
+    // Scrollable, not just centred: the input bar grows to six lines as the
+    // user types, and the console below can be dragged up, so the space left
+    // for this can fall below the artwork's own height. A bare Column cannot
+    // shrink past its children and would overflow instead.
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_fix_high, size: 44, color: colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            Text(
-              l10n.optEmptyChat,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
-            ),
-          ],
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_fix_high, size: 44, color: colorScheme.outlineVariant),
+              const SizedBox(height: 16),
+              Text(
+                l10n.optEmptyChat,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
+              ),
+            ],
+          ),
         ),
       ),
     );

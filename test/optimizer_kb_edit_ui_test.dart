@@ -24,6 +24,7 @@ void main() {
 
   Future<void> pumpChat(WidgetTester tester, PromptOptimizerSession session,
       {Size size = const Size(1400, 1000),
+      String inputText = '',
       void Function(String)? onApply,
       void Function(String)? onReject}) async {
     tester.view.physicalSize = size;
@@ -40,7 +41,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: PromptOptimizerChatView(
-            inputCtrl: TextEditingController(),
+            inputCtrl: TextEditingController(text: inputText),
             onSend: () {},
             onRetry: () {},
             onApplyPrompt: (_) {},
@@ -182,6 +183,42 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+  });
+
+  group('the empty state survives a squeezed pane', () {
+    // The input bar grows to six lines as the user types and the console below
+    // can be dragged up, so the space left for the empty state can fall well
+    // under its own height. It used to overflow: a Column(min) inside a Center
+    // cannot shrink past its children.
+    const longPrompt = '# 任务\n生成一张超写实的 Cosplay 摄影照片： 一位模特'
+        '（面部特征严格参照 `kisara-face.jpg` 提供面部）穿着 '
+        '`narumi-cos-henshin-bodysuit-design1.png` 中角色的全套紧身衣服装，'
+        '在日本漫展的室外拍摄区中摆出动感的拍照姿势。天空正下着';
+
+    for (final height in [600, 400, 300, 240, 200, 160]) {
+      testWidgets('no overflow at 380x$height with a full input bar', (tester) async {
+        await pumpChat(
+          tester,
+          PromptOptimizerSession(mode: AssistantMode.knowledgeBase),
+          size: Size(380, height.toDouble()),
+          inputText: longPrompt,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('the hint stays reachable by scrolling when it does not fit',
+        (tester) async {
+      await pumpChat(
+        tester,
+        PromptOptimizerSession(mode: AssistantMode.knowledgeBase),
+        size: const Size(380, 200),
+        inputText: longPrompt,
+      );
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(l10n.optEmptyChat), findsOneWidget);
+      expect(find.byType(SingleChildScrollView), findsWidgets);
+    });
   });
 
   group('restored sessions', () {
