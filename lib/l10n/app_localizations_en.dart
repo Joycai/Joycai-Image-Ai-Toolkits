@@ -2214,4 +2214,74 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optRetry => 'Retry';
+
+  @override
+  String get optModeKnowledgeEdit => 'Edit KB';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return 'Proposed knowledge update: $name';
+  }
+
+  @override
+  String get kbEditProposedCreate => 'New file';
+
+  @override
+  String get kbEditProposedUpdate => 'Update file';
+
+  @override
+  String get kbEditApply => 'Write file';
+
+  @override
+  String get kbEditReject => 'Discard';
+
+  @override
+  String get kbEditApplied => 'Written to disk';
+
+  @override
+  String get kbEditRejected => 'Discarded';
+
+  @override
+  String get kbEditFailedShort => 'Write failed';
+
+  @override
+  String kbEditShow(int chars) {
+    return 'Show content ($chars chars)';
+  }
+
+  @override
+  String get kbEditHide => 'Hide content';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return 'The new content is much shorter than the current file ($oldChars → $newChars chars). Check it is complete before writing.';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return 'Write failed: $error';
+  }
+
+  @override
+  String kbScaffoldAlreadyInit(String name) {
+    return 'Already initialized — this folder has a $name and will not be touched.';
+  }
+
+  @override
+  String get kbScaffoldCreate => 'Initialize knowledge base';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return 'Initialize $path as a knowledge base? Sample rule files will be created there.';
+  }
+
+  @override
+  String kbScaffoldDone(int created) {
+    return 'Knowledge base initialized: $created file(s) created.';
+  }
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return 'Could not create the knowledge base: $error';
+  }
 }

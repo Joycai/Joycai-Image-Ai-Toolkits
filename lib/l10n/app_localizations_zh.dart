@@ -2148,6 +2148,76 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optRetry => '重试';
+
+  @override
+  String get optModeKnowledgeEdit => '知识库编辑';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return '建议更新知识库：$name';
+  }
+
+  @override
+  String get kbEditProposedCreate => '新建文件';
+
+  @override
+  String get kbEditProposedUpdate => '更新文件';
+
+  @override
+  String get kbEditApply => '写入文件';
+
+  @override
+  String get kbEditReject => '放弃';
+
+  @override
+  String get kbEditApplied => '已写入磁盘';
+
+  @override
+  String get kbEditRejected => '已放弃';
+
+  @override
+  String get kbEditFailedShort => '写入失败';
+
+  @override
+  String kbEditShow(int chars) {
+    return '展开内容（$chars 字符）';
+  }
+
+  @override
+  String get kbEditHide => '收起内容';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return '新内容比当前文件短很多（$oldChars → $newChars 字符），请先确认内容完整再写入。';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return '写入失败：$error';
+  }
+
+  @override
+  String kbScaffoldAlreadyInit(String name) {
+    return '已初始化——该文件夹已有 $name，不会被改动。';
+  }
+
+  @override
+  String get kbScaffoldCreate => '初始化';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return '将把 $path 初始化为知识库，并在其中创建示例规则文件。是否继续？';
+  }
+
+  @override
+  String kbScaffoldDone(int created) {
+    return '知识库已初始化：新建 $created 个文件。';
+  }
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return '创建知识库失败：$error';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4282,4 +4352,74 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRetry => '重試';
+
+  @override
+  String get optModeKnowledgeEdit => '知識庫編輯';
+
+  @override
+  String optToolWriteKnowledge(String name) {
+    return '建議更新知識庫：$name';
+  }
+
+  @override
+  String get kbEditProposedCreate => '新增檔案';
+
+  @override
+  String get kbEditProposedUpdate => '更新檔案';
+
+  @override
+  String get kbEditApply => '寫入檔案';
+
+  @override
+  String get kbEditReject => '捨棄';
+
+  @override
+  String get kbEditApplied => '已寫入磁碟';
+
+  @override
+  String get kbEditRejected => '已捨棄';
+
+  @override
+  String get kbEditFailedShort => '寫入失敗';
+
+  @override
+  String kbEditShow(int chars) {
+    return '展開內容（$chars 字元）';
+  }
+
+  @override
+  String get kbEditHide => '收合內容';
+
+  @override
+  String kbEditShrinkWarning(int oldChars, int newChars) {
+    return '新內容比目前檔案短很多（$oldChars → $newChars 字元），請先確認內容完整再寫入。';
+  }
+
+  @override
+  String kbEditFailed(String error) {
+    return '寫入失敗：$error';
+  }
+
+  @override
+  String kbScaffoldAlreadyInit(String name) {
+    return '已初始化——該資料夾已有 $name，不會被更動。';
+  }
+
+  @override
+  String get kbScaffoldCreate => '初始化';
+
+  @override
+  String kbScaffoldConfirm(String path) {
+    return '將把 $path 初始化為知識庫，並在其中建立範例規則檔案。是否繼續？';
+  }
+
+  @override
+  String kbScaffoldDone(int created) {
+    return '知識庫已初始化：新增 $created 個檔案。';
+  }
+
+  @override
+  String kbScaffoldFailed(String error) {
+    return '建立知識庫失敗：$error';
+  }
 }

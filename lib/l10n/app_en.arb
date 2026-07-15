@@ -1089,5 +1089,82 @@
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
-  "optRetry": "Retry"
+  "optRetry": "Retry",
+  "optModeKnowledgeEdit": "Edit KB",
+  "optToolWriteKnowledge": "Proposed knowledge update: {name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "New file",
+  "kbEditProposedUpdate": "Update file",
+  "kbEditApply": "Write file",
+  "kbEditReject": "Discard",
+  "kbEditApplied": "Written to disk",
+  "kbEditRejected": "Discarded",
+  "kbEditFailedShort": "Write failed",
+  "kbEditShow": "Show content ({chars} chars)",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "Hide content",
+  "kbEditShrinkWarning": "The new content is much shorter than the current file ({oldChars} → {newChars} chars). Check it is complete before writing.",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "Write failed: {error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldAlreadyInit": "Already initialized — this folder has a {name} and will not be touched.",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "Initialize knowledge base",
+  "kbScaffoldConfirm": "Initialize {path} as a knowledge base? Sample rule files will be created there.",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "Knowledge base initialized: {created} file(s) created.",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldFailed": "Could not create the knowledge base: {error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

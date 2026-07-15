@@ -26,6 +26,11 @@ class OptimizerConfigPanel extends StatefulWidget {
   final Function(String?) onSysPromptChanged;
   final Function(bool) onUseCustomChanged;
   final Function(AssistantMode) onModeChanged;
+
+  /// Creates any missing starter knowledge-base file, picking a folder first
+  /// when none is configured. Owned by the parent — this panel stays
+  /// presentational.
+  final Future<void> Function() onScaffoldKb;
   final ScrollController? scrollController;
 
   const OptimizerConfigPanel({
@@ -44,6 +49,7 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.onSysPromptChanged,
     required this.onUseCustomChanged,
     required this.onModeChanged,
+    required this.onScaffoldKb,
     this.scrollController,
   });
 
@@ -53,6 +59,7 @@ class OptimizerConfigPanel extends StatefulWidget {
 
 class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   late final TextEditingController _customCtrl;
+  bool _scaffolding = false;
 
   @override
   void initState() {
@@ -125,6 +132,12 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           icon: Icons.menu_book_outlined,
           enabled: kbSelectable || widget.mode == AssistantMode.knowledgeBase,
         ),
+        AppSegment(
+          value: AssistantMode.knowledgeEdit,
+          label: l10n.optModeKnowledgeEdit,
+          icon: Icons.edit_note_outlined,
+          enabled: kbSelectable || widget.mode == AssistantMode.knowledgeEdit,
+        ),
       ],
       value: widget.mode,
       onChanged: widget.onModeChanged,
@@ -182,10 +195,52 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                 color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
               ),
             ),
+            const SizedBox(height: 8),
+            // Disabled once the base has an entry file: initializing is a
+            // one-time act, and KbStatus.ok means one is already there. Shown
+            // disabled rather than hidden so the action stays discoverable and
+            // its unavailability is explained. KnowledgeBaseStarter.scaffold
+            // refuses independently — this is only the first gate.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _scaffolding
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : Tooltip(
+                      message: ok
+                          ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)
+                          : '',
+                      child: FilledButton.tonalIcon(
+                        onPressed: ok ? null : _handleScaffold,
+                        icon: const Icon(Icons.auto_awesome_outlined, size: 15),
+                        label: Text(l10n.kbScaffoldCreate, style: const TextStyle(fontSize: 11)),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _handleScaffold() async {
+    setState(() => _scaffolding = true);
+    try {
+      await widget.onScaffoldKb();
+    } finally {
+      if (mounted) setState(() => _scaffolding = false);
+    }
   }
 
   Widget _buildSysPromptSection(AppLocalizations l10n, ColorScheme colorScheme) {

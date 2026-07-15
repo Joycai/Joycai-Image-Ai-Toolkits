@@ -138,7 +138,7 @@ extension TaskExecutors on TaskQueueService {
       // its entry file (the file map) for injection into the system prompt.
       String? knowledgeRoot;
       String? knowledgeEntry;
-      if (session.mode == AssistantMode.knowledgeBase) {
+      if (session.usesKnowledgeBase) {
         final kb = KnowledgeBaseService();
         knowledgeRoot = await kb.getRoot();
         final status = await kb.validate(knowledgeRoot);

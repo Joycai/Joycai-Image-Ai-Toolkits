@@ -946,5 +946,82 @@
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
-  "optRetry": "重試"
+  "optRetry": "重試",
+  "optModeKnowledgeEdit": "知識庫編輯",
+  "optToolWriteKnowledge": "建議更新知識庫：{name}",
+  "@optToolWriteKnowledge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbEditProposedCreate": "新增檔案",
+  "kbEditProposedUpdate": "更新檔案",
+  "kbEditApply": "寫入檔案",
+  "kbEditReject": "捨棄",
+  "kbEditApplied": "已寫入磁碟",
+  "kbEditRejected": "已捨棄",
+  "kbEditFailedShort": "寫入失敗",
+  "kbEditShow": "展開內容（{chars} 字元）",
+  "@kbEditShow": {
+    "placeholders": {
+      "chars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditHide": "收合內容",
+  "kbEditShrinkWarning": "新內容比目前檔案短很多（{oldChars} → {newChars} 字元），請先確認內容完整再寫入。",
+  "@kbEditShrinkWarning": {
+    "placeholders": {
+      "oldChars": {
+        "type": "int"
+      },
+      "newChars": {
+        "type": "int"
+      }
+    }
+  },
+  "kbEditFailed": "寫入失敗：{error}",
+  "@kbEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldAlreadyInit": "已初始化——該資料夾已有 {name}，不會被更動。",
+  "@kbScaffoldAlreadyInit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldCreate": "初始化",
+  "kbScaffoldConfirm": "將把 {path} 初始化為知識庫，並在其中建立範例規則檔案。是否繼續？",
+  "@kbScaffoldConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "kbScaffoldDone": "知識庫已初始化：新增 {created} 個檔案。",
+  "@kbScaffoldDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      }
+    }
+  },
+  "kbScaffoldFailed": "建立知識庫失敗：{error}",
+  "@kbScaffoldFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

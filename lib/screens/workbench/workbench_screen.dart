@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +19,7 @@ import '../../models/app_image.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/knowledge_base_service.dart';
+import '../../services/knowledge_base_starter.dart';
 import '../../services/prompt_optimizer_agent.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
@@ -191,8 +193,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
     final session = workbenchUIState.optimizerSession;
 
-    // Knowledge mode requires a valid knowledge base before sending.
-    if (session.mode == AssistantMode.knowledgeBase) {
+    // Knowledge modes require a valid knowledge base before sending.
+    if (session.usesKnowledgeBase) {
       await _refreshKbStatus();
       if (_kbStatus != KbStatus.ok) {
         if (mounted) {
@@ -223,7 +225,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
       return;
     }
-    if (session.mode == AssistantMode.knowledgeBase) {
+    if (session.usesKnowledgeBase) {
       await _refreshKbStatus();
       if (_kbStatus != KbStatus.ok) {
         if (mounted) {
@@ -292,7 +294,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                 dense: true,
                 selected: isCurrent,
                 leading: Icon(
-                  meta.mode == AssistantMode.knowledgeBase ? Icons.menu_book_outlined : Icons.tune,
+                  switch (meta.mode) {
+                    AssistantMode.knowledgeBase => Icons.menu_book_outlined,
+                    AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
+                    AssistantMode.systemPrompt => Icons.tune,
+                  },
                   size: 18,
                 ),
                 title: Text(
@@ -393,6 +399,84 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       if (confirmed != true) return;
     }
     workbenchUIState.setAssistantMode(next);
+  }
+
+  /// Ensures a usable knowledge-base root, then initializes it with the starter
+  /// files. Only ever acts on a folder that is not already a knowledge base —
+  /// the button is disabled at [KbStatus.ok], and both the picker path below
+  /// and [KnowledgeBaseStarter.scaffold] re-check independently.
+  Future<void> _handleScaffoldKb() async {
+    final l10n = AppLocalizations.of(context)!;
+    final kb = KnowledgeBaseService();
+    var stored = await kb.getRoot();
+
+    // No folder yet, or the stored one is gone: ask where to put it rather than
+    // silently recreating a directory the user may have deliberately moved.
+    if (stored == null || !Directory(stored).existsSync()) {
+      final picked = await FilePicker.getDirectoryPath();
+      if (picked == null) return;
+      await kb.setRoot(picked);
+      stored = picked;
+    }
+    final root = stored;
+
+    // The status that enabled the button describes the *previous* root. A
+    // freshly picked folder may already be someone's knowledge base, so refuse
+    // before touching it — with a real explanation rather than a raw error.
+    if (KnowledgeBaseStarter.isInitialized(root)) {
+      await _refreshKbStatus();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)),
+      ));
+      return;
+    }
+
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(l10n.kbScaffoldConfirm(root)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.confirm)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final result = await KnowledgeBaseStarter.scaffold(root);
+      await _refreshKbStatus();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kbScaffoldDone(result.created.length))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kbScaffoldFailed('$e'))),
+      );
+    }
+  }
+
+  Future<void> _handleKbEditApply(PromptOptimizerSession session, String editId) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: editId);
+      // Writing README.md can flip missingEntry -> ok, which re-enables the
+      // knowledge modes in the config panel.
+      await _refreshKbStatus();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.kbEditFailed('$e'))),
+      );
+    }
+  }
+
+  void _handleKbEditReject(PromptOptimizerSession session, String editId) {
+    PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: editId);
   }
 
   void _handleOptimizerApply(String prompt) {
@@ -648,6 +732,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                               onSend: _handleOptimizerSend,
                               onRetry: _handleOptimizerRetry,
                               onApplyPrompt: _handleOptimizerApply,
+                              onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
+                              onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
                               isBusy: isBusy,
                             ),
                     ),
@@ -714,6 +800,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               kbStatus: _kbStatus,
               kbPath: _kbPath,
               onModeChanged: _handleAssistantModeChange,
+              onScaffoldKb: _handleScaffoldKb,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
               onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
