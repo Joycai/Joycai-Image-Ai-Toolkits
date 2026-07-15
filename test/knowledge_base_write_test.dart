@@ -169,6 +169,71 @@ void main() {
     });
   });
 
+  group('a knowledge base the user built themselves', () {
+    /// Nothing in common with the starter but the entry file: its own layout,
+    /// its own names, a file map written as bullets rather than tables, and a
+    /// non-markdown asset.
+    void seedCustomKb() {
+      File(p.join(root.path, 'README.md')).writeAsStringSync('''
+# 我的提示词库
+- 画风规则见 style-guide.md
+- 角色见 characters/lin.md
+''');
+      File(p.join(root.path, 'style-guide.md')).writeAsStringSync('# 画风');
+      Directory(p.join(root.path, 'characters')).createSync();
+      File(p.join(root.path, 'characters/lin.md')).writeAsStringSync('# 林');
+      File(p.join(root.path, 'notes.txt')).writeAsStringSync('scratch');
+    }
+
+    test('validates as ok — only the entry file is required', () async {
+      seedCustomKb();
+      expect(await kb.validate(root.path), KbStatus.ok);
+    });
+
+    test('its own files are listable and readable', () {
+      seedCustomKb();
+      expect(
+        kb.listFiles(root.path).map((e) => e.relPath),
+        containsAll(['README.md', 'characters', 'style-guide.md']),
+      );
+      expect(kb.listFiles(root.path, dir: 'characters').single.relPath, 'characters/lin.md');
+      expect(kb.readFile(root.path, 'characters/lin.md').content, '# 林');
+      expect(kb.readEntry(root.path), contains('style-guide.md'));
+    });
+
+    test('the agent can edit its files, which keep their own names', () async {
+      seedCustomKb();
+      await kb.setRoot(root.path);
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final id = session.stageKbEditForTest(
+        relPath: 'style-guide.md',
+        newContent: '# 画风\n补充说明',
+        oldContent: '# 画风',
+      );
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+      expect(kb.readFullFile(root.path, 'style-guide.md'), '# 画风\n补充说明');
+    });
+
+    test('is not mistaken for a starter base', () {
+      seedCustomKb();
+      // Drives whether the UI offers to add starter files. A false positive
+      // here would bury the user's base in files its map never mentions.
+      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isFalse);
+    });
+
+    test('a starter base is recognised even with a starter file deleted', () async {
+      await KnowledgeBaseStarter.scaffold(root.path);
+      File(p.join(root.path, 'templates/text-to-image.md')).deleteSync();
+      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isTrue);
+    });
+
+    test('an entry file alone is not a starter base', () {
+      File(p.join(root.path, 'README.md')).writeAsStringSync('# mine');
+      // Every valid base has an entry file, so it cannot be the signal.
+      expect(KnowledgeBaseStarter.looksScaffolded(root.path), isFalse);
+    });
+  });
+
   group('applyStagedKbEdit', () {
     test('writes the staged content and evicts every cached page of that file', () async {
       await kb.setRoot(root.path);

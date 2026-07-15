@@ -79,6 +79,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   KbStatus _kbStatus = KbStatus.notSet;
   String? _kbPath;
 
+  /// Whether the configured base came from the starter template. Drives whether
+  /// filling in missing starter files is offered — a knowledge base the user
+  /// built themselves must not be topped up with files it never asked for.
+  bool _kbScaffolded = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -129,10 +134,12 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final kb = KnowledgeBaseService();
     final path = await kb.getRoot();
     final status = await kb.validate(path);
+    final scaffolded = status == KbStatus.ok && KnowledgeBaseStarter.looksScaffolded(path!);
     if (mounted) {
       setState(() {
         _kbPath = path;
         _kbStatus = status;
+        _kbScaffolded = scaffolded;
       });
     }
   }
@@ -788,6 +795,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               mode: workbenchUIState.assistantMode,
               kbStatus: _kbStatus,
               kbPath: _kbPath,
+              kbScaffolded: _kbScaffolded,
               onModeChanged: _handleAssistantModeChange,
               onScaffoldKb: _handleScaffoldKb,
               tags: _optTags,

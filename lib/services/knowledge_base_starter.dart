@@ -42,6 +42,18 @@ class KnowledgeBaseStarter {
     'conditional/chinese-text-render.md': _chineseTextRender,
   };
 
+  /// Whether [root] looks like a knowledge base this class generated.
+  ///
+  /// [entryFileName] is excluded on purpose — every valid knowledge base has
+  /// one, so it tells us nothing. A user's own knowledge base shares none of
+  /// the other names, which is what distinguishes "a starter base missing a
+  /// file" from "someone else's base entirely". Offering to fill in the latter
+  /// would bury it in files its file map never mentions, so the agent could
+  /// never read them anyway.
+  static bool looksScaffolded(String root) => files.keys
+      .where((relPath) => relPath != KnowledgeBaseService.entryFileName)
+      .any((relPath) => File(p.join(root, relPath)).existsSync());
+
   /// Writes any starter file that does not already exist under [root].
   ///
   /// Non-destructive by construction: an existing file is never opened for
