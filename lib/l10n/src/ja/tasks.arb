@@ -83,6 +83,14 @@
       }
     }
   },
+  "taskTotalCount": "全 {count} 件",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "filterAll": "すべて",
   "statusCancelled": "キャンセル済み",
   "retryTask": "再試行",

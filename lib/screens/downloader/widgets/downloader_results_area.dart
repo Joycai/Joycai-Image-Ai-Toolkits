@@ -24,29 +24,38 @@ class DownloaderResultsArea extends StatelessWidget {
       children: [
         // Selection bar sits directly on the PanelCard surface — no fill.
         if (state.discoveredImages case [_, ...]) Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Row(
               children: [
                 Text(
                   l10n.selectImagesToDownload,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                 ),
-                const SizedBox(width: 8),
-                Text('(${l10n.imagesSelected(selectedCount)})', style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                Text(
+                  '(${l10n.imagesSelected(selectedCount)})',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {
-                    for (var img in state.discoveredImages) {
-                      img.isSelected = true;
-                    }
-                    state.notify();
-                  },
+                  onPressed: selectedCount == state.discoveredImages.length
+                      ? null
+                      : () {
+                          for (var img in state.discoveredImages) {
+                            img.isSelected = true;
+                          }
+                          state.notify();
+                        },
                   child: Text(l10n.selectAll),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: selectedCount > 0 ? onAddToQueue : null,
-                  icon: const Icon(Icons.download_for_offline),
+                  icon: const Icon(Icons.download_for_offline, size: 18),
                   label: Text(l10n.addToQueue),
                 ),
               ],
@@ -157,6 +166,36 @@ class _GuideStep extends StatelessWidget {
   }
 }
 
+/// The tick box on a discovery card. Hand-drawn rather than a [Checkbox]: it
+/// sits on a photograph, so it needs a filled body of its own to stay legible
+/// against whatever is behind it.
+class _SelectionBox extends StatelessWidget {
+  final bool selected;
+  final ColorScheme colorScheme;
+
+  const _SelectionBox({required this.selected, required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: selected ? colorScheme.primary : Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: selected ? colorScheme.primary : Colors.white.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: selected
+          ? Icon(Icons.check, size: 15, color: colorScheme.onPrimary)
+          : null,
+    );
+  }
+}
+
 class _ImageDiscoveryCard extends StatelessWidget {
   final dynamic image;
   final VoidCallback onToggle;
@@ -170,12 +209,13 @@ class _ImageDiscoveryCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: image.isSelected ? 4 : 1,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: image.isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-          width: image.isSelected ? 2 : 1,
+          color: image.isSelected ? colorScheme.primary : Colors.transparent,
+          width: 2,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
         onTap: onToggle,
@@ -193,27 +233,30 @@ class _ImageDiscoveryCard extends StatelessWidget {
                       : const Center(child: Icon(Icons.image, color: Colors.grey)),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                Container(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Text(
                     image.url,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            if (image.isSelected)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
-                  child: const Icon(Icons.check, size: 16, color: Colors.white),
-                ),
-              ),
+            // The box is drawn whether or not it is ticked. This grid exists to
+            // be selected from, and a checkmark that only appears once you have
+            // already guessed to click does not tell you that.
+            Positioned(
+              top: 8,
+              left: 8,
+              child: _SelectionBox(selected: image.isSelected, colorScheme: colorScheme),
+            ),
           ],
         ),
       ),

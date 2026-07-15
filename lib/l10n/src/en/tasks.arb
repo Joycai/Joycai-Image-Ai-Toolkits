@@ -75,6 +75,14 @@
       }
     }
   },
+  "taskTotalCount": "{count} total",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "filterAll": "All",
   "statusCancelled": "Cancelled",
   "retryTask": "Retry",

@@ -190,7 +190,6 @@
   "noCookieHistory": "未保存 Cookie 历史",
   "pasteFromClipboard": "从剪贴板粘贴",
   "openRawImage": "打开原始图像",
-  "results": "结果",
   "downloaderFoundSelected": "发现 {found} 张 · 已选 {selected} 张",
   "@downloaderFoundSelected": {
     "placeholders": {
@@ -702,6 +701,14 @@
   "@concurrencyLimit": {
     "placeholders": {
       "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTotalCount": "共 {count} 个任务",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }

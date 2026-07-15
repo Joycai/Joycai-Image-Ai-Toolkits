@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/api_key_field.dart';
+import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/chat_model_selector.dart';
 
-/// Top toolbar of the image downloader: URL + requirement + analysis model +
-/// primary action in a single row (two rows below 1000px), replacing the old
-/// 350px left panel so the results grid gets the full width.
+/// Height of the toolbar's inputs and the controls that line up with them.
+/// Taller than a bare button: these are fields you type a URL into.
+const double _controlHeight = 44;
+
+/// Top toolbar of the image downloader.
+///
+/// Two rows: the address on its own, then what to look for in it and the model
+/// that will do the looking. The URL earns the full width — it is the longest
+/// value on the screen and the one you paste rather than type, so a field that
+/// scrolls its own text hides the end of the thing you just pasted.
 class DownloaderToolbar extends StatelessWidget {
   final TextEditingController urlController;
   final TextEditingController requirementController;
@@ -33,45 +42,38 @@ class DownloaderToolbar extends StatelessWidget {
     final state = appState.downloaderState;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final urlField = TextField(
-      controller: urlController,
-      style: const TextStyle(fontSize: 13),
-      decoration: InputDecoration(
-        hintText: l10n.websiteUrl,
-        isDense: true,
-        prefixIcon: const Icon(Icons.link, size: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    final urlField = SizedBox(
+      height: _controlHeight,
+      child: TextField(
+        controller: urlController,
+        // Monospace: this is an address, not prose. Fixed widths make a typo in
+        // a long path something you can see rather than something you re-read.
+        style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+        decoration: _fieldDecoration(colorScheme, l10n.websiteUrl, Icons.link),
       ),
     );
 
-    final requirementField = TextField(
-      controller: requirementController,
-      style: const TextStyle(fontSize: 13),
-      decoration: InputDecoration(
-        hintText: l10n.whatToFind,
-        isDense: true,
-        prefixIcon: const Icon(Icons.search, size: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    final requirementField = SizedBox(
+      height: _controlHeight,
+      child: TextField(
+        controller: requirementController,
+        style: const TextStyle(fontSize: 13),
+        decoration: _fieldDecoration(colorScheme, l10n.whatToFind, Icons.search),
+        onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
       ),
-      onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
     );
 
     final modelSelector = SizedBox(
-      width: 230,
+      width: 250,
       child: ChatModelSelector(
         selectedModelId: state.selectedModelDbId,
         label: l10n.analysisModel,
-        prefixIcon: Icons.psychology,
         onChanged: (v) => state.setState(selectedModelDbId: v),
       ),
     );
 
     final findButton = SizedBox(
-      height: 42,
+      height: _controlHeight,
       child: FilledButton.icon(
         onPressed: isAnalyzing ? null : onAnalyze,
         icon: isAnalyzing
@@ -83,33 +85,27 @@ class DownloaderToolbar extends StatelessWidget {
             : const Icon(Icons.image_search, size: 18),
         label: Text(isAnalyzing ? l10n.analyzing : l10n.findImages),
         style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          minimumSize: const Size(0, _controlHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
         ),
       ),
     );
 
-    final advancedButton = SizedBox(
-      width: 42,
-      height: 42,
-      child: IconButton.outlined(
-        onPressed: onOpenAdvanced,
-        icon: const Icon(Icons.tune, size: 18),
-        tooltip: l10n.advancedOptions,
-        style: IconButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          side: BorderSide(color: colorScheme.outlineVariant),
-        ),
-      ),
+    final advancedButton = AppIconButton(
+      icon: Icons.tune,
+      tooltip: l10n.advancedOptions,
+      size: _controlHeight,
+      onPressed: onOpenAdvanced,
     );
 
     final title = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.cloud_download, size: 22, color: colorScheme.primary),
+        Icon(Icons.cloud_download_outlined, size: 24, color: colorScheme.primary),
         const SizedBox(width: 10),
         Text(
           l10n.imageDownloader,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
         ),
       ],
     );
@@ -125,23 +121,14 @@ class DownloaderToolbar extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth >= 1000) {
-            return Row(
-              children: [
-                title,
-                const SizedBox(width: 16),
-                Expanded(flex: 3, child: urlField),
-                const SizedBox(width: 8),
-                Expanded(flex: 2, child: requirementField),
-                const SizedBox(width: 8),
-                modelSelector,
-                const SizedBox(width: 8),
-                findButton,
-                const SizedBox(width: 6),
-                advancedButton,
-              ],
-            );
-          }
+          final actions = [
+            modelSelector,
+            const SizedBox(width: 8),
+            findButton,
+            const SizedBox(width: 8),
+            advancedButton,
+          ];
+
           return Column(
             children: [
               Row(
@@ -151,24 +138,43 @@ class DownloaderToolbar extends StatelessWidget {
                   Expanded(child: urlField),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: requirementField),
-                  const SizedBox(width: 8),
-                  modelSelector,
-                  const SizedBox(width: 8),
-                  findButton,
-                  const SizedBox(width: 6),
-                  advancedButton,
-                ],
-              ),
+              const SizedBox(height: 10),
+              // Below ~820 the requirement field is squeezed to a few
+              // characters by the controls beside it, so it takes its own row.
+              if (constraints.maxWidth >= 820)
+                Row(children: [Expanded(child: requirementField), const SizedBox(width: 8), ...actions])
+              else ...[
+                requirementField,
+                const SizedBox(height: 10),
+                Row(children: [Expanded(child: modelSelector), const SizedBox(width: 8), findButton, const SizedBox(width: 8), advancedButton]),
+              ],
             ],
           );
         },
       ),
     );
   }
+}
+
+/// The filled, unbordered field the app uses for search and address inputs.
+InputDecoration _fieldDecoration(ColorScheme colorScheme, String hint, IconData icon) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+    prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
+    isDense: true,
+    contentPadding: EdgeInsets.zero,
+    filled: true,
+    fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(appButtonRadius),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(appButtonRadius),
+      borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+    ),
+  );
 }
 
 /// Slim strip under the toolbar: manual-HTML mode, save-HTML shortcut, log
@@ -267,35 +273,33 @@ class DownloaderOptionsStrip extends StatelessWidget {
               foregroundColor: colorScheme.onSurfaceVariant,
             ),
           ),
-          if (state.logs.isNotEmpty)
-            IconButton(
-              onPressed: onToggleLogs,
-              icon: Icon(
-                showLogs ? Icons.terminal : Icons.terminal_outlined,
-                size: 16,
-              ),
-              tooltip: l10n.logs,
-              visualDensity: VisualDensity.compact,
-              color: showLogs
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              discoveredCount > 0
-                  ? l10n.downloaderFoundSelected(discoveredCount, selectedCount)
-                  : l10n.results,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
-              ),
-            ),
+          const SizedBox(width: 4),
+          // Always drawn, disabled until there is something to read. Appearing
+          // only once logs exist made the strip re-flow under the pointer.
+          AppIconButton(
+            icon: Icons.terminal,
+            tooltip: l10n.logs,
+            size: 30,
+            selected: showLogs,
+            onPressed: state.logs.isEmpty ? null : onToggleLogs,
           ),
+          const Spacer(),
+          // Nothing found yet is not a result worth captioning: an empty strip
+          // says it, where the bare word "Results" reads as a heading for a
+          // section that is not there.
+          if (discoveredCount > 0)
+            Flexible(
+              child: Text(
+                l10n.downloaderFoundSelected(discoveredCount, selectedCount),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
         ],
       ),
     );

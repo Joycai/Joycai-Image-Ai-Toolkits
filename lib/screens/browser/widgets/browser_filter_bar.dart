@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
@@ -22,7 +23,7 @@ class BrowserFilterBar extends StatelessWidget {
     final isNarrow = Responsive.isNarrow(context);
 
     return Container(
-      height: 48,
+      height: 58,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -34,16 +35,12 @@ class BrowserFilterBar extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: FileCategory.values.map((cat) {
-                final isSelected = state.currentFilter == cat;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
-                  child: FilterChip(
-                    label: Text(_getCategoryLabel(cat, l10n), style: const TextStyle(fontSize: 12)),
-                    selected: isSelected,
-                    onSelected: (_) => state.setFilter(cat),
-                    visualDensity: VisualDensity.compact,
-                    showCheckmark: true,
-                    side: isSelected ? BorderSide.none : BorderSide(color: colorScheme.outlineVariant),
+                  padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 10),
+                  child: _CategoryPill(
+                    label: _getCategoryLabel(cat, l10n),
+                    selected: state.currentFilter == cat,
+                    onTap: () => state.setFilter(cat),
                   ),
                 );
               }).toList(),
@@ -99,10 +96,11 @@ class BrowserFilterBar extends StatelessWidget {
         ),
       ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        height: appButtonMinHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.45)),
+          borderRadius: BorderRadius.circular(appButtonRadius),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -112,12 +110,17 @@ class BrowserFilterBar extends StatelessWidget {
               size: 14,
               color: colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 7),
             Text(
               _getSortFieldLabel(state.sortField, l10n),
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-            Icon(Icons.arrow_drop_down, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 2),
+            Icon(Icons.arrow_drop_down, size: 18, color: colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -199,5 +202,57 @@ class BrowserFilterBar extends StatelessWidget {
       case FileCategory.text: return l10n.catText;
       case FileCategory.other: return l10n.catOthers;
     }
+  }
+}
+
+/// One category filter. Only the chosen one is drawn — outlining all six turns
+/// a single choice into a row of competing buttons, and the checkmark, not the
+/// box, is what says which one is on.
+class _CategoryPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryPill({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: selected ? colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
+      borderRadius: BorderRadius.circular(appButtonRadius),
+      child: InkWell(
+        onTap: selected ? null : onTap,
+        borderRadius: BorderRadius.circular(appButtonRadius),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(appButtonRadius),
+            border: Border.all(
+              color: selected ? colorScheme.primary.withValues(alpha: 0.6) : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected) ...[
+                Icon(Icons.check, size: 15, color: color),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

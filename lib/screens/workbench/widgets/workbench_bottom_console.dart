@@ -318,7 +318,9 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      // The queue screen draws task cards on a canvas; on `surface` the cards
+      // would be the same colour as the sheet they sit on.
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       builder: (context) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.8,

@@ -75,6 +75,14 @@
       }
     }
   },
+  "taskTotalCount": "共 {count} 个任务",
+  "@taskTotalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "filterAll": "全部",
   "statusCancelled": "已取消",
   "retryTask": "重试",

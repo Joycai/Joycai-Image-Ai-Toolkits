@@ -827,12 +827,6 @@ abstract class AppLocalizations {
   /// **'Open Raw Image'**
   String get openRawImage;
 
-  /// No description provided for @results.
-  ///
-  /// In en, this message translates to:
-  /// **'Results'**
-  String get results;
-
   /// No description provided for @downloaderFoundSelected.
   ///
   /// In en, this message translates to:
@@ -2794,6 +2788,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Concurrency Limit: {limit}'**
   String concurrencyLimit(int limit);
+
+  /// No description provided for @taskTotalCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total'**
+  String taskTotalCount(int count);
 
   /// No description provided for @statusCancelled.
   ///
