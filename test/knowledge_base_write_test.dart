@@ -232,6 +232,34 @@ void main() {
       // Every valid base has an entry file, so it cannot be the signal.
       expect(KnowledgeBaseStarter.looksScaffolded(root.path), isFalse);
     });
+
+    test('an entry file alone is a working base — no other file is required',
+        () async {
+      File(p.join(root.path, 'README.md'))
+          .writeAsStringSync('# 我的库\n所有规则都写在这里。');
+      expect(await kb.validate(root.path), KbStatus.ok);
+      expect(kb.listFiles(root.path).map((e) => e.relPath), ['README.md']);
+    });
+
+    test('the agent can grow a structure of its own from a bare entry file',
+        () async {
+      File(p.join(root.path, 'README.md')).writeAsStringSync('# 我的库');
+      await kb.setRoot(root.path);
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      final id = session.stageKbEditForTest(
+        relPath: 'my/deeply/nested/rule.md',
+        newContent: '# 规则',
+        oldContent: null,
+      );
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+
+      // Nesting is arbitrary: listFiles is non-recursive but returns
+      // directories, so the agent descends on demand.
+      expect(kb.listFiles(root.path).map((e) => e.relPath), ['README.md', 'my']);
+      expect(kb.listFiles(root.path, dir: 'my/deeply/nested').single.relPath,
+          'my/deeply/nested/rule.md');
+      expect(kb.readFile(root.path, 'my/deeply/nested/rule.md').content, '# 规则');
+    });
   });
 
   group('applyStagedKbEdit', () {
