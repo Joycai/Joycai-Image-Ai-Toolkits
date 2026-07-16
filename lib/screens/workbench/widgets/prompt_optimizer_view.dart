@@ -257,6 +257,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         final noticeText = switch (entry.text) {
           PromptOptimizerAgent.compactedNoticeToken => l10n.optCompactedNotice,
           PromptOptimizerAgent.imageMissingNoticeToken => l10n.optImageMissing,
+          PromptOptimizerAgent.kbEntryTooLargeNoticeToken => l10n.optKbEntryTooLarge,
           _ => entry.text,
         };
         return Center(

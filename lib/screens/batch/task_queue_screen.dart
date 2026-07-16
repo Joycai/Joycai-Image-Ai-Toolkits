@@ -487,6 +487,64 @@ class _FilterPill extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+/// One labelled line of a task's expanded detail.
+///
+/// Its own widget so the layout can be pinned without standing up the screen's
+/// AppState and database — both properties below shipped wrong and neither is
+/// visible from reading the call site.
+class TaskInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  /// Lines a value may occupy before it is ellipsized. A prompt is the only
+  /// value long enough to reach this; the whole text stays available from the
+  /// card's menu (copy prompt).
+  static const int maxValueLines = 4;
+
+  const TaskInfoRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        // A value can run to several lines, and centering parks the icon and
+        // label halfway down it — which reads as if the lines above the label
+        // belonged to the row before. That is what made a prompt look like it
+        // was part of the config row.
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sits on the first line of text rather than the row's top edge.
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 8),
+          Text('$label: ', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12),
+              // maxLines is what makes the ellipsis do anything: unbounded, the
+              // overflow setting is inert and the text just keeps wrapping.
+              maxLines: maxValueLines,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // Task card — an accent stripe carries the status down the list
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -939,13 +997,28 @@ class _TaskCardState extends State<_TaskCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Divider(height: 24, color: colorScheme.outlineVariant.withAlpha(80)),
-        _buildInfoRow(Icons.timer_outlined, l10n.started, _formatClock(task.startTime), colorScheme),
-        _buildInfoRow(Icons.check_circle_outline, l10n.finished, _formatClock(task.endTime), colorScheme),
+        TaskInfoRow(
+          icon: Icons.timer_outlined,
+          label: l10n.started,
+          value: _formatClock(task.startTime),
+        ),
+        TaskInfoRow(
+          icon: Icons.check_circle_outline,
+          label: l10n.finished,
+          value: _formatClock(task.endTime),
+        ),
         if (task.type == TaskType.imageProcess)
-          _buildInfoRow(Icons.aspect_ratio, l10n.config,
-              '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim(), colorScheme),
+          TaskInfoRow(
+            icon: Icons.aspect_ratio,
+            label: l10n.config,
+            value: '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim(),
+          ),
         if (task.parameters.containsKey('prompt'))
-          _buildInfoRow(Icons.description_outlined, l10n.prompt, task.parameters['prompt'] ?? '', colorScheme),
+          TaskInfoRow(
+            icon: Icons.description_outlined,
+            label: l10n.prompt,
+            value: task.parameters['prompt'] ?? '',
+          ),
         if (task.resultPaths.isNotEmpty) ...[
           const SizedBox(height: 10),
           SizedBox(
@@ -1003,22 +1076,6 @@ class _TaskCardState extends State<_TaskCard> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
-          Text('$label: ', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      ),
     );
   }
 

@@ -146,22 +146,76 @@ class KnowledgeBaseService {
     await file.writeAsString(content);
   }
 
+  /// How far back a page boundary may be pulled to land on a paragraph break,
+  /// as a fraction of [pageSize]. Beyond this the text is treated as having no
+  /// usable break (a huge table, minified content) and is cut at the limit.
+  static const double _snapTolerance = 0.25;
+
+  /// Page start offsets for [content] at [pageSize], snapped to paragraph or
+  /// heading breaks where one is close enough.
+  ///
+  /// A page cut at a raw offset lands mid-sentence, mid-table or mid-code-fence
+  /// and hands the model half a rule. Snapping costs a little page capacity and
+  /// buys pages that end where a thought does.
+  ///
+  /// Pure and deterministic given [content] and [pageSize]: page numbers are
+  /// used as cache keys, so the same page must always mean the same bytes.
+  static List<int> pageBoundaries(String content, int pageSize) {
+    if (content.isEmpty) return [0];
+    final starts = <int>[0];
+    int cursor = 0;
+    while (cursor + pageSize < content.length) {
+      final limit = cursor + pageSize;
+      final earliest = limit - (pageSize * _snapTolerance).round();
+      // Prefer a heading: it starts a section, so the break reads as intended
+      // rather than incidental. Fall back to any blank line.
+      int cut = _lastIndexOfWithin(content, '\n#', earliest, limit);
+      cut = cut >= 0 ? cut + 1 : _lastIndexOfWithin(content, '\n\n', earliest, limit);
+      if (cut >= 0 && cut > cursor) {
+        // Land after the break so the page starts on real text.
+        cursor = content.startsWith('\n\n', cut) ? cut + 2 : cut;
+      } else {
+        cursor = limit;
+      }
+      starts.add(cursor);
+    }
+    return starts;
+  }
+
+  /// Last index of [needle] in `content[from, to)`, or -1.
+  static int _lastIndexOfWithin(String content, String needle, int from, int to) {
+    final found = content.lastIndexOf(needle, to - needle.length);
+    return found >= from ? found : -1;
+  }
+
   /// Reads one page of a knowledge file. [page] is 1-based.
-  KbReadResult readFile(String root, String relPath, {int page = 1}) {
+  ///
+  /// [maxChars] is what the caller has room for right now. A file that fits
+  /// comes back whole as page 1 of 1 — cheaper than several round trips, and
+  /// better than handing the model a slice of a rule. When it does not fit,
+  /// pages stay at [pageSize] so that page numbers keep meaning the same bytes
+  /// from one read to the next; the exception is a window too small to hold
+  /// even one full page, where the page shrinks rather than blowing the budget.
+  KbReadResult readFile(String root, String relPath, {int page = 1, int? maxChars}) {
     final resolved = resolvePath(root, relPath);
     final file = File(resolved);
     if (!file.existsSync()) {
       throw KbPathException('File not found: $relPath');
     }
     final content = file.readAsStringSync();
-    final totalPages = content.isEmpty ? 1 : ((content.length + pageSize - 1) ~/ pageSize);
-    final clamped = page.clamp(1, totalPages);
-    final start = (clamped - 1) * pageSize;
-    final end = (start + pageSize) > content.length ? content.length : start + pageSize;
+    if (maxChars != null && content.length <= maxChars) {
+      return KbReadResult(content: content, page: 1, totalPages: 1);
+    }
+    final effectivePageSize =
+        (maxChars != null && maxChars < pageSize) ? maxChars : pageSize;
+    final starts = pageBoundaries(content, effectivePageSize);
+    final clamped = page.clamp(1, starts.length);
+    final start = starts[clamped - 1];
+    final end = clamped < starts.length ? starts[clamped] : content.length;
     return KbReadResult(
       content: content.substring(start, end),
       page: clamped,
-      totalPages: totalPages,
+      totalPages: starts.length,
     );
   }
 }

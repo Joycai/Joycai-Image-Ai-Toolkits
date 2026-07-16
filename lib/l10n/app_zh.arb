@@ -446,8 +446,11 @@
   "supportsStandardRequest": "支持标准请求",
   "supportsStandardRequestDesc": "启用标准 JSON/REST 请求",
   "contextWindow": "上下文大小",
+  "contextUnset": "未设置",
+  "contextUnsetDesc": "使用保守默认值——不确定模型真实上限时选这个。",
+  "contextSpecify": "指定大小",
   "contextUnlimited": "不限制",
-  "contextUnlimitedDesc": "一次性发送所有候选图片（不分批）",
+  "contextUnlimitedDesc": "一次性发送所有候选图片，且不按窗口大小限制提示词助手。",
   "contextMax": "最大上下文",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -457,7 +460,7 @@
       }
     }
   },
-  "contextWindowHint": "更大的上下文可让每次请求分析更多图片。",
+  "contextWindowHint": "用于每次请求的图片分批，以及提示词助手读取知识库与摘要的预算。",
   "agentBehavior": "代理行为",
   "forceViewAllImages": "查看全部参考图",
   "forceViewAllImagesDesc": "代理必须查看所有参考图后才能提交结果，推荐为本地小模型开启。",
@@ -627,6 +630,8 @@
   "kbOpenFolder": "打开文件夹",
   "kbInvalidDir": "文件夹不存在",
   "kbMissingEntry": "文件夹中缺少入口文件 README.md",
+  "assistantContextRatio": "助手摘要阈值",
+  "assistantContextRatioDesc": "提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。",
   "assistantRetention": "助手会话保留数量",
   "assistantRetentionDesc": "超出数量的较旧提示词助手会话将被自动删除",
   "tasks": "任务",
@@ -1088,6 +1093,7 @@
   "optHistory": "历史会话",
   "optNoHistory": "暂无已保存的会话",
   "optDeleteSessionConfirm": "确定永久删除该会话？",
+  "optKbEntryTooLarge": "知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。",
   "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
   "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。",
   "optRetry": "重试",

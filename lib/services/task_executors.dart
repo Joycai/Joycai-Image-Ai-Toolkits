@@ -124,15 +124,24 @@ extension TaskExecutors on TaskQueueService {
 
       task.addLog('Start assistant agent turn (${task.imagePaths.length} reference images, mode: ${session.mode.name}).');
 
-      // Per-model agent setting: force viewing every reference image.
+      // Per-model agent settings, resolved in one lookup: force viewing every
+      // reference image, and the context window that budgets the turn.
       bool forceViewAll = false;
+      int? contextWindow;
       if (task.modelDbId != null) {
         final models = await DatabaseService().getModels();
         final model = models
             .cast<LLMModel?>()
             .firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
         forceViewAll = model?.forceViewAllImages ?? false;
+        contextWindow = model?.contextWindow;
       }
+
+      final contextRatio = double.tryParse(
+              await DatabaseService()
+                      .getSetting(PromptOptimizerAgent.contextRatioSettingKey) ??
+                  '') ??
+          PromptOptimizerAgent.defaultContextRatio;
 
       // Knowledge mode: resolve and validate the knowledge base, and pre-read
       // its entry file (the file map) for injection into the system prompt.
@@ -161,6 +170,8 @@ extension TaskExecutors on TaskQueueService {
             .map((path) => {'path': path, 'name': p.basename(path)})
             .toList(),
         contextId: task.id,
+        contextWindow: contextWindow,
+        contextRatio: contextRatio,
         onLog: (msg) {
           task.addLog(msg);
           refreshQueue();

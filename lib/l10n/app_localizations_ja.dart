@@ -923,10 +923,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contextWindow => 'コンテキストウィンドウ';
 
   @override
+  String get contextUnset => '未設定';
+
+  @override
+  String get contextUnsetDesc => '保守的なデフォルトを使用します。モデルの実際の上限が不明な場合はこれを選んでください。';
+
+  @override
+  String get contextSpecify => '指定';
+
+  @override
   String get contextUnlimited => '無制限';
 
   @override
-  String get contextUnlimitedDesc => 'すべての候補を1回のリクエストで送信（バッチ分割なし）';
+  String get contextUnlimitedDesc =>
+      'すべての候補を1回のリクエストで送信し、プロンプトアシスタントをウィンドウサイズで制限しません。';
 
   @override
   String get contextMax => '最大コンテキスト';
@@ -937,7 +947,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get contextWindowHint => 'コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。';
+  String get contextWindowHint =>
+      'リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。';
 
   @override
   String get agentBehavior => 'エージェント動作';
@@ -1340,6 +1351,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get kbMissingEntry => 'フォルダに README.md が見つかりません';
+
+  @override
+  String get assistantContextRatio => 'アシスタント要約しきい値';
+
+  @override
+  String get assistantContextRatioDesc =>
+      'プロンプトアシスタントは、コンテキスト使用量がモデルのウィンドウのこの割合に達すると会話を要約し、作業を続ける余地を空けます。コンテキストウィンドウが設定されたモデルにのみ適用されます。';
 
   @override
   String get assistantRetention => 'アシスタント会話の保持数';
@@ -2179,6 +2197,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optDeleteSessionConfirm => 'この会話を完全に削除しますか？';
+
+  @override
+  String get optKbEntryTooLarge =>
+      'ナレッジベースの README.md がこのモデルのコンテキストウィンドウの大部分を占めています。毎回のリクエストで再送され、要約でも縮められません。内容を減らすか、より大きなウィンドウのモデルを選んでください。';
 
   @override
   String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';

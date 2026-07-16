@@ -1823,6 +1823,24 @@ abstract class AppLocalizations {
   /// **'Context Window'**
   String get contextWindow;
 
+  /// No description provided for @contextUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get contextUnset;
+
+  /// No description provided for @contextUnsetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use conservative defaults — pick this when you do not know the model\'s real limit.'**
+  String get contextUnsetDesc;
+
+  /// No description provided for @contextSpecify.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify'**
+  String get contextSpecify;
+
   /// No description provided for @contextUnlimited.
   ///
   /// In en, this message translates to:
@@ -1832,7 +1850,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextUnlimitedDesc.
   ///
   /// In en, this message translates to:
-  /// **'Send all candidates in one request (no batching)'**
+  /// **'Send all candidates in one request, and never cap the Prompt Assistant by window size.'**
   String get contextUnlimitedDesc;
 
   /// No description provided for @contextMax.
@@ -1850,7 +1868,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextWindowHint.
   ///
   /// In en, this message translates to:
-  /// **'Larger context lets more images be analyzed per request.'**
+  /// **'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.'**
   String get contextWindowHint;
 
   /// No description provided for @agentBehavior.
@@ -2614,6 +2632,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'README.md entry file not found in the folder'**
   String get kbMissingEntry;
+
+  /// No description provided for @assistantContextRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant Summary Limit'**
+  String get assistantContextRatio;
+
+  /// No description provided for @assistantContextRatioDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.'**
+  String get assistantContextRatioDesc;
 
   /// No description provided for @assistantRetention.
   ///
@@ -4162,6 +4192,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this conversation permanently?'**
   String get optDeleteSessionConfirm;
+
+  /// No description provided for @optKbEntryTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The knowledge base\'s README.md takes up a large share of this model\'s context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.'**
+  String get optKbEntryTooLarge;
 
   /// No description provided for @optCompactedNotice.
   ///

@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
+import 'llm/context_budget.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 import 'repositories/assistant_session_repository.dart';
@@ -125,6 +126,15 @@ class PromptOptimizerSession extends ChangeNotifier {
 
   /// True when the agent may propose knowledge-base edits.
   bool get canWriteKnowledge => mode == AssistantMode.knowledgeEdit;
+
+  /// Chars-per-token measured from the last request the provider reported
+  /// token usage for, or null while it has reported none.
+  ///
+  /// Lets the budget fit the user's actual content — English runs ~4
+  /// chars/token, Chinese ~1–1.3, and a constant cannot serve both — while
+  /// staying entirely optional: providers may omit usage, and then the
+  /// conservative default applies.
+  double? observedCharsPerToken;
 
   /// [history] length at the moment each knowledge file was last written, so
   /// reads recorded before the write stop counting as current.
@@ -391,22 +401,73 @@ class PromptOptimizerAgent {
   /// Transcript-notice tokens, mapped to localized strings at render time.
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
+  static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
+
+  /// Share of the window above which the system prompt is called out.
+  ///
+  /// Past half, a two-message conversation cannot fit — and unlike history, the
+  /// system prompt is re-sent in full every request and compaction cannot touch
+  /// it, so nothing downstream can rescue it.
+  static const double _systemPromptWarnShare = 0.5;
 
   /// Memory management: the most recent user turns whose tool results and
   /// image attachments are never elided or compacted away.
   static const int _keepRecentTurns = 6;
 
-  /// Layer-2 compaction triggers: estimated context size (chars, roughly
-  /// 4 chars/token → ~48K tokens) or raw message count.
-  static const int _compactThresholdChars = 192000;
+  /// Layer-2 compaction's secondary trigger: raw message count, independent of
+  /// size. A long conversation of short turns costs little context but still
+  /// slows every request down.
   static const int _compactMaxMessages = 120;
 
   static const String retentionSettingKey = 'assistant_session_retention';
   static const int defaultRetention = 20;
 
+  /// Fraction of the model's context window at which the conversation is
+  /// summarized to make room ("hard summary limit").
+  ///
+  /// The headroom above it is not waste — it is what funds reading a knowledge
+  /// file in one piece mid-turn, which compaction then reclaims at the next
+  /// turn boundary. See [ContextBudget.readCapChars].
+  static const String contextRatioSettingKey = 'assistant_context_ratio';
+  static const double defaultContextRatio = 0.6;
+
+  /// Whether the conversation should be summarized before the next request.
+  ///
+  /// Pure so it can be pinned without a database or a live model.
+  static bool shouldCompact({
+    required int occupied,
+    required int budgetChars,
+    required int messageCount,
+  }) =>
+      occupied >= budgetChars || messageCount > _compactMaxMessages;
+
   /// Live sessions by id, so the task-queue executor can resolve the session
   /// referenced by a queued task.
   static final Map<String, PromptOptimizerSession> sessions = {};
+
+  /// What a knowledge read may spend right now.
+  ///
+  /// Recomputed per tool call rather than once per turn, because a single
+  /// assistant message can carry several read_knowledge_file calls and both
+  /// Gemini and GPT routinely emit them that way. Reading occupancy from
+  /// [PromptOptimizerSession.history] makes that fall out for free: each
+  /// result is appended before the next call runs, so the second read already
+  /// sees what the first one cost. Computing it once per turn would let every
+  /// call in the batch claim the same remaining window.
+  ///
+  /// Nothing reclaims this mid-turn — compaction only runs at a turn boundary
+  /// and cannot fold the current turn anyway — so the cap is the only thing
+  /// standing between a long tool loop and an overflowing request.
+  static int _readCapNow(
+    PromptOptimizerSession session,
+    String systemPrompt,
+    int? contextWindow,
+  ) =>
+      ContextBudget.readCapChars(
+        contextWindow,
+        occupiedChars(systemPrompt, _trimForSend(session.history)),
+        observedCharsPerToken: session.observedCharsPerToken,
+      );
 
   static final List<LLMTool> _tools = [
     LLMTool(
@@ -475,10 +536,15 @@ class PromptOptimizerAgent {
     ),
     LLMTool(
       name: 'read_knowledge_file',
-      description: 'Read one knowledge file by its relative path. Large files '
-          'are paged: the result includes page/total_pages — request further '
-          'pages only when you actually need them. Never re-read a page that '
-          'is already in the conversation.',
+      description: 'Read one knowledge file by its relative path. A file that '
+          'fits the remaining context comes back whole (total_pages: 1); a '
+          'larger one is split, and the result carries page/total_pages — '
+          'request further pages only when you actually need them. How much '
+          'fits depends on how full the conversation already is, so total_pages '
+          'may differ between reads of the same file. Read selectively: '
+          'list_knowledge_files reports size_kb, and loading rules you do not '
+          'need costs context you will want later. Never re-read a page that is '
+          'already in the conversation.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -550,6 +616,8 @@ class PromptOptimizerAgent {
     String? knowledgeRoot,
     String? knowledgeEntryContent,
     String? contextId,
+    int? contextWindow,
+    double contextRatio = defaultContextRatio,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
   }) async {
@@ -572,49 +640,86 @@ class PromptOptimizerAgent {
     final minTurns = referenceImages.length + (knowledgeMode ? 8 : 4);
     final maxTurns = baseTurns > minTurns ? baseTurns : minTurns;
     final repo = AssistantSessionRepository();
+
+    /// Set once a read finds no room left, for the rest of this turn.
+    bool contextExhausted = false;
+
+    // Built once: it is identical on every request of this turn, and both the
+    // budget check and the request itself must see the same string — it is the
+    // largest fixed cost in the window (the knowledge-base file map lives in
+    // it) and is re-sent in full every single request.
+    final systemPromptText = editMode
+        ? _buildKnowledgeEditSystemPrompt(
+            knowledgeEntryContent!, referenceImages.length, forceViewAllImages)
+        : knowledgeMode
+            ? _buildKnowledgeSystemPrompt(
+                knowledgeEntryContent!, referenceImages.length, forceViewAllImages)
+            : _buildSystemPrompt(systemPrompt, referenceImages.length, forceViewAllImages);
+
+    // Say something while there is still something to say. Compaction only
+    // folds history, so it can never shrink this — past a certain size the turn
+    // is doomed and the only signal would be the provider's own error. A
+    // warning, not a failure: with the window itself picked off a preset
+    // slider, refusing to run would break setups that work today.
+    if (knowledgeMode && contextWindow != null && contextWindow > 0) {
+      final windowChars = contextWindow *
+          (session.observedCharsPerToken ?? ContextBudget.charsPerToken);
+      if (systemPromptText.length > windowChars * _systemPromptWarnShare) {
+        onLog?.call('The knowledge base file map fills '
+            '${(systemPromptText.length / windowChars * 100).round()}% of this '
+            "model's context window, and is re-sent every request.");
+        session._addEntry(OptimizerChatEntry(
+          kind: OptimizerEntryKind.notice,
+          text: kbEntryTooLargeNoticeToken,
+        ));
+      }
+    }
+
     try {
       // Persist the pending user turn, then compact if the history has grown
       // past the context budget. Persistence failures never block the turn.
       try {
         await _syncPersistence(session, referenceImages, repo);
-        await _maybeCompact(session, modelIdentifier, repo, contextId, onLog);
+        await _maybeCompact(
+          session,
+          modelIdentifier,
+          repo,
+          contextId,
+          onLog,
+          systemPrompt: systemPromptText,
+          contextWindow: contextWindow,
+          contextRatio: contextRatio,
+        );
       } catch (e) {
         onLog?.call('Session persistence failed (continuing without it): $e');
       }
       for (int turn = 0; turn < maxTurns; turn++) {
         if (isCancelled?.call() ?? false) return;
 
+        // Once there is no room to read, stop offering the tool at all. Left in
+        // the list the model would keep calling it and keep being refused, and
+        // each refusal costs another full-window request — the loop still has
+        // its remaining iterations to burn. Without it the model can only
+        // answer or submit, and the loop exits on its own.
+        final activeTools = contextExhausted
+            ? [for (final t in tools) if (t.name != 'read_knowledge_file') t]
+            : tools;
+
+        final trimmedHistory = _trimForSend(session.history);
+        // knowledgeEntryContent is captured once per task, but staging means no
+        // edit can reach disk mid-turn, so the injected file map cannot go
+        // stale within a turn.
+        final sentChars = occupiedChars(systemPromptText, trimmedHistory);
+
         final LLMResponse response;
         try {
           response = await LLMService().request(
             modelIdentifier: modelIdentifier,
             messages: [
-              LLMMessage(
-                role: LLMRole.system,
-                // Rebuilt every request. knowledgeEntryContent is captured once
-                // per task, but staging means no edit can reach disk mid-turn,
-                // so the injected file map cannot go stale within a turn.
-                content: editMode
-                    ? _buildKnowledgeEditSystemPrompt(
-                        knowledgeEntryContent!,
-                        referenceImages.length,
-                        forceViewAllImages,
-                      )
-                    : knowledgeMode
-                        ? _buildKnowledgeSystemPrompt(
-                            knowledgeEntryContent!,
-                            referenceImages.length,
-                            forceViewAllImages,
-                          )
-                        : _buildSystemPrompt(
-                            systemPrompt,
-                            referenceImages.length,
-                            forceViewAllImages,
-                          ),
-              ),
-              ..._trimForSend(session.history),
+              LLMMessage(role: LLMRole.system, content: systemPromptText),
+              ...trimmedHistory,
             ],
-            tools: tools,
+            tools: activeTools,
             contextId: contextId,
             // Transient relay/proxy disconnects (e.g. errno 10054) should not
             // kill the whole agent turn — retry a couple of times.
@@ -628,6 +733,15 @@ class PromptOptimizerAgent {
           ));
           rethrow;
         }
+
+        // Calibrate against what this request actually cost. Providers may
+        // report no usage at all, in which case observedCharsPerToken stays as
+        // it was and the conservative default keeps applying.
+        final observed = ContextBudget.calibrate(
+          charsSent: sentChars,
+          promptTokens: LLMService.promptTokensOf(response.metadata),
+        );
+        if (observed != null) session.observedCharsPerToken = observed;
 
         if (response.toolCalls.isEmpty) {
           // Model is done: plain text is a chat reply (comment, clarifying
@@ -659,8 +773,18 @@ class PromptOptimizerAgent {
 
         for (final call in response.toolCalls) {
           if (isCancelled?.call() ?? false) return;
-          final result = _executeTool(call, referenceImages, session,
-              pendingViews, forceViewAllImages, knowledgeRoot, onLog);
+          final result = _executeTool(
+            call,
+            referenceImages,
+            session,
+            pendingViews,
+            forceViewAllImages,
+            knowledgeRoot,
+            onLog,
+            systemPrompt: systemPromptText,
+            contextWindow: contextWindow,
+            onContextExhausted: () => contextExhausted = true,
+          );
           session.history.add(LLMMessage(
             role: LLMRole.tool,
             content: jsonEncode(result),
@@ -743,6 +867,45 @@ class PromptOptimizerAgent {
       }
     }
     return 0;
+  }
+
+  /// Below this many chars a read is not worth doing: the model would get a
+  /// fragment too small to reason from, and would likely just ask for the next
+  /// one, burning a full-window request each time.
+  static const int _minReadChars = 2000;
+
+  /// Rough per-attachment char cost, standing in for an image's token price.
+  ///
+  /// An image carries no characters but is far from free — roughly 1–1.5K
+  /// tokens for a 1024² image on Gemini. Counting it as zero (as the old
+  /// threshold did) makes a session with reference images look emptier than it
+  /// is, and over-grants the knowledge read budget by exactly that much.
+  static const int _attachmentChars = 2000;
+
+  /// Chars in what a request actually carries: the system prompt (which is
+  /// rebuilt and re-sent every turn, knowledge-base file map and all), message
+  /// text, tool-call arguments, and a stand-in for attachments.
+  ///
+  /// Tool-call arguments are counted because they are not small: a staged
+  /// write_knowledge_file or submit_prompt puts a whole file body in the
+  /// assistant message, which a content-only tally misses entirely.
+  ///
+  /// This is also the number [ContextBudget.calibrate] divides into the
+  /// provider's reported token count, so it has to measure the same request the
+  /// provider billed — hence system prompt included, not history alone.
+  static int occupiedChars(String systemPrompt, List<LLMMessage> messages) {
+    int total = systemPrompt.length;
+    for (final m in messages) {
+      total += m.content.length;
+      total += m.attachments.length * _attachmentChars;
+      for (final call in m.toolCalls) {
+        total += call.name.length;
+        for (final entry in call.arguments.entries) {
+          total += entry.key.length + entry.value.toString().length;
+        }
+      }
+    }
+    return total;
   }
 
   /// Pages of [relPath] whose content the model can still read in what will be
@@ -876,19 +1039,43 @@ class PromptOptimizerAgent {
     dynamic modelIdentifier,
     AssistantSessionRepository repo,
     String? contextId,
-    void Function(String message)? onLog,
-  ) async {
+    void Function(String message)? onLog, {
+    required String systemPrompt,
+    required int? contextWindow,
+    required double contextRatio,
+  }) async {
     final trimmed = _trimForSend(session.history);
-    final totalChars = trimmed.fold<int>(0, (sum, m) => sum + m.content.length);
-    if (totalChars < _compactThresholdChars &&
-        session.history.length <= _compactMaxMessages) {
+    final occupied = occupiedChars(systemPrompt, trimmed);
+    final budget = ContextBudget.budgetChars(
+      contextWindow,
+      contextRatio,
+      observedCharsPerToken: session.observedCharsPerToken,
+    );
+    if (!shouldCompact(
+      occupied: occupied,
+      budgetChars: budget,
+      messageCount: session.history.length,
+    )) {
       return;
     }
     final boundary = _recentBoundary(session.history);
-    if (boundary <= 1) return; // Nothing meaningful to fold.
+    if (boundary <= 1) {
+      // Nothing meaningful to fold. Worth saying out loud when it is the size
+      // that triggered this: compaction only folds history, so it can never
+      // shrink an oversized system prompt, and the request is about to fail
+      // with nothing but the provider's own error to explain why.
+      if (occupied >= budget) {
+        onLog?.call('Context is over budget ($occupied/$budget chars) but there '
+            'is nothing to summarize yet — the system prompt or the current '
+            'turn alone exceeds the budget.');
+      }
+      return;
+    }
 
     final head = session.history.sublist(0, boundary);
-    onLog?.call('Context budget exceeded (~${totalChars ~/ 4} tokens) — compacting ${head.length} early messages.');
+    onLog?.call('Context budget reached ($occupied/$budget chars, '
+        '${(contextRatio * 100).round()}% of the window) — summarizing '
+        '${head.length} early messages.');
     String summaryText;
     try {
       final response = await LLMService().request(
@@ -974,8 +1161,11 @@ class PromptOptimizerAgent {
     List<Map<String, String>> pendingViews,
     bool forceViewAllImages,
     String? knowledgeRoot,
-    void Function(String message)? onLog,
-  ) {
+    void Function(String message)? onLog, {
+    required String systemPrompt,
+    required int? contextWindow,
+    required void Function() onContextExhausted,
+  }) {
     switch (call.name) {
       case 'list_knowledge_files':
         if (knowledgeRoot == null) return _kbUnavailable();
@@ -1005,8 +1195,26 @@ class PromptOptimizerAgent {
             'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
           };
         }
+        final cap = _readCapNow(session, systemPrompt, contextWindow);
+        if (cap < _minReadChars) {
+          // Returning a sliver instead would be worse than refusing: the model
+          // would keep asking for more, and every retry is another full-window
+          // request. Nothing reclaims context mid-turn, so say so and take the
+          // tool away rather than let the loop grind through its remaining
+          // iterations.
+          onContextExhausted();
+          onLog?.call('Context exhausted (~$cap chars free) — knowledge reading '
+              'disabled for the rest of this turn.');
+          return {
+            'status': 'error',
+            'message': 'Not enough context left to read more of the knowledge '
+                'base. Work with what you have already read, or tell the user '
+                'to start a new conversation for a fresh context.',
+          };
+        }
         try {
-          final result = KnowledgeBaseService().readFile(knowledgeRoot, relPath, page: page);
+          final result = KnowledgeBaseService()
+              .readFile(knowledgeRoot, relPath, page: page, maxChars: cap);
           session._addEntry(OptimizerChatEntry(
             kind: OptimizerEntryKind.tool,
             text: result.totalPages > 1 ? '$relPath (${result.page}/${result.totalPages})' : relPath,

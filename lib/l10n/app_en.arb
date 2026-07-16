@@ -460,8 +460,11 @@
   "supportsStandardRequest": "Supports Standard Request",
   "supportsStandardRequestDesc": "Enable for standard JSON/REST requests",
   "contextWindow": "Context Window",
+  "contextUnset": "Not set",
+  "contextUnsetDesc": "Use conservative defaults — pick this when you do not know the model's real limit.",
+  "contextSpecify": "Specify",
   "contextUnlimited": "Unlimited",
-  "contextUnlimitedDesc": "Send all candidates in one request (no batching)",
+  "contextUnlimitedDesc": "Send all candidates in one request, and never cap the Prompt Assistant by window size.",
   "contextMax": "Max context",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -471,7 +474,7 @@
       }
     }
   },
-  "contextWindowHint": "Larger context lets more images be analyzed per request.",
+  "contextWindowHint": "Used to batch images per request, and to budget the Prompt Assistant's knowledge-base reads and summarization.",
   "agentBehavior": "Agent Behavior",
   "forceViewAllImages": "View all reference images",
   "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models.",
@@ -641,6 +644,8 @@
   "kbOpenFolder": "Open Folder",
   "kbInvalidDir": "Folder not found",
   "kbMissingEntry": "README.md entry file not found in the folder",
+  "assistantContextRatio": "Assistant Summary Limit",
+  "assistantContextRatioDesc": "The prompt assistant summarizes the conversation once it fills this share of the model's context window, freeing room to keep working. Only applies to models with a context window set.",
   "assistantRetention": "Assistant Conversations to Keep",
   "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically",
   "tasks": "Tasks",
@@ -1102,6 +1107,7 @@
   "optHistory": "Conversation History",
   "optNoHistory": "No saved conversations yet",
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
+  "optKbEntryTooLarge": "The knowledge base's README.md takes up a large share of this model's context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
   "optRetry": "Retry",

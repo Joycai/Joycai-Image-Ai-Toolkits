@@ -920,10 +920,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextWindow => '上下文大小';
 
   @override
+  String get contextUnset => '未设置';
+
+  @override
+  String get contextUnsetDesc => '使用保守默认值——不确定模型真实上限时选这个。';
+
+  @override
+  String get contextSpecify => '指定大小';
+
+  @override
   String get contextUnlimited => '不限制';
 
   @override
-  String get contextUnlimitedDesc => '一次性发送所有候选图片（不分批）';
+  String get contextUnlimitedDesc => '一次性发送所有候选图片，且不按窗口大小限制提示词助手。';
 
   @override
   String get contextMax => '最大上下文';
@@ -934,7 +943,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get contextWindowHint => '更大的上下文可让每次请求分析更多图片。';
+  String get contextWindowHint => '用于每次请求的图片分批，以及提示词助手读取知识库与摘要的预算。';
 
   @override
   String get agentBehavior => '代理行为';
@@ -1330,6 +1339,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get kbMissingEntry => '文件夹中缺少入口文件 README.md';
+
+  @override
+  String get assistantContextRatio => '助手摘要阈值';
+
+  @override
+  String get assistantContextRatioDesc =>
+      '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
 
   @override
   String get assistantRetention => '助手会话保留数量';
@@ -2165,6 +2181,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optDeleteSessionConfirm => '确定永久删除该会话？';
+
+  @override
+  String get optKbEntryTooLarge =>
+      '知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。';
 
   @override
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
@@ -3159,10 +3179,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contextWindow => '上下文大小';
 
   @override
+  String get contextUnset => '未設定';
+
+  @override
+  String get contextUnsetDesc => '使用保守預設值——不確定模型真實上限時選這個。';
+
+  @override
+  String get contextSpecify => '指定大小';
+
+  @override
   String get contextUnlimited => '不限制';
 
   @override
-  String get contextUnlimitedDesc => '一次性傳送所有候選圖片（不分批）';
+  String get contextUnlimitedDesc => '一次性傳送所有候選圖片，且不依視窗大小限制提示詞助手。';
 
   @override
   String get contextMax => '最大上下文';
@@ -3173,7 +3202,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get contextWindowHint => '更大的上下文可讓每次請求分析更多圖片。';
+  String get contextWindowHint => '用於每次請求的圖片分批，以及提示詞助手讀取知識庫與摘要的預算。';
 
   @override
   String get agentBehavior => '代理行為';
@@ -3570,6 +3599,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbMissingEntry => '資料夾中缺少入口檔案 README.md';
+
+  @override
+  String get assistantContextRatio => '助手摘要閾值';
+
+  @override
+  String get assistantContextRatioDesc =>
+      '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
 
   @override
   String get assistantRetention => '助手對話保留數量';
@@ -4395,6 +4431,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optDeleteSessionConfirm => '確定永久刪除該對話？';
+
+  @override
+  String get optKbEntryTooLarge =>
+      '知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。';
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';

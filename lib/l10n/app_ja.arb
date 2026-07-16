@@ -319,8 +319,11 @@
   "supportsStandardRequest": "標準リクエスト対応",
   "supportsStandardRequestDesc": "標準的な JSON/REST リクエストの場合は有効化",
   "contextWindow": "コンテキストウィンドウ",
+  "contextUnset": "未設定",
+  "contextUnsetDesc": "保守的なデフォルトを使用します。モデルの実際の上限が不明な場合はこれを選んでください。",
+  "contextSpecify": "指定",
   "contextUnlimited": "無制限",
-  "contextUnlimitedDesc": "すべての候補を1回のリクエストで送信（バッチ分割なし）",
+  "contextUnlimitedDesc": "すべての候補を1回のリクエストで送信し、プロンプトアシスタントをウィンドウサイズで制限しません。",
   "contextMax": "最大コンテキスト",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -330,7 +333,7 @@
       }
     }
   },
-  "contextWindowHint": "コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。",
+  "contextWindowHint": "リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。",
   "agentBehavior": "エージェント動作",
   "forceViewAllImages": "すべての参考画像を確認",
   "forceViewAllImagesDesc": "エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。",
@@ -493,6 +496,8 @@
   "kbOpenFolder": "フォルダを開く",
   "kbInvalidDir": "フォルダが見つかりません",
   "kbMissingEntry": "フォルダに README.md が見つかりません",
+  "assistantContextRatio": "アシスタント要約しきい値",
+  "assistantContextRatioDesc": "プロンプトアシスタントは、コンテキスト使用量がモデルのウィンドウのこの割合に達すると会話を要約し、作業を続ける余地を空けます。コンテキストウィンドウが設定されたモデルにのみ適用されます。",
   "assistantRetention": "アシスタント会話の保持数",
   "assistantRetentionDesc": "この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます",
   "tasks": "タスク",
@@ -959,6 +964,7 @@
   "optHistory": "会話履歴",
   "optNoHistory": "保存された会話はまだありません",
   "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
+  "optKbEntryTooLarge": "ナレッジベースの README.md がこのモデルのコンテキストウィンドウの大部分を占めています。毎回のリクエストで再送され、要約でも縮められません。内容を減らすか、より大きなウィンドウのモデルを選んでください。",
   "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
   "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
   "optRetry": "再試行",

@@ -943,11 +943,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextWindow => 'Context Window';
 
   @override
+  String get contextUnset => 'Not set';
+
+  @override
+  String get contextUnsetDesc =>
+      'Use conservative defaults — pick this when you do not know the model\'s real limit.';
+
+  @override
+  String get contextSpecify => 'Specify';
+
+  @override
   String get contextUnlimited => 'Unlimited';
 
   @override
   String get contextUnlimitedDesc =>
-      'Send all candidates in one request (no batching)';
+      'Send all candidates in one request, and never cap the Prompt Assistant by window size.';
 
   @override
   String get contextMax => 'Max context';
@@ -959,7 +969,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contextWindowHint =>
-      'Larger context lets more images be analyzed per request.';
+      'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.';
 
   @override
   String get agentBehavior => 'Agent Behavior';
@@ -1371,6 +1381,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kbMissingEntry => 'README.md entry file not found in the folder';
+
+  @override
+  String get assistantContextRatio => 'Assistant Summary Limit';
+
+  @override
+  String get assistantContextRatioDesc =>
+      'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.';
 
   @override
   String get assistantRetention => 'Assistant Conversations to Keep';
@@ -2230,6 +2247,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optDeleteSessionConfirm => 'Delete this conversation permanently?';
+
+  @override
+  String get optKbEntryTooLarge =>
+      'The knowledge base\'s README.md takes up a large share of this model\'s context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.';
 
   @override
   String get optCompactedNotice =>

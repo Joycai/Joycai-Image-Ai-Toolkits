@@ -29,6 +29,12 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   KbStatus _kbStatus = KbStatus.notSet;
   int _assistantRetention = PromptOptimizerAgent.defaultRetention;
 
+  /// Offered summary thresholds. Nothing above 80%: the headroom above the
+  /// threshold is what lets the assistant read a knowledge file in one piece
+  /// mid-turn, and compaction only reclaims it at the next turn boundary.
+  static const List<double> _contextRatios = [0.4, 0.5, 0.6, 0.7, 0.8];
+  double _assistantContextRatio = PromptOptimizerAgent.defaultContextRatio;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +49,9 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     _assistantRetention = int.tryParse(
             await _db.getSetting(PromptOptimizerAgent.retentionSettingKey) ?? '') ??
         PromptOptimizerAgent.defaultRetention;
+    _assistantContextRatio = double.tryParse(
+            await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '') ??
+        PromptOptimizerAgent.defaultContextRatio;
     if (mounted) setState(() {});
   }
 
@@ -118,6 +127,29 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               if (v == null) return;
               await _db.saveSetting(PromptOptimizerAgent.retentionSettingKey, '$v');
               setState(() => _assistantRetention = v);
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          title: Text(l10n.assistantContextRatio),
+          subtitle: Text(l10n.assistantContextRatioDesc),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          trailing: DropdownButton<double>(
+            value: _contextRatios.contains(_assistantContextRatio)
+                ? _assistantContextRatio
+                : PromptOptimizerAgent.defaultContextRatio,
+            underline: const SizedBox.shrink(),
+            items: _contextRatios
+                .map((r) => DropdownMenuItem(
+                      value: r,
+                      child: Text('${(r * 100).round()}%'),
+                    ))
+                .toList(),
+            onChanged: (v) async {
+              if (v == null) return;
+              await _db.saveSetting(PromptOptimizerAgent.contextRatioSettingKey, '$v');
+              setState(() => _assistantContextRatio = v);
             },
           ),
         ),

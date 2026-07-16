@@ -4,7 +4,9 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/channel_dialect.dart';
+import '../../services/llm/context_budget.dart';
 import '../../state/app_state.dart';
+import '../app_segmented_control.dart';
 
 class ModelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
@@ -39,7 +41,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   static const List<int> _contextSizes = [
     4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576,
   ];
-  late bool unlimitedContext;
+  late ContextWindowMode contextMode;
   late double contextSizeIdx;
 
   /// Tag palette mirrors the chips on the models screen.
@@ -64,9 +66,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     supportsStandard = model?.supportsStandard ?? true;
     forceViewAllImages = model?.forceViewAllImages ?? false;
 
-    // Context window: null = not configured, 0 = unlimited, >0 = token limit.
+    // Context window: null = not set, 0 = unlimited, >0 = token limit. A new
+    // model starts unset rather than at a preset — this number now budgets the
+    // Prompt Assistant, and a default nobody chose would silently pass for a
+    // real answer.
     final cw = model?.contextWindow;
-    unlimitedContext = cw != null && cw <= 0;
+    contextMode = cw == null
+        ? ContextWindowMode.unset
+        : (cw <= 0 ? ContextWindowMode.unlimited : ContextWindowMode.specified);
     contextSizeIdx = (cw != null && cw > 0 ? _nearestSizeIndex(cw) : 1).toDouble();
   }
 
@@ -272,18 +279,32 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
         const SizedBox(height: 24),
         _sectionHeader(l10n.contextWindow),
-        const SizedBox(height: 4),
-        SwitchListTile(
-          title: Text(l10n.contextUnlimited, style: const TextStyle(fontSize: 13)),
-          subtitle: Text(l10n.contextUnlimitedDesc, style: const TextStyle(fontSize: 11)),
-          value: unlimitedContext,
-          onChanged: (v) => setState(() => unlimitedContext = v),
-          secondary: const Icon(Icons.all_inclusive),
-          contentPadding: EdgeInsets.zero,
+        const SizedBox(height: 8),
+        AppSegmentedControl<ContextWindowMode>(
+          expand: true,
+          value: contextMode,
+          onChanged: (v) => setState(() => contextMode = v),
+          segments: [
+            AppSegment(
+              value: ContextWindowMode.unset,
+              label: l10n.contextUnset,
+              icon: Icons.help_outline,
+            ),
+            AppSegment(
+              value: ContextWindowMode.specified,
+              label: l10n.contextSpecify,
+              icon: Icons.memory_outlined,
+            ),
+            AppSegment(
+              value: ContextWindowMode.unlimited,
+              label: l10n.contextUnlimited,
+              icon: Icons.all_inclusive,
+            ),
+          ],
         ),
-        if (!unlimitedContext) ...[
+        if (contextMode == ContextWindowMode.specified) ...[
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 8),
             child: Row(
               children: [
                 Icon(Icons.memory_outlined, size: 18, color: colorScheme.outline),
@@ -305,11 +326,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             label: _formatTokens(_contextSizes[contextSizeIdx.round()]),
             onChanged: (v) => setState(() => contextSizeIdx = v),
           ),
-          Text(
-            l10n.contextWindowHint,
+        ],
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            switch (contextMode) {
+              ContextWindowMode.unset => l10n.contextUnsetDesc,
+              ContextWindowMode.specified => l10n.contextWindowHint,
+              ContextWindowMode.unlimited => l10n.contextUnlimitedDesc,
+            },
             style: TextStyle(color: colorScheme.outline, fontSize: 11),
           ),
-        ],
+        ),
 
         const SizedBox(height: 24),
         _sectionHeader(l10n.capabilities),
@@ -407,7 +435,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       'force_view_all_images': forceViewAllImages ? 1 : 0,
       'fee_group_id': feeGroupId,
       'channel_id': channelId,
-      'context_window': unlimitedContext ? 0 : _contextSizes[contextSizeIdx.round()],
+      'context_window': ContextBudget.store(contextMode, _contextSizes[contextSizeIdx.round()]),
     };
 
     if (widget.model == null) {
