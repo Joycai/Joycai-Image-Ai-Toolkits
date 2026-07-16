@@ -1,0 +1,34 @@
+# Line endings.
+#
+# Without this, the committed line endings are whatever the machine that first
+# added the file happened to use, and 35 files had landed as CRLF. A checkout on
+# a machine with core.autocrlf=input then leaves those files permanently
+# "modified" with no edit: the working tree keeps the CRLF it was given, while
+# git compares it against an LF-normalized copy. That noise hid real changes and
+# made `git status` untrustworthy.
+#
+# LF in the repository, LF on checkout, on every platform. Nothing here needs
+# CRLF — there are no .bat/.cmd/.ps1 files, and Visual Studio (Runner.rc) and
+# Inno Setup (.iss) both read LF fine.
+* text=auto eol=lf
+
+# Explicit rather than sniffed: git's binary detection is a heuristic, and a
+# false "text" verdict would corrupt these on checkout.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.mp4 binary
+*.mov binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.jar binary
+*.keystore binary
+*.jks binary
+*.pdf binary
