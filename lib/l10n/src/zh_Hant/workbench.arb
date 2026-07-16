@@ -313,6 +313,7 @@
   "optHistory": "歷史對話",
   "optNoHistory": "尚無已儲存的對話",
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
+  "optKbEntryTooLarge": "知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
   "optRetry": "重試",

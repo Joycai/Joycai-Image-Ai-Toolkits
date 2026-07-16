@@ -2249,6 +2249,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optDeleteSessionConfirm => 'Delete this conversation permanently?';
 
   @override
+  String get optKbEntryTooLarge =>
+      'The knowledge base\'s README.md takes up a large share of this model\'s context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.';
+
+  @override
   String get optCompactedNotice =>
       'Earlier messages were compacted into a summary to save context.';
 

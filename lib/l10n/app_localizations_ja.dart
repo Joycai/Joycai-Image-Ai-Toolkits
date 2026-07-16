@@ -2199,6 +2199,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optDeleteSessionConfirm => 'この会話を完全に削除しますか？';
 
   @override
+  String get optKbEntryTooLarge =>
+      'ナレッジベースの README.md がこのモデルのコンテキストウィンドウの大部分を占めています。毎回のリクエストで再送され、要約でも縮められません。内容を減らすか、より大きなウィンドウのモデルを選んでください。';
+
+  @override
   String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';
 
   @override

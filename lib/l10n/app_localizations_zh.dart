@@ -2183,6 +2183,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optDeleteSessionConfirm => '确定永久删除该会话？';
 
   @override
+  String get optKbEntryTooLarge =>
+      '知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。';
+
+  @override
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
 
   @override
@@ -4427,6 +4431,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optDeleteSessionConfirm => '確定永久刪除該對話？';
+
+  @override
+  String get optKbEntryTooLarge =>
+      '知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。';
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';

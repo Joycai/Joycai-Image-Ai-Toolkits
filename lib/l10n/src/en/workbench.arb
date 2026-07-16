@@ -316,6 +316,7 @@
   "optHistory": "Conversation History",
   "optNoHistory": "No saved conversations yet",
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
+  "optKbEntryTooLarge": "The knowledge base's README.md takes up a large share of this model's context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
   "optRetry": "Retry",

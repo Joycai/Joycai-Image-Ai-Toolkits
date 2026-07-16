@@ -316,6 +316,7 @@
   "optHistory": "历史会话",
   "optNoHistory": "暂无已保存的会话",
   "optDeleteSessionConfirm": "确定永久删除该会话？",
+  "optKbEntryTooLarge": "知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。",
   "optCompactedNotice": "较早的对话已压缩为摘要，以节省上下文。",
   "optImageMissing": "该会话的部分参考图已不存在，可重新添加后继续使用。",
   "optRetry": "重试",

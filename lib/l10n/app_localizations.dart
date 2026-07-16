@@ -4193,6 +4193,12 @@ abstract class AppLocalizations {
   /// **'Delete this conversation permanently?'**
   String get optDeleteSessionConfirm;
 
+  /// No description provided for @optKbEntryTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The knowledge base\'s README.md takes up a large share of this model\'s context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.'**
+  String get optKbEntryTooLarge;
+
   /// No description provided for @optCompactedNotice.
   ///
   /// In en, this message translates to:
