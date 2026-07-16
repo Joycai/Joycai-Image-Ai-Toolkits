@@ -28,6 +28,7 @@ lib/
     task_queue_service.dart       # concurrency queue, Stream<TaskEvent>, ETA estimation
     prompt_optimizer_agent.dart   # Prompt Assistant agent: tool loop, modes (system prompt / knowledge base), session persistence + compaction
     knowledge_base_service.dart   # local knowledge-base folder access (README.md entry, paged reads)
+    llm/context_budget.dart       # sole interpreter of a model's context window (see architecture note below)
     web_scraper_service.dart      # HTML image extraction with cookie support
   screens/              # workbench · browser · batch · downloader · prompts · settings · metrics · models · wizard
   models/               # LLMModel, LLMChannel, PricingGroup, Prompt, PromptTag, AppImage, BrowserFile, LogEntry
@@ -40,6 +41,13 @@ lib/
 **Task types:** `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`  
 **LLM providers (registered in `main.dart`):** `google-genai` · `openai-api`  
 **Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `shelf`, `shelf_router`, `photo_view`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `local_notifier`, `gal`
+
+## Architecture Notes
+
+Read the relevant note before changing that subsystem — each records invariants
+that fail silently when broken, and alternatives already tried and rejected.
+
+- **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart`, `context_budget.dart`, or `knowledge_base_service.dart`.
 
 ## Development Rules
 
