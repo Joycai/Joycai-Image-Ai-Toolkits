@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
@@ -78,9 +80,15 @@ void main() {
       expect(applied, id);
     });
 
-    test('rejecting flips the card without touching the read cache', () {
+    test('rejecting flips the card without invalidating earlier reads', () {
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
-      session.readKnowledgePages.add('a.md#1');
+      session.history.add(LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode(
+            {'path': 'a.md', 'page': 1, 'total_pages': 1, 'content': 'old'}),
+        toolCallId: 'c1',
+        toolName: 'read_knowledge_file',
+      ));
       final id = session.stageKbEditForTest(
         relPath: 'a.md',
         newContent: 'new',
@@ -91,8 +99,10 @@ void main() {
 
       final entry = session.transcript.firstWhere((e) => e.editId == id);
       expect(entry.editState, KbEditState.rejected);
-      // The file never changed, so a re-read would still be redundant.
-      expect(session.readKnowledgePages, contains('a.md#1'));
+      // Nothing reached disk, so the earlier read still describes the file and
+      // a re-read would be redundant.
+      expect(session.knowledgeStaleAt, isEmpty);
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1});
     });
 
     test('rejecting twice is a no-op rather than an error', () {
