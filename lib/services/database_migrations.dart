@@ -55,6 +55,7 @@ class DatabaseMigration {
     if (oldVersion < 28) await _createV28Tables(db);
     if (oldVersion < 29) await _createV29Tables(db);
     if (oldVersion < 30) await _createV30Tables(db);
+    if (oldVersion < 31) await _createV31Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -85,7 +86,17 @@ class DatabaseMigration {
     await _createV28Tables(db);
     await _createV29Tables(db);
     await _createV30Tables(db);
+    await _createV31Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Per-task logs, as a JSON array of already-timestamped lines.
+  ///
+  /// Before v31 `TaskItem.logs` lived only in memory, so the queue's reload
+  /// from this table brought every task back with an empty log — including the
+  /// failed ones, whose log is the only record of why they failed.
+  static Future<void> _createV31Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'tasks', 'logs', 'TEXT');
   }
 
   /// Separate pricing for prompt-cache hits.

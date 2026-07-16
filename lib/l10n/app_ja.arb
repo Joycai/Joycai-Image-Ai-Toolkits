@@ -613,6 +613,21 @@
       }
     }
   },
+  "viewTaskLog": "ログを表示",
+  "taskLogTitle": "タスクログ",
+  "taskLogLive": "リアルタイム",
+  "noTaskLog": "このタスクのログはありません。",
+  "noTaskLogHint": "このアップデート前に実行したタスクはログを保存していません。",
+  "taskLogCopied": "ログをクリップボードにコピーしました",
+  "copyPrompt": "プロンプトをコピー",
+  "taskLogLineCount": "{count} 行",
+  "@taskLogLineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
   "getStarted": "始める",

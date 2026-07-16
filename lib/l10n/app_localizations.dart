@@ -2825,6 +2825,54 @@ abstract class AppLocalizations {
   /// **'Retry Count: {count}'**
   String retryCount(int count);
 
+  /// No description provided for @viewTaskLog.
+  ///
+  /// In en, this message translates to:
+  /// **'View Log'**
+  String get viewTaskLog;
+
+  /// No description provided for @taskLogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Log'**
+  String get taskLogTitle;
+
+  /// No description provided for @taskLogLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get taskLogLive;
+
+  /// No description provided for @noTaskLog.
+  ///
+  /// In en, this message translates to:
+  /// **'No log recorded for this task.'**
+  String get noTaskLog;
+
+  /// No description provided for @noTaskLogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks that ran before this update did not keep their logs.'**
+  String get noTaskLogHint;
+
+  /// No description provided for @taskLogCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Log copied to clipboard'**
+  String get taskLogCopied;
+
+  /// No description provided for @copyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy prompt'**
+  String get copyPrompt;
+
+  /// No description provided for @taskLogLineCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lines'**
+  String taskLogLineCount(int count);
+
   /// No description provided for @setupWizardTitle.
   ///
   /// In en, this message translates to:

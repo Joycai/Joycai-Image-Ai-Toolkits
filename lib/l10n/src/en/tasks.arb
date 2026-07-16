@@ -109,5 +109,20 @@
         "type": "int"
       }
     }
+  },
+  "viewTaskLog": "View Log",
+  "taskLogTitle": "Task Log",
+  "taskLogLive": "Live",
+  "noTaskLog": "No log recorded for this task.",
+  "noTaskLogHint": "Tasks that ran before this update did not keep their logs.",
+  "taskLogCopied": "Log copied to clipboard",
+  "copyPrompt": "Copy prompt",
+  "taskLogLineCount": "{count} lines",
+  "@taskLogLineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

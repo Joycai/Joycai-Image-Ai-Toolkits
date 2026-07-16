@@ -117,5 +117,20 @@
         "type": "int"
       }
     }
+  },
+  "viewTaskLog": "檢視日誌",
+  "taskLogTitle": "任務日誌",
+  "taskLogLive": "即時",
+  "noTaskLog": "此任務沒有日誌記錄。",
+  "noTaskLogHint": "本次更新之前執行的任務不會保存日誌。",
+  "taskLogCopied": "日誌已複製到剪貼簿",
+  "copyPrompt": "複製提示詞",
+  "taskLogLineCount": "{count} 行",
+  "@taskLogLineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

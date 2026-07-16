@@ -1459,6 +1459,32 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get viewTaskLog => '查看日志';
+
+  @override
+  String get taskLogTitle => '任务日志';
+
+  @override
+  String get taskLogLive => '实时';
+
+  @override
+  String get noTaskLog => '该任务没有日志记录。';
+
+  @override
+  String get noTaskLogHint => '本次更新之前运行的任务不会保存日志。';
+
+  @override
+  String get taskLogCopied => '日志已复制到剪贴板';
+
+  @override
+  String get copyPrompt => '复制提示词';
+
+  @override
+  String taskLogLineCount(int count) {
+    return '$count 行';
+  }
+
+  @override
   String get setupWizardTitle => '欢迎设置向导';
 
   @override
@@ -3670,6 +3696,32 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String retryCount(int count) {
     return '重試次數: $count';
+  }
+
+  @override
+  String get viewTaskLog => '檢視日誌';
+
+  @override
+  String get taskLogTitle => '任務日誌';
+
+  @override
+  String get taskLogLive => '即時';
+
+  @override
+  String get noTaskLog => '此任務沒有日誌記錄。';
+
+  @override
+  String get noTaskLogHint => '本次更新之前執行的任務不會保存日誌。';
+
+  @override
+  String get taskLogCopied => '日誌已複製到剪貼簿';
+
+  @override
+  String get copyPrompt => '複製提示詞';
+
+  @override
+  String taskLogLineCount(int count) {
+    return '$count 行';
   }
 
   @override

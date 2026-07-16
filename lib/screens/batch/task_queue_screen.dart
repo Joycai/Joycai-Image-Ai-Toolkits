@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/dialogs/task_log_dialog.dart';
 
 /// Which subset of tasks the list shows.
 enum _TaskFilter { all, running, pending, done, failed }
@@ -861,6 +862,7 @@ class _TaskCardState extends State<_TaskCard> {
         if (val == 'cancel') appState.taskQueue.cancelTask(task.id);
         if (val == 'retry') appState.taskQueue.retryTask(task.id);
         if (val == 'remove') appState.taskQueue.removeTask(task.id);
+        if (val == 'view_log') TaskLogDialog.show(context, task);
         if (val == 'copy_prompt') {
           final prompt = task.parameters['prompt'] ?? '';
           Clipboard.setData(ClipboardData(text: prompt));
@@ -870,6 +872,17 @@ class _TaskCardState extends State<_TaskCard> {
         }
       },
       itemBuilder: (context) => [
+        // First and unconditional: it is the one action every status has a use
+        // for, and the only way to see why a failed task failed.
+        PopupMenuItem(
+          value: 'view_log',
+          child: ListTile(
+            leading: const Icon(Icons.terminal, size: 18),
+            title: Text(l10n.viewTaskLog),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
         if (canCancel)
           PopupMenuItem(
             value: 'cancel',
@@ -905,7 +918,7 @@ class _TaskCardState extends State<_TaskCard> {
             value: 'copy_prompt',
             child: ListTile(
               leading: const Icon(Icons.copy_outlined, size: 18),
-              title: const Text('Copy prompt'),
+              title: Text(l10n.copyPrompt),
               dense: true,
               contentPadding: EdgeInsets.zero,
             ),
@@ -961,18 +974,31 @@ class _TaskCardState extends State<_TaskCard> {
         ],
         if (task.logs.isNotEmpty) ...[
           const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(60),
+          // The peek is the last line only, which for a failure is rarely the
+          // interesting one — so it doubles as the way in to the full log.
+          Material(
+            color: colorScheme.surfaceContainerHighest.withAlpha(60),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              task.logs.last,
-              style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: colorScheme.onSurfaceVariant),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              onTap: () => TaskLogDialog.show(context, task),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        task.logs.last,
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.unfold_more, size: 14, color: colorScheme.onSurfaceVariant.withAlpha(150)),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

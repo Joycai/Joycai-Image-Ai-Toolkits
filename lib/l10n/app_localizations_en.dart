@@ -1503,6 +1503,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get viewTaskLog => 'View Log';
+
+  @override
+  String get taskLogTitle => 'Task Log';
+
+  @override
+  String get taskLogLive => 'Live';
+
+  @override
+  String get noTaskLog => 'No log recorded for this task.';
+
+  @override
+  String get noTaskLogHint =>
+      'Tasks that ran before this update did not keep their logs.';
+
+  @override
+  String get taskLogCopied => 'Log copied to clipboard';
+
+  @override
+  String get copyPrompt => 'Copy prompt';
+
+  @override
+  String taskLogLineCount(int count) {
+    return '$count lines';
+  }
+
+  @override
   String get setupWizardTitle => 'Welcome Setup';
 
   @override
