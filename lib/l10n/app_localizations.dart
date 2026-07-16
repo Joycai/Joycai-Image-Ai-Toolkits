@@ -2633,6 +2633,18 @@ abstract class AppLocalizations {
   /// **'README.md entry file not found in the folder'**
   String get kbMissingEntry;
 
+  /// No description provided for @assistantContextRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant Summary Limit'**
+  String get assistantContextRatio;
+
+  /// No description provided for @assistantContextRatioDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.'**
+  String get assistantContextRatioDesc;
+
   /// No description provided for @assistantRetention.
   ///
   /// In en, this message translates to:

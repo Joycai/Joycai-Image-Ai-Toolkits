@@ -280,6 +280,21 @@ class LLMService {
     return (count == null || count < 0) ? 0 : count;
   }
 
+  /// Prompt tokens a response reported, or null when the provider did not
+  /// report any.
+  ///
+  /// Absent must stay distinguishable from zero: `usage` is optional in the
+  /// OpenAI-compatible response and llama.cpp, LM Studio and various proxies
+  /// omit it. A caller that read "not reported" as "zero tokens" would
+  /// conclude the context is empty on exactly the small local models that
+  /// overflow first, so this returns null and lets them fall back.
+  static int? promptTokensOf(Map<String, dynamic> metadata) {
+    final raw = metadata['promptTokenCount'] ?? metadata['prompt_tokens'];
+    if (raw == null) return null;
+    final count = raw is num ? raw.toInt() : int.tryParse(raw.toString());
+    return (count == null || count <= 0) ? null : count;
+  }
+
   void clearSession(String sessionId) {
     _sessions.remove(sessionId);
   }

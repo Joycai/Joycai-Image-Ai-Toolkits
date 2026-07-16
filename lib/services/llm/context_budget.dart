@@ -47,6 +47,27 @@ class ContextBudget {
   /// models that overflow first.
   static const double charsPerToken = 1.5;
 
+  /// Bounds on a [calibrate] result. A ratio outside this is not a language
+  /// mix, it is a bug or a provider reporting something other than what we
+  /// think — clamping keeps one bad response from unbounding the budget.
+  static const double _minObservedCharsPerToken = 0.5;
+  static const double _maxObservedCharsPerToken = 6.0;
+
+  /// The real chars-per-token of the last request, from the tokens the provider
+  /// billed for it, or null when it reported none.
+  ///
+  /// [charsSent] must be measured the same way occupancy is, or the ratio maps
+  /// between two different quantities. The conversion is then self-consistent
+  /// by construction: budget_chars / observed == the token budget, whatever the
+  /// mix of language, markdown and images happens to cost.
+  static double? calibrate({required int charsSent, required int? promptTokens}) {
+    if (promptTokens == null || promptTokens <= 0 || charsSent <= 0) return null;
+    final observed = charsSent / promptTokens;
+    if (observed < _minObservedCharsPerToken) return _minObservedCharsPerToken;
+    if (observed > _maxObservedCharsPerToken) return _maxObservedCharsPerToken;
+    return observed;
+  }
+
   /// Assumed window when the model does not declare one.
   static const int defaultWindowTokens = 32768;
 
@@ -115,14 +136,18 @@ class ContextBudget {
 
   /// Character budget at which the assistant should summarize, given [window]
   /// and the user's hard-summary [ratio] (0–1).
-  static int budgetChars(int? window, double ratio) {
+  ///
+  /// [observedCharsPerToken] is a [calibrate] result for this session; without
+  /// one the conservative [charsPerToken] default applies.
+  static int budgetChars(int? window, double ratio, {double? observedCharsPerToken}) {
+    final perToken = observedCharsPerToken ?? charsPerToken;
     switch (modeOf(window)) {
       case ContextWindowMode.unlimited:
         return unlimitedBudgetChars;
       case ContextWindowMode.unset:
-        return (defaultWindowTokens * ratio * charsPerToken).round();
+        return (defaultWindowTokens * ratio * perToken).round();
       case ContextWindowMode.specified:
-        return (window! * ratio * charsPerToken).round();
+        return (window! * ratio * perToken).round();
     }
   }
 
@@ -133,12 +158,13 @@ class ContextBudget {
   /// headroom above the ratio is exactly what funds reading a file in one
   /// piece, and compaction reclaims it at the next turn boundary. Never
   /// negative.
-  static int readCapChars(int? window, int occupiedChars) {
+  static int readCapChars(int? window, int occupiedChars, {double? observedCharsPerToken}) {
     if (modeOf(window) == ContextWindowMode.unlimited) return unlimitedReadCapChars;
+    final perToken = observedCharsPerToken ?? charsPerToken;
     final total = ((modeOf(window) == ContextWindowMode.unset
                 ? defaultWindowTokens
                 : window!) *
-            charsPerToken)
+            perToken)
         .round();
     final cap = total - occupiedChars - reserveFor(total);
     return cap < 0 ? 0 : cap;

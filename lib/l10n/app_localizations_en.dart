@@ -1383,6 +1383,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kbMissingEntry => 'README.md entry file not found in the folder';
 
   @override
+  String get assistantContextRatio => 'Assistant Summary Limit';
+
+  @override
+  String get assistantContextRatioDesc =>
+      'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.';
+
+  @override
   String get assistantRetention => 'Assistant Conversations to Keep';
 
   @override

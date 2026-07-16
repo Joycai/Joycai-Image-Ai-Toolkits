@@ -78,6 +78,8 @@
   "kbOpenFolder": "フォルダを開く",
   "kbInvalidDir": "フォルダが見つかりません",
   "kbMissingEntry": "フォルダに README.md が見つかりません",
+  "assistantContextRatio": "アシスタント要約しきい値",
+  "assistantContextRatioDesc": "プロンプトアシスタントは、コンテキスト使用量がモデルのウィンドウのこの割合に達すると会話を要約し、作業を続ける余地を空けます。コンテキストウィンドウが設定されたモデルにのみ適用されます。",
   "assistantRetention": "アシスタント会話の保持数",
   "assistantRetentionDesc": "この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます"
 }

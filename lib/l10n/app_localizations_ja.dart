@@ -1353,6 +1353,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get kbMissingEntry => 'フォルダに README.md が見つかりません';
 
   @override
+  String get assistantContextRatio => 'アシスタント要約しきい値';
+
+  @override
+  String get assistantContextRatioDesc =>
+      'プロンプトアシスタントは、コンテキスト使用量がモデルのウィンドウのこの割合に達すると会話を要約し、作業を続ける余地を空けます。コンテキストウィンドウが設定されたモデルにのみ適用されます。';
+
+  @override
   String get assistantRetention => 'アシスタント会話の保持数';
 
   @override

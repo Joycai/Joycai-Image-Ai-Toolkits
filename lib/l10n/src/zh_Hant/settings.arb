@@ -78,6 +78,8 @@
   "kbOpenFolder": "開啟資料夾",
   "kbInvalidDir": "資料夾不存在",
   "kbMissingEntry": "資料夾中缺少入口檔案 README.md",
+  "assistantContextRatio": "助手摘要閾值",
+  "assistantContextRatioDesc": "提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。",
   "assistantRetention": "助手對話保留數量",
   "assistantRetentionDesc": "超出數量的較舊提示詞助手對話將被自動刪除"
 }

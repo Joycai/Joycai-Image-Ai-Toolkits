@@ -1341,6 +1341,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get kbMissingEntry => '文件夹中缺少入口文件 README.md';
 
   @override
+  String get assistantContextRatio => '助手摘要阈值';
+
+  @override
+  String get assistantContextRatioDesc =>
+      '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
+
+  @override
   String get assistantRetention => '助手会话保留数量';
 
   @override
@@ -3588,6 +3595,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbMissingEntry => '資料夾中缺少入口檔案 README.md';
+
+  @override
+  String get assistantContextRatio => '助手摘要閾值';
+
+  @override
+  String get assistantContextRatioDesc =>
+      '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
 
   @override
   String get assistantRetention => '助手對話保留數量';
