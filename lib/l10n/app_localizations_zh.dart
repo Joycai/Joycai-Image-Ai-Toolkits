@@ -920,10 +920,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextWindow => '上下文大小';
 
   @override
+  String get contextUnset => '未设置';
+
+  @override
+  String get contextUnsetDesc => '使用保守默认值——不确定模型真实上限时选这个。';
+
+  @override
+  String get contextSpecify => '指定大小';
+
+  @override
   String get contextUnlimited => '不限制';
 
   @override
-  String get contextUnlimitedDesc => '一次性发送所有候选图片（不分批）';
+  String get contextUnlimitedDesc => '一次性发送所有候选图片，且不按窗口大小限制提示词助手。';
 
   @override
   String get contextMax => '最大上下文';
@@ -934,7 +943,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get contextWindowHint => '更大的上下文可让每次请求分析更多图片。';
+  String get contextWindowHint => '用于每次请求的图片分批，以及提示词助手读取知识库与摘要的预算。';
 
   @override
   String get agentBehavior => '代理行为';
@@ -3159,10 +3168,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get contextWindow => '上下文大小';
 
   @override
+  String get contextUnset => '未設定';
+
+  @override
+  String get contextUnsetDesc => '使用保守預設值——不確定模型真實上限時選這個。';
+
+  @override
+  String get contextSpecify => '指定大小';
+
+  @override
   String get contextUnlimited => '不限制';
 
   @override
-  String get contextUnlimitedDesc => '一次性傳送所有候選圖片（不分批）';
+  String get contextUnlimitedDesc => '一次性傳送所有候選圖片，且不依視窗大小限制提示詞助手。';
 
   @override
   String get contextMax => '最大上下文';
@@ -3173,7 +3191,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String get contextWindowHint => '更大的上下文可讓每次請求分析更多圖片。';
+  String get contextWindowHint => '用於每次請求的圖片分批，以及提示詞助手讀取知識庫與摘要的預算。';
 
   @override
   String get agentBehavior => '代理行為';

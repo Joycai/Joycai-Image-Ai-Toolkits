@@ -460,8 +460,11 @@
   "supportsStandardRequest": "Supports Standard Request",
   "supportsStandardRequestDesc": "Enable for standard JSON/REST requests",
   "contextWindow": "Context Window",
+  "contextUnset": "Not set",
+  "contextUnsetDesc": "Use conservative defaults — pick this when you do not know the model's real limit.",
+  "contextSpecify": "Specify",
   "contextUnlimited": "Unlimited",
-  "contextUnlimitedDesc": "Send all candidates in one request (no batching)",
+  "contextUnlimitedDesc": "Send all candidates in one request, and never cap the Prompt Assistant by window size.",
   "contextMax": "Max context",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -471,7 +474,7 @@
       }
     }
   },
-  "contextWindowHint": "Larger context lets more images be analyzed per request.",
+  "contextWindowHint": "Used to batch images per request, and to budget the Prompt Assistant's knowledge-base reads and summarization.",
   "agentBehavior": "Agent Behavior",
   "forceViewAllImages": "View all reference images",
   "forceViewAllImagesDesc": "Agents must view every reference image before delivering a result. Recommended for small local models.",

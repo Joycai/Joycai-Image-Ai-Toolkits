@@ -1823,6 +1823,24 @@ abstract class AppLocalizations {
   /// **'Context Window'**
   String get contextWindow;
 
+  /// No description provided for @contextUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get contextUnset;
+
+  /// No description provided for @contextUnsetDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use conservative defaults — pick this when you do not know the model\'s real limit.'**
+  String get contextUnsetDesc;
+
+  /// No description provided for @contextSpecify.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify'**
+  String get contextSpecify;
+
   /// No description provided for @contextUnlimited.
   ///
   /// In en, this message translates to:
@@ -1832,7 +1850,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextUnlimitedDesc.
   ///
   /// In en, this message translates to:
-  /// **'Send all candidates in one request (no batching)'**
+  /// **'Send all candidates in one request, and never cap the Prompt Assistant by window size.'**
   String get contextUnlimitedDesc;
 
   /// No description provided for @contextMax.
@@ -1850,7 +1868,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextWindowHint.
   ///
   /// In en, this message translates to:
-  /// **'Larger context lets more images be analyzed per request.'**
+  /// **'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.'**
   String get contextWindowHint;
 
   /// No description provided for @agentBehavior.

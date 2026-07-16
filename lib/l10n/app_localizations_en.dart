@@ -943,11 +943,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextWindow => 'Context Window';
 
   @override
+  String get contextUnset => 'Not set';
+
+  @override
+  String get contextUnsetDesc =>
+      'Use conservative defaults — pick this when you do not know the model\'s real limit.';
+
+  @override
+  String get contextSpecify => 'Specify';
+
+  @override
   String get contextUnlimited => 'Unlimited';
 
   @override
   String get contextUnlimitedDesc =>
-      'Send all candidates in one request (no batching)';
+      'Send all candidates in one request, and never cap the Prompt Assistant by window size.';
 
   @override
   String get contextMax => 'Max context';
@@ -959,7 +969,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contextWindowHint =>
-      'Larger context lets more images be analyzed per request.';
+      'Used to batch images per request, and to budget the Prompt Assistant\'s knowledge-base reads and summarization.';
 
   @override
   String get agentBehavior => 'Agent Behavior';

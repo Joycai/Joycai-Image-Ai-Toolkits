@@ -8,7 +8,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 
 import '../core/app_paths.dart';
-import 'database_service.dart';
+import 'llm/context_budget.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 
@@ -216,32 +216,24 @@ class WebScraperService {
   /// as having an unlimited context window.
   static const int _unlimitedBatchSize = 1 << 30;
 
-  /// Reads the configured context window for [modelIdentifier] (a DB id), or
-  /// null when it isn't a stored model or the field is unset.
-  Future<int?> _resolveContextWindow(dynamic modelIdentifier) async {
-    if (modelIdentifier is! int) return null;
-    try {
-      final models = await DatabaseService().getModels();
-      for (final m in models) {
-        if (m.id == modelIdentifier) return m.contextWindow;
-      }
-    } catch (_) {
-      // Best effort — fall back to the default batch size.
-    }
-    return null;
-  }
+  /// Reads the configured context window for [modelIdentifier], or null when it
+  /// isn't a stored model or the field is unset.
+  Future<int?> _resolveContextWindow(dynamic modelIdentifier) =>
+      ContextBudget.resolveWindow(modelIdentifier);
 
   /// Derives how many candidate images to show per request from the model's
   /// context window. Roughly one image per 512 tokens, leaving the rest of the
   /// window for the model's reasoning and the tool call, clamped to a sane range.
   ///
-  /// `null` context window means "not configured" → conservative default.
+  /// `null` context window means "not set" → conservative default.
   /// A value of `0` (or negative) means "unlimited" → everything in one batch.
-  int _batchSizeFor(int? contextWindow) {
-    if (contextWindow == null) return _defaultBatchSize;
-    if (contextWindow <= 0) return _unlimitedBatchSize;
-    return (contextWindow ~/ 512).clamp(4, 40);
-  }
+  /// The tri-state itself lives in [ContextBudget] — the Prompt Assistant reads
+  /// the same column and the two must not drift on what null and 0 mean.
+  int _batchSizeFor(int? contextWindow) => ContextBudget.imageBatchSize(
+        contextWindow,
+        defaultSize: _defaultBatchSize,
+        unlimitedSize: _unlimitedBatchSize,
+      );
 
   Future<Set<String>> _selectImagesWithLLM({
     required dynamic modelIdentifier,

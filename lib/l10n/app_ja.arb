@@ -319,8 +319,11 @@
   "supportsStandardRequest": "標準リクエスト対応",
   "supportsStandardRequestDesc": "標準的な JSON/REST リクエストの場合は有効化",
   "contextWindow": "コンテキストウィンドウ",
+  "contextUnset": "未設定",
+  "contextUnsetDesc": "保守的なデフォルトを使用します。モデルの実際の上限が不明な場合はこれを選んでください。",
+  "contextSpecify": "指定",
   "contextUnlimited": "無制限",
-  "contextUnlimitedDesc": "すべての候補を1回のリクエストで送信（バッチ分割なし）",
+  "contextUnlimitedDesc": "すべての候補を1回のリクエストで送信し、プロンプトアシスタントをウィンドウサイズで制限しません。",
   "contextMax": "最大コンテキスト",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -330,7 +333,7 @@
       }
     }
   },
-  "contextWindowHint": "コンテキストが大きいほど、1回のリクエストでより多くの画像を分析できます。",
+  "contextWindowHint": "リクエストごとの画像バッチ分割と、プロンプトアシスタントのナレッジベース読み取り・要約の予算に使われます。",
   "agentBehavior": "エージェント動作",
   "forceViewAllImages": "すべての参考画像を確認",
   "forceViewAllImagesDesc": "エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。",

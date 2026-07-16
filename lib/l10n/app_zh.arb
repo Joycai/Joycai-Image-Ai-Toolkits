@@ -446,8 +446,11 @@
   "supportsStandardRequest": "支持标准请求",
   "supportsStandardRequestDesc": "启用标准 JSON/REST 请求",
   "contextWindow": "上下文大小",
+  "contextUnset": "未设置",
+  "contextUnsetDesc": "使用保守默认值——不确定模型真实上限时选这个。",
+  "contextSpecify": "指定大小",
   "contextUnlimited": "不限制",
-  "contextUnlimitedDesc": "一次性发送所有候选图片（不分批）",
+  "contextUnlimitedDesc": "一次性发送所有候选图片，且不按窗口大小限制提示词助手。",
   "contextMax": "最大上下文",
   "contextTokens": "{size} tokens",
   "@contextTokens": {
@@ -457,7 +460,7 @@
       }
     }
   },
-  "contextWindowHint": "更大的上下文可让每次请求分析更多图片。",
+  "contextWindowHint": "用于每次请求的图片分批，以及提示词助手读取知识库与摘要的预算。",
   "agentBehavior": "代理行为",
   "forceViewAllImages": "查看全部参考图",
   "forceViewAllImagesDesc": "代理必须查看所有参考图后才能提交结果，推荐为本地小模型开启。",
