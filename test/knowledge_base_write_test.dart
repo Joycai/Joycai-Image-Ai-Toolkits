@@ -1,12 +1,43 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_starter.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+/// Appends the call/result pair the agent writes for one `read_knowledge_file`,
+/// so liveness derives from the same shape production builds.
+void recordRead(PromptOptimizerSession session, String path, int page,
+    {String? content}) {
+  final callId = 'call_${session.history.length}';
+  session.history.add(LLMMessage(
+    role: LLMRole.assistant,
+    content: '',
+    toolCalls: [
+      LLMToolCall(
+        id: callId,
+        name: 'read_knowledge_file',
+        arguments: {'path': path, 'page': page},
+      ),
+    ],
+  ));
+  session.history.add(LLMMessage(
+    role: LLMRole.tool,
+    content: jsonEncode({
+      'path': path,
+      'page': page,
+      'total_pages': 1,
+      'content': content ?? 'body of $path page $page',
+    }),
+    toolCallId: callId,
+    toolName: 'read_knowledge_file',
+  ));
+}
 
 void main() {
   final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -296,13 +327,15 @@ void main() {
   });
 
   group('applyStagedKbEdit', () {
-    test('writes the staged content and evicts every cached page of that file', () async {
+    test('writes the staged content and stops earlier reads of that file counting', () async {
       await kb.setRoot(root.path);
       await kb.writeFile(root.path, 'a.md', 'old body');
 
       final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
       // Pretend the agent read the file across two pages, plus an unrelated one.
-      session.readKnowledgePages.addAll({'a.md#1', 'a.md#2', 'b.md#1'});
+      recordRead(session, 'a.md', 1);
+      recordRead(session, 'a.md', 2);
+      recordRead(session, 'b.md', 1);
       final id = session.stageKbEditForTest(
         relPath: 'a.md',
         newContent: 'new body',
@@ -314,11 +347,29 @@ void main() {
       expect(kb.readFullFile(root.path, 'a.md'), 'new body');
       expect(session.transcript.firstWhere((e) => e.editId == id).editState,
           KbEditState.applied);
-      // A rewrite moves page boundaries, so every page of a.md must go or the
-      // agent would be told its own edit is "already in the conversation".
-      expect(session.readKnowledgePages, isNot(contains('a.md#1')));
-      expect(session.readKnowledgePages, isNot(contains('a.md#2')));
-      expect(session.readKnowledgePages, contains('b.md#1'));
+      // A rewrite moves page boundaries, so no page of a.md may still count or
+      // the agent would be told its own edit is "already in the conversation".
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), isEmpty);
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'b.md'), {1});
+    });
+
+    test('a re-read after an applied edit counts again, so the file stays editable', () async {
+      await kb.setRoot(root.path);
+      await kb.writeFile(root.path, 'a.md', 'old body');
+
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      recordRead(session, 'a.md', 1);
+      final id = session.stageKbEditForTest(
+        relPath: 'a.md', newContent: 'new body', oldContent: 'old body');
+      await PromptOptimizerAgent.applyStagedKbEdit(session: session, editId: id);
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), isEmpty);
+
+      // Marking the write's position in history rather than setting a sticky
+      // flag is what makes this recoverable: a flag would make the
+      // read-before-write rail reject the very re-read meant to clear it, and
+      // the model could never edit the same file twice in one session.
+      recordRead(session, 'a.md', 1, content: 'new body');
+      expect(PromptOptimizerAgent.liveReadPagesForTest(session, 'a.md'), {1});
     });
 
     test('creates a file that did not exist', () async {

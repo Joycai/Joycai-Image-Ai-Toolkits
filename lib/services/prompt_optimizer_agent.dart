@@ -126,10 +126,13 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// True when the agent may propose knowledge-base edits.
   bool get canWriteKnowledge => mode == AssistantMode.knowledgeEdit;
 
-  /// Knowledge pages already returned to the model ('relPath#page'), so
-  /// repeated reads return a short "already in context" note instead of the
-  /// full content again.
-  final Set<String> readKnowledgePages = {};
+  /// [history] length at the moment each knowledge file was last written, so
+  /// reads recorded before the write stop counting as current.
+  ///
+  /// A plain "is stale" flag would be unsatisfiable: the read-before-write
+  /// rail would reject the very re-read that is supposed to clear it, and the
+  /// model could never edit the same file twice in one session.
+  final Map<String, int> knowledgeStaleAt = {};
 
   List<OptimizerChatEntry> _transcript = [];
   List<OptimizerChatEntry> get transcript => _transcript;
@@ -240,10 +243,10 @@ class PromptOptimizerSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Rebuilds a session (transcript, viewed images, staged prompt, knowledge
-  /// read cache) from persisted [history]. The transcript is derived rather
-  /// than stored: user/assistant text maps 1:1 and tool activity is recovered
-  /// from the assistant messages' tool calls.
+  /// Rebuilds a session (transcript, viewed images, staged prompt) from
+  /// persisted [history]. The transcript is derived rather than stored:
+  /// user/assistant text maps 1:1 and tool activity is recovered from the
+  /// assistant messages' tool calls.
   factory PromptOptimizerSession.fromStored({
     required String id,
     required AssistantMode mode,
@@ -263,7 +266,8 @@ class PromptOptimizerSession extends ChangeNotifier {
       entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.notice, text: compactedNoticeText));
     }
     bool anyImageMissing = false;
-    for (final msg in history) {
+    for (int msgIndex = 0; msgIndex < history.length; msgIndex++) {
+      final msg = history[msgIndex];
       switch (msg.role) {
         case LLMRole.user:
           if (msg.content.startsWith(PromptOptimizerAgent.viewResultMarker)) {
@@ -305,12 +309,11 @@ class PromptOptimizerSession extends ChangeNotifier {
                   toolName: 'view_image',
                 ));
               case 'read_knowledge_file':
-                final path = call.arguments['path']?.toString() ?? '';
-                final page = call.arguments['page']?.toString() ?? '1';
-                session.readKnowledgePages.add('$path#${int.tryParse(page) ?? 1}');
+                // No cache to rebuild: whether a read is still readable is
+                // derived from the restored history by _liveReadPages.
                 entries.add(OptimizerChatEntry(
                   kind: OptimizerEntryKind.tool,
-                  text: path,
+                  text: call.arguments['path']?.toString() ?? '',
                   toolName: 'read_knowledge_file',
                 ));
               case 'write_knowledge_file':
@@ -320,9 +323,18 @@ class PromptOptimizerSession extends ChangeNotifier {
                 // happened), and oldContent was captured at staging time — so
                 // re-offering Apply after a restart could overwrite newer
                 // content against a stale preview.
+                final writtenPath = call.arguments['path']?.toString() ?? '';
+                // For the same reason the card is inert, we cannot know whether
+                // this edit was applied — so assume it was. Treating earlier
+                // reads of the file as current would let the model overwrite
+                // it while diffing against pre-edit content; the cost of being
+                // wrong is one redundant re-read.
+                if (writtenPath.isNotEmpty) {
+                  session.knowledgeStaleAt[writtenPath] = msgIndex;
+                }
                 entries.add(OptimizerChatEntry(
                   kind: OptimizerEntryKind.tool,
-                  text: call.arguments['path']?.toString() ?? '',
+                  text: writtenPath,
                   toolName: 'write_knowledge_file',
                 ));
               case 'list_knowledge_files':
@@ -733,6 +745,54 @@ class PromptOptimizerAgent {
     return 0;
   }
 
+  /// Pages of [relPath] whose content the model can still read in what will be
+  /// sent next.
+  ///
+  /// Derived from the live history rather than tracked in a set. A set has to
+  /// be told when its content disappears, and nothing told it: [_elide]
+  /// replaces a read's result with a stub and [_maybeCompact] folds it into a
+  /// summary that drops tool results outright, yet the key survived both — so
+  /// the model asking to re-read was answered "already in the conversation"
+  /// pointing at content that no longer existed, with no way to recover. The
+  /// question is only ever "is it still in context", which the history answers
+  /// directly.
+  ///
+  /// Scans tool *results*, not the assistant's tool *calls*: the assistant
+  /// message is appended to history before its calls execute, so matching on
+  /// calls would find the very read being executed and report it as cached.
+  /// Results also make failed reads (no `content` key) correctly not count.
+  static Set<int> _liveReadPages(PromptOptimizerSession session, String relPath) {
+    final history = session.history;
+    // Reads before the recent boundary are elided by _trimForSend; reads
+    // before the file was last written no longer describe what is on disk.
+    final boundary = _recentBoundary(history);
+    final staleAt = session.knowledgeStaleAt[relPath] ?? 0;
+    final from = boundary > staleAt ? boundary : staleAt;
+    final pages = <int>{};
+    for (int i = from; i < history.length; i++) {
+      final m = history[i];
+      if (m.role != LLMRole.tool || m.toolName != 'read_knowledge_file') continue;
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(m.content);
+      } catch (_) {
+        continue;
+      }
+      if (decoded is! Map) continue;
+      if (decoded['path'] != relPath) continue;
+      // Errors and the "already in context" note carry no content, so they are
+      // not evidence the model has ever seen the file.
+      if (decoded['content'] == null) continue;
+      final page = decoded['page'];
+      if (page is int) pages.add(page);
+    }
+    return pages;
+  }
+
+  @visibleForTesting
+  static Set<int> liveReadPagesForTest(PromptOptimizerSession session, String relPath) =>
+      _liveReadPages(session, relPath);
+
   /// Layer-1 (lossless in DB, per-request) trimming: before the recent
   /// window, bulky knowledge-file tool results are elided and viewed-image
   /// attachments dropped. User/assistant text and submit_prompt results are
@@ -939,8 +999,7 @@ class PromptOptimizerAgent {
         final rawPage = call.arguments['page'];
         final page = rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
         onLog?.call('Tool call: read_knowledge_file $relPath (page $page)');
-        final cacheKey = '$relPath#$page';
-        if (session.readKnowledgePages.contains(cacheKey)) {
+        if (_liveReadPages(session, relPath).contains(page)) {
           return {
             'status': 'ok',
             'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
@@ -948,7 +1007,6 @@ class PromptOptimizerAgent {
         }
         try {
           final result = KnowledgeBaseService().readFile(knowledgeRoot, relPath, page: page);
-          session.readKnowledgePages.add(cacheKey);
           session._addEntry(OptimizerChatEntry(
             kind: OptimizerEntryKind.tool,
             text: result.totalPages > 1 ? '$relPath (${result.page}/${result.totalPages})' : relPath,
@@ -996,9 +1054,11 @@ class PromptOptimizerAgent {
           final existing = kb.readFullFile(knowledgeRoot, writePath);
           // Read-before-write rail, enforced here rather than left to the
           // system prompt: overwriting a file the model has not read is the
-          // cheapest way for it to silently destroy the user's rules.
-          if (existing != null &&
-              !session.readKnowledgePages.any((k) => k.startsWith('$writePath#'))) {
+          // cheapest way for it to silently destroy the user's rules. Keyed on
+          // a *live* read, so a read that has since been elided or compacted
+          // away no longer licenses a write — the model must fetch the file
+          // again and diff against what it can actually see.
+          if (existing != null && _liveReadPages(session, writePath).isEmpty) {
             return {
               'status': 'error',
               'message': 'Read $writePath with read_knowledge_file first — you '
@@ -1139,11 +1199,12 @@ class PromptOptimizerAgent {
       final root = await KnowledgeBaseService().getRoot();
       if (root == null) throw KbPathException('The knowledge base folder is not configured.');
       await KnowledgeBaseService().writeFile(root, relPath, entry.newContent!);
-      // The file changed, so every cached page of it is now wrong — and page
-      // boundaries move on a rewrite, so partial eviction is meaningless.
-      // Without this the agent would be told "already in the conversation" and
-      // never see its own edit.
-      session.readKnowledgePages.removeWhere((k) => k.startsWith('$relPath#'));
+      // The file changed, so every read of it recorded so far describes content
+      // that no longer exists — and page boundaries move on a rewrite, so
+      // invalidating single pages would be meaningless. Marking the point in
+      // history rather than dropping a flag keeps the re-read that follows
+      // able to satisfy the read-before-write rail again.
+      session.knowledgeStaleAt[relPath] = session.history.length;
       session._resolveKbEdit(editId, KbEditState.applied);
     } catch (_) {
       session._resolveKbEdit(editId, KbEditState.failed);
