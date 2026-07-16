@@ -84,7 +84,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     super.didChangeDependencies();
     if (_appState == null) {
       _appState = Provider.of<AppState>(context, listen: false);
-      _optInputCtrl.text = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
       _initTabController();
       
       _appState!.addListener(_onAppStateChanged);
@@ -499,17 +498,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       // Re-validate the knowledge base whenever the assistant tab is opened
       // (the user may have just changed the folder in Settings).
       if (_tabController.index == 4) _refreshKbStatus();
-
-      // Prefill the chat input with the current workspace prompt, but only
-      // for a pristine conversation — never clobber an ongoing draft or chat.
-      if (_tabController.index == 4 &&
-          _optInputCtrl.text.isEmpty &&
-          (_workbenchUIState?.optimizerSession.transcript.isEmpty ?? false)) {
-        final currentWorkspacePrompt = _appState!.workbenchTabIndex == 5 ? _appState!.lastVideoPrompt : _appState!.lastPrompt;
-        setState(() {
-          _optInputCtrl.text = currentWorkspacePrompt;
-        });
-      }
     }
   }
 
