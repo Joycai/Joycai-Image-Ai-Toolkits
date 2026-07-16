@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/screens/metrics/widgets/usage_stats.dart';
+import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/database_migrations.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -11,11 +12,28 @@ void main() {
   sqfliteFfiInit();
   final factory = databaseFactoryFfi;
 
+  /// The `tasks` table as it stood before v31, i.e. without its logs column.
+  ///
+  /// Every fixture here needs it: `migrate` keys each step off `oldVersion`
+  /// alone and ignores `newVersion`, so any migrate() call from below 31 runs
+  /// the v31 step and touches this table.
+  Future<void> createPreV31TasksTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE tasks (
+        id TEXT PRIMARY KEY, image_path TEXT, status TEXT, parameters TEXT,
+        result_path TEXT, start_time TEXT, end_time TEXT, model_id TEXT,
+        type TEXT DEFAULT 'imageProcess', use_stream INTEGER DEFAULT 1,
+        model_pk INTEGER, channel_tag TEXT, channel_color INTEGER
+      )
+    ''');
+  }
+
   /// A v29-shaped database: the pre-cache-pricing schema, built by hand because
   /// `onCreate` would otherwise hand us the current one and make the migration
   /// a no-op.
   Future<Database> openV29Db() async {
     final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 29));
+    await createPreV31TasksTable(db);
     await db.execute('''
       CREATE TABLE fee_groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,5 +134,66 @@ void main() {
     expect(await columnsOf(db, 'fee_groups'), contains('cache_input_price'));
     expect(await columnsOf(db, 'token_usage'), containsAll(['cache_tokens', 'cache_price']));
     expect(await columnsOf(db, 'usage_checkpoints'), contains('total_cache_tokens'));
+  });
+
+  /// A v30 database carrying only what the v31 upgrade touches.
+  Future<Database> openV30TasksDb() async {
+    final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 30));
+    await createPreV31TasksTable(db);
+    return db;
+  }
+
+  test('v31 adds the logs column to an existing database', () async {
+    final db = await openV30TasksDb();
+    addTearDown(db.close);
+
+    await DatabaseMigration.migrate(db, 30, 31);
+
+    expect(await columnsOf(db, 'tasks'), contains('logs'));
+  });
+
+  test('tasks recorded before the upgrade survive it with an empty log', () async {
+    final db = await openV30TasksDb();
+    addTearDown(db.close);
+    await db.insert('tasks', {
+      'id': 'old-task',
+      'image_path': '["a.png"]',
+      'status': 'failed',
+      'parameters': '{}',
+      'result_path': '[]',
+      'model_id': 'gpt-image-2',
+    });
+
+    await DatabaseMigration.migrate(db, 30, 31);
+
+    final row = (await db.query('tasks')).single;
+    expect(row['logs'], isNull);
+    // The row is still readable — a null log must not sink the queue reload.
+    expect(TaskItem.fromMap(row).logs, isEmpty);
+  });
+
+  test('a task written after the upgrade reloads with its log', () async {
+    final db = await openV30TasksDb();
+    addTearDown(db.close);
+    await DatabaseMigration.migrate(db, 30, 31);
+
+    final task = TaskItem(id: 't1', imagePaths: [], modelId: 'm', parameters: {})
+      ..addLog('Start processing')
+      ..addLog('Error: quota exceeded');
+    await db.insert('tasks', task.toMap());
+
+    final reloaded = TaskItem.fromMap((await db.query('tasks')).single);
+    expect(reloaded.logs, hasLength(2));
+    expect(reloaded.logs.last, contains('quota exceeded'));
+  });
+
+  test('a fresh database is created with the logs column', () async {
+    final db = await factory.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(version: 31, onCreate: (db, _) => DatabaseMigration.onCreate(db)),
+    );
+    addTearDown(db.close);
+
+    expect(await columnsOf(db, 'tasks'), contains('logs'));
   });
 }

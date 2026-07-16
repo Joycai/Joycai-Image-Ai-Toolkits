@@ -62,8 +62,21 @@ class TaskItem {
   })  : logs = logs ?? [],
         resultPaths = resultPaths ?? [];
 
+  /// Marks where [addLog] dropped the head of an over-long log.
+  static const String logTruncationMarker = '[…] earlier lines dropped (log capped at $maxLogLines lines)';
+
+  /// Ceiling on retained log lines. Streaming executors call [addLog] once per
+  /// response chunk, so an uncapped log grows with the response and — now that
+  /// logs are persisted — gets rewritten to SQLite on every status change.
+  static const int maxLogLines = 500;
+
   void addLog(String message) {
     logs.add('[${DateTime.now().toIso8601String().split('T').last.substring(0, 8)}] $message');
+    if (logs.length <= maxLogLines) return;
+    // Oldest lines go first, but the marker is kept pinned at the head and
+    // trimmed around, so a truncated log never reads as a complete one.
+    if (logs.first != logTruncationMarker) logs.insert(0, logTruncationMarker);
+    logs.removeRange(1, logs.length - maxLogLines + 1);
   }
 
   Map<String, dynamic> toMap() {
@@ -79,9 +92,22 @@ class TaskItem {
       'status': status.name,
       'parameters': jsonEncode(parameters),
       'result_path': jsonEncode(resultPaths),
+      'logs': jsonEncode(logs),
       'start_time': startTime?.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
     };
+  }
+
+  /// Tasks written before schema v31 have no `logs` value, and a hand-edited or
+  /// half-written one shouldn't sink the whole queue reload — either way the
+  /// task is still worth showing, just without its log.
+  static List<String> _decodeLogs(Object? raw) {
+    if (raw is! String || raw.isEmpty) return [];
+    try {
+      return List<String>.from(jsonDecode(raw) as List);
+    } catch (_) {
+      return [];
+    }
   }
 
   factory TaskItem.fromMap(Map<String, dynamic> map) {
@@ -97,6 +123,7 @@ class TaskItem {
       status: TaskStatus.values.firstWhere((e) => e.name == map['status']),
       parameters: Map<String, dynamic>.from(jsonDecode(map['parameters'])),
       resultPaths: List<String>.from(jsonDecode(map['result_path'])),
+      logs: _decodeLogs(map['logs']),
       startTime: map['start_time'] != null ? DateTime.parse(map['start_time']) : null,
       endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
     );

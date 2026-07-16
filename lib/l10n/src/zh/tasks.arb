@@ -109,5 +109,20 @@
         "type": "int"
       }
     }
+  },
+  "viewTaskLog": "查看日志",
+  "taskLogTitle": "任务日志",
+  "taskLogLive": "实时",
+  "noTaskLog": "该任务没有日志记录。",
+  "noTaskLogHint": "本次更新之前运行的任务不会保存日志。",
+  "taskLogCopied": "日志已复制到剪贴板",
+  "copyPrompt": "复制提示词",
+  "taskLogLineCount": "{count} 行",
+  "@taskLogLineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

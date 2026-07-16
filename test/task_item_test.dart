@@ -45,5 +45,47 @@ void main() {
       expect(task.logs.first, contains('Test message'));
       expect(task.logs.first, matches(r'\[\d{2}:\d{2}:\d{2}\] Test message'));
     });
+
+    test('logs survive a toMap/fromMap round trip', () {
+      final task = _bareTask();
+      task.addLog('first');
+      task.addLog('second');
+
+      final decoded = TaskItem.fromMap(task.toMap());
+
+      expect(decoded.logs, task.logs);
+    });
+
+    test('fromMap tolerates a missing or unreadable logs column', () {
+      // Rows written before schema v31 have no `logs` value at all.
+      final legacy = _bareTask().toMap()..remove('logs');
+      expect(TaskItem.fromMap(legacy).logs, isEmpty);
+
+      final corrupt = _bareTask().toMap()..['logs'] = '{not json';
+      expect(TaskItem.fromMap(corrupt).logs, isEmpty);
+    });
+
+    test('addLog caps the log and flags the truncation', () {
+      final task = _bareTask();
+      for (var i = 0; i < TaskItem.maxLogLines + 50; i++) {
+        task.addLog('line $i');
+      }
+
+      expect(task.logs.length, TaskItem.maxLogLines);
+      // The marker is pinned at the head and not re-added on later trims, so a
+      // truncated log always says so exactly once.
+      expect(task.logs.first, TaskItem.logTruncationMarker);
+      expect(task.logs.where((l) => l == TaskItem.logTruncationMarker).length, 1);
+      // Newest lines are the ones kept.
+      expect(task.logs.last, contains('line ${TaskItem.maxLogLines + 49}'));
+      expect(task.logs.any((l) => l.contains('line 0')), isFalse);
+    });
   });
 }
+
+TaskItem _bareTask() => TaskItem(
+      id: 'test-id',
+      imagePaths: [],
+      modelId: 'test-model',
+      parameters: {},
+    );

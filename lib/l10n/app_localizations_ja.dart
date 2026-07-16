@@ -1469,6 +1469,32 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get viewTaskLog => 'ログを表示';
+
+  @override
+  String get taskLogTitle => 'タスクログ';
+
+  @override
+  String get taskLogLive => 'リアルタイム';
+
+  @override
+  String get noTaskLog => 'このタスクのログはありません。';
+
+  @override
+  String get noTaskLogHint => 'このアップデート前に実行したタスクはログを保存していません。';
+
+  @override
+  String get taskLogCopied => 'ログをクリップボードにコピーしました';
+
+  @override
+  String get copyPrompt => 'プロンプトをコピー';
+
+  @override
+  String taskLogLineCount(int count) {
+    return '$count 行';
+  }
+
+  @override
   String get setupWizardTitle => 'ようこそセットアップ';
 
   @override
