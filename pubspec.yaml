@@ -1,7 +1,7 @@
 name: joycai_image_ai_toolkits
 description: "A powerful cross-platform AI image toolkit for batch processing, prompt optimization, and LLM-powered image analysis."
 publish_to: 'none'
-version: 3.4.0+0
+version: 3.5.0+0
 
 environment:
   sdk: ^3.11.0
@@ -89,4 +89,4 @@ msix_config:
   install_certificate: false
   sign_msix: true
   languages: en-US,zh-CN
-  msix_version: 3.4.0.0
+  msix_version: 3.5.0.0
