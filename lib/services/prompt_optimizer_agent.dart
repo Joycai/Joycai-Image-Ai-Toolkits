@@ -771,20 +771,45 @@ class PromptOptimizerAgent {
         // history stays valid for providers whose tool results are text-only.
         final pendingViews = <Map<String, String>>[];
 
+        // Every tool call in the batch MUST get a paired tool result before
+        // this method returns: the assistant message (with its toolCalls) is
+        // already in history, and the finally block persists whatever is
+        // there. An unpaired tool call would poison the session — both
+        // OpenAI-compatible and Gemini endpoints reject such a history — so
+        // on cancellation the remaining calls get a synthetic "cancelled"
+        // result, and a throwing tool becomes an error result instead of
+        // escaping the loop.
+        var cancelledMidBatch = false;
         for (final call in response.toolCalls) {
-          if (isCancelled?.call() ?? false) return;
-          final result = _executeTool(
-            call,
-            referenceImages,
-            session,
-            pendingViews,
-            forceViewAllImages,
-            knowledgeRoot,
-            onLog,
-            systemPrompt: systemPromptText,
-            contextWindow: contextWindow,
-            onContextExhausted: () => contextExhausted = true,
-          );
+          Map<String, dynamic> result;
+          if (cancelledMidBatch || (isCancelled?.call() ?? false)) {
+            cancelledMidBatch = true;
+            result = {
+              'status': 'cancelled',
+              'message': 'The user cancelled the task before this tool ran.',
+            };
+          } else {
+            try {
+              result = _executeTool(
+                call,
+                referenceImages,
+                session,
+                pendingViews,
+                forceViewAllImages,
+                knowledgeRoot,
+                onLog,
+                systemPrompt: systemPromptText,
+                contextWindow: contextWindow,
+                onContextExhausted: () => contextExhausted = true,
+              );
+            } catch (e) {
+              onLog?.call('Tool ${call.name} failed: $e');
+              result = {
+                'status': 'error',
+                'message': 'Tool ${call.name} failed: $e',
+              };
+            }
+          }
           session.history.add(LLMMessage(
             role: LLMRole.tool,
             content: jsonEncode(result),
@@ -802,6 +827,10 @@ class PromptOptimizerAgent {
             ],
           ));
         }
+
+        // Stop only after the batch is fully paired and executed views are
+        // attached, so the persisted history stays valid for the next turn.
+        if (cancelledMidBatch) return;
       }
       onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
     } finally {
@@ -1181,6 +1210,11 @@ class PromptOptimizerAgent {
           return {'files': [for (final f in files) f.toJson()]};
         } on KbPathException catch (e) {
           return {'status': 'error', 'message': e.message};
+        } catch (e) {
+          // listSync/lengthSync throw FileSystemException when the folder
+          // vanishes mid-session; surface it as a tool error instead of
+          // letting it escape and unpair the tool-call batch.
+          return {'status': 'error', 'message': 'Failed to list knowledge files: $e'};
         }
 
       case 'read_knowledge_file':
