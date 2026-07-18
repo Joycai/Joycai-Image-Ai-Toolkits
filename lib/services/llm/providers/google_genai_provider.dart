@@ -263,7 +263,9 @@ class GoogleGenAIProvider implements ILLMProvider {
     }
 
     // Debug logging for the user to see what's happening
-    logger?.call('POST URL: $url', level: 'DEBUG');
+    // Never log the full URL: for Google channels it carries `?key=<API_KEY>`
+    // (see appendGoogleKey), and this logger feeds the user-visible console.
+    logger?.call('POST URL: ${redactUrl(url)}', level: 'DEBUG');
     logger?.call('Headers: ${headers.keys.join(', ')}', level: 'DEBUG');
     
     // Log payload structure (without large data)
