@@ -90,15 +90,62 @@ class KnowledgeBaseService {
     return resolved;
   }
 
+  /// Rejects paths with hidden (dot-prefixed) segments. [listFiles] never
+  /// surfaces them, so the model has no legitimate way to name one — but a
+  /// prompt-injected model could still probe `.git/config`, `.env` and the
+  /// like, whose content would then be shipped to a third-party provider.
+  static void _rejectHiddenSegments(String relPath) {
+    if (p.split(relPath).any((segment) => segment.startsWith('.'))) {
+      throw KbPathException('Paths must not contain hidden (dot-prefixed) segments.');
+    }
+  }
+
+  /// Read-side twin of the [writeFile] policy: only the markdown files that
+  /// [listFiles] surfaces are readable.
+  static void _requireReadableMarkdown(String relPath) {
+    if (!relPath.toLowerCase().endsWith('.md')) {
+      throw KbPathException('Only markdown (.md) files can be read.');
+    }
+    _rejectHiddenSegments(relPath);
+  }
+
+  /// Verifies that [resolved] does not escape [root] once symbolic links are
+  /// followed. [resolvePath]'s containment check is purely lexical, so a
+  /// symlink inside the root pointing outside it would pass while actually
+  /// reading foreign files. [resolved] must exist; [relPath] is only used for
+  /// the error message.
+  static void _requireInsideRootResolvingLinks(String root, String resolved, String relPath) {
+    final String realRoot;
+    final String real;
+    try {
+      realRoot = Directory(root).resolveSymbolicLinksSync();
+      real = FileSystemEntity.isDirectorySync(resolved)
+          ? Directory(resolved).resolveSymbolicLinksSync()
+          : File(resolved).resolveSymbolicLinksSync();
+    } on FileSystemException {
+      throw KbPathException('File not found: $relPath');
+    }
+    if (real != realRoot && !p.isWithin(realRoot, real)) {
+      throw KbPathException('Path escapes the knowledge base folder.');
+    }
+  }
+
   /// Lists markdown files and subdirectories directly under [dir] (relative
   /// to [root]; empty/null = root). Subdirectories are returned as entries so
   /// the model can descend on demand.
   List<KbFileInfo> listFiles(String root, {String? dir}) {
-    final target = (dir == null || dir.trim().isEmpty) ? p.normalize(root) : resolvePath(root, dir);
+    final String target;
+    if (dir == null || dir.trim().isEmpty) {
+      target = p.normalize(root);
+    } else {
+      _rejectHiddenSegments(dir);
+      target = resolvePath(root, dir);
+    }
     final directory = Directory(target);
     if (!directory.existsSync()) {
       throw KbPathException('Directory not found: ${dir ?? '.'}');
     }
+    _requireInsideRootResolvingLinks(root, target, dir ?? '.');
     final entries = <KbFileInfo>[];
     for (final entity in directory.listSync()) {
       final name = p.basename(entity.path);
@@ -121,8 +168,12 @@ class KnowledgeBaseService {
   /// Reads a knowledge file in full, unpaged. Returns null when it does not
   /// exist — callers use that to distinguish a create from an overwrite.
   String? readFullFile(String root, String relPath) {
-    final file = File(resolvePath(root, relPath));
-    return file.existsSync() ? file.readAsStringSync() : null;
+    _requireReadableMarkdown(relPath);
+    final resolved = resolvePath(root, relPath);
+    final file = File(resolved);
+    if (!file.existsSync()) return null;
+    _requireInsideRootResolvingLinks(root, resolved, relPath);
+    return file.readAsStringSync();
   }
 
   /// Creates or overwrites a knowledge file, creating parent directories as
@@ -138,9 +189,16 @@ class KnowledgeBaseService {
     }
     // Mirrors the dot-prefix skip in listFiles: a hidden file would be written
     // but stay invisible to the agent afterwards.
-    if (p.split(relPath).any((segment) => segment.startsWith('.'))) {
-      throw KbPathException('Paths must not contain hidden (dot-prefixed) segments.');
+    _rejectHiddenSegments(relPath);
+    // The target may not exist yet, so check symlink containment on its
+    // deepest existing ancestor instead.
+    var probe = p.dirname(resolved);
+    while (!Directory(probe).existsSync()) {
+      final parent = p.dirname(probe);
+      if (parent == probe) break;
+      probe = parent;
     }
+    _requireInsideRootResolvingLinks(root, probe, relPath);
     final file = File(resolved);
     await file.parent.create(recursive: true);
     await file.writeAsString(content);
@@ -197,11 +255,13 @@ class KnowledgeBaseService {
   /// from one read to the next; the exception is a window too small to hold
   /// even one full page, where the page shrinks rather than blowing the budget.
   KbReadResult readFile(String root, String relPath, {int page = 1, int? maxChars}) {
+    _requireReadableMarkdown(relPath);
     final resolved = resolvePath(root, relPath);
     final file = File(resolved);
     if (!file.existsSync()) {
       throw KbPathException('File not found: $relPath');
     }
+    _requireInsideRootResolvingLinks(root, resolved, relPath);
     final content = file.readAsStringSync();
     if (maxChars != null && content.length <= maxChars) {
       return KbReadResult(content: content, page: 1, totalPages: 1);
