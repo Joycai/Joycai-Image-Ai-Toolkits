@@ -78,7 +78,7 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
           _stats = calculateStats(allInRange, appState.allModels);
 
           if (allInRange.length > 500) {
-            _maybeCreateCheckpoint(_stats);
+            await _maybeCreateCheckpoint(_stats);
           }
         }
       }
@@ -110,19 +110,27 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
   }
 
   Future<void> _maybeCreateCheckpoint(UsageStats currentStats) async {
-    final last = await _db.getLatestUsageCheckpoint();
-    if (last == null ||
-        DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >=
-            1) {
-      await _db.saveUsageCheckpoint({
-        'timestamp': DateTime.now().toIso8601String(),
-        'total_input_tokens': currentStats.totalInput,
-        'total_cache_tokens': currentStats.totalCache,
-        'total_output_tokens': currentStats.totalOutput,
-        'total_request_count': currentStats.totalRequestCount,
-        'total_cost': currentStats.totalCost,
-        'metadata': jsonEncode(currentStats.groupCosts),
-      });
+    try {
+      final last = await _db.getLatestUsageCheckpoint();
+      if (last == null ||
+          DateTime.now().difference(DateTime.parse(last['timestamp'])).inDays >=
+              1) {
+        await _db.saveUsageCheckpoint({
+          'timestamp': DateTime.now().toIso8601String(),
+          'total_input_tokens': currentStats.totalInput,
+          'total_cache_tokens': currentStats.totalCache,
+          'total_output_tokens': currentStats.totalOutput,
+          'total_request_count': currentStats.totalRequestCount,
+          'total_cost': currentStats.totalCost,
+          // groupCosts is keyed by int group id; jsonEncode throws
+          // JsonUnsupportedObjectError on any non-String map key, so the keys
+          // must be stringified first.
+          'metadata': jsonEncode(currentStats.groupCosts
+              .map((k, v) => MapEntry(k.toString(), v))),
+        });
+      }
+    } catch (_) {
+      // Checkpoint persistence is best-effort; it must never break the view.
     }
   }
 
