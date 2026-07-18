@@ -397,10 +397,12 @@ class _GroupCardState extends State<_GroupCard> {
           ),
         ),
         // Reserved, not conjured on hover: a button that appears from nowhere
-        // would reflow the name it sits beside.
+        // would reflow the name it sits beside. On touch layouts there is no
+        // pointer to hover with, so the button must simply be there — same
+        // rule as the usage list's delete action.
         SizedBox(
           width: 28,
-          child: _hovering
+          child: _hovering || !Responsive.isDesktop(context)
               ? IconButton(
                   icon: const Icon(Icons.delete_outline, size: 17),
                   padding: EdgeInsets.zero,
@@ -592,6 +594,22 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
   late TextEditingController outputPriceCtrl;
   late TextEditingController requestPriceCtrl;
   late String billingMode;
+
+  /// Price fields whose current text failed validation on the last save
+  /// attempt. Cleared per field as soon as it is edited again.
+  final Set<TextEditingController> _invalidFields = {};
+
+  /// Parses a price the way users type them, not just the way Dart does:
+  /// accepts a decimal comma ('1,25'), rejects garbage and negatives.
+  /// Returns null when the text is not a usable price.
+  static double? _parsePrice(String text) {
+    final normalized = text.trim().replaceAll(',', '.');
+    final value = double.tryParse(normalized);
+    if (value == null || value.isNaN || value.isInfinite || value < 0) {
+      return null;
+    }
+    return value;
+  }
 
   @override
   void initState() {
@@ -848,6 +866,9 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 17),
+      onChanged: (_) {
+        if (_invalidFields.remove(ctrl)) setState(() {});
+      },
       decoration: InputDecoration(
         labelText: label,
         // Always up, never sitting in the field: the label rides the border so
@@ -872,6 +893,9 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         helperText: helperText,
         helperMaxLines: 2,
         helperStyle: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant),
+        errorText: _invalidFields.contains(ctrl)
+            ? AppLocalizations.of(context)!.invalidPriceValue
+            : null,
         suffixText: suffix,
         suffixStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
@@ -938,16 +962,39 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
   }
 
   Future<void> _save() async {
+    // Rates are snapshotted onto every usage row at request time, so a rate
+    // that silently saved as 0.0 (the old `tryParse ?? 0.0` behavior) poisoned
+    // history irreversibly. Unparseable input now blocks the save and marks
+    // the field instead.
     final cacheText = cacheInputPriceCtrl.text.trim();
+    final requiredFields = billingMode == 'token'
+        ? [inputPriceCtrl, outputPriceCtrl]
+        : [requestPriceCtrl];
+
+    _invalidFields.clear();
+    for (final ctrl in requiredFields) {
+      if (_parsePrice(ctrl.text) == null) _invalidFields.add(ctrl);
+    }
+    // Blank cache is a valid "inherit" value; non-blank must parse. This keeps
+    // 'empty' (null) distinct from 'invalid' — garbage used to silently flip
+    // the field's meaning to "inherit the input price".
+    if (cacheText.isNotEmpty && _parsePrice(cacheText) == null) {
+      _invalidFields.add(cacheInputPriceCtrl);
+    }
+    if (_invalidFields.isNotEmpty) {
+      setState(() {});
+      return;
+    }
+
     final data = {
       'name': nameCtrl.text.trim().isEmpty ? "Unnamed Group" : nameCtrl.text.trim(),
       'billing_mode': billingMode,
-      'input_price': double.tryParse(inputPriceCtrl.text) ?? 0.0,
+      'input_price': _parsePrice(inputPriceCtrl.text) ?? 0.0,
       // Blank stays null so the cost math falls back to the input price; an
       // explicit 0 is kept as a real (free) cache rate.
-      'cache_input_price': cacheText.isEmpty ? null : double.tryParse(cacheText),
-      'output_price': double.tryParse(outputPriceCtrl.text) ?? 0.0,
-      'request_price': double.tryParse(requestPriceCtrl.text) ?? 0.0,
+      'cache_input_price': cacheText.isEmpty ? null : _parsePrice(cacheText),
+      'output_price': _parsePrice(outputPriceCtrl.text) ?? 0.0,
+      'request_price': _parsePrice(requestPriceCtrl.text) ?? 0.0,
     };
     if (widget.group == null) {
       await widget.appState.addPricingGroup(data);

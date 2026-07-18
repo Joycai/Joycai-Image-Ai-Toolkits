@@ -511,6 +511,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loadMore => '加载更多';
 
   @override
+  String get invalidPriceValue => '请输入有效的非负数字';
+
+  @override
   String get models => '模型';
 
   @override
@@ -2768,6 +2771,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get loadMore => '載入更多';
+
+  @override
+  String get invalidPriceValue => '請輸入有效的非負數字';
 
   @override
   String get models => '模型';

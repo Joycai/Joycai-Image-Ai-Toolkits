@@ -40,5 +40,6 @@
   "usageRecordCount": "{count} 条",
   "usageItemCount": "{count} 项",
   "noUsageInRange": "所选时间范围内没有用量数据。",
-  "loadMore": "加载更多"
+  "loadMore": "加载更多",
+  "invalidPriceValue": "请输入有效的非负数字"
 }

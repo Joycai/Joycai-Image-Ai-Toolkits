@@ -54,5 +54,6 @@
     }
   },
   "noUsageInRange": "No usage data in the selected range.",
-  "loadMore": "Load More"
+  "loadMore": "Load More",
+  "invalidPriceValue": "Enter a valid non-negative number"
 }

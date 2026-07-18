@@ -1043,6 +1043,12 @@ abstract class AppLocalizations {
   /// **'Load More'**
   String get loadMore;
 
+  /// No description provided for @invalidPriceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid non-negative number'**
+  String get invalidPriceValue;
+
   /// No description provided for @models.
   ///
   /// In en, this message translates to:
