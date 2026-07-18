@@ -182,6 +182,12 @@ class LLMService {
 
     final int maxRetries = options?['retryCount'] ?? 0;
     int attempt = 0;
+    // Chunks already yielded to the consumer cannot be retracted, and there
+    // is no reset signal in the chunk protocol — a retry after the first
+    // yield would replay the stream from the start and duplicate everything
+    // downstream (doubled text, duplicate images written to disk). So retry
+    // only covers failures that happen before any chunk was delivered.
+    var deliveredAnyChunk = false;
 
     while (true) {
       try {
@@ -206,6 +212,7 @@ class LLMService {
             onLogAdded?.call('Received image part ($imageCount)', level: 'DEBUG', contextId: contextId);
           }
           if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          deliveredAnyChunk = true;
           yield chunk;
         }
 
@@ -226,7 +233,7 @@ class LLMService {
         return; // Success, exit retry loop
       } catch (e) {
         attempt++;
-        if (attempt > maxRetries || !_isRetryable(e)) {
+        if (deliveredAnyChunk || attempt > maxRetries || !_isRetryable(e)) {
           rethrow;
         }
         onLogAdded?.call('Stream failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
