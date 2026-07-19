@@ -58,3 +58,16 @@ Uri appendGoogleKey(Uri url, String apiKey, {String? channelType}) {
     'key': apiKey,
   });
 }
+
+/// Returns [url] with the `key` query parameter masked, safe for logging.
+///
+/// URLs built by [appendGoogleKey] embed the plaintext API key; anything that
+/// prints a full request URL (console log, debug log files) must go through
+/// this first so the key never leaves the process.
+String redactUrl(Uri url) {
+  if (!url.queryParameters.containsKey('key')) return url.toString();
+  return url.replace(queryParameters: {
+    ...url.queryParameters,
+    'key': '***MASKED***',
+  }).toString();
+}

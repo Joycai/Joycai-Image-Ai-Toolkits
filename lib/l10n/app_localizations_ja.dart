@@ -512,6 +512,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loadMore => 'さらに読み込む';
 
   @override
+  String get invalidPriceValue => '0以上の有効な数値を入力してください';
+
+  @override
   String get models => 'モデル';
 
   @override

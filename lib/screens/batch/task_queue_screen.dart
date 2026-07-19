@@ -900,7 +900,8 @@ class _TaskCardState extends State<_TaskCard> {
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
-    final canCancel = task.status == TaskStatus.pending;
+    final canCancel = task.status == TaskStatus.pending ||
+        task.status == TaskStatus.processing;
     final canRetry = task.status == TaskStatus.failed || task.status == TaskStatus.cancelled;
     final canRemove = task.status == TaskStatus.completed ||
         task.status == TaskStatus.failed ||

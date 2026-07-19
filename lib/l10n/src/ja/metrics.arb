@@ -26,5 +26,6 @@
   "usageRecordCount": "{count} 件",
   "usageItemCount": "{count} 項目",
   "noUsageInRange": "選択した期間の使用状況データはありません。",
-  "loadMore": "さらに読み込む"
+  "loadMore": "さらに読み込む",
+  "invalidPriceValue": "0以上の有効な数値を入力してください"
 }

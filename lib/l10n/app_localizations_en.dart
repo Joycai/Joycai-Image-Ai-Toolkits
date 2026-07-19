@@ -521,6 +521,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadMore => 'Load More';
 
   @override
+  String get invalidPriceValue => 'Enter a valid non-negative number';
+
+  @override
   String get models => 'Models';
 
   @override

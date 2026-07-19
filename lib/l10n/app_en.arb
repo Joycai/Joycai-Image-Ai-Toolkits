@@ -264,6 +264,7 @@
   },
   "noUsageInRange": "No usage data in the selected range.",
   "loadMore": "Load More",
+  "invalidPriceValue": "Enter a valid non-negative number",
   "models": "Models",
   "modelManagement": "Model Management",
   "feeManagement": "Fee Management",

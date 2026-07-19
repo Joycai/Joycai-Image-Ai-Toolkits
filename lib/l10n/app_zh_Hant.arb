@@ -172,6 +172,7 @@
   "usageItemCount": "{count} 項",
   "noUsageInRange": "所選時間範圍內沒有用量資料。",
   "loadMore": "載入更多",
+  "invalidPriceValue": "請輸入有效的非負數字",
   "models": "模型",
   "modelManagement": "模型管理",
   "feeManagement": "費用管理",

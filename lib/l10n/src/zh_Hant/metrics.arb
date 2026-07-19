@@ -26,5 +26,6 @@
   "usageRecordCount": "{count} 筆",
   "usageItemCount": "{count} 項",
   "noUsageInRange": "所選時間範圍內沒有用量資料。",
-  "loadMore": "載入更多"
+  "loadMore": "載入更多",
+  "invalidPriceValue": "請輸入有效的非負數字"
 }

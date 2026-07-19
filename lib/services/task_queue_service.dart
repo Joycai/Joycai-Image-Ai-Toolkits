@@ -135,9 +135,17 @@ class TaskQueueService extends ChangeNotifier {
     final index = _queue.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       final task = _queue[index];
-      if (task.status == TaskStatus.pending) {
+      // Processing tasks are cancellable too: every executor checks
+      // TaskStatus.cancelled at its loop/poll checkpoints (and passes an
+      // isCancelled callback to the agents), and _executeTask's
+      // `status != cancelled` guards already handle the finalization.
+      // Without this, a running video task polls its LRO for up to 30
+      // minutes with no way to stop it, holding a concurrency slot.
+      if (task.status == TaskStatus.pending ||
+          task.status == TaskStatus.processing) {
         task.status = TaskStatus.cancelled;
         task.addLog('Task cancelled by user.');
+        _emit(task.id, TaskEventType.statusChanged, task.status);
         await DatabaseService().saveTask(task.toMap());
         notifyListeners();
       }

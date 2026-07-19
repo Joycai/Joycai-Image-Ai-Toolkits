@@ -74,13 +74,20 @@ class LLMDebugLogger {
     } catch (_) {}
   }
 
+  /// Credentials embedded inside string values, which key-name masking cannot
+  /// catch: Google-style `?key=<API_KEY>` query parameters (the request maps
+  /// include the full URL under the innocuous key `url`) and bearer tokens.
+  static final RegExp _keyQueryParam = RegExp(r'([?&]key=)[^&\s"]+');
+  static final RegExp _bearerToken =
+      RegExp(r'(Bearer\s+)[A-Za-z0-9._~+/=-]+');
+
   static dynamic _sanitize(dynamic obj) {
     if (obj is Map) {
       return obj.map((k, v) {
         final keyStr = k.toString().toLowerCase();
         // Mask common sensitive header and payload keys
-        if (keyStr.contains('key') || 
-            keyStr.contains('api-key') || 
+        if (keyStr.contains('key') ||
+            keyStr.contains('api-key') ||
             keyStr.contains('authorization') ||
             keyStr.contains('token')) {
           return MapEntry(k, '***MASKED***');
@@ -89,6 +96,10 @@ class LLMDebugLogger {
       });
     } else if (obj is List) {
       return obj.map((e) => _sanitize(e)).toList();
+    } else if (obj is String) {
+      return obj
+          .replaceAllMapped(_keyQueryParam, (m) => '${m[1]}***MASKED***')
+          .replaceAllMapped(_bearerToken, (m) => '${m[1]}***MASKED***');
     }
     return obj;
   }
