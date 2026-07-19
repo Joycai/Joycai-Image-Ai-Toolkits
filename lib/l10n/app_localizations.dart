@@ -4330,6 +4330,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not create the knowledge base: {error}'**
   String kbScaffoldFailed(String error);
+
+  /// No description provided for @optAskUserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant has a question'**
+  String get optAskUserTitle;
+
+  /// No description provided for @optAskUserMultiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all that apply'**
+  String get optAskUserMultiHint;
+
+  /// No description provided for @optAskUserOtherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Other / add details...'**
+  String get optAskUserOtherHint;
+
+  /// No description provided for @optAskUserConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Send answers'**
+  String get optAskUserConfirm;
+
+  /// No description provided for @optAskUserAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get optAskUserAnswered;
+
+  /// No description provided for @optAskUserDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Continued in chat'**
+  String get optAskUserDismissed;
 }
 
 class _AppLocalizationsDelegate

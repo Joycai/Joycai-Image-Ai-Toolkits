@@ -25,6 +25,9 @@ class PromptOptimizerChatView extends StatefulWidget {
 
   /// Discards a staged knowledge-base edit.
   final void Function(String editId) onRejectKbEdit;
+
+  /// Sends the user's answers to a pending ask_user question card.
+  final void Function(String callId, List<AskUserAnswer> answers) onAnswerAskUser;
   final bool isBusy;
 
   const PromptOptimizerChatView({
@@ -35,6 +38,7 @@ class PromptOptimizerChatView extends StatefulWidget {
     required this.onApplyPrompt,
     required this.onApplyKbEdit,
     required this.onRejectKbEdit,
+    required this.onAnswerAskUser,
     required this.isBusy,
   });
 
@@ -252,6 +256,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
       case OptimizerEntryKind.kbEdit:
         return _buildKbEditCard(entry, l10n, colorScheme);
+
+      case OptimizerEntryKind.askUser:
+        // Keyed by call id so the draft selections survive the transcript
+        // rebuilds that _resolveKbEdit-style copyWith flips trigger.
+        return _AskUserCard(
+          key: ValueKey('ask_${entry.askCallId}'),
+          entry: entry,
+          enabled: !widget.isBusy,
+          onSubmit: (answers) => widget.onAnswerAskUser(entry.askCallId!, answers),
+        );
 
       case OptimizerEntryKind.notice:
         final noticeText = switch (entry.text) {
@@ -653,6 +667,285 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Structured-question card for a pending `ask_user` tool call.
+///
+/// Stateful so the draft selections and "other" text live here (keyed by call
+/// id in the parent) instead of bloating the chat view's state. Once the
+/// entry's state flips to answered/dismissed the card renders collapsed and
+/// the draft state is simply never read again.
+class _AskUserCard extends StatefulWidget {
+  final OptimizerChatEntry entry;
+
+  /// False while an agent turn is queued or running — answering then would
+  /// race the self-healing guard, which cancels a still-pending question.
+  final bool enabled;
+  final void Function(List<AskUserAnswer> answers) onSubmit;
+
+  const _AskUserCard({
+    super.key,
+    required this.entry,
+    required this.enabled,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_AskUserCard> createState() => _AskUserCardState();
+}
+
+class _AskUserCardState extends State<_AskUserCard> {
+  /// Selected option indices per question index.
+  final Map<int, Set<int>> _selections = {};
+  late final List<TextEditingController> _otherCtrls;
+
+  List<AskUserQuestion> get _questions => widget.entry.askQuestions ?? const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _otherCtrls = [for (final _ in _questions) TextEditingController()];
+  }
+
+  @override
+  void dispose() {
+    for (final c in _otherCtrls) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  bool _isAnswered(int qIndex) =>
+      (_selections[qIndex]?.isNotEmpty ?? false) ||
+      _otherCtrls[qIndex].text.trim().isNotEmpty;
+
+  bool get _allAnswered {
+    for (int i = 0; i < _questions.length; i++) {
+      if (!_isAnswered(i)) return false;
+    }
+    return _questions.isNotEmpty;
+  }
+
+  List<AskUserAnswer> _collectAnswers() => [
+        for (int i = 0; i < _questions.length; i++)
+          AskUserAnswer(
+            header: _questions[i].header,
+            selected: [
+              for (final o in (_selections[i] ?? const <int>{}).toList()..sort())
+                _questions[i].options[o].label,
+            ],
+            otherText: _otherCtrls[i].text.trim().isEmpty ? null : _otherCtrls[i].text.trim(),
+          ),
+      ];
+
+  void _toggleOption(int qIndex, int oIndex, bool multiSelect) {
+    setState(() {
+      final current = _selections[qIndex] ?? <int>{};
+      if (current.contains(oIndex)) {
+        _selections[qIndex] = {...current}..remove(oIndex);
+      } else {
+        _selections[qIndex] = multiSelect ? {...current, oIndex} : {oIndex};
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final state = widget.entry.askState ?? AskUserState.pending;
+    if (state != AskUserState.pending) {
+      return _buildResolved(state, l10n, colorScheme);
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            child: Row(
+              children: [
+                Icon(Icons.help_outline, size: 15, color: colorScheme.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.optAskUserTitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (int i = 0; i < _questions.length; i++) _buildQuestion(i, l10n, colorScheme),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: widget.enabled && _allAnswered
+                      ? () => widget.onSubmit(_collectAnswers())
+                      : null,
+                  icon: const Icon(Icons.send_rounded, size: 15),
+                  label: Text(l10n.optAskUserConfirm, style: const TextStyle(fontSize: 12)),
+                  style: tonalButtonStyle(colorScheme)
+                      .copyWith(visualDensity: VisualDensity.compact),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestion(int qIndex, AppLocalizations l10n, ColorScheme colorScheme) {
+    final question = _questions[qIndex];
+    final selected = _selections[qIndex] ?? const <int>{};
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  question.header,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (question.multiSelect) ...[
+                const SizedBox(width: 6),
+                Text(
+                  l10n.optAskUserMultiHint,
+                  style: TextStyle(fontSize: 10, color: colorScheme.outline),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            question.question,
+            style: TextStyle(fontSize: 13, height: 1.4, color: colorScheme.onSurface),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (int o = 0; o < question.options.length; o++)
+                Tooltip(
+                  message: question.options[o].description ?? '',
+                  child: FilterChip(
+                    label: Text(
+                      question.options[o].label,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    selected: selected.contains(o),
+                    showCheckmark: question.multiSelect,
+                    visualDensity: VisualDensity.compact,
+                    onSelected: widget.enabled
+                        ? (_) => _toggleOption(qIndex, o, question.multiSelect)
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _otherCtrls[qIndex],
+            enabled: widget.enabled,
+            minLines: 1,
+            maxLines: 3,
+            style: const TextStyle(fontSize: 12, height: 1.4),
+            // setState so the confirm button re-evaluates _allAnswered.
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: l10n.optAskUserOtherHint,
+              hintStyle: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+              isDense: true,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHigh,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Collapsed rendering once the question is no longer actionable.
+  Widget _buildResolved(AskUserState state, AppLocalizations l10n, ColorScheme colorScheme) {
+    final answers = widget.entry.askAnswers ?? const <AskUserAnswer>[];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                state == AskUserState.answered
+                    ? Icons.check_circle_outline
+                    : Icons.remove_circle_outline,
+                size: 14,
+                color: colorScheme.outline,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  state == AskUserState.answered
+                      ? l10n.optAskUserAnswered
+                      : l10n.optAskUserDismissed,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                ),
+              ),
+            ],
+          ),
+          for (final answer in answers)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 20),
+              child: Text(
+                '${answer.header}: '
+                '${[...answer.selected, if (answer.otherText != null) answer.otherText!].join(', ')}',
+                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+              ),
+            ),
+        ],
       ),
     );
   }

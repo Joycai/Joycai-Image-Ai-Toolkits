@@ -2335,4 +2335,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String kbScaffoldFailed(String error) {
     return 'Could not create the knowledge base: $error';
   }
+
+  @override
+  String get optAskUserTitle => 'The assistant has a question';
+
+  @override
+  String get optAskUserMultiHint => 'Select all that apply';
+
+  @override
+  String get optAskUserOtherHint => 'Other / add details...';
+
+  @override
+  String get optAskUserConfirm => 'Send answers';
+
+  @override
+  String get optAskUserAnswered => 'Answered';
+
+  @override
+  String get optAskUserDismissed => 'Continued in chat';
 }

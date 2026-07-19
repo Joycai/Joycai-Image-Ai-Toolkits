@@ -34,8 +34,111 @@ enum AssistantMode { systemPrompt, knowledgeBase, knowledgeEdit }
 /// the user taps Apply, so it can fail long after the tool call returned ok.
 enum KbEditState { pending, applied, rejected, failed }
 
+/// Lifecycle of a structured question the agent asked via `ask_user`.
+///
+/// [dismissed] covers both "the user answered in free text instead" and "the
+/// question was cancelled" — either way the card is no longer actionable and
+/// the pending tool call has been paired.
+enum AskUserState { pending, answered, dismissed }
+
+/// One selectable option of an [AskUserQuestion].
+class AskUserOption {
+  final String label;
+  final String? description;
+
+  const AskUserOption({required this.label, this.description});
+}
+
+/// One structured question the agent asks the user via the `ask_user` tool.
+class AskUserQuestion {
+  /// Very short label (2-3 words) shown as the question's title.
+  final String header;
+
+  /// The full question text.
+  final String question;
+
+  /// Whether the user may pick several options.
+  final bool multiSelect;
+
+  final List<AskUserOption> options;
+
+  const AskUserQuestion({
+    required this.header,
+    required this.question,
+    required this.multiSelect,
+    required this.options,
+  });
+
+  static const int maxQuestions = 4;
+  static const int minOptions = 2;
+  static const int maxOptions = 4;
+
+  /// Parses the `questions` argument of an `ask_user` call. Strict: 1-4
+  /// questions, each with a non-empty header/question and 2-4 non-empty
+  /// option labels. Returns null on any violation so the caller can answer
+  /// the tool call with a schema error instead of staging a broken card.
+  static List<AskUserQuestion>? tryParse(Object? questionsArg) {
+    if (questionsArg is! List || questionsArg.isEmpty || questionsArg.length > maxQuestions) {
+      return null;
+    }
+    final questions = <AskUserQuestion>[];
+    for (final raw in questionsArg) {
+      if (raw is! Map) return null;
+      final header = raw['header']?.toString().trim() ?? '';
+      final question = raw['question']?.toString().trim() ?? '';
+      if (header.isEmpty || question.isEmpty) return null;
+      // Models routinely quote scalars — accept the string forms of booleans.
+      final rawMulti = raw['multi_select'];
+      final multiSelect = rawMulti == true || rawMulti?.toString() == 'true';
+      final rawOptions = raw['options'];
+      if (rawOptions is! List ||
+          rawOptions.length < minOptions ||
+          rawOptions.length > maxOptions) {
+        return null;
+      }
+      final options = <AskUserOption>[];
+      for (final o in rawOptions) {
+        if (o is! Map) return null;
+        final label = o['label']?.toString().trim() ?? '';
+        if (label.isEmpty) return null;
+        final description = o['description']?.toString().trim();
+        options.add(AskUserOption(
+          label: label,
+          description: (description == null || description.isEmpty) ? null : description,
+        ));
+      }
+      questions.add(AskUserQuestion(
+        header: header,
+        question: question,
+        multiSelect: multiSelect,
+        options: options,
+      ));
+    }
+    return questions;
+  }
+}
+
+/// The user's answer to one [AskUserQuestion].
+class AskUserAnswer {
+  final String header;
+
+  /// Labels of the chosen options (empty when only free text was given).
+  final List<String> selected;
+
+  /// Free-text supplement or replacement ("Other…" field).
+  final String? otherText;
+
+  const AskUserAnswer({required this.header, required this.selected, this.otherText});
+
+  Map<String, dynamic> toJson() => {
+        'header': header,
+        'selected': selected,
+        if (otherText != null && otherText!.trim().isNotEmpty) 'other': otherText!.trim(),
+      };
+}
+
 /// Kinds of entries shown in the optimizer chat transcript.
-enum OptimizerEntryKind { user, assistant, tool, prompt, error, notice, kbEdit }
+enum OptimizerEntryKind { user, assistant, tool, prompt, error, notice, kbEdit, askUser }
 
 /// One rendered line of the optimizer conversation.
 class OptimizerChatEntry {
@@ -67,6 +170,19 @@ class OptimizerChatEntry {
   /// For [OptimizerEntryKind.kbEdit]: approval state.
   final KbEditState? editState;
 
+  /// For [OptimizerEntryKind.askUser]: the tool-call id this card must answer.
+  final String? askCallId;
+
+  /// For [OptimizerEntryKind.askUser]: the structured questions.
+  final List<AskUserQuestion>? askQuestions;
+
+  /// For [OptimizerEntryKind.askUser]: lifecycle state of the card.
+  final AskUserState? askState;
+
+  /// For [OptimizerEntryKind.askUser]: the answers, once given (for the
+  /// collapsed "answered" rendering).
+  final List<AskUserAnswer>? askAnswers;
+
   OptimizerChatEntry({
     required this.kind,
     required this.text,
@@ -78,9 +194,18 @@ class OptimizerChatEntry {
     this.newContent,
     this.oldContent,
     this.editState,
+    this.askCallId,
+    this.askQuestions,
+    this.askState,
+    this.askAnswers,
   });
 
-  OptimizerChatEntry copyWith({KbEditState? editState}) => OptimizerChatEntry(
+  OptimizerChatEntry copyWith({
+    KbEditState? editState,
+    AskUserState? askState,
+    List<AskUserAnswer>? askAnswers,
+  }) =>
+      OptimizerChatEntry(
         kind: kind,
         text: text,
         version: version,
@@ -91,6 +216,10 @@ class OptimizerChatEntry {
         newContent: newContent,
         oldContent: oldContent,
         editState: editState ?? this.editState,
+        askCallId: askCallId,
+        askQuestions: askQuestions,
+        askState: askState ?? this.askState,
+        askAnswers: askAnswers ?? this.askAnswers,
       );
 }
 
@@ -247,6 +376,68 @@ class PromptOptimizerSession extends ChangeNotifier {
     return null;
   }
 
+  /// Stages a structured-question card. The paired tool result is deliberately
+  /// NOT appended here — the call stays dangling in [history] until the user
+  /// answers (or the turn self-heals), which is what makes the pending state
+  /// derivable and restorable.
+  void _stageAskUser(String callId, List<AskUserQuestion> questions) {
+    _addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.askUser,
+      text: '',
+      askCallId: callId,
+      askQuestions: questions,
+      askState: AskUserState.pending,
+    ));
+  }
+
+  /// Flips a question card to its terminal state. Same rebuild-not-mutate and
+  /// length-preserving contract as [_resolveKbEdit].
+  void _resolveAskUser(String callId, AskUserState state, {List<AskUserAnswer>? answers}) {
+    _transcript = [
+      for (final e in _transcript)
+        (e.kind == OptimizerEntryKind.askUser && e.askCallId == callId)
+            ? e.copyWith(askState: state, askAnswers: answers)
+            : e,
+    ];
+    notifyListeners();
+  }
+
+  /// The trailing unanswered `ask_user` call, or null.
+  ///
+  /// Derived from [history] on every access rather than tracked in a flag
+  /// (invariant: derive, don't track — see assistant-context.md). Scans from
+  /// the end: the pending call, if any, is the last `ask_user` call with no
+  /// matching tool result after it. Works identically for live and restored
+  /// sessions.
+  ({String callId, List<AskUserQuestion> questions})? get pendingAskUser {
+    final answered = <String>{};
+    for (int i = history.length - 1; i >= 0; i--) {
+      final m = history[i];
+      if (m.role == LLMRole.tool) {
+        if (m.toolName == 'ask_user' && m.toolCallId != null) answered.add(m.toolCallId!);
+        continue;
+      }
+      if (m.role != LLMRole.assistant) continue;
+      final askCalls = [for (final c in m.toolCalls) if (c.name == 'ask_user') c];
+      if (askCalls.isEmpty) continue;
+      // Only the LAST assistant message carrying ask_user calls can hold a
+      // dangling one: a dangling call ends the turn, so no later assistant
+      // message can exist until it is paired. Within the batch, malformed or
+      // duplicate calls were answered with error results immediately — the
+      // pending one is whichever has no result yet.
+      for (final call in askCalls) {
+        if (answered.contains(call.id)) continue;
+        final questions = AskUserQuestion.tryParse(call.arguments['questions']);
+        // Unparseable would have received an error result in the same batch,
+        // so a dangling unparseable call means corrupt data — not pending.
+        if (questions == null) continue;
+        return (callId: call.id, questions: questions);
+      }
+      return null;
+    }
+    return null;
+  }
+
   void _setRunning(bool running) {
     if (_isRunning == running) return;
     _isRunning = running;
@@ -359,6 +550,65 @@ class PromptOptimizerSession extends ChangeNotifier {
                   text: '',
                   toolName: 'list_reference_images',
                 ));
+              case 'ask_user':
+                final questions = AskUserQuestion.tryParse(call.arguments['questions']);
+                if (questions == null) break; // Malformed call: was error-answered, no card.
+                // Look ahead for the paired result. Found → collapsed card;
+                // dangling → a fully actionable pending card: unlike a restored
+                // kbEdit (inert, could clobber newer disk content), answering
+                // only appends a message, so it is safe to keep live.
+                LLMMessage? result;
+                for (int j = msgIndex + 1; j < history.length; j++) {
+                  final r = history[j];
+                  if (r.role == LLMRole.tool && r.toolCallId == call.id) {
+                    result = r;
+                    break;
+                  }
+                }
+                if (result == null) {
+                  entries.add(OptimizerChatEntry(
+                    kind: OptimizerEntryKind.askUser,
+                    text: '',
+                    askCallId: call.id,
+                    askQuestions: questions,
+                    askState: AskUserState.pending,
+                  ));
+                  break;
+                }
+                var state = AskUserState.dismissed;
+                List<AskUserAnswer>? answers;
+                try {
+                  final decoded = jsonDecode(result.content);
+                  if (decoded is Map && decoded['status'] == 'ok') {
+                    final rawAnswers = decoded['answers'];
+                    if (rawAnswers is List) {
+                      state = AskUserState.answered;
+                      answers = [
+                        for (final a in rawAnswers)
+                          if (a is Map)
+                            AskUserAnswer(
+                              header: a['header']?.toString() ?? '',
+                              selected: [
+                                if (a['selected'] is List)
+                                  for (final s in a['selected'] as List) s.toString(),
+                              ],
+                              otherText: a['other']?.toString(),
+                            ),
+                      ];
+                    }
+                    // status ok without answers = free-text reply → dismissed.
+                  }
+                } catch (_) {
+                  // Undecodable result degrades to a bare dismissed card.
+                }
+                entries.add(OptimizerChatEntry(
+                  kind: OptimizerEntryKind.askUser,
+                  text: '',
+                  askCallId: call.id,
+                  askQuestions: questions,
+                  askState: state,
+                  askAnswers: answers,
+                ));
             }
           }
         case LLMRole.tool:
@@ -383,6 +633,9 @@ class PromptOptimizerSession extends ChangeNotifier {
 ///  * `submit_prompt`         — deliver an optimized prompt (the only channel
 ///                              for results; keeps chat text and deliverable
 ///                              cleanly separated).
+///  * `ask_user`              — ask structured clarifying questions; the turn
+///                              suspends with the call left dangling until the
+///                              user answers (see [answerAskUser]).
 ///
 /// In [AssistantMode.knowledgeBase] two more tools are registered:
 ///  * `list_knowledge_files` / `read_knowledge_file` — progressive-disclosure
@@ -514,6 +767,58 @@ class PromptOptimizerAgent {
           },
         },
         'required': ['prompt'],
+      },
+    ),
+    LLMTool(
+      name: 'ask_user',
+      description: 'Ask the user 1-4 structured clarifying questions and STOP. '
+          'The turn pauses until the user answers; their choices arrive as '
+          'this tool\'s result. Use it only when ambiguity genuinely blocks '
+          'the work — prefer it over guessing, but never ask what you can '
+          'infer. Offer concrete options. Call it at most once per turn and '
+          'do not combine it with other tool calls in the same message.',
+      parameters: {
+        'type': 'object',
+        'properties': {
+          'questions': {
+            'type': 'array',
+            'description': '1 to 4 questions.',
+            'items': {
+              'type': 'object',
+              'properties': {
+                'header': {
+                  'type': 'string',
+                  'description': 'Very short label (2-3 words) shown as the question title.',
+                },
+                'question': {
+                  'type': 'string',
+                  'description': 'The full question text.',
+                },
+                'multi_select': {
+                  'type': 'boolean',
+                  'description': 'Allow choosing several options. Default false.',
+                },
+                'options': {
+                  'type': 'array',
+                  'description': '2 to 4 concrete choices. The user can always add free text instead.',
+                  'items': {
+                    'type': 'object',
+                    'properties': {
+                      'label': {'type': 'string', 'description': 'Short choice text.'},
+                      'description': {
+                        'type': 'string',
+                        'description': 'Optional one-line explanation of this choice.',
+                      },
+                    },
+                    'required': ['label'],
+                  },
+                },
+              },
+              'required': ['header', 'question', 'options'],
+            },
+          },
+        },
+        'required': ['questions'],
       },
     ),
   ];
@@ -693,6 +998,7 @@ class PromptOptimizerAgent {
       } catch (e) {
         onLog?.call('Session persistence failed (continuing without it): $e');
       }
+      _cancelDanglingAskUser(session);
       for (int turn = 0; turn < maxTurns; turn++) {
         if (isCancelled?.call() ?? false) return;
 
@@ -779,7 +1085,15 @@ class PromptOptimizerAgent {
         // on cancellation the remaining calls get a synthetic "cancelled"
         // result, and a throwing tool becomes an error result instead of
         // escaping the loop.
+        //
+        // The ONE deliberate exception is a valid ask_user call: it stays
+        // dangling and the turn returns, because its result IS the user's
+        // answer. This is safe — nothing sends the history while it dangles
+        // (the turn has ended), and every path back into a turn pairs it
+        // first: answerAskUser, resolvePendingAskUserAsFreeText, or the
+        // self-healing guard at the top of runTurn.
         var cancelledMidBatch = false;
+        String? pendingAskCallId;
         for (final call in response.toolCalls) {
           Map<String, dynamic> result;
           if (cancelledMidBatch || (isCancelled?.call() ?? false)) {
@@ -788,6 +1102,30 @@ class PromptOptimizerAgent {
               'status': 'cancelled',
               'message': 'The user cancelled the task before this tool ran.',
             };
+          } else if (call.name == 'ask_user') {
+            if (pendingAskCallId != null) {
+              result = {
+                'status': 'error',
+                'message': 'Only one ask_user call per turn — this one was '
+                    'ignored. Fold extra questions into the pending call next time.',
+              };
+            } else {
+              final questions = AskUserQuestion.tryParse(call.arguments['questions']);
+              if (questions == null) {
+                result = {
+                  'status': 'error',
+                  'message': 'Invalid questions payload. Pass 1-4 questions, '
+                      'each with a non-empty header, a non-empty question, and '
+                      '2-4 options with non-empty labels.',
+                };
+              } else {
+                onLog?.call('Tool call: ask_user (${questions.length} question(s)) '
+                    '— waiting for the user.');
+                session._stageAskUser(call.id, questions);
+                pendingAskCallId = call.id;
+                continue; // Deliberately NO paired result — see comment above.
+              }
+            }
           } else {
             try {
               result = _executeTool(
@@ -831,6 +1169,10 @@ class PromptOptimizerAgent {
         // Stop only after the batch is fully paired and executed views are
         // attached, so the persisted history stays valid for the next turn.
         if (cancelledMidBatch) return;
+        // A staged question ends the turn: the model asked, now the user
+        // answers. The resumed turn (after answerAskUser or a free-text
+        // reply) gets a fresh maxTurns budget.
+        if (pendingAskCallId != null) return;
       }
       onLog?.call('Reached the maximum of $maxTurns agent turns — stopping.');
     } finally {
@@ -1162,6 +1504,10 @@ class PromptOptimizerAgent {
           for (final call in m.toolCalls) {
             if (call.name == 'submit_prompt') {
               buffer.writeln('SUBMITTED PROMPT: ${call.arguments['prompt'] ?? ''}');
+            } else if (call.name == 'ask_user') {
+              final questions = AskUserQuestion.tryParse(call.arguments['questions']);
+              buffer.writeln('USER WAS ASKED: '
+                  '${questions == null ? '(malformed questions)' : questions.map((q) => q.question).join(' | ')}');
             } else if (call.name == 'write_knowledge_file') {
               // The generic branch below would jsonEncode the whole proposed
               // file into the summarization prompt.
@@ -1415,7 +1761,7 @@ class PromptOptimizerAgent {
         return {
           'status': 'error',
           'message': 'Unknown tool "${call.name}". Available tools: '
-              'list_reference_images, view_image, submit_prompt'
+              'list_reference_images, view_image, submit_prompt, ask_user'
               '${knowledgeRoot != null ? ', list_knowledge_files, read_knowledge_file' : ''}'
               '${session.canWriteKnowledge ? ', write_knowledge_file' : ''}.',
         };
@@ -1465,6 +1811,76 @@ class PromptOptimizerAgent {
     session._resolveKbEdit(editId, KbEditState.rejected);
   }
 
+  /// Self-healing guard, run at the top of every turn: a dangling ask_user
+  /// call must never reach a provider (both endpoints reject an unpaired tool
+  /// call). The normal paths pair it before enqueueing a turn — the answer
+  /// card via [answerAskUser], or free text via
+  /// [resolvePendingAskUserAsFreeText] — so a turn starting while one is still
+  /// pending means some other path got here (e.g. Retry on an old error).
+  /// Cancel the question so the history is valid again.
+  static void _cancelDanglingAskUser(PromptOptimizerSession session) {
+    final dangling = session.pendingAskUser;
+    if (dangling == null) return;
+    session.history.add(LLMMessage(
+      role: LLMRole.tool,
+      content: jsonEncode({
+        'status': 'cancelled',
+        'message': 'The question was not answered.',
+      }),
+      toolCallId: dangling.callId,
+      toolName: 'ask_user',
+    ));
+    session._resolveAskUser(dangling.callId, AskUserState.dismissed);
+  }
+
+  @visibleForTesting
+  static void cancelDanglingAskUserForTest(PromptOptimizerSession session) =>
+      _cancelDanglingAskUser(session);
+
+  /// Pairs the pending ask_user call with the user's structured answers and
+  /// flips the card. Does NOT run the model — the caller re-enqueues a
+  /// promptRefine task. No-ops when [callId] is not the pending call (same
+  /// idempotence contract as [rejectStagedKbEdit]).
+  static void answerAskUser({
+    required PromptOptimizerSession session,
+    required String callId,
+    required List<AskUserAnswer> answers,
+  }) {
+    if (session.pendingAskUser?.callId != callId) return;
+    session.history.add(LLMMessage(
+      role: LLMRole.tool,
+      content: jsonEncode({
+        'status': 'ok',
+        'answers': [for (final a in answers) a.toJson()],
+      }),
+      toolCallId: callId,
+      toolName: 'ask_user',
+    ));
+    session._resolveAskUser(callId, AskUserState.answered, answers: answers);
+  }
+
+  /// Pairs the pending ask_user call with a "user answered in free text"
+  /// note. Called by the send path before appending the user turn, so typing
+  /// into the normal input box always works as an escape hatch while a
+  /// question is pending.
+  static void resolvePendingAskUserAsFreeText({
+    required PromptOptimizerSession session,
+    required String callId,
+  }) {
+    if (session.pendingAskUser?.callId != callId) return;
+    session.history.add(LLMMessage(
+      role: LLMRole.tool,
+      content: jsonEncode({
+        'status': 'ok',
+        'note': 'The user replied in free text instead of choosing options — '
+            'see the user message that follows.',
+      }),
+      toolCallId: callId,
+      toolName: 'ask_user',
+    ));
+    session._resolveAskUser(callId, AskUserState.dismissed);
+  }
+
   static String _buildSystemPrompt(
     String? template,
     int referenceImageCount,
@@ -1494,12 +1910,15 @@ class PromptOptimizerAgent {
         '- view_image: look at one reference image before relying on it.\n'
         '- submit_prompt: deliver an optimized prompt. This is the ONLY way to '
         'deliver a result — never paste the final prompt as plain chat text.\n'
+        '- ask_user: ask up to 4 structured questions with concrete options.\n'
         'Workflow:\n'
         '$viewStep'
         '2. Call submit_prompt with the complete optimized prompt (plus a '
         'short note describing what you changed).\n'
-        '3. Afterwards you may reply with a brief comment, or ask one '
-        'clarifying question when the request is too ambiguous to optimize.\n'
+        '3. When the request is too ambiguous to optimize, ask via ask_user '
+        '(structured options, at most once per turn) instead of a plain-text '
+        'question — but never ask about details you can reasonably infer. '
+        'Afterwards you may also reply with a brief comment.\n'
         'The user may reply with follow-up adjustments — deliver every '
         'revision through submit_prompt again, always with the full prompt.';
   }
@@ -1535,6 +1954,7 @@ class PromptOptimizerAgent {
         'images ($referenceImageCount available).\n'
         '- submit_prompt: deliver a prompt. This is the ONLY way to deliver a '
         'result — never paste the final prompt as plain chat text.\n'
+        '- ask_user: ask up to 4 structured questions with concrete options.\n'
         'Workflow:\n'
         '1. Route with the file map: read ONLY the files it points you to for '
         'this request, plus any whose stated condition the request meets, plus '
@@ -1545,8 +1965,10 @@ class PromptOptimizerAgent {
         'prescribe — never invent your own, and never fabricate '
         'character/design details the user or the references did not provide.\n'
         '3. Deliver via submit_prompt (with a short note on choices made). '
-        'Ask one clarifying question instead, when the request is too '
-        'ambiguous to proceed.\n'
+        'When the request is too ambiguous to proceed, ask via ask_user '
+        '(structured options, at most once per turn) instead of a plain-text '
+        'question — but never ask about details the knowledge base or the '
+        'references already settle.\n'
         'The user may reply with follow-up adjustments — apply the knowledge '
         'base rules again and deliver every revision through submit_prompt '
         'with the full prompt.';
@@ -1584,6 +2006,9 @@ class PromptOptimizerAgent {
         '- list_reference_images / view_image: inspect the user\'s reference '
         'images ($referenceImageCount available).\n'
         '- submit_prompt: only if the user also asks for an actual prompt.\n'
+        '- ask_user: ask up to 4 structured questions with concrete options — '
+        'use it (at most once per turn) when the request is too ambiguous to '
+        'proceed, instead of a plain-text question.\n'
         'Workflow:\n'
         '1. Use the file map to locate the files the request concerns, and read '
         'them. Read only what you need — do NOT sweep the whole knowledge base.\n'

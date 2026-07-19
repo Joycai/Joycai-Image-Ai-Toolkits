@@ -2267,6 +2267,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String kbScaffoldFailed(String error) {
     return '创建知识库失败：$error';
   }
+
+  @override
+  String get optAskUserTitle => '助手需要确认几个问题';
+
+  @override
+  String get optAskUserMultiHint => '可多选';
+
+  @override
+  String get optAskUserOtherHint => '其他 / 补充说明...';
+
+  @override
+  String get optAskUserConfirm => '发送回答';
+
+  @override
+  String get optAskUserAnswered => '已回答';
+
+  @override
+  String get optAskUserDismissed => '已在对话中继续';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4520,4 +4538,22 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String kbScaffoldFailed(String error) {
     return '建立知識庫失敗：$error';
   }
+
+  @override
+  String get optAskUserTitle => '助手需要確認幾個問題';
+
+  @override
+  String get optAskUserMultiHint => '可複選';
+
+  @override
+  String get optAskUserOtherHint => '其他 / 補充說明...';
+
+  @override
+  String get optAskUserConfirm => '送出回答';
+
+  @override
+  String get optAskUserAnswered => '已回答';
+
+  @override
+  String get optAskUserDismissed => '已在對話中繼續';
 }
