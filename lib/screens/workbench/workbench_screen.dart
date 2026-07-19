@@ -205,9 +205,47 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       }
     }
 
+    // Free text while a question card is pending answers it: pair the
+    // dangling ask_user call first so the history the turn sends is valid,
+    // then let the reply flow in as a normal user turn.
+    final pendingAsk = session.pendingAskUser;
+    if (pendingAsk != null) {
+      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
+        session: session,
+        callId: pendingAsk.callId,
+      );
+    }
+
     session.addUserTurn(text);
     _optInputCtrl.clear();
 
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  /// Sends the structured answers of an ask_user card and resumes the agent.
+  Future<void> _handleAskUserAnswer(String callId, List<AskUserAnswer> answers) async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+    if (session.isRunning) return;
+
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      return;
+    }
+    if (session.usesKnowledgeBase) {
+      await _refreshKbStatus();
+      if (_kbStatus != KbStatus.ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
+          );
+        }
+        return;
+      }
+    }
+
+    PromptOptimizerAgent.answerAskUser(session: session, callId: callId, answers: answers);
     await _enqueueAssistantTurn(workbenchUIState, session);
   }
 
@@ -722,6 +760,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                               onApplyPrompt: _handleOptimizerApply,
                               onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
                               onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
+                              onAnswerAskUser: _handleAskUserAnswer,
                               isBusy: isBusy,
                             ),
                     ),

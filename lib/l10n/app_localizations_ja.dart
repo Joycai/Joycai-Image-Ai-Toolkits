@@ -2283,4 +2283,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String kbScaffoldFailed(String error) {
     return 'ナレッジベースを作成できませんでした：$error';
   }
+
+  @override
+  String get optAskUserTitle => 'アシスタントからの確認事項';
+
+  @override
+  String get optAskUserMultiHint => '複数選択可';
+
+  @override
+  String get optAskUserOtherHint => 'その他 / 補足...';
+
+  @override
+  String get optAskUserConfirm => '回答を送信';
+
+  @override
+  String get optAskUserAnswered => '回答済み';
+
+  @override
+  String get optAskUserDismissed => 'チャットで継続';
 }

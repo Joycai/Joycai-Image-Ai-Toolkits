@@ -87,6 +87,16 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    derived ratio trigger would fire on every single turn.
 7. **An oversized system prompt warns, it does not throw.** The window is a
    preset off a slider; a hard failure line would break setups that work today.
+8. **Every tool call gets a paired result before the turn ends — except a valid
+   `ask_user` call, which is the *one* deliberate exception.** Its result IS the
+   user's answer, so the turn returns with the call dangling and the pending
+   state is derived from that dangling call (invariant 4's philosophy:
+   `pendingAskUser` is a history scan, never a flag). This is safe only because
+   nothing sends the history while it dangles, and every path back into a turn
+   pairs it first: `answerAskUser`, `resolvePendingAskUserAsFreeText` (free text
+   typed while pending), or the self-healing cancel guard at the top of
+   `runTurn`. Add a new way to start a turn and skip that guard, and the first
+   request 400s on both providers.
 
 ## Accepted limits
 

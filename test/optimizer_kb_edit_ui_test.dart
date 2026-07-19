@@ -49,6 +49,7 @@ void main() {
             onApplyPrompt: (_) {},
             onApplyKbEdit: onApply ?? (_) {},
             onRejectKbEdit: onReject ?? (_) {},
+            onAnswerAskUser: (_, _) {},
             isBusy: false,
           ),
         ),

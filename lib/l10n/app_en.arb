@@ -1188,5 +1188,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "optAskUserTitle": "The assistant has a question",
+  "optAskUserMultiHint": "Select all that apply",
+  "optAskUserOtherHint": "Other / add details...",
+  "optAskUserConfirm": "Send answers",
+  "optAskUserAnswered": "Answered",
+  "optAskUserDismissed": "Continued in chat"
 }

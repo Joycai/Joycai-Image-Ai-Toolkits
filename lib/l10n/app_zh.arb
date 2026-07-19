@@ -1174,5 +1174,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "optAskUserTitle": "助手需要确认几个问题",
+  "optAskUserMultiHint": "可多选",
+  "optAskUserOtherHint": "其他 / 补充说明...",
+  "optAskUserConfirm": "发送回答",
+  "optAskUserAnswered": "已回答",
+  "optAskUserDismissed": "已在对话中继续"
 }

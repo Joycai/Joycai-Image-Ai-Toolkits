@@ -1045,5 +1045,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "optAskUserTitle": "助手需要確認幾個問題",
+  "optAskUserMultiHint": "可複選",
+  "optAskUserOtherHint": "其他 / 補充說明...",
+  "optAskUserConfirm": "送出回答",
+  "optAskUserAnswered": "已回答",
+  "optAskUserDismissed": "已在對話中繼續"
 }

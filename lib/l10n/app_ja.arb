@@ -1045,5 +1045,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "optAskUserTitle": "アシスタントからの確認事項",
+  "optAskUserMultiHint": "複数選択可",
+  "optAskUserOtherHint": "その他 / 補足...",
+  "optAskUserConfirm": "回答を送信",
+  "optAskUserAnswered": "回答済み",
+  "optAskUserDismissed": "チャットで継続"
 }
