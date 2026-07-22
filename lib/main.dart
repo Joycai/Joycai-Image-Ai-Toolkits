@@ -79,7 +79,6 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
-      debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       locale: locale,
       theme: buildAppTheme(
