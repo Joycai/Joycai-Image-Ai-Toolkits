@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -126,156 +127,165 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
     return Dialog.fullscreen(
       backgroundColor: Colors.black,
-      child: ExcludeSemantics(
-        child: Stack(
-          children: [
-            // PageView for Main Content
-            GestureDetector(
-              onTap: () => setState(() => _showControls = !_showControls),
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: images.length,
-                onPageChanged: (index) => workbenchUIState.setActivePreview(index),
-                itemBuilder: (context, index) {
-                  final path = images[index].path;
-                  final handler = PreviewRegistry.resolve(path);
-                  return Center(
-                    child: handler.buildContent(
-                      context,
-                      path: path,
-                      isActive: index == activeIndex,
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Custom Top Toolbar
-            if (_showControls)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.black.withAlpha(180), Colors.transparent],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): _prevImage,
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () => _nextImage(images.length),
+        },
+        child: Focus(
+          autofocus: true,
+          child: ExcludeSemantics(
+            child: Stack(
+              children: [
+                // PageView for Main Content
+                GestureDetector(
+                  onTap: () => setState(() => _showControls = !_showControls),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: images.length,
+                    onPageChanged: (index) => workbenchUIState.setActivePreview(index),
+                    itemBuilder: (context, index) {
+                      final path = images[index].path;
+                      final handler = PreviewRegistry.resolve(path);
+                      return Center(
+                        child: handler.buildContent(
+                          context,
+                          path: path,
+                          isActive: index == activeIndex,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                activeFile.name,
-                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '${activeIndex + 1} / ${images.length}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 11),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.save_alt, color: Colors.white),
-                          tooltip: l10n.save,
-                          onPressed: () => _saveFile(activeFile.path, activeFile.name, l10n),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.share_outlined, color: Colors.white),
-                          tooltip: l10n.share,
-                          onPressed: () => _shareFile(activeFile, l10n),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
-              ),
 
-            // Side Navigation Buttons (Desktop/Tablet Only)
-            if (_showControls && !Responsive.isMobile(context)) ...[
-              if (activeIndex > 0)
-                Positioned(
-                  left: 16,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _buildNavButton(Icons.chevron_left, _prevImage),
-                  ),
-                ),
-              if (activeIndex < images.length - 1)
-                Positioned(
-                  right: 16,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _buildNavButton(Icons.chevron_right, () => _nextImage(images.length)),
-                  ),
-                ),
-            ],
-
-            // Bottom Thumbnail Strip
-            if (_showControls)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 110,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Colors.black.withAlpha(180), Colors.transparent],
-                    ),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: images.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final isSelected = index == activeIndex;
-                        final path = images[index].path;
-                        return GestureDetector(
-                          onTap: () {
-                            _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                          },
-                          child: Container(
-                            width: 60,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? colorScheme.primary : Colors.white24,
-                                width: isSelected ? 3 : 1,
+                // Custom Top Toolbar
+                if (_showControls)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.black.withAlpha(180), Colors.transparent],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    activeFile.name,
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    '${activeIndex + 1} / ${images.length}',
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                  ),
+                                ],
                               ),
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: PreviewRegistry.resolve(path).buildThumbnail(context, path: path),
-                          ),
-                        );
-                      },
+                            IconButton(
+                              icon: const Icon(Icons.save_alt, color: Colors.white),
+                              tooltip: l10n.save,
+                              onPressed: () => _saveFile(activeFile.path, activeFile.name, l10n),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.share_outlined, color: Colors.white),
+                              tooltip: l10n.share,
+                              onPressed: () => _shareFile(activeFile, l10n),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
+
+                // Side Navigation Buttons (Desktop/Tablet Only)
+                if (_showControls && !Responsive.isMobile(context)) ...[
+                  if (activeIndex > 0)
+                    Positioned(
+                      left: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: _buildNavButton(Icons.chevron_left, _prevImage),
+                      ),
+                    ),
+                  if (activeIndex < images.length - 1)
+                    Positioned(
+                      right: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: _buildNavButton(Icons.chevron_right, () => _nextImage(images.length)),
+                      ),
+                    ),
+                ],
+
+                // Bottom Thumbnail Strip
+                if (_showControls)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 110,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [Colors.black.withAlpha(180), Colors.transparent],
+                        ),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: images.length,
+                          separatorBuilder: (context, index) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final isSelected = index == activeIndex;
+                            final path = images[index].path;
+                            return GestureDetector(
+                              onTap: () {
+                                _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                              },
+                              child: Container(
+                                width: 60,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isSelected ? colorScheme.primary : Colors.white24,
+                                    width: isSelected ? 3 : 1,
+                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: PreviewRegistry.resolve(path).buildThumbnail(context, path: path),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
