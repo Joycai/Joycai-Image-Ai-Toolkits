@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
@@ -15,6 +16,7 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
@@ -36,6 +38,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   static const double _maxSidebarWidth = 420;
 
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   double _sidebarWidth = 260;
 
   @override
@@ -55,7 +58,63 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Screen-level shortcuts. Implemented with [Focus.onKeyEvent] rather than
+  /// [CallbackShortcuts] so keys can conditionally fall through: while the
+  /// search field has focus, Ctrl+A/Enter must keep their text-editing
+  /// behavior, which requires returning [KeyEventResult.ignored].
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final state = Provider.of<AppState>(context, listen: false).fileBrowserState;
+    final key = event.logicalKey;
+    final hw = HardwareKeyboard.instance;
+    final isCtrl = Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
+
+    if (isCtrl && key == LogicalKeyboardKey.keyF) {
+      _searchFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f5 || (isCtrl && key == LogicalKeyboardKey.keyR)) {
+      state.refresh();
+      return KeyEventResult.handled;
+    }
+
+    if (_searchFocusNode.hasFocus) {
+      if (key == LogicalKeyboardKey.escape) {
+        _searchController.clear();
+        state.setSearchQuery('');
+        _searchFocusNode.unfocus();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
+    if (isCtrl && key == LogicalKeyboardKey.keyA) {
+      state.selectAll();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && state.selectedFiles.isNotEmpty) {
+      state.clearSelection();
+      return KeyEventResult.handled;
+    }
+    if ((key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) &&
+        state.selectedFiles.isNotEmpty) {
+      _openWithPreview(context, state.selectedFiles.first, state);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f2 && state.selectedFiles.length == 1) {
+      showFileRenameDialog(
+        context: context,
+        filePath: state.selectedFiles.first.path,
+        onSuccess: () => state.refresh(),
+      );
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -189,59 +248,63 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainer,
-      drawer: isNarrow
-          ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
-          : null,
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            if (!isNarrow) ...[
-              PanelCard(
-                width: _sidebarWidth,
-                child: const UnifiedSidebar(useFileBrowserState: true),
-              ),
-              PanelResizer(
-                onDrag: (dx) => setState(() {
-                  _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
-                }),
-                onDragEnd: () => DatabaseService()
-                    .saveSetting('browser_sidebar_width', _sidebarWidth.round().toString()),
-              ),
-            ],
-            Expanded(
-              child: PanelCard(
-                child: Column(
-                  children: [
-                    header,
-                    BrowserFilterBar(state: fileBrowserState),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          fileBrowserState.viewMode == BrowserViewMode.grid
-                              ? _buildFileGrid(context, fileBrowserState)
-                              : _buildFileListView(context, fileBrowserState),
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 16,
-                            child: Center(
-                              child: BrowserSelectionBar(
-                                state: fileBrowserState,
-                                onAiRename: () => _showAiRenameDialog(context),
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
+        backgroundColor: colorScheme.surfaceContainer,
+        drawer: isNarrow
+            ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
+            : null,
+        body: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              if (!isNarrow) ...[
+                PanelCard(
+                  width: _sidebarWidth,
+                  child: const UnifiedSidebar(useFileBrowserState: true),
+                ),
+                PanelResizer(
+                  onDrag: (dx) => setState(() {
+                    _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                  }),
+                  onDragEnd: () => DatabaseService()
+                      .saveSetting('browser_sidebar_width', _sidebarWidth.round().toString()),
+                ),
+              ],
+              Expanded(
+                child: PanelCard(
+                  child: Column(
+                    children: [
+                      header,
+                      BrowserFilterBar(state: fileBrowserState),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            fileBrowserState.viewMode == BrowserViewMode.grid
+                                ? _buildFileGrid(context, fileBrowserState)
+                                : _buildFileListView(context, fileBrowserState),
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 16,
+                              child: Center(
+                                child: BrowserSelectionBar(
+                                  state: fileBrowserState,
+                                  onAiRename: () => _showAiRenameDialog(context),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -282,6 +345,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       height: 40,
       child: TextField(
         controller: _searchController,
+        focusNode: _searchFocusNode,
         onChanged: (v) => state.setSearchQuery(v),
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
