@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../core/constants.dart';
@@ -49,12 +50,45 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   Timer? _hideTimer;
   bool _wasPlaying = false;
 
+  // Claims keyboard focus while this page is active so Space toggles
+  // play/pause. Unhandled keys (arrows, Home/End, Esc) bubble up to the
+  // preview dialog's own shortcuts.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'videoPreviewContent');
+
   @override
   void initState() {
     super.initState();
     if (widget.isActive) {
       _initPlayer();
+      _claimFocus();
     }
+  }
+
+  /// Post-frame so it wins over the dialog's `Focus(autofocus: true)`, which
+  /// resolves during the same frame this page first mounts.
+  void _claimFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.isActive) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.space) {
+      return KeyEventResult.ignored;
+    }
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return KeyEventResult.ignored;
+    }
+    _onUserInteraction();
+    if (controller.value.isPlaying) {
+      controller.pause();
+    } else {
+      controller.play();
+    }
+    return KeyEventResult.handled;
   }
 
   void _onControllerPlayStatusChanged() {
@@ -149,6 +183,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
       _errorMessage = null;
       if (widget.isActive) {
         _initPlayer();
+        _claimFocus();
       } else {
         setState(() {});
       }
@@ -158,11 +193,22 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
   @override
   void dispose() {
     _disposePlayer();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // The Focus node wraps every state (loading/error/ready) so it stays
+    // attached across player lifecycle changes.
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     if (_hasError) {
       return Center(
         child: Column(
