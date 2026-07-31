@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -113,6 +114,53 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _wizardShown = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Ctrl+1..8 (Cmd on macOS) jumps to the corresponding nav destination.
+  // Registered as a HardwareKeyboard handler rather than a Focus/Shortcuts
+  // widget so it works no matter where focus currently sits (screens swap in
+  // and out and may leave focus on a scope outside any screen subtree).
+  // Order must match _getNavDefinitions.
+  static const List<LogicalKeyboardKey> _navDigitKeys = [
+    LogicalKeyboardKey.digit1,
+    LogicalKeyboardKey.digit2,
+    LogicalKeyboardKey.digit3,
+    LogicalKeyboardKey.digit4,
+    LogicalKeyboardKey.digit5,
+    LogicalKeyboardKey.digit6,
+    LogicalKeyboardKey.digit7,
+    LogicalKeyboardKey.digit8,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleGlobalKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalKey);
+    super.dispose();
+  }
+
+  bool _handleGlobalKey(KeyEvent event) {
+    if (event is! KeyDownEvent || !mounted) return false;
+    if (Platform.isAndroid || Platform.isIOS) return false;
+
+    final hw = HardwareKeyboard.instance;
+    final isCtrl = Platform.isMacOS ? hw.isMetaPressed : hw.isControlPressed;
+    if (!isCtrl) return false;
+
+    final index = _navDigitKeys.indexOf(event.logicalKey);
+    if (index == -1) return false;
+
+    // Only while this screen is frontmost — never underneath a dialog, the
+    // setup wizard, or any other pushed route.
+    if (ModalRoute.of(context)?.isCurrent != true) return false;
+
+    Provider.of<AppState>(context, listen: false).navigateToScreen(index);
+    return true;
+  }
 
   @override
   void didChangeDependencies() {

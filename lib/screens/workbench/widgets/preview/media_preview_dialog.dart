@@ -58,6 +58,13 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     }
   }
 
+  void _jumpToPage(int index) {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    if (workbenchUIState.activePreviewIndex != index) {
+      _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    }
+  }
+
   Future<void> _saveFile(String path, String fileName, AppLocalizations l10n) async {
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
@@ -131,6 +138,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
         bindings: {
           const SingleActivator(LogicalKeyboardKey.arrowLeft): _prevImage,
           const SingleActivator(LogicalKeyboardKey.arrowRight): () => _nextImage(images.length),
+          const SingleActivator(LogicalKeyboardKey.home): () => _jumpToPage(0),
+          const SingleActivator(LogicalKeyboardKey.end): () => _jumpToPage(images.length - 1),
+          // Space reaches here only when the active page did not consume it —
+          // the video handler binds Space to play/pause on its own focus node.
+          const SingleActivator(LogicalKeyboardKey.space): () =>
+              setState(() => _showControls = !_showControls),
         },
         child: Focus(
           autofocus: true,
