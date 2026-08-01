@@ -4,6 +4,38 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
+namespace {
+
+// The engine's Windows accessibility bridge is constructed lazily, the first
+// time a client asks the Flutter view for an accessibility object via
+// WM_GETOBJECT. From then on every semantics update is mirrored into a
+// ui::AXTree, and that mirror desyncs when an overlay route (dropdown menu,
+// tooltip) is torn down while its dismiss animation is still running, or when
+// the semantics tree is rebuilt during a resize. The symptom is a stream of
+//   Failed to update ui::AXTree, error: N will not be in the tree and is not
+//   the new root
+// followed, often, by the process going down. Upstream: flutter/flutter#182444
+// and #100610, still open as of Flutter 3.44.
+//
+// No screen reader is needed to trigger it: launching from an IDE that loads
+// the Java Access Bridge (IntelliJ IDEA / Android Studio) is enough for
+// something to probe the window, which is why it shows up in development.
+//
+// Swallowing WM_GETOBJECT on the Flutter view means the bridge is never built,
+// so there is no AXTree to desync. Trade-off: screen readers cannot introspect
+// the Flutter content. Remove this once the upstream fix lands.
+WNDPROC g_original_view_proc = nullptr;
+
+LRESULT CALLBACK ViewWndProc(HWND hwnd, UINT message, WPARAM wparam,
+                             LPARAM lparam) {
+  if (message == WM_GETOBJECT) {
+    return 0;
+  }
+  return CallWindowProc(g_original_view_proc, hwnd, message, wparam, lparam);
+}
+
+}  // namespace
+
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
@@ -25,7 +57,13 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
-  SetChildContent(flutter_controller_->view()->GetNativeWindow());
+
+  HWND view_window = flutter_controller_->view()->GetNativeWindow();
+  SetChildContent(view_window);
+
+  // See ViewWndProc above: keep the accessibility bridge from ever activating.
+  g_original_view_proc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(
+      view_window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(ViewWndProc)));
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
@@ -51,6 +89,13 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // Blocked on the view window too (see ViewWndProc). The engine also answers
+  // WM_GETOBJECT for the top-level window through HandleTopLevelWindowProc, so
+  // it has to be swallowed here as well, before the controller sees it.
+  if (message == WM_GETOBJECT) {
+    return 0;
+  }
+
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =
