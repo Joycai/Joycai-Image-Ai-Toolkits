@@ -1357,6 +1357,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantRetentionDesc => '超出数量的较旧提示词助手会话将被自动删除';
 
   @override
+  String get about => '关于';
+
+  @override
+  String aboutVersion(Object version) {
+    return '版本 $version';
+  }
+
+  @override
+  String get aboutGithubRepo => 'GitHub 仓库';
+
+  @override
+  String get aboutViewSource => '查看源代码与发布版本';
+
+  @override
+  String get aboutLicense => '许可协议';
+
+  @override
+  String aboutCopyright(Object year, Object holder) {
+    return '版权所有 © $year $holder，基于 MIT 许可协议发布。';
+  }
+
+  @override
   String get tasks => '任务';
 
   @override
@@ -3636,6 +3658,28 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get assistantRetentionDesc => '超出數量的較舊提示詞助手對話將被自動刪除';
+
+  @override
+  String get about => '關於';
+
+  @override
+  String aboutVersion(Object version) {
+    return '版本 $version';
+  }
+
+  @override
+  String get aboutGithubRepo => 'GitHub 儲存庫';
+
+  @override
+  String get aboutViewSource => '查看原始碼與發行版本';
+
+  @override
+  String get aboutLicense => '授權條款';
+
+  @override
+  String aboutCopyright(Object year, Object holder) {
+    return '版權所有 © $year $holder，依 MIT 授權條款發布。';
+  }
 
   @override
   String get tasks => '任務';

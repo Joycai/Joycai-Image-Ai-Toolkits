@@ -1369,6 +1369,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get assistantRetentionDesc => 'この数を超えた古いプロンプトアシスタントの会話は自動的に削除されます';
 
   @override
+  String get about => 'アプリについて';
+
+  @override
+  String aboutVersion(Object version) {
+    return 'バージョン $version';
+  }
+
+  @override
+  String get aboutGithubRepo => 'GitHub リポジトリ';
+
+  @override
+  String get aboutViewSource => 'ソースコードとリリースを表示';
+
+  @override
+  String get aboutLicense => 'ライセンス';
+
+  @override
+  String aboutCopyright(Object year, Object holder) {
+    return 'Copyright © $year $holder. MITライセンスの下で公開されています。';
+  }
+
+  @override
   String get tasks => 'タスク';
 
   @override

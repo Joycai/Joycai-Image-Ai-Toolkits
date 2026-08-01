@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/panel_resizer.dart';
+import 'widgets/about_section.dart';
 import 'widgets/appearance_section.dart';
 import 'widgets/application_section.dart';
 import 'widgets/connectivity_section.dart';
 import 'widgets/data_section.dart';
 
-enum SettingsCategory { appearance, connectivity, application, data }
+enum SettingsCategory { appearance, connectivity, application, data, about }
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -37,6 +38,8 @@ IconData _categoryIcon(SettingsCategory category) {
       return Icons.settings_applications_outlined;
     case SettingsCategory.data:
       return Icons.storage_outlined;
+    case SettingsCategory.about:
+      return Icons.info_outline;
   }
 }
 
@@ -50,6 +53,8 @@ Color _categoryColor(SettingsCategory category) {
       return Colors.orange;
     case SettingsCategory.data:
       return Colors.purple;
+    case SettingsCategory.about:
+      return Colors.teal;
   }
 }
 
@@ -63,6 +68,8 @@ String _categoryLabel(SettingsCategory category, AppLocalizations l10n) {
       return l10n.application;
     case SettingsCategory.data:
       return l10n.dataManagement;
+    case SettingsCategory.about:
+      return l10n.about;
   }
 }
 
@@ -84,6 +91,7 @@ class _SettingsMobileView extends StatelessWidget {
               _buildCategoryTile(context, SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity, Colors.green),
               _buildCategoryTile(context, SettingsCategory.application, Icons.settings_applications_outlined, l10n.application, Colors.orange),
               _buildCategoryTile(context, SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement, Colors.purple),
+              _buildCategoryTile(context, SettingsCategory.about, Icons.info_outline, l10n.about, Colors.teal),
             ]),
           ),
         ],
@@ -133,6 +141,8 @@ class _SettingsDetailPage extends StatelessWidget {
         content = const ApplicationSection();
       case SettingsCategory.data:
         content = const DataSection(isMobile: true);
+      case SettingsCategory.about:
+        content = const AboutSection();
     }
 
     return Scaffold(
@@ -265,6 +275,8 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
         content = const ApplicationSection();
       case SettingsCategory.data:
         content = const DataSection();
+      case SettingsCategory.about:
+        content = const AboutSection();
     }
 
     return Column(
