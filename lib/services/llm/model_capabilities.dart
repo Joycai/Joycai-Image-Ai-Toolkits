@@ -7,7 +7,11 @@ import 'model_family.dart';
 /// dialog also lets the user type any WxH that satisfies the param's
 /// [ParamSpec.customValidator]. Used by gpt-image-2, where OpenAI accepts any
 /// pixel dimensions meeting four numeric constraints.
-enum ParamControl { dropdown, segmented, customSize }
+///
+/// `slider` is a continuous-range integer control bounded by [ParamSpec.min]
+/// / [ParamSpec.max] rather than a discrete [ParamSpec.options] list. Used by
+/// grok-imagine-video's duration parameter (1–15s).
+enum ParamControl { dropdown, segmented, customSize, slider }
 
 /// A single selectable option for a parameter.
 ///
@@ -40,6 +44,11 @@ class ParamSpec {
   /// stays `const`-constructible.
   final bool Function(String value)? customValidator;
 
+  /// Inclusive bounds for [ParamControl.slider]. Unused by every other
+  /// control.
+  final int? min;
+  final int? max;
+
   const ParamSpec({
     required this.key,
     required this.labelKey,
@@ -47,6 +56,8 @@ class ParamSpec {
     required this.options,
     required this.defaultValue,
     this.customValidator,
+    this.min,
+    this.max,
   });
 
   bool isValid(String? value) {
@@ -92,6 +103,17 @@ class SizeRuleResult {
   final String labelKey;
   final bool passes;
   const SizeRuleResult(this.labelKey, this.passes);
+}
+
+// ---------------------------------------------------------------------------
+// grok-imagine-video-1.5 duration slider (1–15s)
+// ---------------------------------------------------------------------------
+
+/// Validates the `seconds` slider value for grok-imagine-video-1.5 — an
+/// integer in xAI's supported 1–15s range.
+bool isValidGrokImagineVideoDuration(String value) {
+  final n = int.tryParse(value);
+  return n != null && n >= 1 && n <= 15;
 }
 
 List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
@@ -161,6 +183,13 @@ class ModelCapabilities {
     if (family == ModelFamily.geminiImage) {
       if (id.contains('gemini-3.1-flash-image')) return _geminiImageV2;
       if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
+    }
+
+    // grok-imagine-video-1.5 exposes a different parameter set (1:1 / 4:3 /
+    // 3:2 aspect ratios, 480p–1080p resolution, a 1–15s duration slider) than
+    // the generic Sora-style openaiVideo table.
+    if (family == ModelFamily.openaiVideo && id.contains('grok-imagine-video')) {
+      return _grokImagineVideo;
     }
 
     return forFamily(family);
@@ -392,6 +421,59 @@ class ModelCapabilities {
           ParamOption('standard'),
           ParamOption('high'),
         ],
+      ),
+    ],
+  );
+
+  /// grok-imagine-video-1.5 — xAI's native async video surface
+  /// (`/videos/generations`, see `_submitXaiVideo`) on xAI channels, or the
+  /// NewAPI `/v1/videos` relay otherwise. Overrides the shared Veo
+  /// resolution/aspect-ratio dropdowns (the video panel hides those and
+  /// renders these instead) since xAI's option set is different:
+  ///  * `aspectRatio` — 1:1, 16:9/9:16, 4:3/3:4, 3:2/2:3, or unset (skips the
+  ///    `aspect_ratio` field entirely and lets the model choose).
+  ///  * `resolution` — 480p / 720p / 1080p.
+  ///  * `seconds` — a 1–15s duration slider (xAI's `duration` field).
+  static const _grokImagineVideo = ModelCapabilities(
+    isVideoGenerator: true,
+    maxReferenceImages: 7,
+    videoParams: [
+      ParamSpec(
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'not_set',
+        options: [
+          ParamOption('not_set'),
+          ParamOption('1:1'),
+          ParamOption('16:9'),
+          ParamOption('9:16'),
+          ParamOption('4:3'),
+          ParamOption('3:4'),
+          ParamOption('3:2'),
+          ParamOption('2:3'),
+        ],
+      ),
+      ParamSpec(
+        key: 'resolution',
+        labelKey: 'resolution',
+        control: ParamControl.segmented,
+        defaultValue: '720p',
+        options: [
+          ParamOption('480p'),
+          ParamOption('720p'),
+          ParamOption('1080p'),
+        ],
+      ),
+      ParamSpec(
+        key: 'seconds',
+        labelKey: 'videoSeconds',
+        control: ParamControl.slider,
+        defaultValue: '6',
+        options: [],
+        min: 1,
+        max: 15,
+        customValidator: isValidGrokImagineVideoDuration,
       ),
     ],
   );

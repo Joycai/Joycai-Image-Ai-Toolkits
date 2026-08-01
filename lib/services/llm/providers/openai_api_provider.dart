@@ -1180,6 +1180,11 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
 
   /// Map the per-model aspectRatio + resolution options onto a Sora-compatible
   /// `WxH` size string. Falls back to the upstream default if neither is set.
+  ///
+  /// Three-tier resolution ladder (480p / 720p / 1080p, defaulting to 720p
+  /// for anything unrecognized — e.g. the legacy Veo "4k" option) crossed
+  /// with the aspect ratios exposed across families, including
+  /// grok-imagine-video-1.5's 1:1 / 4:3 / 3:2 set.
   String? _resolveVideoSize(Map<String, dynamic>? options) {
     if (options == null) return null;
 
@@ -1192,21 +1197,23 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
     final aspect = options['aspectRatio']?.toString();
     final resolution = options['resolution']?.toString() ?? '720p';
 
-    final is1080 = resolution.contains('1080');
-    switch (aspect) {
-      case '16:9':
-        return is1080 ? '1920x1080' : '1280x720';
-      case '9:16':
-        return is1080 ? '1080x1920' : '720x1280';
-      case '1:1':
-        return is1080 ? '1024x1024' : '720x720';
-      case '3:2':
-        return is1080 ? '1620x1080' : '1080x720';
-      case '2:3':
-        return is1080 ? '1080x1620' : '720x1080';
-      default:
-        return null;
-    }
+    final tier = resolution.contains('1080')
+        ? '1080'
+        : resolution.contains('480')
+            ? '480'
+            : '720';
+
+    const sizes = {
+      '16:9': {'480': '854x480', '720': '1280x720', '1080': '1920x1080'},
+      '9:16': {'480': '480x854', '720': '720x1280', '1080': '1080x1920'},
+      '1:1': {'480': '480x480', '720': '720x720', '1080': '1080x1080'},
+      '4:3': {'480': '640x480', '720': '960x720', '1080': '1440x1080'},
+      '3:4': {'480': '480x640', '720': '720x960', '1080': '1080x1440'},
+      '3:2': {'480': '720x480', '720': '1080x720', '1080': '1620x1080'},
+      '2:3': {'480': '480x720', '720': '720x1080', '1080': '1080x1620'},
+    };
+
+    return sizes[aspect]?[tier];
   }
 
   String? _resolveSeconds(Map<String, dynamic>? options) {
