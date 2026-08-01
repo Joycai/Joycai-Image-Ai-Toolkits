@@ -1400,6 +1400,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Older prompt assistant conversations beyond this count are deleted automatically';
 
   @override
+  String get about => 'About';
+
+  @override
+  String aboutVersion(Object version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutGithubRepo => 'GitHub Repository';
+
+  @override
+  String get aboutViewSource => 'View source code and releases';
+
+  @override
+  String get aboutLicense => 'License';
+
+  @override
+  String aboutCopyright(Object year, Object holder) {
+    return 'Copyright © $year $holder. Released under the MIT License.';
+  }
+
+  @override
   String get tasks => 'Tasks';
 
   @override

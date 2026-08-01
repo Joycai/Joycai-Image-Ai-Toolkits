@@ -2663,6 +2663,42 @@ abstract class AppLocalizations {
   /// **'Older prompt assistant conversations beyond this count are deleted automatically'**
   String get assistantRetentionDesc;
 
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String aboutVersion(Object version);
+
+  /// No description provided for @aboutGithubRepo.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub Repository'**
+  String get aboutGithubRepo;
+
+  /// No description provided for @aboutViewSource.
+  ///
+  /// In en, this message translates to:
+  /// **'View source code and releases'**
+  String get aboutViewSource;
+
+  /// No description provided for @aboutLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get aboutLicense;
+
+  /// No description provided for @aboutCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright © {year} {holder}. Released under the MIT License.'**
+  String aboutCopyright(Object year, Object holder);
+
   /// No description provided for @tasks.
   ///
   /// In en, this message translates to:

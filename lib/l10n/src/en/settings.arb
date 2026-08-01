@@ -81,5 +81,22 @@
   "assistantContextRatio": "Assistant Summary Limit",
   "assistantContextRatioDesc": "The prompt assistant summarizes the conversation once it fills this share of the model's context window, freeing room to keep working. Only applies to models with a context window set.",
   "assistantRetention": "Assistant Conversations to Keep",
-  "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically"
+  "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically",
+  "about": "About",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {}
+    }
+  },
+  "aboutGithubRepo": "GitHub Repository",
+  "aboutViewSource": "View source code and releases",
+  "aboutLicense": "License",
+  "aboutCopyright": "Copyright © {year} {holder}. Released under the MIT License.",
+  "@aboutCopyright": {
+    "placeholders": {
+      "year": {},
+      "holder": {}
+    }
+  }
 }
