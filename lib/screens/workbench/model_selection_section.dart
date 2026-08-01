@@ -240,6 +240,10 @@ class ModelSelectionSection extends StatelessWidget {
           ),
         );
         break;
+      case ParamControl.slider:
+        // Video-only (grok-imagine-video's duration); no image family uses it.
+        control = const SizedBox.shrink();
+        break;
     }
 
     return Row(

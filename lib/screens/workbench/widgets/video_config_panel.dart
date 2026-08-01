@@ -278,6 +278,51 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       collapsedModelName = match?.modelName;
     }
 
+    // Some families (e.g. grok-imagine-video-1.5) declare their own
+    // aspectRatio/resolution videoParams with a different option set than
+    // the shared Veo dropdowns below — hide the shared control for whichever
+    // key that family overrides so the panel doesn't show two conflicting
+    // resolution/aspect-ratio pickers.
+    final selectedModel = selectedModelDbId == null
+        ? null
+        : videoModels.cast<LLMModel?>().firstWhere(
+            (m) => m?.id == selectedModelDbId,
+            orElse: () => null,
+          );
+    final caps = selectedModel == null
+        ? const ModelCapabilities()
+        : ModelCapabilities.forModel(selectedModel.modelId);
+    final overridesResolution = caps.videoParams.any((p) => p.key == 'resolution');
+    final overridesAspectRatio = caps.videoParams.any((p) => p.key == 'aspectRatio');
+
+    final sharedControls = <Widget>[
+      if (!overridesResolution)
+        Expanded(
+          child: DropdownButtonFormField<VeoResolution>(
+            decoration: InputDecoration(labelText: l10n.videoResolution, isDense: true),
+            initialValue: appState.lastVideoResolution,
+            items: VeoResolution.values.map((v) => DropdownMenuItem(
+              value: v,
+              child: Text(v.value),
+            )).toList(),
+            onChanged: (v) => appState.updateVideoConfig(resolution: v),
+          ),
+        ),
+      if (!overridesResolution && !overridesAspectRatio) const SizedBox(width: 12),
+      if (!overridesAspectRatio)
+        Expanded(
+          child: DropdownButtonFormField<VeoAspectRatio>(
+            decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
+            initialValue: appState.lastVideoAspectRatio,
+            items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
+              value: v,
+              child: Text(v.value),
+            )).toList(),
+            onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
+          ),
+        ),
+    ];
+
     return CollapsibleCard(
       title: l10n.modelSelection,
       subtitle: collapsedModelName,
@@ -313,37 +358,13 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               }
             },
           ),
-          const SizedBox(height: 16),
-          // Veo Resolution
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<VeoResolution>(
-                  decoration: InputDecoration(labelText: l10n.videoResolution, isDense: true),
-                  initialValue: appState.lastVideoResolution,
-                  items: VeoResolution.values.map((v) => DropdownMenuItem(      
-                    value: v,
-                    child: Text(v.value),
-                  )).toList(),
-                  onChanged: (v) => appState.updateVideoConfig(resolution: v),  
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<VeoAspectRatio>(
-                  decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
-                  initialValue: appState.lastVideoAspectRatio,
-                  items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
-                    value: v,
-                    child: Text(v.value),
-                  )).toList(),
-                  onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
-                ),
-              ),
-            ],
-          ),
-          // Per-model extras (seconds / quality for openaiVideo; nothing for
-          // Veo). Rebuilds when the user changes a value or switches model.
+          if (sharedControls.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Row(children: sharedControls),
+          ],
+          // Per-model extras (seconds / quality for openaiVideo; aspectRatio /
+          // resolution / seconds slider for grok-imagine-video-1.5; nothing
+          // for Veo). Rebuilds when the user changes a value or switches model.
           if (selectedModelDbId != null) ...[
             const SizedBox(height: 8),
             _buildVideoParamControls(l10n, videoModels, selectedModelDbId, appState),
@@ -440,6 +461,33 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // own resolution + aspect controls. Render a disabled placeholder
         // rather than silently throw if a future family opts in.
         return const SizedBox.shrink();
+      case ParamControl.slider:
+        final lo = spec.min ?? 1;
+        final hi = spec.max ?? 15;
+        final parsed = int.tryParse(current) ?? int.tryParse(spec.defaultValue) ?? lo;
+        final value = parsed < lo ? lo : (parsed > hi ? hi : parsed);
+        return Row(
+          children: [
+            Expanded(
+              child: Slider(
+                value: value.toDouble(),
+                min: lo.toDouble(),
+                max: hi.toDouble(),
+                divisions: hi - lo,
+                label: '${value}s',
+                onChanged: (v) => appState.setVideoParam(modelId, spec.key, v.round().toString()),
+              ),
+            ),
+            SizedBox(
+              width: 30,
+              child: Text(
+                '${value}s',
+                textAlign: TextAlign.end,
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+              ),
+            ),
+          ],
+        );
     }
   }
 
@@ -449,12 +497,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         return l10n.videoSeconds;
       case 'quality':
         return l10n.quality;
+      case 'aspectRatio':
+        return l10n.aspectRatio;
+      case 'resolution':
+        return l10n.resolution;
       default:
         return labelKey;
     }
   }
 
   String _videoOptionLabel(AppLocalizations l10n, String paramKey, String value) {
+    if (value == 'not_set') return l10n.optionAuto;
     if (paramKey == 'videoQuality') {
       switch (value) {
         case 'standard':
