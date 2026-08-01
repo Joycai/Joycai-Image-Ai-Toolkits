@@ -78,7 +78,7 @@ class MyApp extends StatelessWidget {
     final themeSeedColor = context.select<AppState, Color>((s) => s.themeSeedColor);
     final fontFamily = context.select<AppState, String?>((s) => s.themeFontFamily);
 
-    return MaterialApp(
+    final app = MaterialApp(
       onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
       themeMode: themeMode,
       locale: locale,
@@ -101,6 +101,22 @@ class MyApp extends StatelessWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       home: const MainNavigationScreen(),
     );
+
+    // Windows only: the engine's accessibility bridge mirrors every semantics
+    // update into a ui::AXTree, and that mirror desyncs when overlay routes
+    // (dropdown menus, tooltips) tear down mid-animation or when the tree is
+    // rebuilt during a resize -- it logs "Failed to update ui::AXTree" and can
+    // take the process down (flutter/flutter#182444, #100610). Keeping the
+    // semantics tree empty removes the updates that desync it. The runner also
+    // blocks WM_GETOBJECT so the bridge is never built in the first place; this
+    // is the belt to that pair of braces. Remove both once upstream is fixed.
+    //
+    // Deliberately not applied on Android/iOS, where TalkBack and VoiceOver
+    // need the semantics tree.
+    if (Platform.isWindows) {
+      return ExcludeSemantics(child: app);
+    }
+    return app;
   }
 }
 
