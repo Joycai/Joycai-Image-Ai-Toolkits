@@ -416,16 +416,14 @@ class GalleryState extends ChangeNotifier {
   }
 
   void addDroppedFiles(List<AppImage> files) {
-    for (var file in files) {
-      if (!droppedImages.any((img) => img.path == file.path)) {
-        droppedImages.add(file);
-      }
-    }
+    final existingPaths = droppedImages.map((img) => img.path).toSet();
+    final newFiles = files.where((file) => !existingPaths.contains(file.path));
+    droppedImages = [...droppedImages, ...newFiles];
     notifyListeners();
   }
 
   void clearDroppedImages() {
-    droppedImages.clear();
+    droppedImages = [];
     _cleanupSelection();
     notifyListeners();
   }
