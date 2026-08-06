@@ -74,10 +74,6 @@ flutter_launcher_icons:
     icon_size: 96 # min:48, max:256, default: 48
   macos:
     generate: true
-  web:
-    generate: false
-    background_color: "#hexcode"
-    theme_color: "#hexcode"
 
 msix_config:
   display_name: Joycai Image AI Toolkits
