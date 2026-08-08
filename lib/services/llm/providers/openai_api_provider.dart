@@ -15,6 +15,65 @@ import '../model_capabilities.dart';
 import '../model_discovery_service.dart';
 import '../model_family.dart';
 
+/// Recovers a `function.arguments` string that is several JSON objects
+/// concatenated back-to-back (e.g. `{}{"id": 1}`), which some relays emit —
+/// observed from a Claude-via-relay backend that prefixes real arguments
+/// with a stray empty-object placeholder. Plain [jsonDecode] rejects the
+/// trailing data, so this walks brace depth to split the string into
+/// top-level objects and merges them left-to-right (a later object's keys
+/// win). Returns null if the string isn't actually this shape.
+Map<String, dynamic>? _recoverConcatenatedJsonObjects(String raw) {
+  final objects = <Map<String, dynamic>>[];
+  int depth = 0;
+  int start = -1;
+  bool inString = false;
+  bool escapeNext = false;
+
+  for (int i = 0; i < raw.length; i++) {
+    final ch = raw[i];
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    if (inString) {
+      if (ch == '\\') {
+        escapeNext = true;
+      } else if (ch == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch == '"') {
+      inString = true;
+    } else if (ch == '{') {
+      if (depth == 0) start = i;
+      depth++;
+    } else if (ch == '}') {
+      depth--;
+      if (depth == 0 && start != -1) {
+        try {
+          final decoded = jsonDecode(raw.substring(start, i + 1));
+          if (decoded is Map<String, dynamic>) objects.add(decoded);
+        } catch (_) {
+          // Not a valid standalone object — give up on recovery entirely
+          // rather than silently dropping part of the arguments.
+          return null;
+        }
+        start = -1;
+      } else if (depth < 0) {
+        return null;
+      }
+    }
+  }
+
+  if (objects.length < 2) return null;
+  final merged = <String, dynamic>{};
+  for (final obj in objects) {
+    merged.addAll(obj);
+  }
+  return merged;
+}
+
 /// OpenAI-compatible transport.
 ///
 /// Serves three distinct dialects, selected per-model (because a single relay
@@ -135,7 +194,17 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
                 final decoded = jsonDecode(rawArgs);
                 if (decoded is Map<String, dynamic>) args = decoded;
               } catch (e) {
-                logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
+                final recovered = _recoverConcatenatedJsonObjects(rawArgs);
+                if (recovered != null) {
+                  args = recovered;
+                  logger?.call(
+                    'Tool call arguments were concatenated JSON objects '
+                    '("$rawArgs") — recovered by merging them.',
+                    level: 'WARN',
+                  );
+                } else {
+                  logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
+                }
               }
             } else if (rawArgs is Map<String, dynamic>) {
               args = rawArgs;
