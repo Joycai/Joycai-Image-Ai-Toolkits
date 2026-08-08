@@ -142,6 +142,15 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onChanged: (v) => appState.updateVideoConfig(prompt: v),
           expand: false,
         ),
+        SwitchListTile(
+          title: Text(l10n.compressReferenceImages, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          subtitle: Text(l10n.compressReferenceImagesDesc, style: const TextStyle(fontSize: 11)),
+          value: appState.compressReferenceImages,
+          onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
+          secondary: const Icon(Icons.compress, size: 20),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        ),
 
         ConfigSectionHeader(l10n.frames),
         const SizedBox(height: 6),

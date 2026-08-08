@@ -26,6 +26,7 @@ extension AppStateWorkbench on AppState {
     String? modelId,
     String? prompt,
     bool? useStream,
+    bool? compressReferenceImages,
   }) async {
     if (modelId != null) {
       lastSelectedModelId = modelId;
@@ -38,6 +39,10 @@ extension AppStateWorkbench on AppState {
     if (useStream != null) {
       this.useStream = useStream;
       await _db.saveSetting('workbench_use_stream', useStream.toString());
+    }
+    if (compressReferenceImages != null) {
+      this.compressReferenceImages = compressReferenceImages;
+      await _db.saveSetting('workbench_compress_reference_images', compressReferenceImages.toString());
     }
     notify();
   }
@@ -182,6 +187,7 @@ extension AppStateWorkbench on AppState {
 
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
+    params['compressReferenceImages'] = compressReferenceImages;
     // Gemini safety thresholds travel with the task so payload builders can
     // apply them per request (Map<String,String>, JSON-safe for persistence).
     params[SafetySettings.paramKey] = Map<String, String>.from(safetyThresholds);

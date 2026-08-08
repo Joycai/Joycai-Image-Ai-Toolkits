@@ -1813,6 +1813,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get useStreamingDesc => '实时 AI 响应（如果支持）';
 
   @override
+  String get compressReferenceImages => '压缩参考图';
+
+  @override
+  String get compressReferenceImagesDesc => '发送前将超过 3MB 的图片重新编码为 JPEG，以减小请求体积';
+
+  @override
   String get taskSubmitted => '任务已提交至队列';
 
   @override
@@ -4113,6 +4119,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get useStreamingDesc => '即時 AI 回應（若支援）';
+
+  @override
+  String get compressReferenceImages => '壓縮參考圖';
+
+  @override
+  String get compressReferenceImagesDesc => '傳送前將超過 3MB 的圖片重新編碼為 JPEG，以縮小請求體積';
 
   @override
   String get taskSubmitted => '任務已提交至佇列';

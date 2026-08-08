@@ -6,7 +6,17 @@ import 'package:http/io_client.dart';
 
 enum LLMRole { system, user, assistant, tool }
 
-enum LLMReferenceType { media, asset, firstFrame, lastFrame }
+enum LLMReferenceType {
+  media,
+  asset,
+  firstFrame,
+  lastFrame,
+
+  /// The model only looks at this attachment to describe it in text — it is
+  /// never fed into image generation/editing. Eligible for lossy
+  /// recompression when oversized; see [ImageCompressor].
+  viewOnly,
+}
 
 class LLMAttachment {
   final String? path;

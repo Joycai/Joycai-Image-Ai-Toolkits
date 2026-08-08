@@ -797,6 +797,8 @@
   },
   "useStreaming": "ストリーミングを使用",
   "useStreamingDesc": "リアルタイム AI 応答（対応時）",
+  "compressReferenceImages": "参考画像を圧縮",
+  "compressReferenceImagesDesc": "送信前に3MBを超える画像をJPEGに再エンコードし、リクエストサイズを削減します",
   "taskSubmitted": "タスクがキューに送信されました",
   "comparator": "比較ツール",
   "compareModeSync": "同期モード",

@@ -3485,6 +3485,18 @@ abstract class AppLocalizations {
   /// **'Real-time AI response (if supported)'**
   String get useStreamingDesc;
 
+  /// No description provided for @compressReferenceImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress Reference Images'**
+  String get compressReferenceImages;
+
+  /// No description provided for @compressReferenceImagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-encode images over 3MB to JPEG before sending, to reduce request size'**
+  String get compressReferenceImagesDesc;
+
   /// No description provided for @taskSubmitted.
   ///
   /// In en, this message translates to:

@@ -63,7 +63,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     }
   }
 
-  void _updateConfig({int? modelDbId, String? modelIdStr, String? prompt, bool? useStream}) {
+  void _updateConfig({
+    int? modelDbId,
+    String? modelIdStr,
+    String? prompt,
+    bool? useStream,
+    bool? compressReferenceImages,
+  }) {
     final appState = Provider.of<AppState>(context, listen: false);
 
     String? idToSave;
@@ -75,6 +81,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       modelId: idToSave ?? modelIdStr,
       prompt: prompt,
       useStream: useStream,
+      compressReferenceImages: compressReferenceImages,
     );
   }
 
@@ -87,6 +94,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
     final useStream = context.select<AppState, bool>((s) => s.useStream);
+    final compressReferenceImages = context.select<AppState, bool>((s) => s.compressReferenceImages);
     final promptHistory = context.select<AppState, List<PromptHistoryEntry>>((s) => s.imagePromptHistory);
     // Rebuild parameter controls when the stored image params change.
     context.select<AppState, int>((s) => s.imageParamsRevision);
@@ -184,6 +192,15 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               value: useStream,
               onChanged: (v) => _updateConfig(useStream: v),
               secondary: const Icon(Icons.stream, size: 20),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+            SwitchListTile(
+              title: Text(l10n.compressReferenceImages, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              subtitle: Text(l10n.compressReferenceImagesDesc, style: const TextStyle(fontSize: 11)),
+              value: compressReferenceImages,
+              onChanged: (v) => _updateConfig(compressReferenceImages: v),
+              secondary: const Icon(Icons.compress, size: 20),
               contentPadding: EdgeInsets.zero,
               dense: true,
             ),

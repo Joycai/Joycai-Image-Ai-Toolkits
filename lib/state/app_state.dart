@@ -159,6 +159,10 @@ class AppState extends ChangeNotifier {
   List<PromptHistoryEntry> imagePromptHistory = [];
   List<PromptHistoryEntry> videoPromptHistory = [];
   bool useStream = true;
+  // Opt-in: recompress oversized (>3MB) reference/source images to JPEG
+  // before sending, trading fidelity for smaller requests. Off by default so
+  // existing behavior (original bytes reach the API) doesn't change silently.
+  bool compressReferenceImages = false;
   bool isMarkdownWorkbench = true;
   bool isMarkdownRefinerSource = true;
   bool isMarkdownRefinerTarget = true;
@@ -345,6 +349,7 @@ class AppState extends ChangeNotifier {
     lastPrompt = await _db.getSetting('last_prompt') ?? "";
     lastVideoPrompt = await _db.getSetting('last_video_prompt') ?? "";
     useStream = (await _db.getSetting('workbench_use_stream') ?? 'true') == 'true';
+    compressReferenceImages = (await _db.getSetting('workbench_compress_reference_images') ?? 'false') == 'true';
 
     final savedWorkbenchTab = await _db.getSetting('workbench_tab_index');      
     if (savedWorkbenchTab != null) {

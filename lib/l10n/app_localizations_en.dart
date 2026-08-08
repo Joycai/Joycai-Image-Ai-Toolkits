@@ -1869,6 +1869,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useStreamingDesc => 'Real-time AI response (if supported)';
 
   @override
+  String get compressReferenceImages => 'Compress Reference Images';
+
+  @override
+  String get compressReferenceImagesDesc =>
+      'Re-encode images over 3MB to JPEG before sending, to reduce request size';
+
+  @override
   String get taskSubmitted => 'Task submitted to queue';
 
   @override

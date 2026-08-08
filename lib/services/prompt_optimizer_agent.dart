@@ -1161,7 +1161,11 @@ class PromptOptimizerAgent {
             role: LLMRole.user,
             content: '$viewResultMarker Reference image #${view['id']} (${view['name']}) is attached.',
             attachments: [
-              LLMAttachment.fromFile(File(view['path']!), _mimeTypeFor(view['path']!)),
+              LLMAttachment.fromFile(
+                File(view['path']!),
+                _mimeTypeFor(view['path']!),
+                referenceType: LLMReferenceType.viewOnly,
+              ),
             ],
           ));
         }

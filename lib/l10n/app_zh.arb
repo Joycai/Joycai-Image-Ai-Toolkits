@@ -923,6 +923,8 @@
   },
   "useStreaming": "使用流式传输",
   "useStreamingDesc": "实时 AI 响应（如果支持）",
+  "compressReferenceImages": "压缩参考图",
+  "compressReferenceImagesDesc": "发送前将超过 3MB 的图片重新编码为 JPEG，以减小请求体积",
   "taskSubmitted": "任务已提交至队列",
   "comparator": "对比器",
   "compareModeSync": "同步模式",

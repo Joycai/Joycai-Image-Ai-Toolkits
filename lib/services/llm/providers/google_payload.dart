@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../../../core/safety_settings.dart';
+import '../image_compression.dart';
 import '../llm_types.dart';
 
 /// Pure request-payload builders and response parsing for the Google GenAI
@@ -277,21 +278,14 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
     }
 
     for (var attachment in msg.attachments) {
-      String? b64Data;
-      if (attachment.path != null) {
-        b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
-      } else if (attachment.bytes != null) {
-        b64Data = base64Encode(attachment.bytes!);
-      }
-
-      if (b64Data != null) {
-        parts.add({
-          "inline_data": {
-            "mime_type": attachment.mimeType,
-            "data": b64Data
-          }
-        });
-      }
+      if (attachment.path == null && attachment.bytes == null) continue;
+      final resolved = ImageCompressor.readForApi(attachment);
+      parts.add({
+        "inline_data": {
+          "mime_type": resolved.mimeType,
+          "data": base64Encode(resolved.bytes)
+        }
+      });
     }
 
     return {
