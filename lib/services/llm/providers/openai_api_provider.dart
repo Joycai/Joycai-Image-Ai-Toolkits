@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/safety_settings.dart';
 import '../../../state/app_state.dart';
 import '../channel_dialect.dart';
+import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_provider_interface.dart';
 import '../llm_types.dart';
@@ -1291,21 +1292,14 @@ class OpenAIAPIProvider implements ILLMProvider, IModelDiscoveryProvider {
           parts.add({"type": "text", "text": msg.content});
         }
         for (var attachment in msg.attachments) {
-          String? b64Data;
-          if (attachment.path != null) {
-            b64Data = base64Encode(File(attachment.path!).readAsBytesSync());
-          } else if (attachment.bytes != null) {
-            b64Data = base64Encode(attachment.bytes!);
-          }
-
-          if (b64Data != null) {
-            parts.add({
-              "type": "image_url",
-              "image_url": {
-                "url": "data:${attachment.mimeType};base64,$b64Data"
-              }
-            });
-          }
+          if (attachment.path == null && attachment.bytes == null) continue;
+          final resolved = ImageCompressor.readForApi(attachment);
+          parts.add({
+            "type": "image_url",
+            "image_url": {
+              "url": "data:${resolved.mimeType};base64,${base64Encode(resolved.bytes)}"
+            }
+          });
         }
         content = parts;
       }

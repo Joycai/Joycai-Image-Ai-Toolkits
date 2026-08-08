@@ -1826,6 +1826,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get useStreamingDesc => 'リアルタイム AI 応答（対応時）';
 
   @override
+  String get compressReferenceImages => '参考画像を圧縮';
+
+  @override
+  String get compressReferenceImagesDesc =>
+      '送信前に3MBを超える画像をJPEGに再エンコードし、リクエストサイズを削減します';
+
+  @override
   String get taskSubmitted => 'タスクがキューに送信されました';
 
   @override

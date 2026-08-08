@@ -13,6 +13,7 @@ import '../models/task_item.dart';
 import 'ai_rename_agent.dart';
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
+import 'llm/image_compression.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 import 'prompt_optimizer_agent.dart';

@@ -23,13 +23,35 @@ extension TaskExecutors on TaskQueueService {
     return true;
   }
 
+  /// Builds a reference-image attachment, optionally pre-compressing it when
+  /// the user opted in via the workbench "compress reference images" toggle
+  /// (`task.parameters['compressReferenceImages']`). [referenceType] is
+  /// preserved either way so Veo instance placement (first/last frame vs
+  /// asset) keeps working on the compressed bytes.
+  LLMAttachment _buildReferenceAttachment(
+    TaskItem task,
+    String path, {
+    LLMReferenceType referenceType = LLMReferenceType.media,
+  }) {
+    final mimeType = _getMimeType(path);
+    if (task.parameters['compressReferenceImages'] != true) {
+      return LLMAttachment.fromFile(File(path), mimeType, referenceType: referenceType);
+    }
+    final raw = File(path).readAsBytesSync();
+    if (raw.length <= ImageCompressor.maxBytes) {
+      return LLMAttachment.fromFile(File(path), mimeType, referenceType: referenceType);
+    }
+    final compressed = ImageCompressor.compress(raw, mimeType);
+    return LLMAttachment.fromBytes(compressed.bytes, compressed.mimeType, referenceType: referenceType);
+  }
+
   Future<void> _executeImageProcessTask(TaskItem task) async {
     task.addLog('Start processing with model: ${task.modelDbId ?? task.modelId}');
 
     final outputDir = await _getEffectiveOutputDir(task);
 
     final attachments = task.imagePaths.map((path) =>
-      LLMAttachment.fromFile(File(path), _getMimeType(path))
+      _buildReferenceAttachment(task, path)
     ).toList();
 
     final messages = [
@@ -305,14 +327,14 @@ extension TaskExecutors on TaskQueueService {
     // First frame
     final firstFramePath = task.parameters['firstFramePath'] as String?;
     if (firstFramePath != null && firstFramePath.isNotEmpty) {
-      attachments.add(LLMAttachment.fromFile(File(firstFramePath), _getMimeType(firstFramePath), referenceType: LLMReferenceType.firstFrame));
+      attachments.add(_buildReferenceAttachment(task, firstFramePath, referenceType: LLMReferenceType.firstFrame));
       task.addLog('Added first frame: ${p.basename(firstFramePath)}');
     }
 
     // Last frame
     final lastFramePath = task.parameters['lastFramePath'] as String?;
     if (lastFramePath != null && lastFramePath.isNotEmpty) {
-      attachments.add(LLMAttachment.fromFile(File(lastFramePath), _getMimeType(lastFramePath), referenceType: LLMReferenceType.lastFrame));
+      attachments.add(_buildReferenceAttachment(task, lastFramePath, referenceType: LLMReferenceType.lastFrame));
       task.addLog('Added last frame: ${p.basename(lastFramePath)}');
     }
 
@@ -321,7 +343,7 @@ extension TaskExecutors on TaskQueueService {
     if (referenceImagePaths != null) {
       for (var path in referenceImagePaths) {
         final pathStr = path as String;
-        attachments.add(LLMAttachment.fromFile(File(pathStr), _getMimeType(pathStr), referenceType: LLMReferenceType.asset));
+        attachments.add(_buildReferenceAttachment(task, pathStr, referenceType: LLMReferenceType.asset));
         task.addLog('Added reference image: ${p.basename(pathStr)}');
       }
     }

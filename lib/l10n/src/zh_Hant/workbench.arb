@@ -128,6 +128,8 @@
   },
   "useStreaming": "使用串流",
   "useStreamingDesc": "即時 AI 回應（若支援）",
+  "compressReferenceImages": "壓縮參考圖",
+  "compressReferenceImagesDesc": "傳送前將超過 3MB 的圖片重新編碼為 JPEG，以縮小請求體積",
   "taskSubmitted": "任務已提交至佇列",
   "comparator": "比較器",
   "compareModeSync": "同步模式",
