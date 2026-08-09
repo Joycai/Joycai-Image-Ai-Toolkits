@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/video_thumbnail_service.dart';
@@ -12,13 +14,32 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import 'image_card_context_menu.dart';
 
+/// Ink laid over a photograph, for the chips that have to stay readable on
+/// top of one.
+///
+/// Deliberately not from the [ColorScheme]: these sit on user pictures, not
+/// on the app's own surfaces, and a chip tinted to the theme is illegible the
+/// moment someone loads an image in that hue. Black and white carry no hue of
+/// their own, so they stay neutral under the app's grey scale too.
+const Color _overlayScrim = Color(0x52000000);
+const Color _overlayScrimStrong = Color(0x73000000);
+const Color _overlayInk = Color(0xEBFFFFFF);
+
 /// A single thumbnail tile in the gallery grid. Handles its own thumbnail
 /// loading and hover/selection chrome; all file actions are delegated to
 /// [showImageCardContextMenu].
 class ImageCard extends StatefulWidget {
   final AppImage imageFile;
-  final bool isSelected;
-  final bool isResult;
+
+  /// This picture's place in the selection, counting from 1; `0` when it is
+  /// not selected.
+  ///
+  /// A number rather than a flag because the order is the order the pictures
+  /// reach the model, and the reference strip in the config panel labels them
+  /// the same way — a prompt that refers to "the second image" needs the two
+  /// to agree.
+  final int selectionNumber;
+
   final double thumbnailSize;
   final VoidCallback onTap;
   final VoidCallback? onDoubleTap;
@@ -26,12 +47,13 @@ class ImageCard extends StatefulWidget {
   const ImageCard({
     super.key,
     required this.imageFile,
-    required this.isSelected,
-    required this.isResult,
+    required this.selectionNumber,
     required this.thumbnailSize,
     required this.onTap,
     this.onDoubleTap,
   });
+
+  bool get isSelected => selectionNumber > 0;
 
   @override
   State<ImageCard> createState() => _ImageCardState();
@@ -104,12 +126,12 @@ class _ImageCardState extends State<ImageCard> {
                 ),
               ),
             Container(
-              color: _videoThumbnailPath != null ? Colors.black26 : Colors.transparent,
+              color: _videoThumbnailPath != null ? _overlayScrim : Colors.transparent,
             ),
-            Icon(
+            const Icon(
               Icons.play_circle_filled_rounded,
               size: 40,
-              color: Colors.white.withAlpha((255 * 0.9).round()),
+              color: _overlayInk,
             ),
             Positioned(
               bottom: 4,
@@ -117,17 +139,17 @@ class _ImageCardState extends State<ImageCard> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
+                  color: _overlayScrimStrong,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.videocam, size: 10, color: Colors.white),
+                    Icon(Icons.videocam, size: 10, color: _overlayInk),
                     SizedBox(width: 2),
                     Text(
                       "VIDEO",
-                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: _overlayInk, fontSize: 8, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -145,8 +167,8 @@ class _ImageCardState extends State<ImageCard> {
       ),
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => Container(
-        color: Colors.grey[200],
-        child: const Icon(Icons.broken_image, color: Colors.grey),
+        color: colorScheme.surfaceContainerHighest,
+        child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -188,6 +210,7 @@ class _ImageCardState extends State<ImageCard> {
 
   Widget _buildCardContent(BuildContext context, ColorScheme colorScheme, bool isMobile) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
+    final selected = widget.isSelected;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -195,121 +218,155 @@ class _ImageCardState extends State<ImageCard> {
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: colorScheme.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
+          color: colorScheme.surface,
           border: Border.all(
-            color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withAlpha((255 * 0.4).round()),
-            width: widget.isSelected ? 2 : 1,
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
           ),
-          boxShadow: widget.isSelected ? [
-            BoxShadow(
-              color: colorScheme.primary.withAlpha((255 * 0.2).round()),
-              blurRadius: 8,
-              spreadRadius: 2,
-            )
-          ] : null,
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  )
+                ]
+              : null,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
+        // A column, not a stack: the file name used to be burned onto the
+        // bottom of the picture under a gradient scrim, which covered whatever
+        // the picture had down there. It gets its own strip instead, so the
+        // image is never obscured by its own label.
+        child: Column(
           children: [
-            _buildThumbnail(context, colorScheme),
-
-            if (_dimensions.isNotEmpty)
-              Positioned(
-                top: 7,
-                left: 7,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(158),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _dimensions,
-                    style: const TextStyle(color: Color(0xFFD6D9E0), fontSize: 9.5),
-                  ),
-                ),
-              ),
-
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(9, 14, 9, 7),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Color(0xD0060708)],
-                  ),
-                ),
-                child: Text(
-                  widget.imageFile.name,
-                  style: const TextStyle(
-                    color: Color(0xFFE8EAEF),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            Expanded(
+              child: ColoredBox(
+                color: colorScheme.surfaceContainerHighest,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildThumbnail(context, colorScheme),
+                    if (_dimensions.isNotEmpty)
+                      Positioned(top: 6, left: 6, child: _buildMetaBadge()),
+                    if ((_isHovering || isMobile) && !isVideo)
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Center(child: _buildHoverActions(context)),
+                      ),
+                    if (selected)
+                      Positioned(top: 6, right: 6, child: _buildSelectionBadge(colorScheme)),
+                  ],
                 ),
               ),
             ),
-
-            // Overlay Buttons — bottom-center pill above name label
-            if ((_isHovering || isMobile) && !isVideo)
-              Positioned(
-                bottom: 28,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha(160),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildOverlayButton(
-                          icon: Icons.compare,
-                          onPressed: () => _handleCompare(context),
-                          tooltip: 'Compare',
-                        ),
-                        _buildOverlayButton(
-                          icon: Icons.brush,
-                          onPressed: () => _handleMask(context),
-                          tooltip: 'Mask',
-                        ),
-                        _buildOverlayButton(
-                          icon: Icons.crop,
-                          onPressed: () => _handleCrop(context),
-                          tooltip: 'Crop',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            if (widget.isSelected)
-              Positioned(
-                top: 7,
-                right: 7,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(90), blurRadius: 6, offset: const Offset(0, 2))],
-                  ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 15),
-                ),
-              ),
+            _buildFooter(context, colorScheme),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Dimensions and file size, frosted so the chip reads on a busy photo
+  /// without hiding a solid rectangle of it.
+  Widget _buildMetaBadge() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          color: _overlayScrim,
+          child: Text(
+            _dimensions,
+            style: const TextStyle(color: _overlayInk, fontSize: 9, height: 1.3),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The picture's position in the selection.
+  ///
+  /// A number rather than a tick: with several reference images the model is
+  /// given them in this order, and the user has no other way to see it on the
+  /// grid.
+  Widget _buildSelectionBadge(ColorScheme colorScheme) {
+    return Container(
+      width: 20,
+      height: 20,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: _overlayScrim, blurRadius: 5, offset: const Offset(0, 1))],
+      ),
+      child: Text(
+        '${widget.selectionNumber}',
+        style: TextStyle(
+          color: colorScheme.onPrimary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  /// Compare / mask / crop, in one bar that appears only under the pointer.
+  ///
+  /// One frosted capsule rather than three chips inside a fourth container,
+  /// which is what this was: the nested fills read as buttons on top of a
+  /// button, and they sat on the picture permanently on touch layouts.
+  Widget _buildHoverActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          color: _overlayScrimStrong,
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildOverlayButton(
+                icon: Icons.compare,
+                onPressed: () => _handleCompare(context),
+                tooltip: l10n.comparator,
+              ),
+              _buildOverlayButton(
+                icon: Icons.brush,
+                onPressed: () => _handleMask(context),
+                tooltip: l10n.maskEditor,
+              ),
+              _buildOverlayButton(
+                icon: Icons.crop,
+                onPressed: () => _handleCrop(context),
+                tooltip: l10n.cropAndResize,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      color: colorScheme.surface,
+      child: Text(
+        widget.imageFile.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
       ),
     );
   }
@@ -319,19 +376,13 @@ class _ImageCardState extends State<ImageCard> {
     required VoidCallback onPressed,
     required String tooltip,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(150),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 16, color: Colors.white),
-        onPressed: onPressed,
-        tooltip: tooltip,
-        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-      ),
+    return IconButton(
+      icon: Icon(icon, size: 15, color: _overlayInk),
+      onPressed: onPressed,
+      tooltip: tooltip,
+      constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
     );
   }
 

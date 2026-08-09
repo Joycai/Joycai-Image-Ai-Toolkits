@@ -16,6 +16,19 @@ namespace {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
+/// Window attributes that recolour the caption itself, rather than only
+/// picking one of the two OS themes for it. Windows 11 (build 22000+) only.
+///
+/// Redefined for the same reason as the attribute above: the developer's SDK
+/// may predate them.
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+
+#ifndef DWMWA_TEXT_COLOR
+#define DWMWA_TEXT_COLOR 36
+#endif
+
 constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
 /// Registry key for app theme preference.
@@ -274,6 +287,27 @@ bool Win32Window::OnCreate() {
 
 void Win32Window::OnDestroy() {
   // No-op; provided for subclasses.
+}
+
+void Win32Window::SetCaptionColors(COLORREF caption, COLORREF text, bool dark) {
+  if (!window_handle_) {
+    return;
+  }
+
+  // Set first, so that on Windows 10, where the two colour attributes below
+  // are rejected, the caption at least lands on the right side of the
+  // light/dark split instead of keeping the OS's answer.
+  //
+  // Keep this file pure ASCII: MSVC reads it in the system code page, and on
+  // a non-UTF-8 locale any other byte raises C4819, which this build treats
+  // as an error.
+  BOOL enable_dark_mode = dark;
+  DwmSetWindowAttribute(window_handle_, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        &enable_dark_mode, sizeof(enable_dark_mode));
+
+  DwmSetWindowAttribute(window_handle_, DWMWA_CAPTION_COLOR, &caption,
+                        sizeof(caption));
+  DwmSetWindowAttribute(window_handle_, DWMWA_TEXT_COLOR, &text, sizeof(text));
 }
 
 void Win32Window::UpdateTheme(HWND const window) {

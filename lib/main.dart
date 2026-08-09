@@ -27,6 +27,7 @@ import 'services/llm/providers/openai_api_provider.dart';
 import 'services/notification_service.dart';
 import 'services/task_queue_service.dart';
 import 'services/video_thumbnail_service.dart';
+import 'services/window_chrome_service.dart';
 import 'state/app_state.dart';
 import 'widgets/task_capsule_monitor.dart';
 
@@ -99,6 +100,10 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      // Wrapped here rather than around MaterialApp: the caption has to match
+      // the theme that actually resolved, and themeMode.system is only
+      // settled below this point.
+      builder: (context, child) => _WindowChromeSync(child: child!),
       home: const MainNavigationScreen(),
     );
 
@@ -118,6 +123,32 @@ class MyApp extends StatelessWidget {
     }
     return app;
   }
+}
+
+/// Pushes the resolved theme's canvas colour out to the OS title bar.
+///
+/// A widget rather than a call in `build` because the trigger is a change in
+/// the inherited [Theme] — [didChangeDependencies] fires exactly then, and
+/// only then, whether the theme moved because the user picked a new seed or
+/// because the system flipped to dark underneath `ThemeMode.system`.
+class _WindowChromeSync extends StatefulWidget {
+  final Widget child;
+
+  const _WindowChromeSync({required this.child});
+
+  @override
+  State<_WindowChromeSync> createState() => _WindowChromeSyncState();
+}
+
+class _WindowChromeSyncState extends State<_WindowChromeSync> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WindowChromeService.applyTheme(Theme.of(context).colorScheme);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class MainNavigationScreen extends StatefulWidget {

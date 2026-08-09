@@ -208,14 +208,17 @@ class _GalleryState extends State<Gallery> {
                         // Global index for preview paging (O(1) lookup)
                         final globalIndex = globalIndexByPath[imageFile.path] ?? 0;
 
-                        return Selector<AppState, bool>(
-                          selector: (_, state) => state.isImageSelected(imageFile.path),
-                          builder: (context, isSelected, _) {
+                        // The ordinal, not a bool: a card also has to repaint
+                        // when its *place* in the selection shifts (something
+                        // earlier was removed, or the strip was reordered),
+                        // which a boolean cannot report.
+                        return Selector<AppState, int>(
+                          selector: (_, state) => state.selectionNumberOf(imageFile.path),
+                          builder: (context, selectionNumber, _) {
                             final isVideo = AppConstants.isVideoFile(imageFile.path);
                             return ImageCard(
                               imageFile: imageFile,
-                              isSelected: isSelected,
-                              isResult: isResult,
+                              selectionNumber: selectionNumber,
                               thumbnailSize: state.thumbnailSize,
                               onTap: () {
                                 if (isVideo) {

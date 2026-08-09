@@ -11,6 +11,9 @@ import '../../models/tag.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_icon_button.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../widgets/markdown_editor.dart';
@@ -133,6 +136,47 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     // or if we are being scrolled by an external controller (Mobile BottomSheet)
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Lives in the editor's own footer rather than beside the Process
+        // button. Handing the draft to the assistant is a step *on the
+        // prompt*, and at the bottom of the panel it was an outlined bar the
+        // same width as the one button that actually runs the model -- two
+        // equals, where there is only one primary action.
+        final editorActions = Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: AppButton(
+                  label: l10n.sendToOptimizer,
+                  icon: Icons.auto_fix_high,
+                  variant: AppButtonVariant.text,
+                  onPressed: () {
+                    final appState = Provider.of<AppState>(context, listen: false);
+                    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+
+                    workbenchUIState.sendToOptimizer(
+                      _promptController.text,
+                      appState.selectedImages,
+                    );
+
+                    appState.setWorkbenchTab(4);
+
+                    if (widget.scrollController != null) {
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+              ),
+            ),
+            AppIconButton(
+              icon: Icons.settings_outlined,
+              tooltip: l10n.queueSettings,
+              size: 32,
+              onPressed: () => showQueueSettingsDialog(context),
+            ),
+          ],
+        );
+
         final content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -151,7 +195,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             // Model Selection Section — the section is self-titled (collapsible),
             // so no separate header above it (matches the video panel).
             const SizedBox(height: 8),
-            ModelSelectionSection(
+            AppCard(
+              outlined: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: ModelSelectionSection(
               availableModels: imageModels.map((m) => m.toMap()).toList(),
               // Only offer channels that actually serve image models — a
               // chat-only channel (e.g. DeepSeek) has nothing selectable here.
@@ -183,85 +230,60 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   Provider.of<AppState>(context, listen: false).getImageParam(modelId, spec),
               onImageParamChanged: (modelId, key, value) =>
                   Provider.of<AppState>(context, listen: false).setImageParam(modelId, key, value),
+              ),
             ),
 
             const SizedBox(height: 8),
-            SwitchListTile(
-              title: Text(l10n.useStreaming, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              subtitle: Text(l10n.useStreamingDesc, style: const TextStyle(fontSize: 11)),
-              value: useStream,
-              onChanged: (v) => _updateConfig(useStream: v),
-              secondary: const Icon(Icons.stream, size: 20),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-            ),
-            SwitchListTile(
-              title: Text(l10n.compressReferenceImages, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              subtitle: Text(l10n.compressReferenceImagesDesc, style: const TextStyle(fontSize: 11)),
-              value: compressReferenceImages,
-              onChanged: (v) => _updateConfig(compressReferenceImages: v),
-              secondary: const Icon(Icons.compress, size: 20),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
+            AppCard(
+              outlined: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildToggleRow(
+                    icon: Icons.stream,
+                    title: l10n.useStreaming,
+                    description: l10n.useStreamingDesc,
+                    value: useStream,
+                    onChanged: (v) => _updateConfig(useStream: v),
+                  ),
+                  _buildToggleRow(
+                    icon: Icons.compress,
+                    title: l10n.compressReferenceImages,
+                    description: l10n.compressReferenceImagesDesc,
+                    value: compressReferenceImages,
+                    onChanged: (v) => _updateConfig(compressReferenceImages: v),
+                  ),
+                ],
+              ),
             ),
 
             ConfigSectionHeader(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
             const SizedBox(height: 4),
-            MarkdownEditor(
-              controller: _promptController,
-              label: l10n.prompt,
-              isMarkdown: isMarkdownWorkbench,
-              onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
-              maxLines: 15,
-              initiallyPreview: false,
-              hint: l10n.promptHint,
-              onChanged: (v) => _updateConfig(prompt: v),
-              expand: false, // Don't expand inside scrollable
+            AppCard(
+              outlined: true,
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MarkdownEditor(
+                    controller: _promptController,
+                    label: l10n.prompt,
+                    isMarkdown: isMarkdownWorkbench,
+                    onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+                    maxLines: 15,
+                    initiallyPreview: false,
+                    hint: l10n.promptHint,
+                    onChanged: (v) => _updateConfig(prompt: v),
+                    expand: false, // Don't expand inside scrollable
+                  ),
+                  const SizedBox(height: 4),
+                  editorActions,
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-          ],
-        );
-
-        // Secondary actions — pinned together with the Process button so they
-        // stay reachable no matter how long the prompt gets.
-        final secondaryActions = Row(
-          children: [
-            // Send to Optimizer
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  final appState = Provider.of<AppState>(context, listen: false);
-                  final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-
-                  workbenchUIState.sendToOptimizer(
-                    _promptController.text,
-                    appState.selectedImages,
-                  );
-
-                  appState.setWorkbenchTab(4);
-
-                  if (widget.scrollController != null) {
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.auto_fix_high, size: 18),
-                label: Text(l10n.sendToOptimizer, style: const TextStyle(fontSize: 12)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Queue Settings
-            IconButton.filledTonal(
-              onPressed: () => showQueueSettingsDialog(context),
-              icon: const Icon(Icons.settings_outlined, size: 20),
-              tooltip: l10n.queueSettings,
-              style: IconButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
           ],
         );
 
@@ -328,21 +350,15 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         );
 
         if (widget.scrollController != null) {
-          // Mobile bottom sheet: pin the action zone at the top so both the
-          // Process button and the optimizer entry are always visible.
+          // Mobile bottom sheet: pin the Process button at the top so it stays
+          // visible. The optimizer entry rides with the editor in the scroll
+          // body now, next to the text it acts on.
           return Column(
             mainAxisSize: MainAxisSize.max,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    processButton,
-                    const SizedBox(height: 10),
-                    secondaryActions,
-                  ],
-                ),
+                child: processButton,
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -354,9 +370,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             ],
           );
         } else {
-          // Desktop sidebar: content scrolls; the whole action zone (optimizer
-          // + queue settings + Process) is docked at the bottom so it stays
-          // reachable no matter how long the prompt gets.
+          // Desktop sidebar: content scrolls; only the Process button is docked
+          // at the bottom, so the panel ends on exactly one call to action no
+          // matter how long the prompt gets.
           return Column(
             children: [
               Expanded(
@@ -365,20 +381,57 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   child: content,
                 ),
               ),
-              ConfigActionBar(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    secondaryActions,
-                    const SizedBox(height: 10),
-                    processButton,
-                  ],
-                ),
-              ),
+              ConfigActionBar(child: processButton),
             ],
           );
         }
       },
+    );
+  }
+
+  /// One setting: name, one line of explanation, switch.
+  ///
+  /// Replaces [SwitchListTile], whose title defaulted to bold 13 while the
+  /// section headers above it sat at 11 -- the switches were shouting over
+  /// the headings that grouped them. Here the name takes the type scale's
+  /// small title and the explanation drops to `bodySmall` in
+  /// `onSurfaceVariant`, so the row reads name-first and the description
+  /// stays available without competing.
+  Widget _buildToggleRow({
+    required IconData icon,
+    required String title,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: textTheme.titleSmall),
+                const SizedBox(height: 1),
+                Text(
+                  description,
+                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      ),
     );
   }
 

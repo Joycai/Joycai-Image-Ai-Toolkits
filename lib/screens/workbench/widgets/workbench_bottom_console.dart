@@ -268,22 +268,30 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (runningCount > 0) ...[
-            SizedBox(
-              width: 11,
-              height: 11,
-              child: CircularProgressIndicator(
-                value: avgProgress > 0 ? avgProgress : null,
-                strokeWidth: 2,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 6),
             Text(
               l10n.runningCount(runningCount),
               style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: colorScheme.primary),
             ),
+            const SizedBox(width: 7),
+            // A bar rather than the 11px ring this replaced: at that size a
+            // ring shows roughly "some" progress, while a track the eye can
+            // read left-to-right shows how far along the batch actually is.
+            // Indeterminate until the first task reports, so a queue that has
+            // started but not measured itself does not read as stalled at 0%.
+            SizedBox(
+              width: 44,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: avgProgress > 0 ? avgProgress : null,
+                  minHeight: 4,
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
             if (avgProgress > 0) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               Text(
                 '$pct%',
                 style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: colorScheme.primary),

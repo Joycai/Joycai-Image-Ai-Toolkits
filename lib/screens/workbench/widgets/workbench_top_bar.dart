@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_tool_button.dart';
 import '../workbench_layout.dart';
 
 /// Describes a single workbench destination (tab) for the top bar controls.
@@ -122,11 +123,15 @@ class WorkbenchTopBar extends StatelessWidget {
                                 onSelect: (i) => tabController.animateTo(i),
                               )
                             else
-                              ...tools.map((t) => _ToolButton(
-                                    dest: t,
-                                    selected: active == t.index,
-                                    showLabel: !isNarrow,
-                                    onTap: () => tabController.animateTo(t.index),
+                              ...tools.map((t) => Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                                    child: AppToolButton(
+                                      icon: t.icon,
+                                      label: t.label,
+                                      active: active == t.index,
+                                      showLabel: !isNarrow,
+                                      onPressed: () => tabController.animateTo(t.index),
+                                    ),
                                   )),
                           ],
                         ),
@@ -308,11 +313,10 @@ class _PrimarySegment extends StatelessWidget {
                       const SizedBox(width: 7),
                       Text(
                         d.label,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                          color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                              color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ),
@@ -321,63 +325,6 @@ class _PrimarySegment extends StatelessWidget {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-/// Quiet, secondary icon button for a workbench tool.
-class _ToolButton extends StatelessWidget {
-  final _WbDest dest;
-  final bool selected;
-  final bool showLabel;
-  final VoidCallback onTap;
-
-  const _ToolButton({
-    required this.dest,
-    required this.selected,
-    required this.onTap,
-    this.showLabel = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final iconColor = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Tooltip(
-        message: showLabel ? '' : dest.label,
-        child: Material(
-          color: selected ? colorScheme.primary.withAlpha(28) : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(9),
-            onTap: onTap,
-            child: Padding(
-              padding: showLabel
-                  ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
-                  : const EdgeInsets.all(9),
-              child: showLabel
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(dest.icon, size: 18, color: iconColor),
-                        const SizedBox(width: 5),
-                        Text(
-                          dest.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: iconColor,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Icon(dest.icon, size: 20, color: iconColor),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -60,20 +60,32 @@ class GalleryState extends ChangeNotifier {
   List<AppImage> folderImages = [];
   List<AppImage> processedImages = [];
   List<AppImage> _selectedImages = [];
-  Set<String> _selectedImagePaths = {};
+  Map<String, int> _selectionOrder = {};
   List<AppImage> droppedImages = []; // Transient workspace
 
   List<AppImage> get selectedImages => _selectedImages;
 
-  /// Assigning a new selection list also rebuilds the path index so callers can
-  /// test membership in O(1) via [isImageSelected] instead of scanning the list.
+  /// Assigning a new selection list also rebuilds the position index so callers
+  /// can test membership and read a picture's place in the selection in O(1),
+  /// instead of scanning the list once per grid cell.
   set selectedImages(List<AppImage> value) {
     _selectedImages = value;
-    _selectedImagePaths = value.map((img) => img.path).toSet();
+    _selectionOrder = {
+      for (var i = 0; i < value.length; i++) value[i].path: i,
+    };
   }
 
   /// O(1) selection membership check (avoids O(n) `selectedImages.any(...)`).
-  bool isImageSelected(String path) => _selectedImagePaths.contains(path);
+  bool isImageSelected(String path) => _selectionOrder.containsKey(path);
+
+  /// Where [path] sits in the selection, counting from 1; `0` when it is not
+  /// selected.
+  ///
+  /// Surfaced so a thumbnail can label itself with the same ordinal the
+  /// reference-image strip uses. The order is not cosmetic: it is the order
+  /// the pictures reach the model, and a prompt that says "use the second
+  /// image's pose" is wrong the moment the two disagree.
+  int selectionNumberOf(String path) => (_selectionOrder[path] ?? -1) + 1;
   
   String? outputDirectory;
   String? resultCacheDirectory;

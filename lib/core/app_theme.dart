@@ -16,16 +16,65 @@ const double appButtonRadius = 10;
 /// thirds of the way to a capsule — which is exactly what they looked like.
 const double appButtonMinHeight = 38;
 
+/// The app's palette: accents from the user's seed, greys from nobody's.
+///
+/// [ColorScheme.fromSeed] tints *every* role with the seed's hue, greys
+/// included — pick teal and every panel, border and body line comes out
+/// faintly teal. Two things go wrong with that. The greys shift underneath
+/// the whole app each time the seed changes, so any surface tuned to look
+/// right against one seed is wrong at the next; and with the accent hue
+/// already in the background, an element that is *actually* the accent
+/// colour — selected, focused, pressed — has less left to say.
+///
+/// So the neutral roles are taken from a monochrome scheme instead. Monochrome
+/// keeps Material's tone structure (the same lightness at each step, in both
+/// brightnesses) and drops only the chroma, leaving true greys. The seeded
+/// scheme still supplies primary/secondary/tertiary/error and their
+/// containers, so the accent survives exactly where it should: on things the
+/// user acts on.
+ColorScheme buildAppColorScheme({
+  required Color seedColor,
+  required Brightness brightness,
+}) {
+  final seeded = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+  final neutral = ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: brightness,
+    dynamicSchemeVariant: DynamicSchemeVariant.monochrome,
+  );
+
+  return seeded.copyWith(
+    surface: neutral.surface,
+    surfaceDim: neutral.surfaceDim,
+    surfaceBright: neutral.surfaceBright,
+    surfaceContainerLowest: neutral.surfaceContainerLowest,
+    surfaceContainerLow: neutral.surfaceContainerLow,
+    surfaceContainer: neutral.surfaceContainer,
+    surfaceContainerHigh: neutral.surfaceContainerHigh,
+    surfaceContainerHighest: neutral.surfaceContainerHighest,
+    onSurface: neutral.onSurface,
+    onSurfaceVariant: neutral.onSurfaceVariant,
+    outline: neutral.outline,
+    outlineVariant: neutral.outlineVariant,
+    inverseSurface: neutral.inverseSurface,
+    onInverseSurface: neutral.onInverseSurface,
+    // Material paints this over any elevated surface. Left seeded it would
+    // put the hue back into the very greys this function just took it out of.
+    surfaceTint: neutral.surfaceTint,
+  );
+}
+
 /// The app's theme, built from the seed colour the user picked in settings.
 ///
-/// Everything here is derived from that seed rather than hard-coded, so a
-/// button stays the user's colour and not a designer's.
+/// Accents are derived from that seed rather than hard-coded, so a button
+/// stays the user's colour and not a designer's. Greys deliberately are not —
+/// see [buildAppColorScheme].
 ThemeData buildAppTheme({
   required Color seedColor,
   required Brightness brightness,
   String? fontFamily,
 }) {
-  final colorScheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+  final colorScheme = buildAppColorScheme(seedColor: seedColor, brightness: brightness);
   final fill = buttonFillScheme(seedColor);
 
   return ThemeData(

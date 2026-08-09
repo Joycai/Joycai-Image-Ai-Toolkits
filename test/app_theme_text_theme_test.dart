@@ -62,11 +62,11 @@ void main() {
     expect(textTheme.labelSmall?.fontSize, 10);
   });
 
-  test('slots stay tied to the seed colour, only weight/size are opinionated', () {
+  test('slots stay tied to the scheme, only weight/size are opinionated', () {
     // The scale merges its overrides on top of Material's own colour-derived
     // default so text keeps tracking colorScheme — it must not have stamped a
     // flat colour of its own on top.
-    final colorScheme = ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light);
+    final colorScheme = buildAppColorScheme(seedColor: seed, brightness: Brightness.light);
     final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
     final defaultTheme = ThemeData(useMaterial3: true, colorScheme: colorScheme);
 
