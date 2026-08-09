@@ -5,6 +5,7 @@ import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../state/file_browser_state.dart';
+import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 
 /// Single control row under the header: category chips on the left,
 /// sort control and thumbnail-size slider on the right.
@@ -154,34 +155,10 @@ class BrowserFilterBar extends StatelessWidget {
   }
 
   void _showThumbnailSizeDialog(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.thumbnailSize),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            double val = state.thumbnailSize;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Slider(
-                  value: val,
-                  min: 80,
-                  max: 400,
-                  onChanged: (v) {
-                    state.setThumbnailSize(v);
-                    setState(() => val = v);
-                  },
-                ),
-                Text("${val.toInt()}px"),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-        ],
-      ),
+    showThumbnailSizeDialog(
+      context,
+      initialSize: state.thumbnailSize,
+      onChanged: state.setThumbnailSize,
     );
   }
 
