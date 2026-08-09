@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
+import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 
 class GalleryToolbar extends StatelessWidget {
   const GalleryToolbar({
@@ -490,34 +491,10 @@ class GalleryToolbar extends StatelessWidget {
   }
 
   void _showThumbnailSizeDialog(BuildContext context, GalleryState state, double current, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.thumbnailSize),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            double val = current;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Slider(
-                  value: val,
-                  min: 80,
-                  max: 400,
-                  onChanged: (v) {
-                    state.setThumbnailSize(v);
-                    setState(() => val = v);
-                  },
-                ),
-                Text("${val.toInt()}px"),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-        ],
-      ),
+    showThumbnailSizeDialog(
+      context,
+      initialSize: current,
+      onChanged: state.setThumbnailSize,
     );
   }
 }

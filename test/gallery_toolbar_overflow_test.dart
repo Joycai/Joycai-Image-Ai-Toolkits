@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -132,6 +133,45 @@ void main() {
       expect(toggle.right, lessThanOrEqualTo(bar.right + 0.01),
           reason: 'View toggle clipped at ${width}px');
     }
+  });
+
+  testWidgets('the thumbnail dialog slider follows the drag it caused', (tester) async {
+    // The handle used to spring back to where the dialog opened while the
+    // grid behind it kept resizing: the local holding the value was declared
+    // inside the StatefulBuilder, so every rebuild reinitialised it. The grid
+    // moved because the state was written through directly, which is what
+    // made this read as lag rather than as a broken control.
+    await pumpAtWidth(tester, 420);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thumbnail Size'));
+    await tester.pumpAndSettle();
+
+    final before = tester.widget<Slider>(find.byType(Slider)).value;
+
+    await tester.drag(find.byType(Slider), const Offset(60, 0));
+    await tester.pumpAndSettle();
+
+    final after = tester.widget<Slider>(find.byType(Slider)).value;
+    expect(after, greaterThan(before), reason: 'The slider did not keep the value it was dragged to');
+
+    // The readout beside it has to agree, and so does the grid it drives.
+    expect(find.text('${after.toInt()}px'), findsOneWidget);
+  });
+
+  testWidgets('the thumbnail dialog is built from the themed dialog shell', (tester) async {
+    // Raw AlertDialog ignores the app's surface and corner radius, which is
+    // how this one ended up looking like a different application.
+    await pumpAtWidth(tester, 420);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thumbnail Size'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppDialog), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
   });
 
   testWidgets('the collapsed menu still reaches every control it swallowed', (tester) async {

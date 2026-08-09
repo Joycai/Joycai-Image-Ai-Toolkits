@@ -10,6 +10,8 @@ import '../../services/database_service.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
@@ -611,23 +613,25 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _confirmDeleteModel(AppLocalizations l10n, LLMModel model, AppState appState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteModelConfirmTitle),
-        content: Text(l10n.deleteModelConfirmMessage(model.modelName)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () async {
-              await appState.deleteModel(model.id!);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.deleteModelConfirmTitle,
+      content: Text(l10n.deleteModelConfirmMessage(model.modelName)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.delete,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            await appState.deleteModel(model.id!);
+            if (mounted) Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 
@@ -653,23 +657,25 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _confirmDeleteChannel(AppLocalizations l10n, LLMChannel channel, AppState appState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteChannelConfirm(channel.displayName)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () async {
-              await appState.deleteChannel(channel.id!);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.delete,
+      content: Text(l10n.deleteChannelConfirm(channel.displayName)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.delete,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            await appState.deleteChannel(channel.id!);
+            if (mounted) Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 

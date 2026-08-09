@@ -10,6 +10,8 @@ import '../../../core/constants.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 
 /// File-system side effects for gallery items (save / share / delete).
 ///
@@ -100,23 +102,22 @@ Future<void> confirmAndDeleteImageFile(
   final filename = imageFile.name;
   final isWindows = Platform.isWindows;
 
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.deleteFileConfirmTitle),
-      content: Text(l10n.deleteFileConfirmMessage(filename)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(isWindows ? l10n.moveToTrash : l10n.permanentlyDelete),
-        ),
-      ],
-    ),
+  final confirmed = await AppDialog.show<bool>(
+    context,
+    title: l10n.deleteFileConfirmTitle,
+    content: Text(l10n.deleteFileConfirmMessage(filename)),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, false),
+      ),
+      AppButton(
+        label: isWindows ? l10n.moveToTrash : l10n.permanentlyDelete,
+        variant: AppButtonVariant.destructive,
+        onPressed: () => Navigator.pop(context, true),
+      ),
+    ],
   );
 
   if (confirmed == true && context.mounted) {

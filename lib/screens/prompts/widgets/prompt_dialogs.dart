@@ -8,6 +8,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/color_picker_widget.dart';
 import '../../../widgets/markdown_editor.dart';
 
@@ -46,48 +48,47 @@ Future<bool> showPromptEditDialog(
   final saved = await showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(prompt == null ? Icons.add_circle_outline : Icons.edit_note, color: Colors.blue),
-            const SizedBox(width: 12),
-            Text(prompt == null ? l10n.newPrompt : l10n.editPrompt),
-          ],
-        ),
-        content: SizedBox(
-          width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.title,
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.title),
-                  ),
+      builder: (context, setDialogState) => AppDialog(
+        icon: prompt == null ? Icons.add_circle_outline : Icons.edit_note,
+        iconColor: Colors.blue,
+        title: prompt == null ? l10n.newPrompt : l10n.editPrompt,
+        maxWidth: 800,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: InputDecoration(
+                  labelText: l10n.title,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.title),
                 ),
-                const SizedBox(height: 16),
-                Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
-                const SizedBox(height: 16),
-                MarkdownEditor(
-                  controller: contentCtrl,
-                  label: l10n.promptContent,
-                  isMarkdown: isMarkdown,
-                  onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                  initiallyPreview: false,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
+              const SizedBox(height: 16),
+              MarkdownEditor(
+                controller: contentCtrl,
+                label: l10n.promptContent,
+                isMarkdown: isMarkdown,
+                onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
+                initiallyPreview: false,
+              ),
+            ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
+          AppButton(
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context),
+          ),
+          AppButton(
+            label: prompt == null ? l10n.save : l10n.update,
             onPressed: () async {
               if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
 
@@ -105,7 +106,6 @@ Future<bool> showPromptEditDialog(
               }
               if (context.mounted) Navigator.pop(context, true);
             },
-            child: Text(prompt == null ? l10n.save : l10n.update),
           ),
         ],
       ),
@@ -138,61 +138,60 @@ Future<bool> showSystemPromptEditDialog(
   final saved = await showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(selectedType == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline, color: Colors.purple),
-            const SizedBox(width: 12),
-            Text(prompt == null ? l10n.add : l10n.editPrompt),
-          ],
-        ),
-        content: SizedBox(
-          width: math.min(MediaQuery.of(context).size.width * 0.9, 800),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+      builder: (context, setDialogState) => AppDialog(
+        icon: selectedType == 'refiner' ? Icons.auto_fix_high : Icons.drive_file_rename_outline,
+        iconColor: Colors.purple,
+        title: prompt == null ? l10n.add : l10n.editPrompt,
+        maxWidth: 800,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 1,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: selectedType,
+                      decoration: InputDecoration(labelText: l10n.templateType, border: const OutlineInputBorder()),
+                      items: [
+                        DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
+                        DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),
+                      ],
+                      onChanged: (v) => setDialogState(() => selectedType = v!),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 1,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: selectedType,
-                        decoration: InputDecoration(labelText: l10n.templateType, border: const OutlineInputBorder()),
-                        items: [
-                          DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
-                          DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),
-                        ],
-                        onChanged: (v) => setDialogState(() => selectedType = v!),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
-                const SizedBox(height: 16),
-                MarkdownEditor(
-                  controller: contentCtrl,
-                  label: l10n.promptContent,
-                  isMarkdown: isMarkdown,
-                  onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
-                  initiallyPreview: false,
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 8),
+              _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
+              const SizedBox(height: 16),
+              MarkdownEditor(
+                controller: contentCtrl,
+                label: l10n.promptContent,
+                isMarkdown: isMarkdown,
+                onMarkdownChanged: (v) => setDialogState(() => isMarkdown = v),
+                initiallyPreview: false,
+              ),
+            ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
+          AppButton(
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context),
+          ),
+          AppButton(
+            label: l10n.save,
             onPressed: () async {
               if (titleCtrl.text.isEmpty || contentCtrl.text.isEmpty) return;
               final appState = Provider.of<AppState>(context, listen: false);
@@ -210,7 +209,6 @@ Future<bool> showSystemPromptEditDialog(
               }
               if (context.mounted) Navigator.pop(context, true);
             },
-            child: Text(l10n.save),
           ),
         ],
       ),
@@ -233,31 +231,34 @@ Future<bool> showTagEditDialog(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {
-        return AlertDialog(
-          title: Text(tag == null ? l10n.addCategory : l10n.editCategory),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
-                  const SizedBox(height: 24),
-                  ColorPickerWidget(
-                    selectedColor: selectedColor,
-                    onColorChanged: (color) {
-                      setDialogState(() => selectedColor = color);
-                    },
-                    showHexInput: true,
-                    showColorWheel: true,
-                  ),
-                ],
-              ),
+        return AppDialog(
+          title: tag == null ? l10n.addCategory : l10n.editCategory,
+          maxWidth: 400,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, decoration: InputDecoration(labelText: l10n.name)),
+                const SizedBox(height: 24),
+                ColorPickerWidget(
+                  selectedColor: selectedColor,
+                  onColorChanged: (color) {
+                    setDialogState(() => selectedColor = color);
+                  },
+                  showHexInput: true,
+                  showColorWheel: true,
+                ),
+              ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            ElevatedButton(
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.pop(context),
+            ),
+            AppButton(
+              label: l10n.save,
               onPressed: () async {
                 final appState = Provider.of<AppState>(context, listen: false);
                 final data = {
@@ -272,7 +273,6 @@ Future<bool> showTagEditDialog(
                 }
                 if (context.mounted) Navigator.pop(context, true);
               },
-              child: Text(l10n.save),
             ),
           ],
         );
@@ -289,32 +289,30 @@ Future<bool> showDeletePromptConfirm(
   dynamic prompt, {
   required bool isSystem,
 }) async {
-  final colorScheme = Theme.of(context).colorScheme;
-  final deleted = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.deletePromptConfirmTitle),
-      content: Text(l10n.deletePromptConfirmMessage(prompt.title)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: colorScheme.onError,
-          ),
-          onPressed: () async {
-            final appState = Provider.of<AppState>(context, listen: false);
-            if (isSystem) {
-              await appState.deleteSystemPrompt(prompt.id);
-            } else {
-              await appState.deletePrompt(prompt.id);
-            }
-            if (context.mounted) Navigator.pop(context, true);
-          },
-          child: Text(l10n.delete),
-        ),
-      ],
-    ),
+  final deleted = await AppDialog.show<bool>(
+    context,
+    title: l10n.deletePromptConfirmTitle,
+    content: Text(l10n.deletePromptConfirmMessage(prompt.title)),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context),
+      ),
+      AppButton(
+        label: l10n.delete,
+        variant: AppButtonVariant.destructive,
+        onPressed: () async {
+          final appState = Provider.of<AppState>(context, listen: false);
+          if (isSystem) {
+            await appState.deleteSystemPrompt(prompt.id);
+          } else {
+            await appState.deletePrompt(prompt.id);
+          }
+          if (context.mounted) Navigator.pop(context, true);
+        },
+      ),
+    ],
   );
   return deleted ?? false;
 }
@@ -325,28 +323,26 @@ Future<bool> showDeleteTagConfirm(
   AppLocalizations l10n,
   PromptTag tag,
 ) async {
-  final colorScheme = Theme.of(context).colorScheme;
-  final deleted = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.delete),
-      content: Text(l10n.deleteCategoryConfirmMessage(tag.name)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: colorScheme.onError,
-          ),
-          onPressed: () async {
-            final appState = Provider.of<AppState>(context, listen: false);
-            await appState.deletePromptTag(tag.id!);
-            if (context.mounted) Navigator.pop(context, true);
-          },
-          child: Text(l10n.delete),
-        ),
-      ],
-    ),
+  final deleted = await AppDialog.show<bool>(
+    context,
+    title: l10n.delete,
+    content: Text(l10n.deleteCategoryConfirmMessage(tag.name)),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context),
+      ),
+      AppButton(
+        label: l10n.delete,
+        variant: AppButtonVariant.destructive,
+        onPressed: () async {
+          final appState = Provider.of<AppState>(context, listen: false);
+          await appState.deletePromptTag(tag.id!);
+          if (context.mounted) Navigator.pop(context, true);
+        },
+      ),
+    ],
   );
   return deleted ?? false;
 }
@@ -357,24 +353,22 @@ Future<bool> showBulkDeleteConfirm(
   AppLocalizations l10n,
   int count,
 ) async {
-  final colorScheme = Theme.of(context).colorScheme;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.deleteNPromptsConfirm(count)),
-      content: Text(l10n.actionCannotBeUndone),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: colorScheme.onError,
-          ),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(l10n.delete),
-        ),
-      ],
-    ),
+  final confirmed = await AppDialog.show<bool>(
+    context,
+    title: l10n.deleteNPromptsConfirm(count),
+    content: Text(l10n.actionCannotBeUndone),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, false),
+      ),
+      AppButton(
+        label: l10n.delete,
+        variant: AppButtonVariant.destructive,
+        onPressed: () => Navigator.pop(context, true),
+      ),
+    ],
   );
   return confirmed ?? false;
 }
@@ -390,8 +384,8 @@ Future<List<int>?> showBulkCategorizeDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => AlertDialog(
-        title: Text(l10n.bulkCategorize),
+      builder: (context, setDialogState) => AppDialog(
+        title: l10n.bulkCategorize,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,10 +415,14 @@ Future<List<int>?> showBulkCategorizeDialog(
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          FilledButton(
+          AppButton(
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          AppButton(
+            label: l10n.apply,
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.apply),
           ),
         ],
       ),

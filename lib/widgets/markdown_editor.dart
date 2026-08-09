@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'app_dialog.dart';
 import 'app_segmented_control.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
@@ -354,19 +355,23 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           },
         );
 
+        // Left as Dialog.fullscreen: on a phone the pop-out *is* the screen,
+        // and a rounded card inset from the edges would waste the width the
+        // user opened it to get.
         if (isCompact) {
           return Dialog.fullscreen(child: body);
         }
+
         final screen = MediaQuery.of(dialogContext).size;
-        return Dialog(
+        return AppDialog(
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-          child: SizedBox(
-            width: (screen.width * 0.8).clamp(0.0, 1000.0),
-            height: screen.height * 0.85,
-            child: body,
-          ),
+          maxWidth: (screen.width * 0.8).clamp(0.0, 1000.0),
+          // A deliberate height, not a ceiling: the editor should not resize
+          // as the text grows under the cursor.
+          maxHeight: screen.height * 0.85,
+          // The body carries its own toolbar and padding, and fills the card.
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(height: screen.height * 0.85, child: body),
         );
       },
     );

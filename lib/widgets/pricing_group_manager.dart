@@ -6,6 +6,8 @@ import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pricing_group.dart';
 import '../state/app_state.dart';
+import 'app_button.dart';
+import 'app_dialog.dart';
 import 'app_icon_button.dart';
 import 'app_segmented_control.dart';
 
@@ -228,23 +230,25 @@ class PricingGroupManager extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context, AppState appState, AppLocalizations l10n, PricingGroup group) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.delete),
-        content: Text(l10n.deleteFeeGroupConfirm(group.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              await appState.deletePricingGroup(group.id!);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.delete,
+      content: Text(l10n.deleteFeeGroupConfirm(group.name)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.delete,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            await appState.deletePricingGroup(group.id!);
+            if (context.mounted) Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 
@@ -678,21 +682,24 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
       );
     }
 
-    return Dialog(
+    final saveLabel = widget.group == null ? widget.l10n.add : widget.l10n.save;
+
+    return AppDialog(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 640),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(colorScheme),
-            body,
-            _buildFooter(colorScheme),
-          ],
+      maxWidth: 520,
+      maxHeight: 640,
+      titleWidget: _buildHeader(colorScheme, chromeless: true),
+      scrollable: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      content: _buildForm(colorScheme),
+      actions: [
+        AppButton(
+          label: widget.l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
         ),
-      ),
+        AppButton(label: saveLabel, icon: Icons.save, onPressed: _save),
+      ],
     );
   }
 
@@ -710,16 +717,25 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
 
   // --- Header -------------------------------------------------------------
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  /// The heading, shared by the desktop dialog and the mobile sheet.
+  ///
+  /// [chromeless] drops the padding and the bottom rule for the dialog, where
+  /// [AppDialog] supplies both the inset and the separation. The sheet keeps
+  /// them: there the rule is what divides the header from the drag grabber
+  /// above it.
+  Widget _buildHeader(ColorScheme colorScheme, {bool chromeless = false}) {
     final l10n = widget.l10n;
     final accent = _accent(colorScheme);
     final isAdd = widget.group == null;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 14, 16),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
+      padding: chromeless ? EdgeInsets.zero : const EdgeInsets.fromLTRB(20, 16, 14, 16),
+      decoration: chromeless
+          ? null
+          : BoxDecoration(
+              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+            ),
       child: Row(
         children: [
           Container(
@@ -739,7 +755,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
               children: [
                 Text(
                   isAdd ? l10n.addFeeGroup : l10n.editFeeGroup,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                  style: textTheme.titleLarge,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
@@ -748,7 +764,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
                 // nothing the user cannot already see and change.
                 Text(
                   l10n.feeGroupEditorSubtitle,
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

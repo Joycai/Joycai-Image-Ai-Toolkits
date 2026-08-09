@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import 'usage_stats.dart';
 import 'usage_summary.dart';
 
@@ -247,26 +249,28 @@ class UsageList extends StatelessWidget {
 
   void _confirmDeleteModelData(BuildContext context, String modelId) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.clearDataForModel(modelId)),
-        content: Text(l10n.clearModelDataWarning(modelId)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              await DatabaseService().clearTokenUsage(modelId: modelId);
-              if (context.mounted) {
-                Navigator.pop(context);
-                onRefresh();
-              }
-            },
-            child: Text(l10n.clearModelData),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.clearDataForModel(modelId),
+      content: Text(l10n.clearModelDataWarning(modelId)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.clearModelData,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            await DatabaseService().clearTokenUsage(modelId: modelId);
+            if (context.mounted) {
+              Navigator.pop(context);
+              onRefresh();
+            }
+          },
+        ),
+      ],
     );
   }
 }

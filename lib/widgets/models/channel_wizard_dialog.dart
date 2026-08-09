@@ -6,6 +6,8 @@ import '../../l10n/app_localizations.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 import '../app_segmented_control.dart';
 import 'channel_form_sections.dart';
 
@@ -297,7 +299,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: _buildStepCaption(l10n),
+                // Same treatment AppDialog gives the desktop dialog's
+                // subtitle, so the step caption reads the same on both.
+                child: Text(
+                  _stepCaption(l10n),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
               ),
             ),
             Expanded(child: content),
@@ -327,57 +336,47 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       );
     }
 
-    return AlertDialog(
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-      title: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(l10n.addChannel),
-          const Spacer(),
-          _buildStepCaption(l10n),
-        ],
-      ),
-      contentPadding: EdgeInsets.zero,
+    return AppDialog(
+      title: l10n.addChannel,
+      subtitle: _stepCaption(l10n),
+      maxWidth: 560,
       clipBehavior: Clip.antiAlias,
-      // Fixed size so the dialog doesn't resize between steps; shorter steps
+      // The steps carry their own padding, and step content reaches the edges.
+      contentPadding: EdgeInsets.zero,
+      // Fixed height so the dialog doesn't resize between steps; shorter steps
       // simply leave whitespace below (content is top-aligned and scrolls
       // when it exceeds the height).
-      content: SizedBox(width: 560, height: 520, child: content),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-      actions: [
-        Row(
-          children: [
-            _buildStepDots(),
-            const Spacer(),
-            if (_currentStep > 0)
-              TextButton(onPressed: _back, child: Text(l10n.back))
-            else
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n.cancel),
-              ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: _isNextEnabled() ? _next : null,
-              child: Text(
-                  _currentStep == _totalSteps - 1 ? l10n.finish : l10n.next),
+      content: SizedBox(height: 520, child: content),
+      // Not `actions`: the step dots are pinned opposite the buttons, and the
+      // shell's right-aligned row would shove the whole thing to one side.
+      actionsOverride: Row(
+        children: [
+          _buildStepDots(),
+          const Spacer(),
+          if (_currentStep > 0)
+            AppButton(
+              label: l10n.back,
+              variant: AppButtonVariant.text,
+              onPressed: _back,
+            )
+          else
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.pop(context),
             ),
-          ],
-        ),
-      ],
+          const SizedBox(width: 8),
+          AppButton(
+            label: _currentStep == _totalSteps - 1 ? l10n.finish : l10n.next,
+            onPressed: _isNextEnabled() ? _next : null,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStepCaption(AppLocalizations l10n) {
-    return Text(
-      '${_currentStep + 1}/$_totalSteps · ${_stepSubtitle(l10n)}',
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.normal,
-        color: Theme.of(context).colorScheme.outline,
-      ),
-    );
-  }
+  String _stepCaption(AppLocalizations l10n) =>
+      '${_currentStep + 1}/$_totalSteps · ${_stepSubtitle(l10n)}';
 
   Widget _buildStepDots() {
     final colorScheme = Theme.of(context).colorScheme;

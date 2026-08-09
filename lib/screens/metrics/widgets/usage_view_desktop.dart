@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/panel_resizer.dart';
@@ -241,29 +243,28 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
 
   void _confirmClearAll() {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.clearAllUsage),
-        content: Text(l10n.clearUsageWarning),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              await _db.clearTokenUsage();
-              if (context.mounted) {
-                Navigator.pop(context);
-                _loadData(reset: true);
-              }
-            },
-            child: Text(l10n.clearAll),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.clearAllUsage,
+      content: Text(l10n.clearUsageWarning),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.clearAll,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            await _db.clearTokenUsage();
+            if (mounted) {
+              Navigator.pop(context);
+              _loadData(reset: true);
+            }
+          },
+        ),
+      ],
     );
   }
 }

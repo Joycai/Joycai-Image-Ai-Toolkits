@@ -6,13 +6,14 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../services/ai_rename_agent.dart';
 import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/chat_model_selector.dart';
 
 class AiRenameDialog extends StatefulWidget {
@@ -96,43 +97,35 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     
     if (!mounted) return;
 
-    final SystemPrompt? selected = await showDialog<SystemPrompt>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.selectRenameTemplate),
-        // A tight (fixed) width lets AlertDialog's IntrinsicWidth
-        // short-circuit instead of recursing into the ListView below —
-        // scrollables don't support intrinsic-dimension queries and the
-        // dialog silently fails to lay out (empty barrier) otherwise.
-        content: SizedBox(
-          width: 420,
-          child: templates.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text(l10n.noPromptsSaved)),
-              )
-            : ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: templates.length,
-                  itemBuilder: (context, index) {
-                    final t = templates[index];
-                    return ListTile(
-                      title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-                      onTap: () => Navigator.pop(context, t),
-                    );
-                  },
-                ),
-              ),
+    final SystemPrompt? selected = await AppDialog.show<SystemPrompt>(
+      context,
+      title: l10n.selectRenameTemplate,
+      maxWidth: 420,
+      maxHeight: MediaQuery.of(context).size.height * 0.6,
+      content: templates.isEmpty
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.noPromptsSaved)),
+          )
+        : ListView.builder(
+            shrinkWrap: true,
+            itemCount: templates.length,
+            itemBuilder: (context, index) {
+              final t = templates[index];
+              return ListTile(
+                title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                onTap: () => Navigator.pop(context, t),
+              );
+            },
+          ),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-        ],
-      ),
+      ],
     );
 
     if (selected != null) {
@@ -321,147 +314,115 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     // Safety check: ensure the selected PK actually exists in the current list of chat models
     final effectiveModelDbId = chatModels.any((m) => m.id == _selectedModelDbId) ? _selectedModelDbId : null;
 
-    return AlertDialog(
-      title: Row(
+    return AppDialog(
+      icon: Icons.auto_fix_high,
+      title: l10n.aiBatchRename,
+      subtitle: l10n.imagesSelected(fileCount),
+      maxWidth: 640,
+      maxHeight: MediaQuery.of(context).size.height * 0.8,
+      scrollable: true,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
+          ChatModelSelector(
+            selectedModelId: effectiveModelDbId,
+            label: l10n.model,
+            onChanged: (v) => setState(() => _selectedModelDbId = v),
+          ),
+          const SizedBox(height: 16),
+
+          // System template: the whole card opens the picker.
+          Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 8),
+          Material(
+            color: colorScheme.surfaceContainerHighest.withAlpha(80),
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
               borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.auto_fix_high, size: 22, color: colorScheme.onPrimaryContainer),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.aiBatchRename, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.imagesSelected(fileCount),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
-                    color: colorScheme.outline,
-                  ),
+              onTap: _showTemplatePicker,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.psychology_outlined, size: 22, color: colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedSystemPrompt?.title ?? l10n.noTemplateSelected,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_selectedSystemPrompt != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              _selectedSystemPrompt!.content,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.unfold_more, size: 18, color: colorScheme.outline),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          TextField(
+            controller: _instructionController,
+            minLines: 2,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: l10n.additionalInstructions,
+              hintText: l10n.aiRenameInstructionsHint,
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              fillColor: colorScheme.surface,
+              filled: true,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isProcessing ? null : _generateSuggestions,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              icon: _isProcessing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.bolt),
+              label: Text(l10n.generateSuggestions),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          _buildPreviewSection(colorScheme, l10n),
         ],
       ),
-      content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 640,
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-          minWidth: Responsive.isMobile(context) ? 0 : 560,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ChatModelSelector(
-                selectedModelId: effectiveModelDbId,
-                label: l10n.model,
-                onChanged: (v) => setState(() => _selectedModelDbId = v),
-              ),
-              const SizedBox(height: 16),
-
-              // System template: the whole card opens the picker.
-              Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 8),
-              Material(
-                color: colorScheme.surfaceContainerHighest.withAlpha(80),
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: _showTemplatePicker,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    child: Row(
-                      children: [
-                        Icon(Icons.psychology_outlined, size: 22, color: colorScheme.primary),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _selectedSystemPrompt?.title ?? l10n.noTemplateSelected,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (_selectedSystemPrompt != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  _selectedSystemPrompt!.content,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.unfold_more, size: 18, color: colorScheme.outline),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: _instructionController,
-                minLines: 2,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: l10n.additionalInstructions,
-                  hintText: l10n.aiRenameInstructionsHint,
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  fillColor: colorScheme.surface,
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _isProcessing ? null : _generateSuggestions,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  icon: _isProcessing
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.bolt),
-                  label: Text(l10n.generateSuggestions),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              _buildPreviewSection(colorScheme, l10n),
-            ],
-          ),
-        ),
-      ),
       actions: [
-        TextButton(
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
         ),
-        FilledButton(
+        AppButton(
+          label: l10n.applyRenames,
           onPressed: (_proposedRenames.isEmpty || _conflicts.isNotEmpty || _isProcessing) ? null : _applyRenames,
-          child: Text(l10n.applyRenames),
         ),
       ],
     );

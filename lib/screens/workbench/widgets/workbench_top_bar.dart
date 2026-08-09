@@ -7,6 +7,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_channel.dart';
 import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_tool_button.dart';
 import '../workbench_layout.dart';
 
@@ -217,13 +219,16 @@ class WorkbenchTopBar extends StatelessWidget {
   }
 
   void _showConcurrencyDialog(BuildContext context, AppLocalizations l10n) {
+    // AppDialog is built directly rather than via AppDialog.show: the heading
+    // carries the live value, so the whole dialog has to sit inside the
+    // StatefulBuilder.
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           final appState = Provider.of<AppState>(dialogContext);
-          return AlertDialog(
-            title: Text(l10n.concurrencyLimit(appState.concurrencyLimit)),
+          return AppDialog(
+            title: l10n.concurrencyLimit(appState.concurrencyLimit),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -241,9 +246,10 @@ class WorkbenchTopBar extends StatelessWidget {
               ],
             ),
             actions: [
-              TextButton(
+              AppButton(
+                label: l10n.close,
+                variant: AppButtonVariant.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text(l10n.close),
               ),
             ],
           );

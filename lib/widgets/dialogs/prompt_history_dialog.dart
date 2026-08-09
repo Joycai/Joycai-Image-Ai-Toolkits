@@ -5,6 +5,8 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../state/app_state.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///
@@ -237,22 +239,21 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
 
   Future<void> _confirmClear() async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.clearPromptHistory),
-        content: Text(l10n.clearPromptHistoryConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.clear),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      title: l10n.clearPromptHistory,
+      content: Text(l10n.clearPromptHistoryConfirm),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.clear,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
     if (confirmed != true || !mounted) return;
 
@@ -324,53 +325,54 @@ class _PromptPreviewDialog extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AlertDialog(
-      title: Text(l10n.preview),
-      content: SizedBox(
-        width: 500,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              formatRelativeTime(l10n, entry.usedAt),
-              style: TextStyle(fontSize: 11, color: colorScheme.outline),
-            ),
-            const SizedBox(height: 12),
-            Flexible(
-              child: Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(maxHeight: 320),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withAlpha(80),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    entry.content,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+    return AppDialog(
+      title: l10n.preview,
+      maxWidth: 500,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            formatRelativeTime(l10n, entry.usedAt),
+            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+          ),
+          const SizedBox(height: 12),
+          // Caps the prompt body only — the warning line below it has to stay
+          // visible however long the prompt runs.
+          Flexible(
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 320),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withAlpha(80),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  entry.content,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              l10n.applyPromptWarning,
-              style: TextStyle(fontSize: 11, color: colorScheme.outline),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l10n.applyPromptWarning,
+            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+          ),
+        ],
       ),
       actions: [
-        TextButton(
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
         ),
-        FilledButton.icon(
+        AppButton(
+          label: l10n.usePrompt,
+          icon: Icons.check,
           onPressed: () => Navigator.pop(context, true),
-          icon: const Icon(Icons.check, size: 16),
-          label: Text(l10n.usePrompt),
         ),
       ],
     );

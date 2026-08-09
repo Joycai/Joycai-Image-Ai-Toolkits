@@ -12,6 +12,8 @@ import '../../../services/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
 
 class ApplicationSection extends StatefulWidget {
@@ -232,19 +234,17 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   void _showRestartDialog(AppLocalizations l10n) {
-    showDialog(
-      context: context,
+    AppDialog.show<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.restartRequired),
-        content: Text(l10n.restartMessage),
-        actions: [
-          FilledButton(
-            onPressed: () => exit(0),
-            child: Text(l10n.exit),
-          ),
-        ],
-      ),
+      title: l10n.restartRequired,
+      content: Text(l10n.restartMessage),
+      actions: [
+        AppButton(
+          label: l10n.exit,
+          onPressed: () => exit(0),
+        ),
+      ],
     );
   }
 }

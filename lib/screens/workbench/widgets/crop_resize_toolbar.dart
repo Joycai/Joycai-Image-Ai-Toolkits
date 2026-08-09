@@ -12,6 +12,8 @@ import '../../../models/app_image.dart';
 import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 
 class CropResizeToolbar extends StatefulWidget {
   const CropResizeToolbar({super.key});
@@ -126,20 +128,22 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       final cancelLabel = l10n.cancel;
       final overwriteLabel = l10n.overwriteSource;
 
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(confirmTitle),
-          content: Text(confirmMessage),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(cancelLabel)),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-              child: Text(overwriteLabel),
-            ),
-          ],
-        ),
+      final confirmed = await AppDialog.show<bool>(
+        context,
+        title: confirmTitle,
+        content: Text(confirmMessage),
+        actions: [
+          AppButton(
+            label: cancelLabel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          AppButton(
+            label: overwriteLabel,
+            variant: AppButtonVariant.destructive,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       );
       if (confirmed != true) return;
     }
@@ -595,39 +599,41 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   }
 
   void _showMobileResizeDialog(BuildContext context, AppLocalizations l10n, WorkbenchUIState uiState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.resize),
-        content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _buildDimensionField(_widthController, l10n.width)),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text("×")),
-                  Expanded(child: _buildDimensionField(_heightController, l10n.height)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: Text(l10n.maintainAspectRatio, style: const TextStyle(fontSize: 13)),
-                value: uiState.maintainAspectRatio,
-                onChanged: (v) {
-                  uiState.setMaintainAspectRatio(v);
-                  setDialogState(() {});
-                },
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-            ],
-          ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.resize,
+      content: StatefulBuilder(
+        builder: (context, setDialogState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(child: _buildDimensionField(_widthController, l10n.width)),
+                const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text("×")),
+                Expanded(child: _buildDimensionField(_heightController, l10n.height)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile(
+              title: Text(l10n.maintainAspectRatio, style: const TextStyle(fontSize: 13)),
+              value: uiState.maintainAspectRatio,
+              onChanged: (v) {
+                uiState.setMaintainAspectRatio(v);
+                setDialogState(() {});
+              },
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.close)),
-        ],
       ),
+      actions: [
+        AppButton(
+          label: l10n.close,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 

@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
+import '../app_snackbar.dart';
 
 /// The full log of a single task, in a console the user can read, select and
 /// copy from.
@@ -86,54 +89,42 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
     final logs = widget.task.logs;
     final media = MediaQuery.of(context).size;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 720,
-          maxHeight: media.height * 0.8,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(colorScheme, l10n),
-              const SizedBox(height: 14),
-              Flexible(
-                child: logs.isEmpty
-                    ? _buildEmpty(colorScheme, l10n)
-                    : _buildConsole(logs, colorScheme),
-              ),
-              const SizedBox(height: 12),
-              _buildActions(logs, colorScheme, l10n),
-            ],
-          ),
-        ),
-      ),
+    return AppDialog(
+      maxWidth: 720,
+      // The console is a ListView, so it needs a ceiling to lay out against
+      // rather than growing with the log.
+      maxHeight: media.height * 0.8,
+      // titleWidget rather than title/subtitle/icon: the live indicator sits
+      // on the trailing edge of the heading, which the shell's leading-icon
+      // layout has nowhere to put.
+      titleWidget: _buildHeader(context, colorScheme, l10n),
+      content: logs.isEmpty ? _buildEmpty(colorScheme, l10n) : _buildConsole(logs, colorScheme),
+      // The line count is part of the footer, pinned opposite the buttons.
+      actionsOverride: _buildActions(logs, colorScheme, l10n),
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
     final task = widget.task;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       children: [
-        Icon(Icons.terminal, size: 20, color: colorScheme.onSurfaceVariant),
+        Icon(Icons.terminal, size: 22, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                l10n.taskLogTitle,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+              // Matches the type AppDialog gives a plain title, so this
+              // hand-built heading is not a different size from every other
+              // dialog's.
+              Text(l10n.taskLogTitle, style: textTheme.titleLarge),
               const SizedBox(height: 2),
               Text(
                 l10n.taskId(task.id.length > 8 ? task.id.substring(0, 8) : task.id),
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -147,7 +138,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
           const SizedBox(width: 8),
           Text(
             l10n.taskLogLive,
-            style: TextStyle(fontSize: 11, color: colorScheme.primary),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.primary),
           ),
         ],
       ],
@@ -235,25 +226,24 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
       children: [
         Text(
           l10n.taskLogLineCount(logs.length),
-          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         const Spacer(),
-        TextButton.icon(
+        AppButton(
+          label: l10n.copyLogs,
+          icon: Icons.copy_outlined,
+          variant: AppButtonVariant.text,
           onPressed: logs.isEmpty
               ? null
               : () {
                   Clipboard.setData(ClipboardData(text: logs.join('\n')));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.taskLogCopied)),
-                  );
+                  AppSnackBar.success(context, l10n.taskLogCopied);
                 },
-          icon: const Icon(Icons.copy_outlined, size: 16),
-          label: Text(l10n.copyLogs),
         ),
         const SizedBox(width: 8),
-        FilledButton(
+        AppButton(
+          label: l10n.close,
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.close),
         ),
       ],
     );

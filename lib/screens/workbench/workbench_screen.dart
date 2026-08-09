@@ -25,6 +25,8 @@ import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
 import 'gallery.dart';
@@ -355,19 +357,21 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       tooltip: l10n.rename,
                       onPressed: () async {
                         final ctrl = TextEditingController(text: meta.title ?? '');
-                        final newTitle = await showDialog<String>(
-                          context: sheetContext,
-                          builder: (dialogContext) => AlertDialog(
-                            title: Text(l10n.rename),
-                            content: TextField(controller: ctrl, autofocus: true),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(l10n.cancel)),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()),
-                                child: Text(l10n.confirm),
-                              ),
-                            ],
-                          ),
+                        final newTitle = await AppDialog.show<String>(
+                          sheetContext,
+                          title: l10n.rename,
+                          content: TextField(controller: ctrl, autofocus: true),
+                          actions: [
+                            AppButton(
+                              label: l10n.cancel,
+                              variant: AppButtonVariant.text,
+                              onPressed: () => Navigator.pop(sheetContext),
+                            ),
+                            AppButton(
+                              label: l10n.confirm,
+                              onPressed: () => Navigator.pop(sheetContext, ctrl.text.trim()),
+                            ),
+                          ],
                         );
                         if (newTitle != null && newTitle.isNotEmpty) {
                           await workbenchUIState.renameAssistantSession(meta.id, newTitle);
@@ -381,18 +385,20 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       icon: Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
                       tooltip: l10n.delete,
                       onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: sheetContext,
-                          builder: (dialogContext) => AlertDialog(
-                            content: Text(l10n.optDeleteSessionConfirm),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(l10n.cancel)),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(dialogContext, true),
-                                child: Text(l10n.delete),
-                              ),
-                            ],
-                          ),
+                        final confirmed = await AppDialog.show<bool>(
+                          sheetContext,
+                          content: Text(l10n.optDeleteSessionConfirm),
+                          actions: [
+                            AppButton(
+                              label: l10n.cancel,
+                              variant: AppButtonVariant.text,
+                              onPressed: () => Navigator.pop(sheetContext, false),
+                            ),
+                            AppButton(
+                              label: l10n.delete,
+                              onPressed: () => Navigator.pop(sheetContext, true),
+                            ),
+                          ],
                         );
                         if (confirmed == true) {
                           await workbenchUIState.deleteAssistantSession(meta.id);
@@ -423,15 +429,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (session.mode == next) return;
     if (session.transcript.isNotEmpty) {
       final l10n = AppLocalizations.of(context)!;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: Text(l10n.optModeSwitchConfirm),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.confirm)),
-          ],
-        ),
+      final confirmed = await AppDialog.show<bool>(
+        context,
+        content: Text(l10n.optModeSwitchConfirm),
+        actions: [
+          AppButton(
+            label: l10n.cancel,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          AppButton(label: l10n.confirm, onPressed: () => Navigator.pop(context, true)),
+        ],
       );
       if (confirmed != true) return;
     }
@@ -470,15 +478,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     if (!mounted) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: Text(l10n.kbScaffoldConfirm(root)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.confirm)),
-        ],
-      ),
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      content: Text(l10n.kbScaffoldConfirm(root)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(label: l10n.confirm, onPressed: () => Navigator.pop(context, true)),
+      ],
     );
     if (confirmed != true) return;
 

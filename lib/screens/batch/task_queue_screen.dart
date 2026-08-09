@@ -10,6 +10,8 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
 
@@ -339,13 +341,16 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
   }
 
   void _showConcurrencyDialog(BuildContext context, AppLocalizations l10n, AppState appState) {
+    // AppDialog is built directly rather than via AppDialog.show: the heading
+    // carries the live value, so the whole dialog has to sit inside the
+    // StatefulBuilder.
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           final queue = Provider.of<AppState>(dialogContext).taskQueue;
-          return AlertDialog(
-            title: Text(l10n.concurrencyLimit(queue.concurrencyLimit)),
+          return AppDialog(
+            title: l10n.concurrencyLimit(queue.concurrencyLimit),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -363,9 +368,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
               ],
             ),
             actions: [
-              TextButton(
+              AppButton(
+                label: l10n.close,
+                variant: AppButtonVariant.text,
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text(l10n.close),
               ),
             ],
           );
