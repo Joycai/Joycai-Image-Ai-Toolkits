@@ -55,6 +55,19 @@ class Win32Window {
   // Return a RECT representing the bounds of the current client area.
   RECT GetClientArea();
 
+  // Paints the OS-drawn title bar to match the app's own canvas.
+  //
+  // Without this the caption follows the *Windows* theme (see UpdateTheme)
+  // while the Flutter UI follows the user's in-app choice, so a light app
+  // under a dark OS gets a black bar welded to a white toolbar. |caption| and
+  // |text| are COLORREFs (0x00BBGGRR); |dark| drives the hover/press shading
+  // Windows draws on the caption buttons, which is not covered by the
+  // explicit colours.
+  //
+  // The colour attributes need Windows 11 (build 22000+); on older systems
+  // DwmSetWindowAttribute simply fails and the caption keeps its OS theme.
+  void SetCaptionColors(COLORREF caption, COLORREF text, bool dark);
+
  protected:
   // Processes and route salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that

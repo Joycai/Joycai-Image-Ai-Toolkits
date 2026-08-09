@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
@@ -82,17 +83,20 @@ class FolderList extends StatelessWidget {
           else if (!useFileBrowserState)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: FilledButton.icon(
-                onPressed: () => _pickDirectory(context, appState),
-                icon: const Icon(Icons.create_new_folder_outlined),
-                label: Text(l10n.addFolder),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(45),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              // Tonal, not filled. Adding a folder sets up the work; running
+              // the model is the work. Two solid accent buttons on one screen
+              // make the user choose which is the point, so the workbench
+              // keeps exactly one -- the process button in the right panel.
+              child: SizedBox(
+                width: double.infinity,
+                child: AppButton(
+                  label: l10n.addFolder,
+                  icon: Icons.create_new_folder_outlined,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => _pickDirectory(context, appState),
                 ),
               ),
             ),
-          if (!useFileBrowserState) const Divider(height: 1),
 
           // File Browser: a plain directory tree (no aggregate nodes), with a
           // compact header row hosting the add-folder / deselect-all actions.
