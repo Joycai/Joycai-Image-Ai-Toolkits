@@ -7,6 +7,22 @@ import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_card.dart';
+import '../../../widgets/app_snackbar.dart';
+
+/// One row of the transcript as drawn, which is not one-to-one with
+/// [OptimizerChatEntry]: a run of consecutive tool calls collapses into a
+/// single timeline card.
+class _TranscriptRow {
+  /// Transcript index of the first entry, used as a stable expand-state key.
+  final int startIndex;
+  final List<OptimizerChatEntry> entries;
+
+  _TranscriptRow({required this.startIndex, required this.entries});
+
+  bool get isToolGroup => entries.first.kind == OptimizerEntryKind.tool;
+}
 
 /// Multi-turn chat view for the prompt-optimizer agent.
 ///
@@ -54,6 +70,21 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// Edit ids whose full proposed content is expanded. Purely presentational.
   final Set<String> _expandedKbEdits = {};
 
+  /// Transcript indices of tool groups the user has opened, and prompt cards
+  /// whose full text is showing. Both keyed by transcript index, which is
+  /// stable because the transcript is append-only.
+  final Set<int> _expandedToolGroups = {};
+  final Set<int> _expandedPrompts = {};
+
+  /// Steps shown before a timeline card needs opening. Three is enough to see
+  /// what kind of work the agent did without the card becoming the page.
+  static const int _collapsedStepCount = 3;
+
+  /// A prompt longer than this folds. Roughly the point where the card starts
+  /// pushing the reply that explains it off the screen.
+  static const int _promptFoldChars = 600;
+  static const double _promptFoldHeight = 260;
+
   @override
   void dispose() {
     _session?.removeListener(_onSessionChanged);
@@ -88,12 +119,17 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
-  bool _isCtrlEnter(KeyEvent event) {
-    return event is KeyDownEvent &&
-        (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.numpadEnter) &&
-        (HardwareKeyboard.instance.isControlPressed ||
-            HardwareKeyboard.instance.isMetaPressed);
+  /// Enter sends; Shift+Enter inserts a newline.
+  ///
+  /// This is a chat box, and every chat box works this way — the old
+  /// Ctrl+Enter meant the most common action needed two hands and was
+  /// undiscoverable without the tooltip. Shift+Enter keeps multi-line prompts
+  /// possible, and the hint under the field now says so.
+  bool _isSendKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter;
+    return isEnter && !HardwareKeyboard.instance.isShiftPressed;
   }
 
   @override
@@ -103,16 +139,30 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Expanded(
-          child: session.transcript.isEmpty
-              ? _buildEmptyState(l10n, colorScheme)
-              : _buildTranscript(session, l10n, colorScheme),
-        ),
-        if (session.isRunning || widget.isBusy) _buildWorkingIndicator(l10n, colorScheme),
-        _buildInputBar(l10n, colorScheme),
-      ],
+    // The bottom console can be dragged up until this pane is only a couple
+    // of hundred pixels tall. A composer that always reserves six lines then
+    // leaves nothing for the conversation and overflows outright, so it is
+    // capped against the height actually on offer.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final composerLines = switch (constraints.maxHeight) {
+          < 240 => 1,
+          < 340 => 3,
+          _ => 6,
+        };
+
+        return Column(
+          children: [
+            Expanded(
+              child: session.transcript.isEmpty
+                  ? _buildEmptyState(l10n, colorScheme)
+                  : _buildTranscript(session, l10n, colorScheme),
+            ),
+            if (session.isRunning || widget.isBusy) _buildWorkingIndicator(l10n, colorScheme),
+            _buildInputBar(l10n, colorScheme, composerLines),
+          ],
+        );
+      },
     );
   }
 
@@ -143,29 +193,182 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
+  /// Collapses each run of consecutive tool calls into one row.
+  ///
+  /// A ten-step agent turn used to render as ten grey lines of the same weight
+  /// as everything else, so the answer it produced was buried under the
+  /// working-out. Grouping is done here rather than in the agent because it is
+  /// purely presentational — the transcript itself stays one entry per call.
+  ///
+  /// Rows are keyed by the transcript index of their first entry, which is
+  /// stable: the transcript is append-only, so an index never refers to a
+  /// different entry later.
+  static List<_TranscriptRow> _groupRows(List<OptimizerChatEntry> transcript) {
+    final rows = <_TranscriptRow>[];
+    for (var i = 0; i < transcript.length; i++) {
+      final entry = transcript[i];
+      final continuesGroup = entry.kind == OptimizerEntryKind.tool &&
+          rows.isNotEmpty &&
+          rows.last.isToolGroup;
+      if (continuesGroup) {
+        rows.last.entries.add(entry);
+      } else {
+        rows.add(_TranscriptRow(startIndex: i, entries: [entry]));
+      }
+    }
+    return rows;
+  }
+
   Widget _buildTranscript(
     PromptOptimizerSession session,
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
+    final rows = _groupRows(session.transcript);
+
     return ListView.builder(
       controller: _scrollCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: session.transcript.length,
+      itemCount: rows.length,
       itemBuilder: (context, index) {
-        final entry = session.transcript[index];
-        final isLast = index == session.transcript.length - 1;
+        final row = rows[index];
+        final isLast = index == rows.length - 1;
         return Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 780),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildEntry(entry, isLast, l10n, colorScheme),
+              child: row.isToolGroup
+                  ? _buildAgentTimeline(row, l10n, colorScheme)
+                  : _buildEntry(row.entries.first, isLast, l10n, colorScheme),
             ),
           ),
         );
       },
+    );
+  }
+
+  /// The agent's working-out for one stretch of a turn, as a single card.
+  ///
+  /// Collapsed by default to a summary plus the first few steps: the interesting
+  /// thing is usually *that* it consulted the knowledge base and how much, not
+  /// each individual filename.
+  Widget _buildAgentTimeline(
+    _TranscriptRow row,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final steps = row.entries;
+    final expanded = _expandedToolGroups.contains(row.startIndex);
+    final shown = expanded ? steps : steps.take(_collapsedStepCount).toList();
+
+    final images = steps.where((e) => e.toolName == 'view_image').length;
+    final docs = steps.where((e) => e.toolName == 'read_knowledge_file').length;
+    final detail = [
+      if (images > 0) l10n.optAgentStepsImages(images),
+      if (docs > 0) l10n.optAgentStepsDocs(docs),
+    ].join(' · ');
+
+    return AppCard(
+      outlined: true,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      onTap: () => setState(() {
+        if (!_expandedToolGroups.remove(row.startIndex)) {
+          _expandedToolGroups.add(row.startIndex);
+        }
+      }),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.check_circle_outline, size: 16, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(l10n.optAgentSteps(steps.length), style: textTheme.titleSmall),
+              if (detail.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    detail,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
+              ] else
+                const Spacer(),
+              Icon(
+                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final step in shown) _buildToolStep(step, l10n, colorScheme),
+          if (steps.length > _collapsedStepCount) ...[
+            const SizedBox(height: 2),
+            AppButton(
+              label: expanded
+                  ? l10n.optAgentStepsCollapse
+                  : l10n.optAgentStepsExpand(steps.length),
+              variant: AppButtonVariant.text,
+              onPressed: () => setState(() {
+                if (!_expandedToolGroups.remove(row.startIndex)) {
+                  _expandedToolGroups.add(row.startIndex);
+                }
+              }),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Label and glyph for one tool call, shared by the timeline card and the
+  /// lone-call fallback so the two cannot describe the same call differently.
+  (String, IconData) _describeTool(OptimizerChatEntry entry, AppLocalizations l10n) {
+    switch (entry.toolName) {
+      case 'view_image':
+        return (l10n.optToolViewImage(entry.text), Icons.visibility_outlined);
+      case 'read_knowledge_file':
+        return (l10n.optToolReadKnowledge(entry.text), Icons.menu_book_outlined);
+      case 'list_knowledge_files':
+        return (l10n.optToolListKnowledge, Icons.folder_outlined);
+      case 'write_knowledge_file':
+        // Only reached for restored sessions — a live staged edit renders as
+        // an actionable kbEdit card instead.
+        return (l10n.optToolWriteKnowledge(entry.text), Icons.edit_note_outlined);
+      default:
+        return (l10n.optToolListImages, Icons.checklist_rtl);
+    }
+  }
+
+  Widget _buildToolStep(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final (label, icon) = _describeTool(entry, l10n);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: colorScheme.outline),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -209,46 +412,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         );
 
       case OptimizerEntryKind.tool:
-        final String label;
-        final IconData icon;
-        switch (entry.toolName) {
-          case 'view_image':
-            label = l10n.optToolViewImage(entry.text);
-            icon = Icons.visibility_outlined;
-          case 'read_knowledge_file':
-            label = l10n.optToolReadKnowledge(entry.text);
-            icon = Icons.menu_book_outlined;
-          case 'list_knowledge_files':
-            label = l10n.optToolListKnowledge;
-            icon = Icons.folder_outlined;
-          case 'write_knowledge_file':
-            // Only reached for restored sessions — a live staged edit renders
-            // as an actionable kbEdit card instead.
-            label = l10n.optToolWriteKnowledge(entry.text);
-            icon = Icons.edit_note_outlined;
-          default:
-            label = l10n.optToolListImages;
-            icon = Icons.checklist_rtl;
-        }
+        // Reached only for a lone tool call with no neighbours; a run of them
+        // is grouped into the timeline card by _groupRows before this.
         return Align(
           alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: colorScheme.outline),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: colorScheme.outline),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: _buildToolStep(entry, l10n, colorScheme),
         );
 
       case OptimizerEntryKind.prompt:
@@ -531,6 +699,13 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   }
 
   Widget _buildPromptCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    // Keyed by version rather than transcript index: a prompt card is the one
+    // row a user scrolls back to, and the version is what identifies it.
+    final key = entry.version ?? 1;
+    final expanded = _expandedPrompts.contains(key);
+    final isLong = entry.text.length > _promptFoldChars;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -550,11 +725,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 Expanded(
                   child: Text(
                     l10n.optPromptVersion(entry.version ?? 1),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.tertiary,
-                    ),
+                    style: textTheme.titleSmall?.copyWith(color: colorScheme.tertiary),
                   ),
                 ),
                 IconButton(
@@ -563,15 +734,13 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   visualDensity: VisualDensity.compact,
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: entry.text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.optPromptCopied)),
-                    );
+                    AppSnackBar.success(context, l10n.optPromptCopied);
                   },
                 ),
                 FilledButton.tonalIcon(
                   onPressed: () => widget.onApplyPrompt(entry.text),
                   icon: const Icon(Icons.check, size: 15),
-                  label: Text(l10n.apply, style: const TextStyle(fontSize: 12)),
+                  label: Text(l10n.apply, style: textTheme.labelMedium),
                   style: tonalButtonStyle(Theme.of(context).colorScheme)
                       .copyWith(visualDensity: VisualDensity.compact),
                 ),
@@ -580,14 +749,35 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
-            child: MarkdownBody(
-              data: entry.text,
-              selectable: true,
-              styleSheet: MarkdownStyleSheet(
-                p: TextStyle(color: colorScheme.onSurface, fontSize: 13, height: 1.45),
+            // Folded to a readable opening rather than scrolled inside its own
+            // box: a long prompt otherwise pushes the reply that explains it,
+            // and the input bar, off the bottom of the conversation.
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: isLong && !expanded ? _promptFoldHeight : double.infinity,
+              ),
+              child: ClipRect(
+                child: MarkdownBody(
+                  data: entry.text,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet(
+                    p: TextStyle(color: colorScheme.onSurface, fontSize: 13, height: 1.45),
+                  ),
+                ),
               ),
             ),
           ),
+          if (isLong)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+              child: AppButton(
+                label: expanded ? l10n.optPromptCollapse : l10n.optPromptExpand,
+                variant: AppButtonVariant.text,
+                onPressed: () => setState(() {
+                  if (!_expandedPrompts.remove(key)) _expandedPrompts.add(key);
+                }),
+              ),
+            ),
           if (entry.note != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
@@ -622,48 +812,121 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
-  Widget _buildInputBar(AppLocalizations l10n, ColorScheme colorScheme) {
+  /// The composer: what will be sent, the text, and how to send it.
+  ///
+  /// The send control moved out of `suffixIcon` and onto its own footer row.
+  /// As a suffix it was vertically centred, so it drifted down the field as
+  /// the text grew to six lines, and there was nowhere to say that the
+  /// reference images go with the message — which is the one thing about this
+  /// box that is not obvious.
+  Widget _buildInputBar(AppLocalizations l10n, ColorScheme colorScheme, int maxLines) {
     final canSend = !widget.isBusy;
+    final textTheme = Theme.of(context).textTheme;
+    final attachedCount = context.watch<WorkbenchUIState>().optimizerReferenceImages.length;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 780),
-          child: Focus(
-            onKeyEvent: (node, event) {
-              if (canSend && _isCtrlEnter(event)) {
-                widget.onSend();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: TextField(
-              controller: widget.inputCtrl,
-              minLines: 1,
-              maxLines: 6,
-              enabled: true,
-              style: const TextStyle(fontSize: 13, height: 1.4),
-              decoration: InputDecoration(
-                hintText: l10n.optChatHint,
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Focus(
+                  onKeyEvent: (node, event) {
+                    if (canSend && _isSendKey(event)) {
+                      widget.onSend();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: widget.inputCtrl,
+                    minLines: 1,
+                    maxLines: maxLines,
+                    style: textTheme.bodyMedium?.copyWith(height: 1.4),
+                    decoration: InputDecoration(
+                      hintText: l10n.optChatHint,
+                      hintStyle: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
                 ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHigh,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // The keyboard hint is the first thing to go: it is a
+                    // nicety, while the attachment count changes what gets
+                    // sent and the button is the action itself. Below this the
+                    // three together do not fit, and a squeezed pane is
+                    // exactly where the composer must not overflow.
+                    final showHint = constraints.maxWidth >= 460;
+
+                    return Row(
+                      children: [
+                        if (attachedCount > 0) ...[
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.image_outlined, size: 14, color: colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      l10n.optAttachedImages(attachedCount),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textTheme.labelMedium
+                                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: showHint
+                              ? Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    l10n.optSendHint,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: textTheme.labelSmall
+                                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filled(
+                          icon: const Icon(Icons.send_rounded, size: 18),
+                          tooltip: l10n.optSend,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: canSend ? widget.onSend : null,
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.send_rounded, size: 20),
-                  tooltip: l10n.optSend,
-                  color: colorScheme.primary,
-                  onPressed: canSend ? widget.onSend : null,
-                ),
-              ),
+              ],
             ),
           ),
         ),

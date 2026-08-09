@@ -759,6 +759,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                       onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
                       isRefining: isBusy,
                       canApply: session.refinedPrompt != null,
+                      modeLabel: switch (session.mode) {
+                        AssistantMode.systemPrompt =>
+                          AppLocalizations.of(context)!.optModeSystemPrompt,
+                        AssistantMode.knowledgeBase =>
+                          AppLocalizations.of(context)!.optModeKnowledge,
+                        AssistantMode.knowledgeEdit =>
+                          AppLocalizations.of(context)!.optModeKnowledgeEdit,
+                      },
                     ),
                     Expanded(
                       child: _optIsLoadingData
@@ -840,6 +848,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               onScaffoldKb: _handleScaffoldKb,
               tags: _optTags,
               filteredSysPrompts: _optFilteredSysPrompts,
+              citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
+                workbenchUIState.optimizerSession,
+              ),
               onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
               onTagChanged: (v) {
                 workbenchUIState.setOptimizerTag(v);

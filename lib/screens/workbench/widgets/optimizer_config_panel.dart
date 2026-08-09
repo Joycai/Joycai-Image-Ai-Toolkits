@@ -4,9 +4,13 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
+import '../../../core/file_utils.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_card.dart';
+import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/chat_model_selector.dart';
 import 'config_section_header.dart';
@@ -21,6 +25,11 @@ class OptimizerConfigPanel extends StatefulWidget {
   final String? kbPath;
   final List<PromptTag> tags;
   final List<SystemPrompt> filteredSysPrompts;
+
+  /// Knowledge files the current answer rests on, newest turn first. Passed in
+  /// rather than read from the session here, so this panel stays
+  /// presentational and testable without the workbench's providers.
+  final List<String> citedKnowledgeFiles;
   final Function(int?) onModelChanged;
   final Function(int?) onTagChanged;
   final Function(String?) onSysPromptChanged;
@@ -44,6 +53,7 @@ class OptimizerConfigPanel extends StatefulWidget {
     this.kbPath,
     required this.tags,
     required this.filteredSysPrompts,
+    this.citedKnowledgeFiles = const [],
     required this.onModelChanged,
     required this.onTagChanged,
     required this.onSysPromptChanged,
@@ -61,12 +71,21 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   late final TextEditingController _customCtrl;
   bool _scaffolding = false;
 
+  /// What the knowledge base holds, as of the last scan. Null while scanning
+  /// for the first time.
+  KbTreeStats? _kbStats;
+  bool _scanning = false;
+
+  /// Cited files listed before the "all N" link takes over.
+  static const int _citedPreviewCount = 3;
+
   @override
   void initState() {
     super.initState();
     _customCtrl = TextEditingController(
       text: widget.useCustomSysPrompt ? widget.selectedSysPrompt ?? '' : '',
     );
+    _loadKbStats();
   }
 
   @override
@@ -75,6 +94,36 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     // When switching into custom mode, pre-populate with the current sys prompt.
     if (widget.useCustomSysPrompt && !old.useCustomSysPrompt) {
       _customCtrl.text = widget.selectedSysPrompt ?? '';
+    }
+    // A newly configured or repaired base has different contents to count.
+    if (widget.kbPath != old.kbPath || widget.kbStatus != old.kbStatus) {
+      _loadKbStats();
+    }
+  }
+
+  /// Counts the tree off the build path.
+  ///
+  /// [KnowledgeBaseService.scanTree] is synchronous file IO; a large base
+  /// walked during build would drop frames. There is nothing to invalidate
+  /// here — the count is only ever as fresh as its last run, which is exactly
+  /// what the card claims.
+  Future<void> _loadKbStats() async {
+    final root = widget.kbPath;
+    if (root == null || widget.kbStatus != KbStatus.ok) {
+      if (mounted) setState(() => _kbStats = null);
+      return;
+    }
+
+    setState(() => _scanning = true);
+    try {
+      final stats = await Future(() => KnowledgeBaseService().scanTree(root));
+      if (mounted) setState(() => _kbStats = stats);
+    } catch (_) {
+      // A folder that vanished mid-scan is already reported by kbStatus; the
+      // card simply shows no counts rather than an error of its own.
+      if (mounted) setState(() => _kbStats = null);
+    } finally {
+      if (mounted) setState(() => _scanning = false);
     }
   }
 
@@ -110,10 +159,21 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       ],
     );
 
-    return SingleChildScrollView(
-      controller: widget.scrollController,
-      padding: const EdgeInsets.all(16),
-      child: content,
+    // Expanded inside a Column, not a bare SingleChildScrollView: on its own
+    // the scroll view shrink-wraps to its content, and the panel card then
+    // shrinks with it and floats in the middle of the canvas. The column
+    // claims the full height the card offers and lets the body scroll inside
+    // it.
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.all(16),
+            child: content,
+          ),
+        ),
+      ],
     );
   }
 
@@ -148,88 +208,238 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   Widget _buildKnowledgeStatus(AppLocalizations l10n, ColorScheme colorScheme) {
     final ok = widget.kbStatus == KbStatus.ok;
-    final String text;
+    final textTheme = Theme.of(context).textTheme;
+
+    final String problem;
     switch (widget.kbStatus) {
       case KbStatus.ok:
-        text = widget.kbPath ?? '';
+        problem = '';
       case KbStatus.notSet:
-        text = l10n.optKbNotConfigured;
+        problem = l10n.optKbNotConfigured;
       case KbStatus.missingDir:
-        text = l10n.kbInvalidDir;
+        problem = l10n.kbInvalidDir;
       case KbStatus.missingEntry:
-        text = l10n.kbMissingEntry;
+        problem = l10n.kbMissingEntry;
     }
+
     return Padding(
       padding: const EdgeInsets.only(top: 16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: ok
-              ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
-              : colorScheme.errorContainer.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(8),
-        ),
+      child: AppCard(
+        outlined: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Icon(
                   ok ? Icons.menu_book_outlined : Icons.warning_amber_outlined,
                   size: 16,
-                  color: ok ? colorScheme.primary : colorScheme.error,
+                  color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  l10n.knowledgeBase,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant),
-                ),
+                Expanded(child: Text(l10n.knowledgeBase, style: textTheme.titleSmall)),
+                if (ok) _buildReadyPill(l10n, colorScheme, textTheme),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 11,
-                color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
+            const SizedBox(height: 10),
+            if (!ok)
+              Text(problem, style: textTheme.bodySmall?.copyWith(color: colorScheme.error))
+            else ...[
+              // The folder, in a code-ish chip: it is a path, and paths read
+              // badly as prose at the end of a wrapped sentence.
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  widget.kbPath ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // Disabled once the base has an entry file: initializing is a
-            // one-time act, and KbStatus.ok means one is already there. Shown
-            // disabled rather than hidden so the action stays discoverable and
-            // its unavailability is explained. KnowledgeBaseStarter.scaffold
-            // refuses independently — this is only the first gate.
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _scaffolding
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 6),
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : Tooltip(
-                      message: ok
-                          ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)
-                          : '',
-                      child: FilledButton.tonalIcon(
-                        onPressed: ok ? null : _handleScaffold,
-                        icon: const Icon(Icons.auto_awesome_outlined, size: 15),
-                        label: Text(l10n.kbScaffoldCreate, style: const TextStyle(fontSize: 11)),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      ),
-                    ),
-            ),
+              const SizedBox(height: 8),
+              _buildTreeStatsLine(l10n, colorScheme, textTheme),
+            ],
+            const SizedBox(height: 10),
+            _buildKbActions(l10n, ok),
+            if (ok) _buildCitedThisRound(l10n, colorScheme, textTheme),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReadyPill(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          l10n.optKbReady,
+          style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
+        ),
+      ],
+    );
+  }
+
+  /// How much the assistant can see, and how fresh it is.
+  ///
+  /// Deliberately "content updated", not "last indexed": there is no index.
+  /// The service reads the folder on every call, so the only thing that can
+  /// be stale is this card — and the question the user is actually asking is
+  /// whether the edit they just made will be picked up, which the newest file
+  /// timestamp answers directly.
+  Widget _buildTreeStatsLine(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final stats = _kbStats;
+    // Nothing rather than a spinner while there are no counts. A scan that
+    // fails — an unreadable folder, a path that moved — would otherwise leave
+    // an indeterminate spinner turning forever, which reads as a hung app
+    // when the truth is simply that there is nothing to report. The rescan
+    // button carries the progress instead, where it resolves.
+    if (stats == null) return const SizedBox.shrink();
+
+    final updated = stats.newestModified;
+    final parts = [
+      l10n.optKbTreeStats(stats.files, stats.directories),
+      if (updated != null) l10n.optKbContentUpdated(_formatStamp(updated)),
+    ];
+
+    return Text(
+      parts.join(' · '),
+      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+    );
+  }
+
+  /// `HH:mm` while it is today's date, `MM-DD HH:mm` once it is not — a bare
+  /// clock time on a three-day-old file reads as "just now".
+  String _formatStamp(DateTime when) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final now = DateTime.now();
+    final clock = '${two(when.hour)}:${two(when.minute)}';
+    final sameDay = when.year == now.year && when.month == now.month && when.day == now.day;
+    return sameDay ? clock : '${two(when.month)}-${two(when.day)} $clock';
+  }
+
+  Widget _buildKbActions(AppLocalizations l10n, bool ok) {
+    if (_scaffolding) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 6),
+        child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    // Wrap, not Row: the panel narrows to 250px and these are three controls
+    // with labels.
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        // Kept visible and disabled once the base has an entry file, rather
+        // than hidden: initializing is a one-time act, and an action that
+        // silently disappears leaves the user wondering where it went. The
+        // tooltip says why it is off. KnowledgeBaseStarter.scaffold refuses
+        // independently — this is only the first gate.
+        Tooltip(
+          message: ok ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName) : '',
+          child: AppButton(
+            label: l10n.kbScaffoldCreate,
+            icon: Icons.auto_awesome_outlined,
+            variant: AppButtonVariant.secondary,
+            onPressed: ok ? null : _handleScaffold,
+          ),
+        ),
+        if (ok) ...[
+          AppButton(
+            label: l10n.optKbRescan,
+            icon: Icons.refresh,
+            variant: AppButtonVariant.text,
+            loading: _scanning,
+            onPressed: _loadKbStats,
+          ),
+          AppIconButton(
+            icon: Icons.folder_open_outlined,
+            tooltip: l10n.openInFolder,
+            size: 34,
+            onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// The documents holding up the answer on screen.
+  ///
+  /// Derived from the session's own history rather than tracked, so it cannot
+  /// drift from what was actually sent — see
+  /// [PromptOptimizerAgent.citedKnowledgeFiles].
+  Widget _buildCitedThisRound(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final cited = widget.citedKnowledgeFiles;
+    final shown = cited.take(_citedPreviewCount).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l10n.optKbCitedThisRound, style: textTheme.titleSmall),
+          const SizedBox(height: 6),
+          if (cited.isEmpty)
+            Text(
+              l10n.optKbCitedNone,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            )
+          else ...[
+            for (final path in shown)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        path,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (cited.length > shown.length)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  l10n.optKbCitedAll(cited.length),
+                  style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }

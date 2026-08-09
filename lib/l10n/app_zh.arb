@@ -1199,5 +1199,89 @@
   "optAskUserOtherHint": "其他 / 补充说明...",
   "optAskUserConfirm": "发送回答",
   "optAskUserAnswered": "已回答",
-  "optAskUserDismissed": "已在对话中继续"
+  "optAskUserDismissed": "已在对话中继续",
+  "optAgentSteps": "Agent 过程 · {count} 步",
+  "@optAgentSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsImages": "查看 {count} 张参考图",
+  "@optAgentStepsImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsDocs": "阅读 {count} 篇文档",
+  "@optAgentStepsDocs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsExpand": "展开全部 {count} 步",
+  "@optAgentStepsExpand": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsCollapse": "收起步骤",
+  "optPromptExpand": "展开全文",
+  "optPromptCollapse": "收起",
+  "optKbReady": "已初始化",
+  "optKbTreeStats": "{files} 篇文档 · {dirs} 个目录",
+  "@optKbTreeStats": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbContentUpdated": "内容更新于 {time}",
+  "@optKbContentUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optKbRescan": "重新扫描",
+  "optKbCitedThisRound": "本轮引用",
+  "optKbCitedAll": "全部 {count} 篇",
+  "@optKbCitedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbCitedNone": "尚无引用",
+  "optAttachedImages": "{count} 张参考图随消息发送",
+  "@optAttachedImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSendHint": "Enter 发送 · Shift+Enter 换行",
+  "optModeBadgeAgent": "{mode} · Agent",
+  "@optModeBadgeAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optRefNumberingHint": "序号与提示词中引用的文件名对应，agent 可查看这些图片。"
 }

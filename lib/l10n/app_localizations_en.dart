@@ -2382,4 +2382,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optAskUserDismissed => 'Continued in chat';
+
+  @override
+  String optAgentSteps(int count) {
+    return 'Agent process · $count steps';
+  }
+
+  @override
+  String optAgentStepsImages(int count) {
+    return 'viewed $count reference images';
+  }
+
+  @override
+  String optAgentStepsDocs(int count) {
+    return 'read $count documents';
+  }
+
+  @override
+  String optAgentStepsExpand(int count) {
+    return 'Show all $count steps';
+  }
+
+  @override
+  String get optAgentStepsCollapse => 'Collapse steps';
+
+  @override
+  String get optPromptExpand => 'Show full text';
+
+  @override
+  String get optPromptCollapse => 'Collapse';
+
+  @override
+  String get optKbReady => 'Ready';
+
+  @override
+  String optKbTreeStats(int files, int dirs) {
+    return '$files documents · $dirs folders';
+  }
+
+  @override
+  String optKbContentUpdated(String time) {
+    return 'Content updated $time';
+  }
+
+  @override
+  String get optKbRescan => 'Rescan';
+
+  @override
+  String get optKbCitedThisRound => 'Cited this round';
+
+  @override
+  String optKbCitedAll(int count) {
+    return 'All $count';
+  }
+
+  @override
+  String get optKbCitedNone => 'Nothing cited yet';
+
+  @override
+  String optAttachedImages(int count) {
+    return '$count reference images sent with the message';
+  }
+
+  @override
+  String get optSendHint => 'Enter to send · Shift+Enter for a new line';
+
+  @override
+  String optModeBadgeAgent(String mode) {
+    return '$mode · Agent';
+  }
+
+  @override
+  String get optRefNumberingHint =>
+      'Numbers match the filenames cited in the prompt; the agent can view these images.';
 }

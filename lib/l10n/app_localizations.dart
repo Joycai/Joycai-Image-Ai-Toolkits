@@ -4414,6 +4414,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continued in chat'**
   String get optAskUserDismissed;
+
+  /// No description provided for @optAgentSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent process · {count} steps'**
+  String optAgentSteps(int count);
+
+  /// No description provided for @optAgentStepsImages.
+  ///
+  /// In en, this message translates to:
+  /// **'viewed {count} reference images'**
+  String optAgentStepsImages(int count);
+
+  /// No description provided for @optAgentStepsDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'read {count} documents'**
+  String optAgentStepsDocs(int count);
+
+  /// No description provided for @optAgentStepsExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count} steps'**
+  String optAgentStepsExpand(int count);
+
+  /// No description provided for @optAgentStepsCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse steps'**
+  String get optAgentStepsCollapse;
+
+  /// No description provided for @optPromptExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full text'**
+  String get optPromptExpand;
+
+  /// No description provided for @optPromptCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get optPromptCollapse;
+
+  /// No description provided for @optKbReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get optKbReady;
+
+  /// No description provided for @optKbTreeStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{files} documents · {dirs} folders'**
+  String optKbTreeStats(int files, int dirs);
+
+  /// No description provided for @optKbContentUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Content updated {time}'**
+  String optKbContentUpdated(String time);
+
+  /// No description provided for @optKbRescan.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescan'**
+  String get optKbRescan;
+
+  /// No description provided for @optKbCitedThisRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Cited this round'**
+  String get optKbCitedThisRound;
+
+  /// No description provided for @optKbCitedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count}'**
+  String optKbCitedAll(int count);
+
+  /// No description provided for @optKbCitedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing cited yet'**
+  String get optKbCitedNone;
+
+  /// No description provided for @optAttachedImages.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reference images sent with the message'**
+  String optAttachedImages(int count);
+
+  /// No description provided for @optSendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter to send · Shift+Enter for a new line'**
+  String get optSendHint;
+
+  /// No description provided for @optModeBadgeAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} · Agent'**
+  String optModeBadgeAgent(String mode);
+
+  /// No description provided for @optRefNumberingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbers match the filenames cited in the prompt; the agent can view these images.'**
+  String get optRefNumberingHint;
 }
 
 class _AppLocalizationsDelegate

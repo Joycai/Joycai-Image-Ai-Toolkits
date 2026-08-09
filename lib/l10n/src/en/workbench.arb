@@ -404,5 +404,89 @@
   "optAskUserOtherHint": "Other / add details...",
   "optAskUserConfirm": "Send answers",
   "optAskUserAnswered": "Answered",
-  "optAskUserDismissed": "Continued in chat"
+  "optAskUserDismissed": "Continued in chat",
+  "optAgentSteps": "Agent process · {count} steps",
+  "@optAgentSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsImages": "viewed {count} reference images",
+  "@optAgentStepsImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsDocs": "read {count} documents",
+  "@optAgentStepsDocs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsExpand": "Show all {count} steps",
+  "@optAgentStepsExpand": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsCollapse": "Collapse steps",
+  "optPromptExpand": "Show full text",
+  "optPromptCollapse": "Collapse",
+  "optKbReady": "Ready",
+  "optKbTreeStats": "{files} documents · {dirs} folders",
+  "@optKbTreeStats": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbContentUpdated": "Content updated {time}",
+  "@optKbContentUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optKbRescan": "Rescan",
+  "optKbCitedThisRound": "Cited this round",
+  "optKbCitedAll": "All {count}",
+  "@optKbCitedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbCitedNone": "Nothing cited yet",
+  "optAttachedImages": "{count} reference images sent with the message",
+  "@optAttachedImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSendHint": "Enter to send · Shift+Enter for a new line",
+  "optModeBadgeAgent": "{mode} · Agent",
+  "@optModeBadgeAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images."
 }

@@ -806,6 +806,9 @@
   "sendToComparator": "比較ツールに送信",
   "sendToComparatorRaw": "Before (RAW) として設定",
   "sendToComparatorAfter": "After (結果) として設定",
+  "sendToFirstFrame": "動画の最初のフレームに設定",
+  "sendToLastFrame": "動画の最後のフレームに設定",
+  "sendToVideoReferences": "動画の参照画像に追加",
   "sendToSelection": "選択に追加",
   "sendToOptimizer": "プロンプトアシスタントに送信",
   "optimizePromptWithImage": "画像からプロンプトを最適化",
@@ -1070,5 +1073,89 @@
   "optAskUserOtherHint": "その他 / 補足...",
   "optAskUserConfirm": "回答を送信",
   "optAskUserAnswered": "回答済み",
-  "optAskUserDismissed": "チャットで継続"
+  "optAskUserDismissed": "チャットで継続",
+  "optAgentSteps": "エージェント処理 · {count} ステップ",
+  "@optAgentSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsImages": "参照画像 {count} 枚を確認",
+  "@optAgentStepsImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsDocs": "ドキュメント {count} 件を読了",
+  "@optAgentStepsDocs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsExpand": "全 {count} ステップを表示",
+  "@optAgentStepsExpand": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsCollapse": "ステップを折りたたむ",
+  "optPromptExpand": "全文を表示",
+  "optPromptCollapse": "折りたたむ",
+  "optKbReady": "初期化済み",
+  "optKbTreeStats": "ドキュメント {files} 件 · フォルダ {dirs} 個",
+  "@optKbTreeStats": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbContentUpdated": "内容更新 {time}",
+  "@optKbContentUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optKbRescan": "再スキャン",
+  "optKbCitedThisRound": "今回の参照",
+  "optKbCitedAll": "全 {count} 件",
+  "@optKbCitedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbCitedNone": "参照はまだありません",
+  "optAttachedImages": "参照画像 {count} 枚をメッセージと共に送信",
+  "@optAttachedImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSendHint": "Enter で送信 · Shift+Enter で改行",
+  "optModeBadgeAgent": "{mode} · エージェント",
+  "@optModeBadgeAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。"
 }

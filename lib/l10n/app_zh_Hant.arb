@@ -806,6 +806,9 @@
   "sendToComparator": "發送到比較器",
   "sendToComparatorRaw": "設為原始圖 (RAW)",
   "sendToComparatorAfter": "設為處理後 (Result)",
+  "sendToFirstFrame": "設為影片首格",
+  "sendToLastFrame": "設為影片末格",
+  "sendToVideoReferences": "加入影片參考圖",
   "sendToSelection": "新增至選取項目",
   "sendToOptimizer": "發送到提示詞助手",
   "optimizePromptWithImage": "使用圖片優化提示詞",
@@ -1070,5 +1073,89 @@
   "optAskUserOtherHint": "其他 / 補充說明...",
   "optAskUserConfirm": "送出回答",
   "optAskUserAnswered": "已回答",
-  "optAskUserDismissed": "已在對話中繼續"
+  "optAskUserDismissed": "已在對話中繼續",
+  "optAgentSteps": "Agent 過程 · {count} 步",
+  "@optAgentSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsImages": "檢視 {count} 張參考圖",
+  "@optAgentStepsImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsDocs": "閱讀 {count} 篇文件",
+  "@optAgentStepsDocs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsExpand": "展開全部 {count} 步",
+  "@optAgentStepsExpand": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsCollapse": "收合步驟",
+  "optPromptExpand": "展開全文",
+  "optPromptCollapse": "收合",
+  "optKbReady": "已初始化",
+  "optKbTreeStats": "{files} 篇文件 · {dirs} 個目錄",
+  "@optKbTreeStats": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbContentUpdated": "內容更新於 {time}",
+  "@optKbContentUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "optKbRescan": "重新掃描",
+  "optKbCitedThisRound": "本輪引用",
+  "optKbCitedAll": "全部 {count} 篇",
+  "@optKbCitedAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbCitedNone": "尚無引用",
+  "optAttachedImages": "{count} 張參考圖隨訊息傳送",
+  "@optAttachedImages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSendHint": "Enter 傳送 · Shift+Enter 換行",
+  "optModeBadgeAgent": "{mode} · Agent",
+  "@optModeBadgeAgent": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。"
 }
