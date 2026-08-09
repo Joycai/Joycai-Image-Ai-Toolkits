@@ -7,6 +7,8 @@ import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
 import '../../state/app_state.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 
 class DiscoveryDialog extends StatefulWidget {
   final LLMChannel channel;
@@ -123,35 +125,39 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       );
     }
 
-    return AlertDialog(
-      title: Row(
+    final media = MediaQuery.of(context).size;
+
+    return AppDialog(
+      icon: Icons.auto_awesome_outlined,
+      title: l10n.selectModelsToAdd,
+      maxWidth: media.width.clamp(280.0, 600.0),
+      // A fixed height, not just a ceiling: the body swaps between a spinner,
+      // an error and a list, and without one the dialog would resize under
+      // the pointer each time discovery moves on.
+      maxHeight: media.height.clamp(280.0, 600.0),
+      // The list reaches the dialog's edges; the search field above it brings
+      // its own inset.
+      contentPadding: EdgeInsets.zero,
+      content: Column(
         children: [
-          Icon(Icons.auto_awesome_outlined, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Text(l10n.selectModelsToAdd),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: _buildSearchBar(l10n),
+          ),
+          Expanded(child: _buildMainContent(l10n)),
         ],
       ),
-      contentPadding: EdgeInsets.zero,
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width.clamp(280.0, 600.0).clamp(0.0, MediaQuery.of(context).size.width - 32),
-        height: MediaQuery.of(context).size.height.clamp(280.0, 600.0).clamp(0.0, MediaQuery.of(context).size.height - 96),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: _buildSearchBar(l10n),
-            ),
-            Expanded(child: _buildMainContent(l10n)),
-          ],
-        ),
-      ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
         if (!_isLoading && _error == null && _discovered.isNotEmpty)
-          FilledButton.icon(
+          AppButton(
+            label: l10n.addSelected(_selectedIds.length),
+            icon: Icons.add,
             onPressed: _selectedIds.isEmpty ? null : _handleAddSelected,
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(l10n.addSelected(_selectedIds.length)),
           ),
       ],
     );

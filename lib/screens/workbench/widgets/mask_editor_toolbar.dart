@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 
 class MaskEditorToolbar extends StatelessWidget {
   final VoidCallback onUndo;
@@ -227,35 +229,39 @@ class MaskEditorToolbar extends StatelessWidget {
     Function(double) onChanged,
     String Function(double) displayConverter
   ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            // Find current value in the slider range
-            double val = currentValue;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Slider(
-                  value: val,
-                  min: min,
-                  max: max,
-                  onChanged: (newVal) {
-                    onChanged(newVal);
-                    setState(() => val = newVal);
-                  },
-                ),
-                Text(displayConverter(val)),
-              ],
-            );
-          },
+    // Outside the builder, so it survives the rebuilds the drag causes.
+    var val = currentValue;
+
+    AppDialog.show<void>(
+      context,
+      title: title,
+      content: StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Slider(
+              value: val,
+              min: min,
+              max: max,
+              onChanged: (newVal) {
+                onChanged(newVal);
+                setState(() => val = newVal);
+              },
+            ),
+            Text(displayConverter(val)),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-        ],
       ),
+      actions: [
+        // Same wording the thumbnail-size dialog dismisses with: both are
+        // live-preview sliders where the change has already happened, so the
+        // button only closes.
+        AppButton(
+          label: AppLocalizations.of(context)!.confirm,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 

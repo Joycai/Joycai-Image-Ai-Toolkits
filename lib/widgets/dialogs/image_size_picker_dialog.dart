@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 
 /// Picker for image-size parameters whose values aren't exhaustively
 /// enumerable (currently used by gpt-image-2). Renders the spec's preset
@@ -119,115 +121,114 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
         ? checkOpenAIImage2SizeRules(_width!, _height!)
         : const <SizeRuleResult>[];
 
-    return AlertDialog(
-      title: Text(l10n.imageSizePickerTitle),
-      content: SizedBox(
-        width: 460,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (hasAuto) ...[
-                _SectionHeader(label: l10n.imageSizeAuto),
-                const SizedBox(height: 6),
-                _AutoCard(
-                  selected: widget.currentValue == 'auto' &&
-                      _width.toString() == '1024' && _height.toString() == '1024',
-                  onTap: () => Navigator.of(context).pop('auto'),
-                  label: l10n.imageSizeAutoDesc,
-                ),
-                const SizedBox(height: 16),
-              ],
-              _SectionHeader(label: l10n.imageSizePresets),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: presets.map((opt) {
-                  final isSelected = widget.currentValue == opt.value;
-                  return ChoiceChip(
-                    label: Text(opt.value.replaceAll('x', '×')),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      final parsed = _parseSize(opt.value);
-                      if (parsed != null) _setSize(parsed.$1, parsed.$2);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              _SectionHeader(label: l10n.imageSizeCustom),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _widthCtrl,
-                      decoration: InputDecoration(
-                        labelText: l10n.imageSizeWidth,
-                        isDense: true,
-                        border: const OutlineInputBorder(),
-                        suffixText: 'px',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: _onWidthChanged,
-                      onEditingComplete: _commitSnap,
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Icon(Icons.close, size: 16),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _heightCtrl,
-                      decoration: InputDecoration(
-                        labelText: l10n.imageSizeHeight,
-                        isDense: true,
-                        border: const OutlineInputBorder(),
-                        suffixText: 'px',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: _onHeightChanged,
-                      onEditingComplete: _commitSnap,
-                    ),
-                  ),
-                ],
-              ),
+    return AppDialog(
+      title: l10n.imageSizePickerTitle,
+      maxWidth: 460,
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasAuto) ...[
+              _SectionHeader(label: l10n.imageSizeAuto),
               const SizedBox(height: 6),
-              Text(
-                l10n.imageSizeSnapHint,
-                style: TextStyle(fontSize: 11, color: colorScheme.outline),
+              _AutoCard(
+                selected: widget.currentValue == 'auto' &&
+                    _width.toString() == '1024' && _height.toString() == '1024',
+                onTap: () => Navigator.of(context).pop('auto'),
+                label: l10n.imageSizeAutoDesc,
               ),
-              if (rules.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _AspectPreview(
-                  width: _width!,
-                  height: _height!,
-                  valid: _customValid,
-                ),
-                const SizedBox(height: 14),
-                ...rules.map((r) => _RuleRow(
-                      label: _ruleLabel(l10n, r.labelKey, _width!, _height!),
-                      passes: r.passes,
-                    )),
-              ],
+              const SizedBox(height: 16),
             ],
-          ),
+            _SectionHeader(label: l10n.imageSizePresets),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: presets.map((opt) {
+                final isSelected = widget.currentValue == opt.value;
+                return ChoiceChip(
+                  label: Text(opt.value.replaceAll('x', '×')),
+                  selected: isSelected,
+                  onSelected: (_) {
+                    final parsed = _parseSize(opt.value);
+                    if (parsed != null) _setSize(parsed.$1, parsed.$2);
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            _SectionHeader(label: l10n.imageSizeCustom),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _widthCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.imageSizeWidth,
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      suffixText: 'px',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: _onWidthChanged,
+                    onEditingComplete: _commitSnap,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Icon(Icons.close, size: 16),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _heightCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.imageSizeHeight,
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      suffixText: 'px',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: _onHeightChanged,
+                    onEditingComplete: _commitSnap,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.imageSizeSnapHint,
+              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+            ),
+            if (rules.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _AspectPreview(
+                width: _width!,
+                height: _height!,
+                valid: _customValid,
+              ),
+              const SizedBox(height: 14),
+              ...rules.map((r) => _RuleRow(
+                    label: _ruleLabel(l10n, r.labelKey, _width!, _height!),
+                    passes: r.passes,
+                  )),
+            ],
+          ],
         ),
       ),
       actions: [
-        TextButton(
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancel),
         ),
-        FilledButton(
+        AppButton(
+          label: l10n.apply,
           onPressed: _customValid ? () => Navigator.of(context).pop('${_width}x$_height') : null,
-          child: Text(l10n.apply),
         ),
       ],
     );

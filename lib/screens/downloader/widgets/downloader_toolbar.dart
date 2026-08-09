@@ -6,6 +6,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/api_key_field.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/chat_model_selector.dart';
 
@@ -318,72 +320,63 @@ Future<void> showDownloaderAdvancedDialog(
   final l10n = AppLocalizations.of(context)!;
   final state = Provider.of<AppState>(context, listen: false).downloaderState;
 
-  return showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.tune, size: 20),
-          const SizedBox(width: 10),
-          Text(l10n.advancedOptions),
-        ],
-      ),
-      content: SizedBox(
-        width: 440,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: prefixController,
-              decoration: InputDecoration(
-                labelText: l10n.filenamePrefix,
-                isDense: true,
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.drive_file_rename_outline, size: 20),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ApiKeyField(
-              controller: cookieController,
-              label: l10n.cookiesHint,
-              maxLines: 3,
-              onChanged: (v) => state.setState(cookies: v),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    onImportCookie();
-                  },
-                  icon: const Icon(Icons.upload_file, size: 16),
-                  label: Text(l10n.importCookieFile,
-                      style: const TextStyle(fontSize: 12)),
-                ),
-                if (state.cookieHistory.isNotEmpty)
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showCookieHistory(context, state, cookieController);
-                    },
-                    icon: const Icon(Icons.history, size: 16),
-                    label: Text(l10n.cookieHistory,
-                        style: const TextStyle(fontSize: 12)),
-                  ),
-              ],
-            ),
-          ],
+  return AppDialog.show<void>(
+    context,
+    icon: Icons.tune,
+    title: l10n.advancedOptions,
+    maxWidth: 440,
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: prefixController,
+          decoration: InputDecoration(
+            labelText: l10n.filenamePrefix,
+            isDense: true,
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.drive_file_rename_outline, size: 20),
+          ),
         ),
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.finish),
+        const SizedBox(height: 16),
+        ApiKeyField(
+          controller: cookieController,
+          label: l10n.cookiesHint,
+          maxLines: 3,
+          onChanged: (v) => state.setState(cookies: v),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                onImportCookie();
+              },
+              icon: const Icon(Icons.upload_file, size: 16),
+              label: Text(l10n.importCookieFile,
+                  style: const TextStyle(fontSize: 12)),
+            ),
+            if (state.cookieHistory.isNotEmpty)
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showCookieHistory(context, state, cookieController);
+                },
+                icon: const Icon(Icons.history, size: 16),
+                label: Text(l10n.cookieHistory,
+                    style: const TextStyle(fontSize: 12)),
+              ),
+          ],
         ),
       ],
     ),
+    actions: [
+      AppButton(
+        label: l10n.finish,
+        onPressed: () => Navigator.pop(context),
+      ),
+    ],
   );
 }
 

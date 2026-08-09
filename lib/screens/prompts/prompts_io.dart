@@ -9,6 +9,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 
 /// Import / export helpers for the Prompt Library.
 ///
@@ -69,30 +71,27 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
   if (!context.mounted || result == null) return false;
 
-  final String? importMode = await showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.importMode),
-      content: Text(l10n.importModeDesc),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, 'merge'),
-          child: Text(l10n.merge),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.error,
-            foregroundColor: Theme.of(context).colorScheme.onError,
-          ),
-          onPressed: () => Navigator.pop(context, 'replace'),
-          child: Text(l10n.replaceAll),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-      ],
-    ),
+  final String? importMode = await AppDialog.show<String>(
+    context,
+    title: l10n.importMode,
+    content: Text(l10n.importModeDesc),
+    actions: [
+      AppButton(
+        label: l10n.merge,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, 'merge'),
+      ),
+      AppButton(
+        label: l10n.replaceAll,
+        variant: AppButtonVariant.destructive,
+        onPressed: () => Navigator.pop(context, 'replace'),
+      ),
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context),
+      ),
+    ],
   );
 
   if (importMode == null) return false;

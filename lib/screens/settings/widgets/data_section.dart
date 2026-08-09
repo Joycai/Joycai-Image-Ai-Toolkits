@@ -10,6 +10,8 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
 import '../../wizard/setup_wizard.dart';
 
@@ -188,36 +190,36 @@ class DataSection extends StatelessWidget {
     bool p = true;
     bool u = false;
 
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.exportOptions),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildExportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
-                const SizedBox(height: 12),
-                _buildExportOption(l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
-                const SizedBox(height: 12),
-                _buildExportOption(l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-            FilledButton(
-              onPressed: () {
-                onUpdate(d, p, u);
-                Navigator.pop(context, true);
-              },
-              child: Text(l10n.exportNow),
-            ),
+    return await AppDialog.show<bool>(
+      context,
+      title: l10n.exportOptions,
+      maxWidth: 450,
+      content: StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildExportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
+            const SizedBox(height: 12),
+            _buildExportOption(l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
+            const SizedBox(height: 12),
+            _buildExportOption(l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
           ],
         ),
       ),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.exportNow,
+          onPressed: () {
+            onUpdate(d, p, u);
+            Navigator.pop(context, true);
+          },
+        ),
+      ],
     );
   }
 
@@ -360,39 +362,39 @@ class DataSection extends StatelessWidget {
     bool p = hasPrompts;
     bool u = hasUsage;
 
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.importOptions),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                const SizedBox(height: 20),
-                _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
-                const SizedBox(height: 12),
-                _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
-                const SizedBox(height: 12),
-                _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-            FilledButton(
-              onPressed: () {
-                onUpdate(d, p, u);
-                Navigator.pop(context, true);
-              },
-              style: FilledButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: Text(l10n.importNow),
-            ),
+    return await AppDialog.show<bool>(
+      context,
+      title: l10n.importOptions,
+      maxWidth: 450,
+      content: StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            const SizedBox(height: 20),
+            _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+            const SizedBox(height: 12),
+            _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+            const SizedBox(height: 12),
+            _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
           ],
         ),
       ),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.importNow,
+          variant: AppButtonVariant.destructive,
+          onPressed: () {
+            onUpdate(d, p, u);
+            Navigator.pop(context, true);
+          },
+        ),
+      ],
     );
   }
 
@@ -414,29 +416,31 @@ class DataSection extends StatelessWidget {
   }
 
   void _resetSettings(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.confirmReset),
-        content: Text(l10n.resetWarning),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);
-              await DatabaseService().resetAllSettings();
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              appState.addLog('All settings reset to default.');
-              await appState.loadSettings();
-              await appState.galleryState.reloadSettings();
-              await appState.fileBrowserState.reloadSettings();
-            },
-            child: Text(l10n.resetEverything, style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.confirmReset,
+      content: Text(l10n.resetWarning),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.resetEverything,
+          variant: AppButtonVariant.destructive,
+          onPressed: () async {
+            final appState = Provider.of<AppState>(context, listen: false);
+            await DatabaseService().resetAllSettings();
+            if (!context.mounted) return;
+            Navigator.pop(context);
+            appState.addLog('All settings reset to default.');
+            await appState.loadSettings();
+            await appState.galleryState.reloadSettings();
+            await appState.fileBrowserState.reloadSettings();
+          },
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/responsive.dart';
+
 /// Corner radius shared by every dialog.
 ///
 /// The same 12 the inset panels use ([PanelCard], [AppCard],
@@ -18,6 +20,13 @@ const double appDialogRadius = 12;
 /// dialog whose body owns its own layout, construct [AppDialog] directly
 /// inside your own `showDialog`/`showGeneralDialog` call: the chrome still
 /// applies and nothing about the shape is assumed.
+///
+/// Note on popping: [actions] are built with the *caller's* context, not a
+/// builder-scoped one, so `Navigator.pop(context, value)` inside an action
+/// resolves to the nearest enclosing [Navigator] and pops its topmost route —
+/// this dialog. That holds because the app has a single navigator; introduce a
+/// nested one and an action inside a bottom sheet would start closing the
+/// sheet instead of the dialog.
 ///
 /// Two things callers reach for that this deliberately does not provide:
 ///
@@ -171,6 +180,14 @@ class AppDialog extends StatelessWidget {
       // Material's own stock white/near-black sheet.
       backgroundColor: colorScheme.surfaceContainer,
       clipBehavior: clipBehavior,
+      // Material's 40px side inset costs a phone a fifth of its width; on a
+      // 390pt screen a form dialog ends up 310pt wide with its fields
+      // squeezed. Handled here rather than per call site, because every
+      // dialog in the app has the same problem.
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: Responsive.isMobile(context) ? 12 : 40,
+        vertical: 24,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appDialogRadius)),
       child: ConstrainedBox(
         constraints: BoxConstraints(

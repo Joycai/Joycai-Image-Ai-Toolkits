@@ -12,6 +12,8 @@ import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/settings_widgets.dart';
 import 'wizard_import.dart';
 
@@ -456,24 +458,21 @@ class _SetupWizardState extends State<SetupWizard> {
       
       if (!mounted) return;
       
-      final selected = await showDialog<DiscoveredModel>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.selectModelsToAdd),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400, maxHeight: 400),
-            child: ListView.builder(
-              itemCount: models.length,
-              itemBuilder: (context, index) {
-                final m = models[index];
-                return ListTile(
-                  title: Text(m.displayName),
-                  subtitle: Text(m.modelId),
-                  onTap: () => Navigator.pop(context, m),
-                );
-              },
-            ),
-          ),
+      final selected = await AppDialog.show<DiscoveredModel>(
+        context,
+        title: l10n.selectModelsToAdd,
+        maxWidth: 400,
+        maxHeight: 400,
+        content: ListView.builder(
+          itemCount: models.length,
+          itemBuilder: (context, index) {
+            final m = models[index];
+            return ListTile(
+              title: Text(m.displayName),
+              subtitle: Text(m.modelId),
+              onTap: () => Navigator.pop(context, m),
+            );
+          },
         ),
       );
 
@@ -502,19 +501,17 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   void _showRestartDialog(AppLocalizations l10n) {
-    showDialog(
-      context: context,
+    AppDialog.show<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.restartRequired),
-        content: Text(l10n.restartMessage),
-        actions: [
-          FilledButton(
-            onPressed: () => exit(0),
-            child: Text(l10n.exit),
-          ),
-        ],
-      ),
+      title: l10n.restartRequired,
+      content: Text(l10n.restartMessage),
+      actions: [
+        AppButton(
+          label: l10n.exit,
+          onPressed: () => exit(0),
+        ),
+      ],
     );
   }
 

@@ -6,6 +6,8 @@ import '../../models/llm_model.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/context_budget.dart';
 import '../../state/app_state.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 import '../app_segmented_control.dart';
 
 class ModelEditDialog extends StatefulWidget {
@@ -111,83 +113,86 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
 
-    return Dialog(
+    return AppDialog(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 40, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 620, maxHeight: 760),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(colorScheme),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-                child: _buildForm(colorScheme, twoColumn: !isMobile),
-              ),
-            ),
-            _buildFooter(colorScheme),
-          ],
+      maxWidth: 620,
+      maxHeight: 760,
+      // titleWidget rather than icon/title/subtitle: this heading keeps its
+      // tinted icon tile and its own close button, neither of which the
+      // shell's leading-icon layout has a place for.
+      titleWidget: _buildHeader(context, colorScheme),
+      scrollable: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      content: _buildForm(colorScheme, twoColumn: !isMobile),
+      actions: [
+        AppButton(
+          label: widget.l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
         ),
-      ),
+        AppButton(
+          label: widget.model == null ? widget.l10n.add : widget.l10n.save,
+          icon: Icons.save,
+          onPressed: _canSave ? _save : null,
+        ),
+      ],
     );
   }
 
   // --- Header -------------------------------------------------------------
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  /// The heading: tinted icon tile, name, model id, close.
+  ///
+  /// No bottom rule any more — the app's panels gave up hard divider lines
+  /// for spacing, and [AppDialog]'s own gap already separates this from the
+  /// form. Type comes from the scale so it matches every other dialog title.
+  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
     final l10n = widget.l10n;
     final isEdit = widget.model != null;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 10, 14),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isEdit ? Icons.edit_outlined : Icons.add_box_outlined,
-              size: 22,
-              color: colorScheme.onPrimaryContainer,
-            ),
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: Icon(
+            isEdit ? Icons.edit_outlined : Icons.add_box_outlined,
+            size: 22,
+            color: colorScheme.onPrimaryContainer,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isEdit ? l10n.editLlmModel : l10n.addLlmModel,
+                style: textTheme.titleLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (isEdit)
                 Text(
-                  isEdit ? l10n.editLlmModel : l10n.addLlmModel,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  widget.model!.modelId,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontFamily: 'monospace',
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (isEdit)
-                  Text(
-                    widget.model!.modelId,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 
@@ -395,32 +400,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
-  // --- Footer -------------------------------------------------------------
-
-  Widget _buildFooter(ColorScheme colorScheme) {
-    final l10n = widget.l10n;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: _canSave ? _save : null,
-            icon: const Icon(Icons.save, size: 18),
-            label: Text(widget.model == null ? l10n.add : l10n.save),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _save() async {
     final channel = widget.appState.allChannels.firstWhere((c) => c.id == channelId);

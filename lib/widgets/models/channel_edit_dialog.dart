@@ -6,6 +6,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 import 'channel_form_sections.dart';
 
 /// Edit-channel dialog. Desktop: a fixed-width two-column layout —
@@ -127,30 +129,18 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     }
 
     final colorScheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-      title: Row(
-        children: [
-          Icon(Icons.edit_note, color: colorScheme.primary),
-          const SizedBox(width: 12),
-          Text(l10n.editChannel),
-          const Spacer(),
-          if (widget.channel != null)
-            Flexible(
-              child: Text(
-                widget.channel!.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 13, color: colorScheme.outline),
-              ),
-            ),
-        ],
-      ),
-      contentPadding: EdgeInsets.zero,
+    return AppDialog(
+      icon: Icons.edit_note,
+      title: l10n.editChannel,
+      // Which channel is being edited belongs under the heading, not trailing
+      // it: as a Spacer'd tail it collided with a long title at narrow widths.
+      subtitle: widget.channel?.displayName,
+      maxWidth: 680,
       clipBehavior: Clip.antiAlias,
-      content: SizedBox(
-        width: 680,
-        child: SingleChildScrollView(
+      // The body brings its own padding so its two columns can carry the
+      // divider between them right to the edges.
+      contentPadding: EdgeInsets.zero,
+      content: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
           // No IntrinsicHeight here: the appearance column contains a Wrap,
           // whose intrinsic height is computed as a single run — under a
@@ -198,17 +188,16 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             ],
           ),
         ),
-      ),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       actions: [
-        TextButton(
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
         ),
-        FilledButton.icon(
+        AppButton(
+          label: l10n.save,
+          icon: Icons.save,
           onPressed: _save,
-          icon: const Icon(Icons.save, size: 18),
-          label: Text(l10n.save),
         ),
       ],
     );

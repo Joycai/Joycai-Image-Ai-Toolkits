@@ -4,6 +4,8 @@ import '../core/constants.dart';
 import '../l10n/app_localizations.dart';
 import '../services/font_service.dart';
 import '../state/app_state.dart';
+import 'app_button.dart';
+import 'app_dialog.dart';
 import 'app_segmented_control.dart';
 
 class ThemeSelector extends StatelessWidget {
@@ -257,22 +259,21 @@ class FontSelector extends StatelessWidget {
     if (!context.mounted) return;
     final font = FontService.meta(key)!;
     final sizeMB = (font.totalBytes / 1048576).toStringAsFixed(1);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.fontDownloadTitle),
-        content: Text('${font.displayName}  ·  ~$sizeMB MB\n\n${l10n.fontDownloadPrompt}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.fontDownloadAction),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      title: l10n.fontDownloadTitle,
+      content: Text('${font.displayName}  ·  ~$sizeMB MB\n\n${l10n.fontDownloadPrompt}'),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.fontDownloadAction,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
     if (confirmed != true || !context.mounted) return;
 
@@ -329,7 +330,8 @@ class _FontDownloadDialogState extends State<_FontDownloadDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppDialog(
+      maxWidth: 360,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

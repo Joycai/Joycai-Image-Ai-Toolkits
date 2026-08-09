@@ -9,6 +9,8 @@ import '../../core/backup_error_text.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 
 /// Backup-import flow for the setup wizard.
 ///
@@ -138,39 +140,39 @@ Future<bool?> _showDesktopImportOptions(
   bool p = hasPrompts;
   bool u = hasUsage;
 
-  return await showDialog<bool>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text(l10n.importOptions),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 450),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 20),
-              _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
-              const SizedBox(height: 12),
-              _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
-              const SizedBox(height: 12),
-              _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          FilledButton(
-            onPressed: () {
-              onUpdate(d, p, u);
-              Navigator.pop(context, true);
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: Text(l10n.importNow),
-          ),
+  return await AppDialog.show<bool>(
+    context,
+    title: l10n.importOptions,
+    maxWidth: 450,
+    content: StatefulBuilder(
+      builder: (context, setState) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          const SizedBox(height: 20),
+          _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+          const SizedBox(height: 12),
+          _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+          const SizedBox(height: 12),
+          _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
         ],
       ),
     ),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, false),
+      ),
+      AppButton(
+        label: l10n.importNow,
+        variant: AppButtonVariant.destructive,
+        onPressed: () {
+          onUpdate(d, p, u);
+          Navigator.pop(context, true);
+        },
+      ),
+    ],
   );
 }
 

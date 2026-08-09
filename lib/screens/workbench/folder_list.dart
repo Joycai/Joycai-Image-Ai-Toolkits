@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
@@ -311,29 +312,29 @@ class FolderList extends StatelessWidget {
 
   void _confirmRemove(BuildContext context, AppState appState, String path, String folderName) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.removeFolderConfirmTitle),
-        content: Text(l10n.removeFolderConfirmMessage(folderName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              if (useFileBrowserState) {
-                appState.fileBrowserState.removeBaseDirectory(path);
-              } else {
-                appState.removeBaseDirectory(path);
-              }
-              Navigator.pop(context);
-            },
-            child: Text(l10n.remove, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+    AppDialog.show<void>(
+      context,
+      title: l10n.removeFolderConfirmTitle,
+      content: Text(l10n.removeFolderConfirmMessage(folderName)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.remove,
+          variant: AppButtonVariant.destructive,
+          onPressed: () {
+            if (useFileBrowserState) {
+              appState.fileBrowserState.removeBaseDirectory(path);
+            } else {
+              appState.removeBaseDirectory(path);
+            }
+            Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 

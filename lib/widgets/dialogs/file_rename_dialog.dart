@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 import '../../l10n/app_localizations.dart';
+import '../app_button.dart';
+import '../app_dialog.dart';
 
 Future<void> showFileRenameDialog({
   required BuildContext context,
@@ -18,37 +20,36 @@ Future<void> showFileRenameDialog({
 
   final controller = TextEditingController(text: nameStem);
 
-  final bool? confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.renameFile),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: l10n.newFilename,
-              suffixText: extension,
-              border: const OutlineInputBorder(),
-            ),
-            autofocus: true,
-            onSubmitted: (val) => Navigator.pop(context, true),
+  final bool? confirmed = await AppDialog.show<bool>(
+    context,
+    title: l10n.renameFile,
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: l10n.newFilename,
+            suffixText: extension,
+            border: const OutlineInputBorder(),
           ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(l10n.rename),
+          autofocus: true,
+          onSubmitted: (val) => Navigator.pop(context, true),
         ),
       ],
     ),
+    actions: [
+      AppButton(
+        label: l10n.cancel,
+        variant: AppButtonVariant.text,
+        onPressed: () => Navigator.pop(context, false),
+      ),
+      AppButton(
+        label: l10n.rename,
+        onPressed: () => Navigator.pop(context, true),
+      ),
+    ],
   );
 
   if (confirmed == true) {

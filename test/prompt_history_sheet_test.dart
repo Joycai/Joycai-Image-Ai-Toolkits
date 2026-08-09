@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/dialogs/prompt_history_dialog.dart';
 
 /// Drives the recent-prompt picker the way a user does: open, tap an entry,
@@ -40,7 +41,7 @@ void main() {
     await tester.tap(find.text('a watercolour cat'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(AppDialog), findsOneWidget);
     // Nothing is replaced until the user confirms.
     expect(applied, isEmpty);
   });
@@ -65,7 +66,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(applied, isEmpty);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(AppDialog), findsNothing);
   });
 
   testWidgets('preview shows the whole prompt, not the truncated card text', (tester) async {
