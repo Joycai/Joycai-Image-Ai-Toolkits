@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'app_text_field.dart';
+
+/// A secret-entry field: obscured by default with a reveal toggle, for API
+/// keys and other single-line credentials.
+///
+/// Built on [AppTextField] so it picks up the app's input styling; this
+/// widget only adds the obscure/reveal behaviour on top.
 class ApiKeyField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
@@ -30,22 +37,19 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
   @override
   Widget build(BuildContext context) {
     final canObscure = widget.maxLines == 1;
-    
-    return TextField(
+
+    return AppTextField(
       controller: widget.controller,
-      obscureText: canObscure && _obscureText,
+      label: widget.label,
       maxLines: widget.maxLines,
-      decoration: InputDecoration(
-        labelText: widget.label,
-        border: const OutlineInputBorder(),
-        suffixIcon: canObscure 
+      obscureText: canObscure && _obscureText,
+      onChanged: widget.onChanged,
+      suffixIcon: canObscure
           ? IconButton(
               icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
               onPressed: () => setState(() => _obscureText = !_obscureText),
             )
           : null,
-      ),
-      onChanged: widget.onChanged,
     );
   }
 }

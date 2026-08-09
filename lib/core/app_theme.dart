@@ -32,6 +32,7 @@ ThemeData buildAppTheme({
     useMaterial3: true,
     colorScheme: colorScheme,
     fontFamily: fontFamily,
+    textTheme: _buildTextTheme(colorScheme, fontFamily),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: fill.primary,
@@ -52,6 +53,35 @@ ThemeData buildAppTheme({
       ),
     ),
   );
+}
+
+/// The type scale the rest of the widget library reads instead of a literal
+/// `TextStyle(fontSize: N)`.
+///
+/// Sizes/weights collapse the app's ad hoc call sites (13, 14, 18... each
+/// picked per screen) onto Material's named [TextTheme] slots. Colour is left
+/// to [base] — merging keeps a slot's colour whenever this override doesn't
+/// set one, so text stays tied to [colorScheme] the way Material's own
+/// default theme is, and only size/weight are opinionated here.
+TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
+  final base = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+
+  final merged = base.merge(const TextTheme(
+    titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+    titleSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+    bodyMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+    bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+    labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+    labelMedium: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
+    labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+  ));
+
+  // Applied here rather than left to ThemeData's own `fontFamily` parameter:
+  // that parameter does not reliably reach every slot of a caller-supplied
+  // `textTheme`, so a font switch could silently miss anything styled from
+  // this scale. Doing it explicitly means every slot always carries it.
+  return fontFamily == null ? merged : merged.apply(fontFamily: fontFamily);
 }
 
 /// The scheme a primary button takes its fill and label from.
