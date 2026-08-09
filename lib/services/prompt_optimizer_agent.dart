@@ -1218,30 +1218,72 @@ class PromptOptimizerAgent {
 
   static String _deriveTitle(List<LLMMessage> history) {
     final first = history
-        .where((m) =>
-            m.role == LLMRole.user &&
-            !m.content.startsWith(viewResultMarker) &&
-            !m.content.startsWith(summaryMarker))
+        .where(_isRealUserTurn)
         .map((m) => m.content.trim())
         .firstWhere((c) => c.isNotEmpty, orElse: () => '');
     final oneLine = first.replaceAll(RegExp(r'\s+'), ' ');
     return oneLine.length <= 40 ? oneLine : '${oneLine.substring(0, 40)}…';
   }
 
+  /// Whether [m] is something the *user* actually said, as opposed to a
+  /// message the agent injects into the user role.
+  ///
+  /// `view_image` results and compaction summaries both arrive as user
+  /// messages; counting either as a turn would split a turn in half or make
+  /// the protected window shorter than it claims. Shared so the two callers
+  /// that need this cannot drift apart.
+  static bool _isRealUserTurn(LLMMessage m) =>
+      m.role == LLMRole.user &&
+      !m.content.startsWith(viewResultMarker) &&
+      !m.content.startsWith(summaryMarker);
+
   /// Index of the user message that opens the protected "recent" window
   /// (the last [_keepRecentTurns] real user turns). 0 = protect everything.
   static int _recentBoundary(List<LLMMessage> history) {
     int userSeen = 0;
     for (int i = history.length - 1; i >= 0; i--) {
-      final m = history[i];
-      if (m.role == LLMRole.user &&
-          !m.content.startsWith(viewResultMarker) &&
-          !m.content.startsWith(summaryMarker)) {
+      if (_isRealUserTurn(history[i])) {
         userSeen++;
         if (userSeen >= _keepRecentTurns) return i;
       }
     }
     return 0;
+  }
+
+  /// The knowledge files the current answer rests on, in the order the agent
+  /// consulted them.
+  ///
+  /// The window is the live one — from [_recentBoundary] — rather than
+  /// strictly "this turn". A template read three turns ago and still being
+  /// sent with every request *is* something the answer is grounded in, and a
+  /// list that dropped it the moment the model stopped re-requesting it would
+  /// shrink as the conversation went on, for no reason the user could see.
+  /// Once layer 1 elides that read it genuinely has left the request, and it
+  /// correctly leaves this list with it.
+  ///
+  /// Scans tool **results**, like every other "what has been read" question in
+  /// this file — see the invariant documented on [_liveReadPages]. A failed
+  /// read carries neither content nor a path, so it cannot appear here.
+  static List<String> citedKnowledgeFiles(PromptOptimizerSession session) {
+    final history = session.history;
+    final paths = <String>{};
+
+    for (int i = _recentBoundary(history); i < history.length; i++) {
+      final m = history[i];
+      if (m.role != LLMRole.tool || m.toolName != 'read_knowledge_file') continue;
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(m.content);
+      } catch (_) {
+        continue;
+      }
+      if (decoded is! Map) continue;
+      final path = decoded['path'];
+      if (path is String && path.isNotEmpty) paths.add(path);
+    }
+
+    // Insertion-ordered, so the list reads in the order the agent worked.
+    return paths.toList();
   }
 
   /// Below this many chars a read is not worth doing: the model would get a
@@ -1576,6 +1618,13 @@ class PromptOptimizerAgent {
         if (_liveReadPages(session, relPath).contains(page)) {
           return {
             'status': 'ok',
+            // Named even though the content is not repeated, so the UI can
+            // still credit the file as something this answer rests on. A
+            // cache hit means the model is *using* it, not ignoring it, and a
+            // citation list that dropped it would shrink as a conversation
+            // went on. `_liveReadPages` is unaffected: it requires a non-null
+            // `content` (see the invariant it documents), which this lacks.
+            'path': relPath,
             'note': 'This page is already in the conversation — refer to the earlier result instead of re-reading it.',
           };
         }
