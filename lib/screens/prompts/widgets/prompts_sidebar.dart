@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 
 class PromptsSidebar extends StatelessWidget {
@@ -119,10 +120,11 @@ class PromptsSidebar extends StatelessWidget {
           if (selectedFilterTagIds.isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextButton.icon(
+              child: AppButton(
+                label: l10n.clear,
+                icon: Icons.clear_all,
+                variant: AppButtonVariant.text,
                 onPressed: onClear,
-                icon: const Icon(Icons.clear_all, size: 16),
-                label: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
               ),
             ),
         ],

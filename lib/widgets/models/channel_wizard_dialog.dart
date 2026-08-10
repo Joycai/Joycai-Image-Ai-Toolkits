@@ -318,14 +318,18 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     _buildStepDots(),
                     const Spacer(),
                     if (_currentStep > 0) ...[
-                      OutlinedButton(onPressed: _back, child: Text(l10n.back)),
+                      AppButton(
+                        label: l10n.back,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: _back,
+                      ),
                       const SizedBox(width: 12),
                     ],
-                    FilledButton(
-                      onPressed: _isNextEnabled() ? _next : null,
-                      child: Text(_currentStep == _totalSteps - 1
+                    AppButton(
+                      label: _currentStep == _totalSteps - 1
                           ? l10n.finish
-                          : l10n.next),
+                          : l10n.next,
+                      onPressed: _isNextEnabled() ? _next : null,
                     ),
                   ],
                 ),

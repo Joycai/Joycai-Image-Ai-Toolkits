@@ -440,11 +440,11 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             _updateConfig(prompt: content);
           },
         ),
-        TextButton.icon(
+        AppButton(
+          label: l10n.library,
+          icon: Icons.library_books_outlined,
+          variant: AppButtonVariant.text,
           onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
-          icon: const Icon(Icons.library_books_outlined, size: 16),
-          label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
-          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
         ),
       ],
     );
@@ -500,9 +500,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               l10n.selectedCount(selectedImages.length),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            TextButton(
+            AppButton(
+              label: l10n.clear,
+              variant: AppButtonVariant.text,
               onPressed: () => Provider.of<AppState>(context, listen: false).clearImageSelection(),
-              child: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
             ),
           ],
         ),

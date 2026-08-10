@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 
 class GalleryToolbar extends StatelessWidget {
@@ -75,11 +76,11 @@ class GalleryToolbar extends StatelessWidget {
           ),
           if (!isDesktop && galleryState.droppedImages.isNotEmpty) ...[
             _divider(colorScheme),
-            TextButton.icon(
+            AppButton(
+              label: l10n.clearTempWorkspace,
+              icon: Icons.delete_sweep_outlined,
+              variant: AppButtonVariant.destructiveText,
               onPressed: () => galleryState.clearDroppedImages(),
-              icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-              label: Text(l10n.clearTempWorkspace),
-              style: TextButton.styleFrom(foregroundColor: colorScheme.error),
             ),
           ],
           _divider(colorScheme),
@@ -136,10 +137,11 @@ class GalleryToolbar extends StatelessWidget {
             ),
 
           if (canInline)
-            TextButton.icon(
+            AppButton(
+              label: l10n.importFromGallery,
+              icon: Icons.photo_library_outlined,
+              variant: AppButtonVariant.text,
               onPressed: () => _pickFromGallery(galleryState),
-              icon: const Icon(Icons.photo_library_outlined, size: 18),
-              label: Text(l10n.importFromGallery),
             )
           else
             _buildOverflowMenu(context, galleryState, l10n, selectedCount, thumbnailSize, isDesktop),

@@ -90,10 +90,10 @@ class PricingGroupManager extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
-                    FilledButton.icon(
+                    AppButton(
+                      label: l10n.addFeeGroup,
+                      icon: Icons.add,
                       onPressed: () => _showGroupEditor(context, appState, l10n),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.addFeeGroup),
                     ),
                   ],
                 ),
@@ -136,10 +136,10 @@ class PricingGroupManager extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton.icon(
+            AppButton(
+              label: l10n.addFeeGroup,
+              icon: Icons.add,
               onPressed: () => _showGroupEditor(context, appState, l10n),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(l10n.addFeeGroup),
             ),
           ],
         ),
@@ -218,10 +218,10 @@ class PricingGroupManager extends StatelessWidget {
             const SizedBox(height: 8),
             Text(l10n.feeGroupDesc, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 32),
-            FilledButton.icon(
+            AppButton(
+              label: l10n.addFeeGroup,
+              icon: Icons.add,
               onPressed: () => _showGroupEditor(context, appState, l10n),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.addFeeGroup),
             ),
           ],
         ),
@@ -948,29 +948,32 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         children: [
           if (widget.isMobile) ...[
             Expanded(
-              child: TextButton(
+              child: AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                child: Text(l10n.cancel),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: FilledButton.icon(
+              child: AppButton(
+                label: saveLabel,
+                icon: Icons.save,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: _save,
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                icon: const Icon(Icons.save, size: 18),
-                label: Text(saveLabel),
               ),
             ),
           ] else ...[
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.save, size: 18),
-              label: Text(saveLabel),
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.pop(context),
             ),
+            const SizedBox(width: 8),
+            AppButton(label: saveLabel, icon: Icons.save, onPressed: _save),
           ],
         ],
       ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -294,11 +293,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
           const SizedBox(width: 8),
           if (channel.enableDiscovery) ...[
             if (showActionLabels)
-              FilledButton.tonalIcon(
+              AppButton(
+                label: l10n.fetchModels,
+                icon: Icons.auto_awesome_outlined,
+                variant: AppButtonVariant.secondary,
                 onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
-                icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                label: Text(l10n.fetchModels),
-                style: tonalButtonStyle(Theme.of(context).colorScheme),
               )
             else
               IconButton.filledTonal(
@@ -345,11 +344,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                               .titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        TextButton.icon(
+                        AppButton(
+                          label: l10n.addModel,
+                          icon: Icons.add,
+                          variant: AppButtonVariant.text,
                           onPressed: () =>
                               _showModelDialog(l10n, appState, preChannelId: channel.id),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(l10n.addModel),
                         ),
                       ],
                     ),
@@ -515,14 +515,16 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   alignment: MainAxisAlignment.end,
                   children: [
                     if (channel.enableDiscovery)
-                      TextButton.icon(
-                        icon: const Icon(Icons.refresh, size: 18),
-                        label: Text(l10n.fetchModels),
+                      AppButton(
+                        label: l10n.fetchModels,
+                        icon: Icons.refresh,
+                        variant: AppButtonVariant.text,
                         onPressed: () => _showDiscoveryDialog(l10n, channel, appState),
                       ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.add, size: 18),
-                      label: Text(l10n.addModel),
+                    AppButton(
+                      label: l10n.addModel,
+                      icon: Icons.add,
+                      variant: AppButtonVariant.text,
                       onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
                     ),
                   ],

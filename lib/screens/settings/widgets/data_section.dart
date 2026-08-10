@@ -70,21 +70,16 @@ class DataSection extends StatelessWidget {
   }
 
   Widget _buildActionBtn(BuildContext context, dynamic action, bool fullWidth) {
-    final colorScheme = Theme.of(context).colorScheme;
     final bool isError = action.color != null;
 
     return SizedBox(
       width: fullWidth ? double.infinity : 220,
       height: 50,
-      child: OutlinedButton.icon(
+      child: AppButton(
+        label: action.label,
+        icon: action.icon,
+        variant: isError ? AppButtonVariant.destructiveOutline : AppButtonVariant.secondary,
         onPressed: action.onPressed,
-        icon: Icon(action.icon, size: 18),
-        label: Text(action.label, style: const TextStyle(fontSize: 12)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: action.color,
-          side: isError ? BorderSide(color: colorScheme.error.withAlpha(100)) : null,
-          backgroundColor: isError ? colorScheme.errorContainer.withAlpha(20) : null,
-        ),
       ),
     );
   }
@@ -165,19 +160,22 @@ class DataSection extends StatelessWidget {
               const Divider(height: 32),
               _buildExportOption(l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
               const SizedBox(height: 48),
-              FilledButton(
+              AppButton(
+                label: l10n.exportNow,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () {
                   onUpdate(d, p, u);
                   Navigator.pop(context, true);
                 },
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                child: Text(l10n.exportNow),
               ),
               const SizedBox(height: 12),
-              TextButton(
+              AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () => Navigator.pop(context, false),
-                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-                child: Text(l10n.cancel),
               ),
             ],
           ),
@@ -324,24 +322,23 @@ class DataSection extends StatelessWidget {
               const Divider(height: 32),
               _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
               const SizedBox(height: 48),
-              FilledButton(
+              AppButton(
+                label: l10n.importNow,
+                variant: AppButtonVariant.destructive,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () {
                   onUpdate(d, p, u);
                   Navigator.pop(context, true);
                 },
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(56), 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
-                ),
-                child: Text(l10n.importNow),
               ),
               const SizedBox(height: 12),
-              TextButton(
+              AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () => Navigator.pop(context, false),
-                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-                child: Text(l10n.cancel),
               ),
             ],
           ),

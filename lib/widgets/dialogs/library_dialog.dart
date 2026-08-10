@@ -4,6 +4,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../app_button.dart';
 import '../app_side_panel.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
@@ -263,21 +264,19 @@ class _CompactPromptCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton.icon(
+                AppButton(
+                  label: l10n.add,
+                  icon: Icons.add,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
                   onPressed: () => onApply(true),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: Text(l10n.add, style: const TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                 ),
                 const SizedBox(width: 8),
-                FilledButton.icon(
+                AppButton(
+                  label: l10n.apply,
+                  icon: Icons.check,
+                  size: AppButtonSize.compact,
                   onPressed: () => onApply(false),
-                  icon: const Icon(Icons.check, size: 16),
-                  label: Text(l10n.apply, style: const TextStyle(fontSize: 12)),
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
                 ),
               ],
             ),

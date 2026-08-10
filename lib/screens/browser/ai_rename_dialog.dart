@@ -385,19 +385,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _isProcessing ? null : _generateSuggestions,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              icon: _isProcessing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.bolt),
-              label: Text(l10n.generateSuggestions),
+            child: AppButton(
+              label: l10n.generateSuggestions,
+              icon: Icons.bolt,
+              loading: _isProcessing,
+              onPressed: _generateSuggestions,
             ),
           ),
           const SizedBox(height: 20),

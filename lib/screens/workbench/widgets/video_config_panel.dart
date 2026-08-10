@@ -12,6 +12,7 @@ import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/collapsible_card.dart';
@@ -205,14 +206,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final generateButton = Row(
       children: [
         Expanded(
-          child: FilledButton.icon(
+          child: AppButton(
+            label: l10n.generateVideo,
+            icon: Icons.movie_outlined,
+            size: AppButtonSize.large,
+            fullWidth: true,
             onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
-            icon: const Icon(Icons.movie_outlined),
-            label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
           ),
         ),
         const SizedBox(width: 10),

@@ -7,6 +7,7 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/panel_resizer.dart';
@@ -172,15 +173,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 onPressed: _handleBulkDelete,
               ),
             ] else ...[
-              TextButton.icon(
-                icon: const Icon(Icons.category_outlined),
-                label: Text(l10n.categorize),
+              AppButton(
+                label: l10n.categorize,
+                icon: Icons.category_outlined,
+                variant: AppButtonVariant.text,
                 onPressed: _handleBulkCategorize,
               ),
               const SizedBox(width: 8),
-              TextButton.icon(
-                icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+              AppButton(
+                label: l10n.delete,
+                icon: Icons.delete_outline,
+                variant: AppButtonVariant.destructiveText,
                 onPressed: _handleBulkDelete,
               ),
               const SizedBox(width: 8),
@@ -430,15 +433,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
           ),
           const Spacer(),
-          TextButton.icon(
-            icon: const Icon(Icons.category_outlined, size: 16),
-            label: Text(l10n.categorize),
+          AppButton(
+            label: l10n.categorize,
+            icon: Icons.category_outlined,
+            variant: AppButtonVariant.text,
             onPressed: _handleBulkCategorize,
           ),
           const SizedBox(width: 4),
-          TextButton.icon(
-            icon: Icon(Icons.delete_outline, size: 16, color: colorScheme.error),
-            label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+          AppButton(
+            label: l10n.delete,
+            icon: Icons.delete_outline,
+            variant: AppButtonVariant.destructiveText,
             onPressed: _handleBulkDelete,
           ),
         ],
@@ -456,10 +461,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
           ),
           const Spacer(),
-          FilledButton.icon(
+          AppButton(
+            label: l10n.addCategory,
+            icon: Icons.add,
             onPressed: _handleAddAction,
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(l10n.addCategory),
           ),
         ],
       );
@@ -474,10 +479,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         const SizedBox(width: 10),
         _buildImportExportActions(l10n),
         const SizedBox(width: 10),
-        FilledButton.icon(
+        AppButton(
+          label: _addLabel(l10n),
+          icon: Icons.add,
           onPressed: _handleAddAction,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(_addLabel(l10n)),
         ),
       ],
     );

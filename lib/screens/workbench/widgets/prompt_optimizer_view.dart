@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -486,11 +485,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               if (isLast && !widget.isBusy)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: OutlinedButton.icon(
+                  child: AppButton(
+                    label: l10n.optRetry,
+                    icon: Icons.refresh,
+                    variant: AppButtonVariant.secondary,
                     onPressed: widget.onRetry,
-                    icon: const Icon(Icons.refresh, size: 15),
-                    label: Text(l10n.optRetry, style: const TextStyle(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
                 ),
             ],
@@ -646,17 +645,19 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(
+                      AppButton(
+                        label: l10n.kbEditReject,
+                        variant: AppButtonVariant.text,
+                        size: AppButtonSize.compact,
                         onPressed: () => widget.onRejectKbEdit(editId),
-                        child: Text(l10n.kbEditReject, style: const TextStyle(fontSize: 12)),
                       ),
                       const SizedBox(width: 6),
-                      FilledButton.tonalIcon(
+                      AppButton(
+                        label: l10n.kbEditApply,
+                        icon: Icons.save_outlined,
+                        variant: AppButtonVariant.secondary,
+                        size: AppButtonSize.compact,
                         onPressed: () => widget.onApplyKbEdit(editId),
-                        icon: const Icon(Icons.save_outlined, size: 15),
-                        label: Text(l10n.kbEditApply, style: const TextStyle(fontSize: 12)),
-                        style: tonalButtonStyle(colorScheme)
-                            .copyWith(visualDensity: VisualDensity.compact),
                       ),
                     ],
                   )
@@ -737,12 +738,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     AppSnackBar.success(context, l10n.optPromptCopied);
                   },
                 ),
-                FilledButton.tonalIcon(
+                AppButton(
+                  label: l10n.apply,
+                  icon: Icons.check,
+                  variant: AppButtonVariant.secondary,
                   onPressed: () => widget.onApplyPrompt(entry.text),
-                  icon: const Icon(Icons.check, size: 15),
-                  label: Text(l10n.apply, style: textTheme.labelMedium),
-                  style: tonalButtonStyle(Theme.of(context).colorScheme)
-                      .copyWith(visualDensity: VisualDensity.compact),
                 ),
               ],
             ),
@@ -1059,14 +1059,13 @@ class _AskUserCardState extends State<_AskUserCard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                FilledButton.tonalIcon(
+                AppButton(
+                  label: l10n.optAskUserConfirm,
+                  icon: Icons.send_rounded,
+                  variant: AppButtonVariant.secondary,
                   onPressed: widget.enabled && _allAnswered
                       ? () => widget.onSubmit(_collectAnswers())
                       : null,
-                  icon: const Icon(Icons.send_rounded, size: 15),
-                  label: Text(l10n.optAskUserConfirm, style: const TextStyle(fontSize: 12)),
-                  style: tonalButtonStyle(colorScheme)
-                      .copyWith(visualDensity: VisualDensity.compact),
                 ),
               ],
             ),

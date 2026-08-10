@@ -31,6 +31,33 @@ enum AppButtonVariant {
   /// reserved for the confirmation the user actually commits with (inside the
   /// dialog this button opens), not the toolbar button that only proposes it.
   destructiveOutline,
+
+  /// A destructive action at the lowest emphasis — the error colour on a
+  /// borderless button. For a toolbar or selection bar of otherwise
+  /// borderless controls, where [destructiveOutline]'s edge would be the
+  /// only one in the row and [destructive]'s fill would shout.
+  destructiveText,
+}
+
+/// How much room a button takes.
+///
+/// Buttons were pinned to one height until several call sites turned out to
+/// need otherwise, and each had hand-rolled its own `minimumSize` or
+/// `visualDensity` to get there — the same drift the component exists to
+/// stop. Three sizes cover every one of them.
+enum AppButtonSize {
+  /// ~30px and tight. For a button inside a popup, a slim toolbar strip or
+  /// a card footer, where [normal] would force the row taller than the
+  /// controls it sits among.
+  compact,
+
+  /// The default, matching [AppIconButton] and the segmented control.
+  normal,
+
+  /// 48px. For a sheet's committing action, or a panel's single main call
+  /// to action — where the button is what the screen is *for*, and is
+  /// usually also a touch target on a phone.
+  large,
 }
 
 /// A labelled action button in one of four roles ([AppButtonVariant]).
@@ -60,6 +87,12 @@ class AppButton extends StatelessWidget {
   /// site driving this from a `Future` doesn't need its own busy/idle switch.
   final bool loading;
 
+  final AppButtonSize size;
+
+  /// Stretches to the width offered. For the committing action at the foot
+  /// of a bottom sheet, which is expected to span it.
+  final bool fullWidth;
+
   const AppButton({
     super.key,
     required this.label,
@@ -68,6 +101,8 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.variant = AppButtonVariant.primary,
     this.loading = false,
+    this.size = AppButtonSize.normal,
+    this.fullWidth = false,
   });
 
   /// The label, plus [secondaryLabel] trailing it when set.
@@ -91,11 +126,56 @@ class AppButton extends StatelessWidget {
     );
   }
 
+  /// Geometry *and type* for [size] and [fullWidth], layered under the
+  /// variant's own style so colour always wins over sizing.
+  ///
+  /// The label scales with the box. A compact button holding a full-size
+  /// label is not compact — it was still overflowing the card it had been
+  /// shrunk to fit, and the call sites that predate this had each hand-set a
+  /// `fontSize: 12` alongside their `visualDensity`, which is the pairing
+  /// this encodes once. Sizes come from the app's type scale rather than
+  /// literals, so a change there still reaches buttons.
+  ///
+  /// Returns null for the default, so an ordinary button keeps whatever the
+  /// theme says rather than having the same numbers restated over it.
+  ButtonStyle? _sizeStyle(TextTheme textTheme) {
+    if (size == AppButtonSize.normal && !fullWidth) return null;
+
+    final (height, density, padding, textStyle) = switch (size) {
+      AppButtonSize.compact => (
+          30.0,
+          VisualDensity.compact,
+          const EdgeInsets.symmetric(horizontal: 10),
+          textTheme.labelMedium,
+        ),
+      AppButtonSize.normal => (appButtonMinHeight, null, null, null),
+      // A screen's main action carries a little more weight than the buttons
+      // beside it; several of these had spelled that out as a bold label.
+      AppButtonSize.large => (
+          48.0,
+          null,
+          const EdgeInsets.symmetric(horizontal: 20),
+          textTheme.titleMedium,
+        ),
+    };
+
+    return ButtonStyle(
+      minimumSize: WidgetStatePropertyAll(Size(fullWidth ? double.infinity : 0, height)),
+      visualDensity: density,
+      padding: padding == null ? null : WidgetStatePropertyAll(padding),
+      textStyle: textStyle == null ? null : WidgetStatePropertyAll(textStyle),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final effectiveOnPressed = loading ? null : onPressed;
-    final style = _styleFor(context, colorScheme);
+    final sizeStyle = _sizeStyle(Theme.of(context).textTheme);
+    final variantStyle = _styleFor(context, colorScheme);
+    // Variant first: `merge` fills only what the receiver left null, so the
+    // variant's colours survive and the size style supplies the geometry.
+    final style = variantStyle?.merge(sizeStyle) ?? sizeStyle;
 
     if (loading) {
       final spinner = SizedBox(
@@ -120,6 +200,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.destructive:
         return FilledButton(style: style, onPressed: onPressed, child: child);
       case AppButtonVariant.text:
+      case AppButtonVariant.destructiveText:
         return TextButton(style: style, onPressed: onPressed, child: child);
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton(style: style, onPressed: onPressed, child: child);
@@ -139,25 +220,32 @@ class AppButton extends StatelessWidget {
         return FilledButton.icon(
           style: style,
           onPressed: onPressed,
-          icon: Icon(icon, size: 18),
+          icon: Icon(icon, size: _iconSize),
           label: label,
         );
       case AppButtonVariant.text:
+      case AppButtonVariant.destructiveText:
         return TextButton.icon(
           style: style,
           onPressed: onPressed,
-          icon: Icon(icon, size: 18),
+          icon: Icon(icon, size: _iconSize),
           label: label,
         );
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton.icon(
           style: style,
           onPressed: onPressed,
-          icon: Icon(icon, size: 18),
+          icon: Icon(icon, size: _iconSize),
           label: label,
         );
     }
   }
+
+  double get _iconSize => switch (size) {
+        AppButtonSize.compact => 15,
+        AppButtonSize.normal => 18,
+        AppButtonSize.large => 20,
+      };
 
   ButtonStyle? _styleFor(BuildContext context, ColorScheme colorScheme) {
     switch (variant) {
@@ -181,6 +269,11 @@ class AppButton extends StatelessWidget {
           side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
         );
+      case AppButtonVariant.destructiveText:
+        return TextButton.styleFrom(
+          foregroundColor: colorScheme.error,
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
+        );
     }
   }
 
@@ -200,6 +293,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.destructive:
         return colorScheme.onError;
       case AppButtonVariant.destructiveOutline:
+      case AppButtonVariant.destructiveText:
         return colorScheme.error;
     }
   }

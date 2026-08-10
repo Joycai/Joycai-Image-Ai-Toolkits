@@ -7,6 +7,7 @@ import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
+import 'app_button.dart';
 
 class TaskCapsuleMonitor extends StatefulWidget {
   const TaskCapsuleMonitor({super.key});
@@ -185,16 +186,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                           ],
                         ),
                       )),
-                      TextButton(
+                      AppButton(
+                        label: l10n.viewAll,
+                        variant: AppButtonVariant.text,
+                        size: AppButtonSize.compact,
                         onPressed: () {
                           context.read<AppState>().navigateToScreen(2);
                           setState(() => _isExpanded = false);
                         },
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(l10n.viewAll, style: const TextStyle(fontSize: 12)),
                       ),
                     ],
                   ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../state/file_browser_state.dart';
+import '../../../widgets/app_button.dart';
 
 /// Floating contextual action bar shown at the bottom center of the file
 /// area while files are selected. Slides away when the selection is empty,
@@ -46,15 +47,15 @@ class BrowserSelectionBar extends StatelessWidget {
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 12),
-                  TextButton(
+                  AppButton(
+                    label: l10n.selectAll,
+                    variant: AppButtonVariant.text,
                     onPressed: () => state.selectAll(),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(l10n.selectAll, style: const TextStyle(fontSize: 12.5)),
                   ),
-                  TextButton(
+                  AppButton(
+                    label: l10n.clear,
+                    variant: AppButtonVariant.text,
                     onPressed: () => state.clearSelection(),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(l10n.clear, style: const TextStyle(fontSize: 12.5)),
                   ),
                   const SizedBox(width: 6),
                   SizedBox(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/file_permission_service.dart';
+import '../app_button.dart';
 
 class PermissionPlaceholder extends StatelessWidget {
   final VoidCallback onReAuthorize;
@@ -44,10 +45,10 @@ class PermissionPlaceholder extends StatelessWidget {
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            FilledButton.icon(
+            AppButton(
+              label: service.getReAuthorizeButtonLabel(),
+              icon: Icons.folder_open,
               onPressed: onReAuthorize,
-              icon: const Icon(Icons.folder_open),
-              label: Text(service.getReAuthorizeButtonLabel()),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
 
 class VideoWorkbenchOverlay extends StatefulWidget {
   const VideoWorkbenchOverlay({super.key});
@@ -191,14 +192,10 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton.icon(
+                      child: AppButton(
+                        label: l10n.openInSystemPlayer,
+                        icon: Icons.open_in_new,
                         onPressed: () => _openInSystemPlayer(uiState.lastGeneratedVideoPath!),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: Text(l10n.openInSystemPlayer, style: const TextStyle(fontSize: 12)),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
                       ),
                     ),
                   ],

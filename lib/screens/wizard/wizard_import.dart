@@ -102,24 +102,25 @@ Future<bool?> _showMobileImportOptions(
             const Divider(height: 32),
             _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
             const SizedBox(height: 48),
-            FilledButton(
-              onPressed: () {
-                onUpdate(d, p, u);
-                Navigator.pop(context, true);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                label: l10n.importNow,
+                variant: AppButtonVariant.destructive,
+                onPressed: () {
+                  onUpdate(d, p, u);
+                  Navigator.pop(context, true);
+                },
               ),
-              child: Text(l10n.importNow),
             ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              style: TextButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-              child: Text(l10n.cancel),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                onPressed: () => Navigator.pop(context, false),
+              ),
             ),
           ],
         ),

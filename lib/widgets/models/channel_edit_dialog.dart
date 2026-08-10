@@ -99,10 +99,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             onPressed: () => Navigator.pop(context),
           ),
           actions: [
-            TextButton(
+            AppButton(
+              label: l10n.save,
+              variant: AppButtonVariant.text,
               onPressed: _save,
-              child: Text(l10n.save,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
+import '../../../widgets/app_button.dart';
 
 class DownloaderResultsArea extends StatelessWidget {
   final VoidCallback onAddToQueue;
@@ -41,7 +42,9 @@ class DownloaderResultsArea extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                TextButton(
+                AppButton(
+                  label: l10n.selectAll,
+                  variant: AppButtonVariant.text,
                   onPressed: selectedCount == state.discoveredImages.length
                       ? null
                       : () {
@@ -50,13 +53,12 @@ class DownloaderResultsArea extends StatelessWidget {
                           }
                           state.notify();
                         },
-                  child: Text(l10n.selectAll),
                 ),
                 const SizedBox(width: 8),
-                FilledButton.icon(
+                AppButton(
+                  label: l10n.addToQueue,
+                  icon: Icons.download_for_offline,
                   onPressed: selectedCount > 0 ? onAddToQueue : null,
-                  icon: const Icon(Icons.download_for_offline, size: 18),
-                  label: Text(l10n.addToQueue),
                 ),
               ],
             ),

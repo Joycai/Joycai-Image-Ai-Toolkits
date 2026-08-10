@@ -203,10 +203,10 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         color: Theme.of(context).colorScheme.error,
         title: "Connection Failed",
         subtitle: l10n.fetchFailed(_error!),
-        action: FilledButton(onPressed: () {
+        action: AppButton(label: "Retry", onPressed: () {
           setState(() { _isLoading = true; _error = null; });
           _fetch();
-        }, child: const Text("Retry")),
+        }),
       );
     }
 
@@ -233,10 +233,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                 Text(l10n.modelsDiscovered(_filtered.length), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 if (available.isNotEmpty)
-                  TextButton.icon(
+                  AppButton(
+                    label: _selectedIds.length == available.length ? l10n.deselectAll : l10n.selectAll,
+                    icon: _selectedIds.length == available.length ? Icons.deselect : Icons.select_all,
+                    variant: AppButtonVariant.text,
                     onPressed: _toggleSelectAll,
-                    icon: Icon(_selectedIds.length == available.length ? Icons.deselect : Icons.select_all, size: 16),
-                    label: Text(_selectedIds.length == available.length ? l10n.deselectAll : l10n.selectAll, style: const TextStyle(fontSize: 12)),
                   ),
               ],
             ),

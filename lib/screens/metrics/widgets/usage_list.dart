@@ -206,9 +206,12 @@ class UsageList extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
-        child: isLoadingMore
-            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
-            : OutlinedButton(onPressed: onLoadMore, child: Text(l10n.loadMore)),
+        child: AppButton(
+          label: l10n.loadMore,
+          variant: AppButtonVariant.secondary,
+          loading: isLoadingMore,
+          onPressed: onLoadMore,
+        ),
       ),
     );
   }

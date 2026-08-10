@@ -76,20 +76,11 @@ class DownloaderToolbar extends StatelessWidget {
 
     final findButton = SizedBox(
       height: _controlHeight,
-      child: FilledButton.icon(
-        onPressed: isAnalyzing ? null : onAnalyze,
-        icon: isAnalyzing
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.image_search, size: 18),
-        label: Text(isAnalyzing ? l10n.analyzing : l10n.findImages),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(0, _controlHeight),
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-        ),
+      child: AppButton(
+        label: isAnalyzing ? l10n.analyzing : l10n.findImages,
+        icon: Icons.image_search,
+        loading: isAnalyzing,
+        onPressed: onAnalyze,
       ),
     );
 
@@ -229,13 +220,12 @@ class DownloaderOptionsStrip extends StatelessWidget {
                   fontSize: 12, color: colorScheme.onSurfaceVariant)),
           if (state.isManualHtml) ...[
             const SizedBox(width: 4),
-            TextButton.icon(
+            AppButton(
+              label: l10n.pasteFromClipboard,
+              icon: Icons.paste,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
               onPressed: onPasteHtml,
-              icon: const Icon(Icons.paste, size: 14),
-              label: Text(l10n.pasteFromClipboard,
-                  style: const TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact),
             ),
             if (state.manualHtml.isNotEmpty) ...[
               Container(
@@ -265,15 +255,12 @@ class DownloaderOptionsStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Container(width: 1, height: 18, color: colorScheme.outlineVariant),
           const SizedBox(width: 4),
-          TextButton.icon(
+          AppButton(
+            label: l10n.saveOriginHtml,
+            icon: Icons.html,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
             onPressed: isAnalyzing ? null : onSaveHtml,
-            icon: const Icon(Icons.html, size: 16),
-            label:
-                Text(l10n.saveOriginHtml, style: const TextStyle(fontSize: 12)),
-            style: TextButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              foregroundColor: colorScheme.onSurfaceVariant,
-            ),
           ),
           const SizedBox(width: 4),
           // Always drawn, disabled until there is something to read. Appearing
@@ -348,24 +335,24 @@ Future<void> showDownloaderAdvancedDialog(
         const SizedBox(height: 8),
         Row(
           children: [
-            TextButton.icon(
+            AppButton(
+              label: l10n.importCookieFile,
+              icon: Icons.upload_file,
+              variant: AppButtonVariant.text,
               onPressed: () {
                 Navigator.pop(context);
                 onImportCookie();
               },
-              icon: const Icon(Icons.upload_file, size: 16),
-              label: Text(l10n.importCookieFile,
-                  style: const TextStyle(fontSize: 12)),
             ),
             if (state.cookieHistory.isNotEmpty)
-              TextButton.icon(
+              AppButton(
+                label: l10n.cookieHistory,
+                icon: Icons.history,
+                variant: AppButtonVariant.text,
                 onPressed: () {
                   Navigator.pop(context);
                   _showCookieHistory(context, state, cookieController);
                 },
-                icon: const Icon(Icons.history, size: 16),
-                label: Text(l10n.cookieHistory,
-                    style: const TextStyle(fontSize: 12)),
               ),
           ],
         ),
