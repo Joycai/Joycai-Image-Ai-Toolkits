@@ -14,6 +14,7 @@ import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/settings_widgets.dart';
 import 'wizard_import.dart';
 
@@ -493,7 +494,7 @@ class _SetupWizardState extends State<SetupWizard> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        AppSnackBar.error(context, e.toString());
       }
     } finally {
       if (mounted) setState(() => _isFetchingModels = false);

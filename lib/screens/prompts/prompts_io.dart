@@ -11,6 +11,7 @@ import '../../models/tag.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 
 /// Import / export helpers for the Prompt Library.
 ///
@@ -26,7 +27,6 @@ Future<void> exportPrompts(
   required List<Prompt> userPrompts,
   required List<SystemPrompt> systemPrompts,
 }) async {
-  final messenger = ScaffoldMessenger.of(context);
   final data = {
     'tags': tags.map((t) => t.toMap()).toList(),
     'user_prompts': userPrompts.map((p) => {
@@ -56,7 +56,7 @@ Future<void> exportPrompts(
   }
 
   if (path != null && context.mounted) {
-    messenger.showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+    AppSnackBar.success(context, l10n.settingsExported);
   }
 }
 
@@ -64,9 +64,7 @@ Future<void> exportPrompts(
 /// Returns `true` if data was imported (caller should reload).
 Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   final appState = Provider.of<AppState>(context, listen: false);
-  final messenger = ScaffoldMessenger.of(context);
   final successMsg = l10n.settingsImported;
-  final errorColor = Theme.of(context).colorScheme.error;
 
   FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
   if (!context.mounted || result == null) return false;
@@ -103,13 +101,12 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
 
     await appState.importPromptData(data, replace: importMode == 'replace');
 
-    messenger.showSnackBar(SnackBar(content: Text(successMsg)));
+    if (!context.mounted) return true;
+    AppSnackBar.success(context, successMsg);
     return true;
   } catch (e) {
-    messenger.showSnackBar(SnackBar(
-      content: Text(l10n.importFailed(e.toString())),
-      backgroundColor: errorColor,
-    ));
+    if (!context.mounted) return false;
+    AppSnackBar.error(context, l10n.importFailed(e.toString()));
     return false;
   }
 }

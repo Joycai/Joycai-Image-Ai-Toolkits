@@ -10,6 +10,7 @@ import '../../../models/app_image.dart';
 import '../../../models/browser_file.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart';
 
@@ -139,9 +140,7 @@ void showFileContextMenu({
             );
           } catch (e) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Share failed: $e')),
-              );
+              AppSnackBar.error(context, 'Share failed: $e');
             }
           }
         },

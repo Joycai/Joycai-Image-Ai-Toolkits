@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/panel_resizer.dart';
 import 'widgets/downloader_results_area.dart';
 import 'widgets/downloader_toolbar.dart';
@@ -75,23 +76,17 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final state = appState.downloaderState;
 
     if (_urlController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.urlRequired), backgroundColor: Colors.orange),
-      );
+      AppSnackBar.warning(context, l10n.urlRequired);
       return;
     }
 
     if (_requirementController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.requirementRequired), backgroundColor: Colors.orange),
-      );
+      AppSnackBar.warning(context, l10n.requirementRequired);
       return;
     }
 
     if (state.isManualHtml && state.manualHtml.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.manualHtmlRequired), backgroundColor: Colors.orange),
-      );
+      AppSnackBar.warning(context, l10n.manualHtmlRequired);
       return;
     }
 
@@ -101,13 +96,12 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
     if (state.selectedModelDbId == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.noModelsConfigured),
-            action: SnackBarAction(
-              label: l10n.settings,
-              onPressed: () => appState.navigateToScreen(6),
-            ),
+        AppSnackBar.warning(
+          context,
+          l10n.noModelsConfigured,
+          action: AppSnackBarAction(
+            label: l10n.settings,
+            onPressed: () => appState.navigateToScreen(6),
           ),
         );
       }
@@ -126,9 +120,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Analysis failed: $e"), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, "Analysis failed: $e");
       }
     }
   }
@@ -149,7 +141,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     if (!mounted) return;
 
     if (outputDir == null || outputDir.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.setOutputDirFirst)));
+      AppSnackBar.warning(context, l10n.setOutputDirFirst);
       return;
     }
 
@@ -167,7 +159,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       await File(filePath).writeAsString(html);
       state.addLog('HTML saved to: $filePath');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.htmlSavedTo(filePath))));
+        AppSnackBar.info(context, l10n.htmlSavedTo(filePath));
       }
     } catch (e) {
       state.addLog('Failed to save HTML: $e');
@@ -193,7 +185,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       type: TaskType.imageDownload,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.addedToQueue(selected.length))));
+    AppSnackBar.info(context, l10n.addedToQueue(selected.length));
   }
 
   Future<void> _importCookieFile() async {
@@ -237,9 +229,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
 
       if (parsedCookies.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.cookieFileInvalid), backgroundColor: Colors.orange),
-          );
+          AppSnackBar.warning(context, l10n.cookieFileInvalid);
         }
         return;
       }
@@ -248,9 +238,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.setState(cookies: parsedCookies);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.cookieImportSuccess(count)), backgroundColor: Colors.green),
-        );
+        AppSnackBar.success(context, l10n.cookieImportSuccess(count));
       }
     } catch (e) {
       state.addLog('Failed to import cookies: $e');

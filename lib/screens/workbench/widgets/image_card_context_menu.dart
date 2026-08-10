@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
 import 'gallery_file_actions.dart';
 import 'preview/media_preview_dialog.dart';
@@ -193,9 +194,7 @@ void showImageCardContextMenu(
       onTap: () {
         final filename = imageFile.name;
         Clipboard.setData(ClipboardData(text: filename));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.copiedToClipboard(filename)), duration: const Duration(seconds: 1)),
-        );
+        AppSnackBar.success(context, l10n.copiedToClipboard(filename));
       },
     ),
     PopupMenuItem(

@@ -13,6 +13,7 @@ import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
 
 /// Which subset of tasks the list shows.
@@ -931,8 +932,9 @@ class _TaskCardState extends State<_TaskCard> {
         if (val == 'copy_prompt') {
           final prompt = task.parameters['prompt'] ?? '';
           Clipboard.setData(ClipboardData(text: prompt));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.copiedToClipboard(prompt.length > 30 ? '${prompt.substring(0, 30)}…' : prompt))),
+          AppSnackBar.info(
+            context,
+            l10n.copiedToClipboard(prompt.length > 30 ? '${prompt.substring(0, 30)}…' : prompt),
           );
         }
       },

@@ -13,6 +13,7 @@ import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../wizard/setup_wizard.dart';
 
 class DataSection extends StatelessWidget {
@@ -43,7 +44,7 @@ class DataSection extends StatelessWidget {
         onPressed: () async {
           final appState = Provider.of<AppState>(context, listen: false);
           await appState.clearDownloaderCache();
-          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.downloaderCacheCleared)));
+          if (context.mounted) AppSnackBar.success(context, AppLocalizations.of(context)!.downloaderCacheCleared);
         },
         icon: Icons.delete_sweep_outlined,
         label: l10n.clearDownloaderCache,
@@ -136,7 +137,7 @@ class DataSection extends StatelessWidget {
     if (!context.mounted) return;
 
     if (path != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsExported)));
+      AppSnackBar.success(context, l10n.settingsExported);
     }
   }
 
@@ -285,13 +286,10 @@ class DataSection extends StatelessWidget {
       await appState.galleryState.reloadSettings();
       await appState.fileBrowserState.reloadSettings();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(importedMsg)));
+      AppSnackBar.success(context, importedMsg);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(backupImportErrorText(l10n, e)),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ));
+      AppSnackBar.error(context, backupImportErrorText(l10n, e));
     }
   }
 

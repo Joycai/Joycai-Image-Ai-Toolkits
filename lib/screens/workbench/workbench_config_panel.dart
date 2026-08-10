@@ -14,6 +14,7 @@ import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../widgets/markdown_editor.dart';
@@ -298,13 +299,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   : () {
                       final appState = Provider.of<AppState>(context, listen: false);
                       if (selectedModelDbId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.noModelsConfigured),
-                            action: SnackBarAction(
-                              label: l10n.models,
-                              onPressed: () => appState.navigateToScreen(6),
-                            ),
+                        AppSnackBar.warning(
+                          context,
+                          l10n.noModelsConfigured,
+                          action: AppSnackBarAction(
+                            label: l10n.models,
+                            onPressed: () => appState.navigateToScreen(6),
                           ),
                         );
                         return;
@@ -324,14 +324,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         Navigator.pop(context);
                       }
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.taskSubmitted),
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                          width: 250,
-                        ),
-                      );
+                      AppSnackBar.info(context, l10n.taskSubmitted);
                     },
               icon: const Icon(Icons.play_arrow_rounded, size: 24),
               label: Text(

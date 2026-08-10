@@ -12,6 +12,7 @@ import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_snackbar.dart';
 
 /// File-system side effects for gallery items (save / share / delete).
 ///
@@ -39,9 +40,7 @@ Future<void> saveImageFile(
       );
 
       if (outputFile != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.settingsExported), backgroundColor: Colors.green),
-        );
+        AppSnackBar.success(context, l10n.settingsExported);
       }
     } else {
       if (AppConstants.isVideoFile(sourcePath)) {
@@ -50,16 +49,12 @@ Future<void> saveImageFile(
         await Gal.putImage(sourcePath);
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
-        );
+        AppSnackBar.success(context, l10n.savedToPhotos);
       }
     }
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveFailed(e.toString())), backgroundColor: Colors.red),
-      );
+      AppSnackBar.error(context, l10n.saveFailed(e.toString()));
     }
   }
 }
@@ -86,9 +81,7 @@ Future<void> shareImageFiles(
     );
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.shareFailed(e.toString()))),
-      );
+      AppSnackBar.error(context, l10n.shareFailed(e.toString()));
     }
   }
 }
@@ -154,16 +147,12 @@ Future<void> _deleteImageFile(
     }
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.deleteSuccess), backgroundColor: Colors.green),
-      );
+      AppSnackBar.success(context, l10n.deleteSuccess);
       appState.galleryState.refreshImages();
     }
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.deleteFailed(e.toString())), backgroundColor: Colors.red),
-      );
+      AppSnackBar.error(context, l10n.deleteFailed(e.toString()));
     }
   }
 }

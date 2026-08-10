@@ -12,6 +12,7 @@ import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
+import '../../../../widgets/app_snackbar.dart';
 import 'preview_handler.dart';
 
 /// Full-screen, swipeable preview for a list of media files of any supported
@@ -80,9 +81,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
         if (outputFile != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.settingsExported), backgroundColor: Colors.green),
-            );
+            AppSnackBar.success(context, l10n.settingsExported);
           }
         }
       } else {
@@ -92,16 +91,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
           await Gal.putImage(path);
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.savedToPhotos), backgroundColor: Colors.green),
-          );
+          AppSnackBar.success(context, l10n.savedToPhotos);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.saveFailed(e.toString())), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, l10n.saveFailed(e.toString()));
       }
     }
   }
@@ -113,9 +108,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
       await Share.shareXFiles([xFile], subject: file.name);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.shareFailed(e.toString()))),
-        );
+        AppSnackBar.error(context, l10n.shareFailed(e.toString()));
       }
     }
   }
