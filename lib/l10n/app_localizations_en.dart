@@ -1949,6 +1949,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get custom => 'Custom';
 
   @override
+  String get cropResizeFreeRatio => 'Free';
+
+  @override
   String get resize => 'Resize';
 
   @override
@@ -1962,6 +1965,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sampling => 'Sampling';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String cropResizeOriginalInfo(int width, int height, String size) {
+    return 'Original $width×$height · $size';
+  }
+
+  @override
+  String cropResizeCanvasLabel(String name) {
+    return '$name (Original Preview)';
+  }
+
+  @override
+  String get cropResizeCropOnly => 'Crop';
+
+  @override
+  String cropResizeCropAndScale(int percent) {
+    return 'Crop + Scale $percent%';
+  }
+
+  @override
+  String get cropResizeOutputPreview => 'Output Preview';
+
+  @override
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
+    return '$originalSize → $outputSize · $operation · $sampling';
+  }
+
+  @override
+  String cropResizeWillSaveTo(String path) {
+    return 'Copy will save to $path';
+  }
+
+  @override
+  String get cropResizeTempWorkspaceLabel => 'Temporary Workspace';
+
+  @override
+  String get saveCopy => 'Save Copy';
+
+  @override
+  String get cropResizeSaveDestinationHint => 'to Workspace';
+
+  @override
+  String get cropResizeResample => 'Resample';
+
+  @override
+  String get fitToWindow => 'Fit to Window';
 
   @override
   String get drawMask => 'Draw Mask';

@@ -1905,6 +1905,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get custom => 'カスタム';
 
   @override
+  String get cropResizeFreeRatio => 'フリー';
+
+  @override
   String get resize => 'サイズ変更';
 
   @override
@@ -1918,6 +1921,60 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sampling => 'サンプリング';
+
+  @override
+  String get reset => 'リセット';
+
+  @override
+  String cropResizeOriginalInfo(int width, int height, String size) {
+    return '元画像 $width×$height · $size';
+  }
+
+  @override
+  String cropResizeCanvasLabel(String name) {
+    return '$name（元画像プレビュー）';
+  }
+
+  @override
+  String get cropResizeCropOnly => '切り抰き';
+
+  @override
+  String cropResizeCropAndScale(int percent) {
+    return '切り抰き + 拡大縮小 $percent%';
+  }
+
+  @override
+  String get cropResizeOutputPreview => '出力プレビュー';
+
+  @override
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
+    return '$originalSize → $outputSize · $operation · $sampling';
+  }
+
+  @override
+  String cropResizeWillSaveTo(String path) {
+    return 'コピーの保存先: $path';
+  }
+
+  @override
+  String get cropResizeTempWorkspaceLabel => '一時ワークスペース';
+
+  @override
+  String get saveCopy => 'コピーを保存';
+
+  @override
+  String get cropResizeSaveDestinationHint => 'ワークスペースへ';
+
+  @override
+  String get cropResizeResample => 'リサンプル';
+
+  @override
+  String get fitToWindow => 'ウィンドウに合わせる';
 
   @override
   String get drawMask => 'マスクを描画';

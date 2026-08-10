@@ -3641,6 +3641,12 @@ abstract class AppLocalizations {
   /// **'Custom'**
   String get custom;
 
+  /// No description provided for @cropResizeFreeRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get cropResizeFreeRatio;
+
   /// No description provided for @resize.
   ///
   /// In en, this message translates to:
@@ -3670,6 +3676,89 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sampling'**
   String get sampling;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @cropResizeOriginalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Original {width}×{height} · {size}'**
+  String cropResizeOriginalInfo(int width, int height, String size);
+
+  /// No description provided for @cropResizeCanvasLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (Original Preview)'**
+  String cropResizeCanvasLabel(String name);
+
+  /// No description provided for @cropResizeCropOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop'**
+  String get cropResizeCropOnly;
+
+  /// No description provided for @cropResizeCropAndScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop + Scale {percent}%'**
+  String cropResizeCropAndScale(int percent);
+
+  /// No description provided for @cropResizeOutputPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Preview'**
+  String get cropResizeOutputPreview;
+
+  /// No description provided for @cropResizeOutputSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{originalSize} → {outputSize} · {operation} · {sampling}'**
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  );
+
+  /// No description provided for @cropResizeWillSaveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy will save to {path}'**
+  String cropResizeWillSaveTo(String path);
+
+  /// No description provided for @cropResizeTempWorkspaceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary Workspace'**
+  String get cropResizeTempWorkspaceLabel;
+
+  /// No description provided for @saveCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Copy'**
+  String get saveCopy;
+
+  /// No description provided for @cropResizeSaveDestinationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'to Workspace'**
+  String get cropResizeSaveDestinationHint;
+
+  /// No description provided for @cropResizeResample.
+  ///
+  /// In en, this message translates to:
+  /// **'Resample'**
+  String get cropResizeResample;
+
+  /// No description provided for @fitToWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit to Window'**
+  String get fitToWindow;
 
   /// No description provided for @drawMask.
   ///

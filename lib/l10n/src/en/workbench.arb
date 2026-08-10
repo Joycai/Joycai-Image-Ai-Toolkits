@@ -154,11 +154,75 @@
   "saveToTempSuccess": "Image saved to temporary workspace",
   "overwriteSuccess": "Original file updated",
   "custom": "Custom",
+  "cropResizeFreeRatio": "Free",
   "resize": "Resize",
   "maintainAspectRatio": "Maintain Aspect Ratio",
   "width": "Width",
   "height": "Height",
   "sampling": "Sampling",
+  "reset": "Reset",
+  "cropResizeOriginalInfo": "Original {width}×{height} · {size}",
+  "@cropResizeOriginalInfo": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCanvasLabel": "{name} (Original Preview)",
+  "@cropResizeCanvasLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCropOnly": "Crop",
+  "cropResizeCropAndScale": "Crop + Scale {percent}%",
+  "@cropResizeCropAndScale": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cropResizeOutputPreview": "Output Preview",
+  "cropResizeOutputSummary": "{originalSize} → {outputSize} · {operation} · {sampling}",
+  "@cropResizeOutputSummary": {
+    "placeholders": {
+      "originalSize": {
+        "type": "String"
+      },
+      "outputSize": {
+        "type": "String"
+      },
+      "operation": {
+        "type": "String"
+      },
+      "sampling": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeWillSaveTo": "Copy will save to {path}",
+  "cropResizeTempWorkspaceLabel": "Temporary Workspace",
+  "saveCopy": "Save Copy",
+  "cropResizeSaveDestinationHint": "to Workspace",
+  "cropResizeResample": "Resample",
+  "@cropResizeWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "fitToWindow": "Fit to Window",
   "drawMask": "Draw Mask",
   "maskEditor": "Mask Editor",
   "brushSize": "Brush Size",

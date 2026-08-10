@@ -25,6 +25,12 @@ enum AppButtonVariant {
   /// An action that destroys or removes something, coloured from
   /// [ColorScheme.error] rather than the seed.
   destructive,
+
+  /// A destructive action that hasn't been confirmed yet — an outline rather
+  /// than [destructive]'s solid fill, so the loudest colour on screen is
+  /// reserved for the confirmation the user actually commits with (inside the
+  /// dialog this button opens), not the toolbar button that only proposes it.
+  destructiveOutline,
 }
 
 /// A labelled action button in one of four roles ([AppButtonVariant]).
@@ -39,6 +45,13 @@ enum AppButtonVariant {
 /// always renders a label.
 class AppButton extends StatelessWidget {
   final String label;
+
+  /// A qualifier trailing [label] in a lighter weight — "Save copy
+  /// *to workspace*". For an action whose destination or scope is worth
+  /// stating on the button itself, without giving it the same weight as the
+  /// verb. Dropped by the caller, not by this widget, when space is tight.
+  final String? secondaryLabel;
+
   final IconData? icon;
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
@@ -51,10 +64,32 @@ class AppButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.secondaryLabel,
     this.icon,
     this.variant = AppButtonVariant.primary,
     this.loading = false,
   });
+
+  /// The label, plus [secondaryLabel] trailing it when set.
+  ///
+  /// The qualifier carries no colour of its own — it inherits the button's
+  /// foreground through [DefaultTextStyle] and is dimmed with opacity, so it
+  /// reads as subordinate on a filled, outlined or text button alike without
+  /// this widget having to know which one it is.
+  Widget _label() {
+    if (secondaryLabel == null) return Text(label);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label),
+        const SizedBox(width: 6),
+        Opacity(
+          opacity: 0.78,
+          child: Text(secondaryLabel!, style: const TextStyle(fontWeight: FontWeight.w400)),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +107,10 @@ class AppButton extends StatelessWidget {
     }
 
     if (icon != null) {
-      return _iconButton(style: style, onPressed: effectiveOnPressed, icon: icon!, label: label);
+      return _iconButton(style: style, onPressed: effectiveOnPressed, icon: icon!, label: _label());
     }
 
-    return _button(style: style, onPressed: effectiveOnPressed, child: Text(label));
+    return _button(style: style, onPressed: effectiveOnPressed, child: _label());
   }
 
   Widget _button({required ButtonStyle? style, required VoidCallback? onPressed, required Widget child}) {
@@ -86,6 +121,8 @@ class AppButton extends StatelessWidget {
         return FilledButton(style: style, onPressed: onPressed, child: child);
       case AppButtonVariant.text:
         return TextButton(style: style, onPressed: onPressed, child: child);
+      case AppButtonVariant.destructiveOutline:
+        return OutlinedButton(style: style, onPressed: onPressed, child: child);
     }
   }
 
@@ -93,7 +130,7 @@ class AppButton extends StatelessWidget {
     required ButtonStyle? style,
     required VoidCallback? onPressed,
     required IconData icon,
-    required String label,
+    required Widget label,
   }) {
     switch (variant) {
       case AppButtonVariant.primary:
@@ -103,14 +140,21 @@ class AppButton extends StatelessWidget {
           style: style,
           onPressed: onPressed,
           icon: Icon(icon, size: 18),
-          label: Text(label),
+          label: label,
         );
       case AppButtonVariant.text:
         return TextButton.icon(
           style: style,
           onPressed: onPressed,
           icon: Icon(icon, size: 18),
-          label: Text(label),
+          label: label,
+        );
+      case AppButtonVariant.destructiveOutline:
+        return OutlinedButton.icon(
+          style: style,
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: label,
         );
     }
   }
@@ -131,6 +175,12 @@ class AppButton extends StatelessWidget {
           disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.12),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
         );
+      case AppButtonVariant.destructiveOutline:
+        return OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.error,
+          side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
+        );
     }
   }
 
@@ -149,6 +199,8 @@ class AppButton extends StatelessWidget {
         return colorScheme.primary;
       case AppButtonVariant.destructive:
         return colorScheme.onError;
+      case AppButtonVariant.destructiveOutline:
+        return colorScheme.error;
     }
   }
 }

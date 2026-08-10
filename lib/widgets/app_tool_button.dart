@@ -5,12 +5,17 @@ import '../core/app_theme.dart';
 /// A quiet icon+label action for a toolbar: no fill of its own until the
 /// pointer is on it.
 ///
-/// These sit in the workbench's top bar next to the image/video segmented
-/// control, and the two are not peers — the segmented control says which mode
-/// the workbench is in, while these open a tool. Giving each tool a box or a
-/// fill puts them at the same weight as that control and the row turns into
-/// six things competing; leaving them bare until hover keeps the row legible
-/// and still tells the user they are targets the moment the pointer arrives.
+/// For the tertiary action in a toolbar — the one that must be reachable but
+/// must not compete. The workbench top bar's tool switches are the original
+/// case: they sit next to the image/video segmented control and the two are
+/// not peers, so giving each tool a box or a fill would turn the row into six
+/// things competing. Leaving them bare until hover keeps the row legible and
+/// still tells the user they are targets the moment the pointer arrives.
+///
+/// The same reasoning covers a "Reset" beside a screen's real actions: use
+/// this rather than [AppButton]'s `text` variant when the action should read
+/// as neutral, since that variant keeps Material's accent tint (correct for a
+/// dialog's "Cancel", wrong for a third button in a row of three).
 ///
 /// The rest state is deliberately neutral rather than accented: with the
 /// greys already free of the seed hue (see [buildAppColorScheme]), reserving
