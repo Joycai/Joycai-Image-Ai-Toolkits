@@ -154,11 +154,75 @@
   "saveToTempSuccess": "圖片已儲存至臨時工作區",
   "overwriteSuccess": "原始檔案已更新",
   "custom": "自訂",
+  "cropResizeFreeRatio": "自由",
   "resize": "調整大小",
   "maintainAspectRatio": "保持長寬比",
   "width": "寬度",
   "height": "高度",
   "sampling": "採樣",
+  "reset": "重設",
+  "cropResizeOriginalInfo": "原圖 {width}×{height} · {size}",
+  "@cropResizeOriginalInfo": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCanvasLabel": "{name}（原圖預覽）",
+  "@cropResizeCanvasLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCropOnly": "裁切",
+  "cropResizeCropAndScale": "裁切 + 縮放 {percent}%",
+  "@cropResizeCropAndScale": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cropResizeOutputPreview": "輸出預覽",
+  "cropResizeOutputSummary": "{originalSize} → {outputSize} · {operation} · {sampling}",
+  "@cropResizeOutputSummary": {
+    "placeholders": {
+      "originalSize": {
+        "type": "String"
+      },
+      "outputSize": {
+        "type": "String"
+      },
+      "operation": {
+        "type": "String"
+      },
+      "sampling": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeWillSaveTo": "副本將存入 {path}",
+  "cropResizeTempWorkspaceLabel": "臨時工作區",
+  "saveCopy": "儲存副本",
+  "cropResizeSaveDestinationHint": "到工作區",
+  "cropResizeResample": "重新取樣",
+  "@cropResizeWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "fitToWindow": "適應視窗",
   "drawMask": "繪製遮罩",
   "maskEditor": "遮罩編輯器",
   "brushSize": "畫筆大小",

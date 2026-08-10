@@ -6,14 +6,41 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../../core/app_paths.dart';
+import '../../../core/app_theme.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../services/image_metadata_service.dart';
 import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_icon_button.dart';
+import '../../../widgets/app_segmented_control.dart';
+import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/app_tool_button.dart';
+
+/// The fixed set of ratio presets shown as segments, plus a `custom` mode
+/// whose X:Y fields only appear once it's selected — folding them into the
+/// segmented control instead of always occupying toolbar width.
+enum _RatioPreset { free, r1x1, r4x3, r16x9, r3x4, r9x16, custom }
+
+/// Everything the bar spends before any group gets a say: its own horizontal
+/// padding, the back button, the two dividers, and the gap before the
+/// actions.
+const double _kFixedChrome = 32 + 48 + 25 + 25 + 12;
+
+/// The file caption is given a fixed column so a long filename ellipsizes
+/// rather than pushing the controls along.
+const double _kFileInfoWidth = 190;
+
+/// Room for the number inside a dimension field — wide enough for five
+/// digits, which covers any image the editor can open.
+const double _kNumberFieldWidth = 46;
+
+/// The X:Y pair that unfolds under the "Custom" segment.
+const double _kCustomRatioFieldsWidth = 80;
 
 class CropResizeToolbar extends StatefulWidget {
   const CropResizeToolbar({super.key});
@@ -27,8 +54,26 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _ratioXController = TextEditingController();
   final TextEditingController _ratioYController = TextEditingController();
-  bool _isProcessing = false;
+
+  /// null: no save in flight, otherwise 'save' or 'overwrite' — tracks which
+  /// button to spin rather than blanking the whole action group.
+  String? _processingAction;
   bool _isAutoUpdating = false;
+  bool _customRatioMode = false;
+
+  /// Source dimensions for the toolbar caption. The view loads this too;
+  /// [ImageMetadataService] caches by path, so the second reader costs a map
+  /// lookup rather than a second decode.
+  ImageMetadata? _meta;
+  String? _metaPath;
+
+  void _loadMeta(String path) {
+    if (_metaPath == path) return;
+    _metaPath = path;
+    ImageMetadataService().getMetadata(path).then((meta) {
+      if (mounted && _metaPath == path) setState(() => _meta = meta);
+    });
+  }
 
   @override
   void initState() {
@@ -51,39 +96,37 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   void _onWidthChanged() {
     if (_isAutoUpdating) return;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
-    if (!uiState.maintainAspectRatio) return;
+    final w = int.tryParse(_widthController.text);
 
-    final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
-    if (state == null) return;
-    final cropRect = state.getCropRect();
-    if (cropRect == null) return;
-
-    final double ratio = cropRect.width / cropRect.height;
-    final int? w = int.tryParse(_widthController.text);
-    if (w != null) {
-      _isAutoUpdating = true;
-      _heightController.text = (w / ratio).round().toString();
-      _isAutoUpdating = false;
+    if (uiState.maintainAspectRatio) {
+      final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
+      final cropRect = state?.getCropRect();
+      if (cropRect != null && w != null) {
+        final double ratio = cropRect.width / cropRect.height;
+        _isAutoUpdating = true;
+        _heightController.text = (w / ratio).round().toString();
+        _isAutoUpdating = false;
+      }
     }
+    uiState.setTargetDimensions(w, int.tryParse(_heightController.text));
   }
 
   void _onHeightChanged() {
     if (_isAutoUpdating) return;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
-    if (!uiState.maintainAspectRatio) return;
+    final h = int.tryParse(_heightController.text);
 
-    final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
-    if (state == null) return;
-    final cropRect = state.getCropRect();
-    if (cropRect == null) return;
-
-    final double ratio = cropRect.width / cropRect.height;
-    final int? h = int.tryParse(_heightController.text);
-    if (h != null) {
-      _isAutoUpdating = true;
-      _widthController.text = (h * ratio).round().toString();
-      _isAutoUpdating = false;
+    if (uiState.maintainAspectRatio) {
+      final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
+      final cropRect = state?.getCropRect();
+      if (cropRect != null && h != null) {
+        final double ratio = cropRect.width / cropRect.height;
+        _isAutoUpdating = true;
+        _widthController.text = (h * ratio).round().toString();
+        _isAutoUpdating = false;
+      }
     }
+    uiState.setTargetDimensions(int.tryParse(_widthController.text), h);
   }
 
   @override
@@ -115,6 +158,56 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     }
     _isAutoUpdating = false;
     Provider.of<WorkbenchUIState>(context, listen: false).setCropAspectRatio(ratio);
+  }
+
+  void _selectRatioPreset(_RatioPreset preset) {
+    setState(() => _customRatioMode = preset == _RatioPreset.custom);
+    switch (preset) {
+      case _RatioPreset.free:
+        _updateAspectRatio(null);
+      case _RatioPreset.r1x1:
+        _updateAspectRatio(1.0);
+      case _RatioPreset.r4x3:
+        _updateAspectRatio(4 / 3);
+      case _RatioPreset.r16x9:
+        _updateAspectRatio(16 / 9);
+      case _RatioPreset.r3x4:
+        _updateAspectRatio(3 / 4);
+      case _RatioPreset.r9x16:
+        _updateAspectRatio(9 / 16);
+      case _RatioPreset.custom:
+        // Expands the X:Y fields only; the ratio itself changes once the
+        // user actually types into them (via _onRatioChanged).
+        break;
+    }
+  }
+
+  _RatioPreset _currentPreset(double? ratio) {
+    if (_customRatioMode) return _RatioPreset.custom;
+    if (ratio == null) return _RatioPreset.free;
+    if (ratio == 1.0) return _RatioPreset.r1x1;
+    if (ratio > 1.3 && ratio < 1.4) return _RatioPreset.r4x3;
+    if (ratio > 1.7 && ratio < 1.8) return _RatioPreset.r16x9;
+    if (ratio > 0.7 && ratio < 0.8) return _RatioPreset.r3x4;
+    if (ratio > 0.5 && ratio < 0.6) return _RatioPreset.r9x16;
+    return _RatioPreset.custom;
+  }
+
+  void _handleReset() {
+    final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
+    state?.reset();
+
+    _isAutoUpdating = true;
+    _widthController.clear();
+    _heightController.clear();
+    _ratioXController.clear();
+    _ratioYController.clear();
+    _isAutoUpdating = false;
+
+    setState(() => _customRatioMode = false);
+    uiState.setCropAspectRatio(null);
+    uiState.setTargetDimensions(null, null);
   }
 
   Future<void> _handleSave({bool overwrite = false}) async {
@@ -149,7 +242,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     }
 
     if (!mounted) return;
-    setState(() => _isProcessing = true);
+    setState(() => _processingAction = overwrite ? 'overwrite' : 'save');
 
     try {
       final sourceImage = uiState.cropResizeSourceImage;
@@ -206,28 +299,21 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(successMessage),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppSnackBar.success(context, successMessage);
 
       if (!overwrite) {
         final newFile = AppImage(path: targetPath, name: targetName);
         appState.galleryState.addDroppedFiles([newFile]);
       }
-      
+
       appState.galleryState.refreshImages();
       appState.setWorkbenchTab(0);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, "Error: $e");
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() => _processingAction = null);
     }
   }
 
@@ -242,11 +328,43 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       return _buildMobileToolbar(context, l10n, uiState, colorScheme);
     }
 
+    final source = uiState.cropResizeSourceImage;
+    if (source != null) _loadMeta(source.path);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
-        final bool isMedium = width < 1250;
-        final bool isSmall = width < 1050;
+        final busy = _processingAction != null;
+
+        // Degradation order, loosest thing first: the file caption (the
+        // canvas repeats the name anyway), then the sampler's own label,
+        // then the two portrait presets, then the save button's destination
+        // hint. The action *labels* go last — telling copy from overwrite is
+        // the whole point of the bar, and three unlabelled icons is exactly
+        // what this redesign set out to remove.
+        //
+        // Each step is taken only if what is left still does not fit, and
+        // "fit" is measured rather than guessed. A pixel threshold tuned
+        // against English collapses the bar far too early in Japanese, and
+        // far too late once the user scales text up.
+        var showFileInfo = source != null;
+        var showSamplingLabel = true;
+        var showAllRatios = true;
+        var showSaveHint = true;
+        var labelledActions = true;
+
+        double needed() =>
+            _kFixedChrome +
+            (showFileInfo ? _kFileInfoWidth + 4 : 0) +
+            _ratioGroupWidth(l10n, showAllRatios) +
+            _sizeGroupWidth(l10n, showSamplingLabel) +
+            _actionsWidth(l10n, labelledActions, showSaveHint);
+
+        if (needed() > width) showFileInfo = false;
+        if (needed() > width) showSamplingLabel = false;
+        if (needed() > width) showAllRatios = false;
+        if (needed() > width) showSaveHint = false;
+        if (needed() > width) labelledActions = false;
 
         return Container(
           height: 64,
@@ -262,29 +380,30 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
                 onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
                 tooltip: l10n.cancel,
               ),
-              VerticalDivider(width: isSmall ? 16 : 24, indent: 16, endIndent: 16),
-              
-              // Aspect Ratio Section
-              Flexible(
-                flex: 4,
-                child: _buildDesktopRatioSelector(l10n, uiState, colorScheme, isSmall),
+              if (showFileInfo && source != null) ...[
+                const SizedBox(width: 4),
+                _buildFileInfo(source, l10n, colorScheme),
+              ],
+              _divider(colorScheme),
+
+              // Ratio and size share one scroller: whatever the breakpoints
+              // fail to predict scrolls out of reach instead of clipping,
+              // which is how the gallery toolbar's overflow bug read.
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildDesktopRatioSelector(l10n, uiState, colorScheme, !showAllRatios),
+                      _divider(colorScheme),
+                      _buildDesktopResizeControls(l10n, uiState, colorScheme, !showSamplingLabel),
+                    ],
+                  ),
+                ),
               ),
-              
-              VerticalDivider(width: isSmall ? 24 : 32, indent: 16, endIndent: 16),
 
-              // Resize Section
-              Flexible(
-                flex: 3,
-                child: _buildDesktopResizeControls(l10n, uiState, colorScheme, isSmall),
-              ),
-
-              const SizedBox(width: 8),
-
-              // Actions Section
-              if (_isProcessing)
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-              else
-                _buildDesktopSaveActions(l10n, colorScheme, isMedium),
+              const SizedBox(width: 12),
+              _buildDesktopSaveActions(l10n, colorScheme, !labelledActions, showSaveHint, busy),
             ],
           ),
         );
@@ -292,22 +411,140 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     );
   }
 
-  Widget _buildDesktopSaveActions(AppLocalizations l10n, ColorScheme colorScheme, bool compact) {
+  Widget _divider(ColorScheme colorScheme) => Container(
+        width: 1,
+        height: 28,
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        // An explicit box, not VerticalDivider: a Row centres its children by
+        // default, so the divider gets a loose height constraint and collapses
+        // to nothing.
+        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+      );
+
+  /// Natural width of [text] at [style], honouring the user's text scale.
+  double _textWidth(String text, TextStyle? style) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    return painter.width;
+  }
+
+  /// Width the ratio segments occupy. 20 is a segment's own compact padding,
+  /// 8 the track's — see [AppSegmentedControl]. Measured at the selected
+  /// weight, which is the wider of the two.
+  double _ratioGroupWidth(AppLocalizations l10n, bool allRatios) {
+    const style = TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700);
+    final labels = <String>[
+      l10n.cropResizeFreeRatio,
+      '1:1',
+      '4:3',
+      '16:9',
+      if (allRatios) ...['3:4', '9:16'],
+      l10n.custom,
+    ];
+
+    var width = 8.0;
+    for (final label in labels) {
+      width += 20 + _textWidth(label, style);
+    }
+    if (_customRatioMode) width += 8 + _kCustomRatioFieldsWidth;
+    return width;
+  }
+
+  double _sizeGroupWidth(AppLocalizations l10n, bool samplingLabel) {
+    final textTheme = Theme.of(context).textTheme;
+
+    double field(String label) =>
+        22 + _textWidth(label, textTheme.bodySmall) + 8 + _kNumberFieldWidth + _textWidth('px', textTheme.bodySmall);
+
+    var width = 28.0 + field(l10n.width) + 6 + 28 + 6 + field(l10n.height) + 10;
+    if (samplingLabel) width += _textWidth(l10n.cropResizeResample, textTheme.bodySmall) + 6;
+    // The dropdown sizes to its widest option, plus its box and chevron.
+    width += 38 + _textWidth('Lanczos', textTheme.bodyMedium);
+    return width;
+  }
+
+  /// Material's own icon-button padding, spelled out so the estimate tracks
+  /// what the buttons actually render: text 12/16, filled and outlined 16/24,
+  /// each around an 18px icon with an 8px gap.
+  double _actionsWidth(AppLocalizations l10n, bool labelled, bool saveHint) {
+    if (!labelled) return appButtonMinHeight * 3 + 16;
+
+    final style = Theme.of(context).textTheme.labelLarge;
+    // AppToolButton pads 12 a side; the two AppButtons take Material's
+    // icon-button padding of 16/24 around an 18px icon and its 8px gap.
+    final reset = 44 + _textWidth(l10n.reset, style);
+    final overwrite = 68 + _textWidth(l10n.overwriteSource, style);
+    var save = 66 + _textWidth(l10n.saveCopy, style);
+    if (saveHint) save += 6 + _textWidth(l10n.cropResizeSaveDestinationHint, style);
+    return reset + 8 + overwrite + 12 + save;
+  }
+
+  /// Filename over its native resolution and weight — the crop is always
+  /// expressed against these numbers, and the canvas only ever shows a
+  /// fitted preview, so without them the source's real size is invisible.
+  Widget _buildFileInfo(AppImage source, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    final meta = _meta;
+
+    return SizedBox(
+      width: _kFileInfoWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            source.name,
+            style: textTheme.titleSmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (meta != null && meta.width > 0)
+            Text(
+              l10n.cropResizeOriginalInfo(meta.width, meta.height, meta.sizeString),
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopSaveActions(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    bool compact,
+    bool showSaveHint,
+    bool busy,
+  ) {
     if (compact) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton.outlined(
-            onPressed: () => _handleSave(overwrite: false),
-            icon: const Icon(Icons.save_alt, size: 20),
-            tooltip: l10n.saveToTemp,
+          AppToolButton(
+            icon: Icons.restart_alt,
+            label: l10n.reset,
+            showLabel: false,
+            onPressed: busy ? null : _handleReset,
           ),
           const SizedBox(width: 8),
-          IconButton.filled(
-            onPressed: () => _handleSave(overwrite: true),
-            icon: const Icon(Icons.save, size: 20),
+          AppIconButton(
+            icon: Icons.warning_amber_rounded,
             tooltip: l10n.overwriteSource,
-            style: IconButton.styleFrom(backgroundColor: colorScheme.error),
+            color: colorScheme.error,
+            onPressed: busy ? null : () => _handleSave(overwrite: true),
+          ),
+          const SizedBox(width: 8),
+          AppIconButton(
+            icon: Icons.save_outlined,
+            tooltip: l10n.saveCopy,
+            selected: true,
+            onPressed: busy ? null : () => _handleSave(overwrite: false),
           ),
         ],
       );
@@ -316,76 +553,88 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        OutlinedButton.icon(
-          onPressed: () => _handleSave(overwrite: false),
-          icon: const Icon(Icons.save_alt, size: 18),
-          label: Text(l10n.saveToTemp, style: const TextStyle(fontSize: 12)),
+        // Not AppButton's text variant: that one keeps Material's accent
+        // tint, which would put reset at the same visual weight as the two
+        // actions that actually write a file.
+        AppToolButton(
+          icon: Icons.restart_alt,
+          label: l10n.reset,
+          onPressed: busy ? null : _handleReset,
+        ),
+        const SizedBox(width: 8),
+        AppButton(
+          label: l10n.overwriteSource,
+          icon: Icons.warning_amber_rounded,
+          variant: AppButtonVariant.destructiveOutline,
+          loading: _processingAction == 'overwrite',
+          onPressed: busy ? null : () => _handleSave(overwrite: true),
         ),
         const SizedBox(width: 12),
-        FilledButton.icon(
-          onPressed: () => _handleSave(overwrite: true),
-          icon: const Icon(Icons.save, size: 18),
-          label: Text(l10n.overwriteSource, style: const TextStyle(fontSize: 12)),
-          style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
+        AppButton(
+          label: l10n.saveCopy,
+          secondaryLabel: showSaveHint ? l10n.cropResizeSaveDestinationHint : null,
+          icon: Icons.save_outlined,
+          variant: AppButtonVariant.primary,
+          loading: _processingAction == 'save',
+          onPressed: busy ? null : () => _handleSave(overwrite: false),
         ),
       ],
     );
   }
 
   Widget _buildDesktopRatioSelector(AppLocalizations l10n, WorkbenchUIState uiState, ColorScheme colorScheme, bool compact) {
+    final preset = _currentPreset(uiState.cropAspectRatio);
+    final segments = <AppSegment<_RatioPreset>>[
+      AppSegment(value: _RatioPreset.free, label: l10n.cropResizeFreeRatio),
+      AppSegment(value: _RatioPreset.r1x1, label: "1:1"),
+      AppSegment(value: _RatioPreset.r4x3, label: "4:3"),
+      AppSegment(value: _RatioPreset.r16x9, label: "16:9"),
+      if (!compact) ...[
+        AppSegment(value: _RatioPreset.r3x4, label: "3:4"),
+        AppSegment(value: _RatioPreset.r9x16, label: "9:16"),
+      ],
+      AppSegment(value: _RatioPreset.custom, label: l10n.custom),
+    ];
+
+    // No leading icon: the segments are self-describing ("1:1", "16:9"), and
+    // an aspect-ratio glyph in front of them only competes with the track's
+    // own edge for the eye.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.aspect_ratio, size: 20, color: colorScheme.onSurfaceVariant),
-        const SizedBox(width: 12),
-        Flexible(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildRatioItem("Free", null, uiState.cropAspectRatio),
-                _buildRatioItem("1:1", 1.0, uiState.cropAspectRatio),
-                _buildRatioItem("4:3", 4/3, uiState.cropAspectRatio),
-                _buildRatioItem("16:9", 16/9, uiState.cropAspectRatio),
-                if (!compact) ...[
-                  _buildRatioItem("3:4", 3/4, uiState.cropAspectRatio),
-                  _buildRatioItem("9:16", 9/16, uiState.cropAspectRatio),
-                ],
-              ],
-            ),
-          ),
+        AppSegmentedControl<_RatioPreset>(
+          segments: segments,
+          value: preset,
+          onChanged: _selectRatioPreset,
+          style: AppSegmentStyle.raised,
+          compact: true,
         ),
-        const SizedBox(width: 8),
-        // Custom Ratio Inputs
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withAlpha(100),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildRatioField(_ratioXController),
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 2), child: Text(":", style: TextStyle(fontSize: 12))),
-              _buildRatioField(_ratioYController),
-            ],
-          ),
-        ),
+        if (_customRatioMode) ...[
+          const SizedBox(width: 8),
+          _buildCustomRatioFields(colorScheme),
+        ],
       ],
     );
   }
 
-  Widget _buildRatioItem(String label, double? ratio, double? current) {
-    final isSelected = ratio == current;
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: ChoiceChip(
-        label: Text(label, style: const TextStyle(fontSize: 11)),
-        selected: isSelected,
-        onSelected: (v) => _updateAspectRatio(ratio),
-        visualDensity: VisualDensity.compact,
-        padding: EdgeInsets.zero,
+  /// Only rendered once the "Custom" segment is selected — folded away
+  /// otherwise instead of permanently occupying toolbar width next to the
+  /// preset chips.
+  Widget _buildCustomRatioFields(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(150),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRatioField(_ratioXController),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 2), child: Text(":", style: TextStyle(fontSize: 12))),
+          _buildRatioField(_ratioYController),
+        ],
       ),
     );
   }
@@ -407,79 +656,115 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.photo_size_select_large, size: 20, color: colorScheme.onSurfaceVariant),
-        const SizedBox(width: 12),
-        _buildDimensionField(_widthController, compact ? null : l10n.width),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text("×", style: TextStyle(color: colorScheme.onSurfaceVariant))),
-        _buildDimensionField(_heightController, compact ? null : l10n.height),
-        const SizedBox(width: 4),
-        IconButton(
-          icon: Icon(uiState.maintainAspectRatio ? Icons.lock : Icons.lock_open, size: 18),
-          onPressed: () => uiState.setMaintainAspectRatio(!uiState.maintainAspectRatio),
-          tooltip: l10n.maintainAspectRatio,
-          color: uiState.maintainAspectRatio ? colorScheme.primary : null,
-          visualDensity: VisualDensity.compact,
-        ),
-        const SizedBox(width: 4),
-        
-        if (!compact)
-          DropdownButton<String>(
-            value: uiState.samplingMethod,
-            underline: const SizedBox(),
-            style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
-            items: const [
-              DropdownMenuItem(value: 'lanczos', child: Text("Lanczos")),
-              DropdownMenuItem(value: 'cubic', child: Text("Cubic")),
-              DropdownMenuItem(value: 'linear', child: Text("Linear")),
-              DropdownMenuItem(value: 'nearest', child: Text("Nearest")),
-            ],
-            onChanged: (v) => uiState.setSamplingMethod(v!),
-          )
-        else
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.tune, size: 18),
-            tooltip: l10n.sampling,
-            onSelected: (v) => uiState.setSamplingMethod(v),
-            itemBuilder: (context) => [
-              _buildSamplingItem(context, 'lanczos', 'Lanczos', uiState.samplingMethod),
-              _buildSamplingItem(context, 'cubic', 'Cubic', uiState.samplingMethod),
-              _buildSamplingItem(context, 'linear', 'Linear', uiState.samplingMethod),
-              _buildSamplingItem(context, 'nearest', 'Nearest', uiState.samplingMethod),
-            ],
+        Icon(Icons.photo_size_select_large, size: 18, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 10),
+        _buildDimensionField(_widthController, l10n.width, colorScheme),
+        const SizedBox(width: 6),
+        // Between the two fields, not after both — this is the control that
+        // links them, so it reads as sitting on the link rather than as a
+        // third, unrelated field.
+        Tooltip(
+          message: l10n.maintainAspectRatio,
+          child: InkWell(
+            onTap: () => uiState.setMaintainAspectRatio(!uiState.maintainAspectRatio),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: uiState.maintainAspectRatio
+                    ? colorScheme.primary.withValues(alpha: 0.14)
+                    : Colors.transparent,
+              ),
+              child: Icon(
+                uiState.maintainAspectRatio ? Icons.link : Icons.link_off,
+                size: 15,
+                color: uiState.maintainAspectRatio ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
+        ),
+        const SizedBox(width: 6),
+        _buildDimensionField(_heightController, l10n.height, colorScheme),
+        const SizedBox(width: 10),
+        if (!compact) ...[
+          Text(
+            l10n.cropResizeResample,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 6),
+        ],
+        Container(
+          height: appButtonMinHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(appButtonRadius),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: uiState.samplingMethod,
+              isDense: true,
+              icon: Icon(Icons.expand_more, size: 16, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+              items: const [
+                DropdownMenuItem(value: 'lanczos', child: Text("Lanczos")),
+                DropdownMenuItem(value: 'cubic', child: Text("Cubic")),
+                DropdownMenuItem(value: 'linear', child: Text("Linear")),
+                DropdownMenuItem(value: 'nearest', child: Text("Nearest")),
+              ],
+              onChanged: (v) => uiState.setSamplingMethod(v!),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildSamplingItem(BuildContext context, String value, String label, String current) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Text(label, style: const TextStyle(fontSize: 13)),
-          if (value == current) ...[
-            const Spacer(),
-            Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.primary),
-          ],
-        ],
-      ),
-    );
-  }
+  /// A boxed "W [1200] px" cell.
+  ///
+  /// Built by hand rather than from [InputDecoration]: Material only reveals
+  /// `prefixText`/`suffixText` once a field has focus or content, so an empty
+  /// box would lose both its "width" label and its unit — exactly when the
+  /// user most needs to be told what the box is for. Drawing the chrome here
+  /// keeps the label and the unit standing regardless of state, and leaves a
+  /// borderless field to hold just the number.
+  Widget _buildDimensionField(TextEditingController ctrl, String label, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
 
-  Widget _buildDimensionField(TextEditingController ctrl, String? label) {
-    return SizedBox(
-      width: label == null ? 50 : 70,
-      child: TextField(
-        controller: ctrl,
-        decoration: InputDecoration(
-          isDense: true,
-          labelText: label,
-          labelStyle: const TextStyle(fontSize: 10),
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        ),
-        style: const TextStyle(fontSize: 12),
-        keyboardType: TextInputType.number,
+    return Container(
+      height: appButtonMinHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(appButtonRadius),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: _kNumberFieldWidth,
+            child: TextField(
+              controller: ctrl,
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              keyboardType: TextInputType.number,
+            ),
+          ),
+          Text(
+            'px',
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+          ),
+        ],
       ),
     );
   }
@@ -599,6 +884,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   }
 
   void _showMobileResizeDialog(BuildContext context, AppLocalizations l10n, WorkbenchUIState uiState) {
+    final colorScheme = Theme.of(context).colorScheme;
     AppDialog.show<void>(
       context,
       title: l10n.resize,
@@ -608,9 +894,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           children: [
             Row(
               children: [
-                Expanded(child: _buildDimensionField(_widthController, l10n.width)),
+                Expanded(child: _buildDimensionField(_widthController, l10n.width, colorScheme)),
                 const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text("×")),
-                Expanded(child: _buildDimensionField(_heightController, l10n.height)),
+                Expanded(child: _buildDimensionField(_heightController, l10n.height, colorScheme)),
               ],
             ),
             const SizedBox(height: 12),
@@ -653,11 +939,19 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.save, color: Theme.of(context).colorScheme.error),
+              leading: Icon(Icons.restore_page_outlined, color: Theme.of(context).colorScheme.error),
               title: Text(l10n.overwriteSource, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(context);
                 _handleSave(overwrite: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: Text(l10n.reset),
+              onTap: () {
+                Navigator.pop(context);
+                _handleReset();
               },
             ),
             const SizedBox(height: 16),

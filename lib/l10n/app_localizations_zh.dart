@@ -1891,6 +1891,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get custom => '自定义';
 
   @override
+  String get cropResizeFreeRatio => '自由';
+
+  @override
   String get resize => '缩放';
 
   @override
@@ -1904,6 +1907,60 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sampling => '采样方式';
+
+  @override
+  String get reset => '重置';
+
+  @override
+  String cropResizeOriginalInfo(int width, int height, String size) {
+    return '原图 $width×$height · $size';
+  }
+
+  @override
+  String cropResizeCanvasLabel(String name) {
+    return '$name（原图预览）';
+  }
+
+  @override
+  String get cropResizeCropOnly => '裁剪';
+
+  @override
+  String cropResizeCropAndScale(int percent) {
+    return '裁剪 + 缩放 $percent%';
+  }
+
+  @override
+  String get cropResizeOutputPreview => '输出预览';
+
+  @override
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
+    return '$originalSize → $outputSize · $operation · $sampling';
+  }
+
+  @override
+  String cropResizeWillSaveTo(String path) {
+    return '副本将存入 $path';
+  }
+
+  @override
+  String get cropResizeTempWorkspaceLabel => '临时工作区';
+
+  @override
+  String get saveCopy => '保存副本';
+
+  @override
+  String get cropResizeSaveDestinationHint => '到工作区';
+
+  @override
+  String get cropResizeResample => '重采样';
+
+  @override
+  String get fitToWindow => '适应窗口';
 
   @override
   String get drawMask => '绘制蒙版';
@@ -4274,6 +4331,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get custom => '自訂';
 
   @override
+  String get cropResizeFreeRatio => '自由';
+
+  @override
   String get resize => '調整大小';
 
   @override
@@ -4287,6 +4347,60 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get sampling => '採樣';
+
+  @override
+  String get reset => '重設';
+
+  @override
+  String cropResizeOriginalInfo(int width, int height, String size) {
+    return '原圖 $width×$height · $size';
+  }
+
+  @override
+  String cropResizeCanvasLabel(String name) {
+    return '$name（原圖預覽）';
+  }
+
+  @override
+  String get cropResizeCropOnly => '裁切';
+
+  @override
+  String cropResizeCropAndScale(int percent) {
+    return '裁切 + 縮放 $percent%';
+  }
+
+  @override
+  String get cropResizeOutputPreview => '輸出預覽';
+
+  @override
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
+    return '$originalSize → $outputSize · $operation · $sampling';
+  }
+
+  @override
+  String cropResizeWillSaveTo(String path) {
+    return '副本將存入 $path';
+  }
+
+  @override
+  String get cropResizeTempWorkspaceLabel => '臨時工作區';
+
+  @override
+  String get saveCopy => '儲存副本';
+
+  @override
+  String get cropResizeSaveDestinationHint => '到工作區';
+
+  @override
+  String get cropResizeResample => '重新取樣';
+
+  @override
+  String get fitToWindow => '適應視窗';
 
   @override
   String get drawMask => '繪製遮罩';

@@ -154,11 +154,75 @@
   "saveToTempSuccess": "画像が一時ワークスペースに保存されました",
   "overwriteSuccess": "元のファイルが更新されました",
   "custom": "カスタム",
+  "cropResizeFreeRatio": "フリー",
   "resize": "サイズ変更",
   "maintainAspectRatio": "アスペクト比を維持",
   "width": "幅",
   "height": "高さ",
   "sampling": "サンプリング",
+  "reset": "リセット",
+  "cropResizeOriginalInfo": "元画像 {width}×{height} · {size}",
+  "@cropResizeOriginalInfo": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCanvasLabel": "{name}（元画像プレビュー）",
+  "@cropResizeCanvasLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeCropOnly": "切り抰き",
+  "cropResizeCropAndScale": "切り抰き + 拡大縮小 {percent}%",
+  "@cropResizeCropAndScale": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cropResizeOutputPreview": "出力プレビュー",
+  "cropResizeOutputSummary": "{originalSize} → {outputSize} · {operation} · {sampling}",
+  "@cropResizeOutputSummary": {
+    "placeholders": {
+      "originalSize": {
+        "type": "String"
+      },
+      "outputSize": {
+        "type": "String"
+      },
+      "operation": {
+        "type": "String"
+      },
+      "sampling": {
+        "type": "String"
+      }
+    }
+  },
+  "cropResizeWillSaveTo": "コピーの保存先: {path}",
+  "cropResizeTempWorkspaceLabel": "一時ワークスペース",
+  "saveCopy": "コピーを保存",
+  "cropResizeSaveDestinationHint": "ワークスペースへ",
+  "cropResizeResample": "リサンプル",
+  "@cropResizeWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "fitToWindow": "ウィンドウに合わせる",
   "drawMask": "マスクを描画",
   "maskEditor": "マスクエディタ",
   "brushSize": "ブラシサイズ",
