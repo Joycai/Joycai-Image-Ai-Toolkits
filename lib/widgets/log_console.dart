@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/log_entry.dart';
 import '../state/app_state.dart';
+import 'app_snackbar.dart';
 
 class LogConsoleWidget extends StatefulWidget {
   final bool showHeader;
@@ -149,7 +150,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
               onPressed: () {
                 final text = appState.logs.map((l) => '[${l.level}] ${l.message}').join('\n');
                 Clipboard.setData(ClipboardData(text: text));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs copied to clipboard'), duration: Duration(seconds: 1)));
+                AppSnackBar.info(context, 'Logs copied to clipboard');
               },
               tooltip: 'Copy all',
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/prompt_card.dart';
 
 class UserPromptList extends StatefulWidget {
@@ -80,9 +81,7 @@ class _UserPromptListState extends State<UserPromptList> {
       // ignore: deprecated_member_use
       onReorder: (oldIndex, newIndex) async {
         if (widget.searchQuery.isNotEmpty || widget.selectedFilterTagIds.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.reorderDisabledWhileFiltered)),
-          );
+          AppSnackBar.info(context, l10n.reorderDisabledWhileFiltered);
           return;
         }
 
@@ -149,10 +148,8 @@ class _UserPromptListState extends State<UserPromptList> {
                 IconButton(
                   icon: const Icon(Icons.copy_all, size: 18),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: prompt.content));       
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.copiedToClipboard(prompt.title))),
-                    );
+                    Clipboard.setData(ClipboardData(text: prompt.content));
+                    AppSnackBar.info(context, l10n.copiedToClipboard(prompt.title));
                   },
                 ),
                 IconButton(

@@ -13,6 +13,7 @@ import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_segmented_control.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
@@ -53,7 +54,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // Find selected model
     final videoModels = appState.videoModels;
     if (videoModels.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
       return;
     }
 
@@ -79,9 +80,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
     appState.submitVideoTask(selectedModel.id, params, modelIdDisplay: selectedModel.modelName);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.taskSubmitted), behavior: SnackBarBehavior.floating),
-    );
+    AppSnackBar.info(context, l10n.taskSubmitted);
   }
 
   @override

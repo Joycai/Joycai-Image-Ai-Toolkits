@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../../l10n/app_localizations.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
+import '../app_snackbar.dart';
 
 Future<void> showFileRenameDialog({
   required BuildContext context,
@@ -63,9 +64,7 @@ Future<void> showFileRenameDialog({
 
     if (File(newPath).existsSync()) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.fileAlreadyExists), backgroundColor: Colors.orange),
-        );
+        AppSnackBar.warning(context, l10n.fileAlreadyExists);
       }
       return;
     }
@@ -74,15 +73,11 @@ Future<void> showFileRenameDialog({
       await file.rename(newPath);
       onSuccess();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.renameSuccess), backgroundColor: Colors.green),
-        );
+        AppSnackBar.success(context, l10n.renameSuccess);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.renameFailed(e.toString())), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, l10n.renameFailed(e.toString()));
       }
     }
   }

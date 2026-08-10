@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt_history_entry.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
+import '../app_side_panel.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///
@@ -76,54 +76,14 @@ class PromptHistorySheet extends StatefulWidget {
     required ValueChanged<String> onApply,
     required VoidCallback onClear,
   }) async {
-    final isNarrow = Responsive.isNarrow(context);
-
-    if (isNarrow) {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (context) => DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) => PromptHistorySheet(
-            entries: entries,
-            onApply: onApply,
-            onClear: onClear,
-          ),
-        ),
-      );
-    } else {
-      await showGeneralDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'Dismiss',
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (context, anim1, anim2) => Align(
-          alignment: Alignment.centerRight,
-          child: PromptHistorySheet(
-            entries: entries,
-            onApply: onApply,
-            onClear: onClear,
-          ),
-        ),
-        transitionBuilder: (context, anim1, anim2, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic)),
-            child: child,
-          );
-        },
-      );
-    }
+    await AppSidePanel.show<void>(
+      context,
+      builder: (context) => PromptHistorySheet(
+        entries: entries,
+        onApply: onApply,
+        onClear: onClear,
+      ),
+    );
   }
 
   @override
@@ -135,29 +95,15 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final isNarrow = Responsive.isNarrow(context);
 
-    return Container(
-      width: isNarrow ? double.infinity : 450,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: isNarrow ? const BorderRadius.vertical(top: Radius.circular(20)) : null,
-        boxShadow: isNarrow
-            ? null
-            : [
-                BoxShadow(color: Colors.black.withAlpha(50), blurRadius: 20, offset: const Offset(-5, 0))
-              ],
-      ),
-      child: Material(
-        child: Column(
-          children: [
-            _buildHeader(l10n, colorScheme),
-            const Divider(height: 1),
-            Expanded(child: _buildList(l10n, colorScheme)),
-          ],
-        ),
-      ),
+    // Surface, width and shadow belong to AppSidePanel, which is what
+    // presents this. All that is left here is what the panel contains.
+    return Column(
+      children: [
+        _buildHeader(l10n, colorScheme),
+        const Divider(height: 1),
+        Expanded(child: _buildList(l10n, colorScheme)),
+      ],
     );
   }
 

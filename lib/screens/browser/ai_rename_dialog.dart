@@ -14,6 +14,7 @@ import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/chat_model_selector.dart';
 
 class AiRenameDialog extends StatefulWidget {
@@ -142,25 +143,22 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final l10n = AppLocalizations.of(context)!;
 
     if (_selectedModelDbId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.noModelsConfigured),
-          action: SnackBarAction(
-            label: l10n.settings,
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              appState.navigateToScreen(6); // Settings screen index
-            },
-          ),
+      AppSnackBar.warning(
+        context,
+        l10n.noModelsConfigured,
+        action: AppSnackBarAction(
+          label: l10n.settings,
+          onPressed: () {
+            Navigator.pop(context); // Close dialog
+            appState.navigateToScreen(6); // Settings screen index
+          },
         ),
       );
       return;
     }
 
     if (_selectedSystemPrompt == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectTemplateFirst)),
-      );
+      AppSnackBar.warning(context, l10n.selectTemplateFirst);
       return;
     }
 
@@ -223,9 +221,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             setState(() => _isProcessing = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-            );
+            AppSnackBar.error(context, "Error: $e");
           }
         });
       }
@@ -261,7 +257,6 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     if (_conflicts.isNotEmpty) return;
 
     final l10n = AppLocalizations.of(context)!;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final appState = Provider.of<AppState>(context, listen: false);
     
     setState(() => _isProcessing = true);
@@ -289,15 +284,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       
       if (mounted) {
         Navigator.pop(context);
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(l10n.taskSubmitted), backgroundColor: Colors.blue),
-        );
+        AppSnackBar.info(context, l10n.taskSubmitted);
       }
     } catch (e) {
       if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text("Failed to start task: $e"), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, "Failed to start task: $e");
         setState(() => _isProcessing = false);
       }
     }

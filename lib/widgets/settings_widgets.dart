@@ -7,6 +7,7 @@ import '../state/app_state.dart';
 import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_segmented_control.dart';
+import 'app_snackbar.dart';
 
 class ThemeSelector extends StatelessWidget {
   final AppState appState;
@@ -285,9 +286,7 @@ class FontSelector extends StatelessWidget {
     if (ok == true && context.mounted) {
       await appState.setFontFamily(key);
     } else if (ok == false && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.fontDownloadFailed)),
-      );
+      AppSnackBar.error(context, l10n.fontDownloadFailed);
     }
   }
 }

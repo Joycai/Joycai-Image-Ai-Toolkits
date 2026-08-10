@@ -11,6 +11,7 @@ import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 
 /// Backup-import flow for the setup wizard.
 ///
@@ -66,10 +67,7 @@ Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) a
     Navigator.of(context).pop();
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(backupImportErrorText(l10n, e)),
-      backgroundColor: Theme.of(context).colorScheme.error,
-    ));
+    AppSnackBar.error(context, backupImportErrorText(l10n, e));
   }
 }
 

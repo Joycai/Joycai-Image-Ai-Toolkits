@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/prompt_card.dart';
 
 class SystemTemplateList extends StatefulWidget {
@@ -80,9 +81,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
         // ignore: deprecated_member_use
         onReorder: (oldIndex, newIndex) async {
           if (widget.searchQuery.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.reorderDisabledWhileFiltered)),
-            );
+            AppSnackBar.info(context, l10n.reorderDisabledWhileFiltered);
             return;
           }
           setState(() {
@@ -137,9 +136,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
                     icon: const Icon(Icons.copy_all, size: 18),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: systemPrompt.content));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.copiedToClipboard(systemPrompt.title))),
-                      );
+                      AppSnackBar.info(context, l10n.copiedToClipboard(systemPrompt.title));
                     },
                   ),
                   IconButton(

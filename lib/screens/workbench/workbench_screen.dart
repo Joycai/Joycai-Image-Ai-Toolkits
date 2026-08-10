@@ -27,6 +27,7 @@ import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
 import 'gallery.dart';
@@ -188,7 +189,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (text.isEmpty) return;
 
     if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
       return;
     }
 
@@ -199,9 +200,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       await _refreshKbStatus();
       if (_kbStatus != KbStatus.ok) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
-          );
+          AppSnackBar.warning(context, AppLocalizations.of(context)!.optKbNotConfigured);
         }
         return;
       }
@@ -232,16 +231,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (session.isRunning) return;
 
     if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
       return;
     }
     if (session.usesKnowledgeBase) {
       await _refreshKbStatus();
       if (_kbStatus != KbStatus.ok) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
-          );
+          AppSnackBar.warning(context, AppLocalizations.of(context)!.optKbNotConfigured);
         }
         return;
       }
@@ -261,16 +258,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (session.isRunning || session.history.isEmpty) return;
 
     if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.noModelsConfigured)));
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
       return;
     }
     if (session.usesKnowledgeBase) {
       await _refreshKbStatus();
       if (_kbStatus != KbStatus.ok) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.optKbNotConfigured)),
-          );
+          AppSnackBar.warning(context, AppLocalizations.of(context)!.optKbNotConfigured);
         }
         return;
       }
@@ -301,7 +296,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.refineFailed(e.toString()))));
+        AppSnackBar.error(context, l10n.refineFailed(e.toString()));
       }
     }
   }
@@ -314,7 +309,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final sessions = await workbenchUIState.listAssistantSessions();
     if (!mounted) return;
     if (sessions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.optNoHistory)));
+      AppSnackBar.info(context, l10n.optNoHistory);
       return;
     }
     await showModalBottomSheet(
@@ -471,9 +466,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (KnowledgeBaseStarter.isInitialized(root)) {
       await _refreshKbStatus();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName)),
-      ));
+      AppSnackBar.info(context, l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName));
       return;
     }
 
@@ -496,14 +489,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       final result = await KnowledgeBaseStarter.scaffold(root);
       await _refreshKbStatus();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.kbScaffoldDone(result.created.length))),
-      );
+      AppSnackBar.success(context, l10n.kbScaffoldDone(result.created.length));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.kbScaffoldFailed('$e'))),
-      );
+      AppSnackBar.error(context, l10n.kbScaffoldFailed('$e'));
     }
   }
 
@@ -516,9 +505,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       await _refreshKbStatus();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.kbEditFailed('$e'))),
-      );
+      AppSnackBar.error(context, l10n.kbEditFailed('$e'));
     }
   }
 
@@ -530,7 +517,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     if (_appState == null || prompt.isEmpty) return;
     _appState!.updateWorkbenchConfig(prompt: prompt);
     _appState!.setWorkbenchTab(0);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.promptApplied)));
+    AppSnackBar.info(context, AppLocalizations.of(context)!.promptApplied);
   }
 
   void _onAppStateChanged() {
@@ -607,15 +594,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.maskSaved), backgroundColor: Colors.green),
-        );
+        AppSnackBar.success(context, AppLocalizations.of(context)!.maskSaved);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.maskSaveError(e.toString())), backgroundColor: Colors.red),
-        );
+        AppSnackBar.error(context, AppLocalizations.of(context)!.maskSaveError(e.toString()));
       }
     } finally {
       if (binary != originalBinaryMode && mounted) {
