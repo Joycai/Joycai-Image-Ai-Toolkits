@@ -2313,6 +2313,81 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optAskUserDismissed => '已在对话中继续';
+
+  @override
+  String optAgentSteps(int count) {
+    return 'Agent 过程 · $count 步';
+  }
+
+  @override
+  String optAgentStepsImages(int count) {
+    return '查看 $count 张参考图';
+  }
+
+  @override
+  String optAgentStepsDocs(int count) {
+    return '阅读 $count 篇文档';
+  }
+
+  @override
+  String optAgentStepsExpand(int count) {
+    return '展开全部 $count 步';
+  }
+
+  @override
+  String get optAgentStepsCollapse => '收起步骤';
+
+  @override
+  String get optPromptExpand => '展开全文';
+
+  @override
+  String get optPromptCollapse => '收起';
+
+  @override
+  String get optKbReady => '已初始化';
+
+  @override
+  String optKbTreeStats(int files, int dirs) {
+    return '$files 篇文档 · $dirs 个目录';
+  }
+
+  @override
+  String optKbContentUpdated(String time) {
+    return '内容更新于 $time';
+  }
+
+  @override
+  String get optKbRescan => '重新扫描';
+
+  @override
+  String get optKbCitedThisRound => '本轮引用';
+
+  @override
+  String optKbCitedAll(int count) {
+    return '全部 $count 篇';
+  }
+
+  @override
+  String get optKbCitedNone => '尚无引用';
+
+  @override
+  String optAttachedImages(int count) {
+    return '$count 张参考图随消息发送';
+  }
+
+  @override
+  String get optSendHint => 'Enter 发送 · Shift+Enter 换行';
+
+  @override
+  String optModeBadgeAgent(String mode) {
+    return '$mode · Agent';
+  }
+
+  @override
+  String get optRefNumberingHint => '序号与提示词中引用的文件名对应，agent 可查看这些图片。';
+
+  @override
+  String get optModeKnowledgeEditShort => '库编辑';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4148,6 +4223,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get sendToComparatorAfter => '設為處理後 (Result)';
 
   @override
+  String get sendToFirstFrame => '設為影片首格';
+
+  @override
+  String get sendToLastFrame => '設為影片末格';
+
+  @override
+  String get sendToVideoReferences => '加入影片參考圖';
+
+  @override
   String get sendToSelection => '新增至選取項目';
 
   @override
@@ -4612,4 +4696,79 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optAskUserDismissed => '已在對話中繼續';
+
+  @override
+  String optAgentSteps(int count) {
+    return 'Agent 過程 · $count 步';
+  }
+
+  @override
+  String optAgentStepsImages(int count) {
+    return '檢視 $count 張參考圖';
+  }
+
+  @override
+  String optAgentStepsDocs(int count) {
+    return '閱讀 $count 篇文件';
+  }
+
+  @override
+  String optAgentStepsExpand(int count) {
+    return '展開全部 $count 步';
+  }
+
+  @override
+  String get optAgentStepsCollapse => '收合步驟';
+
+  @override
+  String get optPromptExpand => '展開全文';
+
+  @override
+  String get optPromptCollapse => '收合';
+
+  @override
+  String get optKbReady => '已初始化';
+
+  @override
+  String optKbTreeStats(int files, int dirs) {
+    return '$files 篇文件 · $dirs 個目錄';
+  }
+
+  @override
+  String optKbContentUpdated(String time) {
+    return '內容更新於 $time';
+  }
+
+  @override
+  String get optKbRescan => '重新掃描';
+
+  @override
+  String get optKbCitedThisRound => '本輪引用';
+
+  @override
+  String optKbCitedAll(int count) {
+    return '全部 $count 篇';
+  }
+
+  @override
+  String get optKbCitedNone => '尚無引用';
+
+  @override
+  String optAttachedImages(int count) {
+    return '$count 張參考圖隨訊息傳送';
+  }
+
+  @override
+  String get optSendHint => 'Enter 傳送 · Shift+Enter 換行';
+
+  @override
+  String optModeBadgeAgent(String mode) {
+    return '$mode · Agent';
+  }
+
+  @override
+  String get optRefNumberingHint => '序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。';
+
+  @override
+  String get optModeKnowledgeEditShort => '庫編輯';
 }

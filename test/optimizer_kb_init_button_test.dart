@@ -113,7 +113,15 @@ void main() {
     await pumpPanel(tester, KbStatus.ok);
     final l10n = await en();
 
-    final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+    // Scoped to this button: once the base is valid the card also offers
+    // rescan and open-in-folder, and the folder action carries a tooltip of
+    // its own.
+    final tooltip = tester.widget<Tooltip>(
+      find.ancestor(
+        of: find.text(l10n.kbScaffoldCreate),
+        matching: find.byType(Tooltip),
+      ),
+    );
     expect(
       tooltip.message,
       l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName),

@@ -1,15 +1,9 @@
 {
   "ja": [
-    "noTasks",
-    "sendToFirstFrame",
-    "sendToLastFrame",
-    "sendToVideoReferences"
+    "noTasks"
   ],
 
   "zh_Hant": [
-    "noTasks",
-    "sendToFirstFrame",
-    "sendToLastFrame",
-    "sendToVideoReferences"
+    "noTasks"
   ]
 }

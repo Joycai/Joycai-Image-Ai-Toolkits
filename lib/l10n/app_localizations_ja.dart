@@ -1854,13 +1854,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sendToComparatorAfter => 'After (結果) として設定';
 
   @override
-  String get sendToFirstFrame => 'Set as First Frame (Video)';
+  String get sendToFirstFrame => '動画の最初のフレームに設定';
 
   @override
-  String get sendToLastFrame => 'Set as Last Frame (Video)';
+  String get sendToLastFrame => '動画の最後のフレームに設定';
 
   @override
-  String get sendToVideoReferences => 'Add to Video References';
+  String get sendToVideoReferences => '動画の参照画像に追加';
 
   @override
   String get sendToSelection => '選択に追加';
@@ -2330,4 +2330,80 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optAskUserDismissed => 'チャットで継続';
+
+  @override
+  String optAgentSteps(int count) {
+    return 'エージェント処理 · $count ステップ';
+  }
+
+  @override
+  String optAgentStepsImages(int count) {
+    return '参照画像 $count 枚を確認';
+  }
+
+  @override
+  String optAgentStepsDocs(int count) {
+    return 'ドキュメント $count 件を読了';
+  }
+
+  @override
+  String optAgentStepsExpand(int count) {
+    return '全 $count ステップを表示';
+  }
+
+  @override
+  String get optAgentStepsCollapse => 'ステップを折りたたむ';
+
+  @override
+  String get optPromptExpand => '全文を表示';
+
+  @override
+  String get optPromptCollapse => '折りたたむ';
+
+  @override
+  String get optKbReady => '初期化済み';
+
+  @override
+  String optKbTreeStats(int files, int dirs) {
+    return 'ドキュメント $files 件 · フォルダ $dirs 個';
+  }
+
+  @override
+  String optKbContentUpdated(String time) {
+    return '内容更新 $time';
+  }
+
+  @override
+  String get optKbRescan => '再スキャン';
+
+  @override
+  String get optKbCitedThisRound => '今回の参照';
+
+  @override
+  String optKbCitedAll(int count) {
+    return '全 $count 件';
+  }
+
+  @override
+  String get optKbCitedNone => '参照はまだありません';
+
+  @override
+  String optAttachedImages(int count) {
+    return '参照画像 $count 枚をメッセージと共に送信';
+  }
+
+  @override
+  String get optSendHint => 'Enter で送信 · Shift+Enter で改行';
+
+  @override
+  String optModeBadgeAgent(String mode) {
+    return '$mode · エージェント';
+  }
+
+  @override
+  String get optRefNumberingHint =>
+      '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
+
+  @override
+  String get optModeKnowledgeEditShort => 'ナレッジ編集';
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_card.dart';
 import 'config_section_header.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
@@ -63,52 +64,86 @@ class OptimizerReferencePanel extends StatelessWidget {
                   final viewed = session.viewedImagePaths.contains(image.path);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
+                    child: AppCard(
+                      outlined: true,
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image(
-                            image: image.imageProvider,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                          ),
-                          // The agent addresses images by this 1-based id.
-                          Positioned(
-                            top: 6,
-                            left: 6,
-                            child: _Badge(
-                              text: '#${index + 1}',
-                              background: colorScheme.surface.withValues(alpha: 0.85),
-                              foreground: colorScheme.onSurface,
+                          // A fixed 4:3 window rather than the image's own
+                          // height: unconstrained, one tall portrait shot
+                          // filled the panel and pushed the rest out of sight,
+                          // so the numbering the prompt refers to was no
+                          // longer scannable.
+                          AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ColoredBox(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  child: Image(image: image.imageProvider, fit: BoxFit.cover),
+                                ),
+                                // The agent addresses images by this 1-based
+                                // id, and the optimized prompt cites the same
+                                // number.
+                                Positioned(
+                                  top: 6,
+                                  left: 6,
+                                  child: _Badge(
+                                    text: '${index + 1}',
+                                    background: colorScheme.primary,
+                                    foreground: colorScheme.onPrimary,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (viewed) ...[
+                                        Tooltip(
+                                          message: l10n.optViewed,
+                                          child: _Badge(
+                                            icon: Icons.visibility_outlined,
+                                            background: colorScheme.surface.withValues(alpha: 0.85),
+                                            foreground: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      Tooltip(
+                                        message: l10n.optRemoveImage,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(6),
+                                          onTap: () => workbenchUIState.removeAssistantImage(image),
+                                          child: _Badge(
+                                            icon: Icons.close,
+                                            background: colorScheme.surface.withValues(alpha: 0.85),
+                                            foreground: colorScheme.error,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          if (viewed)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Tooltip(
-                                message: l10n.optViewed,
-                                child: _Badge(
-                                  icon: Icons.visibility_outlined,
-                                  background: colorScheme.tertiaryContainer.withValues(alpha: 0.9),
-                                  foreground: colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                            ),
-                          Positioned(
-                            bottom: 6,
-                            right: 6,
-                            child: Tooltip(
-                              message: l10n.optRemoveImage,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(6),
-                                onTap: () => workbenchUIState.removeAssistantImage(image),
-                                child: _Badge(
-                                  icon: Icons.close,
-                                  background: colorScheme.surface.withValues(alpha: 0.85),
-                                  foreground: colorScheme.error,
-                                ),
-                              ),
+                          // The name the prompt will cite, off the picture so
+                          // it never covers the thing being referred to.
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                            child: Text(
+                              image.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontFamily: 'monospace',
+                                  ),
                             ),
                           ),
                         ],
@@ -117,6 +152,20 @@ class OptimizerReferencePanel extends StatelessWidget {
                   );
                 },
               ),
+            ),
+          ),
+        // Why the numbers matter, said once at the bottom rather than as a
+        // tooltip on each card: the ordering is what the prompt cites, and
+        // that is not guessable from a numbered badge alone.
+        if (images.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Text(
+              l10n.optRefNumberingHint,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
             ),
           ),
       ],

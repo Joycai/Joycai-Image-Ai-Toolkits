@@ -21,6 +21,24 @@ class KbFileInfo {
       };
 }
 
+/// What a knowledge base contains, as the agent sees it.
+///
+/// [newestModified] is the most recent modification time among the markdown
+/// files counted — the honest answer to "will the assistant see the edit I
+/// just made", which is what a freshness line on the status card is really
+/// being asked. Null when the base holds no readable files.
+class KbTreeStats {
+  final int files;
+  final int directories;
+  final DateTime? newestModified;
+
+  const KbTreeStats({
+    required this.files,
+    required this.directories,
+    this.newestModified,
+  });
+}
+
 class KbReadResult {
   final String content;
   final int page;
@@ -163,6 +181,52 @@ class KnowledgeBaseService {
     }
     entries.sort((a, b) => a.relPath.compareTo(b.relPath));
     return entries;
+  }
+
+  /// Walks the whole tree, counting what the agent can reach and noting when
+  /// that content last changed.
+  ///
+  /// Built on [listFiles] rather than a raw directory walk so the numbers
+  /// match exactly what the model is shown — same hidden-segment skip, same
+  /// markdown-only filter. A count that included files the agent cannot read
+  /// would be worse than no count.
+  ///
+  /// Deliberately not cached, and deliberately not an "index". This service
+  /// reads the folder on demand and is therefore never stale; a stored count
+  /// would be the only stale thing in the subsystem. Callers that want to show
+  /// freshness should show [KbTreeStats.newestModified] — the content's own
+  /// timestamp — rather than when some scan last ran.
+  KbTreeStats scanTree(String root, {String? dir, int depth = 0}) {
+    // Symlink loops inside the root survive resolvePath's containment check,
+    // which is lexical. A depth cap is cheaper than tracking visited inodes
+    // and no real knowledge base nests this far.
+    if (depth > 12) return const KbTreeStats(files: 0, directories: 0);
+
+    var files = 0;
+    var directories = 0;
+    DateTime? newest;
+
+    for (final entry in listFiles(root, dir: dir)) {
+      if (entry.isDir) {
+        directories++;
+        final nested = scanTree(root, dir: entry.relPath, depth: depth + 1);
+        files += nested.files;
+        directories += nested.directories;
+        newest = _laterOf(newest, nested.newestModified);
+      } else {
+        files++;
+        final stat = File(resolvePath(root, entry.relPath)).statSync();
+        newest = _laterOf(newest, stat.modified);
+      }
+    }
+
+    return KbTreeStats(files: files, directories: directories, newestModified: newest);
+  }
+
+  static DateTime? _laterOf(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isAfter(b) ? a : b;
   }
 
   /// Reads a knowledge file in full, unpaged. Returns null when it does not

@@ -92,6 +92,14 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(8, 8, 8, widget.bottomPanel == null ? 8 : 0),
                 child: Row(
+                  // Stretch, not the default centre. PanelCard is a SizedBox
+                  // with a width and no height, so under the loose vertical
+                  // constraint a centred Row hands out, a panel whose body is
+                  // a bare SingleChildScrollView shrink-wraps to its content
+                  // and then floats in the middle of the canvas with bare
+                  // surface above and below it. Panels are columns of a
+                  // layout; they should always be the height of the row.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Left Panel
                     if (widget.leftPanel != null && widget.showLeftPanel && !isTablet) ...[

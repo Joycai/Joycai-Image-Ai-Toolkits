@@ -49,7 +49,19 @@ class AppCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        child: Padding(padding: padding, child: child),
+        // Spans its parent rather than hugging its content. A card in a
+        // column is a band across that column; left to shrink-wrap, one whose
+        // body happens to be a short line comes out a stub beside its
+        // neighbours, and whether any given card looked right became an
+        // accident of whether something inside it was full-width already.
+        //
+        // Requires a bounded width, which every column and list gives. An
+        // AppCard directly inside a Row needs an Expanded around it, as any
+        // full-width child there would.
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(padding: padding, child: child),
+        ),
       ),
     );
   }
