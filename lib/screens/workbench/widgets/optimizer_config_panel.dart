@@ -151,11 +151,19 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           label: l10n.refinerModel,
           onChanged: widget.onModelChanged,
           models: appState.multimodalModels,
+          prefixIcon: Icons.tune,
+          style: ChatModelSelectorStyle.card,
         ),
         if (widget.mode == AssistantMode.systemPrompt)
           _buildSysPromptSection(l10n, colorScheme)
-        else
+        else ...[
           _buildKnowledgeStatus(l10n, colorScheme),
+          // Its own card, not a tail on the status card: the base's
+          // configuration is fixed for the session while this changes with
+          // every answer, and reading them as one block invites the two to be
+          // confused for each other.
+          _buildCitedThisRound(l10n, colorScheme, Theme.of(context).textTheme),
+        ],
       ],
     );
 
@@ -177,6 +185,13 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     );
   }
 
+  /// The three assistant modes, as the panel's top-level navigation.
+  ///
+  /// No icons and the short edit label on purpose: three segments share the
+  /// width of a panel that narrows to 250px, and a glyph plus five characters
+  /// each leaves every one of them ellipsized. The raised style keeps the
+  /// accent free for the state *inside* the tab — the ready badge, the cited
+  /// files — rather than spending it on the tab strip.
   Widget _buildModeSelector(AppLocalizations l10n, ColorScheme colorScheme) {
     final kbSelectable = widget.kbStatus == KbStatus.ok;
     return AppSegmentedControl<AssistantMode>(
@@ -184,18 +199,15 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         AppSegment(
           value: AssistantMode.systemPrompt,
           label: l10n.optModeSystemPrompt,
-          icon: Icons.tune,
         ),
         AppSegment(
           value: AssistantMode.knowledgeBase,
           label: l10n.optModeKnowledge,
-          icon: Icons.menu_book_outlined,
           enabled: kbSelectable || widget.mode == AssistantMode.knowledgeBase,
         ),
         AppSegment(
           value: AssistantMode.knowledgeEdit,
-          label: l10n.optModeKnowledgeEdit,
-          icon: Icons.edit_note_outlined,
+          label: l10n.optModeKnowledgeEditShort,
           enabled: kbSelectable || widget.mode == AssistantMode.knowledgeEdit,
         ),
       ],
@@ -203,6 +215,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       onChanged: widget.onModeChanged,
       expand: true,
       compact: true,
+      style: AppSegmentStyle.raised,
     );
   }
 
@@ -270,7 +283,6 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
             ],
             const SizedBox(height: 10),
             _buildKbActions(l10n, ok),
-            if (ok) _buildCitedThisRound(l10n, colorScheme, textTheme),
           ],
         ),
       ),
@@ -345,42 +357,46 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       );
     }
 
-    // Wrap, not Row: the panel narrows to 250px and these are three controls
-    // with labels.
+    // Kept visible and disabled once the base has an entry file, rather than
+    // hidden: initializing is a one-time act, and an action that silently
+    // disappears leaves the user wondering where it went. The tooltip says
+    // why it is off. KnowledgeBaseStarter.scaffold refuses independently —
+    // this is only the first gate.
+    final initialize = Tooltip(
+      message: ok ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName) : '',
+      child: AppButton(
+        label: l10n.kbScaffoldCreate,
+        icon: Icons.auto_awesome_outlined,
+        variant: AppButtonVariant.secondary,
+        onPressed: ok ? null : _handleScaffold,
+      ),
+    );
+
+    if (!ok) return Align(alignment: Alignment.centerLeft, child: initialize);
+
+    // Wrap, not Row: the panel narrows to 250px, and three labelled controls
+    // on one line there would each be a few ellipsized characters.
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        // Kept visible and disabled once the base has an entry file, rather
-        // than hidden: initializing is a one-time act, and an action that
-        // silently disappears leaves the user wondering where it went. The
-        // tooltip says why it is off. KnowledgeBaseStarter.scaffold refuses
-        // independently — this is only the first gate.
-        Tooltip(
-          message: ok ? l10n.kbScaffoldAlreadyInit(KnowledgeBaseService.entryFileName) : '',
-          child: AppButton(
-            label: l10n.kbScaffoldCreate,
-            icon: Icons.auto_awesome_outlined,
-            variant: AppButtonVariant.secondary,
-            onPressed: ok ? null : _handleScaffold,
-          ),
+        initialize,
+        // Rescan is the live action once the base exists, so it takes the
+        // tonal weight while initialize sits spent beside it.
+        AppButton(
+          label: l10n.optKbRescan,
+          icon: Icons.refresh,
+          variant: AppButtonVariant.secondary,
+          loading: _scanning,
+          onPressed: _loadKbStats,
         ),
-        if (ok) ...[
-          AppButton(
-            label: l10n.optKbRescan,
-            icon: Icons.refresh,
-            variant: AppButtonVariant.text,
-            loading: _scanning,
-            onPressed: _loadKbStats,
-          ),
-          AppIconButton(
-            icon: Icons.folder_open_outlined,
-            tooltip: l10n.openInFolder,
-            size: 34,
-            onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
-          ),
-        ],
+        AppIconButton(
+          icon: Icons.folder_open_outlined,
+          tooltip: l10n.openInFolder,
+          size: 34,
+          onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
+        ),
       ],
     );
   }
@@ -399,47 +415,50 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     final shown = cited.take(_citedPreviewCount).toList();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(l10n.optKbCitedThisRound, style: textTheme.titleSmall),
-          const SizedBox(height: 6),
-          if (cited.isEmpty)
-            Text(
-              l10n.optKbCitedNone,
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            )
-          else ...[
-            for (final path in shown)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        path,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+      padding: const EdgeInsets.only(top: 12),
+      child: AppCard(
+        outlined: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.optKbCitedThisRound, style: textTheme.titleSmall),
+            const SizedBox(height: 6),
+            if (cited.isEmpty)
+              Text(
+                l10n.optKbCitedNone,
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              )
+            else ...[
+              for (final path in shown)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          path,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            if (cited.length > shown.length)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  l10n.optKbCitedAll(cited.length),
-                  style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
+              if (cited.length > shown.length)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    l10n.optKbCitedAll(cited.length),
+                    style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
+                  ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

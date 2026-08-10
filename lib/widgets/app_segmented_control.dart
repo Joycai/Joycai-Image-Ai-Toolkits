@@ -18,6 +18,19 @@ class AppSegment<T> {
   });
 }
 
+/// How an [AppSegmentedControl] marks the chosen option.
+enum AppSegmentStyle {
+  /// Accent tint and outline. Reads as "on" against the track, which suits a
+  /// control whose options are settings — streaming on/off, a filter.
+  tinted,
+
+  /// The chosen option lifts out of the track on a plain surface, the way a
+  /// physical switch would. For a control that picks *which view you are in*
+  /// rather than a value: the accent is then free to mean "selected" inside
+  /// that view instead of being spent on the navigation.
+  raised,
+}
+
 /// A single-choice control: a track holding its options, with the chosen one
 /// filled in.
 ///
@@ -38,6 +51,9 @@ class AppSegmentedControl<T> extends StatelessWidget {
   /// Tighter type and padding, for controls tucked into a toolbar.
   final bool compact;
 
+  /// How the chosen option is marked.
+  final AppSegmentStyle style;
+
   const AppSegmentedControl({
     super.key,
     required this.segments,
@@ -45,6 +61,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
     required this.onChanged,
     this.expand = false,
     this.compact = false,
+    this.style = AppSegmentStyle.tinted,
   });
 
   @override
@@ -74,28 +91,48 @@ class AppSegmentedControl<T> extends StatelessWidget {
 
   Widget _buildSegment(BuildContext context, ColorScheme colorScheme, AppSegment<T> segment) {
     final selected = segment.value == value;
+    final raised = style == AppSegmentStyle.raised;
+
     final Color color;
     if (!segment.enabled) {
       color = colorScheme.onSurface.withValues(alpha: 0.38);
+    } else if (!selected) {
+      color = colorScheme.onSurfaceVariant;
     } else {
-      color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+      // Raised spends no accent on the label: the lift already says which one
+      // is chosen, and the accent is needed for state *inside* the view.
+      color = raised ? colorScheme.onSurface : colorScheme.primary;
     }
 
     return InkWell(
       onTap: selected || !segment.enabled ? null : () => onChanged(segment.value),
       borderRadius: BorderRadius.circular(9),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 10 : 14,
           vertical: compact ? 7 : 11,
         ),
-        decoration: selected
-            ? BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: colorScheme.primary.withValues(alpha: 0.6)),
-              )
-            : null,
+        decoration: !selected
+            ? null
+            : raised
+                ? BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(9),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.shadow.withValues(alpha: 0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  )
+                : BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.6)),
+                  ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,

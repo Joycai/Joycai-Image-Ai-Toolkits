@@ -1157,5 +1157,6 @@
       }
     }
   },
-  "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。"
+  "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。",
+  "optModeKnowledgeEditShort": "ナレッジ編集"
 }

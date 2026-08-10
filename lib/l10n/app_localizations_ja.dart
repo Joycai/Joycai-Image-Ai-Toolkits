@@ -2403,4 +2403,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get optRefNumberingHint =>
       '番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。';
+
+  @override
+  String get optModeKnowledgeEditShort => 'ナレッジ編集';
 }

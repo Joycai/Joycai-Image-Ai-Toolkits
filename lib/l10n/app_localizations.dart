@@ -4522,6 +4522,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Numbers match the filenames cited in the prompt; the agent can view these images.'**
   String get optRefNumberingHint;
+
+  /// No description provided for @optModeKnowledgeEditShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit KB'**
+  String get optModeKnowledgeEditShort;
 }
 
 class _AppLocalizationsDelegate

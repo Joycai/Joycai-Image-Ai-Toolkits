@@ -2455,4 +2455,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get optRefNumberingHint =>
       'Numbers match the filenames cited in the prompt; the agent can view these images.';
+
+  @override
+  String get optModeKnowledgeEditShort => 'Edit KB';
 }

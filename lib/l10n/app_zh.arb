@@ -1283,5 +1283,6 @@
       }
     }
   },
-  "optRefNumberingHint": "序号与提示词中引用的文件名对应，agent 可查看这些图片。"
+  "optRefNumberingHint": "序号与提示词中引用的文件名对应，agent 可查看这些图片。",
+  "optModeKnowledgeEditShort": "库编辑"
 }

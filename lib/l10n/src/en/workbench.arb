@@ -488,5 +488,6 @@
       }
     }
   },
-  "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images."
+  "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images.",
+  "optModeKnowledgeEditShort": "Edit KB"
 }

@@ -2385,6 +2385,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optRefNumberingHint => '序号与提示词中引用的文件名对应，agent 可查看这些图片。';
+
+  @override
+  String get optModeKnowledgeEditShort => '库编辑';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4765,4 +4768,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optRefNumberingHint => '序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。';
+
+  @override
+  String get optModeKnowledgeEditShort => '庫編輯';
 }

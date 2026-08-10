@@ -488,5 +488,6 @@
       }
     }
   },
-  "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。"
+  "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。",
+  "optModeKnowledgeEditShort": "庫編輯"
 }
