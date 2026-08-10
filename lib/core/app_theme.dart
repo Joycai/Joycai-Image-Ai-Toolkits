@@ -101,6 +101,31 @@ ThemeData buildAppTheme({
         visualDensity: VisualDensity.standard,
       ),
     ),
+    // The other two button types need the same shape, or the library's own
+    // abstraction leaks: AppButton's `text` and `destructiveOutline` variants
+    // are built on TextButton and OutlinedButton, and with no theme of their
+    // own they keep Material 3's StadiumBorder. A row of Reset / Overwrite /
+    // Save then renders as two pills beside a rounded rectangle — the shared
+    // component is being used, but the theme never reaches through it.
+    //
+    // Only geometry is set here. Foreground colour is deliberately left to
+    // Material, so a dialog's "Cancel" keeps the accent tint it is supposed
+    // to have; a button that wants to be quiet says so at its call site.
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
+        minimumSize: const Size(0, appButtonMinHeight),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.6)),
+        visualDensity: VisualDensity.standard,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
+        minimumSize: const Size(0, appButtonMinHeight),
+        visualDensity: VisualDensity.standard,
+      ),
+    ),
   );
 }
 

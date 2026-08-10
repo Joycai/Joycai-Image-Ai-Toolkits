@@ -115,6 +115,46 @@ void main() {
         reason: 'A density default shrank the button below its floor');
   });
 
+  testWidgets('all three button types carry the app corner, not just the filled one', (tester) async {
+    // The theme used to define filledButtonTheme alone, so AppButton's `text`
+    // and `destructiveOutline` variants — built on TextButton and
+    // OutlinedButton — silently kept Material 3's StadiumBorder. A toolbar row
+    // of Reset / Overwrite / Save rendered as two pills beside a rounded
+    // rectangle. Reaching for the shared component is not enough on its own;
+    // the theme has to reach through it.
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light(),
+        home: const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FilledButton(onPressed: _noop, child: Text('Save')),
+                OutlinedButton(onPressed: _noop, child: Text('Overwrite')),
+                TextButton(onPressed: _noop, child: Text('Reset')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final type in [FilledButton, OutlinedButton, TextButton]) {
+      final painted = find
+          .descendant(of: find.byType(type), matching: find.byType(Material))
+          .first;
+      final shape = tester.widget<Material>(painted).shape;
+
+      expect(shape, isA<RoundedRectangleBorder>(), reason: '$type kept a stadium shape');
+      expect((shape! as RoundedRectangleBorder).borderRadius,
+          BorderRadius.circular(appButtonRadius),
+          reason: '$type does not use the app corner');
+      expect(tester.getSize(painted).height, greaterThanOrEqualTo(appButtonMinHeight),
+          reason: '$type sits below the shared height floor');
+    }
+  });
+
   test('tonal buttons keep their own colours despite the filled theme', () {
     // FilledButton.tonal reads the same FilledButtonTheme, and a theme's
     // background outranks the tonal variant's default — so every tonal button
@@ -129,3 +169,5 @@ void main() {
     }
   });
 }
+
+void _noop() {}
