@@ -103,12 +103,25 @@ bool FlutterWindow::OnCreate() {
           if (it == args->end()) {
             return false;
           }
-          const auto* value = std::get_if<int32_t>(&it->second);
-          if (!value) {
-            return false;
+          // Both widths, and int64 is the one that actually arrives. An
+          // opaque colour carries alpha 0xFF, so its ARGB value always
+          // exceeds 0x7FFFFFFF, and Dart's StandardMessageCodec promotes
+          // anything past that to an int64. Insisting on int32 here rejected
+          // every colour this channel was ever sent -- the caption kept the
+          // OS theme and the failure was invisible, because the Dart side
+          // caught the resulting error and dropped it.
+          //
+          // The narrowing cast is safe: the value is a 32-bit colour that
+          // travelled inside a wider box, and ToColorRef masks per byte.
+          if (const auto* narrow = std::get_if<int32_t>(&it->second)) {
+            *out = *narrow;
+            return true;
           }
-          *out = *value;
-          return true;
+          if (const auto* wide = std::get_if<int64_t>(&it->second)) {
+            *out = static_cast<int32_t>(*wide);
+            return true;
+          }
+          return false;
         };
 
         int32_t caption = 0;

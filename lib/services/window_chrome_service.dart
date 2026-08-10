@@ -40,12 +40,12 @@ class WindowChromeService {
     // surfaceContainer, not surface: it is the colour of the canvas the nav
     // rail and top bar float on, so the caption continues the same plane
     // rather than introducing a third tone above them.
-    final caption = _toArgb(colorScheme.surfaceContainer);
-    final text = _toArgb(colorScheme.onSurface);
+    //
+    // Both are opaque, so both always exceed 0x7FFFFFFF and reach the runner
+    // as an int64 rather than an int32 — see the runner's own note.
+    final caption = colorScheme.surfaceContainer.toARGB32();
+    final text = colorScheme.onSurface.toARGB32();
     if (caption == _lastCaption && text == _lastText) return;
-
-    _lastCaption = caption;
-    _lastText = text;
 
     try {
       await _channel.invokeMethod<void>('setCaptionColors', {
@@ -53,10 +53,25 @@ class WindowChromeService {
         'text': text,
         'dark': colorScheme.brightness == Brightness.dark,
       });
-    } on PlatformException {
-      // An older Windows rejects the colour attributes. The caption keeps the
-      // OS theme, which is the behaviour this app shipped with — not worth
-      // surfacing to the user.
+      // Recorded only once the platform has taken them. Caching before the
+      // await meant a rejected call was also a permanent one: the next theme
+      // change saw its own colours already "sent" and returned early.
+      _lastCaption = caption;
+      _lastText = text;
+    } on PlatformException catch (error, stack) {
+      // Reported, not dropped. The runner errors here only on arguments it
+      // cannot read, which is a defect in this file rather than a property of
+      // the machine — a Windows too old for the attributes fails silently on
+      // the native side and never reaches this handler. Swallowing it hid
+      // exactly such a defect for three releases: every colour crossed as an
+      // int64 while the runner would only accept an int32, so the caption was
+      // never once recoloured.
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'window_chrome_service',
+        context: ErrorDescription('applying the window caption colours'),
+      ));
     } on MissingPluginException {
       // Running against a runner built before the channel existed.
     }
@@ -69,10 +84,4 @@ class WindowChromeService {
     _lastCaption = null;
     _lastText = null;
   }
-
-  static int _toArgb(Color color) =>
-      (color.a * 255).round() << 24 |
-      (color.r * 255).round() << 16 |
-      (color.g * 255).round() << 8 |
-      (color.b * 255).round();
 }
