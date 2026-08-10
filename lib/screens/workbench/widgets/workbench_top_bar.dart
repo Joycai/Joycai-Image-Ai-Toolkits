@@ -9,6 +9,7 @@ import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_tool_button.dart';
 import '../workbench_layout.dart';
 
@@ -106,10 +107,20 @@ class WorkbenchTopBar extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _PrimarySegment(
-                              destinations: primary,
-                              activeIndex: active,
-                              onSelect: (i) => tabController.animateTo(i),
+                            AppSegmentedControl<int>(
+                              segments: [
+                                for (final d in primary)
+                                  AppSegment(value: d.index, label: d.label, icon: d.icon),
+                              ],
+                              value: primary.any((d) => d.index == active)
+                                  // A tool tab is open, so neither mode is
+                                  // "current"; keep the one the user last
+                                  // created in rather than flicking the
+                                  // selection somewhere arbitrary.
+                                  ? active
+                                  : primary.first.index,
+                              onChanged: tabController.animateTo,
+                              style: AppSegmentStyle.raised,
                             ),
                             const SizedBox(width: 12),
                             Container(
@@ -254,83 +265,6 @@ class WorkbenchTopBar extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-/// Prominent iOS-style segmented control for the primary creation modes.
-class _PrimarySegment extends StatelessWidget {
-  final List<_WbDest> destinations;
-  final int activeIndex;
-  final ValueChanged<int> onSelect;
-
-  const _PrimarySegment({
-    required this.destinations,
-    required this.activeIndex,
-    required this.onSelect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(140),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: destinations.map((d) {
-          final selected = activeIndex == d.index;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-            decoration: BoxDecoration(
-              color: selected ? colorScheme.surface : Colors.transparent,
-              borderRadius: BorderRadius.circular(9),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(18),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(9),
-                onTap: () => onSelect(d.index),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        d.icon,
-                        size: 18,
-                        color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        d.label,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                              color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
