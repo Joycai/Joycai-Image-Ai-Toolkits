@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/responsive.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../services/task_queue_service.dart';
-import '../../../state/app_state.dart';
-import '../../../widgets/log_console.dart';
-import '../../../widgets/panel_resizer.dart';
-import '../../batch/task_queue_screen.dart';
+import '../core/responsive.dart';
+import '../l10n/app_localizations.dart';
+import '../services/task_queue_service.dart';
+import '../state/app_state.dart';
+import 'log_console.dart';
+import 'panel_resizer.dart';
+import '../screens/batch/task_queue_screen.dart';
 
-class WorkbenchBottomConsole extends StatefulWidget {
-  const WorkbenchBottomConsole({super.key});
+/// Shared run-status console: pulsing status dot, running/pending task
+/// summary, and an expandable execution log. Reads entirely from app-wide
+/// providers (`AppState`, `TaskQueueService`), so it can be dropped onto any
+/// screen's `Scaffold.bottomNavigationBar` unchanged.
+class AppRunConsole extends StatefulWidget {
+  const AppRunConsole({super.key});
 
   @override
-  State<WorkbenchBottomConsole> createState() => _WorkbenchBottomConsoleState();
+  State<AppRunConsole> createState() => _AppRunConsoleState();
 }
 
-class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
+class _AppRunConsoleState extends State<AppRunConsole>
     with SingleTickerProviderStateMixin {
   double _height = 200;
   bool _heightInitialized = false;

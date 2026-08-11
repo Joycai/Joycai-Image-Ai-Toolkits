@@ -215,48 +215,81 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
-    if (overwrite) {
-      final confirmTitle = l10n.overwriteConfirmTitle;
-      final confirmMessage = l10n.overwriteConfirmMessage;
-      final cancelLabel = l10n.cancel;
-      final overwriteLabel = l10n.overwriteSource;
+    final sourceImage = uiState.cropResizeSourceImage;
+    if (sourceImage == null) return;
 
+    final editorState = uiState.cropKey.currentState as ExtendedImageEditorState?;
+    if (editorState == null) return;
+
+    final cropRect = editorState.getCropRect();
+    if (cropRect == null) return;
+
+    final int? w = int.tryParse(_widthController.text);
+    final int? h = int.tryParse(_heightController.text);
+    final outputWidth = w ?? cropRect.width.round();
+    final outputHeight = h ?? cropRect.height.round();
+
+    if (overwrite) {
+      final originalMeta = await ImageMetadataService().getMetadata(sourceImage.path);
+      if (!mounted) return;
+
+      final colorScheme = Theme.of(context).colorScheme;
+      final originalSize =
+          originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–';
+
+      // true = overwrite, false = save a copy instead, null = cancelled.
       final confirmed = await AppDialog.show<bool>(
         context,
-        title: confirmTitle,
-        content: Text(confirmMessage),
+        title: l10n.overwriteConfirmTitle,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.overwriteConfirmMessage),
+            const SizedBox(height: 14),
+            Text(
+              sourceImage.name,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              '$originalSize → $outputWidth×$outputHeight',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
         actions: [
           AppButton(
-            label: cancelLabel,
+            label: l10n.cancel,
             variant: AppButtonVariant.text,
+            onPressed: () => Navigator.pop(context, null),
+          ),
+          AppButton(
+            label: l10n.overwriteConfirmSaveCopyInstead,
+            variant: AppButtonVariant.secondary,
             onPressed: () => Navigator.pop(context, false),
           ),
           AppButton(
-            label: overwriteLabel,
+            label: l10n.overwriteSource,
             variant: AppButtonVariant.destructive,
             onPressed: () => Navigator.pop(context, true),
           ),
         ],
       );
-      if (confirmed != true) return;
+
+      if (confirmed == null) return;
+      if (confirmed == false) return _handleSave(overwrite: false);
     }
 
     if (!mounted) return;
     setState(() => _processingAction = overwrite ? 'overwrite' : 'save');
 
     try {
-      final sourceImage = uiState.cropResizeSourceImage;
-      if (sourceImage == null) return;
-
-      final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
-      if (state == null) return;
-      
-      final cropRect = state.getCropRect();
-      if (cropRect == null) return;
-
-      final int? w = int.tryParse(_widthController.text);
-      final int? h = int.tryParse(_heightController.text);
-      
       SamplingMethod sampling;
       switch (uiState.samplingMethod) {
         case 'nearest': sampling = SamplingMethod.nearest; break;

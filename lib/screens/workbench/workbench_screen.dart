@@ -28,6 +28,7 @@ import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
@@ -46,7 +47,6 @@ import 'widgets/prompt_optimizer_toolbar.dart';
 import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/video_config_panel.dart';
 import 'widgets/video_workbench_view.dart';
-import 'widgets/workbench_bottom_console.dart';
 import 'widgets/workbench_top_bar.dart';
 import 'workbench_config_panel.dart';
 import 'workbench_layout.dart';
@@ -849,7 +849,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             return const SizedBox.shrink();
         }
       },
-      bottomPanel: const WorkbenchBottomConsole(),
+      bottomPanel: const AppRunConsole(),
       showLeftPanel: showLeftPanel,
       showRightPanel: showRightPanel,
       fabIcon: fabIcon,

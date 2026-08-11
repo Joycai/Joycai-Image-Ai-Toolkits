@@ -9,6 +9,7 @@ import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_run_console.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/panel_resizer.dart';
 import 'prompts_io.dart';
@@ -127,6 +128,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         tablet: _buildDesktopLayout(l10n, isTablet: true),
         desktop: _buildDesktopLayout(l10n),
       ),
+      bottomNavigationBar: const AppRunConsole(),
       floatingActionButton: _isSelectionMode ? _buildBulkActionFAB(l10n) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

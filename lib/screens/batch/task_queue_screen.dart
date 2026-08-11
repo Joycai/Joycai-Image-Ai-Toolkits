@@ -13,6 +13,7 @@ import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
 
@@ -45,19 +46,21 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
 
+    // Embedded presentation (workbench bottom-sheet console): the sheet already
+    // paints the canvas and its own run console, so nesting another one here
+    // would show a console inside the console it was opened from.
+    final inBottomSheet = context.findAncestorWidgetOfExactType<BottomSheet>() != null;
+
     if (Responsive.isNarrow(context)) {
-      return _buildMobileLayout(context, appState, l10n);
+      return _buildMobileLayout(context, appState, l10n, inBottomSheet: inBottomSheet);
     }
 
     final content = _buildDesktopContent(context, appState, l10n);
-
-    // Embedded presentation (workbench bottom-sheet console): the sheet already
-    // paints the canvas, so the content drops straight onto it.
-    final inBottomSheet = context.findAncestorWidgetOfExactType<BottomSheet>() != null;
     if (inBottomSheet) return content;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+      bottomNavigationBar: const AppRunConsole(),
       body: content,
     );
   }
@@ -92,13 +95,19 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
   // ── Mobile layout ───────────────────────────────────────────────────────────
 
-  Widget _buildMobileLayout(BuildContext context, AppState appState, AppLocalizations l10n) {
+  Widget _buildMobileLayout(
+    BuildContext context,
+    AppState appState,
+    AppLocalizations l10n, {
+    required bool inBottomSheet,
+  }) {
     final queue = appState.taskQueue.queue;
     final tasks = _visibleTasks(queue);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainer,
+      bottomNavigationBar: inBottomSheet ? null : const AppRunConsole(),
       appBar: AppBar(
         title: Text(l10n.taskQueueManager),
         actions: [

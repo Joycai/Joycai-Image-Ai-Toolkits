@@ -1896,6 +1896,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get overwriteConfirmMessage => 'この操作により、元のファイルが完全に置き換えられます。よろしいですか？';
 
   @override
+  String get overwriteConfirmSaveCopyInstead => '代わりにコピーを保存';
+
+  @override
   String get saveToTempSuccess => '画像が一時ワークスペースに保存されました';
 
   @override

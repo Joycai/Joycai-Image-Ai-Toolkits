@@ -3623,6 +3623,12 @@ abstract class AppLocalizations {
   /// **'This action will permanently replace the original file. Are you sure?'**
   String get overwriteConfirmMessage;
 
+  /// No description provided for @overwriteConfirmSaveCopyInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Copy Instead'**
+  String get overwriteConfirmSaveCopyInstead;
+
   /// No description provided for @saveToTempSuccess.
   ///
   /// In en, this message translates to:

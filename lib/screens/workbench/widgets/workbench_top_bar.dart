@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/llm_channel.dart';
-import '../../../models/llm_model.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
@@ -35,27 +33,8 @@ class WorkbenchTopBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
     final concurrencyLimit = context.select<AppState, int>((s) => s.concurrencyLimit);
-    final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
-    final allChannels = context.select<AppState, List<LLMChannel>>((s) => s.allChannels);
-    final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final isNarrow = Responsive.isNarrow(context);
     final isMobile = Responsive.isMobile(context);
-
-    // Derive active channel name for the trailing chip.
-    String? channelName;
-    if (lastSelectedModelId != null && imageModels.isNotEmpty && allChannels.isNotEmpty) {
-      final dbId = int.tryParse(lastSelectedModelId);
-      LLMModel? model;
-      if (dbId != null) {
-        try { model = imageModels.firstWhere((m) => m.id == dbId); } catch (_) {}
-      }
-      if (model != null) {
-        try {
-          final ch = allChannels.firstWhere((c) => c.id == model!.channelId);
-          channelName = ch.displayName;
-        } catch (_) {}
-      }
-    }
 
     // Primary creation modes — the headline functions of the workbench.
     final primary = <_WbDest>[
@@ -161,32 +140,7 @@ class WorkbenchTopBar extends StatelessWidget {
                     icon: const Icon(Icons.tune),
                     tooltip: l10n.modelSelection,
                     onPressed: () => context.read<WorkbenchLayoutState>().openRightPanel(),
-                  )
-                else if (channelName != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.bolt, size: 15, color: colorScheme.primary),
-                        const SizedBox(width: 5),
-                        Text(
-                          channelName,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ],
               ],
             ),
           ),

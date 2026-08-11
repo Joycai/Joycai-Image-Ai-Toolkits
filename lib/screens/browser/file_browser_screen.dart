@@ -17,6 +17,7 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_run_console.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/unified_sidebar.dart';
@@ -260,6 +261,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         drawer: isNarrow
             ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
             : null,
+        bottomNavigationBar: const AppRunConsole(),
         body: Padding(
           padding: const EdgeInsets.all(8),
           child: Row(

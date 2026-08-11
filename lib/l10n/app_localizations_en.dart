@@ -1940,6 +1940,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'This action will permanently replace the original file. Are you sure?';
 
   @override
+  String get overwriteConfirmSaveCopyInstead => 'Save Copy Instead';
+
+  @override
   String get saveToTempSuccess => 'Image saved to temporary workspace';
 
   @override

@@ -820,6 +820,7 @@
   "overwriteSource": "覆蓋原始檔案",
   "overwriteConfirmTitle": "覆蓋原始檔案？",
   "overwriteConfirmMessage": "此操作將永久替換原始檔案。您確定嗎？",
+  "overwriteConfirmSaveCopyInstead": "改為儲存副本",
   "saveToTempSuccess": "圖片已儲存至臨時工作區",
   "overwriteSuccess": "原始檔案已更新",
   "custom": "自訂",
