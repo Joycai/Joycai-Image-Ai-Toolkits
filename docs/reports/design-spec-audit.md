@@ -59,6 +59,7 @@
 | `constants.dart:68-78` | 9 个零调用点的死令牌（`cardRadius` / `smallRadius` / `defaultPadding` / `opacityLow`…）→ 删除，几何统一到 `design_tokens.dart` |
 | 计费口径 5 色 | `usage_summary.dart` 声明为公开常量、注释写着「与费率组价格药丸共用」，`pricing_group_manager.dart` 却又**私有地重抄了 4 个**、注释写着「刻意用与用量页相同的色」——共用的意图一直都在，只是被复制而非导入。→ 抽出 `core/metric_palette.dart` |
 | 模型类型 5 色 | `models_screen.dart` 与 `discovery_dialog.dart` 各有一份**逐字节相同**的 `switch`，`model_edit_dialog.dart` 第三份写成元组表。→ 抽出 `core/model_kind_palette.dart` |
+| 6 处搜索框 | 每个需要过滤的列表各写一个，没有两个一致：圆角 8 / 10 / 12 / 18，图标 14 / 16 / 18 / 20，同一个色调三种填充透明度，外加 5 份只为「该不该显示清除按钮」而存在的状态。→ 抽出 `widgets/app_search_field.dart`。**填充去掉了**——设计稿 10a 的搜索框是描边式，`inputDecorationTheme` 已经把这个给了所有裸 `TextField`，这个组件只加搜索图标与清除键，其余全部继承。（早先的报告把这里记成「9 处填充式搜索框」，那个 9 是 `filled:` 的总数，混进了一个多行文本域、一个回答框、下拉、模型选择器和 Markdown 编辑器。实际是 6 处搜索框，其中 4 处填充。）|
 | `data_section.dart` ↔ `wizard_import.dart` | 导入选项的移动端 sheet / 桌面 dialog / 开关行三个函数**各存一份**，且已开始漂移（一边 `AppButtonSize.large`+`fullWidth`、另一边 `SizedBox` 裹默认尺寸；一边问 `Responsive`、另一边硬写 `MediaQuery…< 600`）。→ 抽出 `widgets/dialogs/import_options_dialog.dart`，两份 `Colors.grey` / `Colors.grey[400]` 一并换成主题角色 |
 | 模型类型 chip 容器 | 颜色已共用，但容器一个圆角 8 带描边、一个圆角 6 无描边，同一个 chip 在两屏长得不一样。→ 抽出 `widgets/models/model_tag_chip.dart`，取带描边那版，圆角走 `AppRadius.control` |
 | 覆盖原图写入 PNG 字节到 `.jpg` | `_runImageProcess` 恒用 `img.encodePng`，覆盖 `.jpg` 会把 PNG 字节写进 `.jpg`。→ 改用 `img.encodeNamedImage(targetPath)` 按扩展名选编码器；无编码器的格式（app 能打开但写不了的 **avif**）**明确抛异常**而非静默回落 PNG，UI 给出可操作的提示。`test/image_encoding_test.dart` 从字节而非文件名去验证格式 |
@@ -70,7 +71,7 @@
 
 | 项 | 说明 |
 |---|---|
-| 仍在自绘的输入框装饰 | 冗余的那批（`border: const OutlineInputBorder()` 与 `isDense: true`，21 个文件 35 处）已删，交还给 `inputDecorationTheme`。**剩下的是刻意的**：5 处 `InputBorder.none`（聊天输入框、Markdown 正文、工具栏内联数字、提示词页头搜索）、9 处填充式搜索框、以及 `AppDropdown` / `ChatModelSelector` / `PricingGroupManager` 自己的描边逻辑。这些**不该**被主题收编——真正剩下的问题是那 9 处填充式搜索框长得几乎一样却各写各的，值得抽个共享组件 |
+| 仍在自绘的输入框装饰 | 冗余的那批已删（见 §四）。**剩下的是刻意的**：聊天输入框、Markdown 正文、裁剪工具栏的内联数字输入三处 `InputBorder.none`，下载器的地址栏，以及 `AppDropdown` / `ChatModelSelector` / `PricingGroupManager` 自己的描边逻辑。这些**不该**被主题收编 |
 | 10c–10e 页面重排、10j/10k 字段级重设计 | 见上 |
 | 分组小标题组件 | 目前只在组件全景图里表达，未抽成共享组件 |
 

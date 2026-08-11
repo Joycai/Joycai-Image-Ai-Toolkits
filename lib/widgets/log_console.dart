@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/app_semantic_colors.dart';
 import '../models/log_entry.dart';
 import '../state/app_state.dart';
+import 'app_search_field.dart';
 import 'app_snackbar.dart';
 
 class LogConsoleWidget extends StatefulWidget {
@@ -103,17 +104,26 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    hintText: 'Filter logs...',
-                    hintStyle:
-                        Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                    prefixIcon: Icon(Icons.search, size: 14, color: colorScheme.onSurfaceVariant),
-                    suffixIcon: IconButton(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppSearchField(
+                        controller: _searchController,
+                        hint: 'Filter logs...',
+                        compact: true,
+                        autofocus: true,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                      ),
+                    ),
+                    // A sibling, not the field's suffix. This ✕ closes the
+                    // search rather than clearing it, and it has to stay
+                    // reachable while the field is empty — which is exactly
+                    // when AppSearchField hides its own clear button. Folding
+                    // the two together is what made one glyph mean two things.
+                    IconButton(
                       icon: Icon(Icons.close, size: 14, color: colorScheme.onSurfaceVariant),
+                      visualDensity: VisualDensity.compact,
+                      tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                       onPressed: () {
                         setState(() {
                           _searchQuery = "";
@@ -122,10 +132,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                         });
                       },
                     ),
-                    contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
-                  ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  ],
                 ),
               ),
             )

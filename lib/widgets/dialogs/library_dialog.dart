@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../app_button.dart';
+import '../app_search_field.dart';
 import '../app_side_panel.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
@@ -106,25 +107,11 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           SizedBox(
             width: isNarrow ? 120 : 180,
             height: 36,
-            child: TextField(
+            child: AppSearchField(
               controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.filterPrompts, 
-                // The muted tone the field supplied on its own before this
-                // style named a scale slot, which brings a colour with it.
-                hintStyle: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
-                prefixIcon: const Icon(Icons.search, size: 16),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withAlpha(100),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: EdgeInsets.zero,
-              ),
+              hint: l10n.filterPrompts,
+              compact: true,
+              onChanged: (_) => setState(() {}),
             ),
           ),
           IconButton(
