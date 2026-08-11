@@ -26,6 +26,7 @@ import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
@@ -180,6 +181,23 @@ class _Gallery extends StatelessWidget {
                 AppCountBadge(count: 3),
                 AppCountBadge(count: 128),
               ]),
+              const _Label('分组小标题 · 两种语气'),
+              // The accent tone is the one that has to be checked here: it is
+              // small, semibold, and sits on `surface`, which is where an
+              // accent is least forgiving. The neutral tone is what every
+              // caption on this page already is.
+              const Row(children: [
+                Expanded(
+                  child: AppSectionLabel('价格配置', padding: EdgeInsets.zero),
+                ),
+                Expanded(
+                  child: AppSectionLabel(
+                    '分类管理',
+                    tone: AppSectionTone.neutral,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ]),
               const _Label('语义色 · 七个种子色下应完全一致'),
               const _SemanticRow(),
               const _Label('对话框外壳 · 危险动作'),
@@ -208,25 +226,22 @@ class _Gallery extends StatelessWidget {
   }
 }
 
-/// The spec's tracked group label: 600 weight, wide tracking, tertiary text.
+/// The gallery's own section captions.
+///
+/// The real component now, not a fourth hand-rolled copy of it — so this sheet
+/// also photographs the label itself under all seven seeds, which is where the
+/// accent tone has to prove it stays legible. Neutral here: these caption the
+/// specimens rather than group a form's controls.
 class _Label extends StatelessWidget {
   const _Label(this.text);
   final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 22, bottom: 10),
-      child: Text(
+  Widget build(BuildContext context) => AppSectionLabel(
         text,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.1,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-      ),
-    );
-  }
+        tone: AppSectionTone.neutral,
+        padding: const EdgeInsets.only(top: 22, bottom: 10),
+      );
 }
 
 class _SemanticRow extends StatelessWidget {

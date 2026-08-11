@@ -22,7 +22,7 @@ import '../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
-import 'widgets/config_section_header.dart';
+import '../../widgets/app_section_label.dart';
 import 'widgets/queue_settings_dialog.dart';
 
 /// Ink laid over a thumbnail. Neutral by construction rather than taken from
@@ -269,7 +269,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               ),
             ),
 
-            ConfigSectionHeader(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
+            AppSectionLabel(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
             const SizedBox(height: 4),
             AppCard(
               outlined: true,

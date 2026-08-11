@@ -89,6 +89,9 @@ Color get onAccentTint =>
 | 状态徽标 · 失败 | 危险 10% 底 | `error` @ `tint` 底（非 `errorContainer`） | Material 暗色 `errorContainer` 是接近实心的深红，跟另外三个浅色底放一起不再像同一组状态，而像一条警报 |
 | 成功文字色 | `#158046` | `#127843` | 前者在其容器上实测 4.40:1，差一点点不合规——最糟的位置。压暗一档过 4.5 |
 | 字号 | 多处 12.5px | 类型阶梯的 12 / 13 | 半个像素不值得动 541 个 `textTheme` 引用。只采纳设计稿要求的**字重** |
+| 弹窗图标底板 | 10a 章 44px 圆角 12；10j/10k 章 46px 圆角 13 | 一律 44 / 12 | 设计稿自己两章不一致。同一个 `AppDialog` 外壳不能因为出现在第 3 章就换尺寸，取标准组件章那一版 |
+| 分组小标题 | 主色深 `#0f7d71` | `onAccentTint` | 同一个角色。`primary` 是调给**填充**用的，11.5px 半粗放在 `surface` 上偏薄，Orange / Green 下贴着 4.5:1 地板；`onAccentTint` 按构造七色全过。见 `AppSectionLabel` |
+| 分组小标题字距 | `.08em`（12px 上即 0.96px） | `AppType.trackedLabelSpacing` = 1.0 | 应用的 `labelMedium` 是 11.5px，同比例是 0.92；这个尺寸上 1.0 与 0.92 读起来是同一件事 |
 
 ## 验证
 

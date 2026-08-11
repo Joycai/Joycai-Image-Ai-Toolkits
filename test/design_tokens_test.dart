@@ -50,6 +50,21 @@ void main() {
                   'this is the check it broke — dark mode goes first.');
         });
 
+        test('onAccentTint reads on bare surface too — $where', () {
+          // The other place this role is used: AppSectionLabel draws the small
+          // tracked caption on `surface`, with no tint under it. Strictly
+          // easier than the tint case above — surface is further from the
+          // label in both brightnesses — but stated rather than inferred,
+          // because it is the pairing that made the label switch off `primary`
+          // and nothing else would fail if it regressed.
+          final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+          final double ratio = contrast(scheme.onAccentTint, scheme.surface);
+
+          expect(ratio, greaterThanOrEqualTo(4.5),
+              reason: 'A section label fails AA at $where '
+                  '(${ratio.toStringAsFixed(2)}:1).');
+        });
+
         test('onAccentTint stays distinct from the accent itself — $where', () {
           // The spec's 主色深 sits ~10 tones off 主色: near enough to still read
           // as the accent, far enough to be legible on a wash of it. Collapsing

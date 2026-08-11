@@ -50,6 +50,7 @@
   "inputPrice": "輸入價格（美元/百萬 Token）",
   "cacheInputPrice": "輸入價格·命中快取（美元/百萬 Token）",
   "cacheInputPriceHint": "留空則快取命中依「輸入價格」計費",
+  "requestPriceHint": "依每次成功請求計費，與 Token 用量無關。",
   "cachePriceFollowsInput": "快取命中依「輸入價格」計費",
   "outputPrice": "輸出價格（美元/百萬 Token）",
   "requestPrice": "請求價格（美元/次）",

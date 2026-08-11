@@ -684,6 +684,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Leave empty to bill cache hits at the input price';
 
   @override
+  String get requestPriceHint =>
+      'Billed per successful request, independent of token usage.';
+
+  @override
   String get cachePriceFollowsInput =>
       'Cache hits are billed at the input price';
 

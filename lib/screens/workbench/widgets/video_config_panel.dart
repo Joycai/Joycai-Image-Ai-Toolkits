@@ -19,7 +19,7 @@ import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
 import 'config_action_bar.dart';
-import 'config_section_header.dart';
+import '../../../widgets/app_section_label.dart';
 import 'queue_settings_dialog.dart';
 
 class VideoConfigPanel extends StatefulWidget {
@@ -121,7 +121,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // Model Selection
         _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
 
-        ConfigSectionHeader(
+        AppSectionLabel(
           l10n.prompt,
           trailing: PromptHistoryButton(
             entries: appState.videoPromptHistory,
@@ -155,7 +155,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           dense: true,
         ),
 
-        ConfigSectionHeader(l10n.frames),
+        AppSectionLabel(l10n.frames),
         const SizedBox(height: 6),
         Builder(
           builder: (context) {
@@ -193,7 +193,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           },
         ),
 
-        ConfigSectionHeader(l10n.referenceImages),
+        AppSectionLabel(l10n.referenceImages),
         const SizedBox(height: 6),
         _ReferenceImagesTarget(
           images: uiState.videoReferenceImages,

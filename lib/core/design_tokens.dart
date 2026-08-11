@@ -102,6 +102,18 @@ class AppAlpha {
   static const double disabled = 0.38;
 }
 
+/// Type measurements the scale in [buildAppTheme] does not carry.
+class AppType {
+  /// Letter spacing for the small tracked caption that names a group of
+  /// controls — see [AppSectionLabel].
+  ///
+  /// The spec writes it as `.08em`, which on its 12px caption is 0.96px. The
+  /// app's `labelMedium` is 11.5px, so the same ratio would be 0.92; rounded to
+  /// 1.0, which is what the workbench copy already used and what the eye reads
+  /// as "tracked" at this size either way.
+  static const double trackedLabelSpacing = 1.0;
+}
+
 /// The accent, in the three forms the design spec actually uses it.
 ///
 /// This is the whole multi-theme rule in one place. The spec shows a single

@@ -87,7 +87,40 @@
 
 | | 结论 |
 |---|---|
-| 10j 添加费率组 / 10k 编辑费率组 | 设计稿是 `PricingGroupManager` 的**重设计**：fieldset 式浮起图例标签、46px 图标底板、11px 字段框。`AppDialog` 的新外壳（底板 / 分隔线 / 圆角）已把骨架对齐；字段级重设计未做 |
+| 10j 添加费率组 / 10k 编辑费率组 | 逐项核对见下 |
+### 10j / 10k 逐项核对
+
+初版报告说这两页需要「字段级重设计」。**大半也早就在了**——`floatingLabelBehavior: always` 画出来的正是设计稿那个 fieldset 浮起图例，图例色早已取自 `metric_palette`。差的是三处：
+
+| 设计稿 | 结论 |
+|---|---|
+| 46px 图标底板 · 圆角 13 | 44 / 12（`AppDialog` 的标准值，源自 10a 标准组件章）。**刻意不跟**：同一个弹窗外壳不能因为出现在第 3 章就换个尺寸 |
+| 标题 700/20 + 副标 13 + 34px 关闭钮 | 已做 |
+| 分组小标题 600/12 · 字距 .08em · **主色深** | ✗ 是本文件里私有的第三份 `_sectionHeader`，`titleSmall` w700 + `primary`，无字距。→ 见下「分组小标题」 |
+| 名称字段：描边 + 占位「分组名称」 | 已做 |
+| 计费模式两段式 | 已做（`AppSegmentedControl` expand） |
+| 价格字段 fieldset 浮起图例 + 值 600/20 monospace + 单位 500/13 | 已做 |
+| 输入/输出/缓存/请求 图例各自颜色 | 已做（`metric_palette`） |
+| 缓存留空提示 | 已做 |
+| **请求单价下的说明**「按每次成功请求计费，与 Token 用量无关」 | ✗ **缺**。按次计费那一支只有一个数字，没有任何东西说它是按什么算的——而它和按 Token 的费率差六个数量级。→ 补 `requestPriceHint`（四语言） |
+
+外加一处只有渲染才看得见的：`contentPadding` 只给了水平内距，最后一行帮助文字直接压在页脚分隔线上，读起来像按钮行的装饰而不是缓存规则的说明。→ 补下内距。
+
+### 分组小标题
+
+初版报告写「目前只在组件全景图里表达，未抽成共享组件」。**也不准确**——共享组件一直在，叫 `ConfigSectionHeader`，只是关在 `screens/workbench/widgets/` 里，所以弹窗够不着、只好自己再写一份。加上组件全景图里的 `_Label`，同一个东西**共三份**，三种字重、三种颜色。
+
+设计稿里它其实有两种语气，此前没人分清：
+
+| 出处 | 颜色 |
+|---|---|
+| 10j / 10k 弹窗内的「基本信息 / 计费模式 / 价格配置」 | **主色深** |
+| 10i 提示词库页面上的「分类管理」 | 三级文字灰 |
+
+而全景图里那批 `.1em` / 11px / 灰的「色板」「按钮」「输入」，是**设计文档自己的图注**，不是应用里的组件——初版报告把图注当成了规范。
+
+→ 提为 `widgets/app_section_label.dart`，两种语气（`accent` / `neutral`），三处调用点合一。颜色从 `primary` 改成 **`onAccentTint`**：`primary` 是调给「填充」用的，11.5px 半粗放在 `surface` 上偏薄，Orange / Green 两个种子色下贴着 4.5:1 的地板；`onAccentTint` 按构造在七个种子色下都过。`design_tokens_test.dart` 补了这一对的断言。
+
 | 10l 覆盖原图确认 | **设计稿标注「新增」，但应用里其实早就有**（`crop_resize_toolbar.dart`，三个按钮与尺寸行俱全）。本报告初版照搬了设计稿的标注而没查代码，是错的。已按 10l 重做外观：危险色图标底板、副标题、关闭按钮、带边框的文件行（含 尺寸→尺寸 箭头，新尺寸用 `error` 色）、提示改存副本的信息框 |
 
 ## 四、顺带修掉的既有缺陷
@@ -115,9 +148,10 @@
 | 项 | 说明 |
 |---|---|
 | 仍在自绘的输入框装饰 | 冗余的那批已删（见 §四）。**剩下的是刻意的**：聊天输入框、Markdown 正文、裁剪工具栏的内联数字输入三处 `InputBorder.none`，下载器的地址栏，以及 `AppDropdown` / `ChatModelSelector` / `PricingGroupManager` 自己的描边逻辑。这些**不该**被主题收编 |
-| 10j/10k 字段级重设计 | 见 §三 |
-| 分组小标题组件 | 目前只在组件全景图里表达，未抽成共享组件 |
 | 裁剪选区的静止态徽标 | 见 §二 末尾 |
+| 费率组弹窗的移动端 sheet | 桌面走 `AppDialog`，移动端自绘 grabber + header + footer。表单本身是同一个 `_buildForm`，只有外壳分叉——**没有合并**：sheet 的分隔线要分开的是拖拽条，dialog 的是标题，两者不是同一条线 |
+
+**三章逐项核对至此结束。** 设计稿里剩下的每一处差异都记在 [`design-tokens.md` §4「与设计稿的已知偏离」](../architecture/design-tokens.md#4--与设计稿的已知偏离)，是有理由的偏离而不是待办。
 
 ## 验证方式
 
@@ -131,3 +165,5 @@ flutter test test/screenshots/app_screens_test.dart --plain-name "workbench ·"
 `build/ui-screenshots/gallery_<seed>_<brightness>.png` —— 7 个种子色 × 明暗，一页放下全部标准组件，用来确认结构在换色后不塌。判读要点见 [`design-tokens.md`](../architecture/design-tokens.md#验证)。
 
 `workbench_desktop_<brightness>_{selection,crop,assistant}.png` —— 工作台是八个页面共用一个导航项，而截图矩阵此前只拍 tab 0。**10c–10e 里剩下的 5 项，没有一项是读代码看出来的**：三分线、空的尺寸框、灰底输入框，都是把这三个 tab 摆到镜头前才现形的，其中尺寸框那条还要拍两遍才发现「填上了但输出条仍写 → –」。改这三页之前先跑这一条。
+
+`usage_desktop_<brightness>_{add,addRequest,edit}.png` —— 10j / 10k。这个弹窗藏在用量页自己的 State 里的一个 tab 索引后面，`AppState` 够不着，所以只能像用户那样点进去。帮助文字压在分隔线上那条就是这样看出来的。（一个坑：`按次计费` 既是弹窗里的分段项、又是背后卡片上的模式徽标，不限定范围的 `find.text(...).first` 会点到卡片——那一下点在遮罩外，把要拍的弹窗关掉了。`tapText` 的 `of:` 参数就是为这个。）
