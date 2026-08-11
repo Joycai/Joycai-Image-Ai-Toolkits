@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_semantic_colors.dart';
+import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -306,9 +308,12 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                   },
                 )
               else
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  // Success is a condition, not a category — it comes from the
+                  // semantic set rather than from this file's own green.
+                  child: Icon(Icons.check_circle,
+                      color: context.semantic.success, size: 20),
                 ),
               const SizedBox(width: 8),
               Expanded(
@@ -334,14 +339,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   }
 
   Widget _buildTagChip(String tag) {
-    Color color;
-    switch (tag.toLowerCase()) {
-      case 'image': color = Colors.purple; break;
-      case 'video': color = Colors.red; break;
-      case 'multimodal': color = Colors.orange; break;
-      case 'chat': color = Colors.green; break;
-      default: color = Colors.blue;
-    }
+    final color = modelTagAccent(tag);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(

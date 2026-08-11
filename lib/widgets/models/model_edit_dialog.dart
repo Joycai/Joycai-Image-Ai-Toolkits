@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
@@ -46,12 +47,44 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late ContextWindowMode contextMode;
   late double contextSizeIdx;
 
-  /// Tag palette mirrors the chips on the models screen.
-  static const List<(String, String, Color)> _tagOptions = [
-    ('chat', 'Chat', Colors.green),
-    ('image', 'Image', Colors.purple),
-    ('video', 'Video', Colors.red),
-    ('multimodal', 'Multimodal', Colors.orange),
+  /// One kind chip. A method rather than an inline `ChoiceChip` in the
+  /// collection-for because the kind's colour has to be looked up once and
+  /// then used five times over — inline, that is five `modelTagAccent` calls
+  /// per chip per build, or a local the collection-for has nowhere to put.
+  Widget _buildTagChoice(
+    String value,
+    String label,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    final color = modelTagAccent(value);
+    final selected = tag == value;
+
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) => setState(() => tag = value),
+      label: Text(label),
+      labelStyle: textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: selected ? color : colorScheme.onSurfaceVariant,
+      ),
+      avatar: CircleAvatar(backgroundColor: color, radius: 4),
+      selectedColor: color.withAlpha(30),
+      side: BorderSide(
+        color: selected ? color.withAlpha(150) : colorScheme.outlineVariant,
+      ),
+      showCheckmark: false,
+    );
+  }
+
+  /// The selectable model kinds, in the order they are offered. Colours are
+  /// not repeated here — [modelTagAccent] is the one place they live, so this
+  /// picker cannot drift away from the chips it is choosing between.
+  static const List<(String, String)> _tagOptions = [
+    ('chat', 'Chat'),
+    ('image', 'Image'),
+    ('video', 'Video'),
+    ('multimodal', 'Multimodal'),
   ];
 
   @override
@@ -260,22 +293,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final (value, label, color) in _tagOptions)
-              ChoiceChip(
-                selected: tag == value,
-                onSelected: (_) => setState(() => tag = value),
-                label: Text(label),
-                labelStyle: textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: tag == value ? color : colorScheme.onSurfaceVariant,
-                ),
-                avatar: CircleAvatar(backgroundColor: color, radius: 4),
-                selectedColor: color.withAlpha(30),
-                side: BorderSide(
-                  color: tag == value ? color.withAlpha(150) : colorScheme.outlineVariant,
-                ),
-                showCheckmark: false,
-              ),
+            for (final (value, label) in _tagOptions)
+              _buildTagChoice(value, label, textTheme, colorScheme),
           ],
         ),
 

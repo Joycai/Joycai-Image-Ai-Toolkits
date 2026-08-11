@@ -57,6 +57,9 @@
 | `main.dart:391` | `Color(0xFFB794F6)` 固定紫与 `colorScheme.primary` 组渐变，与 7 个种子色中的 6 个打架 → `primaryContainer` |
 | `log_console.dart` ↔ `task_log_dialog.dart` ↔ `app_snackbar.dart` | 同一组日志级别 / 警告色抄了三份，各带手写 isDark 分支 → 统一读 `AppSemanticColors` |
 | `constants.dart:68-78` | 9 个零调用点的死令牌（`cardRadius` / `smallRadius` / `defaultPadding` / `opacityLow`…）→ 删除，几何统一到 `design_tokens.dart` |
+| 计费口径 5 色 | `usage_summary.dart` 声明为公开常量、注释写着「与费率组价格药丸共用」，`pricing_group_manager.dart` 却又**私有地重抄了 4 个**、注释写着「刻意用与用量页相同的色」——共用的意图一直都在，只是被复制而非导入。→ 抽出 `core/metric_palette.dart` |
+| 模型类型 5 色 | `models_screen.dart` 与 `discovery_dialog.dart` 各有一份**逐字节相同**的 `switch`，`model_edit_dialog.dart` 第三份写成元组表。→ 抽出 `core/model_kind_palette.dart` |
+| `settings_screen.dart` | 已有 `_categoryColor()`，但移动端列表把同样的 5 个色值又内联写了一遍，绕过了那个函数。→ 由 `_buildCategoryTile` 内部统一取色 |
 | `crop_resize_view.dart:447` | 输出条宣称副本存到 `临时工作区 / crop_photo.jpg`，实际写的是 `<temp>/joycai/processed/crop_photo_<时间戳>.png`——文件名、扩展名、目录三处都不符。→ 抽出 `ImageProcessingService.resolveCropCopyTarget()`，输出条 / 覆盖弹窗 / 实际写入共用同一个解析器，命名改为确定性的 `<name>_crop.png`（冲突时加数字后缀） |
 | `image_processing_service.dart` `saveImage()` | 裸 `writeAsBytes`，复制和覆盖走同一行、只差调用方拼出的路径字符串。→ 新增必填的 `allowOverwrite`，为 false 且目标已存在时抛异常。破坏性操作在 UI 与 service 两层都要拦 |
 
@@ -65,7 +68,7 @@
 | 项 | 说明 |
 |---|---|
 | 42 处裸 `TextField` 的手写 `InputDecoration` | `inputDecorationTheme` 已给出描边式基线，但调用点自己写了 `border:`/`filled:` 的会局部覆盖主题。逐个清掉是 25 个文件的机械改动，建议按屏单独推进 |
-| 身份色去重 | `usage_summary.dart` ↔ `pricing_group_manager.dart`（计费口径 5 色）、`models_screen.dart` ↔ `discovery_dialog.dart` ↔ `model_edit_dialog.dart`（模型类型 5 色）仍各自硬编码。它们是身份色不是语义色，应仿 `core/fee_group_palette.dart` 各抽一个调色板模块 |
+| 模型类型 chip 组件本身 | `models_screen.dart` 与 `discovery_dialog.dart` 的 `_buildTagChip` 现在共用颜色，但**两个容器仍是各写各的**（圆角 8 + 描边 vs 圆角 6 无描边）。抽成一个共享组件会带来观感变化，本轮只做了颜色去重 |
 | `data_section.dart:319-407` ↔ `wizard_import.dart:97-187` | 近乎逐行重复，含各自的 `Colors.grey` |
 | 10c–10e 页面重排、10j/10k 字段级重设计 | 见上 |
 | 覆盖原图写入 PNG 字节到 `.jpg` | `_runImageProcess` 恒用 `img.encodePng`（`image_processing_service.dart:73`），所以覆盖一个 `.jpg` 会把 PNG 字节写进 `.jpg` 文件——内容与扩展名不符。修法是按目标扩展名选编码器（并为 JPEG 定质量参数），属于保存行为变更，单独一轮 |

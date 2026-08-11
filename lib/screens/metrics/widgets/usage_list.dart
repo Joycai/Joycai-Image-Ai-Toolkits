@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/metric_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import 'usage_stats.dart';
-import 'usage_summary.dart';
 
 /// Table of token-usage records, grouped by day. Meant to be hosted in a card
 /// inside a scroll view — it lays every row out at once rather than scrolling

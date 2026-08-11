@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/metric_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/panel_resizer.dart';
 import 'usage_stats.dart';
-
-/// Accent per metric. Shared with the fee-group price pills and the record
-/// list, so a rate, a token count and a cost keep one colour across the app.
-const Color usageInputAccent = Colors.blue;
-const Color usageCacheAccent = Colors.teal;
-const Color usageOutputAccent = Colors.green;
-const Color usageRequestAccent = Colors.purple;
-const Color usageCostAccent = Colors.orange;
 
 /// The summary block above the usage records, shared by every breakpoint.
 ///

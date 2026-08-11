@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/fee_group_palette.dart';
+import '../core/metric_palette.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pricing_group.dart';
@@ -15,15 +16,6 @@ enum PricingGroupManagerMode {
   section,
   fullPage
 }
-
-/// Accent colors for the three token price kinds, used by the editor's price
-/// fields. Deliberately the same hues the usage screens use for their input /
-/// cache / output stats, so a rate here and a token count there read as the
-/// same thing.
-const Color _inputAccent = Colors.blue;
-const Color _cacheAccent = Colors.teal;
-const Color _outputAccent = Colors.green;
-const Color _requestAccent = Colors.purple;
 
 /// Narrowest a group card gets before its name starts truncating.
 const double _minCardWidth = 320;
@@ -848,9 +840,9 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildPriceField(inputPriceCtrl, l10n.priceLabelInput, '\$/M', _inputAccent, Icons.input)),
+              Expanded(child: _buildPriceField(inputPriceCtrl, l10n.priceLabelInput, '\$/M', usageInputAccent, Icons.input)),
               const SizedBox(width: 12),
-              Expanded(child: _buildPriceField(outputPriceCtrl, l10n.priceLabelOutput, '\$/M', _outputAccent, Icons.output)),
+              Expanded(child: _buildPriceField(outputPriceCtrl, l10n.priceLabelOutput, '\$/M', usageOutputAccent, Icons.output)),
             ],
           ),
           const SizedBox(height: 16),
@@ -860,13 +852,13 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
             cacheInputPriceCtrl,
             l10n.priceLabelCache,
             '\$/M',
-            _cacheAccent,
+            usageCacheAccent,
             Icons.bolt,
             hintText: inputPriceCtrl.text.trim().isEmpty ? null : inputPriceCtrl.text.trim(),
             helperText: l10n.cacheInputPriceHint,
           ),
         ] else
-          _buildPriceField(requestPriceCtrl, l10n.priceLabelRequest, '\$/Req', _requestAccent, Icons.repeat),
+          _buildPriceField(requestPriceCtrl, l10n.priceLabelRequest, '\$/Req', usageRequestAccent, Icons.repeat),
       ],
     );
   }

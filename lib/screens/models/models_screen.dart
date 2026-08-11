@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -606,8 +607,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+              // `error`, not a red literal: destructive is a semantic role and
+              // Material derives it independently of the seed, so this stays
+              // red at every theme without being written as one.
+              leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              title: Text(l10n.delete,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDeleteModel(l10n, model, appState);
@@ -620,14 +625,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   Widget _buildTagChip(String tag) {
-    Color color;
-    switch (tag.toLowerCase()) {
-      case 'image': color = Colors.purple; break;
-      case 'video': color = Colors.red; break;
-      case 'multimodal': color = Colors.orange; break;
-      case 'chat': color = Colors.green; break;
-      default: color = Colors.blue;
-    }
+    final color = modelTagAccent(tag);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
