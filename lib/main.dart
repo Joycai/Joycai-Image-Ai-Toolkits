@@ -144,7 +144,15 @@ class _WindowChromeSyncState extends State<_WindowChromeSync> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WindowChromeService.applyTheme(Theme.of(context).colorScheme);
+    final appState = context.read<AppState>();
+    // Logged, not fire-and-forget. Whether the OS took the colours is the one
+    // thing the app cannot see by looking at itself — the caption is drawn by
+    // the window manager, outside anything Flutter renders or a test can
+    // assert. Putting the platform's answer in the execution log is the only
+    // way this is checkable at all.
+    WindowChromeService.applyTheme(Theme.of(context).colorScheme).then((report) {
+      if (report != null) appState.addLog(report);
+    });
   }
 
   @override

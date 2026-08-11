@@ -289,9 +289,10 @@ void Win32Window::OnDestroy() {
   // No-op; provided for subclasses.
 }
 
-void Win32Window::SetCaptionColors(COLORREF caption, COLORREF text, bool dark) {
+Win32Window::CaptionColorResult Win32Window::SetCaptionColors(
+    COLORREF caption, COLORREF text, bool dark) {
   if (!window_handle_) {
-    return;
+    return {E_HANDLE, E_HANDLE, E_HANDLE};
   }
 
   // Set first, so that on Windows 10, where the two colour attributes below
@@ -302,12 +303,15 @@ void Win32Window::SetCaptionColors(COLORREF caption, COLORREF text, bool dark) {
   // a non-UTF-8 locale any other byte raises C4819, which this build treats
   // as an error.
   BOOL enable_dark_mode = dark;
-  DwmSetWindowAttribute(window_handle_, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                        &enable_dark_mode, sizeof(enable_dark_mode));
-
-  DwmSetWindowAttribute(window_handle_, DWMWA_CAPTION_COLOR, &caption,
-                        sizeof(caption));
-  DwmSetWindowAttribute(window_handle_, DWMWA_TEXT_COLOR, &text, sizeof(text));
+  CaptionColorResult result;
+  result.dark_mode =
+      DwmSetWindowAttribute(window_handle_, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                            &enable_dark_mode, sizeof(enable_dark_mode));
+  result.caption = DwmSetWindowAttribute(window_handle_, DWMWA_CAPTION_COLOR,
+                                         &caption, sizeof(caption));
+  result.text =
+      DwmSetWindowAttribute(window_handle_, DWMWA_TEXT_COLOR, &text, sizeof(text));
+  return result;
 }
 
 void Win32Window::UpdateTheme(HWND const window) {
