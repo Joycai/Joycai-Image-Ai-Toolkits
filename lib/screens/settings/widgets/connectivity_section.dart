@@ -65,7 +65,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
                       decoration: InputDecoration(
                         labelText: l10n.proxyUrl,
                         hintText: '127.0.0.1:7890',
-                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (v) => _db.saveSetting('proxy_url', v),
                     ),
@@ -75,7 +74,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
                         controller: _proxyUsernameController,
                         decoration: InputDecoration(
                           labelText: l10n.proxyUsername,
-                          border: const OutlineInputBorder(),
                         ),
                         onChanged: (v) => _db.saveSetting('proxy_username', v),
                       ),
@@ -93,7 +91,6 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
                               controller: _proxyUsernameController,
                               decoration: InputDecoration(
                                 labelText: l10n.proxyUsername,
-                                border: const OutlineInputBorder(),
                               ),
                               onChanged: (v) => _db.saveSetting('proxy_username', v),
                             ),

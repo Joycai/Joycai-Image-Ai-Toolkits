@@ -122,7 +122,6 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                         });
                       },
                     ),
-                    isDense: true,
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
                   ),

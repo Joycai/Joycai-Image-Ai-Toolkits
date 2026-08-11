@@ -642,7 +642,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear())
               : null,
           border: InputBorder.none,
-          isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         ),
       ),

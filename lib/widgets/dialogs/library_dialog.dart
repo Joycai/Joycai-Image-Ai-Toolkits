@@ -117,7 +117,6 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
                     .bodySmall
                     ?.copyWith(color: colorScheme.onSurfaceVariant),
                 prefixIcon: const Icon(Icons.search, size: 16),
-                isDense: true,
                 filled: true,
                 fillColor: colorScheme.surfaceContainerHighest.withAlpha(100),
                 border: OutlineInputBorder(

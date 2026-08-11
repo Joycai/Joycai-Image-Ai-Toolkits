@@ -509,8 +509,6 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.tag,
-        border: const OutlineInputBorder(),
-        isDense: true,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int?>(
@@ -541,8 +539,6 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.preset,
-        border: const OutlineInputBorder(),
-        isDense: true,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -568,9 +564,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       decoration: InputDecoration(
         hintText: l10n.customSysPromptHint,
         hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-        border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.all(12),
-        isDense: true,
       ),
       style: Theme.of(context).textTheme.bodyMedium,
     );

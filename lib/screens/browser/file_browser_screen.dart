@@ -368,7 +368,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                   },
                   visualDensity: VisualDensity.compact,
                 ),
-          isDense: true,
           contentPadding: EdgeInsets.zero,
           filled: true,
           fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),

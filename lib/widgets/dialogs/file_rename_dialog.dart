@@ -33,7 +33,6 @@ Future<void> showFileRenameDialog({
           decoration: InputDecoration(
             labelText: l10n.newFilename,
             suffixText: extension,
-            border: const OutlineInputBorder(),
           ),
           autofocus: true,
           onSubmitted: (val) => Navigator.pop(context, true),

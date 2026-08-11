@@ -208,7 +208,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         labelText: l10n.displayName,
-        border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.badge_outlined),
         hintText: 'e.g. GPT-4o, Gemini Pro',
       ),
@@ -218,7 +217,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         labelText: l10n.modelIdLabel,
-        border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.fingerprint),
         hintText: 'e.g. gpt-4, gemini-1.5-pro',
       ),
@@ -239,7 +237,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => channelId = v),
           decoration: InputDecoration(
             labelText: l10n.channel,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.hub_outlined),
           ),
         ),
@@ -398,7 +395,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => feeGroupId = v),
           decoration: InputDecoration(
             labelText: l10n.feeGroup,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.payments_outlined),
           ),
         ),

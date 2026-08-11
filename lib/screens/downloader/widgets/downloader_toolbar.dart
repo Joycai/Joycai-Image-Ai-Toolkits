@@ -156,7 +156,6 @@ InputDecoration _fieldDecoration(
     hintText: hint,
     hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
     prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
-    isDense: true,
     contentPadding: EdgeInsets.zero,
     filled: true,
     fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
@@ -321,8 +320,6 @@ Future<void> showDownloaderAdvancedDialog(
           controller: prefixController,
           decoration: InputDecoration(
             labelText: l10n.filenamePrefix,
-            isDense: true,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.drive_file_rename_outline, size: 20),
           ),
         ),

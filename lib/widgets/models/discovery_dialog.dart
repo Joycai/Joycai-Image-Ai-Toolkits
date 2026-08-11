@@ -175,7 +175,6 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
-        isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );

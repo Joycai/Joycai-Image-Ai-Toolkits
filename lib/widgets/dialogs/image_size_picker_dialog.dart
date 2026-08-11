@@ -168,8 +168,6 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
                     controller: _widthCtrl,
                     decoration: InputDecoration(
                       labelText: l10n.imageSizeWidth,
-                      isDense: true,
-                      border: const OutlineInputBorder(),
                       suffixText: 'px',
                     ),
                     keyboardType: TextInputType.number,
@@ -187,8 +185,6 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
                     controller: _heightCtrl,
                     decoration: InputDecoration(
                       labelText: l10n.imageSizeHeight,
-                      isDense: true,
-                      border: const OutlineInputBorder(),
                       suffixText: 'px',
                     ),
                     keyboardType: TextInputType.number,

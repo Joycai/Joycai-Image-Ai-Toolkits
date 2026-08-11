@@ -287,7 +287,6 @@ class _SetupWizardState extends State<SetupWizard> {
             readOnly: true,
             decoration: InputDecoration(
               labelText: l10n.outputDirectory,
-              border: const OutlineInputBorder(),
               suffixIcon: const Icon(Icons.folder_open),
             ),
             onTap: () async {
@@ -303,7 +302,6 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _prefixController,
             decoration: InputDecoration(
               labelText: l10n.filenamePrefix,
-              border: const OutlineInputBorder(),
               helperText: "e.g. 'result' -> result_001.png",
             ),
             onChanged: (v) => appState.setImagePrefix(v),
@@ -334,7 +332,6 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _channelNameController,
             decoration: InputDecoration(
               labelText: l10n.displayName,
-              border: const OutlineInputBorder(),
               hintText: "e.g. My OpenAI",
             ),
           ),
@@ -357,7 +354,6 @@ class _SetupWizardState extends State<SetupWizard> {
             },
             decoration: InputDecoration(
               labelText: l10n.channelType,
-              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),
@@ -365,7 +361,6 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _endpointController,
             decoration: InputDecoration(
               labelText: l10n.endpointUrl,
-              border: const OutlineInputBorder(),
               helperText: endpointHint,
               helperStyle: const TextStyle(color: Colors.blueGrey),
             ),
@@ -398,7 +393,6 @@ class _SetupWizardState extends State<SetupWizard> {
                   controller: _modelIdController,
                   decoration: InputDecoration(
                     labelText: l10n.modelIdLabel,
-                    border: const OutlineInputBorder(),
                     hintText: "e.g. gpt-4o",
                   ),
                 ),
@@ -418,7 +412,6 @@ class _SetupWizardState extends State<SetupWizard> {
             controller: _modelNameController,
             decoration: InputDecoration(
               labelText: l10n.displayName,
-              border: const OutlineInputBorder(),
               hintText: "e.g. My Model",
             ),
           ),
@@ -433,7 +426,6 @@ class _SetupWizardState extends State<SetupWizard> {
             onChanged: (v) => setState(() => _modelTag = v!),
             decoration: InputDecoration(
               labelText: l10n.tag,
-              border: const OutlineInputBorder(),
             ),
           ),
         ],

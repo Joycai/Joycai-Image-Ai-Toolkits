@@ -239,8 +239,6 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           onChanged: (v) => setState(() => type = v!),
           decoration: InputDecoration(
             labelText: l10n.channelType,
-            isDense: true,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.category_outlined, size: 20),
           ),
           // The style applies to the popup menu items too — it must carry an
@@ -253,8 +251,6 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           style: Theme.of(context).textTheme.titleMedium,
           decoration: InputDecoration(
             labelText: l10n.endpointUrl,
-            isDense: true,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.link, size: 20),
             helperText: endpointHint,
             helperMaxLines: 3,

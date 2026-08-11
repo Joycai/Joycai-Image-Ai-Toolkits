@@ -63,8 +63,6 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
               TextField(
                 controller: prefixController,
                 decoration: InputDecoration(
-                  isDense: true,
-                  border: const OutlineInputBorder(),
                   hintText: l10n.prefixHint,
                 ),
                 onChanged: (v) => appState.setImagePrefix(v),

@@ -46,8 +46,6 @@ class ColorPickerWidget extends StatelessWidget {
             decoration: const InputDecoration(
               labelText: 'HEX Color',
               prefixIcon: Icon(Icons.colorize),
-              isDense: true,
-              border: OutlineInputBorder(),
             ),
             onChanged: (v) {
               if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {
