@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 
 /// Which of the app's four button treatments to draw.
 ///
@@ -14,9 +15,19 @@ enum AppButtonVariant {
   /// Material's washed-out default.
   primary,
 
-  /// A secondary action beside a primary one. [tonalButtonStyle] passed in
-  /// explicitly, because the app-wide filled-button theme otherwise outranks
-  /// [FilledButton.tonal]'s own default and paints it fully primary.
+  /// A secondary action beside a primary one: a hairline outline on the
+  /// surface, carrying no accent of its own.
+  ///
+  /// Was [FilledButton.tonal] — a `secondaryContainer` slab. That spent the
+  /// seed's colour on the action the user *isn't* meant to take, which is the
+  /// one thing the design spec is emphatic about ("主题色只出现在选中态、主
+  /// CTA 与徽标上"). An outline separates it from the primary by weight
+  /// instead of by hue, leaving the accent to mean something.
+  ///
+  /// [tonalButtonStyle] is still exported for the handful of hand-rolled
+  /// [FilledButton.tonal]s elsewhere, which still need it — the app-wide
+  /// filled-button theme outranks the tonal variant's own default and would
+  /// otherwise paint them fully primary.
   secondary,
 
   /// The lowest-emphasis action — cancel, dismiss, "skip this".
@@ -143,16 +154,16 @@ class AppButton extends StatelessWidget {
 
     final (height, density, padding, textStyle) = switch (size) {
       AppButtonSize.compact => (
-          30.0,
+          AppSize.compact,
           VisualDensity.compact,
           const EdgeInsets.symmetric(horizontal: 10),
           textTheme.labelMedium,
         ),
-      AppButtonSize.normal => (appButtonMinHeight, null, null, null),
+      AppButtonSize.normal => (AppSize.control, null, null, null),
       // A screen's main action carries a little more weight than the buttons
       // beside it; several of these had spelled that out as a bold label.
       AppButtonSize.large => (
-          48.0,
+          AppSize.large,
           null,
           const EdgeInsets.symmetric(horizontal: 20),
           textTheme.titleMedium,
@@ -196,12 +207,12 @@ class AppButton extends StatelessWidget {
   Widget _button({required ButtonStyle? style, required VoidCallback? onPressed, required Widget child}) {
     switch (variant) {
       case AppButtonVariant.primary:
-      case AppButtonVariant.secondary:
       case AppButtonVariant.destructive:
         return FilledButton(style: style, onPressed: onPressed, child: child);
       case AppButtonVariant.text:
       case AppButtonVariant.destructiveText:
         return TextButton(style: style, onPressed: onPressed, child: child);
+      case AppButtonVariant.secondary:
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton(style: style, onPressed: onPressed, child: child);
     }
@@ -215,7 +226,6 @@ class AppButton extends StatelessWidget {
   }) {
     switch (variant) {
       case AppButtonVariant.primary:
-      case AppButtonVariant.secondary:
       case AppButtonVariant.destructive:
         return FilledButton.icon(
           style: style,
@@ -231,6 +241,7 @@ class AppButton extends StatelessWidget {
           icon: Icon(icon, size: _iconSize),
           label: label,
         );
+      case AppButtonVariant.secondary:
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton.icon(
           style: style,
@@ -242,9 +253,9 @@ class AppButton extends StatelessWidget {
   }
 
   double get _iconSize => switch (size) {
-        AppButtonSize.compact => 15,
-        AppButtonSize.normal => 18,
-        AppButtonSize.large => 20,
+        AppButtonSize.compact => AppSize.iconSm,
+        AppButtonSize.normal => AppSize.iconMd,
+        AppButtonSize.large => AppSize.iconLg,
       };
 
   ButtonStyle? _styleFor(BuildContext context, ColorScheme colorScheme) {
@@ -255,7 +266,15 @@ class AppButton extends StatelessWidget {
         // naming a style here would just repeat it.
         return null;
       case AppButtonVariant.secondary:
-        return tonalButtonStyle(colorScheme);
+        return OutlinedButton.styleFrom(
+          // `surface`, not transparent: these sit on the canvas and on cards
+          // alike, and an unfilled outline over a card's own tone reads as a
+          // hole punched in it rather than as a button.
+          backgroundColor: colorScheme.surface,
+          foregroundColor: colorScheme.onSurface,
+          side: BorderSide(color: colorScheme.outlineVariant),
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
+        );
       case AppButtonVariant.destructive:
         return FilledButton.styleFrom(
           backgroundColor: colorScheme.error,
@@ -266,13 +285,13 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton.styleFrom(
           foregroundColor: colorScheme.error,
-          side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
-          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
+          side: BorderSide(color: colorScheme.error.withValues(alpha: AppAlpha.edge)),
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );
       case AppButtonVariant.destructiveText:
         return TextButton.styleFrom(
           foregroundColor: colorScheme.error,
-          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );
     }
   }
@@ -287,7 +306,7 @@ class AppButton extends StatelessWidget {
         return Theme.of(context).filledButtonTheme.style?.foregroundColor?.resolve(const {}) ??
             colorScheme.onPrimary;
       case AppButtonVariant.secondary:
-        return colorScheme.onSecondaryContainer;
+        return colorScheme.onSurface;
       case AppButtonVariant.text:
         return colorScheme.primary;
       case AppButtonVariant.destructive:

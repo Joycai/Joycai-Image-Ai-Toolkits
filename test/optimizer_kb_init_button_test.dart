@@ -8,6 +8,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/optimizer_con
 import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -89,8 +90,8 @@ void main() {
     await pumpPanel(tester, KbStatus.ok);
     final l10n = await en();
 
-    final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, l10n.kbScaffoldCreate),
+    final button = tester.widget<AppButton>(
+      find.widgetWithText(AppButton, l10n.kbScaffoldCreate),
     );
     // A null callback is what actually makes it inert — not just greyed out.
     expect(button.onPressed, isNull);
@@ -102,7 +103,7 @@ void main() {
     final l10n = await en();
 
     await tester.tap(
-      find.widgetWithText(FilledButton, l10n.kbScaffoldCreate),
+      find.widgetWithText(AppButton, l10n.kbScaffoldCreate),
       warnIfMissed: false,
     );
     await tester.pumpAndSettle();
@@ -134,8 +135,8 @@ void main() {
       await pumpPanel(tester, status);
       final l10n = await en();
 
-      final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, l10n.kbScaffoldCreate),
+      final button = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, l10n.kbScaffoldCreate),
       );
       expect(button.onPressed, isNotNull);
     });
@@ -146,7 +147,7 @@ void main() {
     await pumpPanel(tester, KbStatus.missingEntry, onScaffold: () async => calls++);
     final l10n = await en();
 
-    await tester.tap(find.widgetWithText(FilledButton, l10n.kbScaffoldCreate));
+    await tester.tap(find.widgetWithText(AppButton, l10n.kbScaffoldCreate));
     await tester.pumpAndSettle();
     expect(calls, 1);
   });

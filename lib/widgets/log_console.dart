@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../core/app_semantic_colors.dart';
 import '../models/log_entry.dart';
 import '../state/app_state.dart';
 import 'app_snackbar.dart';
@@ -142,7 +143,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             // Level Filter
             _buildLevelChip('ERR', 'ERROR', colorScheme.error),
             _buildLevelChip('RUN', 'RUNNING', colorScheme.primary),
-            _buildLevelChip('SUC', 'SUCCESS', const Color(0xFF2E9E6B)),
+            _buildLevelChip('SUC', 'SUCCESS', context.semantic.success),
 
             VerticalDivider(width: 16, indent: 8, endIndent: 8, color: colorScheme.outlineVariant),
 
@@ -197,7 +198,7 @@ class _LogLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final semantic = context.semantic;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: RichText(
@@ -218,7 +219,10 @@ class _LogLine extends StatelessWidget {
               ),
             TextSpan(
               text: '[${log.level}] ',
-              style: TextStyle(color: _getLevelColor(log.level, isDark), fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: _getLevelColor(log.level, colorScheme, semantic),
+                fontWeight: FontWeight.bold,
+              ),
             ),
             TextSpan(
               text: log.message,
@@ -230,16 +234,24 @@ class _LogLine extends StatelessWidget {
     );
   }
 
-  Color _getLevelColor(String level, bool isDark) {
+  /// The colour a level is spoken in.
+  ///
+  /// Was four pairs of literals behind a hand-written `isDark` branch — and
+  /// the same amber pair appeared again in `task_log_dialog.dart` and a third
+  /// time in `app_snackbar.dart`, at three slightly different values. These
+  /// are the `onXContainer` tones rather than the base ones because a log line
+  /// is *text*: the base hues are tuned to be seen as a fill, and at 11.5px on
+  /// the console's surface they read thin.
+  Color _getLevelColor(String level, ColorScheme colorScheme, AppSemanticColors semantic) {
     switch (level) {
       case 'ERROR':
-        return isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F);
+        return colorScheme.error;
       case 'RUNNING':
-        return isDark ? const Color(0xFF82B1FF) : const Color(0xFF1565C0);
+        return semantic.onInfoContainer;
       case 'SUCCESS':
-        return isDark ? const Color(0xFF69F0AE) : const Color(0xFF2E7D32);
+        return semantic.onSuccessContainer;
       default:
-        return isDark ? const Color(0xFFFFD180) : const Color(0xFFB26A00);
+        return semantic.onWarningContainer;
     }
   }
 }

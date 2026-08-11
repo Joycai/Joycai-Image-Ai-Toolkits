@@ -5,6 +5,7 @@ import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/prompt_optimi
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:provider/provider.dart';
 
 /// Pins the ask_user question card: a pending card gates its confirm button on
@@ -88,10 +89,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  FilledButton confirmButton(WidgetTester tester) => tester.widget(
+  AppButton confirmButton(WidgetTester tester) => tester.widget(
         find.ancestor(
           of: find.text('Send answers'),
-          matching: find.byType(FilledButton),
+          matching: find.byType(AppButton),
         ),
       );
 

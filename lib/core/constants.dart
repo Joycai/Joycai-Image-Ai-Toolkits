@@ -64,19 +64,11 @@ class AppConstants {
   static const int workbenchTabCount = 6;
   static const Duration animationDuration = Duration(milliseconds: 200);
 
-  // Opacity levels
-  static const double opacityLow = 0.05;
-  static const double opacityMedium = 0.3;
-  static const double opacityHigh = 0.5;
+  // Padding, radius, opacity and font-size constants used to live here and
+  // had no call sites at all — the app measured itself in literals instead.
+  // Geometry now lives in `core/design_tokens.dart` (AppRadius / AppSize /
+  // AppAlpha) and type sizes in the scale that `core/app_theme.dart` builds.
 
-  // UI Layout Constants
-  static const double defaultPadding = 16.0;
-  static const double smallPadding = 8.0;
-  static const double cardRadius = 12.0;
-  static const double smallRadius = 8.0;
-  static const double inputFontSize = 13.0;
-  static const double smallFontSize = 11.0;
-  
   static const double minThumbnailSize = 80.0;
   static const double maxThumbnailSize = 400.0;
 

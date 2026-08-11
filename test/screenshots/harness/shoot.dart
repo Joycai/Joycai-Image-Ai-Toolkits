@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/main.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:provider/provider.dart';
@@ -53,13 +54,24 @@ Future<void> shoot(
   required AppScreen screen,
   required ShotSize size,
   Brightness brightness = Brightness.light,
+  /// The theme seed to render under. Defaults to [AppState]'s own, which is
+  /// what the app opens with; pass one of [AppConstants.presetThemes] to check
+  /// a screen against a different accent. Appears in the filename so two seeds
+  /// never overwrite each other's PNG.
+  Color? seedColor,
   Locale locale = const Locale('zh'),
   String? suffix,
   Future<void> Function(WidgetTester tester)? before,
   Future<void> Function(WidgetTester tester)? after,
 }) async {
-  final String name =
-      '${screen.name}_${size.label}_${brightness.name}${suffix == null ? '' : '_$suffix'}';
+  final String seedTag = seedColor == null
+      ? ''
+      : '_${AppConstants.presetThemes.entries.firstWhere(
+            (e) => e.value.toARGB32() == seedColor.toARGB32(),
+            orElse: () => MapEntry('seed${seedColor.toARGB32()}', seedColor),
+          ).key.toLowerCase()}';
+  final String name = '${screen.name}_${size.label}_${brightness.name}'
+      '$seedTag${suffix == null ? '' : '_$suffix'}';
 
   tester.view.physicalSize = size.size;
   tester.view.devicePixelRatio = 1.0;
@@ -68,6 +80,7 @@ Future<void> shoot(
   final AppState appState = AppState();
   appState.themeMode =
       brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
+  if (seedColor != null) appState.themeSeedColor = seedColor;
   appState.locale = locale;
   // Logs accumulate across shots and would make the console strip differ run
   // to run for reasons that have nothing to do with layout.

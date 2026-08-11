@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'app_semantic_colors.dart';
+import 'design_tokens.dart';
+
 /// Corner radius shared by buttons and the boxed controls beside them, so a
 /// header of mixed shapes still reads as one row.
 ///
 /// Kept well under half a button's height on purpose: at half, a rounded rect
 /// becomes a capsule, and 12 on the ~30px buttons this app renders was close
-/// enough to read as one.
-const double appButtonRadius = 10;
+/// enough to read as one. The design spec draws 8, which at the heights below
+/// is squarer still — so the reasoning holds, only the number moved. Aliased
+/// rather than replaced: 35 call sites already import this name.
+const double appButtonRadius = AppRadius.control;
 
 /// Height of a filled button, matching the boxed icon actions it sits next to.
 ///
@@ -14,7 +19,10 @@ const double appButtonRadius = 10;
 /// Material defaults to compact, which quietly subtracts 8px from a button's
 /// minimum height. That left these ~30px tall, and at 30 a 10px corner is two
 /// thirds of the way to a capsule — which is exactly what they looked like.
-const double appButtonMinHeight = 38;
+///
+/// The spec's icon buttons are two pixels shorter than its labelled ones, so
+/// [AppIconButton] no longer defaults to this; see [AppSize.iconButton].
+const double appButtonMinHeight = AppSize.control;
 
 /// The app's palette: accents from the user's seed, greys from nobody's.
 ///
@@ -82,7 +90,30 @@ ThemeData buildAppTheme({
     colorScheme: colorScheme,
     fontFamily: fontFamily,
     textTheme: _buildTextTheme(colorScheme, fontFamily),
+    extensions: [
+      brightness == Brightness.dark ? AppSemanticColors.dark : AppSemanticColors.light,
+    ],
+    // The sub-themes below exist because of where the app's controls actually
+    // come from. There are ~40 bare `TextField`s and ~24 bare `Switch`/
+    // `Checkbox`es scattered across the screens, none of them routed through a
+    // shared widget — so a component is the wrong lever for those and the
+    // theme is the right one. Styling them here reaches every call site
+    // without touching any of them.
+    inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
+    switchTheme: _buildSwitchTheme(colorScheme),
+    checkboxTheme: _buildCheckboxTheme(colorScheme),
+    dividerTheme: DividerThemeData(
+      color: colorScheme.outlineVariant,
+      thickness: 1,
+      space: 1,
+    ),
     filledButtonTheme: FilledButtonThemeData(
+      // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
+      // `disabledElevation`: it lifts the button in *every* state, disabled
+      // included. Paired with the accent `shadowColor` below, a disabled
+      // button was casting a full-strength glow in the user's own theme
+      // colour — on a dark canvas it read as a ring around the button, making
+      // the one control that does nothing the loudest thing in the row.
       style: FilledButton.styleFrom(
         backgroundColor: fill.primary,
         foregroundColor: fill.onPrimary,
@@ -99,6 +130,10 @@ ThemeData buildAppTheme({
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
         minimumSize: const Size(0, appButtonMinHeight),
         visualDensity: VisualDensity.standard,
+      ).copyWith(
+        elevation: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled) ? 0 : 2,
+        ),
       ),
     ),
     // The other two button types need the same shape, or the library's own
@@ -126,6 +161,113 @@ ThemeData buildAppTheme({
         visualDensity: VisualDensity.standard,
       ),
     ),
+  );
+}
+
+/// The spec's input: a hairline box on the surface, not a grey slab.
+///
+/// This reverses a decision [AppTextField] documents — it fills with
+/// `surfaceContainerHighest` so inputs and the segmented control's track read
+/// as one system. Worth recording why the reversal is right rather than just
+/// deferential to the spec: that pairing only ever governed two call sites,
+/// because `AppTextField` was never adopted (`api_key_field.dart` is its only
+/// user). The other ~40 inputs in the app are bare `TextField`s rendering
+/// Material's stock outlined default. So the app already ships an outlined
+/// input almost everywhere, and adopting the spec here makes it *more*
+/// internally consistent, not less.
+///
+/// The focus glow the spec draws around a focused field — a 3px accent ring
+/// outside the border — is not expressible through [InputDecoration], which
+/// owns only the border itself. [AppTextField] draws it; a bare `TextField`
+/// gets the 1.5px accent border below and no halo.
+InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
+  OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderSide: BorderSide(color: color, width: width),
+      );
+
+  return InputDecorationTheme(
+    filled: false,
+    isDense: true,
+    // Tighter than Material's default, which budgets for a floating label on
+    // every field. Most of this app's inputs sit in dense config panels and
+    // carry a separate label above them instead.
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    border: border(colorScheme.outlineVariant, 1),
+    enabledBorder: border(colorScheme.outlineVariant, 1),
+    // A disabled field keeps its box — without one it reads as a gap in the
+    // form rather than as a control that is temporarily unavailable.
+    disabledBorder: border(colorScheme.outlineVariant.withValues(alpha: AppAlpha.disabled), 1),
+    focusedBorder: border(colorScheme.primary, 1.5),
+    errorBorder: border(colorScheme.error, 1),
+    focusedErrorBorder: border(colorScheme.error, 1.5),
+  );
+}
+
+/// The spec's switch: a 36×20 track with a 16px thumb.
+///
+/// Only the colours are set. Material 3's switch geometry — a 52×32 track and
+/// a thumb that grows on selection — is baked into `Switch`'s own painting and
+/// is not reachable from [SwitchThemeData]; the spec's proportions would need
+/// a `Transform.scale` per call site or a replacement widget. That is a
+/// separate change from this one, and doing half of it here (colours at spec,
+/// geometry at Material's) is the honest stopping point: every switch in the
+/// app becomes the user's accent colour, and none of them changes size.
+SwitchThemeData _buildSwitchTheme(ColorScheme colorScheme) {
+  return SwitchThemeData(
+    thumbColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return colorScheme.onSurface.withValues(alpha: AppAlpha.disabled);
+      }
+      // White on the accent when on, matching the spec's floating thumb; the
+      // scheme's own `onPrimary` would be dark under a pale seed.
+      return states.contains(WidgetState.selected) ? Colors.white : colorScheme.outline;
+    }),
+    trackColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return colorScheme.onSurface.withValues(alpha: 0.12);
+      }
+      return states.contains(WidgetState.selected)
+          ? colorScheme.primary
+          : colorScheme.surfaceContainerHighest;
+    }),
+    trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+      // The spec's "off" track is a flat grey pill with no edge. Material
+      // draws one by default, which at this size reads as a second border
+      // around the thumb.
+      return states.contains(WidgetState.selected) ? Colors.transparent : colorScheme.outlineVariant;
+    }),
+  );
+}
+
+/// The spec's checkbox: 18px, 6px corners, 1.5px edge when unchecked.
+///
+/// Unlike the switch, all of this *is* reachable from the theme — `Checkbox`
+/// takes its shape and side from here — so this one lands on spec exactly.
+CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
+  return CheckboxThemeData(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xs)),
+    side: WidgetStateBorderSide.resolveWith((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return BorderSide(
+          color: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
+          width: 1.5,
+        );
+      }
+      return BorderSide(color: colorScheme.outline, width: 1.5);
+    }),
+    fillColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.disabled)) {
+        return colorScheme.onSurface.withValues(alpha: 0.12);
+      }
+      // Unselected must be transparent, not a fill: the `side` above is what
+      // draws an unchecked box, and a fill would paint over it.
+      return states.contains(WidgetState.selected) ? colorScheme.primary : Colors.transparent;
+    }),
+    checkColor: WidgetStatePropertyAll(Colors.white),
+    // Material reserves a 48px tap target around a 40px checkbox by default,
+    // which in a dense settings list leaves the box marooned in whitespace.
+    visualDensity: VisualDensity.compact,
   );
 }
 

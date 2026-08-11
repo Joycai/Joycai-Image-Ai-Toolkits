@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 
 /// A quiet icon+label action for a toolbar: no fill of its own until the
 /// pointer is on it.
@@ -46,11 +47,14 @@ class AppToolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final foreground = active ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    // Active reads on its own tint, so it takes `onAccentTint` rather than
+    // `primary` — see AppAccent. The fill was already the spec's 12%; it is
+    // the ladder's `tint` now so the two cannot drift apart.
+    final foreground = active ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
 
     final style = TextButton.styleFrom(
       foregroundColor: foreground,
-      backgroundColor: active ? colorScheme.primary.withValues(alpha: 0.12) : Colors.transparent,
+      backgroundColor: active ? colorScheme.accentTint : Colors.transparent,
       // Neutral, not the accent Material would tint this with: an accented
       // hover on every tool would read as several half-selected buttons.
       overlayColor: colorScheme.onSurface,

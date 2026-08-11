@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_semantic_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
@@ -158,7 +159,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
         child: ListView.builder(
           controller: _scrollController,
           itemCount: logs.length,
-          itemBuilder: (_, i) => _buildLine(logs[i], colorScheme, isDark),
+          itemBuilder: (_, i) => _buildLine(logs[i], colorScheme),
         ),
       ),
     );
@@ -168,13 +169,15 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
   /// level attached, so this matches the same wording `_errorSummary` on the
   /// task card keys off — enough to make a failure findable in a long log
   /// without restructuring every `addLog` call site.
-  Widget _buildLine(String line, ColorScheme colorScheme, bool isDark) {
+  Widget _buildLine(String line, ColorScheme colorScheme) {
     final isError = line.contains('Error') || line.contains('Failed');
     final isWarning = line.contains('Warning');
     final color = isError
         ? colorScheme.error
         : isWarning
-            ? (isDark ? const Color(0xFFFFD180) : const Color(0xFFB26A00))
+            // Was this file's own copy of the amber pair that log_console.dart
+            // and app_snackbar.dart each also carried.
+            ? context.semantic.onWarningContainer
             : colorScheme.onSurface;
 
     return Padding(

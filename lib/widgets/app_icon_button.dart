@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 
 /// An icon action in a box of its own.
 ///
@@ -24,8 +24,12 @@ class AppIconButton extends StatelessWidget {
   /// whose action is currently on.
   final bool selected;
 
-  /// Both sides of the square. Defaults to the height of a filled button so the
-  /// two line up in a header.
+  /// Both sides of the square.
+  ///
+  /// Two pixels under a labelled button rather than equal to it. The design
+  /// spec sets them apart deliberately — a bare glyph with no word beside it
+  /// should not carry the same visual weight as a stated verb — and at this
+  /// difference the two still read as one row.
   final double size;
 
   const AppIconButton({
@@ -35,7 +39,7 @@ class AppIconButton extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.selected = false,
-    this.size = appButtonMinHeight,
+    this.size = AppSize.iconButton,
   });
 
   @override
@@ -47,15 +51,19 @@ class AppIconButton extends StatelessWidget {
       width: size,
       height: size,
       child: IconButton(
-        icon: Icon(icon, size: size * 0.47),
+        // Half the box, per the spec's 16-in-32. The old 0.47 predates the box
+        // being 32 and came out a pixel light once it shrank.
+        icon: Icon(icon, size: size * 0.5),
         color: selected ? accent : color,
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
-          backgroundColor: selected ? accent.withValues(alpha: 0.14) : null,
+          // `color` when the caller named one — a destructive action's box
+          // should wash in its own red, not in the accent.
+          backgroundColor: selected ? accent.withValues(alpha: AppAlpha.tint) : null,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(appButtonRadius),
+            borderRadius: BorderRadius.circular(AppRadius.control),
             side: BorderSide(
-              color: selected ? accent.withValues(alpha: 0.6) : colorScheme.outline.withValues(alpha: 0.45),
+              color: selected ? accent.withValues(alpha: AppAlpha.ring) : colorScheme.outlineVariant,
             ),
           ),
         ),

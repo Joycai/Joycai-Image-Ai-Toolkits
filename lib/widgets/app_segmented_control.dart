@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/design_tokens.dart';
+
 /// One choice in an [AppSegmentedControl].
 class AppSegment<T> {
   final T value;
@@ -69,12 +71,14 @@ class AppSegmentedControl<T> extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         // A tone above every surface the app puts this on, so the track is
         // visible whether it lands on a card or on the canvas.
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        // One step out from the chips it holds, so the gap between the two
+        // curves stays even around the selected option's corners.
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -95,18 +99,23 @@ class AppSegmentedControl<T> extends StatelessWidget {
 
     final Color color;
     if (!segment.enabled) {
-      color = colorScheme.onSurface.withValues(alpha: 0.38);
+      color = colorScheme.onSurface.withValues(alpha: AppAlpha.disabled);
     } else if (!selected) {
       color = colorScheme.onSurfaceVariant;
     } else {
       // Raised spends no accent on the label: the lift already says which one
       // is chosen, and the accent is needed for state *inside* the view.
-      color = raised ? colorScheme.onSurface : colorScheme.primary;
+      //
+      // Tinted takes `onAccentTint`, not `primary`. The label is sitting on a
+      // wash of primary, and primary on its own tint is the same tone twice —
+      // legible in light mode by luck, and washed out in dark, where primary
+      // is already a pale tone 80.
+      color = raised ? colorScheme.onSurface : colorScheme.onAccentTint;
     }
 
     return InkWell(
       onTap: selected || !segment.enabled ? null : () => onChanged(segment.value),
-      borderRadius: BorderRadius.circular(9),
+      borderRadius: BorderRadius.circular(AppRadius.control),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
@@ -119,7 +128,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
             : raised
                 ? BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(AppRadius.control),
                     boxShadow: [
                       BoxShadow(
                         color: colorScheme.shadow.withValues(alpha: 0.08),
@@ -129,9 +138,12 @@ class AppSegmentedControl<T> extends StatelessWidget {
                     ],
                   )
                 : BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.6)),
+                    color: colorScheme.accentTint,
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    // The spec's selection ring is markedly quieter than the
+                    // 0.6 this used to draw — at that strength the border was
+                    // competing with the label inside it for the eye.
+                    border: Border.all(color: colorScheme.accentRing),
                   ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../core/design_tokens.dart';
 import '../core/responsive.dart';
+import '../l10n/app_localizations.dart';
 
 /// Corner radius shared by every dialog.
 ///
-/// The same 12 the inset panels use ([PanelCard], [AppCard],
-/// [AppSegmentedControl]). Dialogs used to be hand-rolled at 24 and Material's
-/// own default is 28, but one radius across the app was the call: a dialog is
-/// another surface in the same system, not a visitor from another one.
-const double appDialogRadius = 12;
+/// Dialogs used to be hand-rolled at 24 and Material's own default is 28; this
+/// sat at the cards' 12 for a while on the argument that a dialog is another
+/// surface in the same system. The design spec puts it one step above the
+/// cards instead, which is the better reading of the same idea: a dialog is in
+/// the system but *floating over* it, and one step of extra curvature is what
+/// says so without breaking the family.
+const double appDialogRadius = AppRadius.dialog;
 
 /// The app's dialog chrome: rounded surface, title in [TextTheme.titleLarge],
 /// right-aligned action row.
@@ -88,6 +92,23 @@ class AppDialog extends StatelessWidget {
   /// ink-splashing child would otherwise paint over them.
   final Clip clipBehavior;
 
+  /// Adds an ✕ in the heading's trailing corner, calling this.
+  ///
+  /// Opt-in rather than automatic. The spec draws one on every dialog, but
+  /// most of this app's dialogs already carry a Cancel in the footer and are
+  /// barrier-dismissible besides — a third way out is clutter, not clarity.
+  /// Reach for it on dialogs with no footer, or whose footer commits to
+  /// something and has nothing to dismiss with.
+  final VoidCallback? onClose;
+
+  /// Hairline rules separating the heading and the footer from the body.
+  ///
+  /// On by default: they are what let the body run edge-to-edge under a
+  /// heading without the two appearing to merge, which is the shape the spec
+  /// draws and the shape a scrolling body needs anyway. Only drawn on the
+  /// sides that actually have a neighbour.
+  final bool divided;
+
   const AppDialog({
     super.key,
     this.title,
@@ -103,6 +124,8 @@ class AppDialog extends StatelessWidget {
     this.scrollable = false,
     this.contentPadding,
     this.clipBehavior = Clip.none,
+    this.onClose,
+    this.divided = true,
   }) : assert(title == null || titleWidget == null,
             'Give AppDialog a title or a titleWidget, not both');
 
@@ -124,6 +147,8 @@ class AppDialog extends StatelessWidget {
     EdgeInsetsGeometry? contentPadding,
     Clip clipBehavior = Clip.none,
     bool barrierDismissible = true,
+    VoidCallback? onClose,
+    bool divided = true,
   }) {
     return showDialog<T>(
       context: context,
@@ -142,6 +167,8 @@ class AppDialog extends StatelessWidget {
         scrollable: scrollable,
         contentPadding: contentPadding,
         clipBehavior: clipBehavior,
+        onClose: onClose,
+        divided: divided,
       ),
     );
   }
@@ -163,13 +190,17 @@ class AppDialog extends StatelessWidget {
     // full-bleed list — while the title and actions above and below it stay
     // inset. The default absorbs the outer inset on whichever sides have no
     // neighbour to provide it.
+    // Without a rule between them, the heading's own bottom inset is the gap
+    // and the body adds none. With one, that inset now sits *above* the rule,
+    // so the body has to supply the space beneath it or the first line of
+    // content ends up flush against the hairline. Same on the footer side.
     body = Padding(
       padding: contentPadding ??
           EdgeInsets.only(
             left: _pad,
             right: _pad,
-            top: heading == null ? _pad : 0,
-            bottom: footer == null ? _pad : 0,
+            top: (heading == null || divided) ? _pad : 0,
+            bottom: (footer == null || divided) ? _pad : 0,
           ),
       child: body,
     );
@@ -198,20 +229,24 @@ class AppDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (heading != null)
+            if (heading != null) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(_pad, _pad, _pad, 16),
+                padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, divided ? _pad : 16),
                 child: heading,
               ),
+              if (divided) const Divider(height: 1),
+            ],
             // The only slot allowed to take the height left over, so a
             // maxHeight bounds the scrolling body rather than cutting the
             // action row off the bottom of the dialog.
             Flexible(child: body),
-            if (footer != null)
+            if (footer != null) ...[
+              if (divided) const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.fromLTRB(_pad, _pad, _pad, _pad),
                 child: footer,
               ),
+            ],
           ],
         ),
       ),
@@ -239,14 +274,51 @@ class AppDialog extends StatelessWidget {
       ],
     );
 
-    if (icon == null) return text;
+    if (icon == null && onClose == null) return text;
+
+    final accent = iconColor ?? colorScheme.primary;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 22, color: iconColor ?? colorScheme.primary),
-        const SizedBox(width: 10),
+        if (icon != null) ...[
+          // A plate, not a bare glyph. The spec gives the heading icon a
+          // tinted square so it reads as the dialog's subject rather than as
+          // decoration beside the title — and because `iconColor` already
+          // carries the dialog's mood, a destructive dialog passing
+          // `iconColor: error` gets the spec's red plate with no extra API.
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: AppAlpha.tint),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Icon(icon, size: 22, color: accent),
+          ),
+          const SizedBox(width: 14),
+        ],
         Expanded(child: text),
+        if (onClose != null) ...[
+          const SizedBox(width: 12),
+          IconButton(
+            icon: const Icon(Icons.close, size: AppSize.iconSm),
+            tooltip: AppLocalizations.of(context)!.close,
+            onPressed: onClose,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(
+              width: AppSize.iconButton,
+              height: AppSize.iconButton,
+            ),
+            style: IconButton.styleFrom(
+              foregroundColor: colorScheme.onSurfaceVariant,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                side: BorderSide(color: colorScheme.outlineVariant),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
