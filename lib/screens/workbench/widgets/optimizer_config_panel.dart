@@ -268,10 +268,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                   color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  widget.kbPath ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: _ElidedPath(
+                  path: widget.kbPath ?? '',
                   style: textTheme.labelSmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
@@ -567,6 +565,66 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         contentPadding: const EdgeInsets.all(12),
       ),
       style: Theme.of(context).textTheme.bodyMedium,
+    );
+  }
+}
+
+/// A filesystem path that loses its *head* when it does not fit, never its
+/// tail.
+///
+/// `TextOverflow.ellipsis` cuts the end, which on a path throws away the one
+/// segment that identifies it — `D:\github\gemini-prompt-generater\knowl…`
+/// tells the user nothing they did not already know, while `…\knowledge` tells
+/// them exactly which folder the assistant is reading. Whole segments are
+/// dropped rather than characters, so what remains is always a real path
+/// fragment.
+class _ElidedPath extends StatelessWidget {
+  final String path;
+  final TextStyle? style;
+
+  const _ElidedPath({required this.path, this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double widthOf(String text) {
+          final painter = TextPainter(
+            text: TextSpan(text: text, style: style),
+            textDirection: direction,
+            maxLines: 1,
+            textScaler: scaler,
+          )..layout();
+          return painter.width;
+        }
+
+        var shown = path;
+        if (widthOf(shown) > constraints.maxWidth) {
+          // Both separators, because the path comes from the host filesystem
+          // and a Windows path is displayed unchanged on any platform.
+          final segments = path.split(RegExp(r'[/\\]'))..removeWhere((s) => s.isEmpty);
+          final separator = path.contains(r'\') ? r'\' : '/';
+          // Never below the last segment: past that there is nothing left to
+          // shorten, and a bare "…" is worse than an overflowing name.
+          for (var keep = segments.length - 1; keep >= 1; keep--) {
+            final candidate = '…$separator${segments.sublist(segments.length - keep).join(separator)}';
+            shown = candidate;
+            if (widthOf(candidate) <= constraints.maxWidth) break;
+          }
+        }
+
+        return Text(
+          shown,
+          maxLines: 1,
+          // Still set: the final fallback is one very long segment, and it has
+          // to end somewhere rather than overflow the chip.
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        );
+      },
     );
   }
 }

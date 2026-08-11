@@ -116,13 +116,20 @@ class OptimizerReferencePanel extends StatelessWidget {
                                       ],
                                       Tooltip(
                                         message: l10n.optRemoveImage,
+                                        // Neutral, not the error colour it
+                                        // used to wear. Taking a picture off
+                                        // the list is undone by selecting it
+                                        // again — nothing is destroyed — and a
+                                        // red ✕ on every card made the panel
+                                        // read as a column of warnings.
                                         child: InkWell(
-                                          borderRadius: BorderRadius.circular(6),
+                                          customBorder: const CircleBorder(),
                                           onTap: () => workbenchUIState.removeAssistantImage(image),
                                           child: _Badge(
                                             icon: Icons.close,
                                             background: colorScheme.surface.withValues(alpha: 0.85),
-                                            foreground: colorScheme.error,
+                                            foreground: colorScheme.onSurfaceVariant,
+                                            circular: true,
                                           ),
                                         ),
                                       ),
@@ -179,15 +186,29 @@ class _Badge extends StatelessWidget {
   final Color background;
   final Color foreground;
 
-  const _Badge({this.text, this.icon, required this.background, required this.foreground});
+  /// A round plate rather than the default rounded square — for the ✕, whose
+  /// job is to read as a small dismiss control rather than as another chip in
+  /// the row of labels.
+  final bool circular;
+
+  const _Badge({
+    this.text,
+    this.icon,
+    required this.background,
+    required this.foreground,
+    this.circular = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: circular
+          ? const EdgeInsets.all(4)
+          : const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(6),
+        shape: circular ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: circular ? null : BorderRadius.circular(6),
       ),
       child: text != null
           ? Text(

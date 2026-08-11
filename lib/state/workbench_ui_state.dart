@@ -129,12 +129,25 @@ class WorkbenchUIState extends ChangeNotifier {
           anyMissing ? PromptOptimizerAgent.imageMissingNoticeToken : null,
     );
 
+    adoptOptimizerSession(session, existing);
+    return true;
+  }
+
+  /// Makes [session] the live one, replacing whatever was open.
+  ///
+  /// The registry swap is the part that matters: [PromptOptimizerAgent] looks
+  /// sessions up by id, so dropping the outgoing one and registering the
+  /// incoming one has to happen together with the field assignment or a turn
+  /// started afterwards writes into a session nothing is rendering.
+  void adoptOptimizerSession(
+    PromptOptimizerSession session,
+    List<AppImage> references,
+  ) {
     PromptOptimizerAgent.sessions.remove(optimizerSession.id);
     optimizerSession = session;
     PromptOptimizerAgent.sessions[session.id] = session;
-    optimizerReferenceImages = existing;
+    optimizerReferenceImages = references;
     notifyListeners();
-    return true;
   }
 
   /// Switching modes always starts a fresh conversation (mode is fixed per
@@ -262,6 +275,20 @@ class WorkbenchUIState extends ChangeNotifier {
   bool maintainAspectRatio = true;
   String samplingMethod = 'lanczos';
   final GlobalKey<State> cropKey = GlobalKey<State>();
+
+  /// The selection's size in source pixels, as the canvas currently has it.
+  ///
+  /// Published by the view because only it receives the editor's change
+  /// callback, and read by the toolbar so the width/height fields can stand at
+  /// the real numbers instead of empty placeholders. Two widgets, one fact —
+  /// it cannot live in either of them.
+  Size? cropPixelSize;
+
+  void setCropPixelSize(Size? size) {
+    if (cropPixelSize == size) return;
+    cropPixelSize = size;
+    notifyListeners();
+  }
 
   void setCropAspectRatio(double? ratio) {
     cropAspectRatio = ratio;

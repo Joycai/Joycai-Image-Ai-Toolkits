@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -826,9 +827,15 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 780),
           child: Container(
+            // A bordered card on `surface`, not a filled grey block. The
+            // transcript above is a column of outlined cards; a solid fill
+            // here read as one more message rather than as the place the user
+            // types, and it was the only input on the screen still wearing the
+            // fill the design spec replaced everywhere else.
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(14),
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppRadius.dialog),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             child: Column(
@@ -873,8 +880,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: colorScheme.surface,
-                                borderRadius: BorderRadius.circular(8),
+                                // A step up from the composer's own surface,
+                                // which it used to match — on the bordered
+                                // card the chip had no edge of its own left.
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(AppRadius.control),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
