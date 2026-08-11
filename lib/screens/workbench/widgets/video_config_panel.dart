@@ -309,7 +309,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       if (!overridesResolution)
         Expanded(
           child: DropdownButtonFormField<VeoResolution>(
-            decoration: InputDecoration(labelText: l10n.videoResolution, isDense: true),
+            decoration: InputDecoration(labelText: l10n.videoResolution),
             initialValue: appState.lastVideoResolution,
             items: VeoResolution.values.map((v) => DropdownMenuItem(
               value: v,
@@ -322,7 +322,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       if (!overridesAspectRatio)
         Expanded(
           child: DropdownButtonFormField<VeoAspectRatio>(
-            decoration: InputDecoration(labelText: l10n.videoAspectRatio, isDense: true),
+            decoration: InputDecoration(labelText: l10n.videoAspectRatio),
             initialValue: appState.lastVideoAspectRatio,
             items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
               value: v,
@@ -341,7 +341,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       content: Column(
         children: [
           DropdownButtonFormField<int>(
-            decoration: InputDecoration(labelText: l10n.channel, isDense: true),
+            decoration: InputDecoration(labelText: l10n.channel),
             initialValue: selectedChannelId,
             items: allChannels.map((c) => DropdownMenuItem(
               value: c.id,
@@ -356,7 +356,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            decoration: InputDecoration(labelText: l10n.model, isDense: true),  
+            decoration: InputDecoration(labelText: l10n.model),  
             initialValue: selectedModelDbId,
             items: videoModels.where((m) => m.channelId == selectedChannelId).map((m) => DropdownMenuItem(
               value: m.id,

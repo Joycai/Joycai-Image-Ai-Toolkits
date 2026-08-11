@@ -54,8 +54,6 @@ class ChannelAppearanceSection extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.displayName,
             hintText: l10n.nameHint,
-            isDense: true,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.label_outline, size: 20),
           ),
         ),
@@ -65,8 +63,6 @@ class ChannelAppearanceSection extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.tag,
             hintText: l10n.tagHint,
-            isDense: true,
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.tag, size: 20),
           ),
         ),
@@ -234,8 +230,6 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
                   decoration: const InputDecoration(
                     labelText: 'HEX',
                     prefixIcon: Icon(Icons.colorize, size: 20),
-                    isDense: true,
-                    border: OutlineInputBorder(),
                   ),
                   onChanged: (v) {
                     if (v.startsWith('#') && (v.length == 7 || v.length == 9)) {

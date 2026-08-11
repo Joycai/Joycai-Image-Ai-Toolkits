@@ -595,7 +595,6 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               hintText: isNewApi || isMidjourney
                   ? 'https://your-newapi-host.com'
                   : 'https://your-api.com/v1',
-              border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.link),
               helperText: isNewApi
                   ? l10n.newApiBaseHint

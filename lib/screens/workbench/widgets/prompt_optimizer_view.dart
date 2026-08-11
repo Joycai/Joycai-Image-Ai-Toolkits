@@ -1140,7 +1140,6 @@ class _AskUserCardState extends State<_AskUserCard> {
               hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
-              isDense: true,
               filled: true,
               fillColor: colorScheme.surfaceContainerHigh,
               border: OutlineInputBorder(

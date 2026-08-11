@@ -62,7 +62,6 @@ Future<bool> showPromptEditDialog(
                 controller: titleCtrl,
                 decoration: InputDecoration(
                   labelText: l10n.title,
-                  border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.title),
                 ),
               ),
@@ -152,14 +151,14 @@ Future<bool> showSystemPromptEditDialog(
                 children: [
                   Expanded(
                     flex: 2,
-                    child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title, border: const OutlineInputBorder())),
+                    child: TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l10n.title)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 1,
                     child: DropdownButtonFormField<String>(
                       initialValue: selectedType,
-                      decoration: InputDecoration(labelText: l10n.templateType, border: const OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: l10n.templateType),
                       items: [
                         DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
                         DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),

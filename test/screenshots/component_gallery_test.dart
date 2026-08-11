@@ -122,6 +122,27 @@ class _Gallery extends StatelessWidget {
                   child: AppTextField(key: const ValueKey('focused-field'), hint: '聚焦态'),
                 ),
               ]),
+              const SizedBox(height: 12),
+              // Bare TextField / DropdownButtonFormField, styled by nothing but
+              // `inputDecorationTheme`. This is what ~40 call sites across the
+              // screens actually are — the ones whose hand-rolled decorations
+              // were deleted in favour of the theme — so if the theme ever
+              // stops reaching them, it shows up here rather than on one screen
+              // nobody happened to open.
+              Row(children: [
+                const Expanded(
+                  child: TextField(decoration: InputDecoration(labelText: '裸 TextField · 仅靠主题')),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(labelText: '下拉'),
+                    initialValue: 0,
+                    items: const [DropdownMenuItem(value: 0, child: Text('Lanczos'))],
+                    onChanged: (_) {},
+                  ),
+                ),
+              ]),
               const _Label('开关与选择'),
               Row(children: [
                 Switch(value: true, onChanged: (_) {}),

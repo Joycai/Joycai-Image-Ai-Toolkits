@@ -679,7 +679,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       width: 24,
       child: TextField(
         controller: ctrl,
-        decoration: const InputDecoration(isDense: true, border: InputBorder.none, contentPadding: EdgeInsets.zero),
+        decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
@@ -787,7 +787,6 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
             child: TextField(
               controller: ctrl,
               decoration: const InputDecoration(
-                isDense: true,
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
