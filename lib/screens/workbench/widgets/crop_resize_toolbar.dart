@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../../../core/app_paths.dart';
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
@@ -210,6 +207,125 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     uiState.setTargetDimensions(null, null);
   }
 
+  /// The last stop before an original is replaced.
+  ///
+  /// Three outcomes, not two: `true` overwrite, `false` save a copy instead,
+  /// `null` cancelled. The middle one is the point of the dialog — a confirm
+  /// that only offers "yes" and "no" leaves someone who wanted to keep the
+  /// original with nothing to do but start over, so the safe alternative is
+  /// offered here, in the moment they are thinking about it.
+  Future<bool?> _confirmOverwrite({
+    required AppLocalizations l10n,
+    required String fileName,
+    required String originalSize,
+    required String outputSize,
+    required String copyDestination,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mono = textTheme.labelMedium?.copyWith(fontFamily: 'monospace');
+
+    return AppDialog.show<bool>(
+      context,
+      icon: Icons.warning_amber_rounded,
+      // Carries the whole dialog's mood: AppDialog tints the heading's icon
+      // plate from this, so naming the error colour here is what makes the
+      // plate red rather than the accent.
+      iconColor: colorScheme.error,
+      title: l10n.overwriteConfirmTitle,
+      subtitle: l10n.overwriteConfirmSubtitle,
+      maxWidth: 480,
+      onClose: () => Navigator.pop(context, null),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.overwriteConfirmMessage, style: textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          // What is being replaced, and what it becomes. The old→new pair is
+          // the one fact that makes this decision answerable, so it gets a
+          // surface of its own instead of a line of body text.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.image_outlined, size: 18, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    fileName,
+                    style: mono,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(originalSize, style: mono?.copyWith(color: colorScheme.onSurfaceVariant)),
+                const SizedBox(width: 7),
+                Icon(Icons.arrow_forward, size: 14, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 7),
+                Text(
+                  outputSize,
+                  // The new dimensions in the error colour: this number is the
+                  // irreversible part, and it is what someone scanning the
+                  // dialog should land on.
+                  style: mono?.copyWith(color: colorScheme.error, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: colorScheme.accentTint,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 16, color: colorScheme.onAccentTint),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${l10n.overwriteConfirmKeepOriginalHint}'
+                    '${l10n.cropResizeWillSaveTo(copyDestination)}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onAccentTint,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, null),
+        ),
+        AppButton(
+          label: l10n.overwriteConfirmSaveCopyInstead,
+          variant: AppButtonVariant.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.overwriteSource,
+          variant: AppButtonVariant.destructive,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+  }
+
   Future<void> _handleSave({bool overwrite = false}) async {
     final l10n = AppLocalizations.of(context)!;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
@@ -231,55 +347,19 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
     if (overwrite) {
       final originalMeta = await ImageMetadataService().getMetadata(sourceImage.path);
+      // Resolved, not guessed: the hint below names the file the copy would
+      // become, so it asks the same resolver the save will use.
+      final copyTarget = await ImageProcessingService().resolveCropCopyTarget(sourceImage.path);
       if (!mounted) return;
 
-      final colorScheme = Theme.of(context).colorScheme;
-      final originalSize =
-          originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–';
-
-      // true = overwrite, false = save a copy instead, null = cancelled.
-      final confirmed = await AppDialog.show<bool>(
-        context,
-        title: l10n.overwriteConfirmTitle,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.overwriteConfirmMessage),
-            const SizedBox(height: 14),
-            Text(
-              sourceImage.name,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              '$originalSize → $outputWidth×$outputHeight',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-        actions: [
-          AppButton(
-            label: l10n.cancel,
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.pop(context, null),
-          ),
-          AppButton(
-            label: l10n.overwriteConfirmSaveCopyInstead,
-            variant: AppButtonVariant.secondary,
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          AppButton(
-            label: l10n.overwriteSource,
-            variant: AppButtonVariant.destructive,
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
+      final confirmed = await _confirmOverwrite(
+        l10n: l10n,
+        fileName: sourceImage.name,
+        originalSize:
+            originalMeta != null ? '${originalMeta.width}×${originalMeta.height}' : '–',
+        outputSize: '$outputWidth×$outputHeight',
+        copyDestination:
+            '${l10n.cropResizeTempWorkspaceLabel} / ${copyTarget.fileName}',
       );
 
       if (confirmed == null) return;
@@ -317,16 +397,20 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         targetPath = sourceImage.path;
         targetName = sourceImage.name;
       } else {
-        final tempDir = await AppPaths.getTempDirectory();
-        final outputDir = Directory(p.join(tempDir, 'joycai', 'processed'));
-        if (!outputDir.existsSync()) outputDir.createSync(recursive: true);
-        
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        targetName = 'crop_${p.basenameWithoutExtension(sourceImage.path)}_$timestamp.png';
-        targetPath = p.join(outputDir.path, targetName);
+        final target = await ImageProcessingService().resolveCropCopyTarget(sourceImage.path);
+        target.ensureExists();
+        targetName = target.fileName;
+        targetPath = target.path;
       }
 
-      await ImageProcessingService().saveImage(bytes: processedBytes, targetPath: targetPath);
+      await ImageProcessingService().saveImage(
+        bytes: processedBytes,
+        targetPath: targetPath,
+        // The dialog above is the only thing that can produce `overwrite:
+        // true`, so this is where the user's answer reaches the file system.
+        // The service refuses to clobber anything without it.
+        allowOverwrite: overwrite,
+      );
 
       final successMessage = overwrite ? l10n.overwriteSuccess : l10n.saveToTempSuccess;
 

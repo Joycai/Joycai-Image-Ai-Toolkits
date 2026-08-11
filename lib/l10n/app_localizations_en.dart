@@ -1943,6 +1943,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overwriteConfirmSaveCopyInstead => 'Save Copy Instead';
 
   @override
+  String get overwriteConfirmSubtitle => 'This action cannot be undone.';
+
+  @override
+  String get overwriteConfirmKeepOriginalHint =>
+      'To keep the original, use Save Copy instead.';
+
+  @override
   String get saveToTempSuccess => 'Image saved to temporary workspace';
 
   @override

@@ -1885,6 +1885,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get overwriteConfirmSaveCopyInstead => '改为保存副本';
 
   @override
+  String get overwriteConfirmSubtitle => '此操作无法撤销';
+
+  @override
+  String get overwriteConfirmKeepOriginalHint => '如需保留原图，可改用「保存副本」。';
+
+  @override
   String get saveToTempSuccess => '已保存至临时工作区';
 
   @override
@@ -4326,6 +4332,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get overwriteConfirmSaveCopyInstead => '改為儲存副本';
+
+  @override
+  String get overwriteConfirmSubtitle => '此操作無法復原';
+
+  @override
+  String get overwriteConfirmKeepOriginalHint => '如需保留原圖，可改用「儲存副本」。';
 
   @override
   String get saveToTempSuccess => '圖片已儲存至臨時工作區';
