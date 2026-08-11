@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/design_tokens.dart';
+
 /// A rounded content card for grouping related widgets inside a panel — a
 /// settings block, a list row, a summary tile.
 ///
@@ -44,7 +46,7 @@ class AppCard extends StatelessWidget {
       // shape, never borderRadius: Material asserts if given both, and the
       // outlined tone needs a side.
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: outlined ? BorderSide(color: colorScheme.outlineVariant) : BorderSide.none,
       ),
       child: InkWell(

@@ -102,6 +102,6 @@ void main() {
     final shape = dialog.shape! as RoundedRectangleBorder;
 
     expect(dialog.backgroundColor, theme.colorScheme.surfaceContainer);
-    expect(shape.borderRadius, BorderRadius.circular(12));
+    expect(shape.borderRadius, BorderRadius.circular(appDialogRadius));
   });
 }

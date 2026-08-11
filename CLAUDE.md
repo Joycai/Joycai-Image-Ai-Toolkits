@@ -13,6 +13,7 @@ flutter run --release                              # run app (use --release on m
 flutter analyze                                    # MUST show "No issues found!" before any commit
 flutter build macos                                # or windows / linux / apk / ipa
 flutter test test/screenshots                      # render every screen to build/ui-screenshots/*.png
+flutter test test/screenshots/component_gallery_test.dart  # every component, 7 theme seeds × light/dark
 ```
 
 ## Project Map
@@ -49,12 +50,14 @@ Read the relevant note before changing that subsystem — each records invariant
 that fail silently when broken, and alternatives already tried and rejected.
 
 - **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart`, `context_budget.dart`, or `knowledge_base_service.dart`.
+- **[Design tokens & multi-theme rule](docs/architecture/design-tokens.md)** — how the design spec's single teal maps onto 7 seed colours: the `onAccentTint` brightness branch, the alpha ladder (and its dark-mode ceiling), which colours must *not* follow the seed, and the deliberate divergences from the spec. Required reading before touching `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, or any accent/status colour in `widgets/`.
 
 ## Development Rules
 
 - **`flutter analyze` must pass** (zero issues, info-level included) after every code change.
 - **Responsive UI:** all changes must work on Mobile (<600px), Tablet (<1000px), Desktop (≥1000px). Use `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). FileBrowser and ImageDownloader are desktop/tablet-only.
 - **Visual debugging:** to actually *see* a layout rather than infer it, run `flutter test test/screenshots` and open the PNGs in `build/ui-screenshots/`. They render the real screens with seeded data at all three widths, in light and dark. Overflows are printed to the run output, not asserted — this is never a regression gate. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
+  For anything touching accent or status colour, use `component_gallery_test.dart` instead: it puts every component on one page and renders it under all 7 theme seeds in both brightnesses (14 PNGs), which is the only way to see whether a colour rule survives a seed change. `shoot()` also takes a `seedColor` if you need a whole screen at a specific seed.
 - **State:** use the existing state classes. Never use `StatefulWidget` for shared or persistent data. Always create new list/object instances before `notifyListeners()` — do not mutate in place.
 - **Data persistence:** all user data goes through `DatabaseService` and the repository layer.
 - **Business logic:** belongs in `lib/services/`, not in widgets or screens.

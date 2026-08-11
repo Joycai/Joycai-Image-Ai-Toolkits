@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_tool_button.dart';
 
 /// Covers [AppToolButton], the quiet toolbar action.
@@ -37,8 +38,11 @@ void main() {
     );
 
     final style = styleOf(tester);
-    expect(style.foregroundColor?.resolve(const {}), theme.colorScheme.primary);
-    expect(style.backgroundColor?.resolve(const {})?.a, greaterThan(0));
+    // `onAccentTint`, not `primary`. The label sits on a wash of primary, and
+    // primary on its own tint is one tone reading against itself — legible in
+    // light by luck, washed out in dark where primary is already tone 80.
+    expect(style.foregroundColor?.resolve(const {}), theme.colorScheme.onAccentTint);
+    expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.accentTint);
   });
 
   testWidgets('the hover overlay stays neutral', (tester) async {

@@ -48,16 +48,20 @@ void main() {
     expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.error);
   });
 
-  testWidgets('secondary takes the tonal style, overriding the app-wide filled theme', (tester) async {
-    // Without this override every FilledButton.tonal would inherit the
-    // primary-filled background named in FilledButtonThemeData — the exact
-    // trap tonalButtonStyle exists to route around.
+  testWidgets('secondary is an outline, spending no accent on itself', (tester) async {
+    // This was a tonal FilledButton — a secondaryContainer slab — until the
+    // design spec landed. The seed's colour belongs on the action the user is
+    // meant to take; a filled secondary spent it on the one beside it. The
+    // separation from `primary` is now weight, not hue.
     await tester.pumpWidget(host(AppButton(label: 'Maybe', onPressed: () {}, variant: AppButtonVariant.secondary)));
 
     final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
-    final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
+    expect(find.byType(OutlinedButton), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing);
 
-    expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.secondaryContainer);
+    final style = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
+    expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.surface);
+    expect(style.foregroundColor?.resolve(const {}), theme.colorScheme.onSurface);
   });
 
   testWidgets('text variant renders as a TextButton', (tester) async {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -22,10 +23,11 @@ enum _TaskFilter { all, running, pending, done, failed }
 /// The colour a status is spoken in, shared by a task's accent stripe, its
 /// leading tile and its count in the header — so one glance down the stripes
 /// answers the same question the header summary does.
-Color _statusColor(TaskStatus status, ColorScheme colorScheme) => switch (status) {
+Color _statusColor(TaskStatus status, ColorScheme colorScheme, AppSemanticColors semantic) =>
+    switch (status) {
       TaskStatus.processing => colorScheme.primary,
       TaskStatus.pending => colorScheme.onSurfaceVariant,
-      TaskStatus.completed => Colors.green,
+      TaskStatus.completed => semantic.success,
       TaskStatus.failed => colorScheme.error,
       TaskStatus.cancelled => colorScheme.outline,
     };
@@ -279,7 +281,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       spans.add(TextSpan(text: '  ·  ', style: TextStyle(color: colorScheme.outline)));
       spans.add(TextSpan(
         text: '$label $count',
-        style: TextStyle(color: _statusColor(status, colorScheme), fontWeight: FontWeight.w600),
+        style: TextStyle(color: _statusColor(status, colorScheme, context.semantic), fontWeight: FontWeight.w600),
       ));
     }
 
@@ -579,7 +581,7 @@ class _TaskCardState extends State<_TaskCard> {
 
     final isProcessing = task.status == TaskStatus.processing;
     final isFailed = task.status == TaskStatus.failed;
-    final accent = _statusColor(task.status, colorScheme);
+    final accent = _statusColor(task.status, colorScheme, context.semantic);
 
     // A card of its own rather than a PanelCard: the stripe has to reach both
     // edges, and a failed card carries a wash of its status through the surface.

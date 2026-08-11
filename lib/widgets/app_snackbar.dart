@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_semantic_colors.dart';
+
 enum _AppSnackBarKind { success, error, warning, info }
 
 /// A single button on a toast, for the case where the message names something
@@ -49,7 +51,7 @@ class AppSnackBar {
     AppSnackBarAction? action,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final semantic = context.semantic;
     final (background, foreground, icon) = switch (kind) {
       _AppSnackBarKind.success => (
           colorScheme.primaryContainer,
@@ -57,15 +59,18 @@ class AppSnackBar {
           Icons.check_circle_outline,
         ),
       _AppSnackBarKind.error => (colorScheme.errorContainer, colorScheme.onErrorContainer, Icons.error_outline),
-      // Amber literals rather than a scheme role, and deliberately so. Material
-      // has no warning role; the nearest, tertiaryContainer, is derived from
-      // whatever seed the user picked, so "warning" would be teal for one user
-      // and pink for another — which is no signal at all. Amber is the one
-      // status colour that carries meaning independently of the palette, and
-      // the log console already spells its levels out the same way.
+      // Amber rather than a scheme role, and deliberately so. Material has no
+      // warning role; the nearest, tertiaryContainer, is derived from whatever
+      // seed the user picked, so "warning" would be teal for one user and pink
+      // for another — which is no signal at all.
+      //
+      // That reasoning was right and the literals were the problem: it was
+      // written out here, again in log_console.dart and a third time in
+      // task_log_dialog.dart, at three different ambers. AppSemanticColors is
+      // now the one place it lives.
       _AppSnackBarKind.warning => (
-          isDark ? const Color(0xFF4A3A00) : const Color(0xFFFFF1C7),
-          isDark ? const Color(0xFFFFD180) : const Color(0xFF6B4E00),
+          semantic.warningContainer,
+          semantic.onWarningContainer,
           Icons.warning_amber_rounded,
         ),
       // Not errorContainer/primaryContainer: info is neither good nor bad

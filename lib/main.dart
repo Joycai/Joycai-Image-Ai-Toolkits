@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import 'core/app_theme.dart';
+import 'core/design_tokens.dart';
 import 'core/responsive.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/batch/task_queue_screen.dart';
@@ -29,6 +30,7 @@ import 'services/task_queue_service.dart';
 import 'services/video_thumbnail_service.dart';
 import 'services/window_chrome_service.dart';
 import 'state/app_state.dart';
+import 'widgets/app_status_badge.dart';
 import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
@@ -387,12 +389,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
+                    // Both stops from the seed. The second used to be a fixed
+                    // lavender, which read as intentional only for the one
+                    // seed near it and fought the other six — an indigo app
+                    // with a purple-tipped logo looks like a rendering bug.
+                    // `primaryContainer` is the seed's own lighter tone, so
+                    // the sweep stays a sweep at every theme.
                     gradient: LinearGradient(
-                      colors: [colorScheme.primary, const Color(0xFFB794F6)],
+                      colors: [colorScheme.primary, colorScheme.primaryContainer],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: const Icon(Icons.auto_awesome, size: 20, color: Colors.white),
                 ),
@@ -583,13 +591,17 @@ class _RailItemState extends State<_RailItem> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    // Selected takes `onAccentTint`, not `primary`: the label sits on a wash
+    // of primary, and primary on its own tint is one tone reading against
+    // itself — fine in light by accident, washed out in dark where primary is
+    // already the pale tone 80.
     final color = widget.isSelected
-        ? colorScheme.primary
+        ? colorScheme.onAccentTint
         : _hovering
             ? colorScheme.onSurfaceVariant
             : colorScheme.onSurfaceVariant.withAlpha(140);
     final bgColor = widget.isSelected
-        ? colorScheme.primary.withAlpha(28)
+        ? colorScheme.accentTint
         : _hovering
             ? colorScheme.onSurfaceVariant.withAlpha(16)
             : Colors.transparent;
@@ -620,25 +632,11 @@ class _RailItemState extends State<_RailItem> {
                       Positioned(
                         top: -5,
                         right: -8,
-                        child: Container(
-                          constraints: const BoxConstraints(minWidth: 15),
-                          height: 15,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              widget.badge > 99 ? '99+' : '${widget.badge}',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                        ),
+                        // Deliberately not the spec's red. This counts work in
+                        // flight, and red already means "a task failed" all
+                        // over this app — a busy queue would read as a broken
+                        // one. See AppCountBadge.
+                        child: AppCountBadge(count: widget.badge),
                       ),
                   ],
                 ),
@@ -685,8 +683,9 @@ class _DrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final color = isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
-    final bg = isSelected ? colorScheme.primary.withAlpha(24) : Colors.transparent;
+    // Same pairing as _RailItem above — this is the drawer's copy of it.
+    final color = isSelected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
+    final bg = isSelected ? colorScheme.accentTint : Colors.transparent;
 
     return GestureDetector(
       onTap: onTap,
@@ -695,7 +694,7 @@ class _DrawerItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
           children: [

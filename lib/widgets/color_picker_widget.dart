@@ -70,7 +70,10 @@ class ColorPickerWidget extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .labelMedium
-                ?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey),
+                ?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
         ),
         const SizedBox(height: 8),
@@ -89,7 +92,11 @@ class ColorPickerWidget extends StatelessWidget {
                   color: color,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? Colors.black : Colors.transparent,
+                    // `onSurface`, not black: this ring marks the chosen
+                    // swatch, and black on a near-black canvas marked nothing.
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Colors.transparent,
                     width: 2,
                   ),
                 ),

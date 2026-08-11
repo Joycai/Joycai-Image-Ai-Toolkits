@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 
 /// Covers the capabilities [AppDialog] grew so the app's ~50 hand-rolled
@@ -214,9 +215,10 @@ void main() {
     expect(dots.left, lessThan(next.left), reason: 'The override lost its own alignment');
   });
 
-  testWidgets('the radius matches the panels, not Material stock', (tester) async {
-    // Settled deliberately: one radius across the app, so a dialog reads as
-    // another surface in the same system.
+  testWidgets('the radius sits one step above the cards, not at Material stock', (tester) async {
+    // Settled deliberately. A dialog is in the same system as the cards but
+    // floating over it, and one step of extra curvature is what says so —
+    // where Material's own 28 would make it a visitor from another app.
     await tester.pumpWidget(host(const AppDialog(content: SizedBox.shrink())));
 
     final dialog = tester.widget<Dialog>(
@@ -224,6 +226,7 @@ void main() {
     final shape = dialog.shape! as RoundedRectangleBorder;
 
     expect(shape.borderRadius, BorderRadius.circular(appDialogRadius));
-    expect(appDialogRadius, 12);
+    expect(appDialogRadius, AppRadius.dialog);
+    expect(AppRadius.dialog, greaterThan(AppRadius.lg));
   });
 }

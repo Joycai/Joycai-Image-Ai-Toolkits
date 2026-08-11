@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/app_section.dart';
@@ -60,7 +61,7 @@ class _AboutSectionState extends State<AboutSection> {
         ListTile(
           title: Text(l10n.aboutGithubRepo),
           subtitle: Text(l10n.aboutViewSource),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
           leading: const Icon(Icons.code),
           trailing: const Icon(Icons.open_in_new, size: 18),
           onTap: () => FileUtils.openUri(Uri.parse(_githubUrl)),
@@ -69,7 +70,7 @@ class _AboutSectionState extends State<AboutSection> {
         ListTile(
           title: Text(l10n.aboutLicense),
           subtitle: const Text('MIT License'),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
           leading: const Icon(Icons.gavel_outlined),
         ),
         const SizedBox(height: 24),

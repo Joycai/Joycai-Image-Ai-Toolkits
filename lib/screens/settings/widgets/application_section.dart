@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/app_paths.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
@@ -119,7 +120,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         ListTile(
           title: Text(l10n.assistantRetention),
           subtitle: Text(l10n.assistantRetentionDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
           trailing: DropdownButton<int>(
             value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
             underline: const SizedBox.shrink(),
@@ -137,7 +138,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         ListTile(
           title: Text(l10n.assistantContextRatio),
           subtitle: Text(l10n.assistantContextRatioDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
           trailing: DropdownButton<double>(
             value: _contextRatios.contains(_assistantContextRatio)
                 ? _assistantContextRatio
@@ -184,7 +185,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         subtitle,
         style: warn ? TextStyle(color: colorScheme.error) : null,
       ),
-      shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -221,7 +222,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
           title: Text(l10n.outputDirectory),
           subtitle: Text(_outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text),
           trailing: const Icon(Icons.folder_open),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
           onTap: () async {
             String? path = await FilePicker.getDirectoryPath();
             if (path != null) {
