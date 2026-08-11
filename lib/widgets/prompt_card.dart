@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/prompt.dart';
 
@@ -78,46 +79,63 @@ class PromptCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+    // Everything on this row apart from the title is fixed-width chrome — a
+    // chevron and up to five icon buttons. On a phone that leaves the title a
+    // word at best, and a card carrying two tags overflows outright. The tags
+    // are the one part that can move, so below the mobile breakpoint they drop
+    // to a line of their own, indented to meet the preview text underneath.
+    final tagsInline = !Responsive.isMobile(context);
+
     return InkWell(
       onTap: onToggle,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: 8),
-            ],
-            AnimatedRotation(
-              duration: const Duration(milliseconds: 200),
-              turns: isExpanded ? 0.25 : 0,
-              child: Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: isExpanded ? colorScheme.primary : colorScheme.outline,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                prompt.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
-                      color: isExpanded ? colorScheme.primary : colorScheme.onSurface,
-                    ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (showCategory) ...[
-              _buildTagsList(context),
-              const SizedBox(width: 8),
-            ],
+            Row(
+              children: [
+                if (leading != null) ...[
+                  leading!,
+                  const SizedBox(width: 8),
+                ],
+                AnimatedRotation(
+                  duration: const Duration(milliseconds: 200),
+                  turns: isExpanded ? 0.25 : 0,
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: isExpanded ? colorScheme.primary : colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    prompt.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
+                          color: isExpanded ? colorScheme.primary : colorScheme.onSurface,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (showCategory && tagsInline) ...[
+                  _buildTagsList(context, alignment: WrapAlignment.end),
+                  const SizedBox(width: 8),
+                ],
 
-            // Reordering actions
-            if (onMoveToTop != null || onMoveToBottom != null)
-              _buildSortActions(context, colorScheme),
+                // Reordering actions
+                if (onMoveToTop != null || onMoveToBottom != null)
+                  _buildSortActions(context, colorScheme),
 
-            ...?actions,
+                ...?actions,
+              ],
+            ),
+            if (showCategory && !tagsInline)
+              Padding(
+                padding: const EdgeInsets.only(left: 28, top: 8),
+                child: _buildTagsList(context),
+              ),
           ],
         ),
       ),
@@ -150,15 +168,15 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTagsList(BuildContext context) {
-    final displayTags = prompt.tags.isEmpty 
-        ? [null] 
+  Widget _buildTagsList(BuildContext context, {WrapAlignment alignment = WrapAlignment.start}) {
+    final displayTags = prompt.tags.isEmpty
+        ? [null]
         : prompt.tags;
 
     return Wrap(
       spacing: 4,
       runSpacing: 4,
-      alignment: WrapAlignment.end,
+      alignment: alignment,
       children: displayTags.map((t) => _buildCategoryTag(
             context,
         t?.name ?? 'General',

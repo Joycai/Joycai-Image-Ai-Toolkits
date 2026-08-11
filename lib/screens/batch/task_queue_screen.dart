@@ -693,67 +693,95 @@ class _TaskCardState extends State<_TaskCard> {
 
     final muted = textTheme.bodySmall!.copyWith(color: colorScheme.onSurfaceVariant);
     final (marker, modelId) = _splitModelMarker(task.modelId);
-    final children = <Widget>[];
-
-    void addSeparator() {
-      if (children.isEmpty) return;
-      children.add(Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7),
-        child: Text('·', style: textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
-      ));
-    }
-
-    if (marker != null) {
-      children.add(Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: _MetaBadge(label: marker, color: colorScheme.onSurfaceVariant),
-      ));
-    }
-    children.add(Flexible(
-      child: Text(
-        _shortModelId(modelId),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: muted.copyWith(fontFamily: 'monospace'),
+    // One entry per fact, each indivisible: the marker rides with the model id
+    // it qualifies, the clock with the duration it measures. What the line is
+    // allowed to break between is decided here.
+    final facts = <Widget>[
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (marker != null) ...[
+            _MetaBadge(label: marker, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              _shortModelId(modelId),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: muted.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+        ],
       ),
-    ));
+    ];
 
     if (task.channelTag != null) {
-      addSeparator();
-      children.add(_MetaBadge(
+      facts.add(_MetaBadge(
         label: task.channelTag!,
         color: Color(task.channelColor ?? 0xFF607D8B),
       ));
     }
 
     if (task.imagePaths.length > 1) {
-      addSeparator();
-      children.add(Text(l10n.filesCount(task.imagePaths.length), style: muted));
+      facts.add(Text(l10n.filesCount(task.imagePaths.length), style: muted));
     }
 
     switch (task.status) {
       case TaskStatus.pending:
         final position = _queuePosition(task);
         if (position > 0) {
-          addSeparator();
-          children.add(Text(l10n.queuedPosition(position), style: muted));
+          facts.add(Text(l10n.queuedPosition(position), style: muted));
         }
       case TaskStatus.completed:
         final duration = _elapsed(task);
         if (duration != null) {
-          addSeparator();
-          children.add(Icon(Icons.schedule, size: 12, color: colorScheme.onSurfaceVariant));
-          children.add(const SizedBox(width: 5));
-          children.add(Text(l10n.tookDuration(duration), style: muted));
+          facts.add(Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.schedule, size: 12, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 5),
+              Text(l10n.tookDuration(duration), style: muted),
+            ],
+          ));
         }
       case TaskStatus.cancelled:
-        addSeparator();
-        children.add(Text(l10n.statusCancelled, style: muted));
+        facts.add(Text(l10n.statusCancelled, style: muted));
       default:
         break;
     }
 
-    return Row(mainAxisSize: MainAxisSize.min, children: children);
+    // A Wrap, not a Row: on a phone the title column is ~230px and four facts
+    // plus their separators do not fit on one line. A Row could only get there
+    // by truncating, and every one of these is short enough that a second line
+    // costs less than an ellipsis does. Wide layouts never reach the wrap point
+    // and read exactly as before.
+    //
+    // Each dot travels with the fact in front of it, so a line that wraps opens
+    // on the next fact instead of on a stray separator.
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 4,
+      children: [
+        for (int i = 0; i < facts.length; i++)
+          if (i == facts.length - 1)
+            facts[i]
+          else
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: facts[i]),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  child: Text(
+                    '·',
+                    style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+                  ),
+                ),
+              ],
+            ),
+      ],
+    );
   }
 
   // ── Trailing: status/action → time → thumbnail → menu ──────────────────────
