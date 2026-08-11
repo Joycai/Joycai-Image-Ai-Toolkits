@@ -66,7 +66,17 @@ class Win32Window {
   //
   // The colour attributes need Windows 11 (build 22000+); on older systems
   // DwmSetWindowAttribute simply fails and the caption keeps its OS theme.
-  void SetCaptionColors(COLORREF caption, COLORREF text, bool dark);
+  // What each of the three DwmSetWindowAttribute calls returned. They are
+  // reported rather than ignored because a silent failure here is
+  // indistinguishable from the feature never having been wired up -- which
+  // is exactly how it went unnoticed through three releases.
+  struct CaptionColorResult {
+    HRESULT dark_mode;
+    HRESULT caption;
+    HRESULT text;
+  };
+
+  CaptionColorResult SetCaptionColors(COLORREF caption, COLORREF text, bool dark);
 
  protected:
   // Processes and route salient window messages for mouse handling,

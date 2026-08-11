@@ -26,11 +26,11 @@ void main() {
 
   /// Installs a handler that records calls and answers with [reject] set to
   /// true when the runner should refuse them.
-  void mockRunner({bool reject = false}) {
+  void mockRunner({bool reject = false, Map<String, int>? hresults}) {
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       if (reject) throw PlatformException(code: 'bad_args', message: 'nope');
-      return null;
+      return hresults ?? const {'darkMode': 0, 'caption': 0, 'text': 0};
     });
   }
 
@@ -127,6 +127,64 @@ void main() {
       await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
 
       expect(errorFrom, 'window_chrome_service');
+    });
+
+    test('it reports what DWM did, because nothing else can see it', () async {
+      // The caption is painted by the window manager, outside anything
+      // Flutter renders — no widget test and no screenshot can reach it. The
+      // platform's own answer in the execution log is the only evidence the
+      // feature works, and its absence is what let a dead channel pass for a
+      // working one across three releases.
+      mockRunner();
+
+      final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+
+      expect(report, isNotNull);
+      expect(report, contains('applied'));
+    });
+
+    test('success is said once, not once per animation frame', () async {
+      // A theme switch is animated, so this runs eight or nine times with
+      // interpolated colours. Applying each frame is deliberate — the caption
+      // then fades with the UI — but nine identical log lines per switch bury
+      // the user's own output, which is what the execution log is for.
+      mockRunner();
+      final light = theme(Brightness.light).colorScheme;
+
+      final first = await WindowChromeService.applyTheme(light);
+      // Distinct colours, as each animation frame would be.
+      final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+      final third = await WindowChromeService.applyTheme(light);
+
+      expect(first, isNotNull);
+      expect(second, isNull);
+      expect(third, isNull);
+      expect(calls, hasLength(3), reason: 'the later frames were not applied to the caption');
+    });
+
+    test('a failure is said every time, however often it repeats', () async {
+      // The opposite rule. A caption that silently stopped working is the
+      // whole defect this service has already shipped once.
+      mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': 0});
+
+      final first = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+      final second = await WindowChromeService.applyTheme(theme(Brightness.dark).colorScheme);
+
+      expect(first, contains('refused'));
+      expect(second, contains('refused'));
+    });
+
+    test('a partial refusal names the attribute that failed', () async {
+      // Windows 10 takes the dark-mode flag and refuses the two colours, so
+      // "it worked" and "it did nothing" have to be tellable apart per
+      // attribute rather than as one boolean.
+      mockRunner(hresults: const {'darkMode': 0, 'caption': -2147024809, 'text': -2147024809});
+
+      final report = await WindowChromeService.applyTheme(theme(Brightness.light).colorScheme);
+
+      expect(report, contains('refused'));
+      expect(report, contains('caption'));
+      expect(report, isNot(contains('darkMode')), reason: 'the attribute that succeeded was named as a failure');
     });
 
     test('a rejected call is retried on the next theme change', () async {

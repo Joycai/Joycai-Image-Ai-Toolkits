@@ -139,8 +139,16 @@ bool FlutterWindow::OnCreate() {
           }
         }
 
-        SetCaptionColors(ToColorRef(caption), ToColorRef(text), dark);
-        result->Success();
+        const auto applied =
+            SetCaptionColors(ToColorRef(caption), ToColorRef(text), dark);
+        result->Success(flutter::EncodableValue(flutter::EncodableMap{
+            {flutter::EncodableValue("darkMode"),
+             flutter::EncodableValue(static_cast<int32_t>(applied.dark_mode))},
+            {flutter::EncodableValue("caption"),
+             flutter::EncodableValue(static_cast<int32_t>(applied.caption))},
+            {flutter::EncodableValue("text"),
+             flutter::EncodableValue(static_cast<int32_t>(applied.text))},
+        }));
       });
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
