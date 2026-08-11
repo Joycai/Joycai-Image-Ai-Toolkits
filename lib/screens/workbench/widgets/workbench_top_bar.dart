@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
@@ -264,24 +266,27 @@ class _ToolsMenu extends StatelessWidget {
           ),
         );
       }).toList(),
+      // The mobile stand-in for the row of AppToolButtons, so it takes the
+      // same active treatment they do — the tint ladder and `onAccentTint`,
+      // not a hand-picked alpha and `primary` on top of it.
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: isToolActive ? colorScheme.primary.withAlpha(28) : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
+          color: isToolActive ? colorScheme.accentTint : Colors.transparent,
+          borderRadius: BorderRadius.circular(appButtonRadius),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.handyman_outlined,
-              size: 20,
-              color: isToolActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              size: AppSize.iconLg,
+              color: isToolActive ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
             ),
             Icon(
               Icons.arrow_drop_down,
-              size: 18,
-              color: isToolActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              size: AppSize.iconMd,
+              color: isToolActive ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
             ),
           ],
         ),

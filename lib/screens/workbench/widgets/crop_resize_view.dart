@@ -69,6 +69,26 @@ class _CropResizeViewState extends State<CropResizeView> {
     });
   }
 
+  /// Reads the selection straight off the editor once it has laid out.
+  ///
+  /// [_handleEditChanged] only fires on an actual edit, so until the user drags
+  /// something there is no crop rect anywhere — which left the size fields
+  /// empty and the output strip reading `768×512 → –` about a picture whose
+  /// output size was fully determined. The initial rect is a fact the editor
+  /// already has; it just never announces it.
+  void _publishInitialCropRect() {
+    if (_pixelCropRect != null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _pixelCropRect != null) return;
+      final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+      final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
+      final rect = state?.getCropRect();
+      if (rect == null) return;
+      setState(() => _pixelCropRect = rect);
+      uiState.setCropPixelSize(Size(rect.width, rect.height));
+    });
+  }
+
   void _handleEditChanged(EditActionDetails? details) {
     if (details == null || !mounted) return;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
@@ -86,6 +106,13 @@ class _CropResizeViewState extends State<CropResizeView> {
       _pixelCropRect = pixelRect;
       if (zoomPercent != null) _zoomPercent = zoomPercent;
     });
+
+    // Published rather than kept: the toolbar's width/height fields stand at
+    // these numbers until the user types over them, and this callback is the
+    // only place they arrive.
+    uiState.setCropPixelSize(
+      pixelRect == null ? null : Size(pixelRect.width, pixelRect.height),
+    );
   }
 
   @override
@@ -134,6 +161,7 @@ class _CropResizeViewState extends State<CropResizeView> {
     }
 
     _loadMeta(sourceImage.path);
+    _publishInitialCropRect();
 
     return Column(
       children: [
@@ -159,6 +187,7 @@ class _CropResizeViewState extends State<CropResizeView> {
                           hitTestSize: 20.0,
                           cropAspectRatio: uiState.cropAspectRatio,
                           cropLayerPainter: const _EightHandleCropLayerPainter(),
+                          editorMaskColorHandler: _maskColor,
                           editActionDetailsIsChanged: _handleEditChanged,
                         );
                       },
@@ -202,6 +231,17 @@ class _CropResizeViewState extends State<CropResizeView> {
     );
   }
 
+  /// What the area outside the selection is dimmed with.
+  ///
+  /// The package's default is `scaffoldBackgroundColor` at 80% — which on the
+  /// light theme washes the discarded part of the picture out to near-white
+  /// over a black canvas, and at that strength hides the very thing the user
+  /// is framing against. Black, so it carries no theme hue onto a photograph
+  /// (the same reasoning as [ImageCard]'s overlay ink), and a notch weaker so
+  /// the surroundings stay legible while the crop is being placed.
+  Color _maskColor(BuildContext context, bool pointerDown) =>
+      Colors.black.withValues(alpha: pointerDown ? 0.35 : 0.55);
+
   void _fitToWindow(WorkbenchUIState uiState) {
     final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
     state?.reset();
@@ -228,9 +268,37 @@ class _CropResizeViewState extends State<CropResizeView> {
 
 /// Draws the package's default 4 corner marks plus 4 edge-midpoint handles,
 /// so the crop rect reads as fully grabbable along every edge, not just at
-/// its corners.
+/// its corners — and keeps the rule-of-thirds grid up at all times.
 class _EightHandleCropLayerPainter extends EditorCropLayerPainter {
   const _EightHandleCropLayerPainter();
+
+  /// The package draws the thirds only while `pointerDown`, so the guides
+  /// appear during a drag and vanish the moment they could be used to judge
+  /// the result. Composition is decided when the pointer is *up*; this keeps
+  /// the grid standing, at a third of the border's weight so it guides
+  /// without becoming part of the picture.
+  @override
+  void paintLines(
+    Canvas canvas,
+    Size size,
+    ExtendedImageCropLayerPainter painter,
+  ) {
+    super.paintLines(canvas, size, painter);
+    if (painter.pointerDown) return; // super already drew them
+
+    final Rect rect = painter.cropRect;
+    final Paint paint = Paint()
+      ..color = painter.lineColor.withValues(alpha: 0.35)
+      ..strokeWidth = painter.lineHeight
+      ..style = PaintingStyle.stroke;
+
+    for (var i = 1; i <= 2; i++) {
+      final double x = rect.left + rect.width / 3 * i;
+      final double y = rect.top + rect.height / 3 * i;
+      canvas.drawLine(Offset(x, rect.top), Offset(x, rect.bottom), paint);
+      canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), paint);
+    }
+  }
 
   @override
   void paintCorners(

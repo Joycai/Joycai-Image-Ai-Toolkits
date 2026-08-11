@@ -12,6 +12,7 @@ import 'dart:io';
 
 import 'package:image/image.dart' as img;
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
+import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
@@ -20,6 +21,8 @@ import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:path/path.dart' as p;
 
@@ -437,6 +440,118 @@ void seedLogs(AppState appState) {
   appState.addLog('任务 fixture-task-1 完成，用时 47.2s');
   appState.addLog('429 RESOURCE_EXHAUSTED: 配额已用尽，请稍后重试', level: 'ERROR');
   appState.addLog('任务 fixture-task-6 已加入队列');
+}
+
+// ---------------------------------------------------------------------------
+// Workbench tabs
+// ---------------------------------------------------------------------------
+
+/// Puts a picture in the crop editor.
+///
+/// Without this the tab photographs as its empty state, which is how three
+/// rounds of design work on the crop screen went unphotographed: the harness
+/// only ever shot workbench tab 0.
+void seedCropSource(AppState appState) {
+  final AppImage? image = _firstGalleryImage(appState);
+  if (image == null) return;
+  appState.workbenchUIState.setCropResizeSourceImage(image);
+}
+
+/// Selects the first few gallery images, so the config panel's reference strip
+/// has something to number.
+void seedImageSelection(AppState appState, {int count = 2}) {
+  for (final AppImage image in _galleryImages(appState).take(count)) {
+    appState.toggleImageSelection(image);
+  }
+}
+
+/// A finished knowledge-base conversation: a question, a run of tool calls, a
+/// submitted prompt and a closing reply.
+///
+/// Built as an [LLMMessage] history and handed to
+/// [PromptOptimizerSession.fromStored] rather than as a hand-made transcript —
+/// the transcript is derived, and a fixture that bypassed the derivation would
+/// photograph a layout the app cannot actually produce.
+void seedOptimizerSession(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+  if (images.isEmpty) return;
+
+  const String refined = '任务：修复并增强这张人像照片的画质。\n\n'
+      '**模特设定**\n'
+      '· **面部与眼镜：**严格继承参考图的面部特征、神态与笑容，保留黑色圆框眼镜。\n'
+      '· **发型：**青蓝色直发，额前平刘海。\n\n'
+      '**画面要求**\n'
+      '· 保持原始构图与全部画面内容不变，只做修复而非重绘。\n'
+      '· 去除噪点与轻微模糊，保留毛孔与皮肤纹理。\n'
+      '· 光线均匀柔和，不要产生明显的边缘锯齿。';
+
+  final List<LLMMessage> history = <LLMMessage>[
+    LLMMessage(role: LLMRole.user, content: '让图片 1 中的人物穿上图片 2 中角色的服装'),
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: <LLMToolCall>[
+        LLMToolCall(id: 'c1', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
+        LLMToolCall(id: 'c2', name: 'view_image', arguments: <String, dynamic>{'id': '2'}),
+        LLMToolCall(
+          id: 'c3',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '04_cosplay照片模版.md'},
+        ),
+        LLMToolCall(
+          id: 'c4',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '07_footwear/07b_叠穿袜子与高跟鞋.md'},
+        ),
+        LLMToolCall(
+          id: 'c5',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '06_场景动作镜头组合库.md'},
+        ),
+      ],
+    ),
+    for (final String id in <String>['c1', 'c2', 'c3', 'c4', 'c5'])
+      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: <LLMToolCall>[
+        LLMToolCall(
+          id: 'c6',
+          name: 'submit_prompt',
+          arguments: <String, dynamic>{
+            'prompt': refined,
+            'note': '已根据 D 类模版提取图 1 的面部与眼镜特征，还原图 2 的全套服装细节。',
+          },
+        ),
+      ],
+    ),
+    LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: 'c6', toolName: 'submit_prompt'),
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '已完成图 1 与图 2 的融合，重点保留了眼镜与五官继承、服装分层与环境融合规则。'
+          '如需微调细节，直接告诉我。',
+    ),
+  ];
+
+  final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
+    id: 'fixture-assistant-1',
+    mode: AssistantMode.knowledgeBase,
+    title: 'Cosplay 服装融合',
+    history: history,
+  );
+
+  appState.workbenchUIState.adoptOptimizerSession(session, images);
+}
+
+/// Whatever the gallery is actually showing, so a seeded selection matches the
+/// tiles in the same shot rather than some other folder's files.
+List<AppImage> _galleryImages(AppState appState) =>
+    appState.galleryState.currentViewImages;
+
+AppImage? _firstGalleryImage(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState);
+  return images.isEmpty ? null : images.first;
 }
 
 // ---------------------------------------------------------------------------

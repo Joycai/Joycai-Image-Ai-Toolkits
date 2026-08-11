@@ -52,4 +52,64 @@ void main() {
       );
     });
   }
+
+  // The workbench is eight screens wearing one nav entry, and the loop above
+  // only ever photographs tab 0. The crop editor and the prompt assistant —
+  // two of the three pages the design spec redraws in full — were therefore
+  // never rendered at all, which is how a grid that only appears mid-drag and
+  // a composer still wearing the old grey fill both survived a design pass.
+  //
+  // Each needs its tab's own state seeded before mount, so they take `before`
+  // rather than riding the loop.
+  for (final _WorkbenchTab tab in _workbenchTabs) {
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('workbench · ${tab.name} @ desktop ${brightness.name}',
+          (WidgetTester tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: kShotSizes.last,
+          brightness: brightness,
+          suffix: tab.name,
+          before: (_) async {
+            final AppState appState = AppState();
+            appState.setWorkbenchTab(tab.index);
+            if (!tab.seedOnSettled) tab.seed(appState);
+          },
+          after: tab.seedOnSettled
+              ? (WidgetTester tester) async {
+                  tab.seed(AppState());
+                  await tester.pump();
+                }
+              : null,
+        );
+      });
+    }
+  }
 }
+
+class _WorkbenchTab {
+  const _WorkbenchTab(this.name, this.index, this.seed, {this.seedOnSettled = false});
+  final String name;
+  final int index;
+  final void Function(AppState appState) seed;
+
+  /// Seed after the first frame instead of before it.
+  ///
+  /// For state the screen's own mount would undo: the gallery rescans on
+  /// mount and the scan rebuilds its [AppImage] list, dropping a selection
+  /// made against the previous instances. Seeding on the settled tree is the
+  /// same order a user produces.
+  final bool seedOnSettled;
+}
+
+/// Indices match the `switch` in `workbench_screen.dart`'s build.
+final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
+  // Tab 0 again, but with pictures selected: the config panel's reference
+  // strip is empty otherwise, and the strip is where the selection order the
+  // model receives is shown and edited.
+  _WorkbenchTab('selection', 0, (AppState s) => seedImageSelection(s), seedOnSettled: true),
+  _WorkbenchTab('crop', 3, seedCropSource),
+  _WorkbenchTab('assistant', 4, seedOptimizerSession),
+];

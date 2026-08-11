@@ -59,6 +59,15 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   bool _isAutoUpdating = false;
   bool _customRatioMode = false;
 
+  /// Whether the user has typed an output size of their own.
+  ///
+  /// Until they do, the two fields track the selection — the spec's "show the
+  /// actual value", and the fix for a bar that read `宽度 [    ] px` over a
+  /// picture whose size was known all along. Once they type, the numbers are
+  /// theirs and the crop stops overwriting them; [_handleReset] hands control
+  /// back.
+  bool _sizeIsUserSet = false;
+
   /// Source dimensions for the toolbar caption. The view loads this too;
   /// [ImageMetadataService] caches by path, so the second reader costs a map
   /// lookup rather than a second decode.
@@ -93,6 +102,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
   void _onWidthChanged() {
     if (_isAutoUpdating) return;
+    _sizeIsUserSet = true;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
     final w = int.tryParse(_widthController.text);
 
@@ -111,6 +121,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
   void _onHeightChanged() {
     if (_isAutoUpdating) return;
+    _sizeIsUserSet = true;
     final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
     final h = int.tryParse(_heightController.text);
 
@@ -203,9 +214,39 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     _ratioYController.clear();
     _isAutoUpdating = false;
 
-    setState(() => _customRatioMode = false);
+    setState(() {
+      _customRatioMode = false;
+      _sizeIsUserSet = false;
+    });
     uiState.setCropAspectRatio(null);
     uiState.setTargetDimensions(null, null);
+  }
+
+  /// Mirrors the live selection into the two size fields.
+  ///
+  /// Silent — through [_isAutoUpdating], so it does not read back as the user
+  /// having chosen these numbers, and does not call [WorkbenchUIState]'s
+  /// setters: a null `targetWidth` is what tells the save to use the crop's
+  /// own size, and writing the same numbers in would only be a second copy of
+  /// the same fact, free to drift.
+  ///
+  /// Deferred to after the frame because the caller is `build`: writing to a
+  /// [TextEditingController] notifies the [TextField] listening to it, and
+  /// marking that field dirty mid-build is an error. The equality check keeps
+  /// it to one write per actual change rather than one per frame.
+  void _syncSizeFields(Size? crop) {
+    if (_sizeIsUserSet) return;
+    final String width = crop == null ? '' : crop.width.round().toString();
+    final String height = crop == null ? '' : crop.height.round().toString();
+    if (_widthController.text == width && _heightController.text == height) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _sizeIsUserSet) return;
+      _isAutoUpdating = true;
+      _widthController.text = width;
+      _heightController.text = height;
+      _isAutoUpdating = false;
+    });
   }
 
   /// The last stop before an original is replaced.
@@ -453,6 +494,8 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     final uiState = Provider.of<WorkbenchUIState>(context);
     final isNarrow = Responsive.isNarrow(context);
     final colorScheme = Theme.of(context).colorScheme;
+
+    _syncSizeFields(uiState.cropPixelSize);
 
     if (isNarrow) {
       return _buildMobileToolbar(context, l10n, uiState, colorScheme);

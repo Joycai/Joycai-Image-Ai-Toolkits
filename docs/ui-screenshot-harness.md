@@ -70,6 +70,18 @@ testWidgets('workbench @ desktop, comparator tab', (WidgetTester tester) async {
 });
 ```
 
+Pick the hook by what the screen does on mount, not by what is convenient.
+Seeding a gallery selection in `before` looks like it works — the count is
+right — and then photographs as empty, because the workbench rescans on mount
+and the scan rebuilds the `AppImage` list the selection was made against. That
+kind of state belongs in `after`. The `_workbenchTabs` table in
+`app_screens_test.dart` carries a `seedOnSettled` flag for exactly this.
+
+**The workbench is eight screens behind one nav entry**, and the main matrix
+only reaches tab 0. Tabs 3 and 4 (crop, prompt assistant) have their own
+entries in `_workbenchTabs`; anything else — comparator, mask editor, video —
+is still unphotographed. Add it there before redesigning it, not after.
+
 **A different locale** — `shoot(..., locale: const Locale('ja'))`. The parameter
 already exists; the matrix just fixes it at `zh` because CJK is the widest text
 and therefore the case most likely to overflow.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
@@ -23,6 +24,14 @@ import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
 import 'widgets/config_section_header.dart';
 import 'widgets/queue_settings_dialog.dart';
+
+/// Ink laid over a thumbnail. Neutral by construction rather than taken from
+/// the [ColorScheme] — these sit on the user's own photographs, where a chip
+/// tinted to the theme disappears the moment someone selects a picture in that
+/// hue. Mirrors [ImageCard]'s overlay constants; the two strips show the same
+/// pictures and must not treat them differently.
+const Color _thumbScrim = Color(0x8A000000);
+const Color _thumbInk = Color(0xFFFFFFFF);
 
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
@@ -336,7 +345,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               ),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
                 elevation: 0,
               ),
             ),
@@ -531,12 +540,42 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 child: Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppRadius.control),
                       child: Image(
                         image: image.imageProvider,
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
+                      ),
+                    ),
+                    // The same number the grid tile carries, because this is
+                    // the same fact: the order these are handed to the model.
+                    // The grid has said it since the selection badge went in;
+                    // this strip is where the order is actually *edited* (it
+                    // reorders by drag), so without the number the two halves
+                    // of one idea disagreed about how to name a picture.
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(color: _thumbScrim, blurRadius: 5, offset: Offset(0, 1)),
+                          ],
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                                height: 1,
+                              ),
+                        ),
                       ),
                     ),
                     Positioned(
@@ -546,8 +585,8 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                         onTap: () => Provider.of<AppState>(context, listen: false).toggleImageSelection(image),
                         child: Container(
                           padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          decoration: const BoxDecoration(color: _thumbScrim, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, size: 14, color: _thumbInk),
                         ),
                       ),
                     ),
