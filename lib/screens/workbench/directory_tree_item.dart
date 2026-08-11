@@ -168,14 +168,20 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // The box is a Material rather than a decorated Container: ListTile
+        // paints its own fill and its ink onto the nearest Material ancestor,
+        // and a Container painting on top of that hid both — the framework
+        // says so at every build. Same fill, same border, same radius.
         Container(
           margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-          decoration: BoxDecoration(
-            color: boxColor,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: borderColor),
-          ),
-          child: ListTile(
+          child: Material(
+            color: boxColor ?? Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: borderColor),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
           dense: true,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
@@ -262,6 +268,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               appState.galleryState.setViewFolder(widget.path);
             }
           },
+            ),
           ),
         ),
 

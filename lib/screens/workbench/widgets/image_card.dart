@@ -331,25 +331,32 @@ class _ImageCardState extends State<ImageCard> {
         child: Container(
           color: _overlayScrimStrong,
           padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildOverlayButton(
-                icon: Icons.compare,
-                onPressed: () => _handleCompare(context),
-                tooltip: l10n.comparator,
-              ),
-              _buildOverlayButton(
-                icon: Icons.brush,
-                onPressed: () => _handleMask(context),
-                tooltip: l10n.maskEditor,
-              ),
-              _buildOverlayButton(
-                icon: Icons.crop,
-                onPressed: () => _handleCrop(context),
-                tooltip: l10n.cropAndResize,
-              ),
-            ],
+          // The bar sits over a grid cell whose width is the column count's to
+          // decide, and on a phone three columns leave less than the three
+          // buttons measure. Scaling the capsule down keeps all three reachable
+          // where a Row would put the third one past the edge of the picture.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildOverlayButton(
+                  icon: Icons.compare,
+                  onPressed: () => _handleCompare(context),
+                  tooltip: l10n.comparator,
+                ),
+                _buildOverlayButton(
+                  icon: Icons.brush,
+                  onPressed: () => _handleMask(context),
+                  tooltip: l10n.maskEditor,
+                ),
+                _buildOverlayButton(
+                  icon: Icons.crop,
+                  onPressed: () => _handleCrop(context),
+                  tooltip: l10n.cropAndResize,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -245,7 +245,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: _buildSearchField(l10n, isMobile: true),
+                    child: _buildSearchField(l10n),
                   ),
                   TabBar(
                     controller: _tabController,
@@ -340,7 +340,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                         ),
                       ),
                       child: _buildDesktopHeader(l10n, colorScheme,
-                          isTablet: isTablet, isCategories: isCategories),
+                          isCategories: isCategories),
                     ),
                     // Tablet: horizontal category filter when on user prompts tab
                     if (isTablet && _tabController.index == 0 && _tags.isNotEmpty)
@@ -415,7 +415,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   Widget _buildDesktopHeader(
     AppLocalizations l10n,
     ColorScheme colorScheme, {
-    bool isTablet = false,
     bool isCategories = false,
   }) {
     // ── Selection mode ──────────────────────────────────────────────────────
@@ -471,28 +470,61 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     }
 
     // ── User / System prompts ───────────────────────────────────────────────
-    return Row(
-      children: [
-        _buildTabToggle(l10n, colorScheme),
-        const Spacer(),
-        _buildSearchField(l10n, width: isTablet ? 180 : 250),
-        const SizedBox(width: 10),
-        _buildImportExportActions(l10n),
-        const SizedBox(width: 10),
-        AppButton(
-          label: _addLabel(l10n),
-          icon: Icons.add,
-          onPressed: _handleAddAction,
-        ),
-      ],
+    //
+    // Measured, not switched on the breakpoint: the sidebar beside this header
+    // is drag-resizable, so a tablet header is anywhere between ~310px and
+    // ~710px wide and the breakpoint says nothing about which. Below the
+    // threshold the toolbar folds — tighter track, import and export back into
+    // the one overflow menu the phone layout already uses, shorter create
+    // button — which is what the four controls at full size cost in width.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tight = constraints.maxWidth < 560;
+
+        return Row(
+          children: [
+            _buildTabToggle(l10n, colorScheme, compact: tight),
+            // Takes the slack so the actions stay flush right — the field
+            // itself keeps its width until the slack runs out, and only then
+            // gives way. A Spacer with a fixed-width field beside it cannot do
+            // that: it holds its share and the row overflows instead.
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 250),
+                  child: _buildSearchField(l10n),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (tight)
+              _buildImportExportMenu(l10n)
+            else
+              _buildImportExportActions(l10n),
+            const SizedBox(width: 10),
+            AppButton(
+              label: _addLabel(l10n),
+              icon: Icons.add,
+              onPressed: _handleAddAction,
+              size: tight ? AppButtonSize.compact : AppButtonSize.normal,
+            ),
+          ],
+        );
+      },
     );
   }
 
   /// Which list the header is over. The same control the rest of the app uses
   /// for a choice of two — this screen had grown its own, a track with a plain
   /// raised chip, which said the same thing in a second dialect.
-  Widget _buildTabToggle(AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildTabToggle(
+    AppLocalizations l10n,
+    ColorScheme colorScheme, {
+    bool compact = false,
+  }) {
     return AppSegmentedControl<int>(
+      compact: compact,
       segments: [
         AppSegment(value: 0, label: l10n.userPrompts),
         AppSegment(value: 1, label: l10n.systemTemplates),
@@ -584,11 +616,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     ];
   }
 
-  Widget _buildSearchField(AppLocalizations l10n, {bool isMobile = false, double width = 300}) {
+  /// Fills whatever width it is given. The desktop header caps it; the phone
+  /// header hands it the full row.
+  Widget _buildSearchField(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: isMobile ? double.infinity : width,
       height: 38,
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
