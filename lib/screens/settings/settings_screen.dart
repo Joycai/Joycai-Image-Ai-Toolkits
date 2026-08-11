@@ -87,11 +87,14 @@ class _SettingsMobileView extends StatelessWidget {
           SliverAppBar.large(title: Text(l10n.settings)),
           SliverList(
             delegate: SliverChildListDelegate([
-              _buildCategoryTile(context, SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance, Colors.blue),
-              _buildCategoryTile(context, SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity, Colors.green),
-              _buildCategoryTile(context, SettingsCategory.application, Icons.settings_applications_outlined, l10n.application, Colors.orange),
-              _buildCategoryTile(context, SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement, Colors.purple),
-              _buildCategoryTile(context, SettingsCategory.about, Icons.info_outline, l10n.about, Colors.teal),
+              // Colours come from _categoryColor, not repeated here: this list
+              // used to restate all five inline, so the desktop rail and the
+              // mobile list were two independent copies of the same mapping.
+              _buildCategoryTile(context, SettingsCategory.appearance, Icons.palette_outlined, l10n.appearance),
+              _buildCategoryTile(context, SettingsCategory.connectivity, Icons.lan_outlined, l10n.connectivity),
+              _buildCategoryTile(context, SettingsCategory.application, Icons.settings_applications_outlined, l10n.application),
+              _buildCategoryTile(context, SettingsCategory.data, Icons.storage_outlined, l10n.dataManagement),
+              _buildCategoryTile(context, SettingsCategory.about, Icons.info_outline, l10n.about),
             ]),
           ),
         ],
@@ -99,7 +102,8 @@ class _SettingsMobileView extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryTile(BuildContext context, SettingsCategory category, IconData icon, String label, Color color) {
+  Widget _buildCategoryTile(BuildContext context, SettingsCategory category, IconData icon, String label) {
+    final color = _categoryColor(category);
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
