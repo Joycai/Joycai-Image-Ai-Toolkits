@@ -963,6 +963,14 @@
   "overwriteConfirmSaveCopyInstead": "Save Copy Instead",
   "overwriteConfirmSubtitle": "This action cannot be undone.",
   "overwriteConfirmKeepOriginalHint": "To keep the original, use Save Copy instead.",
+  "overwriteUnsupportedFormat": "Cannot overwrite a {format} file — this format can be opened but not written. Use Save Copy instead.",
+  "@overwriteUnsupportedFormat": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "saveToTempSuccess": "Image saved to temporary workspace",
   "overwriteSuccess": "Original file updated",
   "custom": "Custom",

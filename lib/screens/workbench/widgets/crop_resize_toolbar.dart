@@ -1,5 +1,6 @@
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
@@ -378,18 +379,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         default: sampling = SamplingMethod.lanczos;
       }
 
-      final processedBytes = await ImageProcessingService().processImage(
-        sourcePath: sourceImage.path,
-        cropX: cropRect.left.toInt(),
-        cropY: cropRect.top.toInt(),
-        cropWidth: cropRect.width.toInt(),
-        cropHeight: cropRect.height.toInt(),
-        width: w,
-        height: h,
-        maintainAspectRatio: uiState.maintainAspectRatio,
-        sampling: sampling,
-      );
-
+      // Resolved before the work, not after: the encoder is chosen from the
+      // target's extension, so the destination has to be known by the time
+      // the bytes are produced.
       String targetPath;
       String targetName;
 
@@ -402,6 +394,19 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         targetName = target.fileName;
         targetPath = target.path;
       }
+
+      final processedBytes = await ImageProcessingService().processImage(
+        sourcePath: sourceImage.path,
+        targetPath: targetPath,
+        cropX: cropRect.left.toInt(),
+        cropY: cropRect.top.toInt(),
+        cropWidth: cropRect.width.toInt(),
+        cropHeight: cropRect.height.toInt(),
+        width: w,
+        height: h,
+        maintainAspectRatio: uiState.maintainAspectRatio,
+        sampling: sampling,
+      );
 
       await ImageProcessingService().saveImage(
         bytes: processedBytes,
@@ -425,6 +430,14 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
       appState.galleryState.refreshImages();
       appState.setWorkbenchTab(0);
+    } on UnsupportedImageFormatException {
+      // Named separately from the generic catch: this one is not a failure the
+      // user can retry, it is a fact about their file, and the message has to
+      // point them at the copy path that does work.
+      if (mounted) {
+        final ext = p.extension(sourceImage.path).replaceFirst('.', '').toUpperCase();
+        AppSnackBar.error(context, l10n.overwriteUnsupportedFormat(ext));
+      }
     } catch (e) {
       if (mounted) {
         AppSnackBar.error(context, "Error: $e");

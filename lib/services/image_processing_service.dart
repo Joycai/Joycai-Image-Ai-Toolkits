@@ -24,6 +24,10 @@ class _ImageProcessParams {
   final bool maintainAspectRatio;
   final SamplingMethod sampling;
 
+  /// Where the result is headed. Only its extension is used, and only to pick
+  /// the encoder — the isolate never touches the path.
+  final String targetPath;
+
   _ImageProcessParams({
     required this.sourcePath,
     this.cropX,
@@ -34,6 +38,7 @@ class _ImageProcessParams {
     this.height,
     required this.maintainAspectRatio,
     required this.sampling,
+    required this.targetPath,
   });
 }
 
@@ -73,7 +78,33 @@ Uint8List _runImageProcess(_ImageProcessParams params) {
     );
   }
 
-  return Uint8List.fromList(img.encodePng(image));
+  // Encoded for wherever it is going, not always PNG.
+  //
+  // This used to `encodePng` unconditionally, which is fine for the copy path
+  // (always `.png`) and silently wrong for an overwrite: replacing `photo.jpg`
+  // wrote PNG bytes into a file still named `.jpg`. Most viewers sniff the
+  // magic bytes and cope, so it looked like it worked — until something that
+  // trusts the extension does not.
+  //
+  // `encodeNamedImage` picks by extension and returns null for a format it
+  // cannot write. That is thrown rather than quietly falling back to PNG,
+  // because a silent fallback is the bug this replaces. AVIF is the one format
+  // the app opens and cannot write, so an AVIF overwrite now fails loudly
+  // instead of producing a mislabelled file; "save a copy" still works, since
+  // copies are PNG.
+  final encoded = img.encodeNamedImage(params.targetPath, image);
+  if (encoded == null) {
+    throw const UnsupportedImageFormatException();
+  }
+  return encoded;
+}
+
+/// The target's extension names a format `image` can decode but not encode.
+class UnsupportedImageFormatException implements Exception {
+  const UnsupportedImageFormatException();
+
+  @override
+  String toString() => 'UnsupportedImageFormatException';
 }
 
 class ImageProcessingService {
@@ -91,6 +122,7 @@ class ImageProcessingService {
     int? height,
     bool maintainAspectRatio = true,
     SamplingMethod sampling = SamplingMethod.lanczos,
+    required String targetPath,
   }) async {
     final params = _ImageProcessParams(
       sourcePath: sourcePath,
@@ -102,6 +134,7 @@ class ImageProcessingService {
       height: height,
       maintainAspectRatio: maintainAspectRatio,
       sampling: sampling,
+      targetPath: targetPath,
     );
     return await compute(_runImageProcess, params);
   }
@@ -155,8 +188,9 @@ class ImageProcessingService {
     final directory = Directory(p.join(tempDir, 'joycai', 'processed'));
 
     final base = p.basenameWithoutExtension(sourcePath);
-    // Always .png: `_runImageProcess` encodes PNG regardless of the source
-    // format, so this is the extension the bytes will actually be.
+    // PNG regardless of the source format. A copy is a new file, so it is
+    // free to pick the lossless option; only an overwrite is obliged to keep
+    // whatever format the file it replaces already was.
     var name = '${base}_crop.png';
     for (var n = 2; File(p.join(directory.path, name)).existsSync(); n++) {
       name = '${base}_crop_$n.png';

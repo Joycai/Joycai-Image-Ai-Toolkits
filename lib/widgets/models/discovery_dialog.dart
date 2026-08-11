@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_semantic_colors.dart';
-import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -9,6 +8,7 @@ import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../services/llm/model_family.dart';
 import '../../state/app_state.dart';
+import 'model_tag_chip.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 
@@ -330,27 +330,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                     style: textTheme.labelSmall
                         ?.copyWith(color: colorScheme.outline, fontWeight: FontWeight.bold))
               else
-                _buildTagChip(_inferTag(m)),
+                ModelTagChip(_inferTag(m)),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTagChip(String tag) {
-    final color = modelTagAccent(tag);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(tag.toUpperCase(),
-          style: Theme.of(context)
-              .textTheme
-              .labelSmall
-              ?.copyWith(color: color, fontWeight: FontWeight.bold)),
     );
   }
 

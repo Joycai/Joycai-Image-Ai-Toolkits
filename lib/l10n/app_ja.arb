@@ -823,6 +823,14 @@
   "overwriteConfirmSaveCopyInstead": "代わりにコピーを保存",
   "overwriteConfirmSubtitle": "この操作は取り消せません",
   "overwriteConfirmKeepOriginalHint": "元の画像を残す場合は「コピーを保存」をご利用ください。",
+  "overwriteUnsupportedFormat": "{format} ファイルは上書きできません。この形式は読み込み専用です。「コピーを保存」をご利用ください。",
+  "@overwriteUnsupportedFormat": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "saveToTempSuccess": "画像が一時ワークスペースに保存されました",
   "overwriteSuccess": "元のファイルが更新されました",
   "custom": "カスタム",

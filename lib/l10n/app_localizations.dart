@@ -3641,6 +3641,12 @@ abstract class AppLocalizations {
   /// **'To keep the original, use Save Copy instead.'**
   String get overwriteConfirmKeepOriginalHint;
 
+  /// No description provided for @overwriteUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot overwrite a {format} file — this format can be opened but not written. Use Save Copy instead.'**
+  String overwriteUnsupportedFormat(String format);
+
   /// No description provided for @saveToTempSuccess.
   ///
   /// In en, this message translates to:

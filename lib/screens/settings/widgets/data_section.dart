@@ -12,6 +12,7 @@ import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/dialogs/import_options_dialog.dart';
 import '../../../widgets/app_section.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../wizard/setup_wizard.dart';
@@ -264,13 +265,17 @@ class DataSection extends StatelessWidget {
       bool includePrompts = hasPrompts;
       bool includeUsage = hasUsage;
 
-      final bool? confirmed = await (isMobile 
-        ? _showMobileImportOptions(context, l10n, hasDirs, hasPrompts, hasUsage, (d, p, u) {
-            includeDirs = d; includePrompts = p; includeUsage = u;
-          })
-        : _showDesktopImportOptions(context, l10n, hasDirs, hasPrompts, hasUsage, (d, p, u) {
-            includeDirs = d; includePrompts = p; includeUsage = u;
-          }));
+      final bool? confirmed = await showImportOptionsDialog(
+        context,
+        l10n: l10n,
+        hasDirs: hasDirs,
+        hasPrompts: hasPrompts,
+        hasUsage: hasUsage,
+        isMobile: isMobile,
+        onUpdate: (d, p, u) {
+          includeDirs = d; includePrompts = p; includeUsage = u;
+        },
+      );
 
       if (confirmed != true || !context.mounted) return;
 
@@ -291,123 +296,6 @@ class DataSection extends StatelessWidget {
       if (!context.mounted) return;
       AppSnackBar.error(context, backupImportErrorText(l10n, e));
     }
-  }
-
-  Future<bool?> _showMobileImportOptions(
-    BuildContext context, 
-    AppLocalizations l10n, 
-    bool hasDirs, bool hasPrompts, bool hasUsage,
-    Function(bool, bool, bool) onUpdate
-  ) async {
-    bool d = hasDirs;
-    bool p = hasPrompts;
-    bool u = hasUsage;
-
-    return await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.importOptions, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-              const SizedBox(height: 24),
-              _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
-              const Divider(height: 32),
-              _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
-              const Divider(height: 32),
-              _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
-              const SizedBox(height: 48),
-              AppButton(
-                label: l10n.importNow,
-                variant: AppButtonVariant.destructive,
-                size: AppButtonSize.large,
-                fullWidth: true,
-                onPressed: () {
-                  onUpdate(d, p, u);
-                  Navigator.pop(context, true);
-                },
-              ),
-              const SizedBox(height: 12),
-              AppButton(
-                label: l10n.cancel,
-                variant: AppButtonVariant.text,
-                size: AppButtonSize.large,
-                fullWidth: true,
-                onPressed: () => Navigator.pop(context, false),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<bool?> _showDesktopImportOptions(
-    BuildContext context, 
-    AppLocalizations l10n, 
-    bool hasDirs, bool hasPrompts, bool hasUsage,
-    Function(bool, bool, bool) onUpdate
-  ) async {
-    bool d = hasDirs;
-    bool p = hasPrompts;
-    bool u = hasUsage;
-
-    return await AppDialog.show<bool>(
-      context,
-      title: l10n.importOptions,
-      maxWidth: 450,
-      content: StatefulBuilder(
-        builder: (context, setState) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-            const SizedBox(height: 20),
-            _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
-            const SizedBox(height: 12),
-            _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
-            const SizedBox(height: 12),
-            _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
-          ],
-        ),
-      ),
-      actions: [
-        AppButton(
-          label: l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        AppButton(
-          label: l10n.importNow,
-          variant: AppButtonVariant.destructive,
-          onPressed: () {
-            onUpdate(d, p, u);
-            Navigator.pop(context, true);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImportOption(BuildContext context, String title, String desc, bool value, bool enabled,
-      AppLocalizations l10n, Function(bool) onChanged) {
-    final textTheme = Theme.of(context).textTheme;
-    return SwitchListTile(
-      value: value && enabled,
-      onChanged: enabled ? onChanged : null,
-      title: Text(title, style: textTheme.titleMedium?.copyWith(color: enabled ? null : Colors.grey)),
-      subtitle: Text(
-        enabled ? desc : l10n.notInBackup,
-        style: textTheme.bodySmall?.copyWith(color: enabled ? null : Colors.grey[400]),
-      ),
-      contentPadding: EdgeInsets.zero,
-    );
   }
 
   void _resetSettings(BuildContext context, AppLocalizations l10n) {

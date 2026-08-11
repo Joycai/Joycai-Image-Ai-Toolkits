@@ -1891,6 +1891,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get overwriteConfirmKeepOriginalHint => '如需保留原图，可改用「保存副本」。';
 
   @override
+  String overwriteUnsupportedFormat(String format) {
+    return '无法覆盖 $format 文件——该格式只能读取、不能写入。请改用「保存副本」。';
+  }
+
+  @override
   String get saveToTempSuccess => '已保存至临时工作区';
 
   @override
@@ -4338,6 +4343,11 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get overwriteConfirmKeepOriginalHint => '如需保留原圖，可改用「儲存副本」。';
+
+  @override
+  String overwriteUnsupportedFormat(String format) {
+    return '無法覆蓋 $format 檔案——此格式只能讀取、不能寫入。請改用「儲存副本」。';
+  }
 
   @override
   String get saveToTempSuccess => '圖片已儲存至臨時工作區';
