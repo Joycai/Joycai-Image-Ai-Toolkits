@@ -1,0 +1,151 @@
+// The screenshot helper: mounts the real app at a given size and writes a PNG.
+
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/main.dart';
+import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:provider/provider.dart';
+
+import 'fixture_env.dart';
+import 'fixture_seed.dart';
+
+/// Declared in the order of `_getNavDefinitions` in main.dart:239-248, so
+/// `AppScreen.index` *is* the argument `AppState.navigateToScreen` wants.
+///
+/// The mapping is 1:1 only because the harness runs on a desktop host: at
+/// main.dart:256 `isMobilePlatform` reads `Platform.isAndroid || isIOS`, so it
+/// is always false here and no destinations are filtered out. See the caveat
+/// in docs/ui-screenshot-harness.md about the 390px shots.
+enum AppScreen {
+  workbench,
+  fileBrowser,
+  tasks,
+  downloader,
+  prompts,
+  models,
+  usage,
+  settings,
+}
+
+class ShotSize {
+  const ShotSize(this.label, this.size);
+  final String label;
+  final Size size;
+}
+
+const List<ShotSize> kShotSizes = <ShotSize>[
+  ShotSize('mobile', Size(390, 844)), //   < 600  → NavigationBar + drawer
+  ShotSize('tablet', Size(834, 1112)), //  < 1000 → icon-only rail
+  ShotSize('desktop', Size(1440, 900)), // ≥ 1000 → labelled rail
+];
+
+/// Renders [screen] at [size] and writes `<screen>_<size>_<brightness><suffix>.png`
+/// into `build/ui-screenshots/`.
+///
+/// [before] runs after the singleton is configured but before the first pump —
+/// use it to set state the screen reads on mount. [after] runs on the settled
+/// tree, for taps that open a dialog or switch a tab.
+Future<void> shoot(
+  WidgetTester tester, {
+  required FixtureEnv env,
+  required AppScreen screen,
+  required ShotSize size,
+  Brightness brightness = Brightness.light,
+  Locale locale = const Locale('zh'),
+  String? suffix,
+  Future<void> Function(WidgetTester tester)? before,
+  Future<void> Function(WidgetTester tester)? after,
+}) async {
+  final String name =
+      '${screen.name}_${size.label}_${brightness.name}${suffix == null ? '' : '_$suffix'}';
+
+  tester.view.physicalSize = size.size;
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+
+  final AppState appState = AppState();
+  appState.themeMode =
+      brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
+  appState.locale = locale;
+  // Logs accumulate across shots and would make the console strip differ run
+  // to run for reasons that have nothing to do with layout.
+  appState.clearLogs();
+  seedLogs(appState);
+  appState.navigateToScreen(screen.index);
+  await before?.call(tester);
+
+  // Real async: the screens' initState sqflite queries and the compute()
+  // isolates behind the gallery/browser scans only make progress out here.
+  await tester.runAsync(() async {
+    await tester.pumpWidget(_appTree(appState));
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    await tester.pump();
+    await _warmImageCache(tester, env);
+    await tester.pump();
+  });
+
+  // 800ms covers the nav rail's 140ms AnimatedContainer and the 200ms
+  // AppConstants.animationDuration used across the screens.
+  for (int i = 0; i < 8; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+
+  if (after != null) {
+    await after(tester);
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  // Drain, never assert. An overflow is the bug we are hunting, and
+  // expect(takeException(), isNull) would abort before writing the PNG —
+  // losing exactly the picture worth looking at.
+  for (Object? e = tester.takeException(); e != null; e = tester.takeException()) {
+    debugPrint('[$name] exception during pump: $e');
+  }
+
+  await tester.pump();
+  await expectLater(find.byType(MyApp), matchesGoldenFile('$name.png'));
+}
+
+Widget _appTree(AppState appState) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<AppState>.value(value: appState),
+      ChangeNotifierProvider.value(value: appState.taskQueue),
+      ChangeNotifierProvider.value(value: appState.workbenchUIState),
+      ChangeNotifierProvider.value(value: appState.fileBrowserState),
+      // main.dart does not register this one, but several widgets read it.
+      ChangeNotifierProvider.value(value: appState.galleryState),
+      ChangeNotifierProvider.value(value: appState.downloaderState),
+    ],
+    child: const MyApp(version: '3.13.0'),
+  );
+}
+
+/// Decoding a [FileImage] is asynchronous, so without this every thumbnail
+/// captures as an empty box — the classic golden-test failure.
+///
+/// Must run after the gallery scan: `GalleryState._evictImages` clears the
+/// image cache on every scan, which would undo the warm-up.
+Future<void> _warmImageCache(WidgetTester tester, FixtureEnv env) async {
+  final Finder app = find.byType(MyApp);
+  if (app.evaluate().isEmpty) return;
+  final BuildContext context = tester.element(app);
+
+  for (final String path in env.fixtureImagePaths) {
+    try {
+      await precacheImage(FileImage(File(path)), context);
+    } catch (_) {
+      // A format the decoder does not handle (the .mp4/.mp3 stubs); the widget
+      // shows its own error placeholder, which is what the real app does too.
+    }
+  }
+  try {
+    await precacheImage(const AssetImage('assets/icon/icon.png'), context);
+  } catch (_) {
+    // Only the About block's logo; not worth failing a shot over.
+  }
+}
