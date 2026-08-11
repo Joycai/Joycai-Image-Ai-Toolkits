@@ -154,6 +154,14 @@
   "overwriteConfirmSaveCopyInstead": "改为保存副本",
   "overwriteConfirmSubtitle": "此操作无法撤销",
   "overwriteConfirmKeepOriginalHint": "如需保留原图，可改用「保存副本」。",
+  "overwriteUnsupportedFormat": "无法覆盖 {format} 文件——该格式只能读取、不能写入。请改用「保存副本」。",
+  "@overwriteUnsupportedFormat": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "saveToTempSuccess": "已保存至临时工作区",
   "overwriteSuccess": "原图已更新",
   "custom": "自定义",

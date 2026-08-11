@@ -1905,6 +1905,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get overwriteConfirmKeepOriginalHint => '元の画像を残す場合は「コピーを保存」をご利用ください。';
 
   @override
+  String overwriteUnsupportedFormat(String format) {
+    return '$format ファイルは上書きできません。この形式は読み込み専用です。「コピーを保存」をご利用ください。';
+  }
+
+  @override
   String get saveToTempSuccess => '画像が一時ワークスペースに保存されました';
 
   @override

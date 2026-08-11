@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -11,6 +10,7 @@ import '../../services/database_service.dart';
 import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
+import '../../widgets/models/model_tag_chip.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
@@ -446,7 +446,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ],
                 ),
               ),
-              _buildTagChip(model.tag),
+              ModelTagChip(model.tag),
               const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.more_vert, size: 20),
@@ -527,7 +527,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         .labelMedium
                         ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
-                  trailing: _buildTagChip(m.tag),
+                  trailing: ModelTagChip(m.tag),
                   onTap: () => _showModelDialog(l10n, appState, model: m),
                 )),
               Padding(
@@ -620,25 +620,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTagChip(String tag) {
-    final color = modelTagAccent(tag);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(100)),
-      ),
-      child: Text(
-        tag.toUpperCase(),
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

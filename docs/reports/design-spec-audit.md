@@ -59,6 +59,9 @@
 | `constants.dart:68-78` | 9 个零调用点的死令牌（`cardRadius` / `smallRadius` / `defaultPadding` / `opacityLow`…）→ 删除，几何统一到 `design_tokens.dart` |
 | 计费口径 5 色 | `usage_summary.dart` 声明为公开常量、注释写着「与费率组价格药丸共用」，`pricing_group_manager.dart` 却又**私有地重抄了 4 个**、注释写着「刻意用与用量页相同的色」——共用的意图一直都在，只是被复制而非导入。→ 抽出 `core/metric_palette.dart` |
 | 模型类型 5 色 | `models_screen.dart` 与 `discovery_dialog.dart` 各有一份**逐字节相同**的 `switch`，`model_edit_dialog.dart` 第三份写成元组表。→ 抽出 `core/model_kind_palette.dart` |
+| `data_section.dart` ↔ `wizard_import.dart` | 导入选项的移动端 sheet / 桌面 dialog / 开关行三个函数**各存一份**，且已开始漂移（一边 `AppButtonSize.large`+`fullWidth`、另一边 `SizedBox` 裹默认尺寸；一边问 `Responsive`、另一边硬写 `MediaQuery…< 600`）。→ 抽出 `widgets/dialogs/import_options_dialog.dart`，两份 `Colors.grey` / `Colors.grey[400]` 一并换成主题角色 |
+| 模型类型 chip 容器 | 颜色已共用，但容器一个圆角 8 带描边、一个圆角 6 无描边，同一个 chip 在两屏长得不一样。→ 抽出 `widgets/models/model_tag_chip.dart`，取带描边那版，圆角走 `AppRadius.control` |
+| 覆盖原图写入 PNG 字节到 `.jpg` | `_runImageProcess` 恒用 `img.encodePng`，覆盖 `.jpg` 会把 PNG 字节写进 `.jpg`。→ 改用 `img.encodeNamedImage(targetPath)` 按扩展名选编码器；无编码器的格式（app 能打开但写不了的 **avif**）**明确抛异常**而非静默回落 PNG，UI 给出可操作的提示。`test/image_encoding_test.dart` 从字节而非文件名去验证格式 |
 | `settings_screen.dart` | 已有 `_categoryColor()`，但移动端列表把同样的 5 个色值又内联写了一遍，绕过了那个函数。→ 由 `_buildCategoryTile` 内部统一取色 |
 | `crop_resize_view.dart:447` | 输出条宣称副本存到 `临时工作区 / crop_photo.jpg`，实际写的是 `<temp>/joycai/processed/crop_photo_<时间戳>.png`——文件名、扩展名、目录三处都不符。→ 抽出 `ImageProcessingService.resolveCropCopyTarget()`，输出条 / 覆盖弹窗 / 实际写入共用同一个解析器，命名改为确定性的 `<name>_crop.png`（冲突时加数字后缀） |
 | `image_processing_service.dart` `saveImage()` | 裸 `writeAsBytes`，复制和覆盖走同一行、只差调用方拼出的路径字符串。→ 新增必填的 `allowOverwrite`，为 false 且目标已存在时抛异常。破坏性操作在 UI 与 service 两层都要拦 |
@@ -67,11 +70,8 @@
 
 | 项 | 说明 |
 |---|---|
-| 42 处裸 `TextField` 的手写 `InputDecoration` | `inputDecorationTheme` 已给出描边式基线，但调用点自己写了 `border:`/`filled:` 的会局部覆盖主题。逐个清掉是 25 个文件的机械改动，建议按屏单独推进 |
-| 模型类型 chip 组件本身 | `models_screen.dart` 与 `discovery_dialog.dart` 的 `_buildTagChip` 现在共用颜色，但**两个容器仍是各写各的**（圆角 8 + 描边 vs 圆角 6 无描边）。抽成一个共享组件会带来观感变化，本轮只做了颜色去重 |
-| `data_section.dart:319-407` ↔ `wizard_import.dart:97-187` | 近乎逐行重复，含各自的 `Colors.grey` |
+| 仍在自绘的输入框装饰 | 冗余的那批（`border: const OutlineInputBorder()` 与 `isDense: true`，21 个文件 35 处）已删，交还给 `inputDecorationTheme`。**剩下的是刻意的**：5 处 `InputBorder.none`（聊天输入框、Markdown 正文、工具栏内联数字、提示词页头搜索）、9 处填充式搜索框、以及 `AppDropdown` / `ChatModelSelector` / `PricingGroupManager` 自己的描边逻辑。这些**不该**被主题收编——真正剩下的问题是那 9 处填充式搜索框长得几乎一样却各写各的，值得抽个共享组件 |
 | 10c–10e 页面重排、10j/10k 字段级重设计 | 见上 |
-| 覆盖原图写入 PNG 字节到 `.jpg` | `_runImageProcess` 恒用 `img.encodePng`（`image_processing_service.dart:73`），所以覆盖一个 `.jpg` 会把 PNG 字节写进 `.jpg` 文件——内容与扩展名不符。修法是按目标扩展名选编码器（并为 JPEG 定质量参数），属于保存行为变更，单独一轮 |
 | 分组小标题组件 | 目前只在组件全景图里表达，未抽成共享组件 |
 
 ## 验证方式

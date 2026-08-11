@@ -823,6 +823,14 @@
   "overwriteConfirmSaveCopyInstead": "改為儲存副本",
   "overwriteConfirmSubtitle": "此操作無法復原",
   "overwriteConfirmKeepOriginalHint": "如需保留原圖，可改用「儲存副本」。",
+  "overwriteUnsupportedFormat": "無法覆蓋 {format} 檔案——此格式只能讀取、不能寫入。請改用「儲存副本」。",
+  "@overwriteUnsupportedFormat": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
   "saveToTempSuccess": "圖片已儲存至臨時工作區",
   "overwriteSuccess": "原始檔案已更新",
   "custom": "自訂",

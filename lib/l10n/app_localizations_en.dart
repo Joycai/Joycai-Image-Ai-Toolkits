@@ -1950,6 +1950,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'To keep the original, use Save Copy instead.';
 
   @override
+  String overwriteUnsupportedFormat(String format) {
+    return 'Cannot overwrite a $format file — this format can be opened but not written. Use Save Copy instead.';
+  }
+
+  @override
   String get saveToTempSuccess => 'Image saved to temporary workspace';
 
   @override
