@@ -12,6 +12,7 @@ dart tool/merge_l10n.dart && flutter gen-l10n     # regenerate l10n (run after e
 flutter run --release                              # run app (use --release on macOS — see Troubleshooting)
 flutter analyze                                    # MUST show "No issues found!" before any commit
 flutter build macos                                # or windows / linux / apk / ipa
+flutter test test/screenshots                      # render every screen to build/ui-screenshots/*.png
 ```
 
 ## Project Map
@@ -53,6 +54,7 @@ that fail silently when broken, and alternatives already tried and rejected.
 
 - **`flutter analyze` must pass** (zero issues, info-level included) after every code change.
 - **Responsive UI:** all changes must work on Mobile (<600px), Tablet (<1000px), Desktop (≥1000px). Use `Responsive`/`ResponsiveBuilder` (`lib/core/responsive.dart`). FileBrowser and ImageDownloader are desktop/tablet-only.
+- **Visual debugging:** to actually *see* a layout rather than infer it, run `flutter test test/screenshots` and open the PNGs in `build/ui-screenshots/`. They render the real screens with seeded data at all three widths, in light and dark. Overflows are printed to the run output, not asserted — this is never a regression gate. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
 - **State:** use the existing state classes. Never use `StatefulWidget` for shared or persistent data. Always create new list/object instances before `notifyListeners()` — do not mutate in place.
 - **Data persistence:** all user data goes through `DatabaseService` and the repository layer.
 - **Business logic:** belongs in `lib/services/`, not in widgets or screens.

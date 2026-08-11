@@ -17,6 +17,15 @@ To run the tests:
 flutter test
 ```
 
+## Visual Verification
+
+`flutter test test/screenshots` renders every screen of the real app at mobile,
+tablet and desktop widths (light and dark) against a seeded database, and writes
+PNGs to `build/ui-screenshots/`. It is a debugging tool for inspecting layout,
+not a golden regression gate — the comparator always overwrites and always
+passes, and layout exceptions are printed to the run output rather than
+asserted. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
+
 ## Manual Verification
 - **Build:** Always ensure the app compiles for the target platform (Windows).
   ```bash
