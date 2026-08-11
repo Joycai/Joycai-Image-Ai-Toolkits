@@ -821,6 +821,8 @@
   "overwriteConfirmTitle": "覆蓋原始檔案？",
   "overwriteConfirmMessage": "此操作將永久替換原始檔案。您確定嗎？",
   "overwriteConfirmSaveCopyInstead": "改為儲存副本",
+  "overwriteConfirmSubtitle": "此操作無法復原",
+  "overwriteConfirmKeepOriginalHint": "如需保留原圖，可改用「儲存副本」。",
   "saveToTempSuccess": "圖片已儲存至臨時工作區",
   "overwriteSuccess": "原始檔案已更新",
   "custom": "自訂",

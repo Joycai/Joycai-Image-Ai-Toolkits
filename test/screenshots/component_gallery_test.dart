@@ -20,8 +20,10 @@ import 'package:joycai_image_ai_toolkits/core/app_semantic_colors.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
+import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
@@ -31,12 +33,18 @@ void main() {
   for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
     for (final Brightness brightness in Brightness.values) {
       testWidgets('gallery · ${seed.key} · ${brightness.name}', (tester) async {
-        tester.view.physicalSize = const Size(720, 900);
+        tester.view.physicalSize = const Size(720, 1080);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
         await tester.pumpWidget(MaterialApp(
           debugShowCheckedModeBanner: false,
+          // Not optional: AppDialog's close button reads its tooltip from
+          // AppLocalizations, so a MaterialApp without the delegates throws
+          // rather than degrading. The real app always has them.
+          locale: const Locale('zh'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           // The font the app actually runs with. Without it the theme falls
           // back to Roboto, which has no CJK — every label in this gallery
           // photographs as a row of tofu boxes.
@@ -164,6 +172,24 @@ class _Gallery extends StatelessWidget {
               ]),
               const _Label('语义色 · 七个种子色下应完全一致'),
               const _SemanticRow(),
+              const _Label('对话框外壳 · 危险动作'),
+              // The chrome only, not any one dialog's body: the icon plate
+              // takes its tint from `iconColor`, so this is also the check
+              // that a destructive dialog comes out red at every seed rather
+              // than in the user's accent.
+              AppDialog(
+                icon: Icons.warning_amber_rounded,
+                iconColor: colorScheme.error,
+                title: '覆盖原图？',
+                subtitle: '此操作无法撤销',
+                maxWidth: 460,
+                onClose: () {},
+                content: const Text('原始文件将被裁剪结果永久替换。'),
+                actions: [
+                  AppButton(label: '取消', variant: AppButtonVariant.text, onPressed: () {}),
+                  AppButton(label: '覆盖原图', variant: AppButtonVariant.destructive, onPressed: () {}),
+                ],
+              ),
             ],
           ),
         ),

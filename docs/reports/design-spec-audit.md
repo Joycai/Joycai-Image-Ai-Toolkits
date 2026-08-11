@@ -45,7 +45,7 @@
 | | 结论 |
 |---|---|
 | 10j 添加费率组 / 10k 编辑费率组 | 设计稿是 `PricingGroupManager` 的**重设计**：fieldset 式浮起图例标签、46px 图标底板、11px 字段框。`AppDialog` 的新外壳（底板 / 分隔线 / 圆角）已把骨架对齐；字段级重设计未做 |
-| 10l 覆盖原图确认 | 标注「**新增**」——应用中尚不存在这个确认弹窗。未实现。`AppDialog(icon:, iconColor: colorScheme.error, onClose:, divided:)` 已经能直接搭出设计稿的形状，实现成本很低 |
+| 10l 覆盖原图确认 | **设计稿标注「新增」，但应用里其实早就有**（`crop_resize_toolbar.dart`，三个按钮与尺寸行俱全）。本报告初版照搬了设计稿的标注而没查代码，是错的。已按 10l 重做外观：危险色图标底板、副标题、关闭按钮、带边框的文件行（含 尺寸→尺寸 箭头，新尺寸用 `error` 色）、提示改存副本的信息框 |
 
 ## 四、顺带修掉的既有缺陷
 
@@ -57,6 +57,8 @@
 | `main.dart:391` | `Color(0xFFB794F6)` 固定紫与 `colorScheme.primary` 组渐变，与 7 个种子色中的 6 个打架 → `primaryContainer` |
 | `log_console.dart` ↔ `task_log_dialog.dart` ↔ `app_snackbar.dart` | 同一组日志级别 / 警告色抄了三份，各带手写 isDark 分支 → 统一读 `AppSemanticColors` |
 | `constants.dart:68-78` | 9 个零调用点的死令牌（`cardRadius` / `smallRadius` / `defaultPadding` / `opacityLow`…）→ 删除，几何统一到 `design_tokens.dart` |
+| `crop_resize_view.dart:447` | 输出条宣称副本存到 `临时工作区 / crop_photo.jpg`，实际写的是 `<temp>/joycai/processed/crop_photo_<时间戳>.png`——文件名、扩展名、目录三处都不符。→ 抽出 `ImageProcessingService.resolveCropCopyTarget()`，输出条 / 覆盖弹窗 / 实际写入共用同一个解析器，命名改为确定性的 `<name>_crop.png`（冲突时加数字后缀） |
+| `image_processing_service.dart` `saveImage()` | 裸 `writeAsBytes`，复制和覆盖走同一行、只差调用方拼出的路径字符串。→ 新增必填的 `allowOverwrite`，为 false 且目标已存在时抛异常。破坏性操作在 UI 与 service 两层都要拦 |
 
 ## 五、已知未做
 
@@ -65,7 +67,8 @@
 | 42 处裸 `TextField` 的手写 `InputDecoration` | `inputDecorationTheme` 已给出描边式基线，但调用点自己写了 `border:`/`filled:` 的会局部覆盖主题。逐个清掉是 25 个文件的机械改动，建议按屏单独推进 |
 | 身份色去重 | `usage_summary.dart` ↔ `pricing_group_manager.dart`（计费口径 5 色）、`models_screen.dart` ↔ `discovery_dialog.dart` ↔ `model_edit_dialog.dart`（模型类型 5 色）仍各自硬编码。它们是身份色不是语义色，应仿 `core/fee_group_palette.dart` 各抽一个调色板模块 |
 | `data_section.dart:319-407` ↔ `wizard_import.dart:97-187` | 近乎逐行重复，含各自的 `Colors.grey` |
-| 10c–10e 页面重排、10l 新弹窗、10j/10k 字段级重设计 | 见上 |
+| 10c–10e 页面重排、10j/10k 字段级重设计 | 见上 |
+| 覆盖原图写入 PNG 字节到 `.jpg` | `_runImageProcess` 恒用 `img.encodePng`（`image_processing_service.dart:73`），所以覆盖一个 `.jpg` 会把 PNG 字节写进 `.jpg` 文件——内容与扩展名不符。修法是按目标扩展名选编码器（并为 JPEG 定质量参数），属于保存行为变更，单独一轮 |
 | 分组小标题组件 | 目前只在组件全景图里表达，未抽成共享组件 |
 
 ## 验证方式

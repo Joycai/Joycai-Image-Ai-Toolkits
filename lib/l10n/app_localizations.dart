@@ -3629,6 +3629,18 @@ abstract class AppLocalizations {
   /// **'Save Copy Instead'**
   String get overwriteConfirmSaveCopyInstead;
 
+  /// No description provided for @overwriteConfirmSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get overwriteConfirmSubtitle;
+
+  /// No description provided for @overwriteConfirmKeepOriginalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep the original, use Save Copy instead.'**
+  String get overwriteConfirmKeepOriginalHint;
+
   /// No description provided for @saveToTempSuccess.
   ///
   /// In en, this message translates to:

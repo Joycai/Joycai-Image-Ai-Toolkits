@@ -1899,6 +1899,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get overwriteConfirmSaveCopyInstead => '代わりにコピーを保存';
 
   @override
+  String get overwriteConfirmSubtitle => 'この操作は取り消せません';
+
+  @override
+  String get overwriteConfirmKeepOriginalHint => '元の画像を残す場合は「コピーを保存」をご利用ください。';
+
+  @override
   String get saveToTempSuccess => '画像が一時ワークスペースに保存されました';
 
   @override

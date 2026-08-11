@@ -5,9 +5,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_paths.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
+import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
@@ -40,7 +40,15 @@ class _CropResizeViewState extends State<CropResizeView> {
 
   ImageMetadata? _meta;
   String? _metaPath;
-  String? _tempWorkspaceDir;
+  /// The name "save a copy" would actually write, resolved rather than
+  /// guessed.
+  ///
+  /// This strip used to build the name itself, and got it wrong three ways at
+  /// once — it printed `crop_photo.jpg` where the save produced
+  /// `<temp>/joycai/processed/crop_photo_1754899200000.png`. It now asks the
+  /// same resolver the save calls, so the strip and the overwrite dialog and
+  /// the file on disk cannot disagree.
+  String? _copyFileName;
 
   /// Wraps the editor so the zoom pill can find its render box and simulate
   /// a mouse-wheel event at its center — extended_image's editor doesn't
@@ -48,19 +56,16 @@ class _CropResizeViewState extends State<CropResizeView> {
   /// takes, so the +/- buttons replay that same path instead of a click.
   final GlobalKey _canvasKey = GlobalKey();
 
-  @override
-  void initState() {
-    super.initState();
-    AppPaths.getTempDirectory().then((dir) {
-      if (mounted) setState(() => _tempWorkspaceDir = dir);
-    });
-  }
-
   void _loadMeta(String path) {
     if (_metaPath == path) return;
     _metaPath = path;
     ImageMetadataService().getMetadata(path).then((meta) {
       if (mounted && _metaPath == path) setState(() => _meta = meta);
+    });
+    // Rides on the same path-changed guard as the metadata: the copy's name is
+    // derived from this path and has to be re-resolved whenever it changes.
+    ImageProcessingService().resolveCropCopyTarget(path).then((target) {
+      if (mounted && _metaPath == path) setState(() => _copyFileName = target.fileName);
     });
   }
 
@@ -120,8 +125,7 @@ class _CropResizeViewState extends State<CropResizeView> {
             targetWidth: null,
             targetHeight: null,
             samplingMethod: uiState.samplingMethod,
-            tempWorkspaceDir: null,
-            sourceName: null,
+            copyFileName: null,
             l10n: l10n,
             colorScheme: colorScheme,
           ),
@@ -190,8 +194,7 @@ class _CropResizeViewState extends State<CropResizeView> {
           targetWidth: uiState.targetWidth,
           targetHeight: uiState.targetHeight,
           samplingMethod: uiState.samplingMethod,
-          tempWorkspaceDir: _tempWorkspaceDir,
-          sourceName: sourceImage.name,
+          copyFileName: _copyFileName,
           l10n: l10n,
           colorScheme: colorScheme,
         ),
@@ -411,8 +414,8 @@ class _OutputPreviewBar extends StatelessWidget {
   final int? targetWidth;
   final int? targetHeight;
   final String samplingMethod;
-  final String? tempWorkspaceDir;
-  final String? sourceName;
+  /// Resolved by the parent from ImageProcessingService, never derived here.
+  final String? copyFileName;
   final AppLocalizations l10n;
   final ColorScheme colorScheme;
 
@@ -422,8 +425,7 @@ class _OutputPreviewBar extends StatelessWidget {
     required this.targetWidth,
     required this.targetHeight,
     required this.samplingMethod,
-    required this.tempWorkspaceDir,
-    required this.sourceName,
+    required this.copyFileName,
     required this.l10n,
     required this.colorScheme,
   });
@@ -443,10 +445,9 @@ class _OutputPreviewBar extends StatelessWidget {
     final operation = isScaling ? l10n.cropResizeCropAndScale(percent) : l10n.cropResizeCropOnly;
     final samplingLabel = _kSamplingLabels[samplingMethod] ?? samplingMethod;
 
-    final name = sourceName;
-    final destination = (name == null || tempWorkspaceDir == null)
+    final destination = copyFileName == null
         ? null
-        : '${l10n.cropResizeTempWorkspaceLabel} / crop_${_baseName(name)}${_extension(name)}';
+        : '${l10n.cropResizeTempWorkspaceLabel} / $copyFileName';
 
     final textTheme = Theme.of(context).textTheme;
     final labelStyle = textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
@@ -487,13 +488,4 @@ class _OutputPreviewBar extends StatelessWidget {
     );
   }
 
-  String _baseName(String name) {
-    final dot = name.lastIndexOf('.');
-    return dot > 0 ? name.substring(0, dot) : name;
-  }
-
-  String _extension(String name) {
-    final dot = name.lastIndexOf('.');
-    return dot > 0 ? name.substring(dot) : '';
-  }
 }
