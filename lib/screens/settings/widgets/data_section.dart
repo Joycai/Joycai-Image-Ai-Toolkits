@@ -154,11 +154,11 @@ class DataSection extends StatelessWidget {
             children: [
               Text(l10n.exportOptions, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
-              _buildExportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
+              _buildExportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
               const Divider(height: 32),
-              _buildExportOption(l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
+              _buildExportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
               const Divider(height: 32),
-              _buildExportOption(l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
+              _buildExportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
               const SizedBox(height: 48),
               AppButton(
                 label: l10n.exportNow,
@@ -197,11 +197,11 @@ class DataSection extends StatelessWidget {
         builder: (context, setState) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildExportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
+            _buildExportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
             const SizedBox(height: 12),
-            _buildExportOption(l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
+            _buildExportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, (v) => setState(() => p = v)),
             const SizedBox(height: 12),
-            _buildExportOption(l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
+            _buildExportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, (v) => setState(() => u = v)),
           ],
         ),
       ),
@@ -222,12 +222,14 @@ class DataSection extends StatelessWidget {
     );
   }
 
-  Widget _buildExportOption(String title, String desc, bool value, Function(bool) onChanged) {
+  Widget _buildExportOption(
+      BuildContext context, String title, String desc, bool value, Function(bool) onChanged) {
+    final textTheme = Theme.of(context).textTheme;
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      subtitle: Text(desc, style: const TextStyle(fontSize: 12)),
+      title: Text(title, style: textTheme.titleMedium),
+      subtitle: Text(desc, style: textTheme.bodySmall),
       contentPadding: EdgeInsets.zero,
     );
   }
@@ -314,13 +316,13 @@ class DataSection extends StatelessWidget {
             children: [
               Text(l10n.importOptions, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
               const SizedBox(height: 24),
-              _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+              _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
               const Divider(height: 32),
-              _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+              _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
               const Divider(height: 32),
-              _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
+              _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
               const SizedBox(height: 48),
               AppButton(
                 label: l10n.importNow,
@@ -365,13 +367,13 @@ class DataSection extends StatelessWidget {
         builder: (context, setState) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
             const SizedBox(height: 20),
-            _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+            _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
             const SizedBox(height: 12),
-            _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+            _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
             const SizedBox(height: 12),
-            _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
+            _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
           ],
         ),
       ),
@@ -393,18 +395,16 @@ class DataSection extends StatelessWidget {
     );
   }
 
-  Widget _buildImportOption(String title, String desc, bool value, bool enabled, AppLocalizations l10n, Function(bool) onChanged) {
+  Widget _buildImportOption(BuildContext context, String title, String desc, bool value, bool enabled,
+      AppLocalizations l10n, Function(bool) onChanged) {
+    final textTheme = Theme.of(context).textTheme;
     return SwitchListTile(
       value: value && enabled,
       onChanged: enabled ? onChanged : null,
-      title: Text(title, style: TextStyle(
-        fontWeight: FontWeight.bold, 
-        fontSize: 14,
-        color: enabled ? null : Colors.grey,
-      )),
+      title: Text(title, style: textTheme.titleMedium?.copyWith(color: enabled ? null : Colors.grey)),
       subtitle: Text(
-        enabled ? desc : l10n.notInBackup, 
-        style: TextStyle(fontSize: 12, color: enabled ? null : Colors.grey[400]),
+        enabled ? desc : l10n.notInBackup,
+        style: textTheme.bodySmall?.copyWith(color: enabled ? null : Colors.grey[400]),
       ),
       contentPadding: EdgeInsets.zero,
     );

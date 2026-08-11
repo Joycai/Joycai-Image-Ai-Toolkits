@@ -47,7 +47,7 @@ class UsageGroupCosts extends StatelessWidget {
       children: [
         Text(
           l10n.usageByGroup,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 10),
         LayoutBuilder(
@@ -79,6 +79,7 @@ class UsageGroupCosts extends StatelessWidget {
 
   Widget _buildCard(BuildContext context, PricingGroup group, double cost) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final accent = feeGroupAccent(group.id);
     final share = stats.totalCost > 0 ? (cost / stats.totalCost).clamp(0.0, 1.0) : 0.0;
 
@@ -94,7 +95,7 @@ class UsageGroupCosts extends StatelessWidget {
                 Expanded(
                   child: Text(
                     group.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -102,8 +103,7 @@ class UsageGroupCosts extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '\$${cost.toStringAsFixed(4)}',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontFamily: 'monospace',
                     color: colorScheme.onSurface,

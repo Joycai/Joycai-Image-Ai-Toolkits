@@ -100,11 +100,10 @@ class ChatModelSelector extends StatelessWidget {
                   ),
                   child: Text(
                     channel.tag!,
-                    style: TextStyle(
-                      fontSize: 9, 
-                      color: Color(channel.tagColor ?? 0xFF607D8B),
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Color(channel.tagColor ?? 0xFF607D8B),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               Flexible(child: Text(m.modelName, overflow: TextOverflow.ellipsis)),

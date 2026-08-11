@@ -53,12 +53,12 @@ class _ComparatorViewState extends State<ComparatorView> {
             const SizedBox(height: 16),
             Text(
               l10n.sendToComparator,
-              style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Text(
               l10n.selectFromLibrary,
-              style: TextStyle(fontSize: 14, color: colorScheme.outline),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.outline),
             ),
             const SizedBox(height: 20),
             Row(
@@ -98,7 +98,7 @@ class _ComparatorViewState extends State<ComparatorView> {
               Expanded(
                 child: Text(
                   workbenchUIState.comparatorRawPath?.split(Platform.pathSeparator).last ?? '—',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -108,7 +108,7 @@ class _ComparatorViewState extends State<ComparatorView> {
               Expanded(
                 child: Text(
                   workbenchUIState.comparatorAfterPath?.split(Platform.pathSeparator).last ?? '—',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -259,7 +259,7 @@ class _ComparatorViewState extends State<ComparatorView> {
         children: [
           Icon(icon, size: 24, color: fg),
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
+          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: fg)),
         ],
       ),
     );
@@ -272,7 +272,7 @@ class _ComparatorViewState extends State<ComparatorView> {
         color: color.withAlpha(40),
         borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+      child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: color)),
     );
   }
 
@@ -285,14 +285,17 @@ class _ComparatorViewState extends State<ComparatorView> {
       ),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }
 
   Widget _buildViewer(String? path, String label, TransformationController controller, {bool showLabel = true, Color? borderColor}) {
     if (path == null) {
-      return const Center(child: Text('No image', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)));
+      return Center(
+          child: Text('No image',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)));
     }
     return Stack(
       fit: StackFit.expand,
@@ -314,7 +317,7 @@ class _ComparatorViewState extends State<ComparatorView> {
                 color: borderColor ?? Colors.black54, 
                 borderRadius: BorderRadius.circular(4)
               ),
-              child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+              child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
       ],

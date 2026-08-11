@@ -421,7 +421,7 @@ class _VideoControlBarState extends State<_VideoControlBar> {
                     const SizedBox(width: 8),
                     Text(
                       '${_formatDuration(value.position)} / ${_formatDuration(value.duration)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
                     ),
                     const Spacer(),
                     IconButton(

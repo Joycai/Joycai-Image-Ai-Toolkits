@@ -202,7 +202,7 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
             const SizedBox(height: 6),
             Text(
               l10n.imageSizeSnapHint,
-              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
             ),
             if (rules.isNotEmpty) ...[
               const SizedBox(height: 14),
@@ -266,7 +266,10 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.4),
+      style: Theme.of(context)
+          .textTheme
+          .labelMedium
+          ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.4),
     );
   }
 }
@@ -298,7 +301,7 @@ class _AutoCard extends StatelessWidget {
             Icon(Icons.auto_fix_high,
                 size: 18, color: selected ? colorScheme.primary : colorScheme.outline),
             const SizedBox(width: 10),
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
+            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
             if (selected) Icon(Icons.check, size: 16, color: colorScheme.primary),
           ],
         ),
@@ -325,10 +328,9 @@ class _RuleRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                color: passes ? colorScheme.onSurfaceVariant : colorScheme.error,
-              ),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: passes ? colorScheme.onSurfaceVariant : colorScheme.error,
+                  ),
             ),
           ),
         ],
@@ -378,7 +380,7 @@ class _AspectPreview extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '$width×$height',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),

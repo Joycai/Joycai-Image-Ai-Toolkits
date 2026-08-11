@@ -290,7 +290,7 @@ class _CropBadge extends StatelessWidget {
           ),
           child: Text(
             ratio == null ? '$w × $h' : '$w × $h · $ratio',
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -324,9 +324,8 @@ class _CanvasLabel extends StatelessWidget {
     return IgnorePointer(
       child: Text(
         l10n.cropResizeCanvasLabel(name),
-        style: TextStyle(
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Colors.white.withValues(alpha: 0.7),
-          fontSize: 12,
           fontFamily: 'monospace',
           shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
         ),
@@ -372,7 +371,7 @@ class _ZoomPill extends StatelessWidget {
             child: Text(
               '${percent.round()}%',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
             ),
           ),
           _pillIcon(Icons.add, onZoomIn),
@@ -382,7 +381,7 @@ class _ZoomPill extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text(l10n.fitToWindow, style: const TextStyle(color: Colors.white, fontSize: 11)),
+              child: Text(l10n.fitToWindow, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white)),
             ),
           ),
         ],

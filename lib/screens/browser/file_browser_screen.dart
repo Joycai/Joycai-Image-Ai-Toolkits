@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/file_utils.dart';
 import '../../core/responsive.dart';
@@ -160,7 +161,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                     ? l10n.fileBrowseriOSHint
                     : l10n.fileBrowserAndroidHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: colorScheme.primary, fontWeight: FontWeight.w500),
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -213,7 +217,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             children: [
               Text(
                 l10n.fileBrowser,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 3),
               _buildHeaderSummary(fileCount, selectedCount, l10n, colorScheme),
@@ -320,7 +324,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   ) {
     return Text.rich(
       TextSpan(
-        style: TextStyle(fontSize: 12.5, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         children: [
           TextSpan(
             text: l10n.filesCount(fileCount),
@@ -347,10 +351,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
         controller: _searchController,
         focusNode: _searchFocusNode,
         onChanged: (v) => state.setSearchQuery(v),
-        style: const TextStyle(fontSize: 13),
+        style: Theme.of(context).textTheme.bodyMedium,
         decoration: InputDecoration(
           hintText: l10n.searchFilesHint,
-          hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+          hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
           prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.outline),
           suffixIcon: state.searchQuery.isEmpty
               ? null
@@ -426,7 +430,14 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           onDoubleTap: () => _openWithPreview(context, file, state),
           child: ListTile(
             leading: Icon(file.icon, color: file.color),
-            title: Text(file.name, style: const TextStyle(fontSize: 13)),
+            // ListTile tints a selected title with `primary`; the slot carries
+            // `onSurface`, so that tint has to be re-stated or it is lost.
+            title: Text(
+              file.name,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: isSelected ? Theme.of(context).colorScheme.primary : null,
+              ),
+            ),
             subtitle: _FileListItemSubtitle(file: file),
             selected: isSelected,
             onTap: () => state.toggleSelection(file),
@@ -522,7 +533,7 @@ class _FileListItemSubtitleState extends State<_FileListItemSubtitle> {
     final sizeStr = AppConstants.formatFileSize(widget.file.size);
     return Text(
       "$sizeStr | ${widget.file.modified.toString().substring(0, 16)}$_extraInfo",
-      style: const TextStyle(fontSize: 11),
+      style: Theme.of(context).textTheme.labelMedium?.metricsOnly,
     );
   }
 }

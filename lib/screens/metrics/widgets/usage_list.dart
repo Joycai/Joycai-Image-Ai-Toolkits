@@ -62,7 +62,7 @@ class UsageList extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!compact) _buildColumnHeader(l10n, colorScheme),
+            if (!compact) _buildColumnHeader(context, l10n, colorScheme),
             for (var i = 0; i < days.length; i++) ...[
               _buildDayHeader(
                 context,
@@ -92,12 +92,13 @@ class UsageList extends StatelessWidget {
 
   // --- Header -------------------------------------------------------------
 
-  Widget _buildColumnHeader(AppLocalizations l10n, ColorScheme colorScheme) {
-    final style = TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w600,
-      color: colorScheme.onSurfaceVariant,
-    );
+  Widget _buildColumnHeader(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
+    // Same slot as the rows beneath it — left at a bare 11 the header would
+    // have ended up the smaller of the two, which is backwards.
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurfaceVariant,
+        );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -136,6 +137,7 @@ class UsageList extends StatelessWidget {
     required List<Map<String, dynamic>> rows,
     required bool partial,
   }) {
+    final textTheme = Theme.of(context).textTheme;
     final total = rows.fold<double>(0, (sum, row) => sum + calculateRowCost(row));
     final name = _dayName(l10n, day);
     final date = DateFormat('MM-dd').format(day);
@@ -155,7 +157,7 @@ class UsageList extends StatelessWidget {
                   Flexible(
                     child: Text(
                       name,
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                      style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -164,8 +166,9 @@ class UsageList extends StatelessWidget {
                 ],
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: name == null ? 12.5 : 11,
+                  // Two sizes, so two slots: standing in for the day's name the
+                  // date takes the larger one, beside it the smaller.
+                  style: (name == null ? textTheme.bodySmall : textTheme.labelMedium)?.copyWith(
                     fontWeight: name == null ? FontWeight.w700 : FontWeight.w400,
                     fontFamily: 'monospace',
                     color: name == null ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
@@ -176,7 +179,7 @@ class UsageList extends StatelessWidget {
                   Flexible(
                     child: Text(
                       '· ${l10n.usageRecordCount(rows.length)}',
-                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                      style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -189,8 +192,7 @@ class UsageList extends StatelessWidget {
           if (!partial)
             Text(
               '\$${total.toStringAsFixed(4)}',
-              style: const TextStyle(
-                fontSize: 12,
+              style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 fontFamily: 'monospace',
                 color: usageCostAccent,
@@ -340,8 +342,7 @@ class _UsageRowState extends State<_UsageRow> {
           child: Text(
             DateFormat('HH:mm').format(time),
             textAlign: TextAlign.end,
-            style: TextStyle(
-              fontSize: 11.5,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontFamily: 'monospace',
               color: colorScheme.onSurfaceVariant,
             ),
@@ -368,8 +369,7 @@ class _UsageRowState extends State<_UsageRow> {
                 children: [
                   Text(
                     DateFormat('HH:mm').format(time),
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontFamily: 'monospace',
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -395,6 +395,7 @@ class _UsageRowState extends State<_UsageRow> {
   /// it pushed every real model name to a different x and made the column
   /// unscannable; as a badge it stays readable and the names line up.
   Widget _buildModel(ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
     final modelId = widget.row['model_id'] as String;
     final match = RegExp(r'^\[([^\]]+)\]\s*').firstMatch(modelId);
     final name = match == null ? modelId : modelId.substring(match.end);
@@ -415,8 +416,7 @@ class _UsageRowState extends State<_UsageRow> {
               ),
               child: Text(
                 match.group(1)!,
-                style: TextStyle(
-                  fontSize: 10,
+                style: textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: colorScheme.primary,
                 ),
@@ -429,8 +429,7 @@ class _UsageRowState extends State<_UsageRow> {
           Flexible(
             child: Text(
               name,
-              style: const TextStyle(
-                fontSize: 12.5,
+              style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontFamily: 'monospace',
               ),
@@ -452,7 +451,7 @@ class _UsageRowState extends State<_UsageRow> {
     if (billingMode != 'token') {
       return Text(
         l10n.usageItemCount(row['request_count'] as int? ?? 1),
-        style: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
@@ -498,7 +497,7 @@ class _UsageRowState extends State<_UsageRow> {
         const SizedBox(width: 3),
         Text(
           _abbreviate((tokens as int?) ?? 0),
-          style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
         ),
       ],
     );
@@ -510,8 +509,7 @@ class _UsageRowState extends State<_UsageRow> {
     return Text(
       '\$${cost.toStringAsFixed(4)}',
       textAlign: TextAlign.end,
-      style: TextStyle(
-        fontSize: 12.5,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
         fontWeight: FontWeight.w700,
         fontFamily: 'monospace',
         color: cost > 0 ? colorScheme.onSurface : colorScheme.outline,

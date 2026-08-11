@@ -51,10 +51,9 @@ class PromptsSidebar extends StatelessWidget {
             // panel's own title two rows above it.
             child: Text(
               l10n.categoriesTab,
-              style: TextStyle(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurfaceVariant,
-                fontSize: 12.5,
               ),
             ),
           ),
@@ -99,7 +98,7 @@ class PromptsSidebar extends StatelessWidget {
                 children: [
                   Text(
                     '${l10n.matchModeLabel}:',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -171,8 +170,7 @@ class _SidebarTile extends StatelessWidget {
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                     color: selected ? colorScheme.primary : colorScheme.onSurface,
                   ),
@@ -181,8 +179,7 @@ class _SidebarTile extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '$count',
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                 ),
               ),

@@ -105,10 +105,11 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
-                  style: TextStyle(color: colorScheme.onSurface, fontSize: 12),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Filter logs...',
-                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                    hintStyle:
+                        Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                     prefixIcon: Icon(Icons.search, size: 14, color: colorScheme.onSurfaceVariant),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.close, size: 14, color: colorScheme.onSurfaceVariant),
@@ -170,7 +171,11 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: ActionChip(
-        label: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+        label: Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(fontWeight: FontWeight.bold, color: color)),
         backgroundColor: isSelected ? color.withAlpha(100) : Colors.transparent,
         side: BorderSide(color: color.withAlpha(isSelected ? 255 : 100)),
         padding: EdgeInsets.zero,
@@ -197,7 +202,10 @@ class _LogLine extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 11, height: 1.4),
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(fontFamily: 'monospace', height: 1.4),
           children: [
             TextSpan(
               text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ',

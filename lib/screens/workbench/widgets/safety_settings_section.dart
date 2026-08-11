@@ -55,11 +55,11 @@ class SafetySettingsSection extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(l10n.safetySettings,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 2),
         Text(
           l10n.safetySettingsDesc,
-          style: TextStyle(fontSize: 11, color: colorScheme.outline),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
         ),
         for (final category in SafetySettings.categories) ...[
           const SizedBox(height: 8),
@@ -67,13 +67,12 @@ class SafetySettingsSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(_categoryLabel(l10n, category),
-                    style: const TextStyle(fontSize: 12)),
+                    style: Theme.of(context).textTheme.bodySmall),
               ),
               Text(
                 _thresholdLabel(
                     l10n, thresholds[category] ?? SafetySettings.defaultThreshold),
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.primary,
                 ),

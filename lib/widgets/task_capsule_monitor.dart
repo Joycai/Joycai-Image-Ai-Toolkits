@@ -116,8 +116,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                                 runningCount > 0 
                                   ? l10n.runningCount(runningCount)
                                   : l10n.plannedCount(pendingCount),
-                                style: TextStyle(
-                                  fontSize: 13, 
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurfaceVariant
                                 ),
@@ -125,7 +124,10 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                               if (pendingCount > 0 && runningCount > 0)
                                 Text(
                                   l10n.plannedCount(pendingCount),
-                                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(color: colorScheme.outline),
                                 ),
                             ],
                           ),
@@ -134,8 +136,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                         if (runningCount > 0)
                           Text(
                             "${(avgProgress * 100).toInt()}%",
-                            style: TextStyle(
-                              fontSize: 13, 
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w900,
                               color: colorScheme.primary
                             ),
@@ -173,7 +174,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                             Expanded(
                               child: Text(
                                 t.modelId,
-                                style: const TextStyle(fontSize: 11),
+                                style: Theme.of(context).textTheme.labelMedium,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),

@@ -94,13 +94,13 @@ Future<bool?> _showMobileImportOptions(
           children: [
             Text(l10n.importOptions, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
             const SizedBox(height: 24),
-            _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+            _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
             const Divider(height: 32),
-            _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+            _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
             const Divider(height: 32),
-            _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
+            _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
             const SizedBox(height: 48),
             SizedBox(
               width: double.infinity,
@@ -147,13 +147,13 @@ Future<bool?> _showDesktopImportOptions(
       builder: (context, setState) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(l10n.importSettingsConfirm, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Text(l10n.importSettingsConfirm, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
           const SizedBox(height: 20),
-          _buildImportOption(l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
+          _buildImportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, hasDirs, l10n, (v) => setState(() => d = v)),
           const SizedBox(height: 12),
-          _buildImportOption(l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
+          _buildImportOption(context, l10n.includePrompts, l10n.includePromptsDesc, p, hasPrompts, l10n, (v) => setState(() => p = v)),
           const SizedBox(height: 12),
-          _buildImportOption(l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
+          _buildImportOption(context, l10n.includeUsage, l10n.includeUsageDesc, u, hasUsage, l10n, (v) => setState(() => u = v)),
         ],
       ),
     ),
@@ -175,18 +175,16 @@ Future<bool?> _showDesktopImportOptions(
   );
 }
 
-Widget _buildImportOption(String title, String desc, bool value, bool enabled, AppLocalizations l10n, Function(bool) onChanged) {
+Widget _buildImportOption(BuildContext context, String title, String desc, bool value, bool enabled,
+    AppLocalizations l10n, Function(bool) onChanged) {
+  final textTheme = Theme.of(context).textTheme;
   return SwitchListTile(
     value: value && enabled,
     onChanged: enabled ? onChanged : null,
-    title: Text(title, style: TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 14,
-      color: enabled ? null : Colors.grey,
-    )),
+    title: Text(title, style: textTheme.titleMedium?.copyWith(color: enabled ? null : Colors.grey)),
     subtitle: Text(
       enabled ? desc : l10n.notInBackup,
-      style: TextStyle(fontSize: 12, color: enabled ? null : Colors.grey[400]),
+      style: textTheme.bodySmall?.copyWith(color: enabled ? null : Colors.grey[400]),
     ),
     contentPadding: EdgeInsets.zero,
   );

@@ -123,9 +123,8 @@ class _MetadataInspectorState extends State<MetadataInspector> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: TextStyle(
-          fontWeight: FontWeight.bold, 
-          fontSize: 11, 
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
           color: colorScheme.primary,
         ),
@@ -141,11 +140,11 @@ class _MetadataInspectorState extends State<MetadataInspector> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(entry.key, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               SelectableText(
                 entry.value,
-                style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
               ),
               const Divider(height: 16),
             ],

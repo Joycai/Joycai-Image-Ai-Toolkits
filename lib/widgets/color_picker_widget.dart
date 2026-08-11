@@ -63,11 +63,14 @@ class ColorPickerWidget extends StatelessWidget {
         ],
 
         // Preset Colors Section
-        const Align(
+        Align(
           alignment: Alignment.centerLeft,
           child: Text(
             "Presets",
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey),
           ),
         ),
         const SizedBox(height: 8),

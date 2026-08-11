@@ -120,8 +120,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
                       const SizedBox(width: 8),
                       Text(
                         label,
-                        style: TextStyle(
-                          fontSize: 15,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                           color: color,
                         ),

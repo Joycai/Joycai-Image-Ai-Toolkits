@@ -24,8 +24,7 @@ class AppSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(
               title,
-              style: TextStyle(
-                fontSize: 18,
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
               ),

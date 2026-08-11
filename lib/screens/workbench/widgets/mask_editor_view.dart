@@ -130,7 +130,7 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                 Expanded(
                   child: Text(
                     l10n.binaryModeActive,
-                    style: TextStyle(fontSize: 12, color: colorScheme.onTertiaryContainer),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onTertiaryContainer),
                   ),
                 ),
               ],

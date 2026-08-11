@@ -177,8 +177,8 @@ class WorkbenchTopBar extends StatelessWidget {
                         const SizedBox(width: 5),
                         Text(
                           channelName,
-                          style: TextStyle(fontFamily: 'monospace',
-                            fontSize: 11,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontFamily: 'monospace',
                             fontWeight: FontWeight.w500,
                             color: colorScheme.onSurfaceVariant,
                           ),

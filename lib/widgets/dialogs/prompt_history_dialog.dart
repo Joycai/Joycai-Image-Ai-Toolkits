@@ -117,7 +117,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
           Expanded(
             child: Text(
               l10n.promptHistory,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           if (widget.entries.isNotEmpty)
@@ -150,7 +150,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
               Text(
                 l10n.noPromptHistoryDesc,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
               ),
             ],
           ),
@@ -240,7 +240,10 @@ class _HistoryCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       formatRelativeTime(l10n, entry.usedAt),
-                      style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: colorScheme.outline),
                     ),
                   ),
                   Icon(Icons.chevron_right, size: 16, color: colorScheme.outline),
@@ -249,7 +252,7 @@ class _HistoryCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 entry.content,
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -280,7 +283,7 @@ class _PromptPreviewDialog extends StatelessWidget {
         children: [
           Text(
             formatRelativeTime(l10n, entry.usedAt),
-            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
           const SizedBox(height: 12),
           // Caps the prompt body only — the warning line below it has to stay
@@ -297,7 +300,7 @@ class _PromptPreviewDialog extends StatelessWidget {
               child: SingleChildScrollView(
                 child: SelectableText(
                   entry.content,
-                  style: const TextStyle(fontSize: 13),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
             ),
@@ -305,7 +308,7 @@ class _PromptPreviewDialog extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             l10n.applyPromptWarning,
-            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
         ],
       ),

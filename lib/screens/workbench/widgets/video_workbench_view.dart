@@ -132,7 +132,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                         Expanded(
                           child: Text(
                             l10n.processResults,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         IconButton(
@@ -154,7 +154,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                             Text(
                               _errorMessage ?? 'Failed to initialize video player',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, color: colorScheme.error),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.error),
                             ),
                           ],
                         ),

@@ -67,7 +67,7 @@ Future<bool> showPromptEditDialog(
                 ),
               ),
               const SizedBox(height: 16),
-              Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(l10n.tagCategory, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
               const SizedBox(height: 16),
@@ -170,7 +170,7 @@ Future<bool> showSystemPromptEditDialog(
                 ],
               ),
               const SizedBox(height: 16),
-              Text(l10n.tagCategory, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(l10n.tagCategory, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               _TagChips(tags: tags, selectedTagIds: selectedTagIds, setDialogState: setDialogState),
               const SizedBox(height: 16),
@@ -455,7 +455,7 @@ class _TagChips extends StatelessWidget {
         final isSelected = selectedTagIds.contains(id);
         final color = Color(t.color);
         return FilterChip(
-          label: Text(t.name, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : color)),
+          label: Text(t.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: isSelected ? Colors.white : color)),
           selected: isSelected,
           onSelected: (val) {
             setDialogState(() {

@@ -32,17 +32,16 @@ class PermissionPlaceholder extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               service.getPermissionErrorMessage(),
-              style: TextStyle(
-                color: colorScheme.error,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 12),
             Text(
               customMessage ?? service.getPermissionInstructions(),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             AppButton(

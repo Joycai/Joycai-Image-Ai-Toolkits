@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
@@ -212,7 +213,7 @@ class _UsageViewMobileState extends State<UsageViewMobile> {
   /// that says which range every number below them covers.
   Widget _buildPresetChip(String preset, String label) {
     return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontSize: 11)),
+      label: Text(label, style: Theme.of(context).textTheme.labelMedium?.metricsOnly),
       selected: _activePreset == preset,
       onSelected: (_) => _updateRange(preset),
       padding: EdgeInsets.zero,

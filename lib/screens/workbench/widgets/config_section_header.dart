@@ -25,8 +25,7 @@ class ConfigSectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
                 color: colorScheme.primary,

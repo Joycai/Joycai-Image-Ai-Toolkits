@@ -30,15 +30,14 @@ class DownloaderResultsArea extends StatelessWidget {
               children: [
                 Text(
                   l10n.selectImagesToDownload,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   '(${l10n.imagesSelected(selectedCount)})',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
                   ),
                 ),
                 const Spacer(),
@@ -154,13 +153,13 @@ class _GuideStep extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 3),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, color: colorScheme.outline),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
         ],
       ),
@@ -240,8 +239,7 @@ class _ImageDiscoveryCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Text(
                     image.url,
-                    style: const TextStyle(
-                      fontSize: 10.5,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontFamily: 'monospace',
                     ),

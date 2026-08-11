@@ -245,12 +245,12 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ),
           // The style applies to the popup menu items too — it must carry an
           // explicit color or the items render with the wrong default.
-          style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: epCtrl,
-          style: const TextStyle(fontSize: 14),
+          style: Theme.of(context).textTheme.titleMedium,
           decoration: InputDecoration(
             labelText: l10n.endpointUrl,
             isDense: true,
@@ -258,7 +258,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             prefixIcon: const Icon(Icons.link, size: 20),
             helperText: endpointHint,
             helperMaxLines: 3,
-            helperStyle: TextStyle(color: colorScheme.outline, fontSize: 11),
+            helperStyle: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
         ),
         const SizedBox(height: 12),
@@ -269,10 +269,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ),
         const SizedBox(height: 4),
         SwitchListTile(
-          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+          title: Text(l10n.enableDiscovery, style: Theme.of(context).textTheme.titleMedium),
           subtitle: Text(
             l10n.enableDiscoveryDesc,
-            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
           ),
           value: discovery,
           onChanged: (v) => setState(() => discovery = v),

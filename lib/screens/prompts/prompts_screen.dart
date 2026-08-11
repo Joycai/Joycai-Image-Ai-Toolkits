@@ -391,7 +391,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Expanded(
             child: Text(
               l10n.promptLibrary,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -458,7 +458,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           const SizedBox(width: 10),
           Text(
             l10n.categoriesTab,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const Spacer(),
           AppButton(
@@ -684,8 +684,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           if (index == 0) {
             final allSelected = _selectedFilterTagIds.isEmpty;
             return FilterChip(
-              label: Text(l10n.filterAll, style: TextStyle(
-                fontSize: 12,
+              label: Text(l10n.filterAll, style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: allSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                 fontWeight: allSelected ? FontWeight.bold : FontWeight.normal,
               )),
@@ -707,8 +706,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           final color = Color(tag.color);
 
           return FilterChip(
-            label: Text(tag.name, style: TextStyle(
-              fontSize: 12,
+            label: Text(tag.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: isSelected ? Colors.white : color,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             )),

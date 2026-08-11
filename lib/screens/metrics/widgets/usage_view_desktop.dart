@@ -202,8 +202,7 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
           padding: const EdgeInsets.only(left: 2),
           child: Text(
             '${fmt.format(_dateRange.start)} ~ ${fmt.format(_dateRange.end)}',
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurfaceVariant,
               fontFamily: 'monospace',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -157,6 +158,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildChannelsPanel(AppLocalizations l10n, AppState appState, List<LLMChannel> channels) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final modelCount = appState.allModels.length;
 
     // Screen header lives inside the top of the card; its bottom border
@@ -178,13 +180,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
               children: [
                 Text(
                   l10n.modelManager,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   l10n.modelsAndChannelsCount(modelCount, channels.length),
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
@@ -231,15 +232,18 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         leading: _buildChannelIcon(channel),
                         title: Text(
                           channel.displayName,
-                          style: TextStyle(
-                            fontSize: 13,
+                          style: textTheme.bodyMedium?.copyWith(
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            // ListTile tints a selected title with `primary`; the slot
+                            // carries `onSurface`, so that tint has to be re-stated or
+                            // the selected row loses it.
+                            color: isSelected ? colorScheme.primary : null,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
                           l10n.countModels(models.length),
-                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                          style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         onTap: () => setState(() => _selectedChannelId = channel.id),
                       ),
@@ -255,6 +259,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildDetailPanel(AppLocalizations l10n, AppState appState, LLMChannel channel) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final showActionLabels = Responsive.isDesktop(context);
 
     final header = Container(
@@ -274,13 +279,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
               children: [
                 Text(
                   channel.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   channel.endpoint,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
@@ -406,6 +410,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final pricingGroup = appState.allPricingGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
 
     return Card(
@@ -426,11 +431,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(model.modelName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(model.modelName, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Flexible(child: Text(model.modelId, style: TextStyle(fontSize: 12, color: colorScheme.outline), overflow: TextOverflow.ellipsis)),
+                        Flexible(child: Text(model.modelId, style: textTheme.bodySmall?.copyWith(color: colorScheme.outline), overflow: TextOverflow.ellipsis)),
                         if (pricingGroup != null) ...[
                           const SizedBox(width: 8),
                           _buildFeeBadge(pricingGroup.name, colorScheme),
@@ -460,7 +465,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
         color: colorScheme.secondaryContainer.withAlpha(150),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(name, style: TextStyle(fontSize: 10, color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w500)),
+      child: Text(
+        name,
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w500),
+      ),
     );
   }
 
@@ -495,7 +506,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
           child: ExpansionTile(
             leading: _buildChannelIcon(channel),
             title: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(l10n.countModels(models.length), style: const TextStyle(fontSize: 12)),
+            subtitle: Text(l10n.countModels(models.length),
+                style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
             children: [
               if (models.isEmpty)
                 Padding(
@@ -505,7 +517,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
               else
                 ...models.map((m) => ListTile(
                   title: Text(m.modelName),
-                  subtitle: Text(m.modelId, style: const TextStyle(fontSize: 11)),
+                  // ListTile's subtitle slot is `onSurfaceVariant`; the type slot
+                  // carries `onSurface`, so the muted tone is restated here.
+                  subtitle: Text(
+                    m.modelId,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
                   trailing: _buildTagChip(m.tag),
                   onTap: () => _showModelDialog(l10n, appState, model: m),
                 )),
@@ -548,7 +568,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
             child: ListTile(
               leading: _buildChannelIcon(channel, size: 32),
               title: Text(channel.displayName),
-              subtitle: Text(channel.endpoint, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                channel.endpoint,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showChannelDialog(l10n, appState, channel: channel),
             ),
@@ -609,7 +637,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
       ),
       child: Text(
         tag.toUpperCase(),
-        style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.bold),
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

@@ -59,8 +59,7 @@ class _GalleryState extends State<Gallery> {
                     const SizedBox(height: 16),
                     Text(
                       l10n.dropFilesHere,
-                      style: TextStyle(
-                        fontSize: 20,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary
                       ),
@@ -135,7 +134,7 @@ class _GalleryState extends State<Gallery> {
               const SizedBox(height: 16),
               Text(
                 isTemp ? l10n.dropFilesHere : (isResult ? l10n.noResultsYet : l10n.noImagesFound),
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
               ),
             ],
           ),
@@ -175,8 +174,7 @@ class _GalleryState extends State<Gallery> {
                           Expanded(
                             child: Text(
                               path,
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.secondary,
                                 letterSpacing: 0.5,
@@ -185,7 +183,7 @@ class _GalleryState extends State<Gallery> {
                           ),
                           Text(
                             "(${grouped[path]!.length})",
-                            style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                           ),
                         ],
                       ),

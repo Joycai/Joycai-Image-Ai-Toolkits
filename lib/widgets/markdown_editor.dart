@@ -212,14 +212,14 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                   }
                 },
               ),
-              const Text(
+              Text(
                 "Markdown",
-                style: TextStyle(fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ] else
               Text(
                 widget.label,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
               ),
           ],
         ),
@@ -317,7 +317,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                       Expanded(
                         child: Text(
                           widget.label,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -423,7 +423,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             fillColor: widget.isRefined ? Colors.grey.withValues(alpha: 0.05) : null,
             filled: widget.isRefined,
           ),
-          style: const TextStyle(fontSize: 13),
+          style: Theme.of(context).textTheme.bodyMedium,
           strutStyle: const StrutStyle(
             fontSize: 13,
             height: 1.5,

@@ -230,7 +230,8 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
               children: [
-                Text(l10n.modelsDiscovered(_filtered.length), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(l10n.modelsDiscovered(_filtered.length),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
                 const Spacer(),
                 if (available.isNotEmpty)
                   AppButton(
@@ -261,7 +262,9 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
   Widget _buildModelCard(DiscoveredModel m, bool isAdded, bool isSelected) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final textTheme = Theme.of(context).textTheme;
+
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 8),
@@ -313,13 +316,15 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(m.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text(m.modelId, style: TextStyle(fontSize: 11, color: colorScheme.outline)),
+                    Text(m.displayName, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(m.modelId, style: textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
                   ],
                 ),
               ),
               if (isAdded)
-                Text(widget.l10n.alreadyAdded, style: TextStyle(color: colorScheme.outline, fontSize: 10, fontWeight: FontWeight.bold))
+                Text(widget.l10n.alreadyAdded,
+                    style: textTheme.labelSmall
+                        ?.copyWith(color: colorScheme.outline, fontWeight: FontWeight.bold))
               else
                 _buildTagChip(_inferTag(m)),
             ],
@@ -344,7 +349,11 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
         color: color.withAlpha(30),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(tag.toUpperCase(), style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.bold)),
+      child: Text(tag.toUpperCase(),
+          style: Theme.of(context)
+              .textTheme
+              .labelSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -365,9 +374,14 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
           children: [
             Icon(icon, size: 64, color: color.withAlpha(150)),
             const SizedBox(height: 24),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(subtitle, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 13)),
+            Text(subtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.outline)),
             if (action != null) ...[
               const SizedBox(height: 24),
               action,

@@ -50,8 +50,8 @@ class DownloaderToolbar extends StatelessWidget {
         controller: urlController,
         // Monospace: this is an address, not prose. Fixed widths make a typo in
         // a long path something you can see rather than something you re-read.
-        style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-        decoration: _fieldDecoration(colorScheme, l10n.websiteUrl, Icons.link),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+        decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
       ),
     );
 
@@ -59,8 +59,8 @@ class DownloaderToolbar extends StatelessWidget {
       height: _controlHeight,
       child: TextField(
         controller: requirementController,
-        style: const TextStyle(fontSize: 13),
-        decoration: _fieldDecoration(colorScheme, l10n.whatToFind, Icons.search),
+        style: Theme.of(context).textTheme.bodyMedium,
+        decoration: _fieldDecoration(context, colorScheme, l10n.whatToFind, Icons.search),
         onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
       ),
     );
@@ -98,7 +98,7 @@ class DownloaderToolbar extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           l10n.imageDownloader,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -150,10 +150,11 @@ class DownloaderToolbar extends StatelessWidget {
 }
 
 /// The filled, unbordered field the app uses for search and address inputs.
-InputDecoration _fieldDecoration(ColorScheme colorScheme, String hint, IconData icon) {
+InputDecoration _fieldDecoration(
+    BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
     prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
     isDense: true,
     contentPadding: EdgeInsets.zero,
@@ -216,8 +217,10 @@ class DownloaderOptionsStrip extends StatelessWidget {
             ),
           ),
           Text(l10n.manualHtmlMode,
-              style: TextStyle(
-                  fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant)),
           if (state.isManualHtml) ...[
             const SizedBox(width: 4),
             AppButton(
@@ -237,8 +240,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
                 ),
                 child: Text(
                   '${(state.manualHtml.length / 1024).toStringAsFixed(1)} KB',
-                  style: TextStyle(
-                      fontSize: 10,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontFamily: 'monospace',
                       color: colorScheme.onSurfaceVariant),
                 ),
@@ -282,8 +284,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
                 l10n.downloaderFoundSelected(discoveredCount, selectedCount),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
                 ),
