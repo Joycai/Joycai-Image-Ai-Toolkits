@@ -151,6 +151,7 @@
   "overwriteSource": "覆盖原图",
   "overwriteConfirmTitle": "确定覆盖原图？",
   "overwriteConfirmMessage": "此操作将永久修改原始文件，确定要继续吗？",
+  "overwriteConfirmSaveCopyInstead": "改为保存副本",
   "saveToTempSuccess": "已保存至临时工作区",
   "overwriteSuccess": "原图已更新",
   "custom": "自定义",

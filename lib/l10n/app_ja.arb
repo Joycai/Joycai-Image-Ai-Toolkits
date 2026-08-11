@@ -820,6 +820,7 @@
   "overwriteSource": "元のファイルを上書き",
   "overwriteConfirmTitle": "元のファイルを上書きしますか？",
   "overwriteConfirmMessage": "この操作により、元のファイルが完全に置き換えられます。よろしいですか？",
+  "overwriteConfirmSaveCopyInstead": "代わりにコピーを保存",
   "saveToTempSuccess": "画像が一時ワークスペースに保存されました",
   "overwriteSuccess": "元のファイルが更新されました",
   "custom": "カスタム",

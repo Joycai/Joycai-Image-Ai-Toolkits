@@ -1882,6 +1882,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get overwriteConfirmMessage => '此操作将永久修改原始文件，确定要继续吗？';
 
   @override
+  String get overwriteConfirmSaveCopyInstead => '改为保存副本';
+
+  @override
   String get saveToTempSuccess => '已保存至临时工作区';
 
   @override
@@ -4320,6 +4323,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get overwriteConfirmMessage => '此操作將永久替換原始檔案。您確定嗎？';
+
+  @override
+  String get overwriteConfirmSaveCopyInstead => '改為儲存副本';
 
   @override
   String get saveToTempSuccess => '圖片已儲存至臨時工作區';

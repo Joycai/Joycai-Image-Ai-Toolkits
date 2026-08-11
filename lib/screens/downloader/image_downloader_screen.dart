@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/panel_resizer.dart';
 import 'widgets/downloader_results_area.dart';
@@ -261,6 +262,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     // tinted surfaceContainer background.
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainer,
+      bottomNavigationBar: const AppRunConsole(),
       body: Padding(
         padding: const EdgeInsets.all(8),
         child: PanelCard(
