@@ -25,6 +25,7 @@ import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_status_badge.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
@@ -122,8 +123,17 @@ class _Gallery extends StatelessWidget {
               ),
               const _Label('输入'),
               Row(children: [
+                // The real search component, not an AppTextField wearing a
+                // search icon: it is what six filter fields across the app now
+                // are, and its clear button only exists once there is text.
                 Expanded(
-                  child: AppTextField(hint: '搜索文件…', prefixIcon: const Icon(Icons.search, size: 18)),
+                  child: SizedBox(
+                    height: 40,
+                    child: AppSearchField(
+                      controller: TextEditingController(text: '猫'),
+                      hint: '搜索文件…',
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

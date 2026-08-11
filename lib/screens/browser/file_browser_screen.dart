@@ -17,6 +17,7 @@ import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_icon_button.dart';
+import '../../widgets/app_search_field.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/panel_resizer.dart';
@@ -349,37 +350,11 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget _buildSearchField(FileBrowserState state, AppLocalizations l10n, ColorScheme colorScheme) {
     return SizedBox(
       height: 40,
-      child: TextField(
+      child: AppSearchField(
         controller: _searchController,
         focusNode: _searchFocusNode,
-        onChanged: (v) => state.setSearchQuery(v),
-        style: Theme.of(context).textTheme.bodyMedium,
-        decoration: InputDecoration(
-          hintText: l10n.searchFilesHint,
-          hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-          prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.outline),
-          suffixIcon: state.searchQuery.isEmpty
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.close, size: 16),
-                  onPressed: () {
-                    _searchController.clear();
-                    state.setSearchQuery('');
-                  },
-                  visualDensity: VisualDensity.compact,
-                ),
-          contentPadding: EdgeInsets.zero,
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-          ),
-        ),
+        hint: l10n.searchFilesHint,
+        onChanged: state.setSearchQuery,
       ),
     );
   }

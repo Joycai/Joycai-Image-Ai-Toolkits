@@ -7,6 +7,7 @@ import '../../../state/app_state.dart';
 import '../../../state/downloader_state.dart';
 import '../../../widgets/api_key_field.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_search_field.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/chat_model_selector.dart';
@@ -57,10 +58,9 @@ class DownloaderToolbar extends StatelessWidget {
 
     final requirementField = SizedBox(
       height: _controlHeight,
-      child: TextField(
+      child: AppSearchField(
         controller: requirementController,
-        style: Theme.of(context).textTheme.bodyMedium,
-        decoration: _fieldDecoration(context, colorScheme, l10n.whatToFind, Icons.search),
+        hint: l10n.whatToFind,
         onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
       ),
     );
@@ -149,7 +149,13 @@ class DownloaderToolbar extends StatelessWidget {
   }
 }
 
-/// The filled, unbordered field the app uses for search and address inputs.
+/// The address bar's own decoration.
+///
+/// Was shared with the requirement field beside it, which is now an
+/// [AppSearchField]; this is the only caller left. It keeps its fill rather
+/// than following the theme's outlined input because the URL bar is the one
+/// field that spans the toolbar and reads as a surface of its own, not as a
+/// control in a row of controls.
 InputDecoration _fieldDecoration(
     BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
   return InputDecoration(

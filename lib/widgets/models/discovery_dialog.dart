@@ -10,6 +10,7 @@ import '../../services/llm/model_family.dart';
 import '../../state/app_state.dart';
 import 'model_tag_chip.dart';
 import '../app_button.dart';
+import '../app_search_field.dart';
 import '../app_dialog.dart';
 
 class DiscoveryDialog extends StatefulWidget {
@@ -166,18 +167,12 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
   }
 
   Widget _buildSearchBar(AppLocalizations l10n) {
-    return TextField(
-      controller: _filterCtrl,
-      decoration: InputDecoration(
-        hintText: l10n.searchModels,
-        prefixIcon: const Icon(Icons.search, size: 20),
-        suffixIcon: _filterCtrl.text.isNotEmpty 
-          ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => _filterCtrl.clear()) 
-          : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(80),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+    return SizedBox(
+      height: 40,
+      child: AppSearchField(
+        controller: _filterCtrl,
+        hint: l10n.searchModels,
+        onChanged: (_) => setState(() {}),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_search_field.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_segmented_control.dart';
@@ -621,29 +622,14 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   /// Fills whatever width it is given. The desktop header caps it; the phone
   /// header hands it the full row.
   Widget _buildSearchField(AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
+    // The outer Container is gone: it existed to give this field a fill and a
+    // border that InputBorder.none had removed from the field itself, which is
+    // the theme's job now.
+    return SizedBox(
       height: 38,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        // Squared off to the same 10px as the boxed actions beside it. A pill
-        // here made the one field on the header the odd shape out.
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
-      ),
-      child: TextField(
+      child: AppSearchField(
         controller: _searchCtrl,
-        textAlignVertical: TextAlignVertical.center,
-        decoration: InputDecoration(
-          hintText: l10n.filterPrompts,
-          prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => _searchCtrl.clear())
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
+        hint: l10n.filterPrompts,
       ),
     );
   }
