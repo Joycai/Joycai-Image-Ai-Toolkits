@@ -194,12 +194,12 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                 children: [
                                   Text(
                                     activeFile.name,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     '${activeIndex + 1} / ${images.length}',
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white70),
                                   ),
                                 ],
                               ),

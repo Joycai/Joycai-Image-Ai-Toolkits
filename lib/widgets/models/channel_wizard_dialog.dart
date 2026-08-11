@@ -318,14 +318,18 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     _buildStepDots(),
                     const Spacer(),
                     if (_currentStep > 0) ...[
-                      OutlinedButton(onPressed: _back, child: Text(l10n.back)),
+                      AppButton(
+                        label: l10n.back,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: _back,
+                      ),
                       const SizedBox(width: 12),
                     ],
-                    FilledButton(
-                      onPressed: _isNextEnabled() ? _next : null,
-                      child: Text(_currentStep == _totalSteps - 1
+                    AppButton(
+                      label: _currentStep == _totalSteps - 1
                           ? l10n.finish
-                          : l10n.next),
+                          : l10n.next,
+                      onPressed: _isNextEnabled() ? _next : null,
                     ),
                   ],
                 ),
@@ -429,11 +433,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.outline,
-        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.outline,
+            ),
       ),
     );
   }
@@ -463,6 +466,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   Widget _buildProviderCard(AppLocalizations l10n, _ProviderPreset preset) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final isSelected = _selectedProviderId == preset.id;
 
     return InkWell(
@@ -499,15 +503,15 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     _providerTitle(l10n, preset.id),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13),
+                    style: textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     _providerSubtitle(l10n, preset),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        TextStyle(fontSize: 11, color: colorScheme.outline),
+                    style: textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.outline),
                   ),
                 ],
               ),
@@ -526,6 +530,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   Widget _buildConnectionStep(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final preset = _preset;
     final isNewApi = preset.endpointSuffix.isNotEmpty;
     final isCustom = preset.id == 'custom';
@@ -548,8 +553,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               const SizedBox(width: 8),
               Text(
                 _providerTitle(l10n, preset.id),
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               if (preset.fixedEndpoint != null)
@@ -558,8 +562,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     preset.fixedEndpoint!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        TextStyle(fontSize: 11, color: colorScheme.outline),
+                    style: textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.outline),
                   ),
                 ),
             ],
@@ -569,8 +573,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
         if (isCustom) ...[
           Text(l10n.channelType,
-              style:
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           AppSegmentedControl<String>(
             segments: [
@@ -616,14 +619,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         const SizedBox(height: 8),
         Text(
           l10n.apiKeyStorageNotice,
-          style: TextStyle(fontSize: 12, color: colorScheme.outline),
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
         ),
         const SizedBox(height: 8),
         SwitchListTile(
-          title: Text(l10n.enableDiscovery, style: const TextStyle(fontSize: 14)),
+          title: Text(l10n.enableDiscovery, style: textTheme.titleMedium),
           subtitle: Text(
             l10n.enableDiscoveryDesc,
-            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
           ),
           value: _enableDiscovery,
           onChanged: (v) => setState(() => _enableDiscovery = v),
@@ -682,13 +685,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   Widget _buildSummaryRow(String label, String value) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
@@ -696,8 +700,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
         ],

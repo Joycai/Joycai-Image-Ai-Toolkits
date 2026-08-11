@@ -436,7 +436,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   /// 8 the track's — see [AppSegmentedControl]. Measured at the selected
   /// weight, which is the wider of the two.
   double _ratioGroupWidth(AppLocalizations l10n, bool allRatios) {
-    const style = TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700);
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700);
     final labels = <String>[
       l10n.cropResizeFreeRatio,
       '1:1',
@@ -632,7 +632,9 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildRatioField(_ratioXController),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 2), child: Text(":", style: TextStyle(fontSize: 12))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(":", style: Theme.of(context).textTheme.bodySmall)),
           _buildRatioField(_ratioYController),
         ],
       ),
@@ -645,7 +647,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       child: TextField(
         controller: ctrl,
         decoration: const InputDecoration(isDense: true, border: InputBorder.none, contentPadding: EdgeInsets.zero),
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
       ),
@@ -824,7 +826,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           children: [
             Icon(icon, color: fg, size: 24),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w500)),
+            Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -872,7 +874,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   Widget _buildRatioChip(String label, double? ratio, double? current) {
     final selected = ratio == current;
     return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontSize: 11)),
+      label: Text(label, style: Theme.of(context).textTheme.labelMedium?.metricsOnly),
       selected: selected,
       onSelected: (v) {
         _updateAspectRatio(ratio);
@@ -901,7 +903,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
             ),
             const SizedBox(height: 12),
             SwitchListTile(
-              title: Text(l10n.maintainAspectRatio, style: const TextStyle(fontSize: 13)),
+              title: Text(l10n.maintainAspectRatio, style: Theme.of(context).textTheme.bodyMedium),
               value: uiState.maintainAspectRatio,
               onChanged: (v) {
                 uiState.setMaintainAspectRatio(v);

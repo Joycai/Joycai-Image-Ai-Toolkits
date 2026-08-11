@@ -395,7 +395,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   children: [
                     Text(
                       l10n.appTitle,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -623,9 +623,8 @@ class _RailItemState extends State<_RailItem> {
                           child: Center(
                             child: Text(
                               widget.badge > 99 ? '99+' : '${widget.badge}',
-                              style: const TextStyle(
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: Colors.white,
-                                fontSize: 9,
                                 fontWeight: FontWeight.w700,
                                 fontFamily: 'monospace',
                               ),
@@ -639,8 +638,7 @@ class _RailItemState extends State<_RailItem> {
                   const SizedBox(height: 4),
                   Text(
                     widget.label,
-                    style: TextStyle(
-                      fontSize: 9.5,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: color,
                       letterSpacing: 0.2,
@@ -699,8 +697,7 @@ class _DrawerItem extends StatelessWidget {
             const SizedBox(width: 13),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: color,
               ),

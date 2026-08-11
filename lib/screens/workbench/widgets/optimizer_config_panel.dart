@@ -527,7 +527,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                 children: [
                   CircleAvatar(backgroundColor: Color(t.color), radius: 6),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(t.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                  Expanded(child: Text(t.name, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium)),
                 ],
               ),
             )),
@@ -552,7 +552,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           onChanged: widget.onSysPromptChanged,
           items: widget.filteredSysPrompts.map((p) => DropdownMenuItem(
             value: p.content,
-            child: Text(p.title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+            child: Text(p.title, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
           )).toList(),
         ),
       ),
@@ -567,12 +567,12 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       onChanged: widget.onSysPromptChanged,
       decoration: InputDecoration(
         hintText: l10n.customSysPromptHint,
-        hintStyle: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.all(12),
         isDense: true,
       ),
-      style: const TextStyle(fontSize: 13),
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 }
@@ -644,8 +644,7 @@ class _Chip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
             color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
           ),

@@ -7,6 +7,7 @@ import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
+import 'app_button.dart';
 
 class TaskCapsuleMonitor extends StatefulWidget {
   const TaskCapsuleMonitor({super.key});
@@ -115,8 +116,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                                 runningCount > 0 
                                   ? l10n.runningCount(runningCount)
                                   : l10n.plannedCount(pendingCount),
-                                style: TextStyle(
-                                  fontSize: 13, 
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurfaceVariant
                                 ),
@@ -124,7 +124,10 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                               if (pendingCount > 0 && runningCount > 0)
                                 Text(
                                   l10n.plannedCount(pendingCount),
-                                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(color: colorScheme.outline),
                                 ),
                             ],
                           ),
@@ -133,8 +136,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                         if (runningCount > 0)
                           Text(
                             "${(avgProgress * 100).toInt()}%",
-                            style: TextStyle(
-                              fontSize: 13, 
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w900,
                               color: colorScheme.primary
                             ),
@@ -172,7 +174,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                             Expanded(
                               child: Text(
                                 t.modelId,
-                                style: const TextStyle(fontSize: 11),
+                                style: Theme.of(context).textTheme.labelMedium,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -185,16 +187,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                           ],
                         ),
                       )),
-                      TextButton(
+                      AppButton(
+                        label: l10n.viewAll,
+                        variant: AppButtonVariant.text,
+                        size: AppButtonSize.compact,
                         onPressed: () {
                           context.read<AppState>().navigateToScreen(2);
                           setState(() => _isExpanded = false);
                         },
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(l10n.viewAll, style: const TextStyle(fontSize: 12)),
                       ),
                     ],
                   ],

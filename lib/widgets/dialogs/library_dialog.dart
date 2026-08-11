@@ -4,6 +4,7 @@ import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
+import '../app_button.dart';
 import '../app_side_panel.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
@@ -99,7 +100,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           Expanded(
             child: Text(
               l10n.promptLibrary,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           SizedBox(
@@ -109,7 +110,12 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
               controller: _searchCtrl,
               decoration: InputDecoration(
                 hintText: l10n.filterPrompts, 
-                hintStyle: const TextStyle(fontSize: 12),
+                // The muted tone the field supplied on its own before this
+                // style named a scale slot, which brings a colour with it.
+                hintStyle: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
                 prefixIcon: const Icon(Icons.search, size: 16),
                 isDense: true,
                 filled: true,
@@ -149,8 +155,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           final color = Color(tag.color);
 
           return FilterChip(
-            label: Text(tag.name, style: TextStyle(
-              fontSize: 11, 
+            label: Text(tag.name, style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: isSelected ? Colors.white : color,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
             )),
@@ -233,7 +238,7 @@ class _CompactPromptCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     prompt.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -247,7 +252,10 @@ class _CompactPromptCard extends StatelessWidget {
                     ),
                     child: Text(
                       prompt.tags.first.name,
-                      style: TextStyle(fontSize: 10, color: Color(prompt.tags.first.color), fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Color(prompt.tags.first.color),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ),
               ],
@@ -255,7 +263,7 @@ class _CompactPromptCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               prompt.content,
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -263,21 +271,19 @@ class _CompactPromptCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton.icon(
+                AppButton(
+                  label: l10n.add,
+                  icon: Icons.add,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
                   onPressed: () => onApply(true),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: Text(l10n.add, style: const TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                 ),
                 const SizedBox(width: 8),
-                FilledButton.icon(
+                AppButton(
+                  label: l10n.apply,
+                  icon: Icons.check,
+                  size: AppButtonSize.compact,
                   onPressed: () => onApply(false),
-                  icon: const Icon(Icons.check, size: 16),
-                  label: Text(l10n.apply, style: const TextStyle(fontSize: 12)),
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
                 ),
               ],
             ),

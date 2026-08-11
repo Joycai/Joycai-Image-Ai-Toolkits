@@ -10,6 +10,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 
 class GalleryToolbar extends StatelessWidget {
@@ -75,11 +76,11 @@ class GalleryToolbar extends StatelessWidget {
           ),
           if (!isDesktop && galleryState.droppedImages.isNotEmpty) ...[
             _divider(colorScheme),
-            TextButton.icon(
+            AppButton(
+              label: l10n.clearTempWorkspace,
+              icon: Icons.delete_sweep_outlined,
+              variant: AppButtonVariant.destructiveText,
               onPressed: () => galleryState.clearDroppedImages(),
-              icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-              label: Text(l10n.clearTempWorkspace),
-              style: TextButton.styleFrom(foregroundColor: colorScheme.error),
             ),
           ],
           _divider(colorScheme),
@@ -136,10 +137,11 @@ class GalleryToolbar extends StatelessWidget {
             ),
 
           if (canInline)
-            TextButton.icon(
+            AppButton(
+              label: l10n.importFromGallery,
+              icon: Icons.photo_library_outlined,
+              variant: AppButtonVariant.text,
               onPressed: () => _pickFromGallery(galleryState),
-              icon: const Icon(Icons.photo_library_outlined, size: 18),
-              label: Text(l10n.importFromGallery),
             )
           else
             _buildOverflowMenu(context, galleryState, l10n, selectedCount, thumbnailSize, isDesktop),
@@ -290,7 +292,7 @@ class GalleryToolbar extends StatelessWidget {
   /// button, inside a padded track. Measured at the selected weight, which is
   /// the wider of the two the label can take.
   double _toggleNaturalWidth(BuildContext context, AppLocalizations l10n) {
-    const label = TextStyle(fontSize: 12, fontWeight: FontWeight.w600);
+    final label = Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600);
     return _measureText(context, l10n.allSources, label) +
         _measureText(context, l10n.allResults, label) +
         _kToggleChrome;
@@ -437,12 +439,14 @@ class GalleryToolbar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildToggleButton(
+            context: context,
             label: l10n.allSources,
             selected: isSource,
             colorScheme: colorScheme,
             onTap: () => gs.setViewMode(GalleryViewMode.all),
           ),
           _buildToggleButton(
+            context: context,
             label: l10n.allResults,
             selected: isResult,
             colorScheme: colorScheme,
@@ -454,6 +458,7 @@ class GalleryToolbar extends StatelessWidget {
   }
 
   Widget _buildToggleButton({
+    required BuildContext context,
     required String label,
     required bool selected,
     required ColorScheme colorScheme,
@@ -478,11 +483,10 @@ class GalleryToolbar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                  ),
             ),
           ),
         ),

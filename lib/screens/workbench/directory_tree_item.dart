@@ -221,8 +221,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           ),
           title: Text(
             folderName,
-            style: TextStyle(
-              fontSize: 13,
+            style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
               color: highlight ? theme.colorScheme.primary : (isUnreachable ? theme.colorScheme.error : null),
             ),

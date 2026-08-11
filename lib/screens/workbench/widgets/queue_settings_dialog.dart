@@ -55,8 +55,10 @@ Future<void> showQueueSettingsDialog(BuildContext context) {
               const Divider(),
               const SizedBox(height: 8),
               Text(l10n.filenamePrefix,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 13)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextField(
                 controller: prefixController,

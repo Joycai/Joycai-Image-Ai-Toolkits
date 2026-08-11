@@ -290,7 +290,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                       Expanded(
                         child: Text(
                           l10n.iosOutputRecommend,
-                          style: TextStyle(fontSize: 11, color: colorScheme.onPrimaryContainer),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onPrimaryContainer),
                         ),
                       ),
                     ],
@@ -375,7 +375,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                 const SizedBox(width: 9),
                 Text(
                   l10n.logs,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(width: 8),
                 Container(
@@ -386,8 +386,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                   ),
                   child: Text(
                     '${logs.length}',
-                    style: TextStyle(
-                      fontSize: 10.5,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontFamily: 'monospace',
                       color: colorScheme.onSurfaceVariant,
@@ -447,8 +446,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                       if (time != null) ...[
                         Text(
                           time,
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontFamily: 'monospace',
                             color: colorScheme.outline,
                           ),
@@ -458,8 +456,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                       Expanded(
                         child: Text(
                           message,
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             fontFamily: 'monospace',
                             fontWeight: isNewest ? FontWeight.w600 : FontWeight.normal,
                             color: isError

@@ -146,8 +146,10 @@ class AppSegmentedControl<T> extends StatelessWidget {
                 segment.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: compact ? 11.5 : 12.5,
+                style: (compact
+                        ? Theme.of(context).textTheme.labelMedium
+                        : Theme.of(context).textTheme.bodySmall)
+                    ?.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),

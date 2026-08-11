@@ -184,7 +184,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               Text(
                 l10n.optEmptyChat,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.5),
               ),
             ],
           ),
@@ -386,7 +386,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
             child: SelectableText(
               entry.text,
-              style: TextStyle(color: colorScheme.onPrimaryContainer, fontSize: 13, height: 1.4),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer, height: 1.4),
             ),
           ),
         );
@@ -405,7 +405,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               data: entry.text,
               selectable: true,
               styleSheet: MarkdownStyleSheet(
-                p: TextStyle(color: colorScheme.onSurface, fontSize: 13, height: 1.4),
+                p: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.4),
               ),
             ),
           ),
@@ -453,7 +453,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 Flexible(
                   child: Text(
                     noticeText,
-                    style: TextStyle(fontSize: 11, color: colorScheme.outline, fontStyle: FontStyle.italic),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline, fontStyle: FontStyle.italic),
                   ),
                 ),
               ],
@@ -477,7 +477,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
                 child: SelectableText(
                   entry.text,
-                  style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 12, height: 1.4),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onErrorContainer, height: 1.4),
                 ),
               ),
               // The failed turn's context (user message, tool results) is
@@ -486,11 +486,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               if (isLast && !widget.isBusy)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: OutlinedButton.icon(
+                  child: AppButton(
+                    label: l10n.optRetry,
+                    icon: Icons.refresh,
+                    variant: AppButtonVariant.secondary,
                     onPressed: widget.onRetry,
-                    icon: const Icon(Icons.refresh, size: 15),
-                    label: Text(l10n.optRetry, style: const TextStyle(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                   ),
                 ),
             ],
@@ -540,8 +540,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 const SizedBox(width: 6),
                 Text(
                   isCreate ? l10n.kbEditProposedCreate : l10n.kbEditProposedUpdate,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
                   ),
@@ -551,8 +550,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   child: Text(
                     entry.targetPath ?? '',
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontFamily: 'monospace',
                       color: colorScheme.onSurface,
                     ),
@@ -566,8 +564,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
               child: Text(
                 entry.note!,
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -583,7 +580,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   Expanded(
                     child: Text(
                       l10n.kbEditShrinkWarning(entry.oldContent!.length, content.length),
-                      style: TextStyle(fontSize: 11, color: colorScheme.error),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.error),
                     ),
                   ),
                 ],
@@ -607,7 +604,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     label: Text(
                       expanded ? l10n.kbEditHide : l10n.kbEditShow(content.length),
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11),
+                      style: Theme.of(context).textTheme.labelMedium?.metricsOnly,
                     ),
                     style: TextButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -631,8 +628,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               child: SingleChildScrollView(
                 child: SelectableText(
                   content,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     height: 1.45,
                     fontFamily: 'monospace',
                     color: colorScheme.onSurface,
@@ -646,17 +642,19 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(
+                      AppButton(
+                        label: l10n.kbEditReject,
+                        variant: AppButtonVariant.text,
+                        size: AppButtonSize.compact,
                         onPressed: () => widget.onRejectKbEdit(editId),
-                        child: Text(l10n.kbEditReject, style: const TextStyle(fontSize: 12)),
                       ),
                       const SizedBox(width: 6),
-                      FilledButton.tonalIcon(
+                      AppButton(
+                        label: l10n.kbEditApply,
+                        icon: Icons.save_outlined,
+                        variant: AppButtonVariant.secondary,
+                        size: AppButtonSize.compact,
                         onPressed: () => widget.onApplyKbEdit(editId),
-                        icon: const Icon(Icons.save_outlined, size: 15),
-                        label: Text(l10n.kbEditApply, style: const TextStyle(fontSize: 12)),
-                        style: tonalButtonStyle(colorScheme)
-                            .copyWith(visualDensity: VisualDensity.compact),
                       ),
                     ],
                   )
@@ -682,8 +680,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                             _ => l10n.kbEditFailedShort,
                           },
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: state == KbEditState.failed
                                 ? colorScheme.error
                                 : colorScheme.outline,
@@ -737,12 +734,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     AppSnackBar.success(context, l10n.optPromptCopied);
                   },
                 ),
-                FilledButton.tonalIcon(
+                AppButton(
+                  label: l10n.apply,
+                  icon: Icons.check,
+                  variant: AppButtonVariant.secondary,
                   onPressed: () => widget.onApplyPrompt(entry.text),
-                  icon: const Icon(Icons.check, size: 15),
-                  label: Text(l10n.apply, style: textTheme.labelMedium),
-                  style: tonalButtonStyle(Theme.of(context).colorScheme)
-                      .copyWith(visualDensity: VisualDensity.compact),
                 ),
               ],
             ),
@@ -761,7 +757,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   data: entry.text,
                   selectable: true,
                   styleSheet: MarkdownStyleSheet(
-                    p: TextStyle(color: colorScheme.onSurface, fontSize: 13, height: 1.45),
+                    p: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.45),
                   ),
                 ),
               ),
@@ -783,8 +779,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
               child: Text(
                 entry.note!,
-                style: TextStyle(
-                  fontSize: 11,
+                style: textTheme.labelMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -805,7 +800,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           const SizedBox(width: 8),
           Text(
             l10n.optAgentWorking,
-            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -1043,8 +1038,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                 Expanded(
                   child: Text(
                     l10n.optAskUserTitle,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.primary,
                     ),
@@ -1059,14 +1053,13 @@ class _AskUserCardState extends State<_AskUserCard> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                FilledButton.tonalIcon(
+                AppButton(
+                  label: l10n.optAskUserConfirm,
+                  icon: Icons.send_rounded,
+                  variant: AppButtonVariant.secondary,
                   onPressed: widget.enabled && _allAnswered
                       ? () => widget.onSubmit(_collectAnswers())
                       : null,
-                  icon: const Icon(Icons.send_rounded, size: 15),
-                  label: Text(l10n.optAskUserConfirm, style: const TextStyle(fontSize: 12)),
-                  style: tonalButtonStyle(colorScheme)
-                      .copyWith(visualDensity: VisualDensity.compact),
                 ),
               ],
             ),
@@ -1090,8 +1083,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                 child: Text(
                   question.header,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -1101,7 +1093,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                 const SizedBox(width: 6),
                 Text(
                   l10n.optAskUserMultiHint,
-                  style: TextStyle(fontSize: 10, color: colorScheme.outline),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.outline),
                 ),
               ],
             ],
@@ -1109,7 +1101,7 @@ class _AskUserCardState extends State<_AskUserCard> {
           const SizedBox(height: 4),
           SelectableText(
             question.question,
-            style: TextStyle(fontSize: 13, height: 1.4, color: colorScheme.onSurface),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4, color: colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -1122,7 +1114,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                   child: FilterChip(
                     label: Text(
                       question.options[o].label,
-                      style: const TextStyle(fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall?.metricsOnly,
                     ),
                     selected: selected.contains(o),
                     showCheckmark: question.multiSelect,
@@ -1140,13 +1132,12 @@ class _AskUserCardState extends State<_AskUserCard> {
             enabled: widget.enabled,
             minLines: 1,
             maxLines: 3,
-            style: const TextStyle(fontSize: 12, height: 1.4),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
             // setState so the confirm button re-evaluates _allAnswered.
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: l10n.optAskUserOtherHint,
-              hintStyle: TextStyle(
-                fontSize: 12,
+              hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
               isDense: true,
@@ -1194,7 +1185,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                       ? l10n.optAskUserAnswered
                       : l10n.optAskUserDismissed,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                 ),
               ),
             ],
@@ -1205,7 +1196,7 @@ class _AskUserCardState extends State<_AskUserCard> {
               child: Text(
                 '${answer.header}: '
                 '${[...answer.selected, if (answer.otherText != null) answer.otherText!].join(', ')}',
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
         ],

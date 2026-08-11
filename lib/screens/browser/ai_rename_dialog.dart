@@ -115,7 +115,17 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
               final t = templates[index];
               return ListTile(
                 title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(t.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                // ListTile's subtitle slot is `onSurfaceVariant`; the type slot
+                // carries `onSurface`, so the muted tone is restated here.
+                subtitle: Text(
+                  t.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
                 onTap: () => Navigator.pop(context, t),
               );
             },
@@ -299,6 +309,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final appState = Provider.of<AppState>(context);
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final fileCount = appState.fileBrowserState.selectedFiles.length;
 
     final chatModels = appState.chatModels;
@@ -324,7 +335,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
           const SizedBox(height: 16),
 
           // System template: the whole card opens the picker.
-          Text(l10n.rulesInstructions, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(l10n.rulesInstructions, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Material(
             color: colorScheme.surfaceContainerHighest.withAlpha(80),
@@ -344,7 +355,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                         children: [
                           Text(
                             _selectedSystemPrompt?.title ?? l10n.noTemplateSelected,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (_selectedSystemPrompt != null) ...[
@@ -353,7 +364,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                               _selectedSystemPrompt!.content,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                              style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                             ),
                           ],
                         ],
@@ -385,19 +396,11 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
 
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _isProcessing ? null : _generateSuggestions,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              icon: _isProcessing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.bolt),
-              label: Text(l10n.generateSuggestions),
+            child: AppButton(
+              label: l10n.generateSuggestions,
+              icon: Icons.bolt,
+              loading: _isProcessing,
+              onPressed: _generateSuggestions,
             ),
           ),
           const SizedBox(height: 20),
@@ -420,6 +423,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   }
 
   Widget _buildPreviewSection(ColorScheme colorScheme, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
+
     // Waiting on the agent loop.
     if (_isProcessing && _proposedRenames.isEmpty) {
       return _buildPreviewPlaceholder(
@@ -431,7 +436,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             _batchProgress == null
                 ? l10n.generatingSuggestions
                 : '${l10n.generatingSuggestions} ($_batchProgress)',
-            style: TextStyle(fontSize: 12, color: colorScheme.outline),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
           ),
         ],
       );
@@ -443,7 +448,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
         children: [
           Icon(Icons.drive_file_rename_outline, size: 32, color: colorScheme.outlineVariant),
           const SizedBox(height: 8),
-          Text(l10n.noSuggestions, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+          Text(l10n.noSuggestions, style: textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
         ],
       );
     }
@@ -465,7 +470,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                 Expanded(
                   child: Text(
                     '${l10n.renamePreviewTitle} (${_proposedRenames.length})',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -483,7 +488,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                         const SizedBox(width: 4),
                         Text(
                           l10n.conflictsFound(_conflicts.length),
-                          style: TextStyle(fontSize: 11, color: colorScheme.onErrorContainer),
+                          style: textTheme.labelMedium?.copyWith(color: colorScheme.onErrorContainer),
                         ),
                       ],
                     ),
@@ -515,6 +520,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   }
 
   Widget _buildPreviewItem(int index, ColorScheme colorScheme, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
     final item = _proposedRenames[index];
     final conflictKey = _conflicts[item['path']];
     final hasConflict = conflictKey != null;
@@ -538,7 +544,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text('${index + 1}', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
+              child: Text('${index + 1}', style: textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
             ),
           ),
           const SizedBox(width: 12),
@@ -548,7 +554,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
               children: [
                 Text(
                   item['old_name']!,
-                  style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                  style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 3),
@@ -563,8 +569,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     Expanded(
                       child: Text(
                         item['new_name']!,
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: hasConflict ? colorScheme.error : colorScheme.onSurface,
                         ),
@@ -578,7 +583,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     padding: const EdgeInsets.only(left: 18, top: 3),
                     child: Text(
                       conflictText!,
-                      style: TextStyle(fontSize: 11, color: colorScheme.error),
+                      style: textTheme.labelMedium?.copyWith(color: colorScheme.error),
                     ),
                   ),
               ],

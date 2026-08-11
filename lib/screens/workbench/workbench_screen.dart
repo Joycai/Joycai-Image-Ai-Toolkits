@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/app_paths.dart';
+import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -342,7 +343,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                 ),
                 subtitle: Text(
                   meta.updatedAt.toLocal().toString().substring(0, 16),
-                  style: const TextStyle(fontSize: 11),
+                  style: Theme.of(context).textTheme.labelMedium?.metricsOnly,
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,

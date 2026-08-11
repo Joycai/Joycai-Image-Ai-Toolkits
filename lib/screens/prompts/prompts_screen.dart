@@ -7,6 +7,7 @@ import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/panel_resizer.dart';
@@ -172,15 +173,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                 onPressed: _handleBulkDelete,
               ),
             ] else ...[
-              TextButton.icon(
-                icon: const Icon(Icons.category_outlined),
-                label: Text(l10n.categorize),
+              AppButton(
+                label: l10n.categorize,
+                icon: Icons.category_outlined,
+                variant: AppButtonVariant.text,
                 onPressed: _handleBulkCategorize,
               ),
               const SizedBox(width: 8),
-              TextButton.icon(
-                icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+              AppButton(
+                label: l10n.delete,
+                icon: Icons.delete_outline,
+                variant: AppButtonVariant.destructiveText,
                 onPressed: _handleBulkDelete,
               ),
               const SizedBox(width: 8),
@@ -388,7 +391,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Expanded(
             child: Text(
               l10n.promptLibrary,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -430,15 +433,17 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
           ),
           const Spacer(),
-          TextButton.icon(
-            icon: const Icon(Icons.category_outlined, size: 16),
-            label: Text(l10n.categorize),
+          AppButton(
+            label: l10n.categorize,
+            icon: Icons.category_outlined,
+            variant: AppButtonVariant.text,
             onPressed: _handleBulkCategorize,
           ),
           const SizedBox(width: 4),
-          TextButton.icon(
-            icon: Icon(Icons.delete_outline, size: 16, color: colorScheme.error),
-            label: Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+          AppButton(
+            label: l10n.delete,
+            icon: Icons.delete_outline,
+            variant: AppButtonVariant.destructiveText,
             onPressed: _handleBulkDelete,
           ),
         ],
@@ -453,13 +458,13 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           const SizedBox(width: 10),
           Text(
             l10n.categoriesTab,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const Spacer(),
-          FilledButton.icon(
+          AppButton(
+            label: l10n.addCategory,
+            icon: Icons.add,
             onPressed: _handleAddAction,
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(l10n.addCategory),
           ),
         ],
       );
@@ -474,10 +479,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
         const SizedBox(width: 10),
         _buildImportExportActions(l10n),
         const SizedBox(width: 10),
-        FilledButton.icon(
+        AppButton(
+          label: _addLabel(l10n),
+          icon: Icons.add,
           onPressed: _handleAddAction,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(_addLabel(l10n)),
         ),
       ],
     );
@@ -679,8 +684,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           if (index == 0) {
             final allSelected = _selectedFilterTagIds.isEmpty;
             return FilterChip(
-              label: Text(l10n.filterAll, style: TextStyle(
-                fontSize: 12,
+              label: Text(l10n.filterAll, style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: allSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                 fontWeight: allSelected ? FontWeight.bold : FontWeight.normal,
               )),
@@ -702,8 +706,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           final color = Color(tag.color);
 
           return FilterChip(
-            label: Text(tag.name, style: TextStyle(
-              fontSize: 12,
+            label: Text(tag.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: isSelected ? Colors.white : color,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             )),

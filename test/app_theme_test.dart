@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 
@@ -155,6 +156,8 @@ void main() {
     }
   });
 
+  group('metricsOnly', _metricsOnlyTests);
+
   test('tonal buttons keep their own colours despite the filled theme', () {
     // FilledButton.tonal reads the same FilledButtonTheme, and a theme's
     // background outranks the tonal variant's default — so every tonal button
@@ -171,3 +174,87 @@ void main() {
 }
 
 void _noop() {}
+
+/// Covers [AppTextScaleMetrics.metricsOnly].
+///
+/// It exists to stop a specific invisible-text bug: a Material 3 TextTheme
+/// slot arrives stamped with `onSurface`, and an explicit colour on a Text
+/// beats the ambient DefaultTextStyle -- so handing a raw slot to a filled
+/// button's label paints dark-on-dark, and to a chip's label freezes it on
+/// the unselected colour.
+void _metricsOnlyTests() {
+  const seed = Colors.indigo;
+  ThemeData light() => buildAppTheme(seedColor: seed, brightness: Brightness.light);
+
+  test('a scale slot really does carry a colour', () {
+    // The premise. If Material ever stops stamping one, metricsOnly is dead
+    // weight and this test says so.
+    for (final slot in [
+      light().textTheme.bodySmall,
+      light().textTheme.labelMedium,
+      light().textTheme.titleMedium,
+    ]) {
+      expect(slot?.color, isNotNull);
+    }
+  });
+
+  test('metricsOnly is marked inheriting, or the merge never happens', () {
+    // The subtle half. Text only merges its style over the ambient
+    // DefaultTextStyle when `inherit` is true; TextStyle.merge returns the
+    // incoming style wholesale otherwise. Copy a slot's own `inherit` through
+    // and the label comes out with no colour at all -- black on a filled
+    // button, which is worse than the bug this getter exists to fix. Caught
+    // by the end-to-end case below, not by reading the code.
+    expect(light().textTheme.labelMedium!.metricsOnly.inherit, isTrue);
+  });
+
+  test('metricsOnly drops the colour and keeps everything else', () {
+    final slot = light().textTheme.labelMedium!;
+    final bare = slot.metricsOnly;
+
+    expect(bare.color, isNull, reason: 'the colour survived, which is the whole bug');
+    expect(bare.fontSize, slot.fontSize);
+    expect(bare.fontWeight, slot.fontWeight);
+    expect(bare.letterSpacing, slot.letterSpacing);
+    expect(bare.height, slot.height);
+    expect(bare.fontFamily, slot.fontFamily);
+  });
+
+  test('copyWith cannot do this, which is why the extension exists', () {
+    // Documents the trap: null in copyWith means "leave it alone", so the
+    // obvious spelling silently keeps the colour.
+    final slot = light().textTheme.labelMedium!;
+
+    expect(slot.copyWith(color: null).color, slot.color);
+  });
+
+  testWidgets('a metricsOnly label takes the colour of the widget above it', (tester) async {
+    // The end to end claim: inside a filled button the label must come out
+    // the button's foreground, not the scale's onSurface.
+    await tester.pumpWidget(MaterialApp(
+      theme: light(),
+      home: Scaffold(
+        body: Center(
+          child: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () {},
+              child: Text('Go', style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final rendered = tester
+        .renderObject<RenderParagraph>(
+          find.descendant(of: find.text('Go'), matching: find.byType(RichText)),
+        )
+        .text
+        .style!;
+
+    expect(rendered.color, isNot(light().colorScheme.onSurface));
+    expect(rendered.color, buttonFillScheme(seed).onPrimary);
+    expect(rendered.fontSize, light().textTheme.bodySmall?.fontSize);
+  });
+}

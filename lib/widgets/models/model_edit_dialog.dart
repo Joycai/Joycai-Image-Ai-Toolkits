@@ -201,6 +201,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   Widget _buildForm(ColorScheme colorScheme, {required bool twoColumn}) {
     final l10n = widget.l10n;
     final appState = widget.appState;
+    final textTheme = Theme.of(context).textTheme;
 
     final nameField = TextField(
       controller: nameCtrl,
@@ -267,8 +268,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                 selected: tag == value,
                 onSelected: (_) => setState(() => tag = value),
                 label: Text(label),
-                labelStyle: TextStyle(
-                  fontSize: 12,
+                labelStyle: textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: tag == value ? color : colorScheme.onSurfaceVariant,
                 ),
@@ -314,11 +314,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               children: [
                 Icon(Icons.memory_outlined, size: 18, color: colorScheme.outline),
                 const SizedBox(width: 8),
-                Text(l10n.contextMax, style: const TextStyle(fontSize: 13)),
+                Text(l10n.contextMax, style: textTheme.bodyMedium),
                 const Spacer(),
                 Text(
                   l10n.contextTokens(_formatTokens(_contextSizes[contextSizeIdx.round()])),
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                  style: textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.primary),
                 ),
               ],
             ),
@@ -340,7 +341,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               ContextWindowMode.specified => l10n.contextWindowHint,
               ContextWindowMode.unlimited => l10n.contextUnlimitedDesc,
             },
-            style: TextStyle(color: colorScheme.outline, fontSize: 11),
+            style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
         ),
 
@@ -348,16 +349,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         _sectionHeader(l10n.capabilities),
         const SizedBox(height: 4),
         SwitchListTile(
-          title: Text(l10n.supportsStreaming, style: const TextStyle(fontSize: 13)),
-          subtitle: Text(l10n.supportsStreamingDesc, style: const TextStyle(fontSize: 11)),
+          title: Text(l10n.supportsStreaming, style: textTheme.bodyMedium),
+          // The muted tone is spelled out because it used to be inherited from
+          // ListTile's own subtitle style, which a scale slot overrides.
+          subtitle: Text(l10n.supportsStreamingDesc,
+              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           value: supportsStream,
           onChanged: (v) => setState(() => supportsStream = v),
           secondary: const Icon(Icons.stream),
           contentPadding: EdgeInsets.zero,
         ),
         SwitchListTile(
-          title: Text(l10n.supportsStandardRequest, style: const TextStyle(fontSize: 13)),
-          subtitle: Text(l10n.supportsStandardRequestDesc, style: const TextStyle(fontSize: 11)),
+          title: Text(l10n.supportsStandardRequest, style: textTheme.bodyMedium),
+          subtitle: Text(l10n.supportsStandardRequestDesc,
+              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           value: supportsStandard,
           onChanged: (v) => setState(() => supportsStandard = v),
           secondary: const Icon(Icons.http),
@@ -368,8 +373,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         _sectionHeader(l10n.agentBehavior),
         const SizedBox(height: 4),
         SwitchListTile(
-          title: Text(l10n.forceViewAllImages, style: const TextStyle(fontSize: 13)),
-          subtitle: Text(l10n.forceViewAllImagesDesc, style: const TextStyle(fontSize: 11)),
+          title: Text(l10n.forceViewAllImages, style: textTheme.bodyMedium),
+          subtitle: Text(l10n.forceViewAllImagesDesc,
+              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           value: forceViewAllImages,
           onChanged: (v) => setState(() => forceViewAllImages = v),
           secondary: const Icon(Icons.visibility_outlined),
@@ -432,12 +438,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         Text(
           title.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-            letterSpacing: 1.2,
-          ),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+                letterSpacing: 1.2,
+              ),
         ),
         const SizedBox(height: 4),
         const Divider(height: 1),

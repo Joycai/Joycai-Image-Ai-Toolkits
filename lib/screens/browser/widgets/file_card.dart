@@ -104,9 +104,8 @@ class _FileCardState extends State<FileCard> {
                     color: Colors.black.withValues(alpha: 0.55),
                     child: Text(
                       widget.file.name,
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Colors.white,
-                        fontSize: 10.5,
                         fontFamily: 'monospace',
                       ),
                       maxLines: 1,
@@ -133,9 +132,8 @@ class _FileCardState extends State<FileCard> {
                       ),
                       child: Text(
                         _dimensions,
-                        style: const TextStyle(
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Colors.white,
-                          fontSize: 9.5,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'monospace',
                         ),

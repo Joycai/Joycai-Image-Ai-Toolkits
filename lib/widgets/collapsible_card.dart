@@ -94,14 +94,17 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       SizeTransition(
                         sizeFactor: _controller.drive(Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeInOut))),
                         child: widget.subtitle != null 
                           ? Text(
                               widget.subtitle!,
-                              style: TextStyle(fontSize: 11, color: colorScheme.outline),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(color: colorScheme.outline),
                             )
                           : const SizedBox.shrink(),
                       ),

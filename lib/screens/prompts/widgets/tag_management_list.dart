@@ -85,8 +85,7 @@ class _TagManagementListState extends State<TagManagementList> {
                   ),
                   child: Text(
                     '$count',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: color.withAlpha(230),
                     ),

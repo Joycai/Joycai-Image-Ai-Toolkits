@@ -25,7 +25,7 @@ class OptimizerReferencePanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
           trailing: images.isEmpty
               ? null
-              : Text('${images.length}', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
+              : Text('${images.length}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
         ),
         if (images.isEmpty)
           Expanded(
@@ -37,7 +37,7 @@ class OptimizerReferencePanel extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     l10n.noImagesSelected,
-                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 8),
                   Padding(
@@ -45,7 +45,7 @@ class OptimizerReferencePanel extends StatelessWidget {
                     child: Text(
                       l10n.optEmptyImagesHint,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: colorScheme.outline, fontSize: 11),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                     ),
                   ),
                 ],
@@ -192,7 +192,7 @@ class _Badge extends StatelessWidget {
       child: text != null
           ? Text(
               text!,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: foreground),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: foreground),
             )
           : Icon(icon, size: 12, color: foreground),
     );

@@ -82,18 +82,21 @@ class BrowserFilterBar extends StatelessWidget {
           CheckedPopupMenuItem(
             value: field,
             checked: state.sortField == field,
-            child: Text(_getSortFieldLabel(field, l10n), style: const TextStyle(fontSize: 13)),
+            child: Text(
+              _getSortFieldLabel(field, l10n),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
           ),
         const PopupMenuDivider(),
         CheckedPopupMenuItem(
           value: true,
           checked: state.sortAscending,
-          child: Text(l10n.sortAsc, style: const TextStyle(fontSize: 13)),
+          child: Text(l10n.sortAsc, style: Theme.of(context).textTheme.labelLarge),
         ),
         CheckedPopupMenuItem(
           value: false,
           checked: !state.sortAscending,
-          child: Text(l10n.sortDesc, style: const TextStyle(fontSize: 13)),
+          child: Text(l10n.sortDesc, style: Theme.of(context).textTheme.labelLarge),
         ),
       ],
       child: Container(
@@ -114,8 +117,7 @@ class BrowserFilterBar extends StatelessWidget {
             const SizedBox(width: 7),
             Text(
               _getSortFieldLabel(state.sortField, l10n),
-              style: TextStyle(
-                fontSize: 12.5,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -220,8 +222,7 @@ class _CategoryPill extends StatelessWidget {
               ],
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12.5,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),

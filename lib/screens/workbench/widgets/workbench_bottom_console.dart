@@ -91,8 +91,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
                     Flexible(
                       child: Text(
                         l10n.executionLogs,
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.4,
                           color: colorScheme.onSurfaceVariant,
@@ -122,8 +121,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
                               alignment: Alignment.centerRight,
                               child: Text(
                                 lastLogMessage,
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                                   fontFamily: 'monospace',
                                   color: colorScheme.onSurfaceVariant.withAlpha(160),
                                 ),
@@ -270,7 +268,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
           if (runningCount > 0) ...[
             Text(
               l10n.runningCount(runningCount),
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: colorScheme.primary),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.primary),
             ),
             const SizedBox(width: 7),
             // A bar rather than the 11px ring this replaced: at that size a
@@ -294,7 +292,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
               const SizedBox(width: 7),
               Text(
                 '$pct%',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: colorScheme.primary),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.primary),
               ),
             ],
           ],
@@ -304,7 +302,7 @@ class _WorkbenchBottomConsoleState extends State<WorkbenchBottomConsole>
             const SizedBox(width: 4),
             Text(
               l10n.plannedCount(pendingCount),
-              style: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ],

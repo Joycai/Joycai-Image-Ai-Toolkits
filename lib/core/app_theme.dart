@@ -194,3 +194,50 @@ ButtonStyle tonalButtonStyle(ColorScheme colorScheme) {
     elevation: 0,
   );
 }
+
+/// Taking a type-scale slot's size without its colour.
+extension AppTextScaleMetrics on TextStyle {
+  /// This slot's metrics, carrying no colour of its own.
+  ///
+  /// Every slot of a Material 3 [TextTheme] arrives stamped with `onSurface`
+  /// — `Typography.material2021` puts it there — and an explicit colour on a
+  /// [Text] beats the ambient [DefaultTextStyle]. So handing a raw slot to a
+  /// label whose colour belongs to the widget *around* it paints `onSurface`
+  /// over that widget's own choice: near-invisible on a filled button, and
+  /// dead to the selected/unselected switch on a chip or list tile.
+  ///
+  /// The cases, all of which came up migrating the app onto the scale:
+  ///
+  /// - a [FilledButton]/[TextButton] label, whose colour is the button's
+  ///   resolved foreground;
+  /// - a [ChoiceChip]/[FilterChip] label, `onSecondaryContainer` when
+  ///   selected and `onSurfaceVariant` when not;
+  /// - a [ListTile] title or subtitle under `selected: true`, which tints to
+  ///   `primary`;
+  /// - an [ExpansionTile] header, whose colour is an animated tween between
+  ///   two of those.
+  ///
+  /// `copyWith(color: null)` cannot express this — null there means "leave it
+  /// alone" — so the metrics are restated explicitly.
+  /// `inherit: true` is forced, not copied. It is the switch that decides
+  /// whether [Text] merges this over the ambient [DefaultTextStyle] or
+  /// replaces it outright — `TextStyle.merge` returns the incoming style
+  /// wholesale when it is false, which would drop the very colour this is
+  /// trying to inherit. A `TextTheme` slot's own value for it is an
+  /// implementation detail of whoever built the theme.
+  TextStyle get metricsOnly => const TextStyle().copyWith(
+        inherit: true,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+        height: height,
+        leadingDistribution: leadingDistribution,
+        textBaseline: textBaseline,
+        fontFeatures: fontFeatures,
+        fontVariations: fontVariations,
+      );
+}

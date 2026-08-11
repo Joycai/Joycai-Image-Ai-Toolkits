@@ -147,6 +147,8 @@ class _ImageCardState extends State<ImageCard> {
                   children: [
                     Icon(Icons.videocam, size: 10, color: _overlayInk),
                     SizedBox(width: 2),
+                    // Left off the type scale on purpose: its smallest slot is
+                    // labelSmall at 10, and +25% does not fit this badge.
                     Text(
                       "VIDEO",
                       style: TextStyle(color: _overlayInk, fontSize: 8, fontWeight: FontWeight.bold),
@@ -281,7 +283,7 @@ class _ImageCardState extends State<ImageCard> {
           color: _overlayScrim,
           child: Text(
             _dimensions,
-            style: const TextStyle(color: _overlayInk, fontSize: 9, height: 1.3),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _overlayInk, height: 1.3),
           ),
         ),
       ),
@@ -305,9 +307,8 @@ class _ImageCardState extends State<ImageCard> {
       ),
       child: Text(
         '${widget.selectionNumber}',
-        style: TextStyle(
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
           color: colorScheme.onPrimary,
-          fontSize: 11,
           fontWeight: FontWeight.w700,
           height: 1,
         ),

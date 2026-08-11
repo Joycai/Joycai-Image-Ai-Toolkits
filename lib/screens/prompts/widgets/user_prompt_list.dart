@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/prompt_card.dart';
 
@@ -56,7 +57,7 @@ class _UserPromptListState extends State<UserPromptList> {
             const SizedBox(height: 16),
             Text(
               l10n.noPromptsSaved,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
             ),
             const SizedBox(height: 8),
             Text(
@@ -65,10 +66,10 @@ class _UserPromptListState extends State<UserPromptList> {
               style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppButton(
+              label: l10n.newPrompt,
+              icon: Icons.add,
               onPressed: () => widget.onShowEditDialog(l10n),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.newPrompt),
             ),
           ],
         ),

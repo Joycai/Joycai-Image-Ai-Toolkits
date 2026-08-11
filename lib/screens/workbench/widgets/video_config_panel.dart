@@ -12,6 +12,7 @@ import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/collapsible_card.dart';
@@ -142,8 +143,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           expand: false,
         ),
         SwitchListTile(
-          title: Text(l10n.compressReferenceImages, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-          subtitle: Text(l10n.compressReferenceImagesDesc, style: const TextStyle(fontSize: 11)),
+          title: Text(l10n.compressReferenceImages, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          // Carries the colour the ListTile's own subtitle style supplied, which
+          // the slot would otherwise replace with plain onSurface.
+          subtitle: Text(l10n.compressReferenceImagesDesc,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           value: appState.compressReferenceImages,
           onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
           secondary: const Icon(Icons.compress, size: 20),
@@ -205,14 +209,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final generateButton = Row(
       children: [
         Expanded(
-          child: FilledButton.icon(
+          child: AppButton(
+            label: l10n.generateVideo,
+            icon: Icons.movie_outlined,
+            size: AppButtonSize.large,
+            fullWidth: true,
             onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
-            icon: const Icon(Icons.movie_outlined),
-            label: Text(l10n.generateVideo, style: const TextStyle(fontWeight: FontWeight.bold)),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
           ),
         ),
         const SizedBox(width: 10),
@@ -414,7 +416,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 SizedBox(
                   width: 80,
                   child: Text(_videoParamLabel(l10n, spec.labelKey),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
                 ),
                 Expanded(
                   child: _buildVideoParamControl(spec, model.modelId, appState, colorScheme, l10n),
@@ -440,7 +442,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         return DropdownButton<String>(
           isExpanded: true,
           value: current,
-          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
           underline: Container(height: 1, color: colorScheme.outlineVariant),
           items: spec.options
               .map((o) => DropdownMenuItem(
@@ -491,7 +493,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
               child: Text(
                 '${value}s',
                 textAlign: TextAlign.end,
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
               ),
             ),
           ],
@@ -558,7 +560,7 @@ class _FrameDropTarget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         DropTarget(
           onDragDone: (details) {
@@ -617,7 +619,7 @@ class _FrameDropTarget extends StatelessWidget {
                               Icon(emptyIcon, color: colorScheme.outline),
                               if (isMobile) ...[
                                 const SizedBox(height: 4),
-                                Text(l10n.tapToPick, style: TextStyle(color: colorScheme.outline, fontSize: 10)),
+                                Text(l10n.tapToPick, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.outline)),
                               ],
                             ],
                           ),
@@ -683,7 +685,7 @@ class _ReferenceImagesTarget extends StatelessWidget {
                         Text(
                           dropHint,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: colorScheme.outline, fontSize: 11),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
                         ),
                       ],
                     ),

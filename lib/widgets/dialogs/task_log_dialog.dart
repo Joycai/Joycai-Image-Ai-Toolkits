@@ -181,13 +181,12 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Text(
         line,
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 11,
-          height: 1.45,
-          color: color,
-          fontWeight: isError ? FontWeight.w600 : FontWeight.normal,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontFamily: 'monospace',
+              height: 1.45,
+              color: color,
+              fontWeight: isError ? FontWeight.w600 : FontWeight.normal,
+            ),
       ),
     );
   }
@@ -207,13 +206,16 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
           const SizedBox(height: 10),
           Text(
             l10n.noTaskLog,
-            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
             l10n.noTaskLogHint,
-            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withAlpha(170)),
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: colorScheme.onSurfaceVariant.withAlpha(170)),
             textAlign: TextAlign.center,
           ),
         ],

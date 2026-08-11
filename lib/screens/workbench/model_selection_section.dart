@@ -59,9 +59,9 @@ class ModelSelectionSection extends StatelessWidget {
         initiallyExpanded: isExpanded,
         onExpansionChanged: (_) => onToggleExpansion(),
         leading: Icon(Icons.tune_outlined, size: 20, color: colorScheme.primary),
-        title: Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        title: Text(l10n.modelSelection, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         subtitle: collapsedModelName != null
-            ? Text(collapsedModelName, style: TextStyle(fontSize: 11, color: colorScheme.outline))
+            ? Text(collapsedModelName, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline))
             : null,
         children: [
           const SizedBox(height: 8),
@@ -71,8 +71,8 @@ class ModelSelectionSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.channel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                    _buildChannelDropdown(colorScheme),
+                    Text(l10n.channel, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    _buildChannelDropdown(context, colorScheme),
                   ],
                 ),
               ),
@@ -81,14 +81,14 @@ class ModelSelectionSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.modelSelection, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    Text(l10n.modelSelection, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
                     DropdownButton<int>(
                       isExpanded: true,
                       value: (filteredModels.any((m) => m['id'] == selectedModelDbId))
                           ? selectedModelDbId
                           : null,
                       hint: Text(l10n.selectAModel),
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
                       underline: Container(height: 1, color: colorScheme.outlineVariant),
                       items: filteredModels.map((m) => DropdownMenuItem(
                         value: m['id'] as int,
@@ -116,13 +116,13 @@ class ModelSelectionSection extends StatelessWidget {
     );
   }
 
-  Widget _buildChannelDropdown(ColorScheme colorScheme) {
+  Widget _buildChannelDropdown(BuildContext context, ColorScheme colorScheme) {
     return DropdownButton<int>(
       isExpanded: true,
       // Guard: the selected id must exist in the (filtered) channel list,
       // otherwise DropdownButton throws an assertion error.
       value: channels.any((c) => c['id'] == selectedChannelId) ? selectedChannelId : null,
-      style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
       underline: Container(height: 1, color: colorScheme.outlineVariant),
       items: channels.map((c) => DropdownMenuItem<int>(
         value: c['id'] as int,
@@ -138,11 +138,10 @@ class ModelSelectionSection extends StatelessWidget {
                 ),
                 child: Text(
                   c['tag'],
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Color(c['tag_color'] ?? 0xFF607D8B),
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Color(c['tag_color'] ?? 0xFF607D8B),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
             Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
@@ -181,7 +180,7 @@ class ModelSelectionSection extends StatelessWidget {
         control = DropdownButton<String>(
           isExpanded: true,
           value: current,
-          style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
           underline: Container(height: 1, color: colorScheme.outlineVariant),
           items: spec.options
               .map((o) => DropdownMenuItem(
@@ -216,7 +215,7 @@ class ModelSelectionSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             minimumSize: const Size(0, 30),
             visualDensity: VisualDensity.compact,
-            textStyle: const TextStyle(fontSize: 12),
+            textStyle: Theme.of(context).textTheme.bodySmall,
             alignment: Alignment.centerLeft,
           ),
           onPressed: () async {
@@ -251,7 +250,7 @@ class ModelSelectionSection extends StatelessWidget {
         SizedBox(
           width: 80,
           child: Text(_paramLabel(l10n, spec.labelKey),
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
         ),
         Expanded(child: control),
       ],

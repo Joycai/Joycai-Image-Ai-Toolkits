@@ -166,9 +166,10 @@ class _SetupWizardState extends State<SetupWizard> {
         title: Text(l10n.setupWizardTitle),
         automaticallyImplyLeading: false,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(), 
-            child: Text(l10n.skip)
+          AppButton(
+            label: l10n.skip,
+            variant: AppButtonVariant.text,
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
@@ -195,7 +196,9 @@ class _SetupWizardState extends State<SetupWizard> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (_currentStep > 0 && _currentStep != 4)
-                    TextButton(
+                    AppButton(
+                      label: l10n.back,
+                      variant: AppButtonVariant.text,
                       onPressed: () {
                         int prev = _currentStep - 1;
                         if (_currentStep == 4 && _createdChannelId == null) {
@@ -204,14 +207,13 @@ class _SetupWizardState extends State<SetupWizard> {
                         _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                         setState(() => _currentStep = prev);
                       },
-                      child: Text(l10n.back),
                     ),
                   const SizedBox(width: 16),
-                  FilledButton(
-                    onPressed: _currentStep == 1 && _outputDirController.text.isEmpty 
-                        ? null 
+                  AppButton(
+                    label: _currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next),
+                    onPressed: _currentStep == 1 && _outputDirController.text.isEmpty
+                        ? null
                         : _nextStep,
-                    child: Text(_currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next)),
                   ),
                 ],
               ),
@@ -402,12 +404,12 @@ class _SetupWizardState extends State<SetupWizard> {
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _isFetchingModels ? null : _fetchModels,
-                icon: _isFetchingModels 
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.refresh),
-                label: Text(l10n.fetchModels),
+              AppButton(
+                label: l10n.fetchModels,
+                icon: Icons.refresh,
+                variant: AppButtonVariant.secondary,
+                loading: _isFetchingModels,
+                onPressed: _fetchModels,
               ),
             ],
           ),

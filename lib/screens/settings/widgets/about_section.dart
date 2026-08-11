@@ -33,6 +33,7 @@ class _AboutSectionState extends State<AboutSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return AppSection(
       title: l10n.about,
@@ -46,12 +47,12 @@ class _AboutSectionState extends State<AboutSection> {
             const SizedBox(height: 12),
             Text(
               l10n.appTitle,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
               _version.isEmpty ? '' : l10n.aboutVersion(_version),
-              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -76,7 +77,7 @@ class _AboutSectionState extends State<AboutSection> {
           child: Text(
             l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),
             textAlign: TextAlign.center,
-            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ),
       ],

@@ -67,7 +67,7 @@ class PromptCard extends StatelessWidget {
                 children: [
                   _buildHeader(context, colorScheme),
                   if (isExpanded) _buildExpandedContent(context, colorScheme)
-                  else _buildCollapsedContent(colorScheme),
+                  else _buildCollapsedContent(context, colorScheme),
                 ],
               ),
             ),
@@ -101,16 +101,15 @@ class PromptCard extends StatelessWidget {
             Expanded(
               child: Text(
                 prompt.title,
-                style: TextStyle(
-                  fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
-                  fontSize: 14,
-                  color: isExpanded ? colorScheme.primary : colorScheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
+                      color: isExpanded ? colorScheme.primary : colorScheme.onSurface,
+                    ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (showCategory) ...[
-              _buildTagsList(),
+              _buildTagsList(context),
               const SizedBox(width: 8),
             ],
 
@@ -151,7 +150,7 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTagsList() {
+  Widget _buildTagsList(BuildContext context) {
     final displayTags = prompt.tags.isEmpty 
         ? [null] 
         : prompt.tags;
@@ -161,6 +160,7 @@ class PromptCard extends StatelessWidget {
       runSpacing: 4,
       alignment: WrapAlignment.end,
       children: displayTags.map((t) => _buildCategoryTag(
+            context,
         t?.name ?? 'General',
         t?.color,
       )).toList(),
@@ -186,11 +186,10 @@ class PromptCard extends StatelessWidget {
                     child: MarkdownBody(
                       data: prompt.content,
                       styleSheet: MarkdownStyleSheet(
-                        p: TextStyle(
-                          fontSize: 13, 
-                          height: 1.6, 
-                          color: colorScheme.onSurface.withAlpha(230)
-                        ),
+                        p: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              height: 1.6,
+                              color: colorScheme.onSurface.withAlpha(230),
+                            ),
                         code: TextStyle(
                           backgroundColor: colorScheme.surfaceContainerHighest,
                           fontFamily: 'monospace',
@@ -201,11 +200,10 @@ class PromptCard extends StatelessWidget {
                 : SelectionArea(
                     child: Text(
                       prompt.content,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.5,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.5,
+                          ),
                     ),
                   ),
           ),
@@ -214,22 +212,19 @@ class PromptCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCollapsedContent(ColorScheme colorScheme) {
+  Widget _buildCollapsedContent(BuildContext context, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(left: 40.0, bottom: 12, right: 16),
       child: Text(
         prompt.content.toString().replaceAll('\n', ' '),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
-          color: colorScheme.outline,
-        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
       ),
     );
   }
 
-  Widget _buildCategoryTag(String tag, int? tagColor) {
+  Widget _buildCategoryTag(BuildContext context, String tag, int? tagColor) {
     final color = tagColor != null ? Color(tagColor) : Colors.blueGrey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -240,12 +235,11 @@ class PromptCard extends StatelessWidget {
       ),
       child: Text(
         tag,
-        style: TextStyle(
-          fontSize: 10, 
-          fontWeight: FontWeight.bold, 
-          color: color.withAlpha(220),
-          letterSpacing: 0.5,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color.withAlpha(220),
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }

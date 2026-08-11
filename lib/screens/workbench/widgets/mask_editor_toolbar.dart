@@ -189,31 +189,20 @@ class MaskEditorToolbar extends StatelessWidget {
           const VerticalDivider(width: 16, indent: 12, endIndent: 12),
           
           if (!isNarrow) ...[
-            OutlinedButton(
+            AppButton(
+              label: l10n.saveToTemp,
+              variant: AppButtonVariant.secondary,
               onPressed: onSave,
-              style: OutlinedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              child: Text(l10n.saveToTemp, style: const TextStyle(fontSize: 12)),
             ),
             const SizedBox(width: 8),
-            FilledButton(
+            AppButton(
+              label: l10n.saveMaskToTemp,
               onPressed: onSaveMask,
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              child: Text(l10n.saveMaskToTemp, style: const TextStyle(fontSize: 12)),
             ),
           ] else
-            FilledButton(
+            AppButton(
+              label: l10n.saveMaskToTemp,
               onPressed: onSaveMask,
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              child: Text(l10n.saveMaskToTemp, style: const TextStyle(fontSize: 12)),
             ),
         ],
       ),

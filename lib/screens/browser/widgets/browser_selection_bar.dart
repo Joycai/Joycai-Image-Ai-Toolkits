@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/file_browser_state.dart';
+import '../../../widgets/app_button.dart';
 
 /// Floating contextual action bar shown at the bottom center of the file
 /// area while files are selected. Slides away when the selection is empty,
@@ -43,18 +45,18 @@ class BrowserSelectionBar extends StatelessWidget {
                 children: [
                   Text(
                     l10n.imagesSelected(state.selectedFiles.length),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 12),
-                  TextButton(
+                  AppButton(
+                    label: l10n.selectAll,
+                    variant: AppButtonVariant.text,
                     onPressed: () => state.selectAll(),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(l10n.selectAll, style: const TextStyle(fontSize: 12.5)),
                   ),
-                  TextButton(
+                  AppButton(
+                    label: l10n.clear,
+                    variant: AppButtonVariant.text,
                     onPressed: () => state.clearSelection(),
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    child: Text(l10n.clear, style: const TextStyle(fontSize: 12.5)),
                   ),
                   const SizedBox(width: 6),
                   SizedBox(
@@ -65,7 +67,7 @@ class BrowserSelectionBar extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onAiRename,
                     icon: const Icon(Icons.auto_fix_high, size: 17),
-                    label: Text(l10n.aiBatchRename, style: const TextStyle(fontSize: 12.5)),
+                    label: Text(l10n.aiBatchRename, style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),

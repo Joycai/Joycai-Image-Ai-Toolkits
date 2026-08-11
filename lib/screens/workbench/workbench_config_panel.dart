@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_channel.dart';
@@ -331,7 +332,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 selectedCount == 0
                     ? l10n.processPrompt
                     : l10n.processImages(selectedCount),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: Theme.of(context).textTheme.titleMedium?.metricsOnly.copyWith(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -440,11 +441,11 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             _updateConfig(prompt: content);
           },
         ),
-        TextButton.icon(
+        AppButton(
+          label: l10n.library,
+          icon: Icons.library_books_outlined,
+          variant: AppButtonVariant.text,
           onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
-          icon: const Icon(Icons.library_books_outlined, size: 16),
-          label: Text(l10n.library, style: const TextStyle(fontSize: 12)),
-          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
         ),
       ],
     );
@@ -483,7 +484,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             children: [
               Icon(Icons.collections_outlined, size: 48, color: colorScheme.outline),
               const SizedBox(height: 8),
-              Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurface, fontSize: 12)),
+              Text(l10n.noImagesSelected, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface)),
             ],
           ),
         ),
@@ -498,11 +499,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           children: [
             Text(
               l10n.selectedCount(selectedImages.length),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            TextButton(
+            AppButton(
+              label: l10n.clear,
+              variant: AppButtonVariant.text,
               onPressed: () => Provider.of<AppState>(context, listen: false).clearImageSelection(),
-              child: Text(l10n.clear, style: const TextStyle(fontSize: 12)),
             ),
           ],
         ),
@@ -586,7 +588,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           Icon(Icons.info_outline, size: 16, color: colorScheme.onTertiaryContainer),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(message, style: TextStyle(fontSize: 11, color: colorScheme.onTertiaryContainer)),
+            child: Text(message, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onTertiaryContainer)),
           ),
         ],
       ),

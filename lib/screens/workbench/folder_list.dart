@@ -74,7 +74,7 @@ class FolderList extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       Platform.isIOS ? l10n.iosSandboxDesc : l10n.mobileSandboxDesc,
-                      style: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onPrimaryContainer),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -110,7 +110,7 @@ class FolderList extends StatelessWidget {
                 children: [
                   Text(
                     l10n.directories,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(width: 8),
                   Container(
@@ -121,8 +121,7 @@ class FolderList extends StatelessWidget {
                     ),
                     child: Text(
                       '${sourceDirectories.length}',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         fontFamily: 'monospace',
                         color: colorScheme.onSurfaceVariant,
@@ -151,7 +150,7 @@ class FolderList extends StatelessWidget {
             Divider(height: 1, color: colorScheme.outlineVariant.withAlpha(90)),
             Expanded(
               child: sourceDirectories.isEmpty
-                  ? _buildEmptyState(colorScheme, l10n)
+                  ? _buildEmptyState(context, colorScheme, l10n)
                   : ListView.builder(
                       itemCount: sourceDirectories.length,
                       itemBuilder: (context, index) {
@@ -189,7 +188,7 @@ class FolderList extends StatelessWidget {
       children: [
         // SOURCES — the aggregate "All Sources" view is the head of the group,
         // with the browsable source-folder tree nested beneath it.
-        _buildSectionHeader(colorScheme, l10n.sectionSources, count: sourceDirectories.length),
+        _buildSectionHeader(context, colorScheme, l10n.sectionSources, count: sourceDirectories.length),
         _buildFixedNode(
           context,
           icon: Icons.photo_library_outlined,
@@ -200,7 +199,7 @@ class FolderList extends StatelessWidget {
           count: galleryState.galleryImages.length,
         ),
         if (sourceDirectories.isEmpty)
-          _buildInlineHint(colorScheme, l10n.noFolders)
+          _buildInlineHint(context, colorScheme, l10n.noFolders)
         else
           ...sourceDirectories.map((path) => DirectoryTreeItem(
                 key: ValueKey(path),
@@ -213,7 +212,7 @@ class FolderList extends StatelessWidget {
         const Divider(height: 16),
 
         // RESULTS — the result cache is also a real folder tree, now browsable.
-        _buildSectionHeader(colorScheme, l10n.sectionResults, count: resultRoots.length),
+        _buildSectionHeader(context, colorScheme, l10n.sectionResults, count: resultRoots.length),
         _buildFixedNode(
           context,
           icon: Icons.auto_awesome_motion,
@@ -224,14 +223,14 @@ class FolderList extends StatelessWidget {
           count: galleryState.processedImages.length,
         ),
         if (resultRoots.isEmpty)
-          _buildInlineHint(colorScheme, l10n.noResultsYet)
+          _buildInlineHint(context, colorScheme, l10n.noResultsYet)
         else
           ...resultRoots.map((path) => ResultTreeItem(key: ValueKey(path), path: path, isRoot: true)),
 
         const Divider(height: 16),
 
         // WORKSPACE — transient drop zone.
-        _buildSectionHeader(colorScheme, l10n.sectionWorkspace),
+        _buildSectionHeader(context, colorScheme, l10n.sectionWorkspace),
         _buildFixedNode(
           context,
           icon: Icons.workspaces_outline,
@@ -245,32 +244,33 @@ class FolderList extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(ColorScheme colorScheme, String label, {int? count}) {
+  Widget _buildSectionHeader(BuildContext context, ColorScheme colorScheme, String label, {int? count}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
       child: Row(
         children: [
           Text(
             label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 1.2,
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
           ),
           const Spacer(),
           if (count != null)
-            Text('$count', style: TextStyle(fontSize: 11, color: colorScheme.outline)),
+            Text('$count',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
         ],
       ),
     );
   }
 
-  Widget _buildInlineHint(ColorScheme colorScheme, String text) {
+  Widget _buildInlineHint(BuildContext context, ColorScheme colorScheme, String text) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 16, 10),
-      child: Text(text, style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+      child: Text(text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
     );
   }
 
@@ -287,8 +287,7 @@ class FolderList extends StatelessWidget {
       leading: Icon(icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: 20),
       title: Text(
         label,
-        style: TextStyle(
-          fontSize: 13,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           color: isSelected ? colorScheme.primary : colorScheme.onSurface,
         ),
@@ -296,8 +295,7 @@ class FolderList extends StatelessWidget {
       trailing: count != null
           ? Text(
               '$count',
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: isSelected ? colorScheme.primary : colorScheme.outline,
               ),
             )
@@ -338,7 +336,7 @@ class FolderList extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -349,13 +347,13 @@ class FolderList extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               l10n.noFolders,
-              style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurface),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               l10n.clickAddFolder,
-              style: TextStyle(color: colorScheme.outline, fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline),
               textAlign: TextAlign.center,
             ),
           ],

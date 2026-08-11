@@ -16,11 +16,10 @@ class ChannelSectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
       ),
     );
   }
@@ -74,11 +73,10 @@ class ChannelAppearanceSection extends StatelessWidget {
         const SizedBox(height: 14),
         Text(
           l10n.tagColor,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.outline,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.outline,
+              ),
         ),
         const SizedBox(height: 8),
         CompactColorPicker(
@@ -181,8 +179,10 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
                   ),
                   const SizedBox(width: 6),
                   Text(_hex,
-                      style: TextStyle(
-                          fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -192,8 +192,13 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // The button's own foreground colour, carried explicitly: it
+                  // used to arrive by inheritance, which a scale slot replaces.
                   Text(widget.l10n.moreColors,
-                      style: const TextStyle(fontSize: 12)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant)),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
                     size: 16,

@@ -85,15 +85,18 @@ class PricingGroupManager extends StatelessWidget {
                         ),
                         Text(
                           l10n.feeGroupDesc,
-                          style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 13),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Theme.of(context).colorScheme.outline),
                         ),
                       ],
                     ),
                     const Spacer(),
-                    FilledButton.icon(
+                    AppButton(
+                      label: l10n.addFeeGroup,
+                      icon: Icons.add,
                       onPressed: () => _showGroupEditor(context, appState, l10n),
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.addFeeGroup),
                     ),
                   ],
                 ),
@@ -125,21 +128,24 @@ class PricingGroupManager extends StatelessWidget {
                   // and it is what the button on the right adds to.
                   Text(
                     l10n.feeGroups,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     l10n.feeGroupDesc,
-                    style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Theme.of(context).colorScheme.outline),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton.icon(
+            AppButton(
+              label: l10n.addFeeGroup,
+              icon: Icons.add,
               onPressed: () => _showGroupEditor(context, appState, l10n),
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(l10n.addFeeGroup),
             ),
           ],
         ),
@@ -214,14 +220,15 @@ class PricingGroupManager extends StatelessWidget {
               child: Icon(Icons.monetization_on_outlined, size: 64, color: Theme.of(context).colorScheme.primary.withAlpha(150)),
             ),
             const SizedBox(height: 24),
-            Text(l10n.noFeeGroups, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(l10n.noFeeGroups,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(l10n.feeGroupDesc, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 32),
-            FilledButton.icon(
+            AppButton(
+              label: l10n.addFeeGroup,
+              icon: Icons.add,
               onPressed: () => _showGroupEditor(context, appState, l10n),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.addFeeGroup),
             ),
           ],
         ),
@@ -359,6 +366,8 @@ class _GroupCardState extends State<_GroupCard> {
   }
 
   Widget _buildIdentity(ColorScheme colorScheme, AppLocalizations l10n, Color accent) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       children: [
         Container(
@@ -378,7 +387,7 @@ class _GroupCardState extends State<_GroupCard> {
             children: [
               Text(
                 widget.group.name,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -390,7 +399,7 @@ class _GroupCardState extends State<_GroupCard> {
                   Flexible(
                     child: Text(
                       l10n.feeGroupModelCount(widget.models.length),
-                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                      style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -430,13 +439,18 @@ class _GroupCardState extends State<_GroupCard> {
       ),
       child: Text(
         _isToken ? l10n.tokenBilling : l10n.requestBilling,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: accent),
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(fontWeight: FontWeight.w700, color: accent),
       ),
     );
   }
 
   /// The models this group bills.
   Widget _buildConsumers(ColorScheme colorScheme, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
+
     if (widget.models.isEmpty) {
       // Worth saying out loud: an orphaned group prices nothing, and nothing
       // else on this screen would ever tell you.
@@ -447,8 +461,7 @@ class _GroupCardState extends State<_GroupCard> {
           Flexible(
             child: Text(
               l10n.feeGroupUnused,
-              style: TextStyle(
-                fontSize: 11,
+              style: textTheme.labelMedium?.copyWith(
                 color: colorScheme.outline,
                 fontStyle: FontStyle.italic,
               ),
@@ -463,7 +476,7 @@ class _GroupCardState extends State<_GroupCard> {
       message: widget.models.join('\n'),
       child: Text(
         widget.models.join(', '),
-        style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: colorScheme.outline),
+        style: textTheme.labelMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.outline),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -478,7 +491,7 @@ class _GroupCardState extends State<_GroupCard> {
         children: [
           Text(
             l10n.priceLabelRequest,
-            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
           const Spacer(),
           _priceValue(colorScheme, group.requestPrice, unit: 'Req', large: true),
@@ -519,7 +532,7 @@ class _GroupCardState extends State<_GroupCard> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 10.5, color: colorScheme.onSurfaceVariant),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -538,6 +551,8 @@ class _GroupCardState extends State<_GroupCard> {
     bool large = false,
     bool inherited = false,
   }) {
+    final textTheme = Theme.of(context).textTheme;
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -553,17 +568,19 @@ class _GroupCardState extends State<_GroupCard> {
             // number alone cannot say which it is.
             TextSpan(
               text: '/$unit',
-              style: TextStyle(
-                fontSize: large ? 10 : 9,
+              style: textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                // Spelled out even though the Text's own style below sets it:
+                // a scale slot carries the app font, which would otherwise
+                // replace the monospace this span used to inherit.
+                fontFamily: 'monospace',
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
         maxLines: 1,
-        style: TextStyle(
-          fontSize: large ? 16 : 12.5,
+        style: (large ? textTheme.titleLarge : textTheme.bodySmall)?.copyWith(
           fontWeight: FontWeight.w700,
           fontFamily: 'monospace',
           fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
@@ -877,11 +894,12 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     String? helperText,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 17),
+      style: textTheme.titleLarge?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w700),
       onChanged: (_) {
         if (_invalidFields.remove(ctrl)) setState(() {});
       },
@@ -894,26 +912,26 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         border: _fieldBorder(colorScheme),
         enabledBorder: _fieldBorder(colorScheme),
         focusedBorder: _fieldBorder(colorScheme, color: accent, width: 2),
-        labelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 15),
-        floatingLabelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 15),
+        labelStyle: textTheme.titleMedium?.copyWith(color: accent, fontWeight: FontWeight.w700),
+        floatingLabelStyle: textTheme.titleMedium?.copyWith(color: accent, fontWeight: FontWeight.w700),
         prefixIcon: Icon(icon, size: 19, color: accent),
         prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
         hintText: hintText,
-        hintStyle: TextStyle(
+        hintStyle: textTheme.titleMedium?.copyWith(
           fontFamily: 'monospace',
           fontStyle: FontStyle.italic,
           fontWeight: FontWeight.w400,
-          fontSize: 14,
           color: colorScheme.outline,
         ),
         helperText: helperText,
         helperMaxLines: 2,
-        helperStyle: TextStyle(fontSize: 11.5, color: colorScheme.onSurfaceVariant),
+        helperStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
         errorText: _invalidFields.contains(ctrl)
             ? AppLocalizations.of(context)!.invalidPriceValue
             : null,
         suffixText: suffix,
-        suffixStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
+        suffixStyle:
+            textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       ),
     );
@@ -924,11 +942,10 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
   Widget _sectionHeader(String title) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.primary,
-      ),
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.primary,
+          ),
     );
   }
 
@@ -948,29 +965,32 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         children: [
           if (widget.isMobile) ...[
             Expanded(
-              child: TextButton(
+              child: AppButton(
+                label: l10n.cancel,
+                variant: AppButtonVariant.text,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                child: Text(l10n.cancel),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: FilledButton.icon(
+              child: AppButton(
+                label: saveLabel,
+                icon: Icons.save,
+                size: AppButtonSize.large,
+                fullWidth: true,
                 onPressed: _save,
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                icon: const Icon(Icons.save, size: 18),
-                label: Text(saveLabel),
               ),
             ),
           ] else ...[
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.save, size: 18),
-              label: Text(saveLabel),
+            AppButton(
+              label: l10n.cancel,
+              variant: AppButtonVariant.text,
+              onPressed: () => Navigator.pop(context),
             ),
+            const SizedBox(width: 8),
+            AppButton(label: saveLabel, icon: Icons.save, onPressed: _save),
           ],
         ],
       ),

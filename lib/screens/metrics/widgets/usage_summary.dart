@@ -98,6 +98,7 @@ class UsageSummary extends StatelessWidget {
   /// would be less legible, not more emphatic, and the token counts beside it
   /// need their own accents to stay distinguishable from each other.
   Widget _buildCostCard(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
     return _card(
       context,
       DecoratedBox(
@@ -125,8 +126,7 @@ class UsageSummary extends StatelessWidget {
                   Expanded(
                     child: Text(
                       l10n.estimatedCost,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -141,8 +141,7 @@ class UsageSummary extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '\$${stats.totalCost.toStringAsFixed(4)}',
-                  style: TextStyle(
-                    fontSize: 32,
+                  style: textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
                     fontFamily: 'monospace',
@@ -162,6 +161,7 @@ class UsageSummary extends StatelessWidget {
   /// What the cost is a cost *of*: a count of requests, and the period both
   /// numbers cover.
   Widget _buildCostFooter(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
     return Row(
       children: [
         Container(
@@ -172,8 +172,7 @@ class UsageSummary extends StatelessWidget {
           ),
           child: Text(
             '${_fmt(stats.totalRequestCount)} ${l10n.requests}',
-            style: const TextStyle(
-              fontSize: 11,
+            style: textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: usageRequestAccent,
             ),
@@ -183,7 +182,7 @@ class UsageSummary extends StatelessWidget {
         Flexible(
           child: Text(
             rangeLabel,
-            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+            style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -223,6 +222,7 @@ class UsageSummary extends StatelessWidget {
   /// and three icons in a row read as a toolbar, not as figures.
   Widget _tokenStat(BuildContext context, Color accent, String label, int value) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Expanded(
       child: Column(
@@ -231,8 +231,7 @@ class UsageSummary extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurfaceVariant,
             ),
@@ -244,8 +243,7 @@ class UsageSummary extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               _fmt(value),
-              style: TextStyle(
-                fontSize: 26,
+              style: textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: accent,
                 fontFamily: 'monospace',
@@ -262,6 +260,7 @@ class UsageSummary extends StatelessWidget {
   /// of the two numbers directly above it, and a bar says "of the whole" in a
   /// way a bare percentage does not.
   Widget _buildHitRateMeter(BuildContext context, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
     final rate = stats.cacheHitRate;
 
     return Tooltip(
@@ -274,8 +273,7 @@ class UsageSummary extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.cacheHitRate,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -287,8 +285,7 @@ class UsageSummary extends StatelessWidget {
                 // An em dash, not "0.0%": with no prompt tokens in range the
                 // cache was never asked, which is not the same as never hit.
                 rate == null ? '—' : '${(rate * 100).toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 13,
+                style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   fontFamily: 'monospace',
                   color: rate == null ? colorScheme.outline : usageCacheAccent,

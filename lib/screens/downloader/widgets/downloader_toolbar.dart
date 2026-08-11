@@ -50,8 +50,8 @@ class DownloaderToolbar extends StatelessWidget {
         controller: urlController,
         // Monospace: this is an address, not prose. Fixed widths make a typo in
         // a long path something you can see rather than something you re-read.
-        style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
-        decoration: _fieldDecoration(colorScheme, l10n.websiteUrl, Icons.link),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+        decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
       ),
     );
 
@@ -59,8 +59,8 @@ class DownloaderToolbar extends StatelessWidget {
       height: _controlHeight,
       child: TextField(
         controller: requirementController,
-        style: const TextStyle(fontSize: 13),
-        decoration: _fieldDecoration(colorScheme, l10n.whatToFind, Icons.search),
+        style: Theme.of(context).textTheme.bodyMedium,
+        decoration: _fieldDecoration(context, colorScheme, l10n.whatToFind, Icons.search),
         onSubmitted: (_) => isAnalyzing ? null : onAnalyze(),
       ),
     );
@@ -76,20 +76,11 @@ class DownloaderToolbar extends StatelessWidget {
 
     final findButton = SizedBox(
       height: _controlHeight,
-      child: FilledButton.icon(
-        onPressed: isAnalyzing ? null : onAnalyze,
-        icon: isAnalyzing
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.image_search, size: 18),
-        label: Text(isAnalyzing ? l10n.analyzing : l10n.findImages),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(0, _controlHeight),
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-        ),
+      child: AppButton(
+        label: isAnalyzing ? l10n.analyzing : l10n.findImages,
+        icon: Icons.image_search,
+        loading: isAnalyzing,
+        onPressed: onAnalyze,
       ),
     );
 
@@ -107,7 +98,7 @@ class DownloaderToolbar extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           l10n.imageDownloader,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -159,10 +150,11 @@ class DownloaderToolbar extends StatelessWidget {
 }
 
 /// The filled, unbordered field the app uses for search and address inputs.
-InputDecoration _fieldDecoration(ColorScheme colorScheme, String hint, IconData icon) {
+InputDecoration _fieldDecoration(
+    BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(fontSize: 13, color: colorScheme.outline),
+    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
     prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
     isDense: true,
     contentPadding: EdgeInsets.zero,
@@ -225,17 +217,18 @@ class DownloaderOptionsStrip extends StatelessWidget {
             ),
           ),
           Text(l10n.manualHtmlMode,
-              style: TextStyle(
-                  fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant)),
           if (state.isManualHtml) ...[
             const SizedBox(width: 4),
-            TextButton.icon(
+            AppButton(
+              label: l10n.pasteFromClipboard,
+              icon: Icons.paste,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
               onPressed: onPasteHtml,
-              icon: const Icon(Icons.paste, size: 14),
-              label: Text(l10n.pasteFromClipboard,
-                  style: const TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact),
             ),
             if (state.manualHtml.isNotEmpty) ...[
               Container(
@@ -247,8 +240,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
                 ),
                 child: Text(
                   '${(state.manualHtml.length / 1024).toStringAsFixed(1)} KB',
-                  style: TextStyle(
-                      fontSize: 10,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontFamily: 'monospace',
                       color: colorScheme.onSurfaceVariant),
                 ),
@@ -265,15 +257,12 @@ class DownloaderOptionsStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Container(width: 1, height: 18, color: colorScheme.outlineVariant),
           const SizedBox(width: 4),
-          TextButton.icon(
+          AppButton(
+            label: l10n.saveOriginHtml,
+            icon: Icons.html,
+            variant: AppButtonVariant.text,
+            size: AppButtonSize.compact,
             onPressed: isAnalyzing ? null : onSaveHtml,
-            icon: const Icon(Icons.html, size: 16),
-            label:
-                Text(l10n.saveOriginHtml, style: const TextStyle(fontSize: 12)),
-            style: TextButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              foregroundColor: colorScheme.onSurfaceVariant,
-            ),
           ),
           const SizedBox(width: 4),
           // Always drawn, disabled until there is something to read. Appearing
@@ -295,8 +284,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
                 l10n.downloaderFoundSelected(discoveredCount, selectedCount),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
                 ),
@@ -348,24 +336,24 @@ Future<void> showDownloaderAdvancedDialog(
         const SizedBox(height: 8),
         Row(
           children: [
-            TextButton.icon(
+            AppButton(
+              label: l10n.importCookieFile,
+              icon: Icons.upload_file,
+              variant: AppButtonVariant.text,
               onPressed: () {
                 Navigator.pop(context);
                 onImportCookie();
               },
-              icon: const Icon(Icons.upload_file, size: 16),
-              label: Text(l10n.importCookieFile,
-                  style: const TextStyle(fontSize: 12)),
             ),
             if (state.cookieHistory.isNotEmpty)
-              TextButton.icon(
+              AppButton(
+                label: l10n.cookieHistory,
+                icon: Icons.history,
+                variant: AppButtonVariant.text,
                 onPressed: () {
                   Navigator.pop(context);
                   _showCookieHistory(context, state, cookieController);
                 },
-                icon: const Icon(Icons.history, size: 16),
-                label: Text(l10n.cookieHistory,
-                    style: const TextStyle(fontSize: 12)),
               ),
           ],
         ),

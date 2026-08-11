@@ -216,7 +216,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
             children: [
               Text(
                 l10n.taskQueueManager,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 3),
               _buildHeaderSummary(queue, l10n, colorScheme),
@@ -285,7 +285,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
     return Text.rich(
       TextSpan(
-        style: TextStyle(fontSize: 12.5, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         children: spans,
       ),
       maxLines: 1,
@@ -300,7 +300,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
         color: filled ? accent.withValues(alpha: 0.5) : colorScheme.outline.withValues(alpha: 0.45),
       ),
       foregroundColor: accent,
-      textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+      textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
       padding: const EdgeInsets.symmetric(horizontal: 14),
       minimumSize: const Size(0, appButtonMinHeight),
       visualDensity: VisualDensity.standard,
@@ -404,7 +404,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
         children: [
           Icon(Icons.assignment_outlined, size: 64, color: colorScheme.outlineVariant),
           const SizedBox(height: 16),
-          Text(l10n.noTasksInQueue, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            l10n.noTasksInQueue,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           Text(l10n.submitTaskFromWorkbench, style: TextStyle(color: colorScheme.onSurfaceVariant)),
         ],
@@ -436,6 +439,7 @@ class _FilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final accent = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
     return Material(
@@ -460,8 +464,7 @@ class _FilterPill extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12.5,
+                style: textTheme.bodySmall?.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: accent,
                 ),
@@ -477,8 +480,7 @@ class _FilterPill extends StatelessWidget {
                 ),
                 child: Text(
                   '$count',
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontFamily: 'monospace',
                     color: accent,
@@ -519,6 +521,7 @@ class TaskInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -534,11 +537,11 @@ class TaskInfoRow extends StatelessWidget {
             child: Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 8),
-          Text('$label: ', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+          Text('$label: ', style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 12),
+              style: textTheme.bodySmall,
               // maxLines is what makes the ellipsis do anything: unbounded, the
               // overflow setting is inert and the text just keeps wrapping.
               maxLines: maxValueLines,
@@ -659,9 +662,8 @@ class _TaskCardState extends State<_TaskCard> {
           _taskDisplayName(task),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            fontSize: 14,
             color: task.status == TaskStatus.cancelled
                 ? colorScheme.onSurfaceVariant
                 : colorScheme.onSurface,
@@ -678,17 +680,18 @@ class _TaskCardState extends State<_TaskCard> {
     // Unless there is none: tasks reloaded from the database come back without
     // their logs, and a blank line says less about a failure than the model
     // that produced it does.
+    final textTheme = Theme.of(context).textTheme;
     final error = task.status == TaskStatus.failed ? _errorSummary(task) : '';
     if (error.isNotEmpty) {
       return Text(
         error,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 12, color: colorScheme.error),
+        style: textTheme.bodySmall?.copyWith(color: colorScheme.error),
       );
     }
 
-    final muted = TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant);
+    final muted = textTheme.bodySmall!.copyWith(color: colorScheme.onSurfaceVariant);
     final (marker, modelId) = _splitModelMarker(task.modelId);
     final children = <Widget>[];
 
@@ -696,7 +699,7 @@ class _TaskCardState extends State<_TaskCard> {
       if (children.isEmpty) return;
       children.add(Padding(
         padding: const EdgeInsets.symmetric(horizontal: 7),
-        child: Text('·', style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+        child: Text('·', style: textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
       ));
     }
 
@@ -762,15 +765,15 @@ class _TaskCardState extends State<_TaskCard> {
     ColorScheme colorScheme,
     AppLocalizations l10n,
   ) {
+    final textTheme = Theme.of(context).textTheme;
     final widgets = <Widget>[];
 
     switch (task.status) {
       case TaskStatus.processing:
         widgets.add(Text(
           _progressLabel(task),
-          style: TextStyle(
+          style: textTheme.bodySmall?.copyWith(
             fontFamily: 'monospace',
-            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: colorScheme.primary,
           ),
@@ -786,7 +789,7 @@ class _TaskCardState extends State<_TaskCard> {
             side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
             backgroundColor: colorScheme.error.withValues(alpha: 0.12),
             foregroundColor: colorScheme.error,
-            textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+            textStyle: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             minimumSize: const Size(0, 30),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -803,9 +806,8 @@ class _TaskCardState extends State<_TaskCard> {
     if (!widget.isMobile) {
       widgets.add(Text(
         _formatClock(task.endTime ?? task.startTime),
-        style: TextStyle(
+        style: textTheme.bodySmall?.copyWith(
           fontFamily: 'monospace',
-          fontSize: 12,
           color: colorScheme.onSurfaceVariant,
         ),
       ));
@@ -859,7 +861,9 @@ class _TaskCardState extends State<_TaskCard> {
               color: colorScheme.surfaceContainerHighest,
               child: Text(
                 '+$overflow',
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
@@ -876,7 +880,10 @@ class _TaskCardState extends State<_TaskCard> {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        style: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(fontWeight: FontWeight.w600, color: color),
       ),
     );
   }
@@ -1071,7 +1078,10 @@ class _TaskCardState extends State<_TaskCard> {
                     Expanded(
                       child: Text(
                         task.logs.last,
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontFamily: 'monospace',
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1202,8 +1212,7 @@ class _MetaBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 10,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
           fontFamily: 'monospace',
           color: color,

@@ -84,10 +84,11 @@ class _ApplicationSectionState extends State<ApplicationSection> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
+                  child: AppButton(
+                    label: l10n.openLogFolder,
+                    icon: Icons.folder_zip_outlined,
+                    variant: AppButtonVariant.text,
                     onPressed: () => LLMDebugLogger.openLogFolder(),
-                    icon: const Icon(Icons.folder_zip_outlined, size: 18),
-                    label: Text(l10n.openLogFolder),
                   ),
                 ),
               ),

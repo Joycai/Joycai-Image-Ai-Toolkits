@@ -24,7 +24,8 @@ class ThemeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.appearance, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+        Text(l10n.appearance,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 500),
@@ -62,7 +63,8 @@ class ThemeColorSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Theme Color", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+        Text("Theme Color",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 12,
@@ -132,7 +134,7 @@ class LanguageSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(l10n.language,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -201,7 +203,7 @@ class FontSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(l10n.font,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -394,14 +396,13 @@ class _LanguageCard extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
-                  fontFamily: fontFamily,
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontFamily: fontFamily,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSurface,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
