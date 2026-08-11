@@ -47,3 +47,6 @@ app.*.map.json
 # additional
 /feature_plan/
 /develop_src/
+
+# Packaged .skill archives built from .agents/skills/
+/.agents/skills-packaged/
