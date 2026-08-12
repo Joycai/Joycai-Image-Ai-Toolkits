@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 
 import 'harness/fixture_env.dart';
@@ -181,6 +182,22 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   // strip is empty otherwise, and the strip is where the selection order the
   // model receives is shown and edited.
   _WorkbenchTab('selection', 0, (AppState s) => seedImageSelection(s), seedOnSettled: true),
+  // One entry per arrangement: the three are separate rendering paths, not
+  // three settings of one, and only the default would ever be photographed
+  // otherwise.
+  _WorkbenchTab('comparator', 1, seedComparatorPair),
+  _WorkbenchTab('comparator_stacked', 1, (AppState s) {
+    seedComparatorPair(s);
+    s.workbenchUIState.setComparatorLayout(ComparatorLayout.stacked);
+  }),
+  _WorkbenchTab('comparator_slider', 1, (AppState s) {
+    seedComparatorPair(s);
+    s.workbenchUIState.setComparatorLayout(ComparatorLayout.slider);
+  }),
+  // Unseeded on purpose: the empty state is the first thing anyone opening
+  // the comparator sees, and it is a screen of its own, not a placeholder.
+  _WorkbenchTab('comparator_empty', 1, (AppState s) {}),
+  _WorkbenchTab('mask', 2, seedMaskSource),
   _WorkbenchTab('crop', 3, seedCropSource),
   _WorkbenchTab('assistant', 4, seedOptimizerSession),
 ];
