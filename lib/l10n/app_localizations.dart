@@ -3221,6 +3221,12 @@ abstract class AppLocalizations {
   /// **'No images selected'**
   String get noImagesSelected;
 
+  /// No description provided for @imageLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load image'**
+  String get imageLoadFailed;
+
   /// No description provided for @selectSourceDirectory.
   ///
   /// In en, this message translates to:
@@ -3515,6 +3521,24 @@ abstract class AppLocalizations {
   /// **'Comparator'**
   String get comparator;
 
+  /// No description provided for @compareLayoutSideBySide.
+  ///
+  /// In en, this message translates to:
+  /// **'Side by Side'**
+  String get compareLayoutSideBySide;
+
+  /// No description provided for @compareLayoutStacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Stacked'**
+  String get compareLayoutStacked;
+
+  /// No description provided for @compareLayoutSlider.
+  ///
+  /// In en, this message translates to:
+  /// **'Slider'**
+  String get compareLayoutSlider;
+
   /// No description provided for @compareModeSync.
   ///
   /// In en, this message translates to:
@@ -3526,6 +3550,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Swap Mode'**
   String get compareModeSwap;
+
+  /// No description provided for @compareSyncTransform.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Zoom & Pan'**
+  String get compareSyncTransform;
+
+  /// No description provided for @comparatorEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send images from the file browser or a task result, or pick two from the library'**
+  String get comparatorEmptyHint;
+
+  /// No description provided for @comparatorPickRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Before'**
+  String get comparatorPickRaw;
+
+  /// No description provided for @comparatorPickAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Result'**
+  String get comparatorPickAfter;
+
+  /// No description provided for @comparatorZoomSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom {percent}% · Synced'**
+  String comparatorZoomSynced(int percent);
+
+  /// No description provided for @comparatorZoomIndependent.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom {percent}% · Independent'**
+  String comparatorZoomIndependent(int percent);
+
+  /// No description provided for @comparatorSizeReduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Size reduced {percent}'**
+  String comparatorSizeReduction(String percent);
+
+  /// No description provided for @comparatorSizeIncrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Size increased {percent}'**
+  String comparatorSizeIncrease(String percent);
+
+  /// No description provided for @fileSize.
+  ///
+  /// In en, this message translates to:
+  /// **'File Size'**
+  String get fileSize;
 
   /// No description provided for @sendToComparator.
   ///
@@ -3843,6 +3921,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Binary Mode'**
   String get binaryMode;
+
+  /// No description provided for @maskSourceCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask {width}×{height}'**
+  String maskSourceCaption(int width, int height);
+
+  /// No description provided for @maskBrushBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{color} brush · {size} px'**
+  String maskBrushBadge(String color, int size);
+
+  /// No description provided for @maskOutputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get maskOutputLabel;
+
+  /// No description provided for @maskOutputSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask {width}×{height} · PNG (black & white)'**
+  String maskOutputSummary(int width, int height);
+
+  /// No description provided for @maskCompositeOutputSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Composite {width}×{height} · PNG'**
+  String maskCompositeOutputSummary(int width, int height);
+
+  /// No description provided for @maskWillSaveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Mask will save to {path}'**
+  String maskWillSaveTo(String path);
+
+  /// No description provided for @maskSaveComposite.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Composite'**
+  String get maskSaveComposite;
+
+  /// No description provided for @maskSaveMask.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Mask'**
+  String get maskSaveMask;
 
   /// No description provided for @maskSaved.
   ///

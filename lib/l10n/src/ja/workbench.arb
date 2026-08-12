@@ -27,6 +27,7 @@
   "clearTempWorkspace": "ワークスペースをクリア",
   "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
   "noImagesSelected": "画像が選択されていません",
+  "imageLoadFailed": "画像の読み込みに失敗しました",
   "selectSourceDirectory": "ソースディレクトリを選択",
   "removeFolderTooltip": "フォルダを削除",
   "removeFolderConfirmTitle": "フォルダを削除しますか？",
@@ -132,8 +133,48 @@
   "compressReferenceImagesDesc": "送信前に3MBを超える画像をJPEGに再エンコードし、リクエストサイズを削減します",
   "taskSubmitted": "タスクがキューに送信されました",
   "comparator": "比較ツール",
+  "compareLayoutSideBySide": "左右に並べる",
+  "compareLayoutStacked": "上下に並べる",
+  "compareLayoutSlider": "スライダー比較",
   "compareModeSync": "同期モード",
   "compareModeSwap": "スワップモード",
+  "compareSyncTransform": "ズーム・パンを同期",
+  "comparatorEmptyHint": "ファイルブラウザやタスク結果から送信するか、ライブラリから2枚選択してください",
+  "comparatorPickRaw": "元画像を選択",
+  "comparatorPickAfter": "結果画像を選択",
+  "comparatorZoomSynced": "ズーム {percent}% · 同期中",
+  "@comparatorZoomSynced": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorZoomIndependent": "ズーム {percent}% · 個別",
+  "@comparatorZoomIndependent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorSizeReduction": "サイズ {percent} 削減",
+  "@comparatorSizeReduction": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "comparatorSizeIncrease": "サイズ {percent} 増加",
+  "@comparatorSizeIncrease": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSize": "ファイルサイズ",
   "sendToComparator": "比較ツールに送信",
   "sendToComparatorRaw": "Before (RAW) として設定",
   "sendToComparatorAfter": "After (結果) として設定",
@@ -243,6 +284,61 @@
   "saveToTemp": "ワークスペースに保存",
   "saveMaskToTemp": "マスクをワークスペースに保存",
   "binaryMode": "バイナリモード",
+  "maskSourceCaption": "マスク {width}×{height}",
+  "@maskSourceCaption": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskBrushBadge": "{color}のブラシ · {size} px",
+  "@maskBrushBadge": {
+    "placeholders": {
+      "color": {
+        "type": "String"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "maskOutputLabel": "出力",
+  "maskOutputSummary": "マスク {width}×{height} · PNG（白黒）",
+  "@maskOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskCompositeOutputSummary": "合成画像 {width}×{height} · PNG",
+  "@maskCompositeOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskWillSaveTo": "マスクの保存先 {path}",
+  "@maskWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "maskSaveComposite": "合成画像を保存",
+  "maskSaveMask": "マスクを保存",
   "maskSaved": "マスクがワークスペースに保存されました",
   "maskSaveError": "マスク保存エラー: {error}",
   "@maskSaveError": {

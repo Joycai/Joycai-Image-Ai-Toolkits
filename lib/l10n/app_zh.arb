@@ -823,6 +823,7 @@
   "clearTempWorkspace": "清空工作区",
   "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
   "noImagesSelected": "未选择图像",
+  "imageLoadFailed": "图像加载失败",
   "selectSourceDirectory": "选择源目录",
   "removeFolderTooltip": "移除文件夹",
   "removeFolderConfirmTitle": "移除文件夹？",
@@ -928,8 +929,48 @@
   "compressReferenceImagesDesc": "发送前将超过 3MB 的图片重新编码为 JPEG，以减小请求体积",
   "taskSubmitted": "任务已提交至队列",
   "comparator": "对比器",
+  "compareLayoutSideBySide": "左右并排",
+  "compareLayoutStacked": "上下并排",
+  "compareLayoutSlider": "滑动对比",
   "compareModeSync": "同步模式",
   "compareModeSwap": "切换模式",
+  "compareSyncTransform": "同步缩放平移",
+  "comparatorEmptyHint": "从文件浏览器或任务结果发送，也可以直接从库中选择两张图",
+  "comparatorPickRaw": "选择原图",
+  "comparatorPickAfter": "选择效果图",
+  "comparatorZoomSynced": "缩放 {percent}% · 已同步",
+  "@comparatorZoomSynced": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorZoomIndependent": "缩放 {percent}% · 独立",
+  "@comparatorZoomIndependent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorSizeReduction": "体积减少 {percent}",
+  "@comparatorSizeReduction": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "comparatorSizeIncrease": "体积增加 {percent}",
+  "@comparatorSizeIncrease": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSize": "文件大小",
   "sendToComparator": "发送至对比器",
   "sendToComparatorRaw": "设置为对比原图",
   "sendToComparatorAfter": "设置为对比效果图",
@@ -1039,6 +1080,61 @@
   "saveToTemp": "保存至工作区",
   "saveMaskToTemp": "保存遮罩至工作区",
   "binaryMode": "二值化模式",
+  "maskSourceCaption": "蒙版 {width}×{height}",
+  "@maskSourceCaption": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskBrushBadge": "{color}笔刷 · {size} px",
+  "@maskBrushBadge": {
+    "placeholders": {
+      "color": {
+        "type": "String"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "maskOutputLabel": "输出",
+  "maskOutputSummary": "遮罩 {width}×{height} · PNG（黑白）",
+  "@maskOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskCompositeOutputSummary": "合成图 {width}×{height} · PNG",
+  "@maskCompositeOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskWillSaveTo": "遮罩将存入 {path}",
+  "@maskWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "maskSaveComposite": "保存合成图",
+  "maskSaveMask": "保存遮罩",
   "maskSaved": "蒙版已保存至工作区",
   "maskSaveError": "保存蒙版失败: {error}",
   "@maskSaveError": {

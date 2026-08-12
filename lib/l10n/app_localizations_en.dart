@@ -1719,6 +1719,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noImagesSelected => 'No images selected';
 
   @override
+  String get imageLoadFailed => 'Failed to load image';
+
+  @override
   String get selectSourceDirectory => 'Select Source Directory';
 
   @override
@@ -1886,10 +1889,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comparator => 'Comparator';
 
   @override
+  String get compareLayoutSideBySide => 'Side by Side';
+
+  @override
+  String get compareLayoutStacked => 'Stacked';
+
+  @override
+  String get compareLayoutSlider => 'Slider';
+
+  @override
   String get compareModeSync => 'Sync Mode';
 
   @override
   String get compareModeSwap => 'Swap Mode';
+
+  @override
+  String get compareSyncTransform => 'Sync Zoom & Pan';
+
+  @override
+  String get comparatorEmptyHint =>
+      'Send images from the file browser or a task result, or pick two from the library';
+
+  @override
+  String get comparatorPickRaw => 'Choose Before';
+
+  @override
+  String get comparatorPickAfter => 'Choose Result';
+
+  @override
+  String comparatorZoomSynced(int percent) {
+    return 'Zoom $percent% · Synced';
+  }
+
+  @override
+  String comparatorZoomIndependent(int percent) {
+    return 'Zoom $percent% · Independent';
+  }
+
+  @override
+  String comparatorSizeReduction(String percent) {
+    return 'Size reduced $percent';
+  }
+
+  @override
+  String comparatorSizeIncrease(String percent) {
+    return 'Size increased $percent';
+  }
+
+  @override
+  String get fileSize => 'File Size';
 
   @override
   String get sendToComparator => 'Send to Comparator';
@@ -2065,6 +2113,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binaryMode => 'Binary Mode';
+
+  @override
+  String maskSourceCaption(int width, int height) {
+    return 'Mask $width×$height';
+  }
+
+  @override
+  String maskBrushBadge(String color, int size) {
+    return '$color brush · $size px';
+  }
+
+  @override
+  String get maskOutputLabel => 'Output';
+
+  @override
+  String maskOutputSummary(int width, int height) {
+    return 'Mask $width×$height · PNG (black & white)';
+  }
+
+  @override
+  String maskCompositeOutputSummary(int width, int height) {
+    return 'Composite $width×$height · PNG';
+  }
+
+  @override
+  String maskWillSaveTo(String path) {
+    return 'Mask will save to $path';
+  }
+
+  @override
+  String get maskSaveComposite => 'Save Composite';
+
+  @override
+  String get maskSaveMask => 'Save Mask';
 
   @override
   String get maskSaved => 'Mask saved to workspace';
