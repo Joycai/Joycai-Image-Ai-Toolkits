@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../services/image_metadata_service.dart';
+import '../../../state/app_state.dart';
+import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
+import '../../../widgets/app_icon_button.dart';
 
-class MaskEditorToolbar extends StatelessWidget {
+/// The mask editor's header: leave, see what is being masked, pick a colour
+/// and a brush, undo, and save.
+///
+/// Drawn to the design spec's tool-toolbar shape — back button, file caption,
+/// hairline dividers between groups, the two save actions at the right — which
+/// is the row the crop editor and the comparator also draw.
+class MaskEditorToolbar extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onClear;
   final VoidCallback onSave;
@@ -38,185 +50,407 @@ class MaskEditorToolbar extends StatelessWidget {
   });
 
   @override
+  State<MaskEditorToolbar> createState() => _MaskEditorToolbarState();
+}
+
+class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
+  /// Source dimensions for the caption. The view loads this too;
+  /// [ImageMetadataService] caches by path, so the second reader costs a map
+  /// lookup rather than a second decode.
+  ImageMetadata? _meta;
+  String? _metaPath;
+
+  void _loadMeta(String path) {
+    if (_metaPath == path) return;
+    _metaPath = path;
+    ImageMetadataService().getMetadata(path).then((meta) {
+      if (mounted && _metaPath == path) setState(() => _meta = meta);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
+    final source = Provider.of<WorkbenchUIState>(context).maskEditorSourceImage;
+
+    if (source != null) _loadMeta(source.path);
 
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
       ),
       child: Row(
         children: [
-          // Primary High-Frequency Actions
-          
-          _buildColorCircle(context, Colors.white, l10n.white),
-          _buildColorCircle(context, Colors.black, l10n.black),
-          if (!isBinaryMode) ...[
-            _buildColorCircle(context, Colors.red, l10n.red),
-            _buildColorCircle(context, Colors.green, l10n.green),
+          AppIconButton(
+            icon: Icons.arrow_back,
+            tooltip: l10n.back,
+            onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
+          ),
+          if (!isNarrow && source != null) ...[
+            const SizedBox(width: 10),
+            _buildFileInfo(source.name, l10n, colorScheme),
           ],
-          
-          const SizedBox(width: 8),
+          _divider(colorScheme),
+
+          // Every editing control shares one scroller: a window too narrow for
+          // them scrolls rather than clipping, the same as the crop toolbar.
           Expanded(
-            child: Row(
-              children: [
-                if (!isNarrow) ...[
-                  Icon(Icons.line_weight, size: 16, color: colorScheme.onSurfaceVariant),
-                  Expanded(
-                    flex: 2,
-                    child: Slider(
-                      value: brushSize,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildColorGroup(l10n, colorScheme, isNarrow),
+                  // A phone scrolls nothing but the swatches — a homogeneous
+                  // row where a half-cut circle at the edge says plainly that
+                  // there is more. Everything else moves to a fixed position
+                  // or into the overflow menu, rather than off the end of a
+                  // scroller with nothing to say it scrolls, which is where
+                  // clear and binary mode were disappearing to.
+                  if (!isNarrow) ...[
+                    _divider(colorScheme),
+                    _buildSlider(
+                      label: l10n.brushSize,
+                      icon: Icons.brush_outlined,
+                      value: widget.brushSize,
                       min: 1,
                       max: 100,
-                      onChanged: onBrushSizeChanged,
-                      label: l10n.brushSize,
+                      width: 110,
+                      readout: widget.brushSize.round().toString(),
+                      onChanged: widget.onBrushSizeChanged,
+                      colorScheme: colorScheme,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(Icons.opacity, size: 16, color: colorScheme.onSurfaceVariant),
-                  Expanded(
-                    flex: 1,
-                    child: Slider(
-                      value: opacity,
+                    const SizedBox(width: 16),
+                    _buildSlider(
+                      label: l10n.maskOpacity,
+                      icon: Icons.opacity,
+                      value: widget.opacity,
                       min: 0.1,
                       max: 1.0,
-                      onChanged: onOpacityChanged,
-                      label: l10n.maskOpacity,
+                      width: 84,
+                      readout: '${(widget.opacity * 100).round()}%',
+                      onChanged: widget.onOpacityChanged,
+                      colorScheme: colorScheme,
                     ),
-                  ),
-                ] else ...[
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.line_weight),
-                    onPressed: () => _showSliderDialog(
-                      context, 
-                      l10n.brushSize, 
-                      brushSize, 1, 100, 
-                      onBrushSizeChanged,
-                      (val) => "${val.toInt()}px"
-                    ),
-                    tooltip: l10n.brushSize,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.opacity),
-                    onPressed: () => _showSliderDialog(
-                      context, 
-                      l10n.maskOpacity, 
-                      opacity, 0.1, 1.0, 
-                      onOpacityChanged,
-                      (val) => "${(val * 100).toInt()}%"
-                    ),
-                    tooltip: l10n.maskOpacity,
-                  ),
+                    _divider(colorScheme),
+                    _buildActionIcons(l10n, colorScheme),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-          
-          IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: hasPaths ? onUndo : null,
-            tooltip: l10n.undo,
-            visualDensity: VisualDensity.compact,
-          ),
 
-          if (!isNarrow) ...[
-            IconButton(
-              icon: Icon(isBinaryMode ? Icons.contrast : Icons.image, size: 20),
-              onPressed: onToggleBinary,
-              tooltip: l10n.binaryMode,
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: hasPaths ? onClear : null,
-              tooltip: l10n.clear,
-            ),
-          ],
+          const SizedBox(width: 12),
+          _buildSaveActions(l10n, colorScheme, isNarrow),
+        ],
+      ),
+    );
+  }
 
-          // Overflow Menu for Mobile
-          if (isNarrow) 
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz),
-              onSelected: (value) {
-                if (value == 'binary') onToggleBinary();
-                if (value == 'clear') onClear();
-                if (value == 'save_temp') onSave();
-                if (value == 'save_mask') onSaveMask();
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'binary',
-                  child: ListTile(
-                    leading: Icon(isBinaryMode ? Icons.contrast : Icons.image),
-                    title: Text(l10n.binaryMode),
-                    dense: true,
-                  ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'save_temp',
-                  child: ListTile(
-                    leading: const Icon(Icons.save_outlined),
-                    title: Text(l10n.saveToTemp),
-                    dense: true,
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'save_mask',
-                  child: ListTile(
-                    leading: const Icon(Icons.layers_outlined),
-                    title: Text(l10n.saveMaskToTemp),
-                    dense: true,
-                  ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'clear',
-                  child: ListTile(
-                    leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                    title: Text(l10n.clear, style: TextStyle(color: colorScheme.error)),
-                    dense: true,
-                  ),
-                ),
-              ],
-            ),
+  Widget _divider(ColorScheme colorScheme) => Container(
+        width: 1,
+        height: 26,
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        // An explicit box rather than VerticalDivider, which collapses to
+        // nothing under a Row's loose height constraint.
+        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+      );
 
-          const VerticalDivider(width: 16, indent: 12, endIndent: 12),
-          
-          if (!isNarrow) ...[
-            AppButton(
-              label: l10n.saveToTemp,
-              variant: AppButtonVariant.secondary,
-              onPressed: onSave,
-            ),
-            const SizedBox(width: 8),
-            AppButton(
-              label: l10n.saveMaskToTemp,
-              onPressed: onSaveMask,
-            ),
-          ] else
-            AppButton(
-              label: l10n.saveMaskToTemp,
-              onPressed: onSaveMask,
+  /// Filename over what the export will be — the canvas only ever shows a
+  /// fitted preview, so without this the mask's real resolution is invisible.
+  Widget _buildFileInfo(String name, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    final meta = _meta;
+
+    return SizedBox(
+      width: 180,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(name, style: textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (meta != null && meta.width > 0)
+            Text(
+              l10n.maskSourceCaption(meta.width, meta.height),
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
         ],
       ),
     );
   }
 
+  /// The brush colours. Binary mode drops red and green: they would be
+  /// flattened to one of the two extremes on export, so offering them there
+  /// would be offering a choice the file cannot keep.
+  Widget _buildColorGroup(AppLocalizations l10n, ColorScheme colorScheme, bool isNarrow) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!isNarrow) ...[
+          Text(
+            l10n.maskColor,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 8),
+        ],
+        _buildColorCircle(Colors.white, l10n.white),
+        _buildColorCircle(Colors.black, l10n.black),
+        if (!widget.isBinaryMode) ...[
+          _buildColorCircle(Colors.red, l10n.red),
+          _buildColorCircle(Colors.green, l10n.green),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildColorCircle(Color color, String tooltip) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = widget.selectedColor == color;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: () => widget.onColorChanged(color),
+          child: Container(
+            width: 26,
+            height: 26,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              // The selection ring stands off the swatch rather than thickening
+              // its edge — a heavier border on a white swatch reads as a
+              // different colour, not as a selection.
+              border: Border.all(
+                color: isSelected ? colorScheme.primary : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Label, track and the value it is currently at. The number is the point:
+  /// a brush slider with no readout can only be set by drawing and undoing.
+  Widget _buildSlider({
+    required String label,
+    required IconData icon,
+    required double value,
+    required double min,
+    required double max,
+    required double width,
+    required String readout,
+    required ValueChanged<double> onChanged,
+    required ColorScheme colorScheme,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Glyph and readout, no spelled-out label: the words are what pushed
+        // the clear button off the end of the row, and between the icon, the
+        // tooltip and the live number the control is not ambiguous.
+        Tooltip(
+          message: label,
+          child: Icon(icon, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: width,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              overlayColor: colorScheme.primary.withValues(alpha: 0.08),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.5),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(value: value, min: min, max: max, onChanged: onChanged, label: label),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          readout,
+          style: textTheme.labelMedium?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionIcons(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIconButton(
+          icon: Icons.undo,
+          tooltip: l10n.undo,
+          onPressed: widget.hasPaths ? widget.onUndo : null,
+        ),
+        const SizedBox(width: 6),
+        AppIconButton(
+          icon: widget.isBinaryMode ? Icons.contrast : Icons.image_outlined,
+          tooltip: l10n.binaryMode,
+          selected: widget.isBinaryMode,
+          onPressed: widget.onToggleBinary,
+        ),
+        const SizedBox(width: 6),
+        AppIconButton(
+          icon: Icons.delete_outline,
+          tooltip: l10n.clear,
+          color: widget.hasPaths ? colorScheme.error : null,
+          onPressed: widget.hasPaths ? widget.onClear : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveActions(AppLocalizations l10n, ColorScheme colorScheme, bool isNarrow) {
+    if (isNarrow) {
+      // Everything the narrow row dropped, spelled out. The mask save stays a
+      // button of its own: it is what the screen is for, and a phone has room
+      // for exactly one such button.
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Undo keeps a fixed place of its own: it is the one control a hand
+          // reaches for mid-stroke, and a menu is two taps too many for it.
+          AppIconButton(
+            icon: Icons.undo,
+            tooltip: l10n.undo,
+            onPressed: widget.hasPaths ? widget.onUndo : null,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_horiz),
+            onSelected: (value) {
+              switch (value) {
+                case 'brush':
+                  _showSliderDialog(
+                    l10n.brushSize,
+                    widget.brushSize,
+                    1,
+                    100,
+                    widget.onBrushSizeChanged,
+                    (val) => '${val.toInt()}px',
+                  );
+                case 'opacity':
+                  _showSliderDialog(
+                    l10n.maskOpacity,
+                    widget.opacity,
+                    0.1,
+                    1.0,
+                    widget.onOpacityChanged,
+                    (val) => '${(val * 100).toInt()}%',
+                  );
+                case 'binary':
+                  widget.onToggleBinary();
+                case 'composite':
+                  widget.onSave();
+                case 'clear':
+                  widget.onClear();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'brush',
+                child: ListTile(
+                  leading: const Icon(Icons.brush_outlined),
+                  title: Text(l10n.brushSize),
+                  trailing: Text(widget.brushSize.round().toString()),
+                  dense: true,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'opacity',
+                child: ListTile(
+                  leading: const Icon(Icons.opacity),
+                  title: Text(l10n.maskOpacity),
+                  trailing: Text('${(widget.opacity * 100).round()}%'),
+                  dense: true,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'binary',
+                child: ListTile(
+                  leading: Icon(
+                    widget.isBinaryMode ? Icons.contrast : Icons.image_outlined,
+                    color: widget.isBinaryMode ? colorScheme.primary : null,
+                  ),
+                  title: Text(l10n.binaryMode),
+                  dense: true,
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'composite',
+                child: ListTile(
+                  leading: const Icon(Icons.layers_outlined),
+                  title: Text(l10n.maskSaveComposite),
+                  dense: true,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'clear',
+                enabled: widget.hasPaths,
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline, color: colorScheme.error),
+                  title: Text(l10n.clear, style: TextStyle(color: colorScheme.error)),
+                  dense: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
+          // No icon on a phone: the glyph is the first thing worth spending
+          // for the swatches beside it, and the verb is not.
+          AppButton(label: l10n.maskSaveMask, onPressed: widget.onSaveMask),
+        ],
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppButton(
+          label: l10n.maskSaveComposite,
+          icon: Icons.save_outlined,
+          variant: AppButtonVariant.secondary,
+          onPressed: widget.onSave,
+        ),
+        const SizedBox(width: 8),
+        AppButton(
+          label: l10n.maskSaveMask,
+          secondaryLabel: l10n.cropResizeSaveDestinationHint,
+          icon: Icons.save_outlined,
+          onPressed: widget.onSaveMask,
+        ),
+      ],
+    );
+  }
+
   void _showSliderDialog(
-    BuildContext context, 
-    String title, 
-    double currentValue, 
-    double min, 
-    double max, 
+    String title,
+    double currentValue,
+    double min,
+    double max,
     Function(double) onChanged,
-    String Function(double) displayConverter
+    String Function(double) displayConverter,
   ) {
     // Outside the builder, so it survives the rebuilds the drag causes.
     var val = currentValue;
@@ -251,28 +485,6 @@ class MaskEditorToolbar extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ],
-    );
-  }
-
-  Widget _buildColorCircle(BuildContext context, Color color, String tooltip) {
-    bool isSelected = selectedColor == color;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: GestureDetector(
-        onTap: () => onColorChanged(color),
-        child: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

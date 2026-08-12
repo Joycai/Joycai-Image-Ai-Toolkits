@@ -4,11 +4,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_button.dart';
 import '../../../widgets/drawing_canvas.dart';
+
+/// Radius of the image plate on the canvas — the same smallest step the
+/// comparator's panes take, so a picture sitting on a workbench canvas has one
+/// shape across the tools.
+const double _kCanvasImageRadius = AppRadius.xs;
 
 class MaskEditorView extends StatefulWidget {
   final List<DrawingPath> paths;
@@ -39,6 +45,8 @@ class MaskEditorView extends StatefulWidget {
 }
 
 class _MaskEditorViewState extends State<MaskEditorView> {
+  final TransformationController _controller = TransformationController();
+
   ui.Image? _imageInfo;
   bool _isLoading = true;
   String? _lastPath;
@@ -47,6 +55,12 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkImageChange();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _checkImageChange() async {
@@ -81,6 +95,23 @@ class _MaskEditorViewState extends State<MaskEditorView> {
     }
   }
 
+  /// Zooms about the middle of the viewport rather than the scene's origin —
+  /// scaling the raw matrix walks the picture off the top-left corner, which
+  /// is what a `+` button that "loses" the image is doing.
+  void _setScale(double target, Size viewport) {
+    final matrix = _controller.value.clone();
+    final current = matrix.getMaxScaleOnAxis();
+    final factor = target.clamp(0.1, 10.0) / current;
+    if ((factor - 1).abs() < 0.001) return;
+
+    final scenePoint = _controller.toScene(Offset(viewport.width / 2, viewport.height / 2));
+    matrix
+      ..translateByDouble(scenePoint.dx, scenePoint.dy, 0, 1)
+      ..scaleByDouble(factor, factor, 1, 1)
+      ..translateByDouble(-scenePoint.dx, -scenePoint.dy, 0, 1);
+    _controller.value = matrix;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -88,101 +119,401 @@ class _MaskEditorViewState extends State<MaskEditorView> {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context);
     final sourceImage = workbenchUIState.maskEditorSourceImage;
 
-    if (sourceImage == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.brush_outlined, size: 64, color: colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            Text(l10n.noImagesSelected, style: TextStyle(color: colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 16),
-            FilledButton.tonalIcon(
-              onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-              icon: const Icon(Icons.photo_library_outlined),
-              label: Text(l10n.goToGallery),
-              style: tonalButtonStyle(colorScheme),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_imageInfo == null) {
-      return const Center(child: Text("Failed to load image"));
-    }
-
+    // The output strip stays whatever the canvas is showing: it is the
+    // screen's chrome, not a result panel, and a bar that appears only once an
+    // image arrives makes the whole layout jump under the user.
     return Column(
       children: [
-        if (widget.isBinaryMode)
-          Container(
-            width: double.infinity,
-            color: colorScheme.tertiaryContainer,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              children: [
-                Icon(Icons.contrast, size: 16, color: colorScheme.onTertiaryContainer),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.binaryModeActive,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onTertiaryContainer),
-                  ),
-                ),
-              ],
-            ),
-          ),
         Expanded(
           child: Container(
-            color: Colors.black,
-            child: InteractiveViewer(
-              maxScale: 10.0,
-              minScale: 0.1,
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: _imageInfo!.width / _imageInfo!.height,
-                  child: RepaintBoundary(
-                    key: widget.repaintKey,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (widget.isBinaryMode)
-                          Container(color: Colors.black)
-                        else
-                          Image.file(File(sourceImage.path), fit: BoxFit.fill),
+            color: colorScheme.surfaceContainerHigh,
+            child: sourceImage == null
+                ? _buildEmptyState(l10n, colorScheme)
+                : _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _imageInfo == null
+                        ? Center(
+                            child: Text(
+                              l10n.imageLoadFailed,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          )
+                        : _buildCanvas(sourceImage.path, l10n, colorScheme),
+          ),
+        ),
+        _MaskOutputBar(
+          image: _imageInfo,
+          isBinaryMode: widget.isBinaryMode,
+          l10n: l10n,
+          colorScheme: colorScheme,
+        ),
+      ],
+    );
+  }
 
-                        MouseRegion(
-                          cursor: SystemMouseCursors.none,
-                          onHover: (event) => widget.onHover(event.localPosition),
-                          onExit: (event) => widget.onHover(null),
-                          child: GestureDetector(
-                            onPanStart: (details) => widget.onPanStart(details.localPosition),
-                            onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
-                            child: CustomPaint(
-                              painter: MaskPainter(paths: widget.paths),
-                              foregroundPainter: widget.mousePosition != null
-                                  ? BrushPreviewPainter(
-                                      position: widget.mousePosition!,
-                                      size: widget.brushSize,
-                                      color: widget.selectedColor,
-                                    )
-                                  : null,
+  Widget _buildEmptyState(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppRadius.dialog),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Icon(Icons.brush_outlined, size: 28, color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 22),
+          Text(l10n.noImagesSelected, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 16),
+          AppButton(
+            label: l10n.goToGallery,
+            icon: Icons.photo_library_outlined,
+            variant: AppButtonVariant.secondary,
+            onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCanvas(String path, AppLocalizations l10n, ColorScheme colorScheme) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = Size(constraints.maxWidth, constraints.maxHeight);
+
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                transformationController: _controller,
+                maxScale: 10.0,
+                minScale: 0.1,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: AspectRatio(
+                      aspectRatio: _imageInfo!.width / _imageInfo!.height,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(_kCanvasImageRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha: 0.18),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(_kCanvasImageRadius),
+                          // The boundary is inside the clip and outside the
+                          // shadow: the export is the picture and the strokes,
+                          // never the canvas dressing around them.
+                          child: RepaintBoundary(
+                            key: widget.repaintKey,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (widget.isBinaryMode)
+                                  const ColoredBox(color: Colors.black)
+                                else
+                                  Image.file(File(path), fit: BoxFit.fill),
+                                MouseRegion(
+                                  cursor: SystemMouseCursors.none,
+                                  onHover: (event) => widget.onHover(event.localPosition),
+                                  onExit: (event) => widget.onHover(null),
+                                  child: GestureDetector(
+                                    onPanStart: (details) => widget.onPanStart(details.localPosition),
+                                    onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
+                                    child: CustomPaint(
+                                      painter: MaskPainter(paths: widget.paths),
+                                      foregroundPainter: widget.mousePosition != null
+                                          ? BrushPreviewPainter(
+                                              position: widget.mousePosition!,
+                                              size: widget.brushSize,
+                                              color: widget.selectedColor,
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
+
+            // What the brush will lay down, over the canvas' top-left — the
+            // same place the crop editor names its source.
+            Positioned(
+              left: 16,
+              top: 14,
+              child: IgnorePointer(child: _BrushBadge(
+                color: widget.selectedColor,
+                size: widget.brushSize,
+                isBinaryMode: widget.isBinaryMode,
+                l10n: l10n,
+              )),
+            ),
+
+            Positioned(
+              right: 16,
+              bottom: 14,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) => _ZoomPill(
+                  percent: _controller.value.getMaxScaleOnAxis() * 100,
+                  onZoomIn: () => _setScale(_controller.value.getMaxScaleOnAxis() * 1.25, viewport),
+                  onZoomOut: () => _setScale(_controller.value.getMaxScaleOnAxis() / 1.25, viewport),
+                  onFit: () => _controller.value = Matrix4.identity(),
+                  l10n: l10n,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// "White brush · 48 px", or the binary-mode notice that replaces it.
+///
+/// Replaces the full-width banner binary mode used to push the canvas down
+/// with: the state belongs where the strokes land, and the toolbar's own
+/// button already carries the accent that says the mode is on.
+class _BrushBadge extends StatelessWidget {
+  final Color color;
+  final double size;
+  final bool isBinaryMode;
+  final AppLocalizations l10n;
+
+  const _BrushBadge({
+    required this.color,
+    required this.size,
+    required this.isBinaryMode,
+    required this.l10n,
+  });
+
+  /// The name of the swatch this colour came from. The view is handed the
+  /// brush with its opacity already applied, so the alpha is dropped before
+  /// matching — otherwise every colour is an unnamed one.
+  String? _colorName() {
+    switch (color.toARGB32() & 0x00FFFFFF) {
+      case 0xFFFFFF:
+        return l10n.white;
+      case 0x000000:
+        return l10n.black;
+      default:
+        if (color.toARGB32() & 0x00FFFFFF == Colors.red.toARGB32() & 0x00FFFFFF) return l10n.red;
+        if (color.toARGB32() & 0x00FFFFFF == Colors.green.toARGB32() & 0x00FFFFFF) return l10n.green;
+        return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = _colorName();
+    final label = isBinaryMode
+        ? l10n.binaryModeActive
+        : name == null
+            ? '${size.round()} px'
+            : l10n.maskBrushBadge(name, size.round());
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 360),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        // Ink rather than a theme surface: this sits over a photograph.
+        color: Colors.black.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isBinaryMode) ...[
+            const Icon(Icons.contrast, size: 12, color: Colors.white),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom-right floating zoom readout and fit action — the crop editor's pill,
+/// so the two canvases are navigated the same way.
+class _ZoomPill extends StatelessWidget {
+  final double percent;
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onFit;
+  final AppLocalizations l10n;
+
+  const _ZoomPill({
+    required this.percent,
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onFit,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _pillIcon(context, Icons.remove, onZoomOut),
+          SizedBox(
+            width: 44,
+            child: Text(
+              '${percent.round()}%',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+          _pillIcon(context, Icons.add, onZoomIn),
+          Container(
+            width: 1,
+            height: 16,
+            color: colorScheme.outlineVariant,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          InkWell(
+            onTap: onFit,
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              child: Text(
+                l10n.fitToWindow,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pillIcon(BuildContext context, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.xs),
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+}
+
+/// Summary strip below the canvas: what a save writes, at what size, and
+/// where it lands — the same numbers the save is about to use, stated before
+/// the user commits. Mirrors the crop editor's output preview.
+class _MaskOutputBar extends StatelessWidget {
+  final ui.Image? image;
+  final bool isBinaryMode;
+  final AppLocalizations l10n;
+  final ColorScheme colorScheme;
+
+  const _MaskOutputBar({
+    required this.image,
+    required this.isBinaryMode,
+    required this.l10n,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final labelStyle = textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
+
+    final summary = image == null
+        ? '—'
+        : isBinaryMode
+            ? l10n.maskOutputSummary(image!.width, image!.height)
+            : l10n.maskCompositeOutputSummary(image!.width, image!.height);
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+      ),
+      child: Row(
+        children: [
+          Text(l10n.maskOutputLabel, style: labelStyle),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              summary,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.accentTint,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.subdirectory_arrow_right, size: 12, color: colorScheme.onAccentTint),
+                const SizedBox(width: 6),
+                Text(
+                  // The workspace, not a filename: the name a save picks
+                  // carries a timestamp minted at save time, and printing a
+                  // guess at it is how the crop bar's destination line was
+                  // wrong three ways at once.
+                  l10n.maskWillSaveTo(l10n.cropResizeTempWorkspaceLabel),
+                  style: textTheme.labelSmall?.copyWith(color: colorScheme.onAccentTint),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

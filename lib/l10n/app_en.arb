@@ -837,6 +837,7 @@
   "clearTempWorkspace": "Clear Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
+  "imageLoadFailed": "Failed to load image",
   "selectSourceDirectory": "Select Source Directory",
   "removeFolderTooltip": "Remove folder",
   "removeFolderConfirmTitle": "Remove Folder?",
@@ -942,8 +943,46 @@
   "compressReferenceImagesDesc": "Re-encode images over 3MB to JPEG before sending, to reduce request size",
   "taskSubmitted": "Task submitted to queue",
   "comparator": "Comparator",
-  "compareModeSync": "Sync Mode",
-  "compareModeSwap": "Swap Mode",
+  "compareLayoutSideBySide": "Side by Side",
+  "compareLayoutStacked": "Stacked",
+  "compareLayoutSlider": "Slider",
+  "compareSyncTransform": "Sync Zoom & Pan",
+  "comparatorEmptyHint": "Send images from the file browser or a task result, or pick two from the library",
+  "comparatorPickRaw": "Choose Before",
+  "comparatorPickAfter": "Choose Result",
+  "comparatorZoomSynced": "Zoom {percent}% · Synced",
+  "@comparatorZoomSynced": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorZoomIndependent": "Zoom {percent}% · Independent",
+  "@comparatorZoomIndependent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "comparatorSizeReduction": "Size reduced {percent}",
+  "@comparatorSizeReduction": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "comparatorSizeIncrease": "Size increased {percent}",
+  "@comparatorSizeIncrease": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSize": "File Size",
   "sendToComparator": "Send to Comparator",
   "sendToComparatorRaw": "Set as Before (RAW)",
   "sendToComparatorAfter": "Set as After (Result)",
@@ -1053,6 +1092,61 @@
   "saveToTemp": "Save to Workspace",
   "saveMaskToTemp": "Save Mask to Workspace",
   "binaryMode": "Binary Mode",
+  "maskSourceCaption": "Mask {width}×{height}",
+  "@maskSourceCaption": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskBrushBadge": "{color} brush · {size} px",
+  "@maskBrushBadge": {
+    "placeholders": {
+      "color": {
+        "type": "String"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "maskOutputLabel": "Output",
+  "maskOutputSummary": "Mask {width}×{height} · PNG (black & white)",
+  "@maskOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskCompositeOutputSummary": "Composite {width}×{height} · PNG",
+  "@maskCompositeOutputSummary": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "maskWillSaveTo": "Mask will save to {path}",
+  "@maskWillSaveTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "maskSaveComposite": "Save Composite",
+  "maskSaveMask": "Save Mask",
   "maskSaved": "Mask saved to workspace",
   "maskSaveError": "Error saving mask: {error}",
   "@maskSaveError": {

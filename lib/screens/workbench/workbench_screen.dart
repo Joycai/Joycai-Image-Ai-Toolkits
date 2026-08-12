@@ -663,7 +663,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             Expanded(child: ComparatorView()),
           ],
         );
-        showRightPanel = !isNarrow; // Show metadata on right
+        // The toolbar's metadata button switches this on desktop; on narrow
+        // the panel is a drawer the same button opens instead.
+        showRightPanel = !isNarrow && context.watch<WorkbenchUIState>().comparatorShowMetadata;
         showLeftPanel = false; // Auto-hide sidebar
         break;
       case 2: // Mask Editor

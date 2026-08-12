@@ -1677,6 +1677,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noImagesSelected => '画像が選択されていません';
 
   @override
+  String get imageLoadFailed => '画像の読み込みに失敗しました';
+
+  @override
   String get selectSourceDirectory => 'ソースディレクトリを選択';
 
   @override
@@ -1842,10 +1845,48 @@ class AppLocalizationsJa extends AppLocalizations {
   String get comparator => '比較ツール';
 
   @override
-  String get compareModeSync => '同期モード';
+  String get compareLayoutSideBySide => '左右に並べる';
 
   @override
-  String get compareModeSwap => 'スワップモード';
+  String get compareLayoutStacked => '上下に並べる';
+
+  @override
+  String get compareLayoutSlider => 'スライダー比較';
+
+  @override
+  String get compareSyncTransform => 'ズーム・パンを同期';
+
+  @override
+  String get comparatorEmptyHint => 'ファイルブラウザやタスク結果から送信するか、ライブラリから2枚選択してください';
+
+  @override
+  String get comparatorPickRaw => '元画像を選択';
+
+  @override
+  String get comparatorPickAfter => '結果画像を選択';
+
+  @override
+  String comparatorZoomSynced(int percent) {
+    return 'ズーム $percent% · 同期中';
+  }
+
+  @override
+  String comparatorZoomIndependent(int percent) {
+    return 'ズーム $percent% · 個別';
+  }
+
+  @override
+  String comparatorSizeReduction(String percent) {
+    return 'サイズ $percent 削減';
+  }
+
+  @override
+  String comparatorSizeIncrease(String percent) {
+    return 'サイズ $percent 増加';
+  }
+
+  @override
+  String get fileSize => 'ファイルサイズ';
 
   @override
   String get sendToComparator => '比較ツールに送信';
@@ -2019,6 +2060,40 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get binaryMode => 'バイナリモード';
+
+  @override
+  String maskSourceCaption(int width, int height) {
+    return 'マスク $width×$height';
+  }
+
+  @override
+  String maskBrushBadge(String color, int size) {
+    return '$colorのブラシ · $size px';
+  }
+
+  @override
+  String get maskOutputLabel => '出力';
+
+  @override
+  String maskOutputSummary(int width, int height) {
+    return 'マスク $width×$height · PNG（白黒）';
+  }
+
+  @override
+  String maskCompositeOutputSummary(int width, int height) {
+    return '合成画像 $width×$height · PNG';
+  }
+
+  @override
+  String maskWillSaveTo(String path) {
+    return 'マスクの保存先 $path';
+  }
+
+  @override
+  String get maskSaveComposite => '合成画像を保存';
+
+  @override
+  String get maskSaveMask => 'マスクを保存';
 
   @override
   String get maskSaved => 'マスクがワークスペースに保存されました';

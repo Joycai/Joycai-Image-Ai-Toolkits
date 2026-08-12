@@ -1665,6 +1665,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noImagesSelected => '未选择图像';
 
   @override
+  String get imageLoadFailed => '图像加载失败';
+
+  @override
   String get selectSourceDirectory => '选择源目录';
 
   @override
@@ -1828,10 +1831,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get comparator => '对比器';
 
   @override
-  String get compareModeSync => '同步模式';
+  String get compareLayoutSideBySide => '左右并排';
 
   @override
-  String get compareModeSwap => '切换模式';
+  String get compareLayoutStacked => '上下并排';
+
+  @override
+  String get compareLayoutSlider => '滑动对比';
+
+  @override
+  String get compareSyncTransform => '同步缩放平移';
+
+  @override
+  String get comparatorEmptyHint => '从文件浏览器或任务结果发送，也可以直接从库中选择两张图';
+
+  @override
+  String get comparatorPickRaw => '选择原图';
+
+  @override
+  String get comparatorPickAfter => '选择效果图';
+
+  @override
+  String comparatorZoomSynced(int percent) {
+    return '缩放 $percent% · 已同步';
+  }
+
+  @override
+  String comparatorZoomIndependent(int percent) {
+    return '缩放 $percent% · 独立';
+  }
+
+  @override
+  String comparatorSizeReduction(String percent) {
+    return '体积减少 $percent';
+  }
+
+  @override
+  String comparatorSizeIncrease(String percent) {
+    return '体积增加 $percent';
+  }
+
+  @override
+  String get fileSize => '文件大小';
 
   @override
   String get sendToComparator => '发送至对比器';
@@ -2005,6 +2046,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get binaryMode => '二值化模式';
+
+  @override
+  String maskSourceCaption(int width, int height) {
+    return '蒙版 $width×$height';
+  }
+
+  @override
+  String maskBrushBadge(String color, int size) {
+    return '$color笔刷 · $size px';
+  }
+
+  @override
+  String get maskOutputLabel => '输出';
+
+  @override
+  String maskOutputSummary(int width, int height) {
+    return '遮罩 $width×$height · PNG（黑白）';
+  }
+
+  @override
+  String maskCompositeOutputSummary(int width, int height) {
+    return '合成图 $width×$height · PNG';
+  }
+
+  @override
+  String maskWillSaveTo(String path) {
+    return '遮罩将存入 $path';
+  }
+
+  @override
+  String get maskSaveComposite => '保存合成图';
+
+  @override
+  String get maskSaveMask => '保存遮罩';
 
   @override
   String get maskSaved => '蒙版已保存至工作区';
@@ -4122,6 +4197,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get noImagesSelected => '未選取圖片';
 
   @override
+  String get imageLoadFailed => '圖片載入失敗';
+
+  @override
   String get selectSourceDirectory => '選取來源目錄';
 
   @override
@@ -4285,10 +4363,48 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get comparator => '比較器';
 
   @override
-  String get compareModeSync => '同步模式';
+  String get compareLayoutSideBySide => '左右並排';
 
   @override
-  String get compareModeSwap => '交換模式';
+  String get compareLayoutStacked => '上下並排';
+
+  @override
+  String get compareLayoutSlider => '滑動對比';
+
+  @override
+  String get compareSyncTransform => '同步縮放平移';
+
+  @override
+  String get comparatorEmptyHint => '從檔案瀏覽器或任務結果傳送，也可以直接從庫中選取兩張圖';
+
+  @override
+  String get comparatorPickRaw => '選取原圖';
+
+  @override
+  String get comparatorPickAfter => '選取效果圖';
+
+  @override
+  String comparatorZoomSynced(int percent) {
+    return '縮放 $percent% · 已同步';
+  }
+
+  @override
+  String comparatorZoomIndependent(int percent) {
+    return '縮放 $percent% · 獨立';
+  }
+
+  @override
+  String comparatorSizeReduction(String percent) {
+    return '體積減少 $percent';
+  }
+
+  @override
+  String comparatorSizeIncrease(String percent) {
+    return '體積增加 $percent';
+  }
+
+  @override
+  String get fileSize => '檔案大小';
 
   @override
   String get sendToComparator => '發送到比較器';
@@ -4462,6 +4578,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get binaryMode => '二進制模式';
+
+  @override
+  String maskSourceCaption(int width, int height) {
+    return '遮罩 $width×$height';
+  }
+
+  @override
+  String maskBrushBadge(String color, int size) {
+    return '$color筆刷 · $size px';
+  }
+
+  @override
+  String get maskOutputLabel => '輸出';
+
+  @override
+  String maskOutputSummary(int width, int height) {
+    return '遮罩 $width×$height · PNG（黑白）';
+  }
+
+  @override
+  String maskCompositeOutputSummary(int width, int height) {
+    return '合成圖 $width×$height · PNG';
+  }
+
+  @override
+  String maskWillSaveTo(String path) {
+    return '遮罩將存入 $path';
+  }
+
+  @override
+  String get maskSaveComposite => '儲存合成圖';
+
+  @override
+  String get maskSaveMask => '儲存遮罩';
 
   @override
   String get maskSaved => '遮罩已儲存到工作區';

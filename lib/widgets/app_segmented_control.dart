@@ -53,6 +53,14 @@ class AppSegmentedControl<T> extends StatelessWidget {
   /// Tighter type and padding, for controls tucked into a toolbar.
   final bool compact;
 
+  /// Draw each option as its [AppSegment.icon] alone, with the label as its
+  /// tooltip. For a toolbar on a phone, where the labelled track would take
+  /// the whole row — the option is never left unexplained, only unlabelled.
+  ///
+  /// Segments without an icon keep their label, so a mixed track degrades
+  /// rather than losing options.
+  final bool iconOnly;
+
   /// How the chosen option is marked.
   final AppSegmentStyle style;
 
@@ -63,6 +71,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
     required this.onChanged,
     this.expand = false,
     this.compact = false,
+    this.iconOnly = false,
     this.style = AppSegmentStyle.tinted,
   });
 
@@ -113,7 +122,9 @@ class AppSegmentedControl<T> extends StatelessWidget {
       color = raised ? colorScheme.onSurface : colorScheme.onAccentTint;
     }
 
-    return InkWell(
+    final bareIcon = iconOnly && segment.icon != null;
+
+    final Widget chip = InkWell(
       onTap: selected || !segment.enabled ? null : () => onChanged(segment.value),
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: AnimatedContainer(
@@ -151,25 +162,28 @@ class AppSegmentedControl<T> extends StatelessWidget {
           children: [
             if (segment.icon != null) ...[
               Icon(segment.icon, size: compact ? 14 : 17, color: color),
-              const SizedBox(width: 7),
+              if (!bareIcon) const SizedBox(width: 7),
             ],
-            Flexible(
-              child: Text(
-                segment.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: (compact
-                        ? Theme.of(context).textTheme.labelMedium
-                        : Theme.of(context).textTheme.bodySmall)
-                    ?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
+            if (!bareIcon)
+              Flexible(
+                child: Text(
+                  segment.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (compact
+                          ? Theme.of(context).textTheme.labelMedium
+                          : Theme.of(context).textTheme.bodySmall)
+                      ?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
+
+    return bareIcon ? Tooltip(message: segment.label, child: chip) : chip;
   }
 }

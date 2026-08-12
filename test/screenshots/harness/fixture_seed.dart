@@ -457,6 +457,24 @@ void seedCropSource(AppState appState) {
   appState.workbenchUIState.setCropResizeSourceImage(image);
 }
 
+/// Puts a picture in the mask editor.
+void seedMaskSource(AppState appState) {
+  final AppImage? image = _firstGalleryImage(appState);
+  if (image == null) return;
+  appState.workbenchUIState.setMaskEditorSourceImage(image);
+}
+
+/// Loads two different pictures into the comparator.
+///
+/// Two, not one: the whole screen is a pair, and a fixture holding one image
+/// photographs a half-empty canvas that says nothing about how the pair reads.
+void seedComparatorPair(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+  if (images.isEmpty) return;
+  appState.workbenchUIState.sendToComparator(images.first.path);
+  appState.workbenchUIState.sendToComparator(images.last.path, isAfter: true);
+}
+
 /// Selects the first few gallery images, so the config panel's reference strip
 /// has something to number.
 void seedImageSelection(AppState appState, {int count = 2}) {
