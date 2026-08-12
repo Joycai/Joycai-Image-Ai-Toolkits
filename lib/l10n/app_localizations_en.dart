@@ -2207,9 +2207,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String optPromptVersion(int version) {
-    return 'Optimized Prompt v$version';
-  }
+  String get optPromptTitle => 'Optimized Prompt';
 
   @override
   String get optCopy => 'Copy';

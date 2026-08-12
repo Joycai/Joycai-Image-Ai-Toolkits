@@ -2145,9 +2145,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String optPromptVersion(int version) {
-    return '优化提示词 v$version';
-  }
+  String get optPromptTitle => '优化提示词';
 
   @override
   String get optCopy => '复制';
@@ -4677,9 +4675,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   }
 
   @override
-  String optPromptVersion(int version) {
-    return '優化提示詞 v$version';
-  }
+  String get optPromptTitle => '優化提示詞';
 
   @override
   String get optCopy => '複製';

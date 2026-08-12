@@ -5,18 +5,17 @@ import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
-import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
+import 'workbench_tool_header.dart';
 
 /// The mask editor's header: leave, see what is being masked, pick a colour
 /// and a brush, undo, and save.
 ///
-/// Drawn to the design spec's tool-toolbar shape — back button, file caption,
-/// hairline dividers between groups, the two save actions at the right — which
-/// is the row the crop editor and the comparator also draw.
+/// Built on [WorkbenchToolHeader], which owns the back button — file caption,
+/// hairline dividers between groups, the two save actions at the right.
 class MaskEditorToolbar extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onClear;
@@ -77,88 +76,66 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
 
     if (source != null) _loadMeta(source.path);
 
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
-      ),
-      child: Row(
-        children: [
-          AppIconButton(
-            icon: Icons.arrow_back,
-            tooltip: l10n.back,
-            onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-          ),
-          if (!isNarrow && source != null) ...[
-            const SizedBox(width: 10),
-            _buildFileInfo(source.name, l10n, colorScheme),
-          ],
-          _divider(colorScheme),
+    return WorkbenchToolHeader(
+      children: [
+        if (!isNarrow && source != null) ...[
+          const SizedBox(width: 10),
+          _buildFileInfo(source.name, l10n, colorScheme),
+        ],
+        const ToolHeaderDivider(),
 
-          // Every editing control shares one scroller: a window too narrow for
-          // them scrolls rather than clipping, the same as the crop toolbar.
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildColorGroup(l10n, colorScheme, isNarrow),
-                  // A phone scrolls nothing but the swatches — a homogeneous
-                  // row where a half-cut circle at the edge says plainly that
-                  // there is more. Everything else moves to a fixed position
-                  // or into the overflow menu, rather than off the end of a
-                  // scroller with nothing to say it scrolls, which is where
-                  // clear and binary mode were disappearing to.
-                  if (!isNarrow) ...[
-                    _divider(colorScheme),
-                    _buildSlider(
-                      label: l10n.brushSize,
-                      icon: Icons.brush_outlined,
-                      value: widget.brushSize,
-                      min: 1,
-                      max: 100,
-                      width: 110,
-                      readout: widget.brushSize.round().toString(),
-                      onChanged: widget.onBrushSizeChanged,
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSlider(
-                      label: l10n.maskOpacity,
-                      icon: Icons.opacity,
-                      value: widget.opacity,
-                      min: 0.1,
-                      max: 1.0,
-                      width: 84,
-                      readout: '${(widget.opacity * 100).round()}%',
-                      onChanged: widget.onOpacityChanged,
-                      colorScheme: colorScheme,
-                    ),
-                    _divider(colorScheme),
-                    _buildActionIcons(l10n, colorScheme),
-                  ],
+        // Every editing control shares one scroller: a window too narrow for
+        // them scrolls rather than clipping, the same as the crop toolbar.
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildColorGroup(l10n, colorScheme, isNarrow),
+                // A phone scrolls nothing but the swatches — a homogeneous
+                // row where a half-cut circle at the edge says plainly that
+                // there is more. Everything else moves to a fixed position
+                // or into the overflow menu, rather than off the end of a
+                // scroller with nothing to say it scrolls, which is where
+                // clear and binary mode were disappearing to.
+                if (!isNarrow) ...[
+                  const ToolHeaderDivider(),
+                  _buildSlider(
+                    label: l10n.brushSize,
+                    icon: Icons.brush_outlined,
+                    value: widget.brushSize,
+                    min: 1,
+                    max: 100,
+                    width: 110,
+                    readout: widget.brushSize.round().toString(),
+                    onChanged: widget.onBrushSizeChanged,
+                    colorScheme: colorScheme,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildSlider(
+                    label: l10n.maskOpacity,
+                    icon: Icons.opacity,
+                    value: widget.opacity,
+                    min: 0.1,
+                    max: 1.0,
+                    width: 84,
+                    readout: '${(widget.opacity * 100).round()}%',
+                    onChanged: widget.onOpacityChanged,
+                    colorScheme: colorScheme,
+                  ),
+                  const ToolHeaderDivider(),
+                  _buildActionIcons(l10n, colorScheme),
                 ],
-              ),
+              ],
             ),
           ),
+        ),
 
-          const SizedBox(width: 12),
-          _buildSaveActions(l10n, colorScheme, isNarrow),
-        ],
-      ),
+        const SizedBox(width: 12),
+        _buildSaveActions(l10n, colorScheme, isNarrow),
+      ],
     );
   }
-
-  Widget _divider(ColorScheme colorScheme) => Container(
-        width: 1,
-        height: 26,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        // An explicit box rather than VerticalDivider, which collapses to
-        // nothing under a Row's loose height constraint.
-        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-      );
 
   /// Filename over what the export will be — the canvas only ever shows a
   /// fitted preview, so without this the mask's real resolution is invisible.

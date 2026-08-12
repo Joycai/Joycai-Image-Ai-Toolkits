@@ -18,6 +18,7 @@ import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/app_tool_button.dart';
+import 'workbench_tool_header.dart';
 
 /// The fixed set of ratio presets shown as segments, plus a `custom` mode
 /// whose X:Y fields only appear once it's selected — folding them into the
@@ -27,7 +28,7 @@ enum _RatioPreset { free, r1x1, r4x3, r16x9, r3x4, r9x16, custom }
 /// Everything the bar spends before any group gets a say: its own horizontal
 /// padding, the back button, the two dividers, and the gap before the
 /// actions.
-const double _kFixedChrome = 32 + 48 + 25 + 25 + 12;
+const double _kFixedChrome = 32 + AppSize.iconButton + 25 + 25 + 12;
 
 /// The file caption is given a fixed column so a long filename ellipsizes
 /// rather than pushing the controls along.
@@ -539,60 +540,37 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         if (needed() > width) showSaveHint = false;
         if (needed() > width) labelledActions = false;
 
-        return Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
-                tooltip: l10n.cancel,
-              ),
-              if (showFileInfo && source != null) ...[
-                const SizedBox(width: 4),
-                _buildFileInfo(source, l10n, colorScheme),
-              ],
-              _divider(colorScheme),
+        return WorkbenchToolHeader(
+          children: [
+            if (showFileInfo && source != null) ...[
+              const SizedBox(width: 4),
+              _buildFileInfo(source, l10n, colorScheme),
+            ],
+            const ToolHeaderDivider(),
 
-              // Ratio and size share one scroller: whatever the breakpoints
-              // fail to predict scrolls out of reach instead of clipping,
-              // which is how the gallery toolbar's overflow bug read.
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildDesktopRatioSelector(l10n, uiState, colorScheme, !showAllRatios),
-                      _divider(colorScheme),
-                      _buildDesktopResizeControls(l10n, uiState, colorScheme, !showSamplingLabel),
-                    ],
-                  ),
+            // Ratio and size share one scroller: whatever the breakpoints
+            // fail to predict scrolls out of reach instead of clipping,
+            // which is how the gallery toolbar's overflow bug read.
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildDesktopRatioSelector(l10n, uiState, colorScheme, !showAllRatios),
+                    const ToolHeaderDivider(),
+                    _buildDesktopResizeControls(l10n, uiState, colorScheme, !showSamplingLabel),
+                  ],
                 ),
               ),
+            ),
 
-              const SizedBox(width: 12),
-              _buildDesktopSaveActions(l10n, colorScheme, !labelledActions, showSaveHint, busy),
-            ],
-          ),
+            const SizedBox(width: 12),
+            _buildDesktopSaveActions(l10n, colorScheme, !labelledActions, showSaveHint, busy),
+          ],
         );
       }
     );
   }
-
-  Widget _divider(ColorScheme colorScheme) => Container(
-        width: 1,
-        height: 28,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        // An explicit box, not VerticalDivider: a Row centres its children by
-        // default, so the divider gets a loose height constraint and collapses
-        // to nothing.
-        color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-      );
 
   /// Natural width of [text] at [style], honouring the user's text scale.
   double _textWidth(String text, TextStyle? style) {
@@ -955,10 +933,13 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // The same arrow, and the same word, as the desktop header's back
+            // button and the other three tools': leaving a workbench tool
+            // should not be "cancel" on one screen and "back" on the next.
             _buildMobileAction(
               context,
-              icon: Icons.close,
-              label: l10n.cancel,
+              icon: Icons.arrow_back,
+              label: l10n.back,
               onTap: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
             ),
             _buildMobileAction(

@@ -753,6 +753,11 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                         AssistantMode.knowledgeEdit =>
                           AppLocalizations.of(context)!.optModeKnowledgeEdit,
                       },
+                      modeIcon: switch (session.mode) {
+                        AssistantMode.systemPrompt => Icons.notes_outlined,
+                        AssistantMode.knowledgeBase => Icons.menu_book_outlined,
+                        AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
+                      },
                     ),
                     Expanded(
                       child: _optIsLoadingData

@@ -10,6 +10,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/drawing_canvas.dart';
+import 'canvas_overlays.dart';
 
 /// Radius of the image plate on the canvas — the same smallest step the
 /// comparator's panes take, so a picture sitting on a workbench canvas has one
@@ -272,12 +273,11 @@ class _MaskEditorViewState extends State<MaskEditorView> {
               bottom: 14,
               child: AnimatedBuilder(
                 animation: _controller,
-                builder: (context, _) => _ZoomPill(
+                builder: (context, _) => CanvasZoomPill(
                   percent: _controller.value.getMaxScaleOnAxis() * 100,
                   onZoomIn: () => _setScale(_controller.value.getMaxScaleOnAxis() * 1.25, viewport),
                   onZoomOut: () => _setScale(_controller.value.getMaxScaleOnAxis() / 1.25, viewport),
                   onFit: () => _controller.value = Matrix4.identity(),
-                  l10n: l10n,
                 ),
               ),
             ),
@@ -325,121 +325,14 @@ class _BrushBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = _colorName();
-    final label = isBinaryMode
-        ? l10n.binaryModeActive
-        : name == null
-            ? '${size.round()} px'
-            : l10n.maskBrushBadge(name, size.round());
 
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 360),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        // Ink rather than a theme surface: this sits over a photograph.
-        color: Colors.black.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(AppRadius.xs),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isBinaryMode) ...[
-            const Icon(Icons.contrast, size: 12, color: Colors.white),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Bottom-right floating zoom readout and fit action — the crop editor's pill,
-/// so the two canvases are navigated the same way.
-class _ZoomPill extends StatelessWidget {
-  final double percent;
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-  final VoidCallback onFit;
-  final AppLocalizations l10n;
-
-  const _ZoomPill({
-    required this.percent,
-    required this.onZoomIn,
-    required this.onZoomOut,
-    required this.onFit,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _pillIcon(context, Icons.remove, onZoomOut),
-          SizedBox(
-            width: 44,
-            child: Text(
-              '${percent.round()}%',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
-            ),
-          ),
-          _pillIcon(context, Icons.add, onZoomIn),
-          Container(
-            width: 1,
-            height: 16,
-            color: colorScheme.outlineVariant,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-          ),
-          InkWell(
-            onTap: onFit,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              child: Text(
-                l10n.fitToWindow,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pillIcon(BuildContext context, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
+    return CanvasBadge(
+      icon: isBinaryMode ? Icons.contrast : null,
+      label: isBinaryMode
+          ? l10n.binaryModeActive
+          : name == null
+              ? '${size.round()} px'
+              : l10n.maskBrushBadge(name, size.round()),
     );
   }
 }

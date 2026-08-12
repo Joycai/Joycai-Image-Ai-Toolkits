@@ -708,8 +708,13 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.tertiary.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        // A plain card edge. This border and the heading below it used to be
+        // drawn from `tertiary` — a seed-derived hue, so the card that carries
+        // the screen's result came out a different colour under each of the
+        // seven themes. The spec draws it as an ordinary card with one accent
+        // glyph on it.
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -718,14 +723,28 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             padding: const EdgeInsets.fromLTRB(14, 8, 8, 0),
             child: Row(
               children: [
-                Icon(Icons.auto_awesome, size: 15, color: colorScheme.tertiary),
+                Icon(Icons.auto_awesome, size: 15, color: colorScheme.primary),
                 const SizedBox(width: 6),
-                Expanded(
+                Text(l10n.optPromptTitle, style: textTheme.titleSmall),
+                const SizedBox(width: 8),
+                // The version as a neutral chip rather than folded into the
+                // heading: it identifies the card a user scrolls back to.
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                  ),
                   child: Text(
-                    l10n.optPromptVersion(entry.version ?? 1),
-                    style: textTheme.titleSmall?.copyWith(color: colorScheme.tertiary),
+                    'v${entry.version ?? 1}',
+                    style: textTheme.labelSmall?.copyWith(
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
+                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.copy_outlined, size: 16),
                   tooltip: l10n.optCopy,
@@ -739,6 +758,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   label: l10n.apply,
                   icon: Icons.check,
                   variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.compact,
                   onPressed: () => widget.onApplyPrompt(entry.text),
                 ),
               ],
