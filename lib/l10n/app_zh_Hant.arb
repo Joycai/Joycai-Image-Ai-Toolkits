@@ -806,8 +806,6 @@
   "compareLayoutSideBySide": "左右並排",
   "compareLayoutStacked": "上下並排",
   "compareLayoutSlider": "滑動對比",
-  "compareModeSync": "同步模式",
-  "compareModeSwap": "交換模式",
   "compareSyncTransform": "同步縮放平移",
   "comparatorEmptyHint": "從檔案瀏覽器或任務結果傳送，也可以直接從庫中選取兩張圖",
   "comparatorPickRaw": "選取原圖",

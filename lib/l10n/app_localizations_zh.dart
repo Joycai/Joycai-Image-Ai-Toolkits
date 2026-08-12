@@ -1840,12 +1840,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compareLayoutSlider => '滑动对比';
 
   @override
-  String get compareModeSync => '同步模式';
-
-  @override
-  String get compareModeSwap => '切换模式';
-
-  @override
   String get compareSyncTransform => '同步缩放平移';
 
   @override
@@ -4376,12 +4370,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get compareLayoutSlider => '滑動對比';
-
-  @override
-  String get compareModeSync => '同步模式';
-
-  @override
-  String get compareModeSwap => '交換模式';
 
   @override
   String get compareSyncTransform => '同步縮放平移';

@@ -806,8 +806,6 @@
   "compareLayoutSideBySide": "左右に並べる",
   "compareLayoutStacked": "上下に並べる",
   "compareLayoutSlider": "スライダー比較",
-  "compareModeSync": "同期モード",
-  "compareModeSwap": "スワップモード",
   "compareSyncTransform": "ズーム・パンを同期",
   "comparatorEmptyHint": "ファイルブラウザやタスク結果から送信するか、ライブラリから2枚選択してください",
   "comparatorPickRaw": "元画像を選択",

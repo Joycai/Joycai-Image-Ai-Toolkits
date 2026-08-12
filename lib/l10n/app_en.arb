@@ -946,8 +946,6 @@
   "compareLayoutSideBySide": "Side by Side",
   "compareLayoutStacked": "Stacked",
   "compareLayoutSlider": "Slider",
-  "compareModeSync": "Sync Mode",
-  "compareModeSwap": "Swap Mode",
   "compareSyncTransform": "Sync Zoom & Pan",
   "comparatorEmptyHint": "Send images from the file browser or a task result, or pick two from the library",
   "comparatorPickRaw": "Choose Before",

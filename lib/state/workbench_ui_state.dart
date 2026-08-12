@@ -6,6 +6,24 @@ import '../models/app_image.dart';
 import '../services/prompt_optimizer_agent.dart';
 import '../services/repositories/assistant_session_repository.dart';
 
+/// How the comparator arranges the two images.
+///
+/// Was a single `isComparatorSyncMode` boolean, which could only say
+/// "side-by-side" or "curtain" — the design spec's third arrangement (one
+/// above the other, for landscape pairs a horizontal split squeezes) had
+/// nowhere to live.
+enum ComparatorLayout {
+  /// Two panes across, before on the left.
+  sideBySide,
+
+  /// Two panes down, before on top. For wide images, where a vertical split
+  /// leaves each half too narrow to judge.
+  stacked,
+
+  /// One image over the other, revealed by a draggable curtain.
+  slider,
+}
+
 class WorkbenchUIState extends ChangeNotifier {
   WorkbenchUIState() {
     PromptOptimizerAgent.sessions[optimizerSession.id] = optimizerSession;
@@ -19,7 +37,19 @@ class WorkbenchUIState extends ChangeNotifier {
   bool isComparatorOpen = false; 
   String? comparatorRawPath;
   String? comparatorAfterPath;
-  bool isComparatorSyncMode = true; // true: Sync side-by-side, false: Hover swap
+  ComparatorLayout comparatorLayout = ComparatorLayout.sideBySide;
+
+  /// Whether the two panes share one zoom/pan transform. Off, each pane is
+  /// navigated on its own — which is what you want when the pair is framed
+  /// differently and matching the crops by hand is the point.
+  ///
+  /// Meaningless in [ComparatorLayout.slider], where both layers are the same
+  /// transform by construction.
+  bool comparatorSyncTransform = true;
+
+  /// Whether the metadata panel is showing. Desktop only: on narrow widths the
+  /// panel is a drawer, which has its own open/closed state.
+  bool comparatorShowMetadata = true;
 
   // Mask Editor State
   AppImage? maskEditorSourceImage;
@@ -252,8 +282,19 @@ class WorkbenchUIState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleComparatorMode() {
-    isComparatorSyncMode = !isComparatorSyncMode;
+  void setComparatorLayout(ComparatorLayout layout) {
+    if (comparatorLayout == layout) return;
+    comparatorLayout = layout;
+    notifyListeners();
+  }
+
+  void toggleComparatorSyncTransform() {
+    comparatorSyncTransform = !comparatorSyncTransform;
+    notifyListeners();
+  }
+
+  void toggleComparatorMetadata() {
+    comparatorShowMetadata = !comparatorShowMetadata;
     notifyListeners();
   }
 

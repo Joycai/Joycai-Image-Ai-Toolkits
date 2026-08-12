@@ -3539,18 +3539,6 @@ abstract class AppLocalizations {
   /// **'Slider'**
   String get compareLayoutSlider;
 
-  /// No description provided for @compareModeSync.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync Mode'**
-  String get compareModeSync;
-
-  /// No description provided for @compareModeSwap.
-  ///
-  /// In en, this message translates to:
-  /// **'Swap Mode'**
-  String get compareModeSwap;
-
   /// No description provided for @compareSyncTransform.
   ///
   /// In en, this message translates to:

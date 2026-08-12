@@ -1898,12 +1898,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compareLayoutSlider => 'Slider';
 
   @override
-  String get compareModeSync => 'Sync Mode';
-
-  @override
-  String get compareModeSwap => 'Swap Mode';
-
-  @override
   String get compareSyncTransform => 'Sync Zoom & Pan';
 
   @override

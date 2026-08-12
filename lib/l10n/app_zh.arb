@@ -932,8 +932,6 @@
   "compareLayoutSideBySide": "左右并排",
   "compareLayoutStacked": "上下并排",
   "compareLayoutSlider": "滑动对比",
-  "compareModeSync": "同步模式",
-  "compareModeSwap": "切换模式",
   "compareSyncTransform": "同步缩放平移",
   "comparatorEmptyHint": "从文件浏览器或任务结果发送，也可以直接从库中选择两张图",
   "comparatorPickRaw": "选择原图",

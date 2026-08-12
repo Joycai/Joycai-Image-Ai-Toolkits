@@ -1854,12 +1854,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get compareLayoutSlider => 'スライダー比較';
 
   @override
-  String get compareModeSync => '同期モード';
-
-  @override
-  String get compareModeSwap => 'スワップモード';
-
-  @override
   String get compareSyncTransform => 'ズーム・パンを同期';
 
   @override
