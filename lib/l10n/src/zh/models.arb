@@ -71,6 +71,7 @@
   "inputPrice": "输入价格 ($/M Tokens)",
   "cacheInputPrice": "输入价格·命中缓存 ($/M Tokens)",
   "cacheInputPriceHint": "留空则缓存命中按“输入价格”计费",
+  "requestPriceHint": "按每次成功请求计费，与 Token 用量无关。",
   "cachePriceFollowsInput": "缓存命中按“输入价格”计费",
   "outputPrice": "输出价格 ($/M Tokens)",
   "requestPrice": "请求价格 ($/次)",

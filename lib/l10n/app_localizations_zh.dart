@@ -673,6 +673,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cacheInputPriceHint => '留空则缓存命中按“输入价格”计费';
 
   @override
+  String get requestPriceHint => '按每次成功请求计费，与 Token 用量无关。';
+
+  @override
   String get cachePriceFollowsInput => '缓存命中按“输入价格”计费';
 
   @override
@@ -3125,6 +3128,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get cacheInputPriceHint => '留空則快取命中依「輸入價格」計費';
+
+  @override
+  String get requestPriceHint => '依每次成功請求計費，與 Token 用量無關。';
 
   @override
   String get cachePriceFollowsInput => '快取命中依「輸入價格」計費';

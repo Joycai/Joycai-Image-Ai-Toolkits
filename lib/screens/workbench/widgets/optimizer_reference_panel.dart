@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_card.dart';
-import 'config_section_header.dart';
+import '../../../widgets/app_section_label.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
@@ -20,7 +20,7 @@ class OptimizerReferencePanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ConfigSectionHeader(
+        AppSectionLabel(
           l10n.referenceImages,
           padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
           trailing: images.isEmpty

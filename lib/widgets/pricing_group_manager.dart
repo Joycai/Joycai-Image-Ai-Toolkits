@@ -10,6 +10,7 @@ import '../state/app_state.dart';
 import 'app_button.dart';
 import 'app_dialog.dart';
 import 'app_icon_button.dart';
+import 'app_section_label.dart';
 import 'app_segmented_control.dart';
 
 enum PricingGroupManagerMode {
@@ -699,7 +700,10 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
       maxHeight: 640,
       titleWidget: _buildHeader(colorScheme, chromeless: true),
       scrollable: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      // Bottom inset spelled out: horizontal-only left the last field's helper
+      // line sitting directly on the footer's divider, so the sentence that
+      // explains the cache rule read as part of the button row's chrome.
+      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       content: _buildForm(colorScheme),
       actions: [
         AppButton(
@@ -800,8 +804,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(l10n.basicInfo),
-        const SizedBox(height: 12),
+        AppSectionLabel(l10n.basicInfo, padding: _sectionPadding),
         TextField(
           controller: nameCtrl,
           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -818,9 +821,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           ),
         ),
-        const SizedBox(height: 22),
-        _sectionHeader(l10n.billingMode),
-        const SizedBox(height: 12),
+        AppSectionLabel(l10n.billingMode, padding: _sectionPadding),
         // Segmented rather than a dropdown: there are only two modes and each
         // one rewrites the price fields below, so the choice should be visible
         // next to what it changes instead of hidden behind a menu.
@@ -833,9 +834,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
           onChanged: (mode) => setState(() => billingMode = mode),
           expand: true,
         ),
-        const SizedBox(height: 22),
-        _sectionHeader(l10n.priceConfig),
-        const SizedBox(height: 12),
+        AppSectionLabel(l10n.priceConfig, padding: _sectionPadding),
         if (_isToken) ...[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,10 +857,28 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
             helperText: l10n.cacheInputPriceHint,
           ),
         ] else
-          _buildPriceField(requestPriceCtrl, l10n.priceLabelRequest, '\$/Req', usageRequestAccent, Icons.repeat),
+          // Same shape as the cache field's hint, and for the same reason: the
+          // number alone does not say what it is charged against. Per-token and
+          // per-request rates differ by six orders of magnitude, so the mode a
+          // user just switched into has to state its own unit of account.
+          _buildPriceField(
+            requestPriceCtrl,
+            l10n.priceLabelRequest,
+            '\$/Req',
+            usageRequestAccent,
+            Icons.repeat,
+            helperText: l10n.requestPriceHint,
+          ),
       ],
     );
   }
+
+  /// The gap above each group label, and none below it.
+  ///
+  /// [AppSectionLabel] owns the space under the caption; the `SizedBox(12)`
+  /// that used to sit there as well is why the first field hung noticeably
+  /// lower than its label in this dialog than in the config panels.
+  static const EdgeInsets _sectionPadding = EdgeInsets.only(top: 22, bottom: 10);
 
   /// The rounded outline every field in this editor wears.
   OutlineInputBorder _fieldBorder(ColorScheme colorScheme, {Color? color, double width = 1}) {
@@ -926,18 +943,6 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
             textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       ),
-    );
-  }
-
-  /// Names a group of fields. No rule under it and no shouting: it is a label
-  /// on the form, not a heading competing with the dialog's own title.
-  Widget _sectionHeader(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.primary,
-          ),
     );
   }
 

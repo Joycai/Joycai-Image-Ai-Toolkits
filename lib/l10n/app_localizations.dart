@@ -1355,6 +1355,12 @@ abstract class AppLocalizations {
   /// **'Leave empty to bill cache hits at the input price'**
   String get cacheInputPriceHint;
 
+  /// No description provided for @requestPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed per successful request, independent of token usage.'**
+  String get requestPriceHint;
+
   /// No description provided for @cachePriceFollowsInput.
   ///
   /// In en, this message translates to:

@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
@@ -87,7 +88,77 @@ void main() {
       });
     }
   }
+
+  // The fee-group editor (spec 10j / 10k). Two taps deep behind a tab index
+  // that lives in the usage screen's own State, so nothing in AppState can
+  // reach it — which is how a dialog the spec devotes two of its twelve frames
+  // to went unphotographed. Driven the way a user reaches it instead.
+  for (final _FeeGroupShot shot in _feeGroupShots) {
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('feeGroupEditor · ${shot.name} @ desktop ${brightness.name}',
+          (WidgetTester tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.usage,
+          size: kShotSizes.last,
+          brightness: brightness,
+          suffix: shot.name,
+          after: (WidgetTester tester) async {
+            // `of` scopes the search, and the per-request shot is why it
+            // exists: "按次计费" is both a segment inside the dialog and the
+            // mode badge on a card behind it, and an unscoped `.first` found
+            // the card — a tap outside the barrier, which closed the dialog
+            // the shot was meant to photograph.
+            Future<void> tapText(String label, {Finder? of}) async {
+              final Finder finder = of == null
+                  ? find.text(label)
+                  : find.descendant(of: of, matching: find.text(label));
+              if (finder.evaluate().isEmpty) return;
+              await tester.tap(finder.first, warnIfMissed: false);
+              for (int i = 0; i < 4; i++) {
+                await tester.pump(const Duration(milliseconds: 100));
+              }
+            }
+
+            await tapText('费率组');
+            await shot.open(tester, tapText);
+          },
+        );
+      });
+    }
+  }
 }
+
+class _FeeGroupShot {
+  const _FeeGroupShot(this.name, this.open);
+  final String name;
+
+  /// Runs on the fee-group tab. `tapText` taps a label and settles; it is a
+  /// no-op when the label is absent, so a shot degrades to the state before it
+  /// rather than failing the whole run on a copy change.
+  final Future<void> Function(
+    WidgetTester tester,
+    Future<void> Function(String label, {Finder? of}) tapText,
+  ) open;
+}
+
+final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[
+  // 10j: adding, empty, token mode.
+  _FeeGroupShot('add', (_, tapText) async {
+    await tapText('添加费率组');
+  }),
+  // 10j, per-request mode — the branch that swaps all three price fields for
+  // one, and the only place the new "billed per request" hint appears.
+  _FeeGroupShot('addRequest', (_, tapText) async {
+    await tapText('添加费率组');
+    await tapText('按次计费', of: find.byType(AppSegmentedControl<String>));
+  }),
+  // 10k: editing, with data. The seeded groups are named in fixture_seed.
+  _FeeGroupShot('edit', (_, tapText) async {
+    await tapText('Gemini Flash');
+  }),
+];
 
 class _WorkbenchTab {
   const _WorkbenchTab(this.name, this.index, this.seed, {this.seedOnSettled = false});

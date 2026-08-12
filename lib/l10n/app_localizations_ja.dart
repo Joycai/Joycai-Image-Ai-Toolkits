@@ -674,6 +674,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cacheInputPriceHint => '未入力の場合、キャッシュヒットは「入力価格」で課金されます';
 
   @override
+  String get requestPriceHint => '成功したリクエストごとに課金され、トークン使用量とは無関係です。';
+
+  @override
   String get cachePriceFollowsInput => 'キャッシュヒットは「入力価格」で課金されます';
 
   @override

@@ -13,7 +13,7 @@ import '../../../widgets/app_card.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/chat_model_selector.dart';
-import 'config_section_header.dart';
+import '../../../widgets/app_section_label.dart';
 
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
@@ -475,7 +475,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        ConfigSectionHeader(
+        AppSectionLabel(
           l10n.systemPrompt,
           trailing: _ModeToggle(
             useCustom: widget.useCustomSysPrompt,

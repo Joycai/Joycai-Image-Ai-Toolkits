@@ -224,6 +224,7 @@
   "inputPrice": "入力価格（$/Mトークン）",
   "cacheInputPrice": "入力価格・キャッシュヒット（$/Mトークン）",
   "cacheInputPriceHint": "未入力の場合、キャッシュヒットは「入力価格」で課金されます",
+  "requestPriceHint": "成功したリクエストごとに課金され、トークン使用量とは無関係です。",
   "cachePriceFollowsInput": "キャッシュヒットは「入力価格」で課金されます",
   "outputPrice": "出力価格（$/Mトークン）",
   "requestPrice": "リクエスト価格（$/リクエスト）",
