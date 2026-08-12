@@ -854,8 +854,18 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             // fill the design spec replaced everywhere else.
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppRadius.dialog),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: colorScheme.outlineVariant),
+              // The spec lifts the composer off the transcript rather than
+              // leaving it flush with it — it is the one thing on this screen
+              // that is always available, whatever is scrolled above it.
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withValues(alpha: 0.10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             child: Column(
@@ -879,7 +889,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                       hintStyle: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
+                      // All three, not just `border`. The app's
+                      // InputDecorationTheme sets `enabledBorder` and
+                      // `focusedBorder`, and those outrank `border` — so
+                      // `border: InputBorder.none` alone left the field's own
+                      // outline standing, drawing a second box inside the
+                      // composer card. The spec has one edge here, not two.
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
                   ),
@@ -896,20 +915,32 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     return Row(
                       children: [
                         if (attachedCount > 0) ...[
-                          Flexible(
+                          // Capped, not [Flexible]. Two flex children split the
+                          // free space evenly and the unused half of the first
+                          // is not handed back — the chip took 168px of its
+                          // 235px share and the 67px left over stayed where it
+                          // was, pushing the hint and the send button 67px
+                          // clear of the card's right edge. Capping it instead
+                          // leaves it a non-flexible child that sizes to its
+                          // text, so the [Expanded] below owns every pixel
+                          // that is actually free.
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                // A step up from the composer's own surface,
-                                // which it used to match — on the bordered
-                                // card the chip had no edge of its own left.
-                                color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(AppRadius.control),
+                                // The spec's accent capsule: this states what
+                                // leaves with the message, which is the one
+                                // thing about the composer that is not
+                                // obvious, and a badge is one of the three
+                                // places accent is allowed.
+                                color: colorScheme.accentTint,
+                                borderRadius: BorderRadius.circular(AppRadius.pill),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.image_outlined, size: 14, color: colorScheme.onSurfaceVariant),
+                                  Icon(Icons.image_outlined, size: 14, color: colorScheme.onAccentTint),
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
@@ -917,14 +948,14 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: textTheme.labelMedium
-                                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                                          ?.copyWith(color: colorScheme.onAccentTint),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                         ],
                         Expanded(
                           child: showHint
@@ -940,7 +971,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                                 )
                               : const SizedBox.shrink(),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         IconButton.filled(
                           icon: const Icon(Icons.send_rounded, size: 18),
                           tooltip: l10n.optSend,
