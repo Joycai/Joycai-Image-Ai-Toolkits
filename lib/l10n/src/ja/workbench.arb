@@ -377,14 +377,7 @@
       }
     }
   },
-  "optPromptVersion": "最適化プロンプト v{version}",
-  "@optPromptVersion": {
-    "placeholders": {
-      "version": {
-        "type": "int"
-      }
-    }
-  },
+  "optPromptTitle": "最適化プロンプト",
   "optCopy": "コピー",
   "optPromptCopied": "プロンプトをコピーしました",
   "optEmptyChat": "ラフなプロンプトやアイデアを送信して開始します。AIは必要に応じて参照画像を確認し、複数ターンで結果を調整できます。",

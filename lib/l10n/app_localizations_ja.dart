@@ -2159,9 +2159,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String optPromptVersion(int version) {
-    return '最適化プロンプト v$version';
-  }
+  String get optPromptTitle => '最適化プロンプト';
 
   @override
   String get optCopy => 'コピー';

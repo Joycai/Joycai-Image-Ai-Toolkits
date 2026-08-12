@@ -1047,14 +1047,7 @@
       }
     }
   },
-  "optPromptVersion": "優化提示詞 v{version}",
-  "@optPromptVersion": {
-    "placeholders": {
-      "version": {
-        "type": "int"
-      }
-    }
-  },
+  "optPromptTitle": "優化提示詞",
   "optCopy": "複製",
   "optPromptCopied": "提示詞已複製到剪貼簿",
   "optEmptyChat": "傳送粗略提示詞或想法開始優化。AI 會按需查看參考圖，你可以多輪追問持續調整結果。",

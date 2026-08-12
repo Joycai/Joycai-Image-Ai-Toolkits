@@ -4072,11 +4072,11 @@ abstract class AppLocalizations {
   /// **'Viewed reference image: {name}'**
   String optToolViewImage(String name);
 
-  /// No description provided for @optPromptVersion.
+  /// No description provided for @optPromptTitle.
   ///
   /// In en, this message translates to:
-  /// **'Optimized Prompt v{version}'**
-  String optPromptVersion(int version);
+  /// **'Optimized Prompt'**
+  String get optPromptTitle;
 
   /// No description provided for @optCopy.
   ///

@@ -5,12 +5,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
+import 'canvas_overlays.dart';
 
 const Map<String, String> _kSamplingLabels = {
   'lanczos': 'Lanczos',
@@ -167,7 +169,11 @@ class _CropResizeViewState extends State<CropResizeView> {
       children: [
         Expanded(
           child: Container(
-            color: Colors.black87,
+            // The same neutral the mask editor and the comparator stand their
+            // pictures on, and what the spec draws (#e9edec). It was black87
+            // here — the one canvas of the three that went dark, which made
+            // moving between the workbench tools read as changing app.
+            color: colorScheme.surfaceContainerHigh,
             child: Stack(
               children: [
                 Positioned.fill(
@@ -194,23 +200,25 @@ class _CropResizeViewState extends State<CropResizeView> {
                     ),
                   ),
                 ),
+                // Names what is under the crop overlay, and — the reason it
+                // says *preview* — marks the canvas as the untouched source
+                // rather than a render of the pending output. The file's
+                // native size lives in the toolbar caption instead.
                 Positioned(
                   left: 16,
                   top: 14,
-                  right: 16,
-                  child: _CanvasLabel(name: sourceImage.name, l10n: l10n),
+                  child: CanvasBadge(label: l10n.cropResizeCanvasLabel(sourceImage.name)),
                 ),
                 if (_screenCropRect != null && _pixelCropRect != null)
                   _CropBadge(screenRect: _screenCropRect!, pixelRect: _pixelCropRect!),
                 Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _ZoomPill(
+                  right: 16,
+                  bottom: 14,
+                  child: CanvasZoomPill(
                     percent: _zoomPercent,
                     onZoomIn: () => _nudgeZoom(1),
                     onZoomOut: () => _nudgeZoom(-1),
                     onFit: () => _fitToWindow(uiState),
-                    l10n: l10n,
                   ),
                 ),
               ],
@@ -378,100 +386,6 @@ class _CropBadge extends StatelessWidget {
   int _gcd(int a, int b) => b == 0 ? a : _gcd(b, a % b);
 }
 
-/// "{name}（original preview）" over the canvas' top-left.
-///
-/// Names what is under the crop overlay, and — the reason it says *preview* —
-/// marks the canvas as the untouched source rather than a render of the
-/// pending output. The file's native size lives in the toolbar caption
-/// instead; repeating it here would be two answers to one question.
-class _CanvasLabel extends StatelessWidget {
-  final String name;
-  final AppLocalizations l10n;
-
-  const _CanvasLabel({required this.name, required this.l10n});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Text(
-        l10n.cropResizeCanvasLabel(name),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Colors.white.withValues(alpha: 0.7),
-          fontFamily: 'monospace',
-          shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-}
-
-/// Bottom-right floating readout: current zoom against the source image's
-/// native resolution (100% = one screen pixel per source pixel), plus a fit
-/// action. The +/- steps mirror the package's own mouse-wheel zoom rather
-/// than driving a scale setter the package doesn't expose publicly.
-class _ZoomPill extends StatelessWidget {
-  final double percent;
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-  final VoidCallback onFit;
-  final AppLocalizations l10n;
-
-  const _ZoomPill({
-    required this.percent,
-    required this.onZoomIn,
-    required this.onZoomOut,
-    required this.onFit,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _pillIcon(Icons.remove, onZoomOut),
-          SizedBox(
-            width: 44,
-            child: Text(
-              '${percent.round()}%',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ),
-          _pillIcon(Icons.add, onZoomIn),
-          Container(width: 1, height: 14, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 4)),
-          InkWell(
-            onTap: onFit,
-            borderRadius: BorderRadius.circular(14),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text(l10n.fitToWindow, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pillIcon(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 14, color: Colors.white),
-      ),
-    );
-  }
-}
-
 /// Summary strip below the canvas: original size -> output size, whether
 /// scaling is happening on top of the crop, which sampler will run, and
 /// where the copy will land — the same numbers a save is about to use, shown
@@ -521,7 +435,9 @@ class _OutputPreviewBar extends StatelessWidget {
     final labelStyle = textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
 
     return Container(
-      height: 34,
+      // 40 and an accent capsule for the destination, the same strip the mask
+      // editor draws below its canvas — the spec gives both tools one bar.
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -540,14 +456,27 @@ class _OutputPreviewBar extends StatelessWidget {
           ),
           if (destination != null) ...[
             const SizedBox(width: 12),
-            Icon(Icons.subdirectory_arrow_right, size: 14, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 6),
             Flexible(
-              child: Text(
-                l10n.cropResizeWillSaveTo(destination),
-                style: labelStyle,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.accentTint,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.subdirectory_arrow_right, size: 12, color: colorScheme.onAccentTint),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        l10n.cropResizeWillSaveTo(destination),
+                        style: textTheme.labelSmall?.copyWith(color: colorScheme.onAccentTint),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

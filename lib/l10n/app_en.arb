@@ -1187,14 +1187,7 @@
       }
     }
   },
-  "optPromptVersion": "Optimized Prompt v{version}",
-  "@optPromptVersion": {
-    "placeholders": {
-      "version": {
-        "type": "int"
-      }
-    }
-  },
+  "optPromptTitle": "Optimized Prompt",
   "optCopy": "Copy",
   "optPromptCopied": "Prompt copied to clipboard",
   "optEmptyChat": "Send a rough prompt or idea to start. The AI inspects reference images on demand, and you can refine the result over multiple turns.",
