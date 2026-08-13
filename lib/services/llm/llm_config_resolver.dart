@@ -44,7 +44,6 @@ class LLMConfigResolver {
       }
     }
 
-    final type = modelData.type;
     final modelId = modelData.modelId;
     final channelId = modelData.channelId;
 
@@ -70,7 +69,6 @@ class LLMConfigResolver {
     return LLMModelConfig(
       id: modelData.id,
       modelId: modelId,
-      type: type,
       channelType: channelType,
       endpoint: endpoint,
       apiKey: apiKey,

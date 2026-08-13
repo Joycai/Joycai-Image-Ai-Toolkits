@@ -431,15 +431,15 @@ extension TaskExecutors on TaskQueueService {
     try {
       final db = DatabaseService();
       String? apiKey;
-      String? providerType;
+      ProtocolFamily? vendorFamily;
       if (task.modelDbId != null) {
         final models = await db.getModels();
         final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
         if (model != null && model.channelId != null) {
-          providerType = model.type;
           final channel = await db.getChannel(model.channelId!);
           if (channel != null) {
             apiKey = channel.apiKey;
+            vendorFamily = Vendors.byId(channel.type).family;
           }
         }
       }
@@ -448,9 +448,9 @@ extension TaskExecutors on TaskQueueService {
       if (apiKey != null) {
         // Veo URIs sit on Google's CDN and want `x-goog-api-key`; OpenAI/Sora
         // URIs sit on the relay and want `Authorization: Bearer`. The header
-        // each side doesn't recognise is silently ignored, so we add both for
-        // any non-Google provider rather than try to sniff the URL host.
-        if (providerType == 'google-genai') {
+        // each side doesn't recognise is silently ignored, so we key off the
+        // channel's vendor family rather than try to sniff the URL host.
+        if (vendorFamily == ProtocolFamily.gemini) {
           request.headers.add('x-goog-api-key', apiKey);
         } else {
           request.headers.add('Authorization', 'Bearer $apiKey');

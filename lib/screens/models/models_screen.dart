@@ -7,7 +7,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/model_tag_chip.dart';
@@ -699,11 +698,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _showDiscoveryDialog(AppLocalizations l10n, LLMChannel channel, AppState appState) async {
-    final type = ChannelDialect.providerType(channel.type);
-
     final config = LLMModelConfig(
       modelId: 'discovery',
-      type: type,
       channelType: channel.type,
       endpoint: channel.endpoint,
       apiKey: channel.apiKey,

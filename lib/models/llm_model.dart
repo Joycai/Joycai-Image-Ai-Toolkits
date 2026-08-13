@@ -2,7 +2,6 @@ class LLMModel {
   final int? id;
   final String modelId;
   final String modelName;
-  final String type; // google-genai, openai-api
   final String tag; // image, chat, multimodal
   final bool isPaid;
   final bool supportsStream;
@@ -31,7 +30,6 @@ class LLMModel {
     this.id,
     required this.modelId,
     required this.modelName,
-    required this.type,
     required this.tag,
     this.isPaid = true,
     this.supportsStream = true,
@@ -51,7 +49,6 @@ class LLMModel {
       id: map['id'] as int?,
       modelId: map['model_id'] as String,
       modelName: map['model_name'] as String,
-      type: map['type'] as String,
       tag: map['tag'] as String,
       isPaid: (map['is_paid'] ?? 1) == 1,
       supportsStream: (map['supports_stream'] ?? 1) == 1,
@@ -71,7 +68,6 @@ class LLMModel {
     final map = {
       'model_id': modelId,
       'model_name': modelName,
-      'type': type,
       'tag': tag,
       'is_paid': isPaid ? 1 : 0,
       'supports_stream': supportsStream ? 1 : 0,

@@ -108,7 +108,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     displayName: 'Google AI Studio',
     endpoint: 'https://generativelanguage.googleapis.com',
     apiKey: 'fixture-key-google',
-    type: 'google-genai',
+    type: 'google-genai-rest',
     tag: '官方',
     tagColor: 0xFF4285F4,
   ).toMap(includeId: false));
@@ -117,7 +117,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     displayName: '中转 · OpenAI 兼容',
     endpoint: 'https://api.example-relay.com/v1',
     apiKey: 'fixture-key-relay',
-    type: 'openai-api',
+    type: 'openai-api-rest',
     tag: '中转',
     tagColor: 0xFF00897B,
   ).toMap(includeId: false));
@@ -145,7 +145,6 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     LLMModel(
       modelId: 'gemini-2.5-flash-image',
       modelName: 'Nano Banana 图像生成',
-      type: 'google-genai',
       tag: ModelTag.image.value,
       channelId: googleId,
       feeGroupId: perImageFee,
@@ -155,7 +154,6 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     LLMModel(
       modelId: 'gemini-2.5-flash',
       modelName: 'Gemini 2.5 Flash',
-      type: 'google-genai',
       tag: ModelTag.multimodal.value,
       channelId: googleId,
       feeGroupId: flashFee,
@@ -165,7 +163,6 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     LLMModel(
       modelId: 'gemini-2.5-pro',
       modelName: 'Gemini 2.5 Pro',
-      type: 'google-genai',
       tag: ModelTag.refiner.value,
       channelId: googleId,
       feeGroupId: proFee,
@@ -175,7 +172,6 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     LLMModel(
       modelId: 'veo-3.1-generate-preview',
       modelName: 'Veo 3.1 视频生成',
-      type: 'google-genai',
       tag: ModelTag.video.value,
       channelId: googleId,
       feeGroupId: perImageFee,
@@ -184,7 +180,6 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     LLMModel(
       modelId: 'gpt-5-chat',
       modelName: 'GPT-5 Chat',
-      type: 'openai-api',
       tag: ModelTag.chat.value,
       channelId: openaiId,
       feeGroupId: proFee,

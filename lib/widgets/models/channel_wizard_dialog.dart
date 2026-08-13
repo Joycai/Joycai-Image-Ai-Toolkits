@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
-import '../../services/llm/channel_dialect.dart';
+import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../app_button.dart';
@@ -41,48 +41,48 @@ class _ProviderPreset {
 const _presets = <_ProviderPreset>[
   _ProviderPreset(
     id: 'openai-official',
-    channelType: ChannelDialect.openAIRest,
+    channelType: Vendors.openAIRest,
     fixedEndpoint: 'https://api.openai.com/v1',
     icon: Icons.api,
   ),
   _ProviderPreset(
     id: 'xai-official',
-    channelType: ChannelDialect.xaiApi,
+    channelType: Vendors.xaiApi,
     fixedEndpoint: 'https://api.x.ai/v1',
     icon: Icons.rocket_launch_outlined,
   ),
   _ProviderPreset(
     id: 'google-compatible',
-    channelType: ChannelDialect.openAIRest,
+    channelType: Vendors.openAIRest,
     fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
     icon: Icons.swap_horiz,
   ),
   _ProviderPreset(
     id: 'newapi-openai',
-    channelType: ChannelDialect.newApiOpenAI,
+    channelType: Vendors.newApiOpenAI,
     endpointSuffix: '/v1',
     icon: Icons.hub_outlined,
   ),
   _ProviderPreset(
     id: 'google-official',
-    channelType: ChannelDialect.googleRest,
+    channelType: Vendors.googleRest,
     fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
     icon: Icons.auto_awesome,
   ),
   _ProviderPreset(
     id: 'newapi-gemini',
-    channelType: ChannelDialect.newApiGemini,
+    channelType: Vendors.newApiGemini,
     endpointSuffix: '/v1beta',
     icon: Icons.hub_outlined,
   ),
   _ProviderPreset(
     id: 'midjourney-proxy',
-    channelType: ChannelDialect.midjourneyProxy,
+    channelType: Vendors.midjourneyProxy,
     icon: Icons.brush_outlined,
   ),
   _ProviderPreset(
     id: 'custom',
-    channelType: ChannelDialect.openAIRest, // resolved by _customProtocol
+    channelType: Vendors.openAIRest, // resolved by _customProtocol
     icon: Icons.settings_input_component,
   ),
 ];
@@ -108,7 +108,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   String _selectedProviderId = 'openai-official';
 
   /// Dialect for the `custom` preset (OpenAI- or Gemini-shaped REST).
-  String _customProtocol = ChannelDialect.openAIRest;
+  String _customProtocol = Vendors.openAIRest;
 
   final TextEditingController _endpointCtrl = TextEditingController();
   final TextEditingController _apiKeyCtrl = TextEditingController();
@@ -577,8 +577,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           const SizedBox(height: 8),
           AppSegmentedControl<String>(
             segments: [
-              AppSegment(value: ChannelDialect.openAIRest, label: l10n.protocolOpenAI),
-              AppSegment(value: ChannelDialect.googleRest, label: l10n.protocolGoogle),
+              AppSegment(value: Vendors.openAIRest, label: l10n.protocolOpenAI),
+              AppSegment(value: Vendors.googleRest, label: l10n.protocolGoogle),
             ],
             value: _customProtocol,
             onChanged: (v) => setState(() => _customProtocol = v),
@@ -600,7 +600,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                   ? l10n.newApiBaseHint
                   : isMidjourney
                       ? l10n.midjourneyEndpointHint
-                      : (_customProtocol == ChannelDialect.googleRest
+                      : (_customProtocol == Vendors.googleRest
                           ? l10n.googleV1BetaHint
                           : l10n.openaiV1Hint),
               helperMaxLines: 3,

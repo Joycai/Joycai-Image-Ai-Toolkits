@@ -56,6 +56,7 @@ class DatabaseMigration {
     if (oldVersion < 29) await _createV29Tables(db);
     if (oldVersion < 30) await _createV30Tables(db);
     if (oldVersion < 31) await _createV31Tables(db);
+    if (oldVersion < 32) await _createV32Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -87,6 +88,7 @@ class DatabaseMigration {
     await _createV29Tables(db);
     await _createV30Tables(db);
     await _createV31Tables(db);
+    await _createV32Tables(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -97,6 +99,57 @@ class DatabaseMigration {
   /// failed ones, whose log is the only record of why they failed.
   static Future<void> _createV31Tables(Database db) async {
     await _addColumnIfNotExists(db, 'tasks', 'logs', 'TEXT');
+  }
+
+  /// Drops `llm_models.type`.
+  ///
+  /// The column was a copy of the serving provider type, derived from the
+  /// channel's type whenever a model was saved — but nothing kept it in sync
+  /// when the *channel's* type changed afterwards, leaving models routed to
+  /// the wrong provider. The runtime now resolves
+  /// `channel.type → vendor → protocol` on every request (see
+  /// `services/llm/llm_dispatcher.dart`), so the stored copy is dropped
+  /// entirely rather than repaired.
+  ///
+  /// SQLite's `ALTER TABLE ... DROP COLUMN` requires 3.35+, which not every
+  /// supported platform ships, so this uses the portable rebuild-and-copy
+  /// pattern. Column list = every `llm_models` column accumulated through
+  /// v31, minus `type`.
+  static Future<void> _createV32Tables(Database db) async {
+    const keptColumns =
+        'id, model_id, model_name, tag, is_paid, sort_order, '
+        'input_fee, output_fee, billing_mode, request_fee, '
+        'channel_id, fee_group_id, force_view_all_images, context_window, '
+        'supports_stream, supports_standard, '
+        'est_mean_ms, est_sd_ms, tasks_since_update';
+
+    await db.execute('''
+      CREATE TABLE llm_models_v32 (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model_id TEXT NOT NULL,
+        model_name TEXT NOT NULL,
+        tag TEXT NOT NULL,
+        is_paid INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        input_fee REAL DEFAULT 0.0,
+        output_fee REAL DEFAULT 0.0,
+        billing_mode TEXT DEFAULT 'token',
+        request_fee REAL DEFAULT 0.0,
+        channel_id INTEGER REFERENCES llm_channels(id),
+        fee_group_id INTEGER REFERENCES fee_groups(id),
+        force_view_all_images INTEGER DEFAULT 0,
+        context_window INTEGER,
+        supports_stream INTEGER DEFAULT 1,
+        supports_standard INTEGER DEFAULT 1,
+        est_mean_ms REAL DEFAULT 0.0,
+        est_sd_ms REAL DEFAULT 0.0,
+        tasks_since_update INTEGER DEFAULT 0
+      )
+    ''');
+    await db.execute(
+        'INSERT INTO llm_models_v32 ($keptColumns) SELECT $keptColumns FROM llm_models');
+    await db.execute('DROP TABLE llm_models');
+    await db.execute('ALTER TABLE llm_models_v32 RENAME TO llm_models');
   }
 
   /// Separate pricing for prompt-cache hits.

@@ -53,7 +53,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 31;
+  static const int dbVersion = 32;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -648,6 +648,8 @@ class DatabaseService {
     for (var m in rows) {
       final oldId = m['id'] as int;
       final Map<String, dynamic> row = Map.from(m)..remove('id');
+      // Pre-v32 backups carry the dropped llm_models.type column.
+      row.remove('type');
       if (row['channel_id'] != null) row['channel_id'] = channelIdMap[row['channel_id']];
       if (row['fee_group_id'] != null) row['fee_group_id'] = pricingGroupIdMap[row['fee_group_id']];
       final newId = await txn.insert('llm_models', row);

@@ -1,13 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/providers/google_genai_provider.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 void main() {
-  group('buildGoogleAuthHeaders', () {
+  group('VendorProfile.headers (Gemini family auth)', () {
     const key = 'AIza-test-key';
 
     test('always sends the API key in x-goog-api-key', () {
-      final headers = buildGoogleAuthHeaders(
-        'google-genai-rest',
+      final headers = Vendors.byId(Vendors.googleRest).headers(
         key,
         'https://generativelanguage.googleapis.com/v1beta',
       );
@@ -18,8 +17,7 @@ void main() {
     test('official Google host never receives Authorization: Bearer (the 401 cause)', () {
       // Regression: google-genai-rest pointed at the official endpoint used to
       // also send `Authorization: Bearer <key>`, which Google rejects with 401.
-      final headers = buildGoogleAuthHeaders(
-        'google-genai-rest',
+      final headers = Vendors.byId(Vendors.googleRest).headers(
         key,
         'https://generativelanguage.googleapis.com/v1beta',
       );
@@ -27,9 +25,8 @@ void main() {
       expect(headers['x-goog-api-key'], key);
     });
 
-    test('official-google-genai-api type never sends Authorization', () {
-      final headers = buildGoogleAuthHeaders(
-        'official-google-genai-api',
+    test('official-google-genai-api vendor never sends Authorization', () {
+      final headers = Vendors.byId(Vendors.officialGoogle).headers(
         key,
         'https://generativelanguage.googleapis.com/v1beta',
       );
@@ -38,8 +35,7 @@ void main() {
     });
 
     test('third-party relay still receives bearer token for compatibility', () {
-      final headers = buildGoogleAuthHeaders(
-        'google-genai-rest',
+      final headers = Vendors.byId(Vendors.googleRest).headers(
         key,
         'https://api.yyds168.net/v1beta',
       );
@@ -48,8 +44,7 @@ void main() {
     });
 
     test('any *.googleapis.com host is treated as official', () {
-      final headers = buildGoogleAuthHeaders(
-        'google-genai-rest',
+      final headers = Vendors.byId(Vendors.googleRest).headers(
         key,
         'https://us-central1-aiplatform.googleapis.com/v1',
       );
@@ -59,8 +54,7 @@ void main() {
     test('newapi-gemini uses bearer token only (no x-goog-api-key)', () {
       // New API's Gemini format authenticates like OpenAI and rejects the
       // x-goog-api-key header; it must receive Authorization: Bearer alone.
-      final headers = buildGoogleAuthHeaders(
-        'newapi-gemini',
+      final headers = Vendors.byId(Vendors.newApiGemini).headers(
         key,
         'https://my-newapi-host.com/v1beta',
       );
@@ -70,11 +64,11 @@ void main() {
     });
   });
 
-  group('appendGoogleKey', () {
+  group('VendorProfile.decorateUrl (Gemini family key parameter)', () {
     const key = 'AIza-test-key';
 
     test('adds key query parameter matching Google docs', () {
-      final url = appendGoogleKey(
+      final url = Vendors.byId(Vendors.officialGoogle).decorateUrl(
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'),
         key,
       );
@@ -83,7 +77,7 @@ void main() {
     });
 
     test('preserves existing query parameters (e.g. alt=sse for streaming)', () {
-      final url = appendGoogleKey(
+      final url = Vendors.byId(Vendors.officialGoogle).decorateUrl(
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/m:streamGenerateContent?alt=sse'),
         key,
       );
@@ -93,14 +87,19 @@ void main() {
 
     test('leaves the URL untouched when the key is empty', () {
       final original = Uri.parse('https://example.com/v1beta/models');
-      expect(appendGoogleKey(original, ''), original);
+      expect(Vendors.byId(Vendors.officialGoogle).decorateUrl(original, ''), original);
     });
 
     test('newapi-gemini never leaks the key into the query string', () {
       final original = Uri.parse('https://my-newapi-host.com/v1beta/models');
-      final url = appendGoogleKey(original, key, channelType: 'newapi-gemini');
+      final url = Vendors.byId(Vendors.newApiGemini).decorateUrl(original, key);
       expect(url.queryParameters.containsKey('key'), isFalse);
       expect(url, original);
+    });
+
+    test('openai vendors never put the key in the query string', () {
+      final original = Uri.parse('https://api.openai.com/v1/models');
+      expect(Vendors.byId(Vendors.openAIRest).decorateUrl(original, key), original);
     });
   });
 }

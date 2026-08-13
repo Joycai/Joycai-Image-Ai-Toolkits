@@ -1,6 +1,6 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/providers/google_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_payload.dart';
 
 void main() {
   group('Google function calling thought signatures', () {

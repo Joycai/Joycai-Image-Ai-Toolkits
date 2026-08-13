@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
-import 'llm_provider_interface.dart';
+import 'llm_dispatcher.dart';
 import 'llm_types.dart';
 
 class LLMService {
@@ -11,15 +11,11 @@ class LLMService {
   factory LLMService() => _instance;
   LLMService._internal();
 
-  final Map<String, ILLMProvider> _providers = {};
   final Map<String, List<LLMMessage>> _sessions = {};
   final LLMConfigResolver _configResolver = LLMConfigResolver();
+  final LLMDispatcher _dispatcher = LLMDispatcher();
 
   Function(String, {String level, String? contextId})? onLogAdded;
-
-  void registerProvider(String type, ILLMProvider provider) {
-    _providers[type] = provider;
-  }
 
   Future<LLMResponse> request({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
@@ -38,8 +34,6 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    final provider = _getProvider(config.type);
-
     List<LLMMessage> fullHistory = messages;
     if (sessionId != null) {
       _sessions[sessionId] ??= [];
@@ -53,12 +47,12 @@ class LLMService {
     while (true) {
       try {
         if (useStream) {
-          onLogAdded?.call('Connecting to ${config.type} provider (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
           String accumulatedText = "";
           List<Uint8List> accumulatedImages = [];
           Map<String, dynamic>? finalMetadata;
 
-          final stream = provider.generateStream(
+          final stream = _dispatcher.generateStream(
             config, 
             fullHistory, 
             options: options, 
@@ -97,8 +91,8 @@ class LLMService {
 
           return response;
         } else {
-          onLogAdded?.call('Connecting to ${config.type} provider (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
-          final response = await provider.generate(
+          onLogAdded?.call('Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          final response = await _dispatcher.generate(
             config,
             fullHistory,
             options: options,
@@ -169,8 +163,6 @@ class LLMService {
       modelIdentifier, 
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    final provider = _getProvider(config.type);
-
     List<LLMMessage> fullHistory = messages;
     if (sessionId != null) {
       _sessions[sessionId] ??= [];
@@ -178,7 +170,7 @@ class LLMService {
       fullHistory = _sessions[sessionId]!;
     }
 
-    onLogAdded?.call('Connecting to ${config.type} provider...', level: 'DEBUG', contextId: contextId);
+    onLogAdded?.call('Connecting to ${config.channelType}...', level: 'DEBUG', contextId: contextId);
 
     final int maxRetries = options?['retryCount'] ?? 0;
     int attempt = 0;
@@ -195,7 +187,7 @@ class LLMService {
         int imageCount = 0;
         Map<String, dynamic>? finalMetadata;
         
-        final stream = provider.generateStream(
+        final stream = _dispatcher.generateStream(
           config, 
           fullHistory, 
           options: options, 
@@ -316,9 +308,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    final provider = _getProvider(config.type);
-
-    return await provider.startLongRunning(
+    return await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
@@ -335,20 +325,10 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    final provider = _getProvider(config.type);
-
-    return await provider.checkOperation(
+    return await _dispatcher.checkOperation(
       config,
       operationName,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-  }
-
-  ILLMProvider _getProvider(String type) {
-    final provider = _providers[type];
-    if (provider == null) {
-      throw Exception("LLM Provider for type '$type' not registered.");
-    }
-    return provider;
   }
 }

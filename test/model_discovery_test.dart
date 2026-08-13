@@ -1,60 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
-import 'package:joycai_image_ai_toolkits/services/llm/model_discovery_service.dart';
-
-class MockDiscoveryProvider implements IModelDiscoveryProvider {
-  @override
-  Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
-    return [
-      DiscoveredModel(
-        modelId: 'test-1',
-        displayName: 'Test Model 1',
-        rawData: {'id': 'test-1'},
-      ),
-      DiscoveredModel(
-        modelId: 'test-2',
-        displayName: 'Test Model 2',
-        rawData: {'id': 'test-2'},
-      ),
-    ];
-  }
-}
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/midjourney_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 void main() {
-  group('ModelDiscoveryService', () {
-    test('should register and discover models', () async {
-      final service = ModelDiscoveryService();
-      service.registerProvider('mock', MockDiscoveryProvider());
-
+  group('Model discovery', () {
+    test('midjourney vendor lists the built-in catalog without any network', () async {
       final config = LLMModelConfig(
-        modelId: 'none',
-        type: 'mock',
-        channelType: 'mock',
-        endpoint: '',
-        apiKey: '',
+        modelId: 'discovery',
+        channelType: Vendors.midjourneyProxy,
+        endpoint: 'https://example.com',
+        apiKey: 'k',
+      );
+      final target = LLMTarget(
+        config: config,
+        vendor: Vendors.byId(config.channelType),
+        model: ModelDescriptor.of(config.modelId),
       );
 
-      final models = await service.discoverModels('mock', config);
+      final models = await MidjourneyDiscoveryProtocol().fetchModels(target);
 
-      expect(models.length, 2);
-      expect(models[0].modelId, 'test-1');
-      expect(models[1].displayName, 'Test Model 2');
+      expect(models, isNotEmpty);
+      expect(models.map((m) => m.modelId), contains('midjourney'));
+      expect(models.map((m) => m.modelId), contains('niji-journey'));
     });
 
-    test('should throw exception for unregistered provider', () {
-      final service = ModelDiscoveryService();
-      final config = LLMModelConfig(
-        modelId: 'none',
-        type: 'unknown',
-        channelType: 'unknown',
-        endpoint: '',
-        apiKey: '',
-      );
-
-      expect(
-        () => service.discoverModels('unknown', config),
-        throwsA(isA<Exception>()),
-      );
+    test('unknown channel types resolve to the generic OpenAI vendor', () {
+      final vendor = Vendors.byId('some-unknown-type');
+      expect(vendor.id, Vendors.openAIRest);
+      expect(vendor.family, ProtocolFamily.openai);
     });
   });
 }

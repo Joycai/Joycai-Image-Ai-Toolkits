@@ -5,9 +5,9 @@ import '../../../core/safety_settings.dart';
 import '../image_compression.dart';
 import '../llm_types.dart';
 
-/// Pure request-payload builders and response parsing for the Google GenAI
-/// dialect. Extracted from the provider so the wire-format logic is isolated
-/// from network orchestration and can be unit-tested directly.
+/// Pure request-payload builders and response parsing for the Gemini wire
+/// format (layer 1). Isolated from network orchestration so the logic can be
+/// unit-tested directly.
 
 /// Recursively strips large base64 `data` fields so payloads are safe to log.
 Map<String, dynamic> getSafePayload(Map<String, dynamic> payload) {
