@@ -102,6 +102,24 @@ class LLMMessage {
   final String content;
   final List<LLMAttachment> attachments;
 
+  /// Chain-of-thought text carried by an assistant message, for OpenAI-family
+  /// vendors that expose one (DeepSeek's `reasoning_content`, OpenRouter's
+  /// `reasoning`, or an inline `<think>…</think>` span some relays emit).
+  ///
+  /// DeepSeek rejects a tool-calling conversation with 400 when the reasoning
+  /// of a tool-call-bearing assistant turn is not replayed, so this must
+  /// round-trip through history and persistence — the ① family sibling of
+  /// [LLMToolCall.thoughtSignature].
+  final String? reasoningContent;
+
+  /// The wire field name [reasoningContent] arrived under
+  /// (`reasoning_content` / `reasoning`), or null when it was extracted from
+  /// an inline `<think>` span or absent. Echo-back uses this exact name —
+  /// "return it under the name you received it" survives vendors the app has
+  /// never heard of, unlike hardcoding one spelling. Inline reasoning carries
+  /// no echo obligation and is never sent back.
+  final String? reasoningFieldName;
+
   /// Tool calls carried by an assistant message (echoed back into history
   /// during an agent loop).
   final List<LLMToolCall> toolCalls;
@@ -117,6 +135,8 @@ class LLMMessage {
     required this.role,
     required this.content,
     this.attachments = const [],
+    this.reasoningContent,
+    this.reasoningFieldName,
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
@@ -125,6 +145,10 @@ class LLMMessage {
   Map<String, dynamic> toJson() => {
         'role': role.name,
         'content': content,
+        // The reasoning of a tool-calling turn must survive restarts — the
+        // echo-back obligation does not expire with the session.
+        if (reasoningContent != null) 'reasoningContent': reasoningContent,
+        if (reasoningFieldName != null) 'reasoningFieldName': reasoningFieldName,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
@@ -135,6 +159,8 @@ class LLMMessage {
   factory LLMMessage.fromJson(Map<String, dynamic> json) => LLMMessage(
         role: LLMRole.values.asNameMap()[json['role']] ?? LLMRole.user,
         content: json['content'] as String? ?? '',
+        reasoningContent: json['reasoningContent'] as String?,
+        reasoningFieldName: json['reasoningFieldName'] as String?,
         attachments: [
           for (final a in (json['attachments'] as List? ?? []))
             if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
@@ -231,6 +257,14 @@ class LLMResponse {
   final String? operationName;
   final Map<String, dynamic> metadata;
 
+  /// Chain-of-thought the response carried, already separated from [text].
+  /// See [LLMMessage.reasoningContent] for the round-trip contract.
+  final String? reasoningContent;
+
+  /// Wire field name of [reasoningContent], or null for inline/absent —
+  /// see [LLMMessage.reasoningFieldName].
+  final String? reasoningFieldName;
+
   /// Tool calls requested by the model (empty when it answered directly).
   final List<LLMToolCall> toolCalls;
 
@@ -240,16 +274,23 @@ class LLMResponse {
     this.videoUri,
     this.operationName,
     this.metadata = const {},
+    this.reasoningContent,
+    this.reasoningFieldName,
     this.toolCalls = const [],
   });
 }
 
 class LLMResponseChunk {
   final String? textPart;
+
+  /// Chain-of-thought increment, kept out of [textPart] so consumers that
+  /// accumulate text never glue the model's thinking into the deliverable.
+  final String? reasoningPart;
+
   final Uint8List? imagePart;
   final Map<String, dynamic>? metadata;
   final LLMToolCall? toolCallPart;
   final bool isDone;
 
-  LLMResponseChunk({this.textPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
+  LLMResponseChunk({this.textPart, this.reasoningPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
 }

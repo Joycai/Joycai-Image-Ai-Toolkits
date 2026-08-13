@@ -835,6 +835,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerNewApiDesc => 'New API リレー · ベアラートークン認証';
 
   @override
+  String get providerMiniMaxDesc => 'OpenAI 互換 /v1 エンドポイント';
+
+  @override
   String get newApiBaseUrl => 'New API ベース URL';
 
   @override

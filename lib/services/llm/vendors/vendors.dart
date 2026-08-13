@@ -37,6 +37,19 @@ class Vendors {
   /// authenticated with an OpenAI-style bearer token.
   static const String newApiGemini = 'newapi-gemini';
 
+  /// DeepSeek's official OpenAI-compatible endpoint
+  /// (`https://api.deepseek.com`). Body-compatible with [openAIRest]; its
+  /// specifics are response-side (`reasoning_content` echo-back is handled
+  /// vendor-agnostically by the chat protocol) and future request extensions
+  /// (`thinking: {type}`) will hang off this profile.
+  static const String deepseek = 'deepseek-api';
+
+  /// MiniMax's OpenAI-compatible endpoint. Body-compatible with [openAIRest];
+  /// its specifics are response-side (inline `<think>` chains and the
+  /// `base_resp.status_code` error envelope, both handled vendor-agnostically
+  /// by the chat protocol).
+  static const String minimax = 'minimax-api';
+
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
 
@@ -70,6 +83,16 @@ class Vendors {
     VendorProfile(
       id: newApiGemini,
       family: ProtocolFamily.gemini,
+      auth: AuthScheme.bearer,
+    ),
+    VendorProfile(
+      id: deepseek,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+    ),
+    VendorProfile(
+      id: minimax,
+      family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
     ),
     VendorProfile(

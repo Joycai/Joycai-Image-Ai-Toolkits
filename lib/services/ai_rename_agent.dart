@@ -184,10 +184,14 @@ class AiRenameAgent {
         return;
       }
 
-      // Echo the assistant turn (with its tool calls) back into history.
+      // Echo the assistant turn (with its tool calls) back into history,
+      // reasoning included — DeepSeek-style endpoints 400 on the next request
+      // of a tool loop when reasoning_content is not replayed.
       messages.add(LLMMessage(
         role: LLMRole.assistant,
         content: response.text,
+        reasoningContent: response.reasoningContent,
+        reasoningFieldName: response.reasoningFieldName,
         toolCalls: response.toolCalls,
       ));
 

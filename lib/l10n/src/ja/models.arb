@@ -100,6 +100,7 @@
   "providerNewApiOpenAI": "New API（OpenAI 形式）",
   "providerNewApiGemini": "New API（Gemini 形式）",
   "providerNewApiDesc": "New API リレー · ベアラートークン認証",
+  "providerMiniMaxDesc": "OpenAI 互換 /v1 エンドポイント",
   "newApiBaseUrl": "New API ベース URL",
   "newApiBaseHint": "New API のホストを入力してください。バージョンパスは自動的に追加されます",
   "customEndpointHint": "カスタムエンドポイントURLを入力してください",

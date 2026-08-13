@@ -149,6 +149,7 @@ extension TaskExecutors on TaskQueueService {
       // Per-model agent settings, resolved in one lookup: force viewing every
       // reference image, and the context window that budgets the turn.
       bool forceViewAll = false;
+      bool acceptsImageInput = true;
       int? contextWindow;
       if (task.modelDbId != null) {
         final models = await DatabaseService().getModels();
@@ -157,6 +158,10 @@ extension TaskExecutors on TaskQueueService {
             .firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
         forceViewAll = model?.forceViewAllImages ?? false;
         contextWindow = model?.contextWindow;
+        if (model != null) {
+          // Layer-3 read: text-only models must not be offered image tools.
+          acceptsImageInput = ModelDescriptor.of(model.modelId).acceptsImageInput;
+        }
       }
 
       final contextRatio = double.tryParse(
@@ -186,6 +191,7 @@ extension TaskExecutors on TaskQueueService {
         modelIdentifier: task.modelDbId ?? task.modelId,
         systemPrompt: task.parameters['systemPrompt'],
         forceViewAllImages: forceViewAll,
+        acceptsImageInput: acceptsImageInput,
         knowledgeRoot: knowledgeRoot,
         knowledgeEntryContent: knowledgeEntry,
         referenceImages: task.imagePaths

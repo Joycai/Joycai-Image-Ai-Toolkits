@@ -1655,6 +1655,12 @@ abstract class AppLocalizations {
   /// **'New API relay · bearer-token auth'**
   String get providerNewApiDesc;
 
+  /// No description provided for @providerMiniMaxDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI-compatible /v1 endpoint'**
+  String get providerMiniMaxDesc;
+
   /// No description provided for @newApiBaseUrl.
   ///
   /// In en, this message translates to:

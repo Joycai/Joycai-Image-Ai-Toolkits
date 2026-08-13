@@ -149,6 +149,7 @@
   "providerNewApiOpenAI": "New API (OpenAI format)",
   "providerNewApiGemini": "New API (Gemini format)",
   "providerNewApiDesc": "New API relay · bearer-token auth",
+  "providerMiniMaxDesc": "OpenAI-compatible /v1 endpoint",
   "newApiBaseUrl": "New API Base URL",
   "newApiBaseHint": "Enter your New API host; the version path is added automatically",
   "customEndpointHint": "Enter your custom endpoint URL",

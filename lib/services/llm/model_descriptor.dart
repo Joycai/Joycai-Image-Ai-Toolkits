@@ -40,4 +40,16 @@ class ModelDescriptor {
   /// True when this id is a Niji variant of Midjourney (drives the proxy's
   /// `botType` field).
   bool get isNijiVariant => modelId.toLowerCase().contains('niji');
+
+  /// Whether the model accepts image *input* (multimodal understanding), as
+  /// opposed to the generation-side capabilities in [capabilities].
+  ///
+  /// Drives whether image-viewing tools are offered to agent loops: sending
+  /// an `image_url` part to a text-only endpoint either 400s or — worse —
+  /// gets silently dropped, so the model answers as if it saw the image.
+  ///
+  /// Default is true (the historical behavior); only families/ids known to be
+  /// text-only opt out. DeepSeek's chat/completions endpoint takes text only —
+  /// its multimodal models are not served there (as of 2026-08).
+  bool get acceptsImageInput => !modelId.toLowerCase().contains('deepseek');
 }

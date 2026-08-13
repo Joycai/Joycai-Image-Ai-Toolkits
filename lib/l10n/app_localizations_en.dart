@@ -848,6 +848,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerNewApiDesc => 'New API relay · bearer-token auth';
 
   @override
+  String get providerMiniMaxDesc => 'OpenAI-compatible /v1 endpoint';
+
+  @override
   String get newApiBaseUrl => 'New API Base URL';
 
   @override
