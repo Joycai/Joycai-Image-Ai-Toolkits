@@ -490,14 +490,33 @@ void seedOptimizerSession(AppState appState) {
   final List<AppImage> images = _galleryImages(appState).take(2).toList();
   if (images.isEmpty) return;
 
-  const String refined = '任务：修复并增强这张人像照片的画质。\n\n'
+  // Deliberately past `_promptFoldChars` (600) in `prompt_optimizer_view.dart`:
+  // below it the card renders in full and the folded branch — the one that has
+  // to clip a long prompt without laying it out inside the fold height — never
+  // appears in a screenshot at all. A real refined prompt is this long anyway.
+  const String refined = '任务：修复并增强这张人像照片的画质，并按下列设定重绘服装。\n\n'
       '**模特设定**\n'
       '· **面部与眼镜：**严格继承参考图的面部特征、神态与笑容，保留黑色圆框眼镜。\n'
-      '· **发型：**青蓝色直发，额前平刘海。\n\n'
+      '· **发型：**青蓝色直发，额前平刘海，发梢自然内扣，避免出现结块与锯齿边缘。\n'
+      '· **体态：**身形与站姿保持参考图原样，不做拉伸、瘦身或比例调整。\n\n'
+      '**服装**\n'
+      '· 上衣：参考图 2 的深色立领外套，保留肩线结构与金属扣件的层次。\n'
+      '· 下装：同参考图 2 的直筒长裤，褶皱走向随站姿自然生成。\n'
+      '· 鞋履：黑色短靴，袜口露出约两指宽，与裤脚衔接自然。\n\n'
       '**画面要求**\n'
-      '· 保持原始构图与全部画面内容不变，只做修复而非重绘。\n'
-      '· 去除噪点与轻微模糊，保留毛孔与皮肤纹理。\n'
-      '· 光线均匀柔和，不要产生明显的边缘锯齿。';
+      '· 保持原始构图与全部画面内容不变，只做修复与替换而非重绘整张图。\n'
+      '· 去除噪点与轻微模糊，保留毛孔与皮肤纹理，不要磨皮成塑料质感。\n'
+      '· 光线均匀柔和，主光来自左前方，阴影过渡自然，不要产生明显的边缘锯齿。\n'
+      '· 背景保持原样并轻微降噪，不要引入新的物件、文字或水印。\n\n'
+      '**镜头与构图**\n'
+      '· 视角与参考图一致，齐腰构图，人物居中略偏左，头顶留白约一成。\n'
+      '· 景深浅但不过度，背景虚化程度以能辨认环境轮廓为准。\n'
+      '· 不要添加边框、暗角或任何后期滤镜风格。\n\n'
+      '**输出**\n'
+      '· 分辨率不低于原图，格式 PNG，不要附加任何说明文字。\n'
+      '· 若某项设定与参考图冲突，以参考图为准并在结果中保持一致。\n'
+      '· 一次只输出一张成品图，不要给出多个候选版本、过程图或对比拼图。\n'
+      '· 保留原始 EXIF 方向信息，导出前不要旋转或镜像画面。';
 
   final List<LLMMessage> history = <LLMMessage>[
     LLMMessage(role: LLMRole.user, content: '让图片 1 中的人物穿上图片 2 中角色的服装'),

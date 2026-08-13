@@ -90,6 +90,41 @@ void main() {
     }
   }
 
+  // The prompt assistant at iPad width. It is the only tab that keeps both side
+  // panels, so it is the only one that can run out of centre — and the size
+  // band it ran out in (screen over the desktop breakpoint, content box under
+  // it) is the one the loop above never photographed. Light only: this shot is
+  // about widths, and the desktop pass already covers both brightnesses.
+  testWidgets('workbench · assistant @ ipad light', (WidgetTester tester) async {
+    final _WorkbenchTab tab = _workbenchTabs.firstWhere((t) => t.name == 'assistant');
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: kShotSizes.firstWhere((ShotSize s) => s.label == 'ipad'),
+      suffix: tab.name,
+      before: (_) async {
+        final AppState appState = AppState();
+        appState.setWorkbenchTab(tab.index);
+        tab.seed(appState);
+      },
+      // Scrolled to the end of the transcript, because the refined-prompt card
+      // is the part of this screen worth photographing and the run console
+      // leaves the transcript barely 300px to show it in. A restored session
+      // opens at the top — only a live reply auto-scrolls — so the shot would
+      // otherwise be of the card's first two lines.
+      after: (WidgetTester tester) async {
+        final Finder transcript = find.descendant(
+          of: find.byType(ListView),
+          matching: find.text('优化提示词'),
+        );
+        if (transcript.evaluate().isEmpty) return;
+        await tester.drag(transcript.first, const Offset(0, -400));
+        await tester.pump();
+      },
+    );
+  });
+
   // The fee-group editor (spec 10j / 10k). Two taps deep behind a tab index
   // that lives in the usage screen's own State, so nothing in AppState can
   // reach it — which is how a dialog the spec devotes two of its twelve frames

@@ -769,19 +769,15 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             // Folded to a readable opening rather than scrolled inside its own
             // box: a long prompt otherwise pushes the reply that explains it,
             // and the input bar, off the bottom of the conversation.
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: isLong && !expanded ? _promptFoldHeight : double.infinity,
-              ),
-              child: ClipRect(
-                child: MarkdownBody(
-                  data: entry.text,
-                  selectable: true,
-                  styleSheet: MarkdownStyleSheet(
-                    p: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.45),
-                  ),
+            child: _fold(
+              MarkdownBody(
+                data: entry.text,
+                selectable: true,
+                styleSheet: MarkdownStyleSheet(
+                  p: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.45),
                 ),
               ),
+              folded: isLong && !expanded,
             ),
           ),
           if (isLong)
@@ -807,6 +803,31 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Shows the first [_promptFoldHeight] of [child] and hides the rest.
+  ///
+  /// The obvious `ConstrainedBox(maxHeight:) + ClipRect` does not work here and
+  /// was the bug: `ClipRect` only clips the painting, so the markdown's inner
+  /// `Column` was still being *laid out* inside 260px and reported a 1300px
+  /// RenderFlex overflow for every long prompt. The child has to be given the
+  /// unbounded height it wants — which is what [OverflowBox] is for — and the
+  /// fixed-height box around it does the hiding. Width constraints are left
+  /// null so they pass through untouched and the text wraps as it otherwise
+  /// would.
+  Widget _fold(Widget child, {required bool folded}) {
+    if (!folded) return child;
+    return ClipRect(
+      child: SizedBox(
+        height: _promptFoldHeight,
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: child,
+        ),
       ),
     );
   }
