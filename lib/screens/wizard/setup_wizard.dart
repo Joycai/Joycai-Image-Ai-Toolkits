@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
-import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
 import '../../state/app_state.dart';
@@ -135,7 +134,6 @@ class _SetupWizardState extends State<SetupWizard> {
       await _db.addModel({
         'model_id': _modelIdController.text,
         'model_name': _modelNameController.text.isEmpty ? _modelIdController.text : _modelNameController.text,
-        'type': ChannelDialect.providerType(_channelType),
         'tag': _modelTag,
         'is_paid': 1,
         'sort_order': 0,
@@ -438,18 +436,16 @@ class _SetupWizardState extends State<SetupWizard> {
     setState(() => _isFetchingModels = true);
     
     try {
-      final type = ChannelDialect.providerType(_channelType);
       final apiKey = _apiKeyController.text.trim();
-      
+
       final config = LLMModelConfig(
         modelId: 'discovery',
-        type: type,
         channelType: _channelType,
         endpoint: _endpointController.text.trim(),
         apiKey: apiKey,
       );
 
-      final models = await ModelDiscoveryService().discoverModels(type, config);
+      final models = await ModelDiscoveryService().discoverModels(config);
       
       if (!mounted) return;
       

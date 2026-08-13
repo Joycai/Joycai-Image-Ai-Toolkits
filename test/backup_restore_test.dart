@@ -35,7 +35,6 @@ void main() {
     await db.insert('llm_models', {
       'model_id': 'gemini-3-pro',
       'model_name': 'Gemini 3 Pro',
-      'type': 'image',
       'tag': 'General',
       'channel_id': channelId,
     });

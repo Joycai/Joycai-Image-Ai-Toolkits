@@ -31,7 +31,6 @@ void main() {
         id: id,
         modelId: 'm$id',
         modelName: 'Model $id',
-        type: 'openai-api',
         tag: 'chat',
         feeGroupId: feeGroupId,
       );

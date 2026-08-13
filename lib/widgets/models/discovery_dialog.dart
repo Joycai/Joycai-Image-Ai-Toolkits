@@ -68,7 +68,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
 
   Future<void> _fetch() async {
     try {
-      final models = await ModelDiscoveryService().discoverModels(widget.config.type, widget.config);
+      final models = await ModelDiscoveryService().discoverModels(widget.config);
       if (mounted) {
         setState(() {
           _discovered = models;
@@ -391,7 +391,6 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       await widget.appState.addModel({
         'model_id': m.modelId,
         'model_name': m.displayName,
-        'type': widget.config.type,
         'tag': _inferTag(m),
         'is_paid': 1,
         'supports_stream': 1,

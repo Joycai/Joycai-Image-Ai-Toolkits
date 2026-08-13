@@ -152,8 +152,10 @@ class LLMMessage {
 class LLMModelConfig {
   final int? id; // Database Primary Key
   final String modelId;
-  final String type; // Provider type: 'google-genai' or 'openai-api'
-  final String channelType; // 'google-genai-rest', 'openai-api-rest', 'official-google-genai-api'
+
+  /// The channel's stored vendor id (`llm_channels.type`) — resolved to a
+  /// [VendorProfile] by the dispatcher. See `vendors/vendors.dart`.
+  final String channelType;
   final String endpoint;
   final String apiKey;
   final double inputFee;
@@ -176,7 +178,6 @@ class LLMModelConfig {
   LLMModelConfig({
     this.id,
     required this.modelId,
-    required this.type,
     required this.channelType,
     required this.endpoint,
     required this.apiKey,

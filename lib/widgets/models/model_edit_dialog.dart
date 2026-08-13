@@ -4,7 +4,6 @@ import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_model.dart';
-import '../../services/llm/channel_dialect.dart';
 import '../../services/llm/context_budget.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
@@ -423,11 +422,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
 
   Future<void> _save() async {
-    final channel = widget.appState.allChannels.firstWhere((c) => c.id == channelId);
     final data = {
       'model_id': idCtrl.text.trim(),
       'model_name': nameCtrl.text.trim(),
-      'type': ChannelDialect.providerType(channel.type),
       'tag': tag,
       'is_paid': 1,
       'supports_stream': supportsStream ? 1 : 0,

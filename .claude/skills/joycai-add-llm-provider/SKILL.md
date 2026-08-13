@@ -1,277 +1,107 @@
 ---
 name: joycai-add-llm-provider
 description: >
-  Guides adding a new AI provider (backend API) to the Joycai Image AI Toolkits app.
-  Use whenever asked to "add a new model provider", "integrate a new AI API",
-  "add an LLM provider", "support a new backend", "connect to a new AI service",
-  or "add support for [ProviderName] models". This skill covers the full implementation
-  checklist: implementing the ILLMProvider interface (all 4 methods), HTTP client
-  lifecycle management, streaming vs non-streaming response parsing, token usage
-  metadata (required for cost tracking), two registration calls in main.dart, and
-  optional model discovery. Reference implementations: OpenAIAPIProvider and
-  GoogleGenAIProvider in lib/services/llm/providers/.
+  Guides adding a new AI supplier (vendor) or a new wire protocol to the
+  Joycai Image AI Toolkits app's three-layer LLM stack. Use whenever asked to
+  "add a new model provider", "integrate a new AI API", "add an LLM provider",
+  "support a new backend", "connect to a new AI service", or "add support for
+  [ProviderName] models". Covers: deciding whether the addition is a vendor
+  (layer 2) or a protocol (layer 1), VendorProfile fields, dispatcher routing,
+  channel-wizard presets, and model capabilities (layer 3).
 ---
 
-# Add a New LLM Provider
+# Add a New LLM Vendor or Protocol
 
-The app's AI layer is built around `LLMService` + `ILLMProvider`. Each provider
-is a self-contained class that handles one API's HTTP protocol, streaming format,
-and response parsing. The service layer handles retry, session management, and
-token accounting — providers only need to implement the raw communication.
+The LLM stack is three layers (required reading:
+`docs/architecture/llm-three-layer.md`):
 
-## Files to Touch
+1. **Protocol** (`lib/services/llm/protocols/`) — a wire format: endpoint
+   shape, payload, response/stream parsing. Families: `openai`, `gemini`,
+   `midjourney`.
+2. **Vendor** (`lib/services/llm/vendors/`) — a supplier of a protocol
+   family: auth scheme, surface overrides. `VendorProfile.id` is stored in
+   `llm_channels.type`.
+3. **Model** (`lib/services/llm/model_descriptor.dart` +
+   `model_family.dart` + `model_capabilities.dart`) — family classification
+   and capabilities. The ONLY place model-id string sniffing is allowed.
 
-| File | What to do |
-|------|-----------|
-| `lib/services/llm/providers/<name>_provider.dart` | Create new provider class |
-| `lib/main.dart` (lines 33–37) | Register provider with `LLMService` and `ModelDiscoveryService` |
-| `lib/services/llm/llm_config_resolver.dart` | Add channel type mapping if needed |
+All routing lives in `lib/services/llm/llm_dispatcher.dart`. `LLMService`
+(retry, sessions, token accounting) and `LLMConfigResolver` never change for
+a new vendor.
 
-**Reference implementations** (read before writing):
-- `lib/services/llm/providers/openai_api_provider.dart` — OpenAI-compatible REST + SSE streaming
-- `lib/services/llm/providers/google_genai_provider.dart` — Google Gemini REST + SSE + long-running ops
+## First: which layer is this?
 
-## Checklist
+- **The service speaks OpenAI chat/completions or the Gemini REST dialect**
+  (DeepSeek, MiniMax, Qwen, a new relay, …) → it's a **vendor**. No new
+  protocol code.
+- **The service has its own wire format** (like midjourney-proxy did) → it's
+  a **protocol** (plus a vendor profile that serves it).
 
-- [ ] 1. Create `lib/services/llm/providers/<name>_provider.dart`
-- [ ] 2. Implement `generate()` — synchronous request-response fallback
-- [ ] 3. Implement `generateStream()` — streaming, must yield `LLMResponseChunk` with token metadata
-- [ ] 4. Implement `startLongRunning()` if provider supports async jobs (video, image gen queues)
-- [ ] 5. Implement `checkOperation()` paired with `startLongRunning()`
-- [ ] 6. Close HTTP client in `finally` block in both `generate()` and `generateStream()`
-- [ ] 7. Register in `main.dart`: `LLMService().registerProvider('type-id', MyProvider())`
-- [ ] 8. Register discovery: `ModelDiscoveryService().registerProvider('type-id', MyProvider())` (if implementing `IModelDiscoveryProvider`)
-- [ ] 9. Run `flutter analyze` — must report **"No issues found!"**
+## Checklist A — new vendor (the common case)
 
-## Interface Contract
+- [ ] 1. `lib/services/llm/vendors/vendors.dart`: add a `static const String`
+      id and a `VendorProfile` entry. Pick `family` (openai/gemini) and
+      `auth` (`bearer`, `googleApiKey`, `googleApiKeyWithBearerFallback`).
+- [ ] 2. Vendor-specific surface? Set a declarative flag on `VendorProfile`
+      (see `usesXaiNativeSurfaces`) and add the protocol selection to the
+      dispatcher. Never branch on `vendor.id` inside a protocol.
+- [ ] 3. UI preset: `widgets/models/channel_wizard_dialog.dart` `_presets`
+      list (+ provider title l10n via the `joycai-l10n` skill) and, if it
+      should appear in first-run setup, `screens/wizard/setup_wizard.dart`'s
+      dropdown.
+- [ ] 4. Models with new parameters? Extend layer 3:
+      `model_capabilities.dart` (ParamSpec tables) and, if a new family is
+      needed, `model_family.dart` + the dispatcher routing.
+- [ ] 5. `flutter analyze` — must report **"No issues found!"**
+- [ ] 6. `flutter test` — the vendor auth tests live in
+      `test/google_auth_headers_test.dart`; add cases for a new auth scheme.
+
+## Checklist B — new protocol
+
+- [ ] 1. Create `lib/services/llm/protocols/<name>_protocol.dart`
+      implementing the relevant interfaces from `protocols/protocol.dart`:
+      `ChatProtocol` (sync + stream), `ImageGenProtocol` (single-shot),
+      `VideoJobProtocol` (submit + poll, translate poll results into the
+      Veo-shaped `{done, response: {generateVideoResponse: ...}}` envelope),
+      `DiscoveryProtocol`.
+- [ ] 2. Protocols receive an `LLMTarget` — use `target.headers()` /
+      `target.decorateUrl()` for auth, `target.model.capabilities` for
+      limits, `target.config.createClient()` for proxy-aware HTTP (close it
+      in `finally`). No vendor-id branches, no modelId sniffing.
+- [ ] 3. Add a `ProtocolFamily` value and extend every switch in
+      `llm_dispatcher.dart` (generate / generateStream / startLongRunning /
+      checkOperation / discoverModels).
+- [ ] 4. Add the vendor profile(s) serving the protocol (Checklist A).
+- [ ] 5. Token usage: yield/return `metadata` carrying the upstream usage
+      payload — `LLMService._recordUsage` understands OpenAI
+      (`prompt_tokens`/`completion_tokens`) and Google
+      (`promptTokenCount`/`candidatesTokenCount`) keys.
+- [ ] 6. `flutter analyze` + `flutter test`.
+
+## Key types
 
 ```dart
-// lib/services/llm/llm_provider_interface.dart
-abstract class ILLMProvider {
-  Future<LLMResponse> generate(
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  });
-
-  Stream<LLMResponseChunk> generateStream(
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  });
-
-  Future<String> startLongRunning(   // return operation ID / name
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  });
-
-  Future<Map<String, dynamic>> checkOperation(   // return status map
-    LLMModelConfig config,
-    String operationName, {
-    Function(String, {String level})? logger,
-  });
+// protocols/protocol.dart
+class LLMTarget {
+  final LLMModelConfig config;   // endpoint, apiKey, fees, proxy, channelType
+  final VendorProfile vendor;    // layer 2 — auth + family
+  final ModelDescriptor model;   // layer 3 — family + capabilities
+  Map<String, String> headers();
+  Uri decorateUrl(Uri url);
 }
+
+// llm_types.dart (unchanged by vendor work)
+LLMMessage(role: LLMRole.system | .user | .assistant | .tool, content: '...', attachments: [...])
+LLMResponse(text: '...', generatedImages: [], metadata: {...}, toolCalls: [...])
+LLMResponseChunk(textPart: ..., imagePart: ..., metadata: ..., isDone: ...)
 ```
 
-## Key Types
+## Reference implementations
 
-```dart
-// LLMModelConfig — what the provider receives
-config.modelId      // String — e.g. "gpt-4o"
-config.endpoint     // String — base URL (never hardcode this)
-config.apiKey       // String — auth key
-config.extraParams  // Map<String,dynamic> — model-specific options
-config.createClient() // returns http.Client (proxy-aware)
-
-// LLMMessage — a conversation turn
-LLMMessage(role: LLMRole.system | .user | .assistant, content: '...', attachments: [...])
-LLMAttachment.fromFile(File(path), mimeType)   // for images/files
-LLMAttachment.fromBytes(bytes, mimeType)
-
-// LLMResponse — synchronous response
-LLMResponse(text: '...', generatedImages: [], metadata: {'usage': ...})
-
-// LLMResponseChunk — one streaming chunk
-LLMResponseChunk(textPart: '...', imagePart: bytes, metadata: {'usage': ...})
-```
-
-## Implementation Template
-
-```dart
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:http/http.dart' as http;
-import '../llm_provider_interface.dart';
-import '../llm_types.dart';
-import '../model_discovery_service.dart'; // only if implementing IModelDiscoveryProvider
-
-class MyNewProvider implements ILLMProvider, IModelDiscoveryProvider {
-
-  // ─── Model discovery (optional but recommended) ───────────────────────────
-
-  @override
-  Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
-    final url = Uri.parse('${config.endpoint}/models');
-    final response = await http.get(url, headers: _headers(config.apiKey));
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch models: ${response.statusCode}');
-    }
-    final data = jsonDecode(response.body);
-    return (data['data'] as List).map((m) => DiscoveredModel(
-      modelId: m['id'] as String,
-      displayName: m['id'] as String,
-      description: '',
-      rawData: m as Map<String, dynamic>,
-    )).toList();
-  }
-
-  // ─── Synchronous request (used when model.supportsStream == false) ────────
-
-  @override
-  Future<LLMResponse> generate(
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  }) async {
-    final url = Uri.parse('${config.endpoint}/chat/completions');
-    final client = config.createClient(); // proxy-aware
-    try {
-      final response = await client.post(url,
-        headers: _headers(config.apiKey),
-        body: jsonEncode(_buildPayload(config.modelId, history, options, stream: false)),
-      );
-      if (response.statusCode != 200) {
-        throw Exception('API error: ${response.statusCode} — ${response.body}');
-      }
-      final data = jsonDecode(response.body);
-      return LLMResponse(
-        text: data['choices']?[0]?['message']?['content'] ?? '',
-        metadata: data['usage'] ?? {},  // token counts for cost tracking
-      );
-    } finally {
-      client.close(); // ALWAYS close — prevents resource leaks
-    }
-  }
-
-  // ─── Streaming request (preferred path) ──────────────────────────────────
-
-  @override
-  Stream<LLMResponseChunk> generateStream(
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  }) async* {
-    final url = Uri.parse('${config.endpoint}/chat/completions');
-    final request = http.Request('POST', url)
-      ..headers.addAll(_headers(config.apiKey))
-      ..body = jsonEncode(_buildPayload(config.modelId, history, options, stream: true));
-
-    final client = config.createClient();
-    try {
-      final response = await client.send(request);
-      if (response.statusCode != 200) {
-        client.close();
-        throw Exception('Stream error: ${response.statusCode}');
-      }
-
-      await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
-        if (line.isEmpty || line == 'data: [DONE]') continue;
-        final dataLine = line.startsWith('data: ') ? line.substring(6) : line;
-
-        try {
-          final chunk = jsonDecode(dataLine);
-          // Emit token usage metadata (required for cost tracking)
-          if (chunk['usage'] != null) {
-            yield LLMResponseChunk(metadata: chunk['usage']);
-          }
-          final delta = chunk['choices']?[0]?['delta']?['content'] as String?;
-          if (delta != null && delta.isNotEmpty) {
-            yield LLMResponseChunk(textPart: delta);
-          }
-        } catch (_) {
-          // skip malformed lines
-        }
-      }
-    } finally {
-      client.close(); // ALWAYS close, even after stream ends
-    }
-  }
-
-  // ─── Long-running operations (skip if not needed) ────────────────────────
-
-  @override
-  Future<String> startLongRunning(LLMModelConfig config, List<LLMMessage> history, {
-    Map<String, dynamic>? options, Function(String, {String level})? logger,
-  }) async {
-    throw UnimplementedError('MyNewProvider does not support long-running operations.');
-  }
-
-  @override
-  Future<Map<String, dynamic>> checkOperation(LLMModelConfig config, String operationName, {
-    Function(String, {String level})? logger,
-  }) async {
-    throw UnimplementedError('MyNewProvider does not support long-running operations.');
-  }
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-
-  Map<String, String> _headers(String apiKey) => {
-    'Authorization': 'Bearer $apiKey',
-    'Content-Type': 'application/json',
-  };
-
-  Map<String, dynamic> _buildPayload(
-    String modelId,
-    List<LLMMessage> history,
-    Map<String, dynamic>? options, {
-    required bool stream,
-  }) {
-    return {
-      'model': modelId,
-      'stream': stream,
-      'messages': history.map((m) => {
-        'role': m.role.name,
-        'content': m.content,
-      }).toList(),
-      ...?options,
-    };
-  }
-}
-```
-
-## Registration in `main.dart`
-
-```dart
-// lib/main.dart, after existing registerProvider calls:
-LLMService().registerProvider('my-provider-type', MyNewProvider());
-ModelDiscoveryService().registerProvider('my-provider-type', MyNewProvider());
-```
-
-The type string (e.g., `'my-provider-type'`) must match the `type` field stored
-on `LLMChannel` records in the database for models to route correctly.
-
-## Common Pitfalls
-
-**Hardcoded endpoint URLs** — Always use `config.endpoint`. Users configure custom
-endpoints (proxies, mirrors). Hardcoding breaks any non-default deployment.
-
-**Not closing the HTTP client** — `config.createClient()` allocates a connection.
-Without `client.close()` in a `finally` block, each request leaks a socket.
-This applies to both `generate()` and `generateStream()`.
-
-**Implementing only `generateStream()`** — `LLMService` calls `generate()` when
-`model.supportsStream == false`. If unimplemented, those models will error.
-
-**Missing token metadata in streaming** — The `metadata` field of `LLMResponseChunk`
-carries token counts. The service layer uses this to record usage and estimate cost.
-Without it, usage tracking silently reports zero tokens.
-
-**Forgetting the second `registerProvider` call** — `LLMService` needs the provider
-to route AI calls; `ModelDiscoveryService` needs it to populate the model list in
-the Models screen. Both registrations are required if model discovery is supported.
+- `protocols/openai_chat_protocol.dart` — JSON + SSE streaming, tools,
+  relay image extraction.
+- `protocols/gemini_veo_protocol.dart` — async job (submit + poll).
+- `protocols/midjourney_protocol.dart` — fully custom wire format hidden
+  behind the ChatProtocol shape (submit-poll loop inside generate()).
+- `vendors/vendors.dart` — the seven existing profiles, including xAI's
+  surface-override pattern.

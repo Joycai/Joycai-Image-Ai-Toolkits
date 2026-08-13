@@ -12,6 +12,36 @@ void main() {
   sqfliteFfiInit();
   final factory = databaseFactoryFfi;
 
+  /// The `llm_models` table as it stood before v32, i.e. still carrying the
+  /// redundant `type` column. Every fixture that calls `migrate` from below 32
+  /// needs it, because the v32 step rebuilds this table.
+  Future<void> createPreV32LlmModelsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE llm_models (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        model_id TEXT NOT NULL,
+        model_name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        tag TEXT NOT NULL,
+        is_paid INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        input_fee REAL DEFAULT 0.0,
+        output_fee REAL DEFAULT 0.0,
+        billing_mode TEXT DEFAULT 'token',
+        request_fee REAL DEFAULT 0.0,
+        channel_id INTEGER,
+        fee_group_id INTEGER,
+        force_view_all_images INTEGER DEFAULT 0,
+        context_window INTEGER,
+        supports_stream INTEGER DEFAULT 1,
+        supports_standard INTEGER DEFAULT 1,
+        est_mean_ms REAL DEFAULT 0.0,
+        est_sd_ms REAL DEFAULT 0.0,
+        tasks_since_update INTEGER DEFAULT 0
+      )
+    ''');
+  }
+
   /// The `tasks` table as it stood before v31, i.e. without its logs column.
   ///
   /// Every fixture here needs it: `migrate` keys each step off `oldVersion`
@@ -34,6 +64,7 @@ void main() {
   Future<Database> openV29Db() async {
     final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 29));
     await createPreV31TasksTable(db);
+    await createPreV32LlmModelsTable(db);
     await db.execute('''
       CREATE TABLE fee_groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -140,6 +171,7 @@ void main() {
   Future<Database> openV30TasksDb() async {
     final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 30));
     await createPreV31TasksTable(db);
+    await createPreV32LlmModelsTable(db);
     return db;
   }
 
@@ -170,6 +202,49 @@ void main() {
     expect(row['logs'], isNull);
     // The row is still readable — a null log must not sink the queue reload.
     expect(TaskItem.fromMap(row).logs, isEmpty);
+  });
+
+  test('v32 drops llm_models.type and keeps every row intact', () async {
+    final db = await factory.openDatabase(inMemoryDatabasePath, options: OpenDatabaseOptions(version: 31));
+    addTearDown(db.close);
+    await createPreV32LlmModelsTable(db);
+    await db.insert('llm_models', {
+      'model_id': 'gemini-3-pro-image',
+      'model_name': 'Nano Banana Pro',
+      'type': 'google-genai', // the stale copy being dropped
+      'tag': 'image',
+      'is_paid': 1,
+      'sort_order': 3,
+      'channel_id': 7,
+      'fee_group_id': 2,
+      'force_view_all_images': 1,
+      'context_window': 1048576,
+      'supports_stream': 0,
+      'supports_standard': 1,
+      'est_mean_ms': 1234.5,
+      'tasks_since_update': 4,
+    });
+
+    await DatabaseMigration.migrate(db, 31, 32);
+
+    final columns = await columnsOf(db, 'llm_models');
+    expect(columns, isNot(contains('type')));
+    expect(columns, containsAll(['model_id', 'tag', 'channel_id', 'fee_group_id', 'context_window', 'supports_stream']));
+
+    final row = (await db.query('llm_models')).single;
+    expect(row['model_id'], 'gemini-3-pro-image');
+    expect(row['model_name'], 'Nano Banana Pro');
+    expect(row['tag'], 'image');
+    expect(row['is_paid'], 1);
+    expect(row['sort_order'], 3);
+    expect(row['channel_id'], 7);
+    expect(row['fee_group_id'], 2);
+    expect(row['force_view_all_images'], 1);
+    expect(row['context_window'], 1048576);
+    expect(row['supports_stream'], 0);
+    expect(row['supports_standard'], 1);
+    expect(row['est_mean_ms'], 1234.5);
+    expect(row['tasks_since_update'], 4);
   });
 
   test('a task written after the upgrade reloads with its log', () async {

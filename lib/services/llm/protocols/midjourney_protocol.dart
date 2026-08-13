@@ -7,31 +7,31 @@ import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
-import '../llm_provider_interface.dart';
 import '../llm_types.dart';
-import '../model_discovery_service.dart';
+import 'protocol.dart';
 
-/// Midjourney transport speaking the open-source `midjourney-proxy` REST
-/// surface (also exposed by NewAPI under `/mj/*`).
+/// The open-source `midjourney-proxy` REST wire format (also exposed by
+/// NewAPI under `/mj/*`) — an independent layer-1 protocol, not a variant of
+/// the OpenAI or Gemini standards.
 ///
 /// MJ is an asynchronous task model — submit → poll → download — that doesn't
-/// fit the synchronous chat-completions shape used by Google / OpenAI. We
-/// adapt by hiding the submit-poll loop inside [generate] / [generateStream]:
-/// each progress poll surfaces as a text chunk (keeping the 120s per-chunk
-/// timeout in [LLMService] reset), and the final image bytes are yielded as
-/// `imagePart` — exactly what the existing image-process task executor
-/// expects.
+/// fit the synchronous chat-completions shape. The submit-poll loop is hidden
+/// inside [generate] / [generateStream]: each progress poll surfaces as a text
+/// chunk (keeping the 120s per-chunk timeout in `LLMService` reset), and the
+/// final image bytes are yielded as `imagePart` — exactly what the existing
+/// image-process task executor expects.
 ///
 /// MJ-specific parameters (aspect ratio, version, stylize, chaos, quality)
 /// are passed in `options` as structured values and rewritten into the
 /// prompt's `--ar`, `--v`, `--s`, `--c`, `--q` flags before submission. This
-/// keeps the workbench parameter UI consistent with the other providers — the
+/// keeps the workbench parameter UI consistent with the other protocols — the
 /// user picks a value in a dropdown rather than typing flags by hand.
-class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
-  /// Built-in catalog returned by [fetchModels]. The proxy itself doesn't
-  /// expose a `/models` endpoint, so we present the common MJ variants users
-  /// expect to see; they remain free to add custom ids manually.
-  static const List<Map<String, String>> _builtinModels = [
+class MidjourneyProtocol implements ChatProtocol {
+  /// Built-in catalog returned by [MidjourneyDiscoveryProtocol]. The proxy
+  /// itself doesn't expose a `/models` endpoint, so we present the common MJ
+  /// variants users expect to see; they remain free to add custom ids
+  /// manually.
+  static const List<Map<String, String>> builtinModels = [
     {'id': 'midjourney', 'name': 'Midjourney', 'desc': 'Standard Midjourney model'},
     {'id': 'mj_fast', 'name': 'Midjourney (Fast)', 'desc': 'Fast mode — quicker, higher cost'},
     {'id': 'mj_relax', 'name': 'Midjourney (Relax)', 'desc': 'Relax mode — slower, lower cost'},
@@ -49,26 +49,14 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
   static const Duration _maxWait = Duration(minutes: 10);
 
   @override
-  Future<List<DiscoveredModel>> fetchModels(LLMModelConfig config) async {
-    return _builtinModels
-        .map((m) => DiscoveredModel(
-              modelId: m['id']!,
-              displayName: m['name']!,
-              description: m['desc']!,
-              rawData: m,
-            ))
-        .toList();
-  }
-
-  @override
   Future<LLMResponse> generate(
-    LLMModelConfig config,
+    LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
     List<LLMTool>? tools, // Tool calling is not supported by Midjourney — ignored.
-    Function(String, {String level})? logger,
+    LLMLogger? logger,
   }) async {
-    final result = await _runImagine(config, history, options: options, logger: logger);
+    final result = await _runImagine(target, history, options: options, logger: logger);
     return LLMResponse(
       text: '',
       generatedImages: result.images,
@@ -78,17 +66,17 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
 
   @override
   Stream<LLMResponseChunk> generateStream(
-    LLMModelConfig config,
+    LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
+    LLMLogger? logger,
   }) async* {
     final controller = StreamController<LLMResponseChunk>();
 
     () async {
       try {
         final result = await _runImagine(
-          config,
+          target,
           history,
           options: options,
           logger: logger,
@@ -116,28 +104,15 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
     yield* controller.stream;
   }
 
-  @override
-  Future<String> startLongRunning(
-    LLMModelConfig config,
-    List<LLMMessage> history, {
-    Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
-  }) async {
-    throw UnsupportedError(
-      'Midjourney generation runs inside generate()/generateStream(); '
-      'long-running operations are not used by this provider.',
-    );
-  }
-
-  @override
-  Future<Map<String, dynamic>> checkOperation(
-    LLMModelConfig config,
-    String operationName, {
-    Function(String, {String level})? logger,
-  }) async {
-    final client = config.createClient();
+  /// Fetch the raw `/mj/task/{id}/fetch` status for [taskId]. Exposed for the
+  /// dispatcher's `checkOperation` surface.
+  Future<Map<String, dynamic>> fetchTaskStatus(
+    LLMTarget target,
+    String taskId,
+  ) async {
+    final client = target.config.createClient();
     try {
-      return await _fetchTask(client, config, operationName);
+      return await _fetchTask(client, target, taskId);
     } finally {
       client.close();
     }
@@ -148,12 +123,13 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
   // ---------------------------------------------------------------------------
 
   Future<_MjResult> _runImagine(
-    LLMModelConfig config,
+    LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
-    Function(String, {String level})? logger,
+    LLMLogger? logger,
     void Function(String message)? onProgress,
   }) async {
+    final config = target.config;
     final userMsg = history.lastWhere(
       (m) => m.role == LLMRole.user,
       orElse: () => history.last,
@@ -162,9 +138,9 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
     final base64Images = await _encodeAttachments(userMsg.attachments);
     final isBlend = base64Images.length >= 2;
 
-    final baseUrl = _normalizeBase(config.endpoint);
+    final baseUrl = trimBaseUrl(config.endpoint);
     final mode = _readMode(options);
-    final botType = _readBotType(config.modelId);
+    final botType = target.model.isNijiVariant ? 'NIJI_JOURNEY' : 'MID_JOURNEY';
 
     final client = config.createClient();
     final appState = AppState();
@@ -197,7 +173,7 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
 
       final submitResp = await client.post(
         endpoint,
-        headers: _headers(config.apiKey),
+        headers: target.headers(),
         body: jsonEncode(body),
       );
 
@@ -234,7 +210,7 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
         }
         await Future.delayed(_pollInterval);
 
-        final task = await _fetchTask(client, config, taskId);
+        final task = await _fetchTask(client, target, taskId);
         final status = task['status']?.toString() ?? '';
         final progress = _parseProgress(task['progress']);
         if (status != lastStatus || progress != lastProgress) {
@@ -272,12 +248,12 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
 
   Future<Map<String, dynamic>> _fetchTask(
     http.Client client,
-    LLMModelConfig config,
+    LLMTarget target,
     String taskId,
   ) async {
-    final baseUrl = _normalizeBase(config.endpoint);
+    final baseUrl = trimBaseUrl(target.config.endpoint);
     final url = Uri.parse('$baseUrl/mj/task/$taskId/fetch');
-    final resp = await client.get(url, headers: _headers(config.apiKey));
+    final resp = await client.get(url, headers: target.headers());
     if (resp.statusCode != 200) {
       throw Exception('Midjourney fetch failed: ${resp.statusCode} - ${resp.body}');
     }
@@ -323,12 +299,7 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
   Future<List<String>> _encodeAttachments(List<LLMAttachment> attachments) async {
     final out = <String>[];
     for (final att in attachments) {
-      Uint8List? bytes;
-      if (att.path != null) {
-        bytes = await File(att.path!).readAsBytes();
-      } else if (att.bytes != null) {
-        bytes = att.bytes;
-      }
+      final bytes = await readAttachmentBytes(att);
       if (bytes != null) {
         out.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
       }
@@ -345,28 +316,11 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
     return 'FAST';
   }
 
-  String _readBotType(String modelId) {
-    return modelId.toLowerCase().contains('niji') ? 'NIJI_JOURNEY' : 'MID_JOURNEY';
-  }
-
   int _parseProgress(dynamic raw) {
     if (raw == null) return -1;
     final s = raw.toString().replaceAll('%', '').trim();
     return int.tryParse(s) ?? -1;
   }
-
-  String _normalizeBase(String endpoint) {
-    var base = endpoint.trim();
-    while (base.endsWith('/')) {
-      base = base.substring(0, base.length - 1);
-    }
-    return base;
-  }
-
-  Map<String, String> _headers(String apiKey) => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
-      };
 
   /// Copy of [body] with `base64Array` truncated for debug logs (the raw
   /// payload can be megabytes when reference images are attached).
@@ -377,6 +331,22 @@ class MidjourneyProxyProvider implements ILLMProvider, IModelDiscoveryProvider {
       copy['base64Array'] = arr.map((_) => '[base64 image omitted]').toList();
     }
     return copy;
+  }
+}
+
+/// Midjourney "discovery" — the proxy exposes no `/models` endpoint, so a
+/// built-in catalog of the common MJ variants is returned instead.
+class MidjourneyDiscoveryProtocol implements DiscoveryProtocol {
+  @override
+  Future<List<DiscoveredModel>> fetchModels(LLMTarget target) async {
+    return MidjourneyProtocol.builtinModels
+        .map((m) => DiscoveredModel(
+              modelId: m['id']!,
+              displayName: m['name']!,
+              description: m['desc']!,
+              rawData: m,
+            ))
+        .toList();
   }
 }
 

@@ -23,7 +23,10 @@ lib/
   main.dart             # app entry, MultiProvider root, NavigationRail (desktop) / NavigationBar+Drawer (mobile)
   state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState
   services/             # all business logic
-    llm/                # LLMService facade + GoogleGenAIProvider + OpenAIAPIProvider; model discovery
+    llm/                # LLMService facade + LLMDispatcher; three-layer API stack (see architecture note)
+      protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, midjourney
+      vendors/          # layer 2 — VendorProfile registry (auth, surface overrides); ids stored in llm_channels.type
+      model_descriptor.dart  # layer 3 — ModelDescriptor (family + capabilities); sole place model-id sniffing is allowed
     repositories/       # SQLite DAOs: model, prompt, task, usage, assistant session
     database_service.dart         # SQLite via sqflite/sqflite_common_ffi
     database_migrations.dart      # schema migrations
@@ -41,7 +44,7 @@ lib/
 ```
 
 **Task types:** `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`  
-**LLM providers (registered in `main.dart`):** `google-genai` · `openai-api`  
+**LLM protocol families:** `openai` · `gemini` · `midjourney` — routing lives in `lib/services/llm/llm_dispatcher.dart`  
 **Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `shelf`, `shelf_router`, `photo_view`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `local_notifier`, `gal`
 
 ## Architecture Notes
@@ -49,6 +52,7 @@ lib/
 Read the relevant note before changing that subsystem — each records invariants
 that fail silently when broken, and alternatives already tried and rejected.
 
+- **[LLM three-layer API stack](docs/architecture/llm-three-layer.md)** — protocol / vendor / model layering, the dispatcher routing table, and the layering rules (no model-id sniffing outside `ModelDescriptor`, no vendor branches inside protocols). Required reading before touching anything under `lib/services/llm/`.
 - **[Prompt Assistant context management](docs/architecture/assistant-context.md)** — elide/compact layers, the `context_window` tri-state, knowledge-read budgeting and paging. Required reading before touching `prompt_optimizer_agent.dart`, `context_budget.dart`, or `knowledge_base_service.dart`.
 - **[Design tokens & multi-theme rule](docs/architecture/design-tokens.md)** — how the design spec's single teal maps onto 7 seed colours: the `onAccentTint` brightness branch, the alpha ladder (and its dark-mode ceiling), which colours must *not* follow the seed, and the deliberate divergences from the spec. Required reading before touching `design_tokens.dart`, `app_semantic_colors.dart`, `app_theme.dart`, or any accent/status colour in `widgets/`.
 
@@ -75,7 +79,7 @@ Supports `en`, `zh`, `zh_Hant`, `ja`. **All four languages must be updated toget
 
 **New task type:** add value to `TaskType` enum in `task_queue_service.dart` → implement `_executeXxxTask()` → wire into `addTask()`.
 
-**New LLM provider:** implement `ILLMProvider` (`lib/services/llm/llm_provider_interface.dart`) → register in `main.dart` via `LLMService().registerProvider('type-id', MyProvider())`.
+**New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in `lib/services/llm/vendors/vendors.dart` → add a wizard preset in `widgets/models/channel_wizard_dialog.dart`. **New wire protocol:** implement the interfaces in `lib/services/llm/protocols/protocol.dart` → add a `ProtocolFamily` value → extend the switches in `lib/services/llm/llm_dispatcher.dart`. See [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
 
 ## Troubleshooting
 

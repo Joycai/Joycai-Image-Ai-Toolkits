@@ -6,7 +6,7 @@ void main() {
     test('Initialization should set correct values', () {
             final config = LLMModelConfig(
               id: 1,
-              modelId: 'test-model',        type: 'openai-api',
+              modelId: 'test-model',
         channelType: 'openai',
         endpoint: 'https://api.openai.com/v1',
         apiKey: 'sk-123',
@@ -20,7 +20,7 @@ void main() {
 
       expect(config.id, 1);
       expect(config.modelId, 'test-model');
-      expect(config.type, 'openai-api');
+      expect(config.channelType, 'openai');
       expect(config.endpoint, 'https://api.openai.com/v1');
       expect(config.apiKey, 'sk-123');
       expect(config.inputFee, 0.01);
