@@ -56,6 +56,53 @@ When the provider reports `usage`, `ContextBudget.calibrate` divides the chars
 actually sent by the tokens actually billed and the session switches to that
 measured ratio. When it doesn't, the conservative default stands.
 
+## The usage readout
+
+The 上下文占用 card in the assistant's right panel shows the same accounting the
+budget runs on, so the user can see a turn approaching compaction instead of
+discovering it afterwards. `PromptOptimizerAgent.measureContext` builds it;
+`ContextUsageSnapshot` (`services/assistant_context_usage.dart`) carries it; the
+card is presentational and does no arithmetic beyond formatting.
+
+Three things about it are load-bearing:
+
+1. **It measures `_trimForSend(history)`, not `history`.** Layer 1 is what the
+   provider actually receives. A readout over the raw history keeps charging for
+   every elided knowledge read the session ever did and never comes back down —
+   the number would only ever grow, which is precisely the question the card is
+   there to answer.
+2. **Tool schemas are counted for display and *not* for the budget.**
+   `occupiedChars` excludes them, and it is both the compaction basis and
+   `calibrate`'s divisor — widening it would move the trigger for every existing
+   session and re-scale every calibrated ratio. So `toolSchemaChars` is measured
+   separately. The consequence is deliberate: the card's total is slightly
+   larger than the number `shouldCompact` compares, and that direction is the
+   safe one (the user sees the fuller figure). The bias partly cancels itself —
+   `calibrate` divides a tools-free char count by a tokens count that includes
+   them, so the observed ratio comes out low and the budget conservative.
+3. **The system prompt and the tool schemas are *recorded*, not derived.**
+   Neither is reconstructible from the session: the prompt is assembled per turn
+   from a mode, a preset and (in knowledge mode) a file read off disk, and the
+   tool list shrinks mid-turn when `read_knowledge_file` is withdrawn.
+   `recordRequestBasis` writes both immediately before each request, which is
+   why the readout tracks a turn as it runs rather than only at the end of it.
+   Until the first request they are **absent from `slices`, not zero** — a
+   session restored from the database knows its history exactly and knows
+   nothing about the next system prompt, and the card draws that as '—'.
+
+The window itself is the same tri-state, decoded by `ContextBudget.modeOf` and
+converted with the session's calibrated ratio when it has one:
+
+| Stored | Bar drawn against | Card says |
+|---|---|---|
+| `> 0` | `tokens × charsPerToken` | the fraction, plainly |
+| `null` | `defaultWindowTokens × charsPerToken` | "no window set — this is the default assumption" |
+| `<= 0` | nothing | the spend, and `Unlimited` in place of a denominator |
+
+The unset row is not a cop-out: that assumption is what actually budgets the
+turn, so drawing it shows what the app does. What the caption prevents is
+presenting it as a measurement of *this* model.
+
 ## Invariants
 
 Each of these is load-bearing, and breaking any of them fails *silently* —
@@ -153,6 +200,8 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 |---|---|
 | `test/context_budget_test.dart` | tri-state, ratio math, reserve scaling, `budgetChars < window` for every preset |
 | `test/optimizer_context_budget_test.dart` | `shouldCompact`, `occupiedChars`, per-call cap, exhaustion |
+| `test/optimizer_context_usage_test.dart` | the readout: role split, trimmed-not-raw history, window tri-state, unmeasured slices |
+| `test/optimizer_context_card_test.dart` | the card's four states (unmeasured / configured / assumed / unlimited) at both panel widths |
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |

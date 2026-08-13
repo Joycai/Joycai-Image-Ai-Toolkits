@@ -2593,6 +2593,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optKbCitedNone => 'Nothing cited yet';
 
   @override
+  String get optCtxTitle => 'Context usage';
+
+  @override
+  String get optCtxSystemPrompt => 'System prompt';
+
+  @override
+  String get optCtxTools => 'Tool definitions';
+
+  @override
+  String get optCtxHistory => 'Conversation';
+
+  @override
+  String get optCtxRemaining => 'Remaining';
+
+  @override
+  String get optCtxWindowUnknown => 'Window not set';
+
+  @override
+  String get optCtxWindowUnlimited => 'Unlimited';
+
+  @override
+  String get optCtxWindowAssumed =>
+      'This model has no context window set — measured against the default assumption.';
+
+  @override
   String optAttachedImages(int count) {
     return '$count reference images sent with the message';
   }

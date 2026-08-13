@@ -2521,6 +2521,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optKbCitedNone => '尚无引用';
 
   @override
+  String get optCtxTitle => '上下文占用';
+
+  @override
+  String get optCtxSystemPrompt => '系统提示词';
+
+  @override
+  String get optCtxTools => '工具定义';
+
+  @override
+  String get optCtxHistory => '会话历史';
+
+  @override
+  String get optCtxRemaining => '剩余窗口';
+
+  @override
+  String get optCtxWindowUnknown => '窗口未设置';
+
+  @override
+  String get optCtxWindowUnlimited => '不限';
+
+  @override
+  String get optCtxWindowAssumed => '该模型未设置上下文窗口，此处按默认值估算。';
+
+  @override
   String optAttachedImages(int count) {
     return '$count 张参考图随消息发送';
   }
@@ -5052,6 +5076,30 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbCitedNone => '尚無引用';
+
+  @override
+  String get optCtxTitle => '上下文佔用';
+
+  @override
+  String get optCtxSystemPrompt => '系統提示詞';
+
+  @override
+  String get optCtxTools => '工具定義';
+
+  @override
+  String get optCtxHistory => '對話歷史';
+
+  @override
+  String get optCtxRemaining => '剩餘視窗';
+
+  @override
+  String get optCtxWindowUnknown => '視窗未設定';
+
+  @override
+  String get optCtxWindowUnlimited => '不限';
+
+  @override
+  String get optCtxWindowAssumed => '此模型未設定上下文視窗，這裡以預設值估算。';
 
   @override
   String optAttachedImages(int count) {

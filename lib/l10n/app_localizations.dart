@@ -4738,6 +4738,54 @@ abstract class AppLocalizations {
   /// **'Nothing cited yet'**
   String get optKbCitedNone;
 
+  /// No description provided for @optCtxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Context usage'**
+  String get optCtxTitle;
+
+  /// No description provided for @optCtxSystemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'System prompt'**
+  String get optCtxSystemPrompt;
+
+  /// No description provided for @optCtxTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool definitions'**
+  String get optCtxTools;
+
+  /// No description provided for @optCtxHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get optCtxHistory;
+
+  /// No description provided for @optCtxRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get optCtxRemaining;
+
+  /// No description provided for @optCtxWindowUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Window not set'**
+  String get optCtxWindowUnknown;
+
+  /// No description provided for @optCtxWindowUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get optCtxWindowUnlimited;
+
+  /// No description provided for @optCtxWindowAssumed.
+  ///
+  /// In en, this message translates to:
+  /// **'This model has no context window set — measured against the default assumption.'**
+  String get optCtxWindowAssumed;
+
   /// No description provided for @optAttachedImages.
   ///
   /// In en, this message translates to:

@@ -17,6 +17,7 @@ import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
+import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../../services/knowledge_base_service.dart';
@@ -826,29 +827,50 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           case 1:
             return MetadataInspector(scrollController: scrollController);
           case 4:
-            return OptimizerConfigPanel(
-              scrollController: scrollController,
-              selectedModelDbId: workbenchUIState.optSelectedModelDbId,
-              selectedTagId: workbenchUIState.optSelectedTagId,
-              selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
-              useCustomSysPrompt: workbenchUIState.optUseCustomSysPrompt,
-              mode: workbenchUIState.assistantMode,
-              kbStatus: _kbStatus,
-              kbPath: _kbPath,
-              onModeChanged: _handleAssistantModeChange,
-              onScaffoldKb: _handleScaffoldKb,
-              tags: _optTags,
-              filteredSysPrompts: _optFilteredSysPrompts,
-              citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
-                workbenchUIState.optimizerSession,
+            // Listens to the session, not just to WorkbenchUIState: the two
+            // live readings in this panel — the cited files and the context
+            // usage — change while a turn runs, and nothing else in this build
+            // is watching that.
+            return ListenableBuilder(
+              listenable: workbenchUIState.optimizerSession,
+              builder: (context, _) => OptimizerConfigPanel(
+                scrollController: scrollController,
+                selectedModelDbId: workbenchUIState.optSelectedModelDbId,
+                selectedTagId: workbenchUIState.optSelectedTagId,
+                selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
+                useCustomSysPrompt: workbenchUIState.optUseCustomSysPrompt,
+                mode: workbenchUIState.assistantMode,
+                kbStatus: _kbStatus,
+                kbPath: _kbPath,
+                onModeChanged: _handleAssistantModeChange,
+                onScaffoldKb: _handleScaffoldKb,
+                tags: _optTags,
+                filteredSysPrompts: _optFilteredSysPrompts,
+                citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
+                  workbenchUIState.optimizerSession,
+                ),
+                contextUsage: PromptOptimizerAgent.measureContext(
+                  workbenchUIState.optimizerSession,
+                  // Read from the picker rather than from the last turn: pick a
+                  // different model and the same conversation is measured against
+                  // the new window immediately, which is the question the user is
+                  // asking when they switch.
+                  contextWindowTokens: appState.allModels
+                      .cast<LLMModel?>()
+                      .firstWhere(
+                        (m) => m?.id == workbenchUIState.optSelectedModelDbId,
+                        orElse: () => null,
+                      )
+                      ?.contextWindow,
+                ),
+                onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
+                onTagChanged: (v) {
+                  workbenchUIState.setOptimizerTag(v);
+                  setState(() => _applyOptimizerFilter(workbenchUIState));
+                },
+                onSysPromptChanged: (v) => workbenchUIState.setOptimizerSysPrompt(v),
+                onUseCustomChanged: (v) => workbenchUIState.setOptimizerSysPromptMode(v),
               ),
-              onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
-              onTagChanged: (v) {
-                workbenchUIState.setOptimizerTag(v);
-                setState(() => _applyOptimizerFilter(workbenchUIState));
-              },
-              onSysPromptChanged: (v) => workbenchUIState.setOptimizerSysPrompt(v),
-              onUseCustomChanged: (v) => workbenchUIState.setOptimizerSysPromptMode(v),
             );
           case 5:
             return VideoConfigPanel(scrollController: scrollController);

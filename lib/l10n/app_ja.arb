@@ -1304,6 +1304,14 @@
     }
   },
   "optKbCitedNone": "参照はまだありません",
+  "optCtxTitle": "コンテキスト使用量",
+  "optCtxSystemPrompt": "システムプロンプト",
+  "optCtxTools": "ツール定義",
+  "optCtxHistory": "会話履歴",
+  "optCtxRemaining": "残りウィンドウ",
+  "optCtxWindowUnknown": "ウィンドウ未設定",
+  "optCtxWindowUnlimited": "無制限",
+  "optCtxWindowAssumed": "このモデルはコンテキストウィンドウが未設定です。既定値で概算しています。",
   "optAttachedImages": "参照画像 {count} 枚をメッセージと共に送信",
   "@optAttachedImages": {
     "placeholders": {

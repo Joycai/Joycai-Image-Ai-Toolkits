@@ -574,6 +574,12 @@ void seedOptimizerSession(AppState appState) {
     history: history,
   );
 
+  // What the last request's fixed costs were. Restoring a session cannot know
+  // them (only a live turn records them), and without them the context card
+  // photographs with two of its four rows reading '—' — the one state that
+  // says least about the layout.
+  session.recordRequestBasis(systemPromptChars: 4820, toolSchemaChars: 1960);
+
   appState.workbenchUIState.adoptOptimizerSession(session, images);
 }
 

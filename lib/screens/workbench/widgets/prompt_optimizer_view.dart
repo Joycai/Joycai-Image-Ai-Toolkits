@@ -10,6 +10,7 @@ import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
+import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_snackbar.dart';
 
 /// One row of the transcript as drawn, which is not one-to-one with
@@ -84,7 +85,22 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// A prompt longer than this folds. Roughly the point where the card starts
   /// pushing the reply that explains it off the screen.
   static const int _promptFoldChars = 600;
-  static const double _promptFoldHeight = 260;
+  static const double _promptFoldHeight = 196;
+
+  /// Height of the fade that covers the cut edge of a folded prompt.
+  static const double _promptFadeHeight = 44;
+
+  /// How wide a turn is allowed to run.
+  ///
+  /// Asymmetric on purpose, and both well under the column: a user turn is
+  /// usually one sentence and reads as an aside, while the reply is prose. Set
+  /// equal, the short user line came out as a wide, near-empty slab.
+  static const double _userBubbleMaxWidth = 420;
+  static const double _replyMaxWidth = 520;
+
+  /// The bubble corner that points back at its speaker.
+  static const Radius _tailRadius = Radius.circular(3);
+  static const Radius _bubbleRadius = Radius.circular(AppRadius.lg);
 
   @override
   void dispose() {
@@ -229,7 +245,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
     return ListView.builder(
       controller: _scrollCtrl,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      // 16 horizontal, not the spec's 24: the centre column floors at
+      // `kMinCenterWidth` (400), where 48px of gutter is an eighth of the
+      // conversation's width.
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
       itemCount: rows.length,
       itemBuilder: (context, index) {
         final row = rows[index];
@@ -239,7 +258,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 780),
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 14),
               child: row.isToolGroup
                   ? _buildAgentTimeline(row, l10n, colorScheme)
                   : _buildEntry(row.entries.first, isLast, l10n, colorScheme),
@@ -272,58 +291,99 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       if (docs > 0) l10n.optAgentStepsDocs(docs),
     ].join(' · ');
 
-    return AppCard(
-      outlined: true,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-      onTap: () => setState(() {
-        if (!_expandedToolGroups.remove(row.startIndex)) {
-          _expandedToolGroups.add(row.startIndex);
-        }
-      }),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+    void toggle() => setState(() {
+          if (!_expandedToolGroups.remove(row.startIndex)) {
+            _expandedToolGroups.add(row.startIndex);
+          }
+        });
+
+    // Left-aligned and narrower than the column, like the reply it precedes:
+    // this is the agent's working-out, not a full-bleed result card.
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _replyMaxWidth),
+        child: AppCard(
+          outlined: true,
+          // Zero, so the hairline between summary and steps can run edge to
+          // edge the way the spec draws it.
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.check_circle_outline, size: 16, color: colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(l10n.optAgentSteps(steps.length), style: textTheme.titleSmall),
-              if (detail.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    detail,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              // The tap target is the summary row alone. On the whole card, a
+              // tap anywhere in the step list collapsed the card the user had
+              // just opened to read it.
+              InkWell(
+                onTap: toggle,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Row(
+                    children: [
+                      // A tinted plate rather than a bare accent glyph: at 16px
+                      // on a white card the outline icon read as an error mark
+                      // as often as a tick.
+                      Container(
+                        width: 18,
+                        height: 18,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colorScheme.accentTint,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check_rounded, size: 12, color: colorScheme.onAccentTint),
+                      ),
+                      const SizedBox(width: 9),
+                      Text(l10n.optAgentSteps(steps.length), style: textTheme.titleSmall),
+                      if (detail.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            detail,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ] else
+                        const Spacer(),
+                      Icon(
+                        expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        size: AppSize.iconMd,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
                 ),
-              ] else
-                const Spacer(),
-              Icon(
-                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                size: 18,
-                color: colorScheme.onSurfaceVariant,
+              ),
+              Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final step in shown) _buildToolStep(step, l10n, colorScheme),
+                    if (steps.length > _collapsedStepCount)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: AppButton(
+                          label: expanded
+                              ? l10n.optAgentStepsCollapse
+                              : l10n.optAgentStepsExpand(steps.length),
+                          variant: AppButtonVariant.text,
+                          // Compact, so it reads as the spec's inline link
+                          // rather than as a 36px button in a list of 12px rows.
+                          size: AppButtonSize.compact,
+                          onPressed: toggle,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          for (final step in shown) _buildToolStep(step, l10n, colorScheme),
-          if (steps.length > _collapsedStepCount) ...[
-            const SizedBox(height: 2),
-            AppButton(
-              label: expanded
-                  ? l10n.optAgentStepsCollapse
-                  : l10n.optAgentStepsExpand(steps.length),
-              variant: AppButtonVariant.text,
-              onPressed: () => setState(() {
-                if (!_expandedToolGroups.remove(row.startIndex)) {
-                  _expandedToolGroups.add(row.startIndex);
-                }
-              }),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -379,15 +439,25 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         return Align(
           alignment: Alignment.centerRight,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: _userBubbleMaxWidth),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(14),
+              // The accent wash, not `primaryContainer`. The spec draws the
+              // user's own turn as a 12% tint of the seed — at several of the
+              // seven seeds `primaryContainer` is a saturated slab that made
+              // every question the user asked the loudest thing on the screen.
+              color: colorScheme.accentTint,
+              borderRadius: const BorderRadius.only(
+                topLeft: _bubbleRadius,
+                topRight: _bubbleRadius,
+                bottomLeft: _bubbleRadius,
+                // Points back at the right edge the bubble is aligned to.
+                bottomRight: _tailRadius,
+              ),
             ),
             child: SelectableText(
               entry.text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer, height: 1.4),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onAccentTint, height: 1.5),
             ),
           ),
         );
@@ -396,11 +466,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         return Align(
           alignment: Alignment.centerLeft,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 640),
+            constraints: const BoxConstraints(maxWidth: _replyMaxWidth),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: const BorderRadius.only(
+                topLeft: _bubbleRadius,
+                topRight: _bubbleRadius,
+                bottomRight: _bubbleRadius,
+                bottomLeft: _tailRadius,
+              ),
             ),
             child: MarkdownBody(
               data: entry.text,
@@ -470,11 +545,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                constraints: const BoxConstraints(maxWidth: 640),
+                constraints: const BoxConstraints(maxWidth: _replyMaxWidth),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: _bubbleRadius,
+                    topRight: _bubbleRadius,
+                    bottomRight: _bubbleRadius,
+                    bottomLeft: _tailRadius,
+                  ),
                 ),
                 child: SelectableText(
                   entry.text,
@@ -519,10 +599,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: pending
-              ? colorScheme.primary.withValues(alpha: 0.45)
+              ? colorScheme.accentRing
               : colorScheme.outlineVariant,
         ),
       ),
@@ -623,8 +703,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               padding: const EdgeInsets.all(10),
               constraints: const BoxConstraints(maxHeight: 320),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(8),
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.control),
               ),
               child: SingleChildScrollView(
                 child: SelectableText(
@@ -704,23 +784,29 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     final expanded = _expandedPrompts.contains(key);
     final isLong = entry.text.length > _promptFoldChars;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        // A plain card edge. This border and the heading below it used to be
-        // drawn from `tertiary` — a seed-derived hue, so the card that carries
-        // the screen's result came out a different colour under each of the
-        // seven themes. The spec draws it as an ordinary card with one accent
-        // glyph on it.
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
+    // AppCard, not a hand-rolled Container: it already carries `surface`, the
+    // `outlineVariant` hairline, `AppRadius.lg` — and `Clip.antiAlias`, which
+    // is what keeps the header band's fill inside the rounded top corners.
+    //
+    // A plain card edge. This border and the heading below it used to be drawn
+    // from `tertiary` — a seed-derived hue, so the card that carries the
+    // screen's result came out a different colour under each of the seven
+    // themes. The spec draws it as an ordinary card with one accent glyph.
+    return AppCard(
+      outlined: true,
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 8, 0),
+          // The header is a band of its own, so the version and the two actions
+          // stay legible as a title bar rather than floating on the prompt.
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
             child: Row(
               children: [
                 Icon(Icons.auto_awesome, size: 15, color: colorScheme.primary),
@@ -745,15 +831,19 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.copy_outlined, size: 16),
+                // A boxed icon at the compact rung, not a bare [IconButton]:
+                // Material's own is 40px even at compact density, which forced
+                // this header taller than the button sitting beside it.
+                AppIconButton(
+                  icon: Icons.copy_outlined,
                   tooltip: l10n.optCopy,
-                  visualDensity: VisualDensity.compact,
+                  size: AppSize.compact,
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: entry.text));
                     AppSnackBar.success(context, l10n.optPromptCopied);
                   },
                 ),
+                const SizedBox(width: 8),
                 AppButton(
                   label: l10n.apply,
                   icon: Icons.check,
@@ -765,7 +855,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             // Folded to a readable opening rather than scrolled inside its own
             // box: a long prompt otherwise pushes the reply that explains it,
             // and the input bar, off the bottom of the conversation.
@@ -778,28 +868,44 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
               ),
               folded: isLong && !expanded,
+              fadeColor: colorScheme.surface,
             ),
           ),
-          if (isLong)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-              child: AppButton(
-                label: expanded ? l10n.optPromptCollapse : l10n.optPromptExpand,
-                variant: AppButtonVariant.text,
-                onPressed: () => setState(() {
-                  if (!_expandedPrompts.remove(key)) _expandedPrompts.add(key);
-                }),
+          // One footer row, not two stacked blocks. The expand control used to
+          // sit *above* the note it belonged under, so a long prompt read
+          // "…more · why the agent wrote it" in the wrong order.
+          if (entry.note != null || isLong)
+            Container(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
               ),
-            ),
-          if (entry.note != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-              child: Text(
-                entry.note!,
-                style: textTheme.labelMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              padding: const EdgeInsets.fromLTRB(14, 4, 8, 4),
+              child: Row(
+                children: [
+                  if (entry.note != null)
+                    Expanded(
+                      child: Text(
+                        entry.note!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelMedium?.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (isLong)
+                    AppButton(
+                      label: expanded ? l10n.optPromptCollapse : l10n.optPromptExpand,
+                      variant: AppButtonVariant.text,
+                      size: AppButtonSize.compact,
+                      onPressed: () => setState(() {
+                        if (!_expandedPrompts.remove(key)) _expandedPrompts.add(key);
+                      }),
+                    ),
+                ],
               ),
             ),
         ],
@@ -817,18 +923,45 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// fixed-height box around it does the hiding. Width constraints are left
   /// null so they pass through untouched and the text wraps as it otherwise
   /// would.
-  Widget _fold(Widget child, {required bool folded}) {
+  ///
+  /// The fade over the last [_promptFadeHeight] is what tells the reader the
+  /// text was cut rather than finished — a hard edge mid-sentence reads as a
+  /// rendering fault. It is drawn in the card's own fill, faded from the same
+  /// colour at zero alpha rather than from [Colors.transparent], which is
+  /// transparent *black* and lerps through grey on the way.
+  Widget _fold(Widget child, {required bool folded, required Color fadeColor}) {
     if (!folded) return child;
-    return ClipRect(
-      child: SizedBox(
-        height: _promptFoldHeight,
-        child: OverflowBox(
-          alignment: Alignment.topLeft,
-          minHeight: 0,
-          maxHeight: double.infinity,
-          child: child,
+    return Stack(
+      children: [
+        ClipRect(
+          child: SizedBox(
+            height: _promptFoldHeight,
+            child: OverflowBox(
+              alignment: Alignment.topLeft,
+              minHeight: 0,
+              maxHeight: double.infinity,
+              child: child,
+            ),
+          ),
         ),
-      ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: _promptFadeHeight,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [fadeColor.withValues(alpha: 0), fadeColor],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -862,7 +995,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     final attachedCount = context.watch<WorkbenchUIState>().optimizerReferenceImages.length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -888,7 +1021,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+            // Zero here, with the insets carried by the two children instead:
+            // the field's own top padding and the footer's bottom one are not
+            // the same number, and a uniform inset on the card flattened that.
+            padding: EdgeInsets.zero,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -920,7 +1056,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       disabledBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.fromLTRB(14, 11, 14, 6),
                     ),
                   ),
                 ),
@@ -933,8 +1069,10 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     // exactly where the composer must not overflow.
                     final showHint = constraints.maxWidth >= 460;
 
-                    return Row(
-                      children: [
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 10, 10),
+                      child: Row(
+                        children: [
                         if (attachedCount > 0) ...[
                           // Capped, not [Flexible]. Two flex children split the
                           // free space evenly and the unused half of the first
@@ -978,28 +1116,44 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                           ),
                           const SizedBox(width: 10),
                         ],
-                        Expanded(
-                          child: showHint
-                              ? Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    l10n.optSendHint,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: textTheme.labelSmall
-                                        ?.copyWith(color: colorScheme.onSurfaceVariant),
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                        const SizedBox(width: 10),
-                        IconButton.filled(
-                          icon: const Icon(Icons.send_rounded, size: 18),
-                          tooltip: l10n.optSend,
-                          visualDensity: VisualDensity.compact,
-                          onPressed: canSend ? widget.onSend : null,
-                        ),
-                      ],
+                          Expanded(
+                            child: showHint
+                                ? Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      l10n.optSendHint,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textTheme.labelSmall
+                                          ?.copyWith(color: colorScheme.outline),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          const SizedBox(width: 10),
+                          // A 32px circle, sized and shaped explicitly:
+                          // Material's own filled icon button is a ~40px
+                          // rounded square even at compact density, which
+                          // outweighed everything else on the footer row.
+                          // Still [IconButton.filled] rather than a hand-rolled
+                          // plate, because it is what supplies the disabled
+                          // fill/foreground pair.
+                          SizedBox(
+                            width: AppSize.iconButton,
+                            height: AppSize.iconButton,
+                            child: IconButton.filled(
+                              icon: const Icon(Icons.send_rounded, size: AppSize.iconMd),
+                              tooltip: l10n.optSend,
+                              padding: EdgeInsets.zero,
+                              style: IconButton.styleFrom(
+                                shape: const CircleBorder(),
+                                minimumSize: const Size.square(AppSize.iconButton),
+                              ),
+                              onPressed: canSend ? widget.onSend : null,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -1105,8 +1259,8 @@ class _AskUserCardState extends State<_AskUserCard> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colorScheme.accentRing),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1225,7 +1379,7 @@ class _AskUserCardState extends State<_AskUserCard> {
               filled: true,
               fillColor: colorScheme.surfaceContainerHigh,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1244,7 +1398,7 @@ class _AskUserCardState extends State<_AskUserCard> {
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(

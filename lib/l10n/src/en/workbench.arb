@@ -633,6 +633,14 @@
     }
   },
   "optKbCitedNone": "Nothing cited yet",
+  "optCtxTitle": "Context usage",
+  "optCtxSystemPrompt": "System prompt",
+  "optCtxTools": "Tool definitions",
+  "optCtxHistory": "Conversation",
+  "optCtxRemaining": "Remaining",
+  "optCtxWindowUnknown": "Window not set",
+  "optCtxWindowUnlimited": "Unlimited",
+  "optCtxWindowAssumed": "This model has no context window set — measured against the default assumption.",
   "optAttachedImages": "{count} reference images sent with the message",
   "@optAttachedImages": {
     "placeholders": {
