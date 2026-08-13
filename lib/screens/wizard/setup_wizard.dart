@@ -80,6 +80,12 @@ class _SetupWizardState extends State<SetupWizard> {
       case Vendors.xaiApi:
         _endpointController.text = 'https://api.x.ai/v1';
         break;
+      case Vendors.deepseek:
+        _endpointController.text = 'https://api.deepseek.com';
+        break;
+      case Vendors.minimax:
+        _endpointController.text = 'https://api.minimaxi.com/v1';
+        break;
       default:
         _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
@@ -312,7 +318,11 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
     String endpointHint = "";
-    if (_channelType == Vendors.openAIRest || _channelType == Vendors.newApiOpenAI || _channelType == Vendors.xaiApi) {
+    if (_channelType == Vendors.openAIRest ||
+        _channelType == Vendors.newApiOpenAI ||
+        _channelType == Vendors.xaiApi ||
+        _channelType == Vendors.deepseek ||
+        _channelType == Vendors.minimax) {
       endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
     } else {
       endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
@@ -344,6 +354,8 @@ class _SetupWizardState extends State<SetupWizard> {
               DropdownMenuItem(value: Vendors.newApiOpenAI, child: Text('New API (OpenAI format)')),
               DropdownMenuItem(value: Vendors.newApiGemini, child: Text('New API (Gemini format)')),
               DropdownMenuItem(value: Vendors.xaiApi, child: Text('xAI (Grok) API')),
+              DropdownMenuItem(value: Vendors.deepseek, child: Text('DeepSeek')),
+              DropdownMenuItem(value: Vendors.minimax, child: Text('MiniMax')),
             ],
             onChanged: (v) {
               setState(() {

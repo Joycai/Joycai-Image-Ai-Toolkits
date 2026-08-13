@@ -58,6 +58,17 @@ const _presets = <_ProviderPreset>[
     icon: Icons.swap_horiz,
   ),
   _ProviderPreset(
+    id: 'deepseek',
+    channelType: Vendors.deepseek,
+    fixedEndpoint: 'https://api.deepseek.com',
+    icon: Icons.psychology_outlined,
+  ),
+  _ProviderPreset(
+    id: 'minimax',
+    channelType: Vendors.minimax,
+    icon: Icons.grain_outlined,
+  ),
+  _ProviderPreset(
     id: 'newapi-openai',
     channelType: Vendors.newApiOpenAI,
     endpointSuffix: '/v1',
@@ -214,6 +225,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerXaiOfficial;
       case 'google-compatible':
         return l10n.providerGoogleCompatible;
+      case 'deepseek':
+        return 'DeepSeek';
+      case 'minimax':
+        return 'MiniMax';
       case 'newapi-openai':
         return l10n.providerNewApiOpenAI;
       case 'google-official':
@@ -237,6 +252,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerGoogleCompatibleDesc;
       case 'google-official':
         return 'generativelanguage.googleapis.com';
+      case 'deepseek':
+        return 'api.deepseek.com';
+      case 'minimax':
+        return l10n.providerMiniMaxDesc;
       case 'newapi-openai':
       case 'newapi-gemini':
         return l10n.providerNewApiDesc;

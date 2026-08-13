@@ -832,6 +832,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerNewApiDesc => 'New API 中转 · Bearer 令牌鉴权';
 
   @override
+  String get providerMiniMaxDesc => 'OpenAI 兼容 /v1 端点';
+
+  @override
   String get newApiBaseUrl => 'New API 基础地址';
 
   @override
@@ -3360,6 +3363,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerNewApiDesc => 'New API 中轉 · Bearer 權杖驗證';
+
+  @override
+  String get providerMiniMaxDesc => 'OpenAI 相容 /v1 端點';
 
   @override
   String get newApiBaseUrl => 'New API 基礎位址';

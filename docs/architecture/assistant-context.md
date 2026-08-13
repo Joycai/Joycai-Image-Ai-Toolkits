@@ -76,11 +76,23 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    bytes. A file that fits comes back whole as `1/1`; one that doesn't uses the
    constant `KnowledgeBaseService.pageSize`. Making the page size track the
    remaining window would make page 1 mean different things at different times.
+   **One deliberate exception**: when the remaining window cannot hold even one
+   full page (`maxChars < pageSize`, i.e. a cap in [2000, 8000)), the page
+   shrinks to the cap rather than refusing small-window models any paged read
+   at all. In that regime page numbers are *not* stable across reads — the
+   worst consequence is a redundant re-read or a stale "already in context"
+   note near exhaustion, both self-correcting on the next turn. Accepted, not
+   an oversight.
 4. **"Already read?" is derived from history, never tracked in a set.** It scans
    tool **results**, not the assistant's tool **calls** — the assistant message
    is appended to history *before* its calls execute, so matching on calls finds
    the read currently being executed and reports every read as a cache hit.
    Results also make failed reads (no `content` key) correctly not count.
+   **The same rule now governs image re-views** (`_liveViewedPaths`): a
+   `view_image` request is only refused while the earlier attachment still sits
+   inside the recent window — once layer 1 elides it (or compaction folds it),
+   the model may view the image again. `viewedImagePaths` survives only as the
+   UI's "has been looked at" badge and gates nothing the model asks for.
 5. **Compaction measures the trimmed history**, not the raw one, or layer 1 is
    pointless.
 6. **The unlimited budget is a constant, not derived.** `0 × ratio == 0`, so a
@@ -128,7 +140,10 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   conversation — refer to the earlier result" about content that no longer
   existed, with no way to recover. Restarting the app fixed it (restore rebuilt
   the set from surviving rows), which is why it was hard to reproduce. Deriving
-  liveness means there is nothing to invalidate.
+  liveness means there is nothing to invalidate. **The image-view path kept the
+  old `Set` pattern until 2026-08** — `viewedImagePaths` gated re-views without
+  anything invalidating it — and exhibited exactly this deadlock before moving
+  to the same derivation (`_liveViewedPaths`).
 
 ## Tests
 
@@ -141,6 +156,8 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
+| `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted |
+| `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
 
 **Not covered end-to-end:** the model dialog's tri-state control and the
 Settings summary-ratio dropdown have never been driven through a real UI run.

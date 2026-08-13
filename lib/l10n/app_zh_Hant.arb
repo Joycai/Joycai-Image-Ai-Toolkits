@@ -274,6 +274,7 @@
   "providerNewApiOpenAI": "New API（OpenAI 格式）",
   "providerNewApiGemini": "New API（Gemini 格式）",
   "providerNewApiDesc": "New API 中轉 · Bearer 權杖驗證",
+  "providerMiniMaxDesc": "OpenAI 相容 /v1 端點",
   "newApiBaseUrl": "New API 基礎位址",
   "newApiBaseHint": "填寫 New API 主機位址，版本路徑將自動補全",
   "customEndpointHint": "輸入您的自訂端點 URL",

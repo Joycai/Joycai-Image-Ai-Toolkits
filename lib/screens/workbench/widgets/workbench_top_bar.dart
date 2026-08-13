@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
-import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
@@ -35,8 +34,14 @@ class WorkbenchTopBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isSidebarExpanded = context.select<AppState, bool>((s) => s.isSidebarExpanded);
     final concurrencyLimit = context.select<AppState, int>((s) => s.concurrencyLimit);
-    final isNarrow = Responsive.isNarrow(context);
-    final isMobile = Responsive.isMobile(context);
+    // Measured off the layout's own content box, not the screen: the workbench
+    // sits beside a 64–78px navigation rail, so on an iPad-class window the
+    // panels go into drawers while `MediaQuery` still reads "desktop". Taking
+    // the screen's word for it is how the buttons that open those drawers would
+    // go missing on exactly the widths that need them.
+    final layout = context.watch<WorkbenchLayoutState>();
+    final isNarrow = layout.isNarrow;
+    final isMobile = layout.isMobile;
 
     // Primary creation modes — the headline functions of the workbench.
     final primary = <_WbDest>[
@@ -63,8 +68,8 @@ class WorkbenchTopBar extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
             child: Row(
               children: [
-                // Leading: sidebar toggle (desktop) / drawer (narrow)
-                if (isNarrow)
+                // Leading: sidebar toggle (inline panel) / drawer opener
+                if (layout.leftInDrawer)
                   IconButton(
                     icon: const Icon(Icons.menu),
                     onPressed: () => context.read<WorkbenchLayoutState>().openLeftPanel(),
@@ -137,7 +142,7 @@ class WorkbenchTopBar extends StatelessWidget {
                 // Trailing actions
                 if (isMobile)
                   _buildMobileMoreMenu(context, concurrencyLimit, l10n)
-                else if (isNarrow)
+                else if (layout.rightInDrawer)
                   IconButton(
                     icon: const Icon(Icons.tune),
                     tooltip: l10n.modelSelection,

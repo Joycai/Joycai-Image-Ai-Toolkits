@@ -401,6 +401,7 @@
   "providerNewApiOpenAI": "New API（OpenAI 格式）",
   "providerNewApiGemini": "New API（Gemini 格式）",
   "providerNewApiDesc": "New API 中转 · Bearer 令牌鉴权",
+  "providerMiniMaxDesc": "OpenAI 兼容 /v1 端点",
   "newApiBaseUrl": "New API 基础地址",
   "newApiBaseHint": "填写 New API 主机地址，版本路径将自动补全",
   "customEndpointHint": "请输入自定义端点 URL",

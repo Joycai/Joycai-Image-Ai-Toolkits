@@ -39,6 +39,12 @@ class ShotSize {
 const List<ShotSize> kShotSizes = <ShotSize>[
   ShotSize('mobile', Size(390, 844)), //   < 600  → NavigationBar + drawer
   ShotSize('tablet', Size(834, 1112)), //  < 1000 → icon-only rail
+  // iPad landscape. Its own band because the screen is just over the desktop
+  // breakpoint while the content box — the window minus the 78px rail — is
+  // just under it, and nothing else here lands in that gap. The workbench
+  // squeezing its centre panel to 152px lived in exactly this 20px-wide band
+  // of window widths for as long as the harness skipped it.
+  ShotSize('ipad', Size(1024, 768)), //    ≥ 1000 screen, < 1000 content
   ShotSize('desktop', Size(1440, 900)), // ≥ 1000 → labelled rail
 ];
 

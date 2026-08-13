@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/safety_settings.dart';
@@ -70,6 +70,130 @@ Map<String, dynamic>? _recoverConcatenatedJsonObjects(String raw) {
   return merged;
 }
 
+/// Result of separating inline `<think>…</think>` chain-of-thought from
+/// model text.
+class InlineThinkResult {
+  final String text;
+  final String? reasoning;
+  const InlineThinkResult(this.text, this.reasoning);
+}
+
+/// Separates inline `<think>…</think>` spans from [raw].
+///
+/// Some ①-family compat endpoints (MiniMax by default, various relays fronting
+/// DeepSeek-style models) put the chain of thought straight into `content` as
+/// `<think>…</think>\n\n<answer>`. Any consumer that treats `content` as the
+/// answer collects the thinking with it — into the transcript, into history
+/// re-sent every turn, into compaction summaries. A trailing unterminated
+/// `<think>` (truncated response) swallows the rest of the string as
+/// reasoning rather than leaking it as text.
+InlineThinkResult stripInlineThink(String raw) {
+  if (!raw.contains('<think>')) return InlineThinkResult(raw, null);
+  final reasoning = StringBuffer();
+  final text = StringBuffer();
+  int cursor = 0;
+  while (true) {
+    final open = raw.indexOf('<think>', cursor);
+    if (open == -1) {
+      text.write(raw.substring(cursor));
+      break;
+    }
+    text.write(raw.substring(cursor, open));
+    final close = raw.indexOf('</think>', open + 7);
+    if (close == -1) {
+      reasoning.write(raw.substring(open + 7));
+      break;
+    }
+    reasoning.write(raw.substring(open + 7, close));
+    cursor = close + 8;
+  }
+  final cleaned = text.toString().trimLeft();
+  final thought = reasoning.toString().trim();
+  return InlineThinkResult(cleaned, thought.isEmpty ? null : thought);
+}
+
+/// Cross-chunk `<think>` separator for the streaming path.
+///
+/// Tags arrive split across SSE chunks (`<thi` + `nk>` is normal), so a
+/// per-chunk regex cannot work. The filter holds back the longest trailing
+/// fragment that could still become a tag and classifies everything else as
+/// text or reasoning as soon as its side of the tag boundary is known.
+class InlineThinkStreamFilter {
+  final StringBuffer _pending = StringBuffer();
+  bool _inThink = false;
+
+  static const String _openTag = '<think>';
+  static const String _closeTag = '</think>';
+
+  /// Feeds one delta; returns what can be classified so far.
+  ({String text, String reasoning}) feed(String delta) {
+    _pending.write(delta);
+    final text = StringBuffer();
+    final reasoning = StringBuffer();
+    var buf = _pending.toString();
+    _pending.clear();
+
+    while (buf.isNotEmpty) {
+      final tag = _inThink ? _closeTag : _openTag;
+      final idx = buf.indexOf(tag);
+      if (idx != -1) {
+        (_inThink ? reasoning : text).write(buf.substring(0, idx));
+        buf = buf.substring(idx + tag.length);
+        _inThink = !_inThink;
+        continue;
+      }
+      // No full tag: hold back a trailing partial-tag fragment, flush the rest.
+      final hold = _partialTagSuffix(buf, tag);
+      final flush = buf.substring(0, buf.length - hold);
+      (_inThink ? reasoning : text).write(flush);
+      _pending.write(buf.substring(buf.length - hold));
+      buf = '';
+    }
+    return (text: text.toString(), reasoning: reasoning.toString());
+  }
+
+  /// Flushes whatever is still held back at stream end. An unterminated think
+  /// span counts as reasoning, mirroring [stripInlineThink].
+  ({String text, String reasoning}) flush() {
+    final rest = _pending.toString();
+    _pending.clear();
+    if (rest.isEmpty) return (text: '', reasoning: '');
+    return _inThink ? (text: '', reasoning: rest) : (text: rest, reasoning: '');
+  }
+
+  /// Length of the longest suffix of [buf] that is a proper prefix of [tag].
+  static int _partialTagSuffix(String buf, String tag) {
+    final maxLen = buf.length < tag.length - 1 ? buf.length : tag.length - 1;
+    for (int len = maxLen; len > 0; len--) {
+      if (tag.startsWith(buf.substring(buf.length - len))) return len;
+    }
+    return 0;
+  }
+}
+
+/// Throws when a 200 response body is actually an error envelope.
+///
+/// Compat layers deliver failures inside a successful HTTP response in at
+/// least two spellings (streaming.md §3.1/§3.2): an `error` field (relays,
+/// audits, quota), or MiniMax's `base_resp.status_code != 0` (auth 1004,
+/// balance 1008, rate 1002, token limit 1039). A client that only checks the
+/// HTTP status reads an expired key as a normal empty reply.
+void throwIfEnvelopeError(Map<String, dynamic> data) {
+  final err = data['error'];
+  if (err != null) {
+    final msg = err is Map ? (err['message'] ?? err.toString()) : err.toString();
+    throw Exception('API error in response body: $msg');
+  }
+  final baseResp = data['base_resp'];
+  if (baseResp is Map) {
+    final code = baseResp['status_code'];
+    if (code is num && code != 0) {
+      throw Exception(
+          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}');
+    }
+  }
+}
+
 /// OpenAI `POST /chat/completions` — JSON request, JSON or SSE response.
 ///
 /// The base envelope is identical for every model. Gemini-family models
@@ -122,15 +246,51 @@ class OpenAIChatProtocol implements ChatProtocol {
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
       final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        // 200 does not mean success on compat layers — check both known
+        // in-body error spellings before trusting the shape.
+        throwIfEnvelopeError(data);
+      }
       String text = "";
       List<Uint8List> images = [];
       final List<LLMToolCall> toolCalls = [];
+      String? reasoningContent;
+      String? reasoningFieldName;
 
-      final choice = data['choices']?[0];
+      final choices = data['choices'];
+      final choice = (choices is List && choices.isNotEmpty) ? choices[0] : null;
       final message = choice?['message'];
-      if (message != null) {
+      if (message == null) {
+        // Previously this fell through to an empty LLMResponse, which callers
+        // (the assistant loop above all) read as "the model chose to say
+        // nothing" — an expired key looked like a silent no-op.
+        final body = response.body;
+        throw Exception('OpenAI API returned no choices: '
+            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+      }
+      {
         if (message['content'] != null) {
           text = message['content'];
+        }
+
+        // ① family chain-of-thought: field-based (DeepSeek reasoning_content,
+        // OpenRouter reasoning — no standard spelling exists, so probe the
+        // known candidates and remember which one answered)...
+        final rawReasoning = message['reasoning_content'] ?? message['reasoning'];
+        if (rawReasoning is String && rawReasoning.isNotEmpty) {
+          reasoningContent = rawReasoning;
+          reasoningFieldName =
+              message['reasoning_content'] != null ? 'reasoning_content' : 'reasoning';
+        }
+        // ...or inline <think> spans glued into content (MiniMax default).
+        // Inline reasoning is display/accounting-only — it carries no echo
+        // obligation, hence no field name.
+        final inline = stripInlineThink(text);
+        if (inline.reasoning != null) {
+          text = inline.text;
+          reasoningContent = reasoningContent == null
+              ? inline.reasoning
+              : '$reasoningContent\n${inline.reasoning}';
         }
 
         // Native tool/function calls.
@@ -196,6 +356,8 @@ class OpenAIChatProtocol implements ChatProtocol {
         text: text,
         generatedImages: images,
         metadata: metadata,
+        reasoningContent: reasoningContent,
+        reasoningFieldName: reasoningFieldName,
         toolCalls: toolCalls,
       );
     } finally {
@@ -255,6 +417,9 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     String accumulatedText = "";
     bool isLikelyBase64Stream = false;
+    // <think> tags arrive split across chunks; the filter reassembles them
+    // and keeps the thinking out of the text channel.
+    final thinkFilter = InlineThinkStreamFilter();
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
@@ -268,8 +433,21 @@ class OpenAIChatProtocol implements ChatProtocol {
           dataLine = line.substring(6);
         }
 
+        Map<String, dynamic>? chunkData;
         try {
-          final chunkData = jsonDecode(dataLine);
+          final decoded = jsonDecode(dataLine);
+          if (decoded is Map<String, dynamic>) chunkData = decoded;
+        } catch (_) {
+          continue; // Non-JSON SSE noise (comments, keep-alives).
+        }
+        if (chunkData == null) continue;
+
+        // Deliberately outside the shape-tolerant try below: an in-body error
+        // event must terminate the stream as a failure, not be swallowed as
+        // a malformed chunk (streaming.md §3.1/§3.2).
+        throwIfEnvelopeError(chunkData);
+
+        try {
           final choice = chunkData['choices']?[0];
           if (choice == null) {
             if (chunkData['usage'] != null) {
@@ -280,24 +458,33 @@ class OpenAIChatProtocol implements ChatProtocol {
 
           final delta = choice['delta'];
           final text = delta?['content'];
-          final reasoning = delta?['reasoning_content'];
+          final reasoning = delta?['reasoning_content'] ?? delta?['reasoning'];
           final imageData = delta?['image_data'];
 
           if (reasoning != null && reasoning.isNotEmpty) {
-            yield LLMResponseChunk(textPart: reasoning);
+            // Dedicated channel: consumers that accumulate textPart into a
+            // deliverable must never glue the thinking into it.
+            yield LLMResponseChunk(reasoningPart: reasoning);
           }
 
           if (text != null && text.isNotEmpty) {
-            accumulatedText += text;
-
-            // Check if we are currently receiving a massive base64 string
-            if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
-              isLikelyBase64Stream = true;
+            final split = thinkFilter.feed(text);
+            if (split.reasoning.isNotEmpty) {
+              yield LLMResponseChunk(reasoningPart: split.reasoning);
             }
+            final cleanText = split.text;
+            if (cleanText.isNotEmpty) {
+              accumulatedText += cleanText;
 
-            // Only yield text to console if it doesn't look like raw image data
-            if (!isLikelyBase64Stream && !_isBase64Heuristic(text)) {
-              yield LLMResponseChunk(textPart: text);
+              // Check if we are currently receiving a massive base64 string
+              if (!isLikelyBase64Stream && accumulatedText.length > 500 && _isBase64Heuristic(accumulatedText)) {
+                isLikelyBase64Stream = true;
+              }
+
+              // Only yield text to console if it doesn't look like raw image data
+              if (!isLikelyBase64Stream && !_isBase64Heuristic(cleanText)) {
+                yield LLMResponseChunk(textPart: cleanText);
+              }
             }
           }
 
@@ -310,6 +497,15 @@ class OpenAIChatProtocol implements ChatProtocol {
         } catch (e) {
           // Ignore parse errors
         }
+      }
+
+      final tail = thinkFilter.flush();
+      if (tail.reasoning.isNotEmpty) {
+        yield LLMResponseChunk(reasoningPart: tail.reasoning);
+      }
+      if (tail.text.isNotEmpty && !_isBase64Heuristic(tail.text)) {
+        accumulatedText += tail.text;
+        yield LLMResponseChunk(textPart: tail.text);
       }
 
       if (accumulatedText.isNotEmpty) {
@@ -425,6 +621,13 @@ class OpenAIChatProtocol implements ChatProtocol {
         return {
           "role": "assistant",
           "content": msg.content.isEmpty ? null : msg.content,
+          // ① family echo-back obligation (reasoning.md §3): DeepSeek returns
+          // 400 when a tool-calling assistant turn's reasoning is not
+          // replayed. Echo under the exact field name it arrived with —
+          // vendors that don't require it simply ignore the field. Inline
+          // (<think>) reasoning has no field name and no obligation.
+          if (msg.reasoningContent != null && msg.reasoningFieldName != null)
+            msg.reasoningFieldName!: msg.reasoningContent,
           "tool_calls": msg.toolCalls.map((tc) => {
             "id": tc.id,
             "type": "function",
@@ -495,6 +698,19 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     return payload;
   }
+
+  /// Exposes the payload builder to tests — request-shape rules (reasoning
+  /// echo-back, tool nesting, image parts) are pinned in
+  /// `test/openai_chat_payload_test.dart`.
+  @visibleForTesting
+  Map<String, dynamic> buildChatPayloadForTest(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    required bool isStreaming,
+    List<LLMTool>? tools,
+  }) =>
+      _prepareChatPayload(target, history, options, isStreaming: isStreaming, tools: tools);
 
   /// Gemini-via-OpenAI compatibility extensions used by relay services.
   void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dynamic>? options) {

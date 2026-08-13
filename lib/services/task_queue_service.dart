@@ -17,6 +17,7 @@ import 'llm/image_compression.dart';
 import 'llm/llm_service.dart';
 import 'llm/vendors/vendors.dart';
 import 'llm/llm_types.dart';
+import 'llm/model_descriptor.dart';
 import 'prompt_optimizer_agent.dart';
 import 'web_scraper_service.dart';
 

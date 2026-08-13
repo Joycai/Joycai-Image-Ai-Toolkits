@@ -60,6 +60,11 @@ class LLMService {
           );
 
           await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
+            if (chunk.reasoningPart != null) {
+              // Thinking is surfaced to the console but never accumulated —
+              // the deliverable must not contain the chain of thought.
+              onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
+            }
             if (chunk.textPart != null) {
               accumulatedText += chunk.textPart!;
               onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
@@ -195,6 +200,9 @@ class LLMService {
         );
 
         await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
+          if (chunk.reasoningPart != null) {
+            onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
+          }
           if (chunk.textPart != null) {
             accumulatedText += chunk.textPart!;
             onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);

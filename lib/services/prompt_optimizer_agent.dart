@@ -918,6 +918,7 @@ class PromptOptimizerAgent {
     String? systemPrompt,
     required List<Map<String, String>> referenceImages,
     bool forceViewAllImages = false,
+    bool acceptsImageInput = true,
     String? knowledgeRoot,
     String? knowledgeEntryContent,
     String? contextId,
@@ -933,16 +934,34 @@ class PromptOptimizerAgent {
       session._setRunning(false);
       throw StateError('Knowledge mode requires knowledgeRoot and knowledgeEntryContent.');
     }
+    // A text-only model must not be offered the image tools: an `image_url`
+    // part sent anyway is either a 400 or — worse — silently dropped, and the
+    // model answers as if it had seen the image. The reference list stays in
+    // the session (and its persistence) for the UI; the model just never
+    // hears about it.
+    if (!acceptsImageInput && referenceImages.isNotEmpty) {
+      onLog?.call('This model does not accept image input — '
+          '${referenceImages.length} reference image(s) will not be offered to it.');
+    }
+    final effectiveRefs =
+        acceptsImageInput ? referenceImages : const <Map<String, String>>[];
+    final effectiveForceView = forceViewAllImages && acceptsImageInput;
+    final baseTools = acceptsImageInput
+        ? _tools
+        : [
+            for (final t in _tools)
+              if (t.name != 'view_image' && t.name != 'list_reference_images') t
+          ];
     final tools = editMode
-        ? [..._tools, ..._knowledgeTools, ..._knowledgeWriteTools]
-        : (knowledgeMode ? [..._tools, ..._knowledgeTools] : _tools);
+        ? [...baseTools, ..._knowledgeTools, ..._knowledgeWriteTools]
+        : (knowledgeMode ? [...baseTools, ..._knowledgeTools] : baseTools);
     // Weak local models tend to issue a single tool call per turn, so viewing
     // every reference image one by one needs list + N views + submit turns.
     // Knowledge mode needs extra headroom for file listing/reading rounds.
     // Edit mode needs more still — not because writes are expensive, but
     // because the read-before-write rail forces a read round per file touched.
     final baseTurns = editMode ? 24 : (knowledgeMode ? 20 : _maxTurns);
-    final minTurns = referenceImages.length + (knowledgeMode ? 8 : 4);
+    final minTurns = effectiveRefs.length + (knowledgeMode ? 8 : 4);
     final maxTurns = baseTurns > minTurns ? baseTurns : minTurns;
     final repo = AssistantSessionRepository();
 
@@ -955,11 +974,11 @@ class PromptOptimizerAgent {
     // it) and is re-sent in full every single request.
     final systemPromptText = editMode
         ? _buildKnowledgeEditSystemPrompt(
-            knowledgeEntryContent!, referenceImages.length, forceViewAllImages)
+            knowledgeEntryContent!, effectiveRefs.length, effectiveForceView)
         : knowledgeMode
             ? _buildKnowledgeSystemPrompt(
-                knowledgeEntryContent!, referenceImages.length, forceViewAllImages)
-            : _buildSystemPrompt(systemPrompt, referenceImages.length, forceViewAllImages);
+                knowledgeEntryContent!, effectiveRefs.length, effectiveForceView)
+            : _buildSystemPrompt(systemPrompt, effectiveRefs.length, effectiveForceView);
 
     // Say something while there is still something to say. Compaction only
     // folds history, so it can never shrink this — past a certain size the turn
@@ -1049,21 +1068,43 @@ class PromptOptimizerAgent {
         );
         if (observed != null) session.observedCharsPerToken = observed;
 
+        // A truncated reply is not "the model ignoring instructions": a
+        // submit_prompt cut mid-JSON parses as empty arguments and burns a
+        // retry round. Say what actually happened (streaming.md §2).
+        if (response.metadata['finish_reason'] == 'length') {
+          onLog?.call('The reply hit the model\'s output-token limit and was '
+              'truncated — tool arguments from this turn may be incomplete.');
+        }
+
         if (response.toolCalls.isEmpty) {
           // Model is done: plain text is a chat reply (comment, clarifying
           // question, ...), never the deliverable itself.
           final text = response.text.trim();
           if (text.isNotEmpty) {
-            session.history.add(LLMMessage(role: LLMRole.assistant, content: text));
+            // No echo obligation without tool calls (the payload builder only
+            // replays reasoning on tool-call-bearing messages), but keep the
+            // record so persistence reflects what the model actually did.
+            session.history.add(LLMMessage(
+              role: LLMRole.assistant,
+              content: text,
+              reasoningContent: response.reasoningContent,
+              reasoningFieldName: response.reasoningFieldName,
+            ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
           return;
         }
 
         // Echo the assistant turn (with its tool calls) back into history.
+        // The reasoning rides along: DeepSeek-style endpoints reject the next
+        // request with 400 when a tool-calling turn's reasoning_content is not
+        // replayed (reasoning.md §3), and _prepareChatPayload echoes it from
+        // these fields under its original name.
         session.history.add(LLMMessage(
           role: LLMRole.assistant,
           content: response.text,
+          reasoningContent: response.reasoningContent,
+          reasoningFieldName: response.reasoningFieldName,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -1130,10 +1171,10 @@ class PromptOptimizerAgent {
             try {
               result = _executeTool(
                 call,
-                referenceImages,
+                effectiveRefs,
                 session,
                 pendingViews,
-                forceViewAllImages,
+                effectiveForceView,
                 knowledgeRoot,
                 onLog,
                 systemPrompt: systemPromptText,
@@ -1314,6 +1355,9 @@ class PromptOptimizerAgent {
     int total = systemPrompt.length;
     for (final m in messages) {
       total += m.content.length;
+      // Replayed on tool-call turns (see _prepareChatPayload), so it is part
+      // of what the provider bills.
+      total += m.reasoningContent?.length ?? 0;
       total += m.attachments.length * _attachmentChars;
       for (final call in m.toolCalls) {
         total += call.name.length;
@@ -1373,6 +1417,39 @@ class PromptOptimizerAgent {
   static Set<int> liveReadPagesForTest(PromptOptimizerSession session, String relPath) =>
       _liveReadPages(session, relPath);
 
+  /// Reference-image paths whose attachment is still part of what will be sent
+  /// next — i.e. the synthetic `view_image` message sits inside the recent
+  /// window, where [_trimForSend] does not strip attachments.
+  ///
+  /// Derived from the live history, exactly like [_liveReadPages], and for the
+  /// same reason: the previous implementation refused a re-view whenever the
+  /// path was in [PromptOptimizerSession.viewedImagePaths], but that set was
+  /// never invalidated when [_elide] dropped the attachment from the outgoing
+  /// copy or [_maybeCompact] folded the message away — so the model was pointed
+  /// at an attachment that no longer existed in the request, with no way to
+  /// recover (the exact deadlock assistant-context.md's "Rejected" section
+  /// describes for knowledge reads). [PromptOptimizerSession.viewedImagePaths]
+  /// remains as the UI's "has been looked at" badge only; it no longer gates
+  /// anything the model asks for.
+  static Set<String> _liveViewedPaths(PromptOptimizerSession session) {
+    final history = session.history;
+    final paths = <String>{};
+    for (int i = _recentBoundary(history); i < history.length; i++) {
+      final m = history[i];
+      if (m.role != LLMRole.user) continue;
+      if (!m.content.startsWith(viewResultMarker)) continue;
+      for (final att in m.attachments) {
+        final path = att.path;
+        if (path != null) paths.add(path);
+      }
+    }
+    return paths;
+  }
+
+  @visibleForTesting
+  static Set<String> liveViewedPathsForTest(PromptOptimizerSession session) =>
+      _liveViewedPaths(session);
+
   /// Layer-1 (lossless in DB, per-request) trimming: before the recent
   /// window, bulky knowledge-file tool results are elided and viewed-image
   /// attachments dropped. User/assistant text and submit_prompt results are
@@ -1421,6 +1498,11 @@ class PromptOptimizerAgent {
       return LLMMessage(
         role: LLMRole.assistant,
         content: m.content,
+        // Reasoning must survive verbatim: eliding or editing it would break
+        // the ① family echo-back contract the same way dropping a
+        // thoughtSignature breaks Gemini's.
+        reasoningContent: m.reasoningContent,
+        reasoningFieldName: m.reasoningFieldName,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -1762,7 +1844,11 @@ class PromptOptimizerAgent {
         final path = image['path']!;
         onLog?.call('Tool call: view_image #$id (${image['name']})');
         final alreadyAttached = pendingViews.any((v) => v['path'] == path);
-        if (session.viewedImagePaths.contains(path) || alreadyAttached) {
+        // Derived, not tracked: only refuse when the earlier attachment is
+        // still inside the recent window and therefore actually part of the
+        // next request. Once _trimForSend has elided it (or compaction folded
+        // it), the model may legitimately ask to see the image again.
+        if (_liveViewedPaths(session).contains(path) || alreadyAttached) {
           return {
             'status': 'ok',
             'note': 'Image #$id was already attached earlier in this '
