@@ -1,5 +1,13 @@
 # API 规范实现审计
 
+> **⚠️ 路径快照说明** — 本审计基于 2026-08-13 三层重构（PR #86）**之前**的
+> 基线 commit `d03047e`：文中所有 `providers/*` 的 `file:line` 在当前代码里
+> 已不存在，新旧路径对照见
+> [docs/architecture/llm-three-layer.md](../architecture/llm-three-layer.md)。
+> 各条发现的「验证」步骤仍然有效 —— 逻辑基本原样搬进了对应协议文件，
+> 重新核对时按对照表换文件名即可。
+
+
 **日期：2026-08-13** · 版本 3.14.1 · 基线 commit `d03047e`
 
 对照 [`docs/api/`](../api/) 的协议事实知识库，逐条核对本工程 `lib/services/llm/` 的实现。

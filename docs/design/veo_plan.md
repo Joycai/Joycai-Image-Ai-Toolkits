@@ -1,5 +1,11 @@
 # Veo Video Generation Implementation Plan
 
+> **⚠️ 历史文档（2025，重构前）** — 本文写作时的 LLM 层结构已在
+> 2026-08 的三层重构（PR #86）中整体替换：`ILLMProvider` / `providers/`
+> 已不存在。文中实现方案仅作历史记录；文件路径的新旧对照见
+> [docs/architecture/llm-three-layer.md](../architecture/llm-three-layer.md) 末尾的对照表。
+
+
 This document outlines the plan for integrating Google's Veo video generation API into the Joycai Image AI Toolkits.
 
 ## 1. Core Changes (Models & Constants)

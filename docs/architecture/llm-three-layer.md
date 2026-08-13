@@ -76,6 +76,25 @@ LLMService.request(modelIdentifier, messages, ...)
   必要时 `model_family.dart` 的分类规则）。
 - **新增任务类型**：与本层无关，见 CLAUDE.md 的 task type 扩展流程。
 
+## 硬编码红线（code review 时直接 grep）
+
+重构消灭的正是这些模式。任何一条重新出现，都意味着三层在被绕过 ——
+review 时用下面的模式全仓库 grep 一遍即可：
+
+| 红线模式（grep） | 为什么禁止 | 正确位置 |
+|----------------|-----------|---------|
+| `modelId.contains(` / `modelId.startsWith(` / `id.contains(` 出现在 `model_family.dart`、`model_descriptor.dart` 之外 | 模型分类只能有一个事实来源；散点嗅探曾导致 30+ 条规则互相踩（顺序敏感、改一处漏一处） | 加进 `ModelFamilyClassifier` 的规则表，消费方读 `ModelDescriptor.of(id)` |
+| `vendor.id ==` 任何位置 | 协议一旦认识具体厂商，厂商差异就会重新散落 | `VendorProfile` 加声明式字段（参考 `usesXaiNativeSurfaces`），dispatcher 据此选协议 |
+| `channelType ==` / `channel.type ==` 出现在 `vendors/`、`llm_dispatcher.dart` 之外 | 这是重构前 `isXai`/`isNewApiGemini` 散点判断的复活形态 | 语义抬升为 `Vendors.byId(...)` 后读 profile 字段 |
+| UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改 | 引用 `Vendors.openAIRest` 等常量 |
+| `if (family == ...)` 路由分支出现在 `llm_dispatcher.dart` 和 Layer 3 之外 | 路由规则必须单点可审计 | 挪进 dispatcher 对应 switch，加注释说明规则来源 |
+| 给 DB 表新增"由其他表推导出来的"列（如当年的 `llm_models.type`） | 冗余副本没有级联更新，就是 bug 面；v32 迁移专门为删它而生 | 运行时解析（`channel → vendor → protocol`），不落库 |
+| 协议文件里写死某厂商的 endpoint 路径差异 | endpoint 形状属于协议，*选择哪个* endpoint 属于 vendor | 独立协议类 + vendor 覆写，由 dispatcher 组合 |
+
+新增代码的自检口诀：**"这行代码回答的是哪一层的问题？"** ——
+线上格式 → protocols/；谁在供货/怎么认证 → vendors/；这个模型是什么 → Layer 3；
+选哪条路 → dispatcher。回答不出来的，先别写。
+
 ## 遗留与已知取舍
 
 - 模型 family 仍由 modelId 字符串规则推断（`model_family.dart`），
@@ -86,3 +105,17 @@ LLMService.request(modelIdentifier, messages, ...)
   合法只读消费。
 - 协议文件里保留了 `AppState().enableApiDebug` 的调试日志钩子
   （历史模式，未在本轮改动）。
+
+## 旧路径对照（读重构前的历史文档/报告用）
+
+| 重构前（已删除） | 现在 |
+|----------------|------|
+| `llm/providers/openai_api_provider.dart` | 按 surface 拆为 `protocols/openai_chat_protocol.dart` · `openai_images_protocol.dart` · `openai_videos_protocol.dart` · `xai_images_protocol.dart` · `xai_videos_protocol.dart` |
+| `llm/providers/google_genai_provider.dart` | `protocols/gemini_chat_protocol.dart` · `gemini_imagen_protocol.dart` · `gemini_veo_protocol.dart`（discovery 在 gemini_chat 文件内） |
+| `llm/providers/google_payload.dart` | `protocols/gemini_payload.dart`（内容基本原样） |
+| `llm/providers/google_auth.dart` | `vendors/vendor_profile.dart`（`headers()` / `decorateUrl()` / `redactUrl`） |
+| `llm/providers/midjourney_proxy_provider.dart` | `protocols/midjourney_protocol.dart` |
+| `llm/channel_dialect.dart` | `vendors/vendors.dart`（id 常量）+ `VendorProfile`（语义） |
+| `llm/llm_provider_interface.dart`（`ILLMProvider`） | `protocols/protocol.dart`（能力接口）+ `llm_dispatcher.dart`（路由） |
+| `llm_models.type` 数据库列 | 已删除（v32）；运行时 `channel.type → Vendors.byId → family` |
+| `main.dart` 的 `registerProvider(...)` 注册 | 不存在；dispatcher 静态持有协议实例 |

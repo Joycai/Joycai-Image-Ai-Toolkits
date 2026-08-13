@@ -63,7 +63,8 @@ that fail silently when broken, and alternatives already tried and rejected.
 - **Visual debugging:** to actually *see* a layout rather than infer it, run `flutter test test/screenshots` and open the PNGs in `build/ui-screenshots/`. They render the real screens with seeded data at all three widths, in light and dark. Overflows are printed to the run output, not asserted — this is never a regression gate. See [docs/ui-screenshot-harness.md](docs/ui-screenshot-harness.md).
   For anything touching accent or status colour, use `component_gallery_test.dart` instead: it puts every component on one page and renders it under all 7 theme seeds in both brightnesses (14 PNGs), which is the only way to see whether a colour rule survives a seed change. `shoot()` also takes a `seedColor` if you need a whole screen at a specific seed.
 - **State:** use the existing state classes. Never use `StatefulWidget` for shared or persistent data. Always create new list/object instances before `notifyListeners()` — do not mutate in place.
-- **Data persistence:** all user data goes through `DatabaseService` and the repository layer.
+- **Data persistence:** all user data goes through `DatabaseService` and the repository layer. Never persist columns derivable from another table (the deleted `llm_models.type` is the cautionary tale — see the v32 migration).
+- **LLM layering:** no model-id sniffing outside `model_family.dart`/`model_descriptor.dart`; no `vendor.id`/channel-type string comparisons outside `vendors/` and `llm_dispatcher.dart`; all routing branches live in `llm_dispatcher.dart` only. The greppable red-flag list is in [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
 - **Business logic:** belongs in `lib/services/`, not in widgets or screens.
 - **Shell commands:** detect host OS before running shell commands. Never use Unix commands on Windows or PowerShell commands on macOS/Linux. No trial-and-error retries.
 

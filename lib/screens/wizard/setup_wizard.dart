@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
+import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_button.dart';
@@ -38,7 +39,7 @@ class _SetupWizardState extends State<SetupWizard> {
   final TextEditingController _channelNameController = TextEditingController();
   final TextEditingController _endpointController = TextEditingController();
   final TextEditingController _apiKeyController = TextEditingController();
-  String _channelType = 'google-genai-rest';
+  String _channelType = Vendors.googleRest;
   int? _createdChannelId;
 
   // Model Step Controllers
@@ -66,17 +67,17 @@ class _SetupWizardState extends State<SetupWizard> {
 
   void _updateDefaultEndpoint() {
     switch (_channelType) {
-      case 'openai-api-rest':
+      case Vendors.openAIRest:
         _endpointController.text = 'https://api.openai.com/v1';
         break;
-      case 'newapi-openai':
+      case Vendors.newApiOpenAI:
         // New API is a self-hosted relay; only the path suffix is known.
         _endpointController.text = 'https://your-newapi-host.com/v1';
         break;
-      case 'newapi-gemini':
+      case Vendors.newApiGemini:
         _endpointController.text = 'https://your-newapi-host.com/v1beta';
         break;
-      case 'xai-api-rest':
+      case Vendors.xaiApi:
         _endpointController.text = 'https://api.x.ai/v1';
         break;
       default:
@@ -311,7 +312,7 @@ class _SetupWizardState extends State<SetupWizard> {
 
   Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
     String endpointHint = "";
-    if (_channelType == 'openai-api-rest' || _channelType == 'newapi-openai' || _channelType == 'xai-api-rest') {
+    if (_channelType == Vendors.openAIRest || _channelType == Vendors.newApiOpenAI || _channelType == Vendors.xaiApi) {
       endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
     } else {
       endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
@@ -337,12 +338,12 @@ class _SetupWizardState extends State<SetupWizard> {
           DropdownButtonFormField<String>(
             initialValue: _channelType,
             items: const [
-              DropdownMenuItem(value: 'google-genai-rest', child: Text('Google GenAI REST')),
-              DropdownMenuItem(value: 'openai-api-rest', child: Text('OpenAI API REST')),
-              DropdownMenuItem(value: 'official-google-genai-api', child: Text('Official Google GenAI API')),
-              DropdownMenuItem(value: 'newapi-openai', child: Text('New API (OpenAI format)')),
-              DropdownMenuItem(value: 'newapi-gemini', child: Text('New API (Gemini format)')),
-              DropdownMenuItem(value: 'xai-api-rest', child: Text('xAI (Grok) API')),
+              DropdownMenuItem(value: Vendors.googleRest, child: Text('Google GenAI REST')),
+              DropdownMenuItem(value: Vendors.openAIRest, child: Text('OpenAI API REST')),
+              DropdownMenuItem(value: Vendors.officialGoogle, child: Text('Official Google GenAI API')),
+              DropdownMenuItem(value: Vendors.newApiOpenAI, child: Text('New API (OpenAI format)')),
+              DropdownMenuItem(value: Vendors.newApiGemini, child: Text('New API (Gemini format)')),
+              DropdownMenuItem(value: Vendors.xaiApi, child: Text('xAI (Grok) API')),
             ],
             onChanged: (v) {
               setState(() {

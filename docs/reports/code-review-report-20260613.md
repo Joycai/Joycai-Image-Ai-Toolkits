@@ -1,5 +1,10 @@
 # 代码审查报告 — Joycai Image AI Toolkits v2.3.0
 
+> **⚠️ 历史文档（2026-06，重构前）** — 文中引用的 `lib/services/llm/providers/*`
+> 路径已在 2026-08 三层重构（PR #86）中重组，对照表见
+> [docs/architecture/llm-three-layer.md](../architecture/llm-three-layer.md)。
+
+
 **审查日期:** 2026-06-13  
 **审查范围:** `lib/` 下所有 Dart 源文件  
 **审查维度:** 安全性、性能、逻辑错误  

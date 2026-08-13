@@ -16,6 +16,7 @@ Welcome to the documentation directory of the Joycai Image AI Toolkits project. 
 
 ### 3. 🏛️ Architecture Notes
 Living descriptions of how a subsystem works today — invariants, accepted limits, and rejected alternatives. Unlike the design notes below, these are maintained alongside the code rather than dated to a phase.
+*   **[LLM three-layer API stack](architecture/llm-three-layer.md)**: The protocol / vendor / model layering under `lib/services/llm/`, the single dispatcher routing table, the greppable hard-coding red-flag list, and the old→new path mapping for pre-refactor documents.
 *   **[Prompt Assistant context management](architecture/assistant-context.md)**: The elide/compact layers, the `context_window` tri-state, and how knowledge-base reads are budgeted and paged.
 
 ### 4. 🎨 Design & Implementation Notes
@@ -24,7 +25,7 @@ Living descriptions of how a subsystem works today — invariants, accepted limi
 *   **[Mobile Optimization (Phase 3)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/design_notes/mobile-optimization.md)**: Adaptations for smaller screens, including mobile task queue sheets, click-to-pick slots, and quick concurrency controls.
 
 ### 5. 🛡️ Quality & Audit Reports
-*   **[API Standards Audit (August 13, 2026)](reports/api-standards-audit.md)**: How this project's `lib/services/llm/` implementation measures up against the protocol facts in [`docs/api/`](api/) — 14 findings across the OpenAI Chat Completions and Google GenAI families, plus the video/image surfaces.
+*   **[API Standards Audit (August 13, 2026)](reports/api-standards-audit.md)**: How this project's `lib/services/llm/` implementation measures up against the protocol facts in [`docs/api/`](api/) — 14 findings across the OpenAI Chat Completions and Google GenAI families, plus the video/image surfaces. *File paths predate the three-layer refactor (PR #86); see the mapping table in the architecture note.*
 *   **[Code Review Report (June 13, 2026)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/reports/code-review-report-20260613.md)**: An in-depth security, performance, and logic audit of the Dart codebase.
 
 ### 6. 🏷️ Release Notes History

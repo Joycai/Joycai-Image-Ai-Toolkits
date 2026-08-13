@@ -15,6 +15,7 @@ import 'package:joycai_image_ai_toolkits/core/constants.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 import 'package:joycai_image_ai_toolkits/models/pricing_group.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt.dart';
 import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
@@ -108,7 +109,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     displayName: 'Google AI Studio',
     endpoint: 'https://generativelanguage.googleapis.com',
     apiKey: 'fixture-key-google',
-    type: 'google-genai-rest',
+    type: Vendors.googleRest,
     tag: '官方',
     tagColor: 0xFF4285F4,
   ).toMap(includeId: false));
@@ -117,7 +118,7 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     displayName: '中转 · OpenAI 兼容',
     endpoint: 'https://api.example-relay.com/v1',
     apiKey: 'fixture-key-relay',
-    type: 'openai-api-rest',
+    type: Vendors.openAIRest,
     tag: '中转',
     tagColor: 0xFF00897B,
   ).toMap(includeId: false));
