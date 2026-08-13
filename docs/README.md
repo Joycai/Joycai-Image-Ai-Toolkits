@@ -24,6 +24,7 @@ Living descriptions of how a subsystem works today — invariants, accepted limi
 *   **[Mobile Optimization (Phase 3)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/design_notes/mobile-optimization.md)**: Adaptations for smaller screens, including mobile task queue sheets, click-to-pick slots, and quick concurrency controls.
 
 ### 5. 🛡️ Quality & Audit Reports
+*   **[API Standards Audit (August 13, 2026)](reports/api-standards-audit.md)**: How this project's `lib/services/llm/` implementation measures up against the protocol facts in [`docs/api/`](api/) — 14 findings across the OpenAI Chat Completions and Google GenAI families, plus the video/image surfaces.
 *   **[Code Review Report (June 13, 2026)](file:///d:/github/Joycai-Image-Ai-Toolkits/docs/reports/code-review-report-20260613.md)**: An in-depth security, performance, and logic audit of the Dart codebase.
 
 ### 6. 🏷️ Release Notes History
