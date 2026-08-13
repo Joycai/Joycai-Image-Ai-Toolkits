@@ -25,7 +25,13 @@ class OptimizerReferencePanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
           trailing: images.isEmpty
               ? null
-              : Text('${images.length}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
+              : Text(
+                  '${images.length}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colorScheme.outline,
+                        fontFamily: 'monospace',
+                      ),
+                ),
         ),
         if (images.isEmpty)
           Expanded(
@@ -57,7 +63,7 @@ class OptimizerReferencePanel extends StatelessWidget {
             child: ListenableBuilder(
               listenable: session,
               builder: (context, _) => ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                 itemCount: images.length,
                 itemBuilder: (context, index) {
                   final image = images[index];
@@ -89,8 +95,8 @@ class OptimizerReferencePanel extends StatelessWidget {
                                 // id, and the optimized prompt cites the same
                                 // number.
                                 Positioned(
-                                  top: 6,
-                                  left: 6,
+                                  top: 7,
+                                  left: 7,
                                   child: _Badge(
                                     text: '${index + 1}',
                                     background: colorScheme.primary,
@@ -98,8 +104,8 @@ class OptimizerReferencePanel extends StatelessWidget {
                                   ),
                                 ),
                                 Positioned(
-                                  top: 6,
-                                  right: 6,
+                                  top: 7,
+                                  right: 7,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -108,11 +114,12 @@ class OptimizerReferencePanel extends StatelessWidget {
                                           message: l10n.optViewed,
                                           child: _Badge(
                                             icon: Icons.visibility_outlined,
-                                            background: colorScheme.surface.withValues(alpha: 0.85),
+                                            background: colorScheme.surface.withValues(alpha: 0.9),
                                             foreground: colorScheme.onSurfaceVariant,
+                                            border: colorScheme.outlineVariant,
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 5),
                                       ],
                                       Tooltip(
                                         message: l10n.optRemoveImage,
@@ -127,9 +134,9 @@ class OptimizerReferencePanel extends StatelessWidget {
                                           onTap: () => workbenchUIState.removeAssistantImage(image),
                                           child: _Badge(
                                             icon: Icons.close,
-                                            background: colorScheme.surface.withValues(alpha: 0.85),
+                                            background: colorScheme.surface.withValues(alpha: 0.9),
                                             foreground: colorScheme.onSurfaceVariant,
-                                            circular: true,
+                                            border: colorScheme.outlineVariant,
                                           ),
                                         ),
                                       ),
@@ -140,9 +147,18 @@ class OptimizerReferencePanel extends StatelessWidget {
                             ),
                           ),
                           // The name the prompt will cite, off the picture so
-                          // it never covers the thing being referred to.
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                          // it never covers the thing being referred to. Its
+                          // own footer band under a hairline, rather than text
+                          // floating below the image: the card is a thumbnail
+                          // *and* a filename, and the rule is what says the two
+                          // belong to each other rather than to the next card.
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: colorScheme.outlineVariant),
+                              ),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(9, 6, 9, 6),
                             child: Text(
                               image.name,
                               maxLines: 1,
@@ -170,8 +186,8 @@ class OptimizerReferencePanel extends StatelessWidget {
             child: Text(
               l10n.optRefNumberingHint,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.4,
+                    color: colorScheme.outline,
+                    height: 1.6,
                   ),
             ),
           ),
@@ -180,40 +196,52 @@ class OptimizerReferencePanel extends StatelessWidget {
   }
 }
 
+/// A fixed 20px round plate over a thumbnail — the reference number, and the
+/// two neutral controls beside it.
+///
+/// One size and one shape for all three. They sit in the same 7px inset on
+/// opposite corners of the same picture, and the earlier mix of rounded squares
+/// (the number, the eye) with a circle (the ✕) read as three unrelated marks
+/// rather than as one set of affordances on one card.
 class _Badge extends StatelessWidget {
   final String? text;
   final IconData? icon;
   final Color background;
   final Color foreground;
 
-  /// A round plate rather than the default rounded square — for the ✕, whose
-  /// job is to read as a small dismiss control rather than as another chip in
-  /// the row of labels.
-  final bool circular;
+  /// A hairline for the translucent plates, which otherwise vanish over a pale
+  /// patch of the image underneath.
+  final Color? border;
+
+  static const double _diameter = 20;
 
   const _Badge({
     this.text,
     this.icon,
     required this.background,
     required this.foreground,
-    this.circular = false,
+    this.border,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: circular
-          ? const EdgeInsets.all(4)
-          : const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      width: _diameter,
+      height: _diameter,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: background,
-        shape: circular ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: circular ? null : BorderRadius.circular(6),
+        shape: BoxShape.circle,
+        border: border == null ? null : Border.all(color: border!),
       ),
       child: text != null
           ? Text(
               text!,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: foreground),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                    color: foreground,
+                  ),
             )
           : Icon(icon, size: 12, color: foreground),
     );

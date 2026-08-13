@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
+import '../../../services/assistant_context_usage.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
@@ -12,8 +14,10 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
+import '../../../widgets/app_status_badge.dart';
 import '../../../widgets/chat_model_selector.dart';
 import '../../../widgets/app_section_label.dart';
+import 'optimizer_context_card.dart';
 
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
@@ -30,6 +34,12 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// rather than read from the session here, so this panel stays
   /// presentational and testable without the workbench's providers.
   final List<String> citedKnowledgeFiles;
+
+  /// What the session currently spends of the model's window. Measured by the
+  /// caller for the same reason as [citedKnowledgeFiles] — it needs the live
+  /// session and the selected model's configured window, neither of which this
+  /// panel should reach for itself.
+  final ContextUsageSnapshot contextUsage;
   final Function(int?) onModelChanged;
   final Function(int?) onTagChanged;
   final Function(String?) onSysPromptChanged;
@@ -54,6 +64,7 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.tags,
     required this.filteredSysPrompts,
     this.citedKnowledgeFiles = const [],
+    this.contextUsage = ContextUsageSnapshot.placeholder,
     required this.onModelChanged,
     required this.onTagChanged,
     required this.onSysPromptChanged,
@@ -78,6 +89,13 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   /// Cited files listed before the "all N" link takes over.
   static const int _citedPreviewCount = 3;
+
+  /// The single gap between every card in this column.
+  ///
+  /// One constant rather than a `Padding(top:)` grown onto each card as it was
+  /// added: the panel had picked up 4, 12 and 16 between neighbours, and the
+  /// design draws one rhythm down the whole column.
+  static const double _cardGap = 12;
 
   @override
   void initState() {
@@ -143,9 +161,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 4),
         _buildModeSelector(l10n, colorScheme),
-        const SizedBox(height: 12),
+        const SizedBox(height: _cardGap),
         ChatModelSelector(
           selectedModelId: widget.selectedModelDbId,
           label: l10n.refinerModel,
@@ -154,10 +171,20 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           prefixIcon: Icons.tune,
           style: ChatModelSelectorStyle.card,
         ),
-        if (widget.mode == AssistantMode.systemPrompt)
-          _buildSysPromptSection(l10n, colorScheme)
-        else ...[
+        if (widget.mode == AssistantMode.systemPrompt) ...[
+          _buildSysPromptSection(l10n, colorScheme),
+          const SizedBox(height: _cardGap),
+          // In every mode, not only the knowledge ones the design draws: a
+          // system-prompt session fills the same window, and a long custom
+          // prompt is exactly the thing that fills it without the user
+          // suspecting it.
+          OptimizerContextCard(usage: widget.contextUsage),
+        ] else ...[
+          const SizedBox(height: _cardGap),
           _buildKnowledgeStatus(l10n, colorScheme),
+          const SizedBox(height: _cardGap),
+          OptimizerContextCard(usage: widget.contextUsage),
+          const SizedBox(height: _cardGap),
           // Its own card, not a tail on the status card: the base's
           // configuration is fixed for the session while this changes with
           // every answer, and reading them as one block invites the two to be
@@ -235,73 +262,56 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         problem = l10n.kbMissingEntry;
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: AppCard(
-        outlined: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  ok ? Icons.menu_book_outlined : Icons.warning_amber_outlined,
-                  size: 16,
-                  color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Expanded(child: Text(l10n.knowledgeBase, style: textTheme.titleSmall)),
-                if (ok) _buildReadyPill(l10n, colorScheme, textTheme),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (!ok)
-              Text(problem, style: textTheme.bodySmall?.copyWith(color: colorScheme.error))
-            else ...[
-              // The folder, in a code-ish chip: it is a path, and paths read
-              // badly as prose at the end of a wrapped sentence.
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: _ElidedPath(
-                  path: widget.kbPath ?? '',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                  ),
+    return AppCard(
+      outlined: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                ok ? Icons.menu_book_outlined : Icons.warning_amber_outlined,
+                size: AppSize.iconSm,
+                color: ok ? colorScheme.onSurfaceVariant : colorScheme.error,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.knowledgeBase, style: textTheme.titleSmall)),
+              // `running`, which is the accent-tinted pill with a dot the spec
+              // draws here — and the honest reading of the state: a configured
+              // base is not a finished job, it is a source the agent reads from
+              // on every turn for as long as the mode is on.
+              if (ok) AppStatusBadge(label: l10n.optKbReady, kind: AppStatusKind.running),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (!ok)
+            Text(problem, style: textTheme.bodySmall?.copyWith(color: colorScheme.error))
+          else ...[
+            // The folder, in a code-ish chip: it is a path, and paths read
+            // badly as prose at the end of a wrapped sentence.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+              child: _ElidedPath(
+                path: widget.kbPath ?? '',
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontFamily: 'monospace',
                 ),
               ),
-              const SizedBox(height: 8),
-              _buildTreeStatsLine(l10n, colorScheme, textTheme),
-            ],
-            const SizedBox(height: 10),
-            _buildKbActions(l10n, ok),
+            ),
+            const SizedBox(height: 8),
+            _buildTreeStatsLine(l10n, colorScheme, textTheme),
           ],
-        ),
+          const SizedBox(height: 10),
+          _buildKbActions(l10n, ok),
+        ],
       ),
-    );
-  }
-
-  Widget _buildReadyPill(AppLocalizations l10n, ColorScheme colorScheme, TextTheme textTheme) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          l10n.optKbReady,
-          style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
-        ),
-      ],
     );
   }
 
@@ -392,7 +402,6 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         AppIconButton(
           icon: Icons.folder_open_outlined,
           tooltip: l10n.openInFolder,
-          size: 34,
           onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
         ),
       ],
@@ -412,51 +421,60 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     final cited = widget.citedKnowledgeFiles;
     final shown = cited.take(_citedPreviewCount).toList();
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: AppCard(
-        outlined: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.optKbCitedThisRound, style: textTheme.titleSmall),
-            const SizedBox(height: 6),
-            if (cited.isEmpty)
-              Text(
-                l10n.optKbCitedNone,
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-              )
-            else ...[
-              for (final path in shown)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    children: [
-                      Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          path,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+    return AppCard(
+      outlined: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The tracked caption, not a card title: the spec draws this and the
+          // context card's heading as the same small label, and they sit two
+          // cards apart in the same column.
+          AppSectionLabel(l10n.optKbCitedThisRound, padding: EdgeInsets.zero),
+          const SizedBox(height: 8),
+          if (cited.isEmpty)
+            Text(
+              l10n.optKbCitedNone,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            )
+          else ...[
+            for (final path in shown)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Icon(Icons.description_outlined, size: 14, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 7),
+                    Flexible(
+                      // Monospace, like every other filename on this screen —
+                      // the reference panel's captions and the timeline's step
+                      // rows name the same files.
+                      child: Text(
+                        path,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              if (cited.length > shown.length)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    l10n.optKbCitedAll(cited.length),
-                    style: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
-                  ),
+              ),
+            if (cited.length > shown.length)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  l10n.optKbCitedAll(cited.length),
+                  // onAccentTint, not `primary`: at 11.5px this is thin text on
+                  // a plain surface, and `primary` lands near the contrast floor
+                  // on the warmer seeds. See AppSectionLabel's own note.
+                  style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
                 ),
-            ],
+              ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -687,18 +705,21 @@ class _Chip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+          // The selection wash and its ring, off the accent ladder rather than
+          // `primaryContainer` — which is a saturated slab at several of the
+          // seven seeds and made a 20px chip the loudest thing in the panel.
+          color: selected ? colorScheme.accentTint : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.xs),
           border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.5),
+            color: selected ? colorScheme.accentRing : colorScheme.outlineVariant,
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            color: selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
           ),
         ),
       ),

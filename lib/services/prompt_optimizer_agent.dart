@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import 'assistant_context_usage.dart';
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
 import 'llm/context_budget.dart';
@@ -264,6 +265,33 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// staying entirely optional: providers may omit usage, and then the
   /// conservative default applies.
   double? observedCharsPerToken;
+
+  /// Chars of the two fixed parts of the last request that went out: the system
+  /// prompt, and the JSON schemas of the tools offered with it.
+  ///
+  /// Recorded rather than derived, because neither is reconstructible from the
+  /// session: the system prompt is assembled per turn from a mode, a preset and
+  /// (in knowledge mode) a file read off disk, and the tool list shrinks
+  /// mid-turn when the window runs out. Both are zero until the first request —
+  /// [PromptOptimizerAgent.measureContext] reports that as "nothing measured
+  /// yet" rather than as a free system prompt.
+  int systemPromptChars = 0;
+  int toolSchemaChars = 0;
+
+  /// Records what the request about to go out costs before the history.
+  ///
+  /// Notifies, so the usage readout follows the turn as it runs rather than
+  /// only at the end of it — the tool list changes between requests of the same
+  /// turn, and so does everything downstream of a tool result.
+  void recordRequestBasis({required int systemPromptChars, required int toolSchemaChars}) {
+    if (this.systemPromptChars == systemPromptChars &&
+        this.toolSchemaChars == toolSchemaChars) {
+      return;
+    }
+    this.systemPromptChars = systemPromptChars;
+    this.toolSchemaChars = toolSchemaChars;
+    notifyListeners();
+  }
 
   /// [history] length at the moment each knowledge file was last written, so
   /// reads recorded before the write stop counting as current.
@@ -1036,6 +1064,15 @@ class PromptOptimizerAgent {
         // stale within a turn.
         final sentChars = occupiedChars(systemPromptText, trimmedHistory);
 
+        // The two fixed costs of *this* request, for the usage readout. Here
+        // rather than once per turn: activeTools shrinks when the window runs
+        // out, and this is the last point before the request where what is
+        // actually being sent is known.
+        session.recordRequestBasis(
+          systemPromptChars: systemPromptText.length,
+          toolSchemaChars: toolSchemaChars(activeTools),
+        );
+
         final LLMResponse response;
         try {
           response = await LLMService().request(
@@ -1367,6 +1404,87 @@ class PromptOptimizerAgent {
       }
     }
     return total;
+  }
+
+  /// Chars the tool schemas add to every request.
+  ///
+  /// Not part of [occupiedChars] and deliberately kept out of it: that number
+  /// is the budget basis *and* [ContextBudget.calibrate]'s divisor, and both
+  /// were tuned against a tally that excludes tools. Widening it would move the
+  /// compaction trigger for every existing session. So tools are measured
+  /// separately, for display only — the readout is allowed to be more complete
+  /// than the budget, and saying so is better than a bar with a missing slice.
+  ///
+  /// The count is of the JSON that goes on the wire: every protocol serializes
+  /// name, description and parameter schema, whatever wrapper it puts them in.
+  static int toolSchemaChars(List<LLMTool> tools) {
+    int total = 0;
+    for (final t in tools) {
+      total += t.name.length + t.description.length;
+      total += jsonEncode(t.parameters).length;
+    }
+    return total;
+  }
+
+  /// What this session currently spends of the model's context window, split
+  /// the way the request is.
+  ///
+  /// Derived on every call rather than cached, for the same reason the read cap
+  /// is recomputed per tool call: a cached figure has to be invalidated by
+  /// eliding, compaction and every appended tool result, and the one thing this
+  /// subsystem has repeatedly proven is that nothing remembers to do that (see
+  /// assistant-context.md, *Rejected*). The walk is over message lengths, not
+  /// their contents, so it is cheap enough to run per rebuild.
+  ///
+  /// [contextWindowTokens] is the model's configured window straight out of
+  /// `llm_models.context_window` — the same nullable tri-state the turn is
+  /// budgeted with, decoded here by [ContextBudget.modeOf] and nowhere else.
+  ///
+  /// History is measured **after** [_trimForSend], because that is what will be
+  /// sent; the untrimmed history would over-report by every elided knowledge
+  /// read the session has ever done.
+  static ContextUsageSnapshot measureContext(
+    PromptOptimizerSession session, {
+    required int? contextWindowTokens,
+  }) {
+    // Nothing has gone out and nothing has been said: report "not measured"
+    // rather than a confident zero for a system prompt that simply has not been
+    // built yet.
+    if (session.systemPromptChars == 0 && session.history.isEmpty) {
+      return ContextUsageSnapshot.placeholder;
+    }
+
+    final perToken = session.observedCharsPerToken ?? ContextBudget.charsPerToken;
+    final (int windowChars, ContextWindowBasis basis) =
+        switch (ContextBudget.modeOf(contextWindowTokens)) {
+      ContextWindowMode.specified => (
+          (contextWindowTokens! * perToken).round(),
+          ContextWindowBasis.configured,
+        ),
+      ContextWindowMode.unset => (
+          (ContextBudget.defaultWindowTokens * perToken).round(),
+          ContextWindowBasis.assumed,
+        ),
+      ContextWindowMode.unlimited => (0, ContextWindowBasis.unlimited),
+    };
+
+    return ContextUsageSnapshot(
+      windowChars: windowChars,
+      basis: basis,
+      slices: {
+        // Omitted rather than zeroed while unmeasured: a session restored from
+        // the database has its whole history back and no idea what system
+        // prompt the next turn will build, and "0" there would read as a free
+        // one. The next request fills both in.
+        if (session.systemPromptChars > 0)
+          ContextUsageSlice.systemPrompt: session.systemPromptChars,
+        if (session.toolSchemaChars > 0) ContextUsageSlice.tools: session.toolSchemaChars,
+        // occupiedChars('') is the history's own share — the system prompt is
+        // already its own slice above, and double-counting it would push the
+        // bar past the window it is drawn in.
+        ContextUsageSlice.history: occupiedChars('', _trimForSend(session.history)),
+      },
+    );
   }
 
   /// Pages of [relPath] whose content the model can still read in what will be

@@ -633,6 +633,14 @@
     }
   },
   "optKbCitedNone": "尚无引用",
+  "optCtxTitle": "上下文占用",
+  "optCtxSystemPrompt": "系统提示词",
+  "optCtxTools": "工具定义",
+  "optCtxHistory": "会话历史",
+  "optCtxRemaining": "剩余窗口",
+  "optCtxWindowUnknown": "窗口未设置",
+  "optCtxWindowUnlimited": "不限",
+  "optCtxWindowAssumed": "该模型未设置上下文窗口，此处按默认值估算。",
   "optAttachedImages": "{count} 张参考图随消息发送",
   "@optAttachedImages": {
     "placeholders": {

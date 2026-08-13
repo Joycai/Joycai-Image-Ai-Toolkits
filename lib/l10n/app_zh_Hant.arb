@@ -1304,6 +1304,14 @@
     }
   },
   "optKbCitedNone": "尚無引用",
+  "optCtxTitle": "上下文佔用",
+  "optCtxSystemPrompt": "系統提示詞",
+  "optCtxTools": "工具定義",
+  "optCtxHistory": "對話歷史",
+  "optCtxRemaining": "剩餘視窗",
+  "optCtxWindowUnknown": "視窗未設定",
+  "optCtxWindowUnlimited": "不限",
+  "optCtxWindowAssumed": "此模型未設定上下文視窗，這裡以預設值估算。",
   "optAttachedImages": "{count} 張參考圖隨訊息傳送",
   "@optAttachedImages": {
     "placeholders": {

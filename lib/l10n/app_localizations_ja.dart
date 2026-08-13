@@ -2538,6 +2538,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optKbCitedNone => '参照はまだありません';
 
   @override
+  String get optCtxTitle => 'コンテキスト使用量';
+
+  @override
+  String get optCtxSystemPrompt => 'システムプロンプト';
+
+  @override
+  String get optCtxTools => 'ツール定義';
+
+  @override
+  String get optCtxHistory => '会話履歴';
+
+  @override
+  String get optCtxRemaining => '残りウィンドウ';
+
+  @override
+  String get optCtxWindowUnknown => 'ウィンドウ未設定';
+
+  @override
+  String get optCtxWindowUnlimited => '無制限';
+
+  @override
+  String get optCtxWindowAssumed => 'このモデルはコンテキストウィンドウが未設定です。既定値で概算しています。';
+
+  @override
   String optAttachedImages(int count) {
     return '参照画像 $count 枚をメッセージと共に送信';
   }
