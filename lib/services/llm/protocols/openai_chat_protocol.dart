@@ -246,27 +246,89 @@ class InlineThinkStreamFilter {
   }
 }
 
-/// Throws when a 200 response body is actually an error envelope.
+/// Images carried by a structured (non-text) response field.
 ///
-/// Compat layers deliver failures inside a successful HTTP response in at
-/// least two spellings (streaming.md §3.1/§3.2): an `error` field (relays,
-/// audits, quota), or MiniMax's `base_resp.status_code != 0` (auth 1004,
-/// balance 1008, rate 1002, token limit 1039). A client that only checks the
-/// HTTP status reads an expired key as a normal empty reply.
-void throwIfEnvelopeError(Map<String, dynamic> data) {
-  final err = data['error'];
-  if (err != null) {
-    final msg = err is Map ? (err['message'] ?? err.toString()) : err.toString();
-    throw Exception('API error in response body: $msg');
-  }
-  final baseResp = data['base_resp'];
-  if (baseResp is Map) {
-    final code = baseResp['status_code'];
-    if (code is num && code != 0) {
-      throw Exception(
-          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}');
+/// Relays disagree on how a generated image comes back. New API's own Gemini
+/// adapter writes markdown `![image](data:…)` into `content`, which the text
+/// scan handles; others use `images: [{image_url: {url}}]` or a bare
+/// `image_data` base64 string. [urls] holds `http(s)` entries the caller must
+/// still fetch — a relay backed by object storage returns a link rather than
+/// the bytes, and dropping those was indistinguishable from generating nothing.
+class StructuredImages {
+  final List<Uint8List> bytes;
+  final List<String> urls;
+  const StructuredImages(this.bytes, this.urls);
+
+  bool get isEmpty => bytes.isEmpty && urls.isEmpty;
+}
+
+/// Reads the structured image fields of a `message` (sync) or `delta`
+/// (streaming) object. Unknown shapes contribute nothing.
+StructuredImages extractStructuredImages(Map<String, dynamic> source) {
+  final bytes = <Uint8List>[];
+  final urls = <String>[];
+
+  void addUrl(String url) {
+    if (url.startsWith('data:image/')) {
+      final comma = url.indexOf(',');
+      if (comma == -1) return;
+      try {
+        bytes.add(base64Decode(url.substring(comma + 1)));
+      } catch (_) {/* not decodable — nothing to add */}
+    } else if (url.startsWith('http://') || url.startsWith('https://')) {
+      urls.add(url);
     }
   }
+
+  final imageData = source['image_data'];
+  if (imageData is String && imageData.isNotEmpty) {
+    try {
+      bytes.add(base64Decode(imageData));
+    } catch (_) {/* ignore */}
+  }
+
+  // `images: [{ image_url: { url: "data:…"|"http…" } }]`
+  final imageList = source['images'];
+  if (imageList is List) {
+    for (final entry in imageList) {
+      if (entry is! Map) continue;
+      final urlField = entry['image_url'] is Map
+          ? entry['image_url']['url']
+          : (entry['image_url'] ?? entry['url']);
+      if (urlField is String && urlField.isNotEmpty) addUrl(urlField);
+      final b64 = entry['b64_json'];
+      if (b64 is String && b64.isNotEmpty) {
+        try {
+          bytes.add(base64Decode(b64));
+        } catch (_) {/* ignore */}
+      }
+    }
+  }
+
+  return StructuredImages(bytes, urls);
+}
+
+/// Image URLs a reply's *text* points at, in declaration order, deduplicated.
+///
+/// Two forms count as "this is the image you asked for":
+///  * a markdown image link — `![image](https://…)`. New API's Gemini adapter
+///    writes exactly this shape with a `data:` URI, and relays backed by
+///    object storage write it with an `http(s)` link instead; the second kind
+///    used to be dropped, so those relays produced a caption and no picture.
+///  * a bare `storage.googleapis.com` link, the historical Gemini case.
+///
+/// A bare link to any other host is deliberately *not* fetched: a chat reply
+/// that merely cites a URL must not cause the app to go download it.
+List<String> imageUrlsInText(String text) {
+  final urls = <String>{};
+  for (final m in RegExp(r'!\[[^\]]*\]\((https?://[^\s)]+)\)').allMatches(text)) {
+    urls.add(m.group(1)!);
+  }
+  for (final m
+      in RegExp(r'https?://storage\.googleapis\.com/[^\s"\]\)]+').allMatches(text)) {
+    urls.add(m.group(0)!);
+  }
+  return urls.toList();
 }
 
 /// OpenAI `POST /chat/completions` — JSON request, JSON or SSE response.
@@ -336,7 +398,9 @@ class OpenAIChatProtocol implements ChatProtocol {
       String? reasoningFieldName;
 
       final choice = data is Map<String, dynamic> ? firstChoice(data) : null;
-      final message = choice?['message'];
+      final rawMessage = choice?['message'];
+      final message =
+          rawMessage is Map ? rawMessage.cast<String, dynamic>() : null;
       if (message == null) {
         // Previously this fell through to an empty LLMResponse, which callers
         // (the assistant loop above all) read as "the model chose to say
@@ -409,7 +473,9 @@ class OpenAIChatProtocol implements ChatProtocol {
         }
 
         // Some OpenAI-compat relays expose images via a structured field.
-        _extractStructuredImages(message, images);
+        final structured = extractStructuredImages(message);
+        images.addAll(structured.bytes);
+        images.addAll(await _fetchImageUrls(structured.urls, config, logger));
 
         if (text.isNotEmpty) {
           logger?.call('Extracting images from text response...', level: 'DEBUG');
@@ -535,14 +601,29 @@ class OpenAIChatProtocol implements ChatProtocol {
         final rawFinish = choice['finish_reason'];
         if (rawFinish is String && rawFinish.isNotEmpty) finishReason = rawFinish;
 
+        // Structured image fields, read outside the tolerant try for the same
+        // reason as usage: on a relay that answers with `delta.images[]`
+        // instead of a markdown data URI in the text, these *are* the reply.
+        // Only `image_data` used to be read here, so those relays streamed
+        // zero images and the task reported success with nothing in it.
+        final rawDelta = choice['delta'];
+        final delta = rawDelta is Map ? rawDelta.cast<String, dynamic>() : null;
+        if (delta != null) {
+          final structured = extractStructuredImages(delta);
+          for (final img in structured.bytes) {
+            yield LLMResponseChunk(imagePart: img);
+          }
+          for (final img in await _fetchImageUrls(structured.urls, config, logger)) {
+            yield LLMResponseChunk(imagePart: img);
+          }
+        }
+
         try {
-          final delta = choice['delta'];
           // Same shape tolerance as the sync path — a delta carrying a content
           // array would otherwise throw into the catch below and be dropped as
           // "parse noise", losing the reply one chunk at a time.
           final text = contentToText(delta?['content']);
           final reasoning = delta?['reasoning_content'] ?? delta?['reasoning'];
-          final imageData = delta?['image_data'];
 
           if (reasoning is String && reasoning.isNotEmpty) {
             // Dedicated channel: consumers that accumulate textPart into a
@@ -571,12 +652,6 @@ class OpenAIChatProtocol implements ChatProtocol {
             }
           }
 
-          if (imageData != null) {
-            yield LLMResponseChunk(
-              imagePart: base64Decode(imageData),
-              metadata: chunkData['usage'],
-            );
-          }
         } catch (e) {
           // Ignore parse errors
         }
@@ -622,31 +697,34 @@ class OpenAIChatProtocol implements ChatProtocol {
     yield LLMResponseChunk(isDone: true);
   }
 
-  /// Pull images out of structured (non-text) response fields used by some
-  /// OpenAI-compatible relays.
-  void _extractStructuredImages(Map<String, dynamic> message, List<Uint8List> images) {
-    final imageData = message['image_data'];
-    if (imageData is String && imageData.isNotEmpty) {
-      try {
-        images.add(base64Decode(imageData));
-      } catch (_) {/* ignore */}
-    }
-
-    // `images: [{ image_url: { url: "data:..."|"http..." } }]`
-    final imageList = message['images'];
-    if (imageList is List) {
-      for (final entry in imageList) {
-        final urlField = entry is Map ? (entry['image_url']?['url'] ?? entry['url']) : null;
-        if (urlField is String && urlField.startsWith('data:image/')) {
-          final comma = urlField.indexOf(',');
-          if (comma != -1) {
-            try {
-              images.add(base64Decode(urlField.substring(comma + 1)));
-            } catch (_) {/* ignore */}
+  /// Downloads images a relay returned by reference rather than by value.
+  /// A failed fetch is logged and skipped — one dead link must not lose the
+  /// images that did arrive.
+  Future<List<Uint8List>> _fetchImageUrls(
+    List<String> urls,
+    LLMModelConfig config,
+    LLMLogger? logger,
+  ) async {
+    if (urls.isEmpty) return const [];
+    final images = <Uint8List>[];
+    final client = config.createClient();
+    try {
+      for (final url in urls) {
+        try {
+          final resp = await client.get(Uri.parse(url));
+          if (resp.statusCode == 200) {
+            images.add(resp.bodyBytes);
+          } else {
+            logger?.call('Image URL returned ${resp.statusCode}: $url', level: 'WARN');
           }
+        } catch (e) {
+          logger?.call('Failed to fetch image URL $url: $e', level: 'WARN');
         }
       }
+    } finally {
+      client.close();
     }
+    return images;
   }
 
   bool _isBase64Heuristic(String text) {
@@ -673,12 +751,9 @@ class OpenAIChatProtocol implements ChatProtocol {
         } catch (e) { /* ignore */ }
       }
 
-      // 2. Extract Cloud URLs
-      final urlRegex = RegExp(r'(https?://storage\.googleapis\.com/[^\s"\]\)]+)');
-      final urlMatches = urlRegex.allMatches(text);
-      for (var match in urlMatches) {
+      // 2. Fetch images the text points at rather than embeds.
+      for (final url in imageUrlsInText(text)) {
         try {
-          final url = match.group(1)!;
           final response = await client.get(Uri.parse(url));
           if (response.statusCode == 200) {
             images.add(response.bodyBytes);
@@ -806,26 +881,54 @@ class OpenAIChatProtocol implements ChatProtocol {
       _prepareChatPayload(target, history, options, isStreaming: isStreaming, tools: tools);
 
   /// Gemini-via-OpenAI compatibility extensions used by relay services.
+  ///
+  /// The aspect ratio and 1K/2K/4K size go out **twice**, because the two
+  /// hosts that serve Gemini through an OpenAI-shaped surface read them from
+  /// different places and neither complains about the other's spelling:
+  ///
+  ///  * New API only reads `extra_body.google.image_config`, and only its
+  ///    `aspect_ratio` / `image_size` keys — it rejects the camelCase
+  ///    spellings outright and ignores everything else, so the top-level
+  ///    `image_config` this used to send alone was silently dropped and the
+  ///    workbench's ratio and resolution controls did nothing.
+  ///  * The top-level form is what other relays (and our own history) use, so
+  ///    it stays.
+  ///
+  /// `modalities` and `safety_settings` are likewise ignored by New API — it
+  /// derives `responseModalities` from the model name and takes safety
+  /// thresholds from its own server-side config — but they are what other
+  /// OpenAI-shaped Gemini hosts read, and an unknown field costs nothing.
   void _applyGeminiCompatExtensions(Map<String, dynamic> payload, Map<String, dynamic>? options) {
     payload["modalities"] = ["image", "text"];
 
     payload["safety_settings"] =
         SafetySettings.toApiList(options?[SafetySettings.paramKey]);
 
-    if (options != null) {
-      final imageConfig = <String, dynamic>{};
-      imageConfig['person_generation'] = 'allow_all';
-      if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
-        imageConfig['aspect_ratio'] = options['aspectRatio'];
-      }
-      if (options.containsKey('imageSize')) {
-        imageConfig['image_size'] = options['imageSize'];
-      }
-      if (imageConfig.isNotEmpty) {
-        imageConfig['number_of_images'] = 1;
-        payload["image_config"] = imageConfig;
-      }
+    if (options == null) return;
+
+    // Only these two keys are portable; `person_generation` /
+    // `number_of_images` belong to the top-level dialect alone.
+    final portable = <String, dynamic>{};
+    if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
+      portable['aspect_ratio'] = options['aspectRatio'];
     }
+    if (options.containsKey('imageSize')) {
+      portable['image_size'] = options['imageSize'];
+    }
+    if (portable.isEmpty) return;
+
+    payload["image_config"] = {
+      'person_generation': 'allow_all',
+      ...portable,
+      'number_of_images': 1,
+    };
+
+    final extraBody = (payload['extra_body'] as Map<String, dynamic>?) ?? {};
+    final google = (extraBody['google'] as Map<String, dynamic>?) ?? {};
+    payload['extra_body'] = {
+      ...extraBody,
+      'google': {...google, 'image_config': portable},
+    };
   }
 }
 

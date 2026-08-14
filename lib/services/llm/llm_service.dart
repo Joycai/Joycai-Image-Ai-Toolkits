@@ -258,9 +258,17 @@ class LLMService {
   Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId}) async {
     final db = DatabaseService();
 
-    // Standardize metadata keys (OpenAI vs Google)
-    final promptTokens = _asTokenCount(metadata['promptTokenCount'] ?? metadata['prompt_tokens']);
-    final outputTokens = _asTokenCount(metadata['candidatesTokenCount'] ?? metadata['completion_tokens']);
+    // Standardize metadata keys. Three spellings are in play: Google
+    // (`promptTokenCount`), OpenAI chat (`prompt_tokens`) and the OpenAI
+    // *Images* API (`input_tokens`) — gpt-image-1 reports only the third, so
+    // reading the first two alone recorded every image generation as zero
+    // tokens and only request-billed channels came out right.
+    final promptTokens = _asTokenCount(metadata['promptTokenCount'] ??
+        metadata['prompt_tokens'] ??
+        metadata['input_tokens']);
+    final outputTokens = _asTokenCount(metadata['candidatesTokenCount'] ??
+        metadata['completion_tokens'] ??
+        metadata['output_tokens']);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     await db.recordTokenUsage({
@@ -309,7 +317,9 @@ class LLMService {
   /// conclude the context is empty on exactly the small local models that
   /// overflow first, so this returns null and lets them fall back.
   static int? promptTokensOf(Map<String, dynamic> metadata) {
-    final raw = metadata['promptTokenCount'] ?? metadata['prompt_tokens'];
+    final raw = metadata['promptTokenCount'] ??
+        metadata['prompt_tokens'] ??
+        metadata['input_tokens'];
     if (raw == null) return null;
     final count = raw is num ? raw.toInt() : int.tryParse(raw.toString());
     return (count == null || count <= 0) ? null : count;

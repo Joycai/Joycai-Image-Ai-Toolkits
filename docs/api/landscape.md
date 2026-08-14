@@ -357,7 +357,30 @@ vLLM / llama.cpp。Google 与 Anthropic 也各自提供了一层 OpenAI 兼容�
 **由此得出一条可移植的规则：面向兼容层时，在"官方两种都收"的地方要选中继
 文档写的那一种。** 官方的宽容不是中继的宽容。
 
-### 兼容层文档的通用规律（五个样本的共同点）
+### 第六个样本：同一个生图模型的两条路（截至 2026-08）
+
+New API 的 Gemini 生图模型可以走 ① 形状（`/v1/chat/completions`）也可以走
+③ 形状（`:generateContent`）。**两条路对"谁负责哪个字段"的划分正好互补**，
+而且两边的错法都不报错。以下三条读自中继源码，不是文档——文档这两页的字段
+说明是空的。
+
+- **① 形状：出图参数只认 `extra_body.google.image_config`。** 顶层
+  `image_config` 不读，键名只收 snake_case（`aspect_ratio` / `image_size`），
+  camelCase 会被显式拒绝，其余键一律丢弃。发在顶层的后果是宽高比和分辨率
+  **静默无效**——请求成功、图也出来了，只是尺寸不是你要的那个。
+- **① 形状：`modalities` 和 `safety_settings` 都不读。** 前者由中继按模型名
+  自行推导 `responseModalities`，后者取自中继的服务端配置。
+- **③ 形状：`responseModalities` 没人替你补。** 中继只在**翻译** ① 形状请求
+  时注入它，原生形状是透传。于是同一个模型走 ① 反而更稳——需要显式声明模态
+  的老模型（如 `gemini-2.0-flash-preview-image-generation`）走 ③ 时只回文本。
+
+图片回传形态同样有两种，都得接住：中继自己的适配器把 `inlineData` 写成
+**`content` 里的 markdown** `![image](data:<mime>;base64,…)`（同步和流式都是
+这个形状）；另一些中继改用结构化的
+`message.images[].image_url.url`，其中的 URL 可能是 data URI，**也可能是图床
+的 http 链接**——只认 data URI 的解析器在后一种上得到零张图。
+
+### 兼容层文档的通用规律（六个样本的共同点）
 
 1. **结构照抄，扩展在响应侧。**
 2. **枚举是子集**（reasoning_effort 只写三档、content block 只写 text）。

@@ -124,6 +124,32 @@ abstract class DiscoveryProtocol {
 // Shared wire-level helpers
 // ---------------------------------------------------------------------------
 
+/// Throws when a 200 response body is actually an error envelope.
+///
+/// Compat layers deliver failures inside a successful HTTP response in at
+/// least two spellings (streaming.md §3.1/§3.2): an `error` field (relays,
+/// audits, quota), or MiniMax's `base_resp.status_code != 0` (auth 1004,
+/// balance 1008, rate 1002, token limit 1039). A client that only checks the
+/// HTTP status reads an expired key as a normal empty reply.
+///
+/// Lives here rather than in one protocol because every JSON surface a relay
+/// fronts can return it — the images endpoints as much as chat.
+void throwIfEnvelopeError(Map<String, dynamic> data) {
+  final err = data['error'];
+  if (err != null) {
+    final msg = err is Map ? (err['message'] ?? err.toString()) : err.toString();
+    throw Exception('API error in response body: $msg');
+  }
+  final baseResp = data['base_resp'];
+  if (baseResp is Map) {
+    final code = baseResp['status_code'];
+    if (code is num && code != 0) {
+      throw Exception(
+          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}');
+    }
+  }
+}
+
 /// [endpoint] without any trailing slashes.
 ///
 /// Redundant for a [LLMModelConfig.endpoint], which is normalized on

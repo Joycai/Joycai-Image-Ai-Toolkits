@@ -58,7 +58,14 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
       if (isEdit) {
         final request = http.MultipartRequest('POST', url);
-        request.headers['Authorization'] = 'Bearer ${config.apiKey}';
+        // Auth comes from the vendor profile (layer 2) like every other
+        // surface — a hardcoded bearer header worked only because today's
+        // OpenAI-family vendors all happen to use one, and would have failed
+        // on the next one while plain generation kept working. Content-Type
+        // is dropped: the multipart body sets its own with a boundary.
+        request.headers.addAll(
+          Map.of(target.headers())..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
+        );
         request.fields['model'] = config.modelId;
         request.fields['prompt'] = prompt;
         if (size != null) request.fields['size'] = size;
@@ -118,22 +125,46 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       }
 
       final data = jsonDecode(response.body);
-      final List<dynamic> items = data['data'] ?? [];
+      if (data is Map<String, dynamic>) {
+        // 200 does not mean success on a relay — an `{"error": …}` body used
+        // to parse as zero images and report the task as finished with
+        // nothing in it. Same check the chat surface makes.
+        throwIfEnvelopeError(data);
+      }
+      final rawItems = data is Map ? data['data'] : null;
+      final List<dynamic> items = rawItems is List ? rawItems : const [];
       final List<Uint8List> images = [];
 
       for (final item in items) {
-        final b64 = item['b64_json'] as String?;
-        if (b64 != null) {
+        if (item is! Map) continue;
+        final b64 = item['b64_json'];
+        if (b64 is String && b64.isNotEmpty) {
           images.add(base64Decode(b64));
           continue;
         }
-        final imgUrl = item['url'] as String?;
-        if (imgUrl != null) {
+        final imgUrl = item['url'];
+        if (imgUrl is String && imgUrl.isNotEmpty) {
           try {
             final imgResp = await client.get(Uri.parse(imgUrl));
-            if (imgResp.statusCode == 200) images.add(imgResp.bodyBytes);
-          } catch (_) {/* ignore */}
+            if (imgResp.statusCode == 200) {
+              images.add(imgResp.bodyBytes);
+            } else {
+              logger?.call('Image URL returned ${imgResp.statusCode}: $imgUrl', level: 'WARN');
+            }
+          } catch (e) {
+            logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+          }
         }
+      }
+
+      if (images.isEmpty) {
+        // The Images API has exactly one deliverable. Returning an empty
+        // response here reads to the task executor as a successful generation
+        // that produced nothing, which is indistinguishable from a model
+        // refusing — so say what actually came back instead.
+        final body = response.body;
+        throw Exception('OpenAI Images API returned no image: '
+            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
       }
 
       logger?.call('Images parse complete. Images: ${images.length}', level: 'DEBUG');
@@ -141,7 +172,11 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
       return LLMResponse(
         text: '',
         generatedImages: images,
-        metadata: data['usage'] ?? {},
+        // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
+        // chat spelling — see LLMService._recordUsage, which reads both.
+        metadata: (data is Map ? data['usage'] : null) is Map
+            ? (data['usage'] as Map).cast<String, dynamic>()
+            : const {},
       );
     } finally {
       client.close();

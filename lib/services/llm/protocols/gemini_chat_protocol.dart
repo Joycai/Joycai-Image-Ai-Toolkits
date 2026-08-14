@@ -29,7 +29,8 @@ class GeminiChatProtocol implements ChatProtocol {
         Uri.parse('${config.endpoint}/models/${config.modelId}:generateContent'));
     logger?.call('Preparing Google GenAI request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = prepareGooglePayload(history, options, config.endpoint, tools: tools);
+    final payload = prepareGooglePayload(history, options, config.endpoint,
+        tools: tools, emitsImages: target.model.capabilities.isImageGenerator);
     logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     logger?.call('Sending POST request...', level: 'DEBUG');
@@ -69,6 +70,18 @@ class GeminiChatProtocol implements ChatProtocol {
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
 
+      // A body with no candidates and no promptFeedback reached the caller as
+      // an empty success — the same silent no-op the OpenAI surface used to
+      // have. Only the synchronous path can judge this: in a stream a chunk
+      // carrying nothing but usageMetadata is perfectly normal, so
+      // parseGoogleChunks must stay tolerant of it.
+      final candidates = data is Map ? data['candidates'] : null;
+      if (candidates is! List || candidates.isEmpty) {
+        final body = response.body;
+        throw Exception('Google GenAI returned no candidates: '
+            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+      }
+
       String text = "";
       List<Uint8List> images = [];
       List<LLMToolCall> toolCalls = [];
@@ -106,7 +119,8 @@ class GeminiChatProtocol implements ChatProtocol {
         '${config.endpoint}/models/${config.modelId}:streamGenerateContent?alt=sse'));
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = prepareGooglePayload(history, options, config.endpoint);
+    final payload = prepareGooglePayload(history, options, config.endpoint,
+        emitsImages: target.model.capabilities.isImageGenerator);
     logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     final request = http.Request('POST', url);
