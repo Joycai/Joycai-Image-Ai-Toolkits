@@ -70,6 +70,41 @@ Map<String, dynamic>? _recoverConcatenatedJsonObjects(String raw) {
   return merged;
 }
 
+/// Normalizes a chat message's `content` field into text.
+///
+/// `content` is a plain string in the OpenAI spec, but compat layers fronting
+/// a Responses- or Anthropic-shaped backend mirror the content-**array** form
+/// onto `chat/completions` (`[{"type":"text","text":"…"}]`). A bare `String`
+/// downcast throws a `TypeError` from inside the parser, which reaches the
+/// caller as a request failure with nothing in it that points at the cause —
+/// so both shapes are accepted and anything else (an image part carries no
+/// text) contributes nothing.
+String contentToText(Object? raw) {
+  if (raw is String) return raw;
+  if (raw is! List) return '';
+  final buffer = StringBuffer();
+  for (final part in raw) {
+    if (part is String) {
+      buffer.write(part);
+    } else if (part is Map) {
+      final text = part['text'];
+      if (text is String) buffer.write(text);
+    }
+  }
+  return buffer.toString();
+}
+
+/// Call id for the [index]-th tool call of a response.
+///
+/// Relays that do not assign ids mostly send `null`, but some send `""` —
+/// which a plain `?? 'call_$index'` fallback keeps, so two calls in one batch
+/// share an empty `tool_call_id` and the *next* request is rejected for a
+/// duplicate id. Empty is treated as absent.
+String resolveToolCallId(Object? rawId, int index) {
+  final id = rawId?.toString();
+  return (id == null || id.isEmpty) ? 'call_$index' : id;
+}
+
 /// Result of separating inline `<think>…</think>` chain-of-thought from
 /// model text.
 class InlineThinkResult {
@@ -269,9 +304,7 @@ class OpenAIChatProtocol implements ChatProtocol {
             '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
       }
       {
-        if (message['content'] != null) {
-          text = message['content'];
-        }
+        text = contentToText(message['content']);
 
         // ① family chain-of-thought: field-based (DeepSeek reasoning_content,
         // OpenRouter reasoning — no standard spelling exists, so probe the
@@ -323,7 +356,7 @@ class OpenAIChatProtocol implements ChatProtocol {
               args = rawArgs;
             }
             toolCalls.add(LLMToolCall(
-              id: tc['id']?.toString() ?? 'call_$i',
+              id: resolveToolCallId(tc['id'], i),
               name: fn['name']?.toString() ?? '',
               arguments: args,
             ));
@@ -457,17 +490,20 @@ class OpenAIChatProtocol implements ChatProtocol {
           }
 
           final delta = choice['delta'];
-          final text = delta?['content'];
+          // Same shape tolerance as the sync path — a delta carrying a content
+          // array would otherwise throw into the catch below and be dropped as
+          // "parse noise", losing the reply one chunk at a time.
+          final text = contentToText(delta?['content']);
           final reasoning = delta?['reasoning_content'] ?? delta?['reasoning'];
           final imageData = delta?['image_data'];
 
-          if (reasoning != null && reasoning.isNotEmpty) {
+          if (reasoning is String && reasoning.isNotEmpty) {
             // Dedicated channel: consumers that accumulate textPart into a
             // deliverable must never glue the thinking into it.
             yield LLMResponseChunk(reasoningPart: reasoning);
           }
 
-          if (text != null && text.isNotEmpty) {
+          if (text.isNotEmpty) {
             final split = thinkFilter.feed(text);
             if (split.reasoning.isNotEmpty) {
               yield LLMResponseChunk(reasoningPart: split.reasoning);
