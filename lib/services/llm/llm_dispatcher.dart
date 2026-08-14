@@ -1,6 +1,7 @@
 import 'llm_types.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
+import 'protocols/anthropic_chat_protocol.dart';
 import 'protocols/gemini_chat_protocol.dart';
 import 'protocols/gemini_imagen_protocol.dart';
 import 'protocols/gemini_veo_protocol.dart';
@@ -37,10 +38,12 @@ class LLMDispatcher {
   static final _imagen = GeminiImagenProtocol();
   static final _veo = GeminiVeoProtocol();
   static final _midjourney = MidjourneyProtocol();
+  static final _anthropicChat = AnthropicChatProtocol();
 
   static final _openaiDiscovery = OpenAIDiscoveryProtocol();
   static final _geminiDiscovery = GeminiDiscoveryProtocol();
   static final _midjourneyDiscovery = MidjourneyDiscoveryProtocol();
+  static final _anthropicDiscovery = AnthropicDiscoveryProtocol();
 
   /// Resolve the (vendor, model) pair for a request.
   LLMTarget resolveTarget(LLMModelConfig config) => LLMTarget(
@@ -64,6 +67,11 @@ class LLMDispatcher {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return _midjourney.generate(target, history, options: options, tools: tools, logger: logger);
+
+      case ProtocolFamily.anthropic:
+        // One surface for everything ④ does — no image or video sibling to
+        // route around, unlike ① and ③.
+        return _anthropicChat.generate(target, history, options: options, tools: tools, logger: logger);
 
       case ProtocolFamily.gemini:
         // Imagen uses the dedicated `:predict` surface, not `:generateContent`.
@@ -101,6 +109,10 @@ class LLMDispatcher {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         yield* _midjourney.generateStream(target, history, options: options, logger: logger);
+        return;
+
+      case ProtocolFamily.anthropic:
+        yield* _anthropicChat.generateStream(target, history, options: options, logger: logger);
         return;
 
       case ProtocolFamily.gemini:
@@ -158,6 +170,12 @@ class LLMDispatcher {
           'long-running operations are not used by this protocol.',
         );
 
+      case ProtocolFamily.anthropic:
+        throw UnsupportedError(
+          'The Anthropic Messages API has no image or video generation '
+          'surface; "${config.modelId}" cannot run a long-running operation.',
+        );
+
       case ProtocolFamily.gemini:
         // Veo via :predictLongRunning.
         return _veo.submit(target, history, options: options, logger: logger);
@@ -193,6 +211,12 @@ class LLMDispatcher {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return _midjourney.fetchTaskStatus(target, operationName);
+
+      case ProtocolFamily.anthropic:
+        throw UnsupportedError(
+          'Operation "$operationName" cannot belong to an Anthropic channel — '
+          'the family has no long-running surface to have started it.',
+        );
 
       case ProtocolFamily.gemini:
         return _veo.poll(target, operationName, logger: logger);
@@ -243,6 +267,8 @@ class LLMDispatcher {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return _midjourneyDiscovery.fetchModels(target);
+      case ProtocolFamily.anthropic:
+        return _anthropicDiscovery.fetchModels(target);
       case ProtocolFamily.gemini:
         return _geminiDiscovery.fetchModels(target);
       case ProtocolFamily.openai:

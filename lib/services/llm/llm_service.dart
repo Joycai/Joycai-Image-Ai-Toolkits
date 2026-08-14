@@ -291,12 +291,19 @@ class LLMService {
     });
   }
 
-  /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google)
-  /// or `prompt_tokens_details.cached_tokens` (OpenAI). Clamped to [promptTokens]
-  /// so a malformed payload can never drive the uncached remainder negative.
+  /// Cache-hit tokens from a usage payload: `cachedContentTokenCount` (Google),
+  /// `prompt_tokens_details.cached_tokens` (OpenAI) or `cache_read_input_tokens`
+  /// (Anthropic). Clamped to [promptTokens] so a malformed payload can never
+  /// drive the uncached remainder negative.
+  ///
+  /// Anthropic's bucket is only comparable to the other two because its
+  /// protocol already republished the *inclusive* prompt total as
+  /// `prompt_tokens` — its own `input_tokens` excludes the cached part, so
+  /// subtracting one from the other would count the cache twice.
   int _extractCacheTokens(Map<String, dynamic> metadata, int promptTokens) {
     final details = metadata['prompt_tokens_details'];
     final raw = metadata['cachedContentTokenCount'] ??
+        metadata['cache_read_input_tokens'] ??
         (details is Map ? details['cached_tokens'] : null);
     return _asTokenCount(raw).clamp(0, promptTokens);
   }

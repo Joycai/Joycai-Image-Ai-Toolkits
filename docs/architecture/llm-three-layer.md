@@ -21,16 +21,22 @@
 
 | 层 | 回答的问题 | 代码 |
 |----|-----------|------|
-| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · midjourney |
-| **2 Vendor** | 谁在提供这个格式：认证方式、是否用厂商私有 surface | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（7 个 profile，id 即 `llm_channels.type`） |
+| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney |
+| **2 Vendor** | 谁在提供这个格式：认证方式、是否用厂商私有 surface | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（11 个 profile，id 即 `llm_channels.type`） |
 | **3 Model** | 这个模型是什么：family 分类、能力、参数表 | `model_descriptor.dart`（包装 `model_family.dart` + `model_capabilities.dart`） |
 
-协议家族（`ProtocolFamily`）只有三个：`openai`（chat/completions 及其姊妹
+协议家族（`ProtocolFamily`）有四个：`openai`（chat/completions 及其姊妹
 images/videos surface）、`gemini`（`:generateContent` 及 `:predict` /
-`:predictLongRunning`）、`midjourney`（midjourney-proxy 的 `/mj/*`）。
+`:predictLongRunning`）、`anthropic`（`/messages`，2026-08 加入）、
+`midjourney`（midjourney-proxy 的 `/mj/*`）。
 xAI 的 JSON images/videos surface 是 openai 家族下由 vendor 选择的替代协议。
-Anthropic `/v1/messages` 尚未实现；实现时是 Layer 1 加一个协议家族 +
-Layer 2 加一个 vendor profile，其余层不动。
+
+`anthropic` 是唯一一个只有单一 surface 的家族 —— 没有生图/视频姊妹端点，
+所以 dispatcher 的四个 switch 里它都只有一条分支（两条是
+`UnsupportedError`）。接入它时**没有**动 Layer 3：Claude 的 modelId 落在
+`ModelFamily.other`，而 family 在这条路径上只用来在 ①/③ 内部选姊妹 surface，
+④ 没有可选的。**"新增协议家族要不要动 Layer 3"的判断标准是"这个家族内部要不要
+按模型分流"，不是"这个家族新不新"。**
 
 ## 分层纪律（违反会静默腐化）
 
@@ -69,9 +75,13 @@ LLMService.request(modelIdentifier, messages, ...)
   `vendors.dart` 加一个 `VendorProfile`（family=openai，bearer），
   UI 渠道向导加预设。厂商特有参数/约定加在 profile 的声明式字段上，
   由对应协议读取 —— 不要在协议里写 `if (vendor.id == ...)`。
-- **新增协议标准（如 Anthropic）**：`protocols/` 新建协议类实现
-  `ChatProtocol` 等接口，`ProtocolFamily` 加值，dispatcher 的 switch
-  补分支，再加 vendor profile。
+- **新增协议标准**：`protocols/` 新建协议类实现 `ChatProtocol` 等接口，
+  `ProtocolFamily` 加值，dispatcher 的 switch 补分支，再加 vendor profile。
+  ④ Anthropic 就是照这条路加的，可以直接当模板读
+  （`anthropic_chat_protocol.dart` + `Vendors.anthropicRest` /
+  `newApiAnthropic`）。加完记得 grep 一遍 `ProtocolFamily` ——
+  `app_state.dart` 里还有一个穷尽 switch 在 dispatcher 之外
+  （合法：它问的是"这个渠道能不能出视频"，属于 UI 对 Layer 2 的只读消费）。
 - **新增模型能力**：只动 Layer 3（`model_capabilities.dart` 的参数表、
   必要时 `model_family.dart` 的分类规则）。
 - **新增任务类型**：与本层无关，见 CLAUDE.md 的 task type 扩展流程。
@@ -94,6 +104,74 @@ review 时用下面的模式全仓库 grep 一遍即可：
 新增代码的自检口诀：**"这行代码回答的是哪一层的问题？"** ——
 线上格式 → protocols/；谁在供货/怎么认证 → vendors/；这个模型是什么 → Layer 3；
 选哪条路 → dispatcher。回答不出来的，先别写。
+
+## ④ Anthropic 的六条不变量（会静默错，不会报错）
+
+协议事实见 [`docs/api/landscape.md`](../api/landscape.md) §5；这里只记本项目
+踩得到、且**不会以报错形式暴露**的六条。前四条是接入时就有的，后两条随
+thinking / server tool 一起加。
+
+1. **usage 三桶不重叠，必须先加起来。** ④ 的 `input_tokens` 只是未命中缓存的
+   余量，`cache_read_input_tokens` / `cache_creation_input_tokens` 与它并列；
+   而 `LLMService._recordUsage` 的口径是"prompt 总量包含缓存部分，再把缓存减
+   出去"。直接把 `input_tokens` 交上去，长 prompt + 缓存命中会把输入量少报一
+   个数量级，然后再被减一次。协议层把三桶之和以 `prompt_tokens` 发布
+   （`_recordUsage` 优先读它），原始桶原样保留。
+2. **`max_tokens` 必填且无服务端默认。** 常量在
+   `anthropicDefaultMaxTokens`（8192 —— 在服的 Claude 全都接受的最大值；再高会
+   在老型号上 400）。它同时意味着**截断是可达状态**，所以 `stop_reason` 还要
+   翻译成 ① 的 `finish_reason` 词表：助手循环和网页抓取都只认
+   `finish_reason == 'length'`。
+3. **鉴权要两套都发。** 官方只认 `x-api-key`，生态里
+   `ANTHROPIC_AUTH_TOKEN → Bearer` 同样是一等约定，中转两个都收且文档都不说要
+   哪个。`AuthScheme.anthropicApiKeyWithBearerFallback` 一律发 `x-api-key` +
+   `anthropic-version`，只在 host 是 `api.anthropic.com` 时不发 bearer。
+   顺带：`VendorProfile.decorateUrl` 已从"非 bearer 就加 `?key=`"改写成穷尽
+   switch —— 原来的写法会让每个**新增**的 auth scheme 默认继承 Google 的
+   query 参数约定，把 Anthropic 的 key 写进 URL 和每一行日志。
+4. **三处改写才能过 400：** system 提到顶层（④ 没有 system 角色）、工具结果变
+   成 user 消息里的 `tool_result` block（④ 没有 tool 角色）、连续同角色消息合
+   并（④ 要求角色交替）。第三条对 agent 循环是硬要求：一轮并行调用的 N 个结果
+   必须装在**同一条** user 消息里。三条都由 `buildAnthropicHistory` 负责，
+   `test/anthropic_chat_test.dart` 逐条钉住。
+
+5. **thinking 有两套词表，且开了就欠一笔债。** 官方是
+   `{type:"enabled", budget_tokens:N}`（N 从 `max_tokens` 里切，下限 1024，
+   且必须给答案留出余量），MiniMax M3 是 `{type:"adaptive"}`。协议不许问"你是
+   谁"，所以问的是 `VendorProfile.thinking`（`ThinkingDialect`）—— **Layer 2 说
+   哪种方言，Layer 1 说 JSON 长什么样**。
+   开了之后：带工具调用的 assistant 轮**必须原样回传 thinking block，连同
+   `signature`**，否则下一次请求被拒。它存在 `LLMMessage.reasoningSignature`
+   （随会话持久化），回传时排在 text / tool_use **之前**；没有签名的 thinking
+   宁可丢掉也不发 —— 发了必被拒，而"模型重新想一遍"好过"整个请求失败"。
+   注意这与 ① 的机制不同：① 回传的是一个**字段**（名字记在
+   `reasoningFieldName`），④ 回传的是一整个**块**，所以 ④ 路径上
+   `reasoningFieldName` 永远是 null，① 的 payload builder 才不会替它编一个字段名。
+6. **server tool 不是 tool call。** `web_search_20250305` 由服务端自己执行、
+   自己回答，响应里的 `server_tool_use` + `web_search_tool_result` 是**已完成的
+   事实**。把它当 `LLMToolCall` 交给 agent 循环，等于让本地去跑一个没人要求的
+   工具，再去回答一个模型从没发起的调用。所以它们进 `serverToolRuns`，来源写进
+   metadata 的 `server_tool_runs` 并打一条 INFO 日志（用户在为它付费，且答案建
+   立在这个 App 没有选择过的网页上）。
+   连带的一条：开了 server tool 之后一轮里会出现**多个 text block**（搜索前一
+   段、搜索后一段），所以 block 之间按空行拼接，不是裸接 —— 裸接会把两段话连成
+   一句。
+
+流式那条路上 thinking 仍是只读的：`generateStream` 不声明工具，没有工具调用就
+没有需要签名去封的重放，与 ① / ③ 对各自 reasoning 的处理一致。
+
+两个开关都是**按模型**存的（v33 迁移的 `llm_models.enable_thinking` /
+`enable_web_search`，默认关），由 `LLMConfigResolver` 解析进 `LLMModelConfig`
+—— 不是请求 option。这样助手、提示词精修、AI 重命名三条路自动都认，不必各自记得
+传；同时一条渠道下"支持思考的模型"和"发了就 400 的模型"可以分别设置。UI 只在
+④ 渠道下显示这两个开关。
+
+三个 ④ vendor（`anthropicRest` / `newApiAnthropic` / `minimaxAnthropic`）
+除 thinking 方言外行为一致，分开还为记录供货方。**MiniMax 是唯一 base path 不是
+`/v1` 的 ④ 主机**（`/anthropic/v1`，与它的 ① 端点并列），所以协议里不能有任何
+地方假设版本后缀 —— 这也是它值得一个向导预设的原因：两个端点填反了只会得到一个
+404，而 404 不会说是 URL 的哪一半错了。同一家厂商同时供 ① 和 ④，正是"协议族属于
+渠道、不属于厂商"最直白的证据。
 
 ## 遗留与已知取舍
 

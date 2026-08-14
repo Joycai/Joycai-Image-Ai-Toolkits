@@ -4,6 +4,7 @@ import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
+import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../app_button.dart';
@@ -206,14 +207,14 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   Widget _buildConnectionFields(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    String endpointHint;
-    if (type == 'openai-api-rest' ||
-        type == 'newapi-openai' ||
-        type == 'xai-api-rest') {
-      endpointHint = l10n.openaiV1Hint;
-    } else {
-      endpointHint = l10n.googleV1BetaHint;
-    }
+    // Reads the vendor registry rather than re-listing channel-type strings:
+    // the literals here silently stopped covering new types every time one
+    // was added, and an unlisted type fell through to the Gemini hint.
+    final String endpointHint = switch (Vendors.byId(type).family) {
+      ProtocolFamily.gemini => l10n.googleV1BetaHint,
+      ProtocolFamily.anthropic => l10n.anthropicV1Hint,
+      ProtocolFamily.openai || ProtocolFamily.midjourney => l10n.openaiV1Hint,
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,18 +224,40 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           isExpanded: true,
           items: [
             DropdownMenuItem(
-                value: 'openai-api-rest', child: Text(l10n.protocolOpenAI)),
+                value: Vendors.openAIRest, child: Text(l10n.protocolOpenAI)),
             DropdownMenuItem(
-                value: 'google-genai-rest', child: Text(l10n.protocolGoogle)),
+                value: Vendors.googleRest, child: Text(l10n.protocolGoogle)),
             const DropdownMenuItem(
-                value: 'official-google-genai-api',
+                value: Vendors.officialGoogle,
                 child: Text('Official Google GenAI API (Deprecated)')),
             DropdownMenuItem(
-                value: 'newapi-openai', child: Text(l10n.providerNewApiOpenAI)),
+                value: Vendors.anthropicRest,
+                child: Text(l10n.protocolAnthropic)),
             DropdownMenuItem(
-                value: 'newapi-gemini', child: Text(l10n.providerNewApiGemini)),
+                value: Vendors.newApiOpenAI,
+                child: Text(l10n.providerNewApiOpenAI)),
             DropdownMenuItem(
-                value: 'xai-api-rest', child: Text(l10n.protocolXai)),
+                value: Vendors.newApiGemini,
+                child: Text(l10n.providerNewApiGemini)),
+            DropdownMenuItem(
+                value: Vendors.newApiAnthropic,
+                child: Text(l10n.providerNewApiAnthropic)),
+            DropdownMenuItem(
+                value: Vendors.minimaxAnthropic,
+                child: Text(l10n.providerMiniMaxAnthropic)),
+            DropdownMenuItem(
+                value: Vendors.xaiApi, child: Text(l10n.protocolXai)),
+            // The list has to name *every* vendor, not just the ones worth
+            // switching to: the dropdown asserts that its current value is
+            // among the items, so a channel of an unlisted type could not be
+            // opened for editing at all.
+            const DropdownMenuItem(
+                value: Vendors.deepseek, child: Text('DeepSeek')),
+            const DropdownMenuItem(
+                value: Vendors.minimax, child: Text('MiniMax')),
+            DropdownMenuItem(
+                value: Vendors.midjourneyProxy,
+                child: Text(l10n.protocolMidjourney)),
           ],
           onChanged: (v) => setState(() => type = v!),
           decoration: InputDecoration(

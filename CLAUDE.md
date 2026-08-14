@@ -24,7 +24,7 @@ lib/
   state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState
   services/             # all business logic
     llm/                # LLMService facade + LLMDispatcher; three-layer API stack (see architecture note)
-      protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, midjourney
+      protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, anthropic_chat, midjourney
       vendors/          # layer 2 — VendorProfile registry (auth, surface overrides); ids stored in llm_channels.type
       model_descriptor.dart  # layer 3 — ModelDescriptor (family + capabilities); sole place model-id sniffing is allowed
     repositories/       # SQLite DAOs: model, prompt, task, usage, assistant session
@@ -44,7 +44,7 @@ lib/
 ```
 
 **Task types:** `imageProcess` · `imageDownload` · `promptRefine` · `aiRename` · `videoGenerate`  
-**LLM protocol families:** `openai` · `gemini` · `midjourney` — routing lives in `lib/services/llm/llm_dispatcher.dart`  
+**LLM protocol families:** `openai` · `gemini` · `anthropic` · `midjourney` — routing lives in `lib/services/llm/llm_dispatcher.dart`  
 **Key dependencies:** see `pubspec.yaml` — `provider`, `sqflite`, `http`, `shelf`, `shelf_router`, `photo_view`, `extended_image`, `video_player`, `desktop_drop`, `file_picker`, `image`, `local_notifier`, `gal`
 
 ## Architecture Notes

@@ -1553,6 +1553,18 @@ abstract class AppLocalizations {
   /// **'midjourney-proxy / NewAPI /mj/* surface'**
   String get protocolMidjourneyDesc;
 
+  /// No description provided for @protocolAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic Messages'**
+  String get protocolAnthropic;
+
+  /// No description provided for @protocolAnthropicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Native /v1/messages surface (Claude)'**
+  String get protocolAnthropicDesc;
+
   /// No description provided for @midjourneyEndpointHint.
   ///
   /// In en, this message translates to:
@@ -1655,6 +1667,30 @@ abstract class AppLocalizations {
   /// **'New API relay · bearer-token auth'**
   String get providerNewApiDesc;
 
+  /// No description provided for @providerAnthropicOfficial.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic Official'**
+  String get providerAnthropicOfficial;
+
+  /// No description provided for @providerAnthropicOfficialDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'api.anthropic.com · Claude'**
+  String get providerAnthropicOfficialDesc;
+
+  /// No description provided for @providerNewApiAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'New API (Anthropic format)'**
+  String get providerNewApiAnthropic;
+
+  /// No description provided for @providerMiniMaxAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'MiniMax (Anthropic format)'**
+  String get providerMiniMaxAnthropic;
+
   /// No description provided for @providerMiniMaxDesc.
   ///
   /// In en, this message translates to:
@@ -1690,6 +1726,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hint: Google GenAI endpoints usually end with \'/v1beta\''**
   String get googleV1BetaHint;
+
+  /// No description provided for @anthropicV1Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: Anthropic endpoints usually end with \'/v1\''**
+  String get anthropicV1Hint;
 
   /// No description provided for @enterApiKey.
   ///
@@ -1906,6 +1948,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Agents must view every reference image before delivering a result. Recommended for small local models.'**
   String get forceViewAllImagesDesc;
+
+  /// No description provided for @enableThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended thinking'**
+  String get enableThinking;
+
+  /// No description provided for @enableThinkingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the model reason before answering. Costs output tokens; Anthropic-format channels only.'**
+  String get enableThinkingDesc;
+
+  /// No description provided for @enableWebSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Host web search'**
+  String get enableWebSearch;
+
+  /// No description provided for @enableWebSearchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.'**
+  String get enableWebSearchDesc;
 
   /// No description provided for @prompts.
   ///

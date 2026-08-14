@@ -150,6 +150,36 @@ void throwIfEnvelopeError(Map<String, dynamic> data) {
   }
 }
 
+/// The payload of one SSE line, or null when the line carries none.
+///
+/// The single space after `data:` is *optional* in the SSE grammar — a relay
+/// emitting `data:{"id":…}` is as conformant as one emitting `data: {"id":…}` —
+/// but only the spaced spelling was recognized, and an unrecognized line fell
+/// through to a JSON decode of the whole `data:{…}` string, which fails and is
+/// skipped as noise. The reply arrived in full and parsed as nothing, with no
+/// error anywhere.
+///
+/// Comments (`:` keep-alives), blank lines and the `[DONE]` terminator carry no
+/// payload. A line with no `data:` prefix at all is returned unchanged, keeping
+/// the tolerance for relays that stream bare JSON lines without SSE framing —
+/// which is also why a caller that receives named events (④'s `event: …`
+/// lines) must skip those itself before calling this.
+///
+/// Lives here rather than in one protocol because two families now parse SSE
+/// and the `data:`-framing rules are the transport's, not either family's.
+String? sseDataPayload(String line) {
+  var s = line.trimRight();
+  if (s.isEmpty) return null;
+  if (s.startsWith('data:')) {
+    s = s.substring(5);
+    if (s.startsWith(' ')) s = s.substring(1);
+  } else if (s.startsWith(':')) {
+    return null;
+  }
+  if (s.isEmpty || s == '[DONE]') return null;
+  return s;
+}
+
 /// [endpoint] without any trailing slashes.
 ///
 /// Redundant for a [LLMModelConfig.endpoint], which is normalized on

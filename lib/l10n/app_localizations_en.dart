@@ -794,6 +794,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'midjourney-proxy / NewAPI /mj/* surface';
 
   @override
+  String get protocolAnthropic => 'Anthropic Messages';
+
+  @override
+  String get protocolAnthropicDesc => 'Native /v1/messages surface (Claude)';
+
+  @override
   String get midjourneyEndpointHint =>
       'Host root (e.g. https://your-newapi.com). /mj/* paths are added automatically.';
 
@@ -848,6 +854,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get providerNewApiDesc => 'New API relay · bearer-token auth';
 
   @override
+  String get providerAnthropicOfficial => 'Anthropic Official';
+
+  @override
+  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
+
+  @override
+  String get providerNewApiAnthropic => 'New API (Anthropic format)';
+
+  @override
+  String get providerMiniMaxAnthropic => 'MiniMax (Anthropic format)';
+
+  @override
   String get providerMiniMaxDesc => 'OpenAI-compatible /v1 endpoint';
 
   @override
@@ -867,6 +885,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get googleV1BetaHint =>
       'Hint: Google GenAI endpoints usually end with \'/v1beta\'';
+
+  @override
+  String get anthropicV1Hint =>
+      'Hint: Anthropic endpoints usually end with \'/v1\'';
 
   @override
   String get enterApiKey => 'Enter your API Key';
@@ -990,6 +1012,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get forceViewAllImagesDesc =>
       'Agents must view every reference image before delivering a result. Recommended for small local models.';
+
+  @override
+  String get enableThinking => 'Extended thinking';
+
+  @override
+  String get enableThinkingDesc =>
+      'Let the model reason before answering. Costs output tokens; Anthropic-format channels only.';
+
+  @override
+  String get enableWebSearch => 'Host web search';
+
+  @override
+  String get enableWebSearchDesc =>
+      'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.';
 
   @override
   String get prompts => 'Prompts';

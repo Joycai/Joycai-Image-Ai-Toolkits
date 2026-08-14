@@ -57,6 +57,7 @@ class DatabaseMigration {
     if (oldVersion < 30) await _createV30Tables(db);
     if (oldVersion < 31) await _createV31Tables(db);
     if (oldVersion < 32) await _createV32Tables(db);
+    if (oldVersion < 33) await _createV33Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -89,6 +90,7 @@ class DatabaseMigration {
     await _createV30Tables(db);
     await _createV31Tables(db);
     await _createV32Tables(db);
+    await _createV33Tables(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -107,6 +109,16 @@ class DatabaseMigration {
   /// channel's type whenever a model was saved — but nothing kept it in sync
   /// when the *channel's* type changed afterwards, leaving models routed to
   /// the wrong provider. The runtime now resolves
+  /// Per-model opt-ins for the two ④-only extras: server-side thinking and
+  /// the host's own web search. Both default off — each costs tokens (and, for
+  /// search, reaches the network on the user's behalf), so neither may turn
+  /// itself on. Stored per model rather than per channel because one channel
+  /// serves models that support them and models that 400 on them.
+  static Future<void> _createV33Tables(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'enable_thinking', 'INTEGER DEFAULT 0');
+    await _addColumnIfNotExists(db, 'llm_models', 'enable_web_search', 'INTEGER DEFAULT 0');
+  }
+
   /// `channel.type → vendor → protocol` on every request (see
   /// `services/llm/llm_dispatcher.dart`), so the stored copy is dropped
   /// entirely rather than repaired.

@@ -120,6 +120,19 @@ class LLMMessage {
   /// no echo obligation and is never sent back.
   final String? reasoningFieldName;
 
+  /// ④'s cryptographic seal over [reasoningContent], present only on the
+  /// Anthropic Messages surface.
+  ///
+  /// Where ① echoes reasoning as a *field* named by [reasoningFieldName], ④
+  /// echoes it as a whole `thinking` **block**, and the API verifies this
+  /// signature before accepting it. A tool-calling turn produced with thinking
+  /// on is rejected when its thinking block is missing or unsealed — the ④
+  /// sibling of [LLMToolCall.thoughtSignature] and of ①'s echo-back rule.
+  ///
+  /// Its presence is also what marks reasoning as ④-shaped: [reasoningFieldName]
+  /// stays null there, so the ① payload builder never invents a field for it.
+  final String? reasoningSignature;
+
   /// Tool calls carried by an assistant message (echoed back into history
   /// during an agent loop).
   final List<LLMToolCall> toolCalls;
@@ -137,6 +150,7 @@ class LLMMessage {
     this.attachments = const [],
     this.reasoningContent,
     this.reasoningFieldName,
+    this.reasoningSignature,
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
@@ -149,6 +163,7 @@ class LLMMessage {
         // echo-back obligation does not expire with the session.
         if (reasoningContent != null) 'reasoningContent': reasoningContent,
         if (reasoningFieldName != null) 'reasoningFieldName': reasoningFieldName,
+        if (reasoningSignature != null) 'reasoningSignature': reasoningSignature,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
@@ -161,6 +176,7 @@ class LLMMessage {
         content: json['content'] as String? ?? '',
         reasoningContent: json['reasoningContent'] as String?,
         reasoningFieldName: json['reasoningFieldName'] as String?,
+        reasoningSignature: json['reasoningSignature'] as String?,
         attachments: [
           for (final a in (json['attachments'] as List? ?? []))
             if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
@@ -196,6 +212,20 @@ class LLMModelConfig {
   final String endpoint;
 
   final String apiKey;
+
+  /// Per-model opt-in: ask the model to reason before answering.
+  ///
+  /// Carried on the config rather than passed as a request option because it
+  /// is a property of *this model on this channel*, resolved once by
+  /// [LLMConfigResolver] — so the assistant, prompt refinement and AI rename
+  /// all honor it without each having to remember to pass it along. What the
+  /// parameter looks like on the wire is the vendor's business
+  /// (`ThinkingDialect`); whether to ask for it at all is this flag's.
+  final bool enableThinking;
+
+  /// Per-model opt-in: let the host run its own web searches during a turn.
+  final bool enableWebSearch;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -218,6 +248,8 @@ class LLMModelConfig {
     required this.channelType,
     required String endpoint,
     required this.apiKey,
+    this.enableThinking = false,
+    this.enableWebSearch = false,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -285,6 +317,11 @@ class LLMResponse {
   /// see [LLMMessage.reasoningFieldName].
   final String? reasoningFieldName;
 
+  /// ④'s seal over [reasoningContent] — see [LLMMessage.reasoningSignature].
+  /// Must reach the assistant message that replays this turn, or the next
+  /// request in a tool-calling conversation is rejected.
+  final String? reasoningSignature;
+
   /// Tool calls requested by the model (empty when it answered directly).
   final List<LLMToolCall> toolCalls;
 
@@ -296,6 +333,7 @@ class LLMResponse {
     this.metadata = const {},
     this.reasoningContent,
     this.reasoningFieldName,
+    this.reasoningSignature,
     this.toolCalls = const [],
   });
 }
