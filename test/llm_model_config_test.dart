@@ -30,6 +30,27 @@ void main() {
       expect(config.proxyUrl, 'http://localhost:8080');
     });
 
+    test('endpoint is normalized — a pasted trailing slash cannot reach a URL builder', () {
+      // Protocols append their path directly, so `…/v1/` used to yield
+      // `/v1//chat/completions` and every request 404'd while discovery,
+      // which trimmed, kept working.
+      LLMModelConfig at(String endpoint) => LLMModelConfig(
+            modelId: 'm',
+            channelType: 'openai',
+            endpoint: endpoint,
+            apiKey: 'k',
+          );
+
+      expect(at('https://relay.example.com/v1/').endpoint,
+          'https://relay.example.com/v1');
+      expect(at('https://relay.example.com/v1///').endpoint,
+          'https://relay.example.com/v1');
+      expect(at('  https://relay.example.com/v1  ').endpoint,
+          'https://relay.example.com/v1');
+      expect(at('https://relay.example.com/v1').endpoint,
+          'https://relay.example.com/v1');
+    });
+
     test('LLMMessage should be initialized correctly', () {
       final message = LLMMessage(
         role: LLMRole.user,

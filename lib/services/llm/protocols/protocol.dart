@@ -125,6 +125,10 @@ abstract class DiscoveryProtocol {
 // ---------------------------------------------------------------------------
 
 /// [endpoint] without any trailing slashes.
+///
+/// Redundant for a [LLMModelConfig.endpoint], which is normalized on
+/// construction — kept so every protocol builds its URL the same way and a
+/// raw string from elsewhere is safe too.
 String trimBaseUrl(String endpoint) {
   var base = endpoint.trim();
   while (base.endsWith('/')) {

@@ -182,7 +182,19 @@ class LLMModelConfig {
   /// The channel's stored vendor id (`llm_channels.type`) — resolved to a
   /// [VendorProfile] by the dispatcher. See `vendors/vendors.dart`.
   final String channelType;
+
+  /// Channel base URL, always without surrounding whitespace or a trailing
+  /// slash — normalized here rather than at each call site.
+  ///
+  /// Protocols append their path to this (`$endpoint/chat/completions`), so a
+  /// channel saved as `https://relay.example.com/v1/` used to produce
+  /// `/v1//chat/completions`, which fails on gateways that do not collapse
+  /// empty path segments. Only the surfaces that happened to call
+  /// [trimBaseUrl] were safe — `/models` was, `/chat/completions` was not, so
+  /// model discovery succeeded and every request failed. Normalizing on the
+  /// way in covers channels already stored with a slash too; no migration.
   final String endpoint;
+
   final String apiKey;
   final double inputFee;
 
@@ -204,7 +216,7 @@ class LLMModelConfig {
     this.id,
     required this.modelId,
     required this.channelType,
-    required this.endpoint,
+    required String endpoint,
     required this.apiKey,
     this.inputFee = 0.0,
     this.cacheInputFee,
@@ -215,7 +227,17 @@ class LLMModelConfig {
     this.proxyUrl,
     this.proxyUsername,
     this.proxyPassword,
-  });
+  }) : endpoint = normalizeEndpoint(endpoint);
+
+  /// Strips surrounding whitespace and trailing slashes from a base URL.
+  /// See [endpoint].
+  static String normalizeEndpoint(String raw) {
+    var base = raw.trim();
+    while (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    return base;
+  }
 
   /// Rate actually charged per cached input token.
   double get effectiveCacheInputFee => cacheInputFee ?? inputFee;

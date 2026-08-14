@@ -105,6 +105,46 @@ String resolveToolCallId(Object? rawId, int index) {
   return (id == null || id.isEmpty) ? 'call_$index' : id;
 }
 
+/// The payload of one SSE line, or null when the line carries none.
+///
+/// The single space after `data:` is *optional* in the SSE grammar — a relay
+/// emitting `data:{"id":…}` is as conformant as one emitting `data: {"id":…}` —
+/// but only the spaced spelling was recognized, and an unrecognized line fell
+/// through to a JSON decode of the whole `data:{…}` string, which fails and is
+/// skipped as noise. The reply arrived in full and parsed as nothing, with no
+/// error anywhere.
+///
+/// Comments (`:` keep-alives), blank lines and the `[DONE]` terminator carry no
+/// payload. A line with no `data:` prefix at all is returned unchanged, keeping
+/// the tolerance for relays that stream bare JSON lines without SSE framing.
+String? sseDataPayload(String line) {
+  var s = line.trimRight();
+  if (s.isEmpty) return null;
+  if (s.startsWith('data:')) {
+    s = s.substring(5);
+    if (s.startsWith(' ')) s = s.substring(1);
+  } else if (s.startsWith(':')) {
+    return null;
+  }
+  if (s.isEmpty || s == '[DONE]') return null;
+  return s;
+}
+
+/// The first `choices` entry of a response or stream chunk, or null when there
+/// is none.
+///
+/// The usage-only chunk that `stream_options.include_usage` produces at stream
+/// end carries `"choices": []`, and a null-aware `chunk['choices']?[0]` does
+/// not guard an *empty* list — it throws a `RangeError` that the stream loop's
+/// shape-tolerant catch swallowed as a malformed chunk. Every OpenAI-family
+/// streaming request lost its token usage that way, silently.
+Map<String, dynamic>? firstChoice(Map<String, dynamic> chunk) {
+  final choices = chunk['choices'];
+  if (choices is! List || choices.isEmpty) return null;
+  final first = choices.first;
+  return first is Map ? first.cast<String, dynamic>() : null;
+}
+
 /// Result of separating inline `<think>…</think>` chain-of-thought from
 /// model text.
 class InlineThinkResult {
@@ -246,7 +286,10 @@ class OpenAIChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final url = Uri.parse('${config.endpoint}/chat/completions');
+    // Trimmed like every sibling protocol's base URL. [LLMModelConfig.endpoint]
+    // already guarantees no trailing slash; this keeps the call sites uniform
+    // so the next one copied from here cannot reintroduce `//chat/completions`.
+    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
     logger?.call('Preparing OpenAI request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = _prepareChatPayload(target, history, options, isStreaming: false, tools: tools);
@@ -292,8 +335,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       String? reasoningContent;
       String? reasoningFieldName;
 
-      final choices = data['choices'];
-      final choice = (choices is List && choices.isNotEmpty) ? choices[0] : null;
+      final choice = data is Map<String, dynamic> ? firstChoice(data) : null;
       final message = choice?['message'];
       if (message == null) {
         // Previously this fell through to an empty LLMResponse, which callers
@@ -406,7 +448,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final url = Uri.parse('${config.endpoint}/chat/completions');
+    final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
     logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = _prepareChatPayload(target, history, options, isStreaming: true);
@@ -453,25 +495,28 @@ class OpenAIChatProtocol implements ChatProtocol {
     // <think> tags arrive split across chunks; the filter reassembles them
     // and keeps the thinking out of the text channel.
     final thinkFilter = InlineThinkStreamFilter();
+    // Usage and finish_reason arrive on different chunks (and, on some relays,
+    // alongside content rather than on a choices-less tail chunk), so they are
+    // collected here and emitted once at stream end — the consumer keeps the
+    // last metadata it sees, so a single final chunk cannot be overwritten by
+    // a later one carrying only half the picture.
+    Map<String, dynamic>? usageMetadata;
+    String? finishReason;
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
           await LLMDebugLogger.appendLine(debugFile, line);
         }
-        if (line.isEmpty || line == 'data: [DONE]') continue;
-
-        String dataLine = line;
-        if (line.startsWith('data: ')) {
-          dataLine = line.substring(6);
-        }
+        final dataLine = sseDataPayload(line);
+        if (dataLine == null) continue;
 
         Map<String, dynamic>? chunkData;
         try {
           final decoded = jsonDecode(dataLine);
           if (decoded is Map<String, dynamic>) chunkData = decoded;
         } catch (_) {
-          continue; // Non-JSON SSE noise (comments, keep-alives).
+          continue; // Non-JSON SSE noise.
         }
         if (chunkData == null) continue;
 
@@ -480,15 +525,17 @@ class OpenAIChatProtocol implements ChatProtocol {
         // a malformed chunk (streaming.md §3.1/§3.2).
         throwIfEnvelopeError(chunkData);
 
-        try {
-          final choice = chunkData['choices']?[0];
-          if (choice == null) {
-            if (chunkData['usage'] != null) {
-              yield LLMResponseChunk(metadata: chunkData['usage']);
-            }
-            continue;
-          }
+        // Same: usage is the whole point of the choices-less tail chunk, so it
+        // is read before any parsing that is allowed to fail.
+        final usage = chunkData['usage'];
+        if (usage is Map) usageMetadata = usage.cast<String, dynamic>();
 
+        final choice = firstChoice(chunkData);
+        if (choice == null) continue;
+        final rawFinish = choice['finish_reason'];
+        if (rawFinish is String && rawFinish.isNotEmpty) finishReason = rawFinish;
+
+        try {
           final delta = choice['delta'];
           // Same shape tolerance as the sync path — a delta carrying a content
           // array would otherwise throw into the catch below and be dropped as
@@ -560,6 +607,16 @@ class OpenAIChatProtocol implements ChatProtocol {
       }
     } finally {
       client.close();
+    }
+
+    // Last, so it wins over any metadata attached to an earlier chunk. Without
+    // it a streamed request recorded no token usage at all — the sync path's
+    // `usage` + `finish_reason` are reported here in the same shape.
+    if (usageMetadata != null) {
+      yield LLMResponseChunk(metadata: {
+        ...usageMetadata,
+        'finish_reason': ?finishReason,
+      });
     }
 
     yield LLMResponseChunk(isDone: true);

@@ -25,10 +25,19 @@ Gemini 的每个 chunk 是一个**完整的 `GenerateContentResponse`**，不是
 按"拼接 delta"的思路处理会重复累加。它的 `parts` 是这一片的全部内容，直接追加
 即可。
 
-### ① 的三个实现细节
+### ① 的五个实现细节
 
 - **SSE 行会被网络切开。** 一个 `data:` 行可能跨两次 read 到达，解析半行会
   静默丢掉 token 或 usage。必须把最后一个不完整行留到下次。
+- **`data:` 后的空格是可选的。** SSE 规范里 `data:{"id":…}` 与
+  `data: {"id":…}` 等价，两种拼法都在流通。只匹配带空格的那种，遇到另一种
+  不会报错——整个回复原样到达、逐行解析为空、当噪声跳过。
+- **usage 尾 chunk 的 `choices` 是空数组，不是缺失字段。** 开了
+  `include_usage` 之后最后一个 chunk 形如
+  `{"choices": [], "usage": {…}}`；`chunk["choices"]?[0]` 这类空值守卫挡的是
+  null 不是空数组，会抛越界异常。而这个异常通常落在"容忍畸形 chunk"的 catch
+  里，于是 usage 静默归零——与下面那条"兼容层没实现 `stream_options`"表现
+  完全一样，排查时容易归错因。
 - **`tool_calls` 的分组键是 `index`，不是 `id`** —— `id` 本身也可能分片到达。
 - **`stream_options.include_usage` 是很多兼容层没实现的第一个东西。** 不实现
   的表现不是报错，是 usage 全为 0。
