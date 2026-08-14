@@ -21,6 +21,19 @@ class LLMModel {
   /// small local models that otherwise look at one image and stop.
   final bool forceViewAllImages;
 
+  /// Ask the model to reason before answering (④ only, off by default).
+  ///
+  /// Per model rather than per channel: one Anthropic-format channel serves
+  /// models that support thinking and models that reject the parameter, and
+  /// the spelling it goes out in is the channel's business (see
+  /// [ThinkingDialect]), not this flag's.
+  final bool enableThinking;
+
+  /// Let the host run web searches on its own during a turn (④ only, off by
+  /// default). Costs tokens and reaches the network on the user's behalf, so
+  /// it never turns itself on.
+  final bool enableWebSearch;
+
   // Performance metrics
   final double? estMeanMs;
   final double? estSdMs;
@@ -39,6 +52,8 @@ class LLMModel {
     this.feeGroupId,
     this.contextWindow,
     this.forceViewAllImages = false,
+    this.enableThinking = false,
+    this.enableWebSearch = false,
     this.estMeanMs,
     this.estSdMs,
     this.tasksSinceUpdate = 0,
@@ -58,6 +73,8 @@ class LLMModel {
       feeGroupId: map['fee_group_id'] as int?,
       contextWindow: map['context_window'] as int?,
       forceViewAllImages: (map['force_view_all_images'] ?? 0) == 1,
+      enableThinking: (map['enable_thinking'] ?? 0) == 1,
+      enableWebSearch: (map['enable_web_search'] ?? 0) == 1,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
       tasksSinceUpdate: map['tasks_since_update'] as int? ?? 0,
@@ -77,6 +94,8 @@ class LLMModel {
       'fee_group_id': feeGroupId,
       'context_window': contextWindow,
       'force_view_all_images': forceViewAllImages ? 1 : 0,
+      'enable_thinking': enableThinking ? 1 : 0,
+      'enable_web_search': enableWebSearch ? 1 : 0,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/context_budget.dart';
+import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
@@ -38,6 +40,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late bool supportsStream;
   late bool supportsStandard;
   late bool forceViewAllImages;
+  late bool enableThinking;
+  late bool enableWebSearch;
 
   /// Context-window slider presets (tokens): 4K … 1M.
   static const List<int> _contextSizes = [
@@ -99,6 +103,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     supportsStream = model?.supportsStream ?? true;
     supportsStandard = model?.supportsStandard ?? true;
     forceViewAllImages = model?.forceViewAllImages ?? false;
+    enableThinking = model?.enableThinking ?? false;
+    enableWebSearch = model?.enableWebSearch ?? false;
 
     // Context window: null = not set, 0 = unlimited, >0 = token limit. A new
     // model starts unset rather than at a preset — this number now budgets the
@@ -396,6 +402,29 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           secondary: const Icon(Icons.visibility_outlined),
           contentPadding: EdgeInsets.zero,
         ),
+        // Shown only on Anthropic-format channels, where these two exist at
+        // all. Offering them everywhere would put a switch in front of the
+        // user whose only effect on ① or ③ is nothing.
+        if (_isAnthropicChannel(appState)) ...[
+          SwitchListTile(
+            title: Text(l10n.enableThinking, style: textTheme.bodyMedium),
+            subtitle: Text(l10n.enableThinkingDesc,
+                style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+            value: enableThinking,
+            onChanged: (v) => setState(() => enableThinking = v),
+            secondary: const Icon(Icons.psychology_outlined),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: Text(l10n.enableWebSearch, style: textTheme.bodyMedium),
+            subtitle: Text(l10n.enableWebSearchDesc,
+                style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+            value: enableWebSearch,
+            onChanged: (v) => setState(() => enableWebSearch = v),
+            secondary: const Icon(Icons.travel_explore_outlined),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
 
         const SizedBox(height: 24),
         _sectionHeader(l10n.billing),
@@ -421,6 +450,16 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   }
 
 
+  /// Whether the selected channel speaks Anthropic Messages — the only
+  /// family with a thinking switch or a host-run web search.
+  bool _isAnthropicChannel(AppState appState) {
+    final channel = appState.allChannels
+        .cast<LLMChannel?>()
+        .firstWhere((c) => c?.id == channelId, orElse: () => null);
+    if (channel == null) return false;
+    return Vendors.byId(channel.type).family == ProtocolFamily.anthropic;
+  }
+
   Future<void> _save() async {
     final data = {
       'model_id': idCtrl.text.trim(),
@@ -430,6 +469,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       'supports_stream': supportsStream ? 1 : 0,
       'supports_standard': supportsStandard ? 1 : 0,
       'force_view_all_images': forceViewAllImages ? 1 : 0,
+      'enable_thinking': enableThinking ? 1 : 0,
+      'enable_web_search': enableWebSearch ? 1 : 0,
       'fee_group_id': feeGroupId,
       'channel_id': channelId,
       'context_window': ContextBudget.store(contextMode, _contextSizes[contextSizeIdx.round()]),

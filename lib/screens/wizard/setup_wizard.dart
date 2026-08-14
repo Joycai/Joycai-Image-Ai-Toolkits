@@ -86,6 +86,16 @@ class _SetupWizardState extends State<SetupWizard> {
       case Vendors.minimax:
         _endpointController.text = 'https://api.minimaxi.com/v1';
         break;
+      case Vendors.anthropicRest:
+        _endpointController.text = 'https://api.anthropic.com/v1';
+        break;
+      case Vendors.newApiAnthropic:
+        _endpointController.text = 'https://your-newapi-host.com/v1';
+        break;
+      case Vendors.minimaxAnthropic:
+        // Not `/v1`: MiniMax puts its ④-format endpoint beside the ① one.
+        _endpointController.text = 'https://api.minimaxi.com/anthropic/v1';
+        break;
       default:
         _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
     }
@@ -317,16 +327,14 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Widget _buildChannelStep(BuildContext context, AppLocalizations l10n) {
-    String endpointHint = "";
-    if (_channelType == Vendors.openAIRest ||
-        _channelType == Vendors.newApiOpenAI ||
-        _channelType == Vendors.xaiApi ||
-        _channelType == Vendors.deepseek ||
-        _channelType == Vendors.minimax) {
-      endpointHint = "Hint: OpenAI compatible endpoints usually end with '/v1'";
-    } else {
-      endpointHint = "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)";
-    }
+    final String endpointHint = switch (Vendors.byId(_channelType).family) {
+      ProtocolFamily.gemini =>
+        "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
+      ProtocolFamily.anthropic =>
+        "Hint: Anthropic endpoints usually end with '/v1'",
+      ProtocolFamily.openai || ProtocolFamily.midjourney =>
+        "Hint: OpenAI compatible endpoints usually end with '/v1'",
+    };
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
@@ -356,6 +364,9 @@ class _SetupWizardState extends State<SetupWizard> {
               DropdownMenuItem(value: Vendors.xaiApi, child: Text('xAI (Grok) API')),
               DropdownMenuItem(value: Vendors.deepseek, child: Text('DeepSeek')),
               DropdownMenuItem(value: Vendors.minimax, child: Text('MiniMax')),
+              DropdownMenuItem(value: Vendors.anthropicRest, child: Text('Anthropic API')),
+              DropdownMenuItem(value: Vendors.newApiAnthropic, child: Text('New API (Anthropic format)')),
+              DropdownMenuItem(value: Vendors.minimaxAnthropic, child: Text('MiniMax (Anthropic format)')),
             ],
             onChanged: (v) {
               setState(() {

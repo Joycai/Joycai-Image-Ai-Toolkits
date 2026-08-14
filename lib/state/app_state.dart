@@ -212,6 +212,7 @@ class AppState extends ChangeNotifier {
       case ProtocolFamily.openai:
         return ModelDescriptor.of(m.modelId).family == ModelFamily.openaiVideo;
       case ProtocolFamily.midjourney:
+      case ProtocolFamily.anthropic:
         return false;
     }
   }

@@ -87,6 +87,28 @@ const _presets = <_ProviderPreset>[
     icon: Icons.hub_outlined,
   ),
   _ProviderPreset(
+    id: 'anthropic-official',
+    channelType: Vendors.anthropicRest,
+    fixedEndpoint: 'https://api.anthropic.com/v1',
+    icon: Icons.forum_outlined,
+  ),
+  _ProviderPreset(
+    id: 'newapi-anthropic',
+    channelType: Vendors.newApiAnthropic,
+    endpointSuffix: '/v1',
+    icon: Icons.hub_outlined,
+  ),
+  // The one ④ endpoint whose path is not `/v1`: MiniMax serves it under
+  // `/anthropic/v1`, next to its OpenAI-format `/v1`. Worth a preset purely so
+  // nobody has to know that — a channel pointed at the wrong one of the two
+  // fails with a 404 that says nothing about which half of the URL is wrong.
+  _ProviderPreset(
+    id: 'minimax-anthropic',
+    channelType: Vendors.minimaxAnthropic,
+    fixedEndpoint: 'https://api.minimaxi.com/anthropic/v1',
+    icon: Icons.grain_outlined,
+  ),
+  _ProviderPreset(
     id: 'midjourney-proxy',
     channelType: Vendors.midjourneyProxy,
     icon: Icons.brush_outlined,
@@ -235,6 +257,12 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerGoogleOfficial;
       case 'newapi-gemini':
         return l10n.providerNewApiGemini;
+      case 'anthropic-official':
+        return l10n.providerAnthropicOfficial;
+      case 'newapi-anthropic':
+        return l10n.providerNewApiAnthropic;
+      case 'minimax-anthropic':
+        return l10n.providerMiniMaxAnthropic;
       case 'midjourney-proxy':
         return l10n.protocolMidjourney;
       default:
@@ -256,8 +284,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return 'api.deepseek.com';
       case 'minimax':
         return l10n.providerMiniMaxDesc;
+      case 'minimax-anthropic':
+        return 'api.minimaxi.com/anthropic/v1';
+      case 'anthropic-official':
+        return l10n.providerAnthropicOfficialDesc;
       case 'newapi-openai':
       case 'newapi-gemini':
+      case 'newapi-anthropic':
         return l10n.providerNewApiDesc;
       case 'midjourney-proxy':
         return l10n.protocolMidjourneyDesc;
@@ -441,6 +474,13 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         _buildGroupLabel(l10n.protocolGoogle),
         _buildProviderGrid(l10n, const ['google-official', 'newapi-gemini']),
         const SizedBox(height: 14),
+        _buildGroupLabel(l10n.protocolAnthropic),
+        _buildProviderGrid(l10n, const [
+          'anthropic-official',
+          'newapi-anthropic',
+          'minimax-anthropic',
+        ]),
+        const SizedBox(height: 14),
         _buildGroupLabel(l10n.providerGroupOther),
         _buildProviderGrid(l10n, const ['midjourney-proxy', 'custom']),
       ],
@@ -594,10 +634,15 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           Text(l10n.channelType,
               style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
+          // Bare brand names rather than the localized protocol titles used
+          // as group labels above: three of those in one track ellipsize to
+          // "OpenAI Compa…" on a phone, and these three words are the same in
+          // every language the app ships.
           AppSegmentedControl<String>(
-            segments: [
-              AppSegment(value: Vendors.openAIRest, label: l10n.protocolOpenAI),
-              AppSegment(value: Vendors.googleRest, label: l10n.protocolGoogle),
+            segments: const [
+              AppSegment(value: Vendors.openAIRest, label: 'OpenAI'),
+              AppSegment(value: Vendors.googleRest, label: 'Google'),
+              AppSegment(value: Vendors.anthropicRest, label: 'Anthropic'),
             ],
             value: _customProtocol,
             onChanged: (v) => setState(() => _customProtocol = v),
@@ -619,9 +664,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                   ? l10n.newApiBaseHint
                   : isMidjourney
                       ? l10n.midjourneyEndpointHint
-                      : (_customProtocol == Vendors.googleRest
-                          ? l10n.googleV1BetaHint
-                          : l10n.openaiV1Hint),
+                      : switch (_customProtocol) {
+                          Vendors.googleRest => l10n.googleV1BetaHint,
+                          Vendors.anthropicRest => l10n.anthropicV1Hint,
+                          _ => l10n.openaiV1Hint,
+                        },
               helperMaxLines: 3,
             ),
             onChanged: (_) => setState(() {}),

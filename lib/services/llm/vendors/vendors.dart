@@ -50,6 +50,28 @@ class Vendors {
   /// by the chat protocol).
   static const String minimax = 'minimax-api';
 
+  /// Anthropic Messages REST — Anthropic's own host, or any other supplier of
+  /// the native `POST /messages` surface (MiniMax's `/anthropic/v1`, a
+  /// self-hosted gateway, an unspecified relay). One profile covers both
+  /// because the only thing that actually differs is auth, and that is keyed
+  /// off the endpoint host rather than off the channel type.
+  static const String anthropicRest = 'anthropic-api-rest';
+
+  /// New API relay, Anthropic native format. Same wire behavior as
+  /// [anthropicRest]; kept distinct so channels record their supplier, exactly
+  /// as [newApiOpenAI] does for ①.
+  static const String newApiAnthropic = 'newapi-anthropic';
+
+  /// MiniMax's Anthropic-format endpoint (`/anthropic/v1`), the sibling of its
+  /// OpenAI-format one at [minimax] — the same vendor serving two protocol
+  /// families, which is why the family is a property of the channel and not of
+  /// the company. Its documented divergences from Anthropic all land inside
+  /// what this app already sends (`tool_choice: auto` only, `max_tokens`
+  /// optional rather than required, `anthropic-version` not demanded), so it
+  /// needs no behavior of its own — only its own id, so that the day one of
+  /// them does diverge there is somewhere to put it.
+  static const String minimaxAnthropic = 'minimax-anthropic';
+
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
 
@@ -94,6 +116,27 @@ class Vendors {
       id: minimax,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+    ),
+    VendorProfile(
+      id: anthropicRest,
+      family: ProtocolFamily.anthropic,
+      auth: AuthScheme.anthropicApiKeyWithBearerFallback,
+      thinking: ThinkingDialect.anthropicBudget,
+    ),
+    VendorProfile(
+      id: newApiAnthropic,
+      family: ProtocolFamily.anthropic,
+      auth: AuthScheme.anthropicApiKeyWithBearerFallback,
+      // A relay of Claude, so Claude's spelling. A New API host fronting some
+      // *other* ④ backend is the case this gets wrong — which is exactly why
+      // [minimaxAnthropic] is its own profile rather than a note in a README.
+      thinking: ThinkingDialect.anthropicBudget,
+    ),
+    VendorProfile(
+      id: minimaxAnthropic,
+      family: ProtocolFamily.anthropic,
+      auth: AuthScheme.anthropicApiKeyWithBearerFallback,
+      thinking: ThinkingDialect.adaptive,
     ),
     VendorProfile(
       id: midjourneyProxy,

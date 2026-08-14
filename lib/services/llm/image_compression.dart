@@ -36,6 +36,31 @@ class ImageCompressor {
     return (bytes: Uint8List.fromList(jpg), mimeType: 'image/jpeg');
   }
 
+  /// Re-encodes [original] to JPEG when [mimeType] is not one [accepted] by
+  /// the target API, and returns the pair unchanged when it already is.
+  ///
+  /// Only ④ needs this today: Anthropic accepts exactly four media types and
+  /// 400s the whole request on a fifth, where ① and ③ take whatever they are
+  /// handed. The alternatives — dropping the attachment, or relabelling it as
+  /// a type it isn't — both end with the model answering as though it saw an
+  /// image it never got. A decode failure falls back to the original bytes so
+  /// the request still reaches the API and fails loudly there.
+  static ({Uint8List bytes, String mimeType}) coerceMediaType(
+    Uint8List original,
+    String mimeType,
+    Set<String> accepted,
+  ) {
+    if (accepted.contains(mimeType.toLowerCase())) {
+      return (bytes: original, mimeType: mimeType);
+    }
+    final decoded = img.decodeImage(original);
+    if (decoded == null) return (bytes: original, mimeType: mimeType);
+    return (
+      bytes: Uint8List.fromList(img.encodeJpg(decoded, quality: _jpegQuality)),
+      mimeType: 'image/jpeg',
+    );
+  }
+
   /// Reads [attachment]'s bytes, compressing them when its referenceType is
   /// [LLMReferenceType.viewOnly] — see the class doc for why other
   /// reference types are excluded here.

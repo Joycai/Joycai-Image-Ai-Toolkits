@@ -1127,6 +1127,7 @@ class PromptOptimizerAgent {
               content: text,
               reasoningContent: response.reasoningContent,
               reasoningFieldName: response.reasoningFieldName,
+              reasoningSignature: response.reasoningSignature,
             ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
@@ -1143,6 +1144,7 @@ class PromptOptimizerAgent {
           content: response.text,
           reasoningContent: response.reasoningContent,
           reasoningFieldName: response.reasoningFieldName,
+          reasoningSignature: response.reasoningSignature,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -1626,6 +1628,7 @@ class PromptOptimizerAgent {
         // thoughtSignature breaks Gemini's.
         reasoningContent: m.reasoningContent,
         reasoningFieldName: m.reasoningFieldName,
+        reasoningSignature: m.reasoningSignature,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -2143,6 +2146,7 @@ class PromptOptimizerAgent {
         // the ① family echo-back contract does not care why it was rewritten.
         reasoningContent: owning.reasoningContent,
         reasoningFieldName: owning.reasoningFieldName,
+        reasoningSignature: owning.reasoningSignature,
         toolCalls: [
           for (final c in owning.toolCalls)
             if (c.id != callId) c,

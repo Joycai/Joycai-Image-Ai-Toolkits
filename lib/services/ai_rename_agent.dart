@@ -192,6 +192,7 @@ class AiRenameAgent {
         content: response.text,
         reasoningContent: response.reasoningContent,
         reasoningFieldName: response.reasoningFieldName,
+        reasoningSignature: response.reasoningSignature,
         toolCalls: response.toolCalls,
       ));
 

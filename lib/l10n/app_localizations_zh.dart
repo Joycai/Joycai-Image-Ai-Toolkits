@@ -780,6 +780,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 协议';
 
   @override
+  String get protocolAnthropic => 'Anthropic Messages 协议';
+
+  @override
+  String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 接口';
+
+  @override
   String get midjourneyEndpointHint =>
       '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
 
@@ -832,6 +838,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerNewApiDesc => 'New API 中转 · Bearer 令牌鉴权';
 
   @override
+  String get providerAnthropicOfficial => 'Anthropic 官方';
+
+  @override
+  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
+
+  @override
+  String get providerNewApiAnthropic => 'New API（Anthropic 格式）';
+
+  @override
+  String get providerMiniMaxAnthropic => 'MiniMax（Anthropic 格式）';
+
+  @override
   String get providerMiniMaxDesc => 'OpenAI 兼容 /v1 端点';
 
   @override
@@ -848,6 +866,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get googleV1BetaHint => '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾';
+
+  @override
+  String get anthropicV1Hint => '提示：Anthropic 接口通常以 \'/v1\' 结尾';
 
   @override
   String get enterApiKey => '请输入 API 密钥';
@@ -962,6 +983,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get forceViewAllImagesDesc => '代理必须查看所有参考图后才能提交结果，推荐为本地小模型开启。';
+
+  @override
+  String get enableThinking => '深度思考';
+
+  @override
+  String get enableThinkingDesc => '让模型先推理再作答。会消耗输出 token，仅 Anthropic 格式渠道支持。';
+
+  @override
+  String get enableWebSearch => '服务端联网搜索';
+
+  @override
+  String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
   String get prompts => '提示词';
@@ -3337,6 +3370,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolMidjourneyDesc => 'midjourney-proxy / NewAPI 的 /mj/* 介面';
 
   @override
+  String get protocolAnthropic => 'Anthropic Messages 協定';
+
+  @override
+  String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 介面';
+
+  @override
   String get midjourneyEndpointHint =>
       '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
 
@@ -3389,6 +3428,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerNewApiDesc => 'New API 中轉 · Bearer 權杖驗證';
 
   @override
+  String get providerAnthropicOfficial => 'Anthropic 官方';
+
+  @override
+  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
+
+  @override
+  String get providerNewApiAnthropic => 'New API（Anthropic 格式）';
+
+  @override
+  String get providerMiniMaxAnthropic => 'MiniMax（Anthropic 格式）';
+
+  @override
   String get providerMiniMaxDesc => 'OpenAI 相容 /v1 端點';
 
   @override
@@ -3405,6 +3456,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get googleV1BetaHint => '提示：Google GenAI 端點通常以「/v1beta」結尾';
+
+  @override
+  String get anthropicV1Hint => '提示：Anthropic 端點通常以「/v1」結尾';
 
   @override
   String get enterApiKey => '輸入您的 API 金鑰';
@@ -3519,6 +3573,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get forceViewAllImagesDesc => '代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。';
+
+  @override
+  String get enableThinking => '深度思考';
+
+  @override
+  String get enableThinkingDesc => '讓模型先推理再作答。會消耗輸出 token，僅 Anthropic 格式通道支援。';
+
+  @override
+  String get enableWebSearch => '伺服器端聯網搜尋';
+
+  @override
+  String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
 
   @override
   String get prompts => '提示';

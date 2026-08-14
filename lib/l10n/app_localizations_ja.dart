@@ -782,6 +782,12 @@ class AppLocalizationsJa extends AppLocalizations {
       'midjourney-proxy / NewAPI の /mj/* インターフェース';
 
   @override
+  String get protocolAnthropic => 'Anthropic Messages';
+
+  @override
+  String get protocolAnthropicDesc => 'Claude ネイティブの /v1/messages インターフェース';
+
+  @override
   String get midjourneyEndpointHint =>
       'ホストのルートURL（例: https://your-newapi.com）を入力してください。/mj/* パスは自動的に追加されます。';
 
@@ -835,6 +841,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerNewApiDesc => 'New API リレー · ベアラートークン認証';
 
   @override
+  String get providerAnthropicOfficial => 'Anthropic 公式';
+
+  @override
+  String get providerAnthropicOfficialDesc => 'api.anthropic.com · Claude';
+
+  @override
+  String get providerNewApiAnthropic => 'New API（Anthropic 形式）';
+
+  @override
+  String get providerMiniMaxAnthropic => 'MiniMax（Anthropic 形式）';
+
+  @override
   String get providerMiniMaxDesc => 'OpenAI 互換 /v1 エンドポイント';
 
   @override
@@ -851,6 +869,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get googleV1BetaHint => 'ヒント：Google GenAIのエンドポイントは通常「/v1beta」で終わります';
+
+  @override
+  String get anthropicV1Hint => 'ヒント：Anthropic のエンドポイントは通常「/v1」で終わります';
 
   @override
   String get enterApiKey => 'APIキーを入力してください';
@@ -968,6 +989,20 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get forceViewAllImagesDesc =>
       'エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。';
+
+  @override
+  String get enableThinking => '拡張思考';
+
+  @override
+  String get enableThinkingDesc =>
+      '回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。';
+
+  @override
+  String get enableWebSearch => 'サーバー側ウェブ検索';
+
+  @override
+  String get enableWebSearchDesc =>
+      '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
   String get prompts => 'プロンプト';
