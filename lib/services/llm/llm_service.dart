@@ -26,7 +26,10 @@ class LLMService {
     List<LLMTool>? tools,
     bool useStream = true,
   }) async {
-    // Tool calling is only wired through the standard (non-streaming) path.
+    // Tool calling is only wired through the standard (non-streaming) path —
+    // see [ChatProtocol.generateStream]. Silently downgrading beats honouring
+    // useStream: a caller that passed tools needs them, and a stream that
+    // never declares them just answers as if there were none.
     if (tools != null && tools.isNotEmpty) {
       useStream = false;
     }
@@ -50,6 +53,7 @@ class LLMService {
           onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
           String accumulatedText = "";
           List<Uint8List> accumulatedImages = [];
+          List<LLMToolCall> accumulatedToolCalls = [];
           Map<String, dynamic>? finalMetadata;
 
           final stream = _dispatcher.generateStream(
@@ -72,13 +76,22 @@ class LLMService {
             if (chunk.imagePart != null) {
               accumulatedImages.add(chunk.imagePart!);
             }
+            // Collected rather than ignored: a dropped tool call reads to the
+            // caller as "the model chose to answer directly", which is the one
+            // failure mode an agent loop cannot detect. Not reachable while
+            // the guard above forces tools onto the standard path, but the
+            // guard is the reason, not an excuse for losing them here.
+            if (chunk.toolCallPart != null) {
+              accumulatedToolCalls.add(chunk.toolCallPart!);
+            }
             if (chunk.metadata != null) finalMetadata = chunk.metadata;
           }
-          
+
           final response = LLMResponse(
             text: accumulatedText,
             generatedImages: accumulatedImages,
             metadata: finalMetadata ?? {},
+            toolCalls: accumulatedToolCalls,
           );
 
           // Record usage

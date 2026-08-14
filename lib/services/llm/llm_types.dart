@@ -193,7 +193,6 @@ class LLMModelConfig {
   final double outputFee;
   final String billingMode; // 'token' or 'request'
   final double requestFee;
-  final Map<String, dynamic> extraParams;
 
   // Proxy settings
   final bool proxyEnabled;
@@ -212,7 +211,6 @@ class LLMModelConfig {
     this.outputFee = 0.0,
     this.billingMode = 'token',
     this.requestFee = 0.0,
-    this.extraParams = const {},
     this.proxyEnabled = false,
     this.proxyUrl,
     this.proxyUsername,
@@ -289,7 +287,16 @@ class LLMResponseChunk {
 
   final Uint8List? imagePart;
   final Map<String, dynamic>? metadata;
+
+  /// One whole tool call. Emitted by the Google chunk parser, which is shared
+  /// between that family's streaming and synchronous paths — the synchronous
+  /// one reassembles [LLMResponse.toolCalls] from these.
+  ///
+  /// Always a complete call, never a fragment: no protocol declares tools on
+  /// the streaming surface (see [ChatProtocol.generateStream]), so nothing
+  /// here has to survive being split across chunks.
   final LLMToolCall? toolCallPart;
+
   final bool isDone;
 
   LLMResponseChunk({this.textPart, this.reasoningPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
