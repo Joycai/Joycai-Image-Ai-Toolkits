@@ -130,6 +130,23 @@ Map<String, dynamic> prepareVeoPayload(List<LLMMessage> history, Map<String, dyn
   };
 }
 
+/// Finish reasons that mean the model was stopped by a policy rather than by
+/// running out of things to say.
+///
+/// `IMAGE_SAFETY` and `PROHIBITED_CONTENT` are the two the image models
+/// actually return; both used to fall through the `SAFETY`/`RECITATION`
+/// comparison and be logged at INFO, which is the level a successful request
+/// uses. `MAX_TOKENS` is deliberately absent — a truncated answer is still an
+/// answer.
+const Set<String> blockingFinishReasons = {
+  'SAFETY',
+  'IMAGE_SAFETY',
+  'RECITATION',
+  'BLOCKLIST',
+  'PROHIBITED_CONTENT',
+  'SPII',
+};
+
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
 Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
@@ -161,17 +178,18 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 
   for (var candidate in candidates) {
     final finishReason = candidate['finishReason'] as String?;
+    final parts = candidate['content']?['parts'] as List?;
 
     // Handle Safety and other non-STOP reasons (Section 3.3)
     if (finishReason != null && finishReason != 'STOP') {
+      final blocked = blockingFinishReasons.contains(finishReason);
       String level = 'INFO';
-      if (finishReason == 'SAFETY') level = 'WARN';
-      if (finishReason == 'RECITATION') level = 'WARN';
+      if (blocked) level = 'WARN';
       if (finishReason == 'OTHER') level = 'ERROR';
 
       logger?.call('Generation finished with reason: $finishReason', level: level);
 
-      if (finishReason == 'SAFETY') {
+      if (blocked) {
         logger?.call('Content was flagged by safety filters.', level: 'WARN');
         if (candidate['safetyRatings'] != null) {
           final ratings = candidate['safetyRatings'] as List;
@@ -182,9 +200,18 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
           }
         }
       }
+
+      // A block that left nothing behind is a failure, not a quiet success.
+      // Image generation is where this bites: the candidate carries no parts
+      // at all, so the caller collected zero images and the task reported
+      // "done" with no output and only a log line to explain it. When the
+      // candidate *does* carry content (a truncated MAX_TOKENS answer, or a
+      // block that arrived after text streamed), the content is kept.
+      if (blocked && (parts == null || parts.isEmpty)) {
+        throw Exception('Google GenAI blocked the generation: $finishReason');
+      }
     }
 
-    final parts = candidate['content']?['parts'] as List?;
     if (parts != null) {
       int callIndex = 0;
       for (var part in parts) {
@@ -223,7 +250,20 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 /// Standard `:generateContent` request body: system instruction, multimodal
 /// contents, image-generation config and per-request safety settings (from
 /// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
-Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, dynamic>? options, String? endpoint, {List<LLMTool>? tools}) {
+///
+/// [emitsImages] declares `responseModalities: ["TEXT","IMAGE"]`. It comes
+/// from the model descriptor's capabilities, never from the model id — this
+/// layer must not sniff. Nothing else supplies it: a relay only injects the
+/// modalities when it is *translating* an OpenAI-shaped request, so on the
+/// native surface the field is ours to send or the model answers in text
+/// only — silently, for the models that need it declared.
+Map<String, dynamic> prepareGooglePayload(
+  List<LLMMessage> history,
+  Map<String, dynamic>? options,
+  String? endpoint, {
+  List<LLMTool>? tools,
+  bool emitsImages = false,
+}) {
   final systemMessages = history.where((m) => m.role == LLMRole.system).toList();
   final conversationMessages = history.where((m) => m.role != LLMRole.system).toList();
 
@@ -295,6 +335,9 @@ Map<String, dynamic> prepareGooglePayload(List<LLMMessage> history, Map<String, 
   }).toList();
 
   final generationConfig = <String, dynamic>{};
+  if (emitsImages) {
+    generationConfig['responseModalities'] = ['TEXT', 'IMAGE'];
+  }
   if (options != null) {
     final imageConfig = <String, dynamic>{};
     // personGeneration is Only for Imagen model
