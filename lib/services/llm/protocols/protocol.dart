@@ -50,6 +50,19 @@ abstract class ChatProtocol {
     LLMLogger? logger,
   });
 
+  /// Deliberately takes no `tools`: the streaming surface does not declare
+  /// them, so no implementation has to assemble a tool call out of deltas.
+  /// [LLMService.request] downgrades a tool-bearing request to [generate]
+  /// instead.
+  ///
+  /// Adding tools here is a bigger change than the signature suggests. On the
+  /// ① family `function.arguments` arrives fragmented across chunks and
+  /// `delta.tool_calls[].index` — not `id`, which is fragmented too — is the
+  /// only reliable grouping key (docs/api/tools.md §4); the accumulator has to
+  /// live in the protocol and emit whole calls at stream end. And the one
+  /// consumer that would use it, the assistant's agent loop, cannot act on a
+  /// partial batch anyway: it needs every call in the message before it can
+  /// pair a single result. Hence the downgrade rather than the machinery.
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
