@@ -130,6 +130,70 @@ void main() {
     });
   });
 
+  group('sseDataPayload', () {
+    test('the spec-optional space after data: is accepted either way', () {
+      // `data:{…}` is as conformant as `data: {…}`; only the spaced form was
+      // recognized, so a relay using the bare one delivered a reply that
+      // parsed as nothing, with no error raised anywhere.
+      expect(sseDataPayload('data: {"a":1}'), '{"a":1}');
+      expect(sseDataPayload('data:{"a":1}'), '{"a":1}');
+    });
+
+    test('only one space is consumed — leading whitespace inside is preserved', () {
+      expect(sseDataPayload('data:  {"a":1}'), ' {"a":1}');
+    });
+
+    test('terminators, comments and blanks carry no payload', () {
+      expect(sseDataPayload('data: [DONE]'), isNull);
+      expect(sseDataPayload('data:[DONE]'), isNull);
+      expect(sseDataPayload(''), isNull);
+      expect(sseDataPayload('   '), isNull);
+      expect(sseDataPayload('data:'), isNull);
+      expect(sseDataPayload(': keep-alive'), isNull);
+    });
+
+    test('a stray CR from \\r\\n framing is stripped', () {
+      expect(sseDataPayload('data: {"a":1}\r'), '{"a":1}');
+      expect(sseDataPayload('data: [DONE]\r'), isNull);
+    });
+
+    test('an unframed JSON line still passes through', () {
+      // Some relays stream bare JSON lines with no SSE field name; that
+      // tolerance predates this helper and is kept.
+      expect(sseDataPayload('{"a":1}'), '{"a":1}');
+    });
+  });
+
+  group('firstChoice', () {
+    test('an empty choices list reads as absent, not as a RangeError', () {
+      // The `stream_options.include_usage` tail chunk is exactly this shape.
+      // `chunk['choices']?[0]` threw into the stream loop's tolerant catch,
+      // so every streamed request silently recorded zero token usage.
+      final tail = {
+        'id': 'x',
+        'choices': [],
+        'usage': {'prompt_tokens': 10, 'completion_tokens': 2},
+      };
+      expect(firstChoice(tail), isNull);
+      expect(tail['usage'], isNotNull);
+    });
+
+    test('a missing or malformed choices field reads as absent', () {
+      expect(firstChoice({'usage': {}}), isNull);
+      expect(firstChoice({'choices': 'nope'}), isNull);
+      expect(firstChoice({'choices': ['nope']}), isNull);
+    });
+
+    test('a real choice is returned as a typed map', () {
+      final choice = firstChoice({
+        'choices': [
+          {'index': 0, 'delta': {'content': 'hi'}, 'finish_reason': null}
+        ]
+      });
+      expect(choice?['delta']['content'], 'hi');
+    });
+  });
+
   group('throwIfEnvelopeError', () {
     test('error field throws with the upstream message', () {
       expect(
