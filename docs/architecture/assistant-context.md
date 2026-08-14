@@ -156,6 +156,18 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    typed while pending), or the self-healing cancel guard at the top of
    `runTurn`. Add a new way to start a turn and skip that guard, and the first
    request 400s on both providers.
+9. **A suspended `ask_user` call is the *last* message in the history**, which
+   is what makes pairing it later legal — the result appended when the user
+   answers lands immediately after the assistant message that made it.
+   `canStageAskUser` enforces it by refusing to stage a question batched with
+   any other tool call: `view_image` appends its attachment as a **user**
+   message once the batch finishes, so a batched question's answer would arrive
+   behind it and the history would read `assistant(tool_calls) → tool → user →
+   tool`. Providers reject that (docs/api/tools.md §3) and history is
+   cumulative, so the session never recovers — this is a session-killer, not a
+   turn-killer. `_pairDanglingAskUser` additionally checks adjacency at pairing
+   time and, for a history written before this rail existed, strips the call
+   rather than appending a misplaced tool message.
 
 ## Accepted limits
 

@@ -803,8 +803,9 @@ class PromptOptimizerAgent {
           'The turn pauses until the user answers; their choices arrive as '
           'this tool\'s result. Use it only when ambiguity genuinely blocks '
           'the work — prefer it over guessing, but never ask what you can '
-          'infer. Offer concrete options. Call it at most once per turn and '
-          'do not combine it with other tool calls in the same message.',
+          'infer. Offer concrete options. It must be the ONLY tool call in the '
+          'message: a question batched with any other call is rejected and '
+          'never reaches the user.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -1164,12 +1165,14 @@ class PromptOptimizerAgent {
         // result, and a throwing tool becomes an error result instead of
         // escaping the loop.
         //
-        // The ONE deliberate exception is a valid ask_user call: it stays
-        // dangling and the turn returns, because its result IS the user's
-        // answer. This is safe — nothing sends the history while it dangles
-        // (the turn has ended), and every path back into a turn pairs it
-        // first: answerAskUser, resolvePendingAskUserAsFreeText, or the
-        // self-healing guard at the top of runTurn.
+        // The ONE deliberate exception is a valid, solo ask_user call: it
+        // stays dangling and the turn returns, because its result IS the
+        // user's answer. This is safe — nothing sends the history while it
+        // dangles (the turn has ended), every path back into a turn pairs it
+        // first (answerAskUser, resolvePendingAskUserAsFreeText, or the
+        // self-healing guard at the top of runTurn), and canStageAskUser
+        // keeps the dangling call the LAST message so that pairing lands
+        // inside its own batch.
         var cancelledMidBatch = false;
         String? pendingAskCallId;
         for (final call in response.toolCalls) {
@@ -1181,11 +1184,13 @@ class PromptOptimizerAgent {
               'message': 'The user cancelled the task before this tool ran.',
             };
           } else if (call.name == 'ask_user') {
-            if (pendingAskCallId != null) {
+            if (!canStageAskUser(response.toolCalls)) {
               result = {
                 'status': 'error',
-                'message': 'Only one ask_user call per turn — this one was '
-                    'ignored. Fold extra questions into the pending call next time.',
+                'message': 'ask_user must be the only tool call in a message, '
+                    'so this question was NOT shown to the user. The other '
+                    'calls in this message ran normally — ask again on its own '
+                    'in your next message.',
               };
             } else {
               final questions = AskUserQuestion.tryParse(call.arguments['questions']);
@@ -2068,6 +2073,87 @@ class PromptOptimizerAgent {
     session._resolveKbEdit(editId, KbEditState.rejected);
   }
 
+  /// Whether an `ask_user` call may be staged — left deliberately unpaired so
+  /// the turn can suspend on it (invariant 8).
+  ///
+  /// Only when it is the message's **only** tool call. Suspending is safe
+  /// precisely because the dangling call is then the last thing in the
+  /// history: the result appended when the user answers lands immediately
+  /// after the assistant message that made it. Batched with anything else that
+  /// runs, that stops being true — `view_image` appends the image as a *user*
+  /// message once the batch finishes, so the answer would arrive behind it and
+  /// the history would read `assistant(tool_calls) → tool → user → tool`.
+  /// Providers reject that ("an assistant message with 'tool_calls' must be
+  /// followed by tool messages responding to each tool_call_id",
+  /// docs/api/tools.md §3), and because history is cumulative the request
+  /// never becomes valid again — the session is dead, not just the turn.
+  ///
+  /// The tool's own description already tells the model to ask alone; this is
+  /// the rail that makes it structural rather than advisory. A batched
+  /// question is refused with an error result, so the model simply re-asks on
+  /// the next iteration of the same turn.
+  @visibleForTesting
+  static bool canStageAskUser(List<LLMToolCall> batch) => batch.length == 1;
+
+  /// Pairs the dangling `ask_user` call [callId] with [result].
+  ///
+  /// Appends a tool message when that still lands inside the call's own batch
+  /// — the normal case, which [canStageAskUser] guarantees. It does not hold
+  /// for a history written by a build that predates that rail, where a
+  /// `view_image` attachment could sit between the call and here; appending
+  /// there would produce the exact ordering providers reject. In that case the
+  /// call is stripped from the assistant message instead — the question is
+  /// cancelled either way — and [fallback], if given, is appended as a user
+  /// message so the user's input is not silently dropped.
+  ///
+  /// The repair is in place (same index, same list length), so
+  /// [PromptOptimizerSession.persistedCount] stays a valid count. The stored
+  /// row keeps the old shape, but this runs at the top of every turn, so what
+  /// goes on the wire is repaired every time.
+  static void _pairDanglingAskUser(
+    PromptOptimizerSession session,
+    String callId,
+    Map<String, dynamic> result, {
+    String? fallback,
+  }) {
+    final history = session.history;
+    int owner = -1;
+    for (int i = history.length - 1; i >= 0; i--) {
+      if (history[i].toolCalls.any((c) => c.id == callId)) {
+        owner = i;
+        break;
+      }
+    }
+    if (owner < 0) return;
+
+    final adjacent = history.skip(owner + 1).every((m) => m.role == LLMRole.tool);
+    if (adjacent) {
+      history.add(LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode(result),
+        toolCallId: callId,
+        toolName: 'ask_user',
+      ));
+    } else {
+      final owning = history[owner];
+      history[owner] = LLMMessage(
+        role: LLMRole.assistant,
+        content: owning.content,
+        // Verbatim, like everywhere else this rewrites an assistant message:
+        // the ① family echo-back contract does not care why it was rewritten.
+        reasoningContent: owning.reasoningContent,
+        reasoningFieldName: owning.reasoningFieldName,
+        toolCalls: [
+          for (final c in owning.toolCalls)
+            if (c.id != callId) c,
+        ],
+      );
+      if (fallback != null) {
+        history.add(LLMMessage(role: LLMRole.user, content: fallback));
+      }
+    }
+  }
+
   /// Self-healing guard, run at the top of every turn: a dangling ask_user
   /// call must never reach a provider (both endpoints reject an unpaired tool
   /// call). The normal paths pair it before enqueueing a turn — the answer
@@ -2078,15 +2164,10 @@ class PromptOptimizerAgent {
   static void _cancelDanglingAskUser(PromptOptimizerSession session) {
     final dangling = session.pendingAskUser;
     if (dangling == null) return;
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({
-        'status': 'cancelled',
-        'message': 'The question was not answered.',
-      }),
-      toolCallId: dangling.callId,
-      toolName: 'ask_user',
-    ));
+    _pairDanglingAskUser(session, dangling.callId, {
+      'status': 'cancelled',
+      'message': 'The question was not answered.',
+    });
     session._resolveAskUser(dangling.callId, AskUserState.dismissed);
   }
 
@@ -2104,15 +2185,15 @@ class PromptOptimizerAgent {
     required List<AskUserAnswer> answers,
   }) {
     if (session.pendingAskUser?.callId != callId) return;
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({
-        'status': 'ok',
-        'answers': [for (final a in answers) a.toJson()],
-      }),
-      toolCallId: callId,
-      toolName: 'ask_user',
-    ));
+    final payload = [for (final a in answers) a.toJson()];
+    _pairDanglingAskUser(
+      session,
+      callId,
+      {'status': 'ok', 'answers': payload},
+      // Only reachable for a pre-rail history (see _pairDanglingAskUser): the
+      // choices still have to reach the model, just in the user role.
+      fallback: 'Answers to the questions you asked: ${jsonEncode(payload)}',
+    );
     session._resolveAskUser(callId, AskUserState.answered, answers: answers);
   }
 
@@ -2125,16 +2206,13 @@ class PromptOptimizerAgent {
     required String callId,
   }) {
     if (session.pendingAskUser?.callId != callId) return;
-    session.history.add(LLMMessage(
-      role: LLMRole.tool,
-      content: jsonEncode({
-        'status': 'ok',
-        'note': 'The user replied in free text instead of choosing options — '
-            'see the user message that follows.',
-      }),
-      toolCallId: callId,
-      toolName: 'ask_user',
-    ));
+    // No fallback message: the user's free text is appended as its own user
+    // turn by the caller, right after this.
+    _pairDanglingAskUser(session, callId, {
+      'status': 'ok',
+      'note': 'The user replied in free text instead of choosing options — '
+          'see the user message that follows.',
+    });
     session._resolveAskUser(callId, AskUserState.dismissed);
   }
 

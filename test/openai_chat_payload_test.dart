@@ -88,6 +88,48 @@ void main() {
     });
   });
 
+  group('contentToText', () {
+    test('a plain string passes through — the spec shape', () {
+      expect(contentToText('hello'), 'hello');
+    });
+
+    test('a content array is joined, not downcast into a TypeError', () {
+      // Compat layers fronting a Responses/Anthropic backend mirror this
+      // shape onto chat/completions. `String text = message['content']` used
+      // to throw from inside the parser, surfacing as a request failure with
+      // nothing pointing at the cause.
+      expect(
+        contentToText([
+          {'type': 'text', 'text': 'part one '},
+          {'type': 'image_url', 'image_url': {'url': 'data:…'}},
+          {'type': 'text', 'text': 'part two'},
+        ]),
+        'part one part two',
+      );
+    });
+
+    test('absent or unrecognized content reads as empty, never as a throw', () {
+      expect(contentToText(null), '');
+      expect(contentToText(42), '');
+      expect(contentToText([]), '');
+      expect(contentToText([{'type': 'image_url'}]), '');
+    });
+  });
+
+  group('resolveToolCallId', () {
+    test('a real id is kept verbatim', () {
+      expect(resolveToolCallId('call_abc', 0), 'call_abc');
+    });
+
+    test('absent AND empty ids both fall back — an empty one used to survive', () {
+      // Two calls in one batch sharing '' would give two tool messages the
+      // same tool_call_id, and the next request is rejected.
+      expect(resolveToolCallId(null, 0), 'call_0');
+      expect(resolveToolCallId('', 1), 'call_1');
+      expect(resolveToolCallId('', 0), isNot(resolveToolCallId('', 1)));
+    });
+  });
+
   group('throwIfEnvelopeError', () {
     test('error field throws with the upstream message', () {
       expect(

@@ -269,6 +269,154 @@ void main() {
     });
   });
 
+  group('wire ordering', () {
+    /// Asserts the two rules every provider enforces on a tool-calling
+    /// history (docs/api/tools.md §3): each tool message sits *inside* the
+    /// batch of the assistant message that requested it — immediately
+    /// preceded by that message or by another tool message — and every tool
+    /// call has a result. Violating either poisons the session permanently,
+    /// because history is cumulative.
+    void expectWireValidOrdering(List<LLMMessage> history) {
+      for (int i = 0; i < history.length; i++) {
+        if (history[i].role != LLMRole.tool) continue;
+        expect(i, greaterThan(0), reason: 'a tool message cannot open a history');
+        final prev = history[i - 1];
+        expect(
+          prev.role == LLMRole.tool || prev.toolCalls.isNotEmpty,
+          isTrue,
+          reason: 'tool message at $i is separated from its assistant batch by '
+              'a ${prev.role.name} message',
+        );
+      }
+      final answered = {
+        for (final m in history)
+          if (m.role == LLMRole.tool && m.toolCallId != null) m.toolCallId!,
+      };
+      for (final m in history) {
+        for (final c in m.toolCalls) {
+          expect(answered, contains(c.id), reason: 'unpaired tool call ${c.id}');
+        }
+      }
+    }
+
+    /// The shape a build predating [PromptOptimizerAgent.canStageAskUser]
+    /// could leave behind: one assistant message carrying view_image *and*
+    /// ask_user, the view's result, and the viewed image appended as a **user**
+    /// message — with the question still dangling behind it.
+    String recordPreRailBatch(PromptOptimizerSession session) {
+      session.history.add(LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(id: 'view1', name: 'view_image', arguments: {'id': 1}),
+          LLMToolCall(
+            id: 'ask1',
+            name: 'ask_user',
+            arguments: {'questions': validQuestions},
+          ),
+        ],
+      ));
+      session.history.add(LLMMessage(
+        role: LLMRole.tool,
+        content: jsonEncode({'status': 'ok'}),
+        toolCallId: 'view1',
+        toolName: 'view_image',
+      ));
+      session.history.add(LLMMessage(
+        role: LLMRole.user,
+        content: '${PromptOptimizerAgent.viewResultMarker} Reference image #1 attached.',
+      ));
+      return 'ask1';
+    }
+
+    test('a question batched with anything else is never staged', () {
+      final ask = LLMToolCall(
+        id: 'a',
+        name: 'ask_user',
+        arguments: const {'questions': validQuestions},
+      );
+      expect(PromptOptimizerAgent.canStageAskUser([ask]), isTrue);
+      // view_image is the killer: its attachment is appended in the *user*
+      // role after the batch, so the answer could never land adjacent again.
+      expect(
+        PromptOptimizerAgent.canStageAskUser(
+            [LLMToolCall(id: 'v', name: 'view_image', arguments: const {'id': 1}), ask]),
+        isFalse,
+      );
+      expect(
+        PromptOptimizerAgent.canStageAskUser(
+            [ask, LLMToolCall(id: 'b', name: 'ask_user', arguments: const {})]),
+        isFalse,
+      );
+    });
+
+    test('the three solo pairing paths all keep the ordering valid', () {
+      for (final pair in <void Function(PromptOptimizerSession, String)>[
+        (s, id) => PromptOptimizerAgent.answerAskUser(
+              session: s,
+              callId: id,
+              answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
+            ),
+        (s, id) => PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
+            session: s, callId: id),
+        (s, _) => PromptOptimizerAgent.cancelDanglingAskUserForTest(s),
+      ]) {
+        final session = newSession();
+        session.addUserTurn('go');
+        final callId = recordAsk(session);
+        pair(session, callId);
+
+        expect(session.history.last.role, LLMRole.tool);
+        expect(session.pendingAskUser, isNull);
+        expectWireValidOrdering(session.history);
+      }
+    });
+
+    test('a pre-rail history is repaired by stripping, never by a misplaced result', () {
+      final session = newSession();
+      session.addUserTurn('go');
+      final callId = recordPreRailBatch(session);
+      expect(session.pendingAskUser?.callId, callId);
+
+      PromptOptimizerAgent.cancelDanglingAskUserForTest(session);
+
+      // Appending a tool result here would have produced
+      // assistant → tool → user → tool, which every provider rejects.
+      expect(session.history.last.role, LLMRole.user);
+      expect(
+        session.history.any((m) => m.toolCalls.any((c) => c.id == callId)),
+        isFalse,
+        reason: 'the unanswerable call must be gone from the assistant message',
+      );
+      // Only the unanswerable call goes: the view_image it was batched with
+      // is untouched (and expectWireValidOrdering re-checks it is paired).
+      expect(
+        session.history.any((m) => m.toolCalls.any((c) => c.id == 'view1')),
+        isTrue,
+      );
+      expect(session.pendingAskUser, isNull);
+      expectWireValidOrdering(session.history);
+    });
+
+    test('answering a pre-rail question keeps the choices, in the user role', () {
+      final session = newSession();
+      session.addUserTurn('go');
+      final callId = recordPreRailBatch(session);
+
+      PromptOptimizerAgent.answerAskUser(
+        session: session,
+        callId: callId,
+        answers: const [AskUserAnswer(header: '鞋型', selected: ['一体袜靴'])],
+      );
+
+      final last = session.history.last;
+      expect(last.role, LLMRole.user);
+      expect(last.content, contains('一体袜靴'));
+      expect(session.pendingAskUser, isNull);
+      expectWireValidOrdering(session.history);
+    });
+  });
+
   group('fromStored', () {
     test('a dangling call restores as a pending, actionable card', () {
       final live = newSession();
