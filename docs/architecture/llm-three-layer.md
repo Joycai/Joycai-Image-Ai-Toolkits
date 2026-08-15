@@ -93,10 +93,10 @@ review 时用下面的模式全仓库 grep 一遍即可：
 
 | 红线模式（grep） | 为什么禁止 | 正确位置 |
 |----------------|-----------|---------|
-| `modelId.contains(` / `modelId.startsWith(` / `id.contains(` 出现在 `model_family.dart`、`model_descriptor.dart` 之外 | 模型分类只能有一个事实来源；散点嗅探曾导致 30+ 条规则互相踩（顺序敏感、改一处漏一处） | 加进 `ModelFamilyClassifier` 的规则表，消费方读 `ModelDescriptor.of(id)` |
+| `modelId.contains(` / `modelId.startsWith(` / `id.contains(` 出现在 `model_family.dart`、`model_capabilities.dart`、`model_descriptor.dart` 之外 | 模型分类只能有一个事实来源；散点嗅探曾导致 30+ 条规则互相踩（顺序敏感、改一处漏一处） | 加进 `ModelFamilyClassifier` 的规则表（含 `isNijiVariant` / `isTextOnlyChat` / `isMockModel` 这类具名谓词），消费方读 `ModelDescriptor.of(id)` |
 | `vendor.id ==` 任何位置 | 协议一旦认识具体厂商，厂商差异就会重新散落 | `VendorProfile` 加声明式字段（参考 `usesXaiNativeSurfaces`），dispatcher 据此选协议 |
 | `channelType ==` / `channel.type ==` 出现在 `vendors/`、`llm_dispatcher.dart` 之外 | 这是重构前 `isXai`/`isNewApiGemini` 散点判断的复活形态 | 语义抬升为 `Vendors.byId(...)` 后读 profile 字段 |
-| UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改 | 引用 `Vendors.openAIRest` 等常量 |
+| UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改（`Vendors.byId` 对未知 id 静默回退 openAIRest，错拼永远不报错） | 引用 `Vendors.openAIRest` 等常量。**两条豁免**：`database_migrations.dart`（迁移代码按当时的字面量冻结，改成常量反而会让未来的常量重命名悄悄改写历史迁移）；`channel_wizard_dialog.dart` 的 `_ProviderPreset.id`（那是向导自己的预设命名空间，与 vendor id 拼写雷同但语义无关——真正进 `llm_channels.type` 的是 `preset.channelType` 字段，它已全部引用 `Vendors.*`） |
 | `if (family == ...)` 路由分支出现在 `llm_dispatcher.dart` 和 Layer 3 之外 | 路由规则必须单点可审计 | 挪进 dispatcher 对应 switch，加注释说明规则来源 |
 | 给 DB 表新增"由其他表推导出来的"列（如当年的 `llm_models.type`） | 冗余副本没有级联更新，就是 bug 面；v32 迁移专门为删它而生 | 运行时解析（`channel → vendor → protocol`），不落库 |
 | 协议文件里写死某厂商的 endpoint 路径差异 | endpoint 形状属于协议，*选择哪个* endpoint 属于 vendor | 独立协议类 + vendor 覆写，由 dispatcher 组合 |
@@ -104,6 +104,36 @@ review 时用下面的模式全仓库 grep 一遍即可：
 新增代码的自检口诀：**"这行代码回答的是哪一层的问题？"** ——
 线上格式 → protocols/；谁在供货/怎么认证 → vendors/；这个模型是什么 → Layer 3；
 选哪条路 → dispatcher。回答不出来的，先别写。
+
+## 协议实现的共享机制（2026-08 M2 加固，新协议照抄）
+
+写一个新协议（或改既有协议的解码路径）时，以下机制**必须复用而不是手写**，
+它们各自对应一类踩过的静默失败（`test/llm_error_handling_test.dart` 钉住）：
+
+- **`decodeJsonBody(response, apiName: …)`**（`protocols/protocol.dart`）——
+  唯一安全的解码顺序：状态码 → JSON → 形状 → 错误信封。手写这四步曾让
+  Gemini 把网关的 HTML 502 报成裸 `FormatException`（真实状态码永不现身）。
+  异步任务的 **poll** 面传 `checkEnvelope: false`：失败的任务以
+  `{status:"failed", error:{…}}` 形式装在 200 里，由 poll 自己的状态机报错
+  （带上 operation 名），通用信封检查会先一步抢走并丢掉这个上下文。
+- **`LLMApiException`**（`llm_types.dart`）—— 非 2xx 与信封错误一律抛它。
+  `LLMService.isRetryable` 读它的 `statusCode` 决定重试（仅 5xx/429）；
+  抛裸 `Exception` 的老路径靠一条锚定 `failed: <status>` 的 legacy 正则兜底，
+  新代码不许依赖它。
+- **`sseDataPayload(line)`** —— SSE 行解析（`data:` 后空格可选、注释行、
+  `[DONE]`）。调用前自行跳过 `event:` 行；解析失败的行**忽略**，不许把
+  `FormatException` 重抛成整条流的死刑（gemini 踩过，见
+  `geminiChunksFromSseLine` 的 dartdoc）。
+- **`redactUrl(url)`**（经 `protocol.dart` 转出口）—— 任何写进 debug 日志的
+  请求 URL 必须先过它：Google 系 vendor 的 URL 带 `?key=`，靠日志落盘层的
+  正则兜底等于把一个机制的 bug 变成凭证泄漏。
+- **`VendorProfile.downloadHeaders(apiKey)`** —— 下载生成产物（视频/图片 URI）
+  时用什么认证头是 Layer 2 知识，executor 只消费；按协议族分支写在调用方
+  曾是红线违规（错头会被静默忽略，下一个非 bearer vendor 只会得到一个 403）。
+- **`VideoJobProtocol.poll` / dispatcher `checkOperation` 的返回契约**是
+  Veo 信封（`{name, done, response|progress}`），四个家族一致 —— 包括 MJ
+  分支（dispatcher 内翻译）。唯一豁免：`gemini_veo` 的 poll 返回原始
+  operation JSON 里的 `{done, error}` 由 executor 消费，注释已说明。
 
 ## ④ Anthropic 的六条不变量（会静默错，不会报错）
 

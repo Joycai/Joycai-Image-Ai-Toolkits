@@ -182,11 +182,8 @@ class MidjourneyProtocol implements ChatProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${submitResp.body}');
       }
 
-      if (submitResp.statusCode != 200) {
-        throw Exception('Midjourney submit failed: ${submitResp.statusCode} - ${submitResp.body}');
-      }
-
-      final submitData = jsonDecode(submitResp.body) as Map<String, dynamic>;
+      final submitData =
+          decodeJsonBody(submitResp, apiName: 'Midjourney submit');
       final submitCode = submitData['code'];
       // code 1 = success, 22 = queued (also acceptable — task is created).
       if (submitCode != 1 && submitCode != 22) {
@@ -254,10 +251,11 @@ class MidjourneyProtocol implements ChatProtocol {
     final baseUrl = trimBaseUrl(target.config.endpoint);
     final url = Uri.parse('$baseUrl/mj/task/$taskId/fetch');
     final resp = await client.get(url, headers: target.headers());
-    if (resp.statusCode != 200) {
-      throw Exception('Midjourney fetch failed: ${resp.statusCode} - ${resp.body}');
-    }
-    return jsonDecode(resp.body) as Map<String, dynamic>;
+    // checkEnvelope: false — the task JSON is a status record
+    // (status/progress/failReason), and FAILURE is handled by the polling
+    // loop with the task id in its message.
+    return decodeJsonBody(resp,
+        apiName: 'Midjourney fetch', checkEnvelope: false);
   }
 
   Future<Uint8List> _downloadImage(http.Client client, String url) async {

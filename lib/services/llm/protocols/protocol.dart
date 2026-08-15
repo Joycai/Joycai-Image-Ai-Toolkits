@@ -8,6 +8,13 @@ import '../llm_types.dart';
 import '../model_descriptor.dart';
 import '../vendors/vendor_profile.dart';
 
+// Every debug-log line that prints a request URL must redact it first —
+// Google-keyed vendors carry `?key=<API_KEY>` in the URL (VendorProfile
+// .decorateUrl), and relying on the log sink's regex to catch it made one
+// mechanism's bug a credential leak. Re-exported here so protocols need no
+// extra import.
+export '../vendors/vendor_profile.dart' show redactUrl;
+
 /// **Layer 1 — the protocol.**
 ///
 /// A protocol is one *wire format*: an endpoint shape, a request payload, a
@@ -170,8 +177,14 @@ void throwIfEnvelopeError(Map<String, dynamic> data) {
 ///
 /// On a non-2xx status the body is still probed for a JSON `error.message` so
 /// the thrown message leads with the provider's own words when there are any.
+///
+/// [checkEnvelope] exists for the async-job *poll* surfaces, which must pass
+/// false: a failed job arrives inside a 200 as `{status: "failed", error:
+/// {...}}` and the poller's own status machine turns that into an error that
+/// names the operation — the generic envelope check would fire first and
+/// discard that context. Every request/submit surface keeps the default.
 Map<String, dynamic> decodeJsonBody(http.Response response,
-    {String apiName = 'API'}) {
+    {String apiName = 'API', bool checkEnvelope = true}) {
   final status = response.statusCode;
   if (status < 200 || status >= 300) {
     String detail = _bodyExcerpt(response.body);
@@ -201,7 +214,7 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
   }
 
   final data = decoded.cast<String, dynamic>();
-  throwIfEnvelopeError(data);
+  if (checkEnvelope) throwIfEnvelopeError(data);
   return data;
 }
 

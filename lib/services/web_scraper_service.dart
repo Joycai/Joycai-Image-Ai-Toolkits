@@ -380,6 +380,13 @@ Call select_images with the id numbers of the images that match the requirement.
       messages.add(LLMMessage(
         role: LLMRole.assistant,
         content: response.text,
+        // Echo obligations ride with tool-calling turns on every family:
+        // ①'s reasoning field by original name, ④'s thinking blocks verbatim.
+        reasoningContent: response.reasoningContent,
+        reasoningFieldName: response.reasoningFieldName,
+        reasoningSignature: response.reasoningSignature,
+        rawThinkingBlocks: response.rawThinkingBlocks,
+        rawThinkingModelId: response.rawThinkingModelId,
         toolCalls: response.toolCalls,
       ));
 

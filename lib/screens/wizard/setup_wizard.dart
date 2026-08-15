@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../services/llm/model_discovery_service.dart';
+import '../../services/llm/model_family.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
@@ -495,15 +496,10 @@ class _SetupWizardState extends State<SetupWizard> {
         setState(() {
           _modelIdController.text = selected.modelId;
           _modelNameController.text = selected.displayName;
-          // Infer tag
-          final id = selected.modelId.toLowerCase();
-          if (id.contains('vision') || id.contains('image')) {
-            _modelTag = 'multimodal';
-          } else if (id.contains('gemini')) {
-            _modelTag = 'multimodal';
-          } else {
-            _modelTag = 'chat';
-          }
+          // Layer 3 owns model-id inference — this used to be a second,
+          // divergent contains() chain (the discovery dialog already tags
+          // through the classifier).
+          _modelTag = ModelFamilyClassifier.inferTag(selected.modelId);
         });
       }
     } catch (e) {

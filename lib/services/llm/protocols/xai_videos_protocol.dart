@@ -103,7 +103,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'xAI (Video Submit)', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'payload': {
           ...payload,
           if (payload.containsKey('image')) 'image': '[base64 data]',
@@ -126,14 +126,11 @@ class XaiVideosProtocol implements VideoJobProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('xAI video submit failed: ${response.statusCode} - ${response.body}');
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decodeJsonBody(response, apiName: 'xAI video submit');
       final requestId = data['request_id']?.toString();
       if (requestId == null || requestId.isEmpty) {
-        throw Exception('xAI video submit returned no request_id: ${response.body}');
+        throw LLMApiException(
+            'xAI video submit returned no request_id: ${response.body}');
       }
       logger?.call('xAI video request id: $requestId', level: 'DEBUG');
       return requestId;
@@ -158,11 +155,12 @@ class XaiVideosProtocol implements VideoJobProtocol {
     final client = config.createClient();
     try {
       final response = await client.get(url, headers: target.headers());
-      // 200 = terminal result; 202 = accepted / still pending.
-      if (response.statusCode != 200 && response.statusCode != 202) {
-        throw Exception('xAI video fetch failed: ${response.statusCode} - ${response.body}');
-      }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      // 200 = terminal result; 202 = accepted / still pending — both inside
+      // decodeJsonBody's 2xx window. checkEnvelope: false because a failed
+      // job carries an `error` field beside `status`, owned by the status
+      // machine below (which names the request in its message).
+      final data = decodeJsonBody(response,
+          apiName: 'xAI video fetch', checkEnvelope: false);
       final status = data['status']?.toString() ?? '';
 
       switch (status) {

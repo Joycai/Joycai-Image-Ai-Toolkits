@@ -40,7 +40,7 @@ class GeminiChatProtocol implements ChatProtocol {
       File? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
-          'url': url.toString(),
+          'url': redactUrl(url),
           'headers': headers,
           'body': payload,
         });
@@ -119,7 +119,7 @@ class GeminiChatProtocol implements ChatProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'headers': headers,
         'body': payload,
       });
@@ -219,12 +219,9 @@ class GeminiDiscoveryProtocol implements DiscoveryProtocol {
 
     final response = await http.get(url, headers: headers);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch models: ${response.statusCode} - ${response.body}');
-    }
-
-    final data = jsonDecode(response.body);
-    final List<dynamic> modelsJson = data['models'] ?? [];
+    final data = decodeJsonBody(response, apiName: 'Gemini models');
+    final rawModels = data['models'];
+    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
     return modelsJson.map((m) => DiscoveredModel(
       modelId: m['name']?.toString().replaceFirst('models/', '') ?? '',

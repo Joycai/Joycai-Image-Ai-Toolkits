@@ -2,8 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// Pins the M1 error-handling fixes (docs/reviews/2026-08-ai-capability-review.md
 /// B1/B2/B5): the Gemini SSE line rules, the status-first response decode, and
@@ -103,6 +105,55 @@ void main() {
     test('a clean 200 returns the decoded map', () {
       final response = http.Response('{"candidates":[]}', 200);
       expect(decodeJsonBody(response), {'candidates': []});
+    });
+
+    test('201/202 are inside the success window (submit/poll surfaces)', () {
+      expect(decodeJsonBody(http.Response('{"id":"v1"}', 201)), {'id': 'v1'});
+      expect(decodeJsonBody(http.Response('{"status":"pending"}', 202)),
+          {'status': 'pending'});
+    });
+
+    test('checkEnvelope: false hands a failed-job body to the caller', () {
+      // Poll surfaces own the {status: failed, error: {...}} case — their
+      // status machine names the operation; the generic envelope check would
+      // fire first and discard that context.
+      final response =
+          http.Response('{"status":"failed","error":{"message":"boom"}}', 200);
+      expect(decodeJsonBody(response, checkEnvelope: false),
+          containsPair('status', 'failed'));
+      expect(() => decodeJsonBody(response), throwsA(isA<LLMApiException>()));
+    });
+  });
+
+  group('VendorProfile.downloadHeaders', () {
+    test('google-keyed vendors get x-goog-api-key, bearer vendors a bearer',
+        () {
+      expect(Vendors.byId(Vendors.officialGoogle).downloadHeaders('k'),
+          {'x-goog-api-key': 'k'});
+      expect(Vendors.byId(Vendors.googleRest).downloadHeaders('k'),
+          {'x-goog-api-key': 'k'});
+      expect(Vendors.byId(Vendors.openAIRest).downloadHeaders('k'),
+          {'Authorization': 'Bearer k'});
+      // newapi-gemini serves the Gemini family behind bearer auth — keying
+      // off the *protocol family* (the old executor branch) would have sent
+      // it x-goog-api-key, which the relay silently ignores → 403.
+      expect(Vendors.byId(Vendors.newApiGemini).downloadHeaders('k'),
+          {'Authorization': 'Bearer k'});
+    });
+
+    test('an empty key sends no auth header at all', () {
+      expect(Vendors.byId(Vendors.openAIRest).downloadHeaders(''), isEmpty);
+    });
+  });
+
+  group('ModelFamilyClassifier named predicates', () {
+    test('niji / text-only / mock rules live in the rule table', () {
+      expect(ModelFamilyClassifier.isNijiVariant('Niji-6'), isTrue);
+      expect(ModelFamilyClassifier.isNijiVariant('mj_fast'), isFalse);
+      expect(ModelFamilyClassifier.isTextOnlyChat('deepseek-chat'), isTrue);
+      expect(ModelFamilyClassifier.isTextOnlyChat('gpt-4o'), isFalse);
+      expect(ModelFamilyClassifier.isMockModel('mock-video'), isTrue);
+      expect(ModelFamilyClassifier.isMockModel('sora-2'), isFalse);
     });
   });
 

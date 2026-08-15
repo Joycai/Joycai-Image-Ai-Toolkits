@@ -48,7 +48,7 @@ class GeminiImagenProtocol implements ImageGenProtocol {
       File? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
-          'url': url.toString(),
+          'url': redactUrl(url),
           'headers': headers,
           'body': getSafePayload(payload),
         });
