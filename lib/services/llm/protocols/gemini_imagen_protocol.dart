@@ -61,17 +61,7 @@ class GeminiImagenProtocol implements ImageGenProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      final data = jsonDecode(response.body);
-      if (data['error'] != null) {
-        final err = data['error'];
-        final msg = 'Imagen Error: [${err['code']}] ${err['message']} (${err['status']})';
-        logger?.call(msg, level: 'ERROR');
-        throw Exception(msg);
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception('Imagen Request failed: ${response.statusCode} - ${response.body}');
-      }
+      final data = decodeJsonBody(response, apiName: 'Imagen');
 
       final List<Uint8List> images = [];
       final predictions = data['predictions'] as List?;
@@ -86,8 +76,25 @@ class GeminiImagenProtocol implements ImageGenProtocol {
         }
       }
 
+      if (images.isEmpty) {
+        // Mirrors the OpenAI/xAI images surfaces: a 200 that carries no
+        // decodable image (missing predictions, filtered prompt) is a
+        // failure, not an empty success the caller reads as "nothing to do".
+        final body = response.body;
+        throw LLMApiException('Imagen returned no image data: '
+            '${body.length > 500 ? '${body.substring(0, 500)}…' : body}');
+      }
+
       logger?.call('Imagen parse complete. Images: ${images.length}', level: 'DEBUG');
-      return LLMResponse(text: '', generatedImages: images, metadata: {});
+      // Imagen's :predict reports no token usage; a non-empty metadata still
+      // matters — LLMService only records usage (request-count billing
+      // included) when there is some, so `{}` made every Imagen call
+      // invisible to the metrics page.
+      return LLMResponse(
+        text: '',
+        generatedImages: images,
+        metadata: {'prediction_count': images.length},
+      );
     } finally {
       client.close();
     }

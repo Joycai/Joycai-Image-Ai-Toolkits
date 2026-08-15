@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 import '../database_service.dart';
 import 'llm_config_resolver.dart';
@@ -116,7 +117,7 @@ class LLMService {
             options: options,
             tools: tools,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          ).timeout(const Duration(seconds: 120));
+          ).timeout(_dispatcher.generateTimeout(config));
           if (response.text.isNotEmpty) {
             onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
           }
@@ -138,7 +139,7 @@ class LLMService {
         }
       } catch (e) {
         attempt++;
-        if (attempt > maxRetries || !_isRetryable(e)) {
+        if (attempt > maxRetries || !isRetryable(e)) {
           rethrow;
         }
         onLogAdded?.call('Request failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
@@ -147,21 +148,32 @@ class LLMService {
     }
   }
 
-  bool _isRetryable(Object e) {
-    // Only retry on network errors or 5xx server errors
-    // The providers throw Exception('... statusCode - body') on non-200 responses
+  /// Whether a failed attempt is worth retrying: network-level failures and
+  /// transient HTTP codes (5xx / 429), nothing else.
+  ///
+  /// Structured errors ([LLMApiException]) answer directly. The regex is a
+  /// legacy fallback for protocols still throwing plain Exceptions with
+  /// `... failed: <status> - <body>` prose — anchored to that shape because
+  /// the old version grabbed the *first* three-digit number anywhere in the
+  /// message, which read "retry after 500ms" in an error body as a server
+  /// error and re-sent a request that was going to fail (and bill) again.
+  @visibleForTesting
+  static bool isRetryable(Object e) {
+    if (e is TimeoutException) return true;
+    if (e is LLMApiException) return e.isTransient;
+
     final errorStr = e.toString();
-    
-    // Check for common network exceptions
-    if (e is TimeoutException || errorStr.contains('SocketException') || errorStr.contains('Connection closed')) {
+    if (errorStr.contains('SocketException') ||
+        errorStr.contains('Connection closed')) {
       return true;
     }
 
-    // Check for 5xx status codes in the exception message
-    final statusCodeMatch = RegExp(r'(\d{3})').firstMatch(errorStr);
+    final statusCodeMatch =
+        RegExp(r'failed:?\s+(\d{3})\b').firstMatch(errorStr);
     if (statusCodeMatch != null) {
       final code = int.tryParse(statusCodeMatch.group(1)!);
-      if (code != null && code >= 500 && code < 600) {
+      if (code != null &&
+          (code == 429 || (code >= 500 && code < 600))) {
         return true;
       }
     }
@@ -246,7 +258,7 @@ class LLMService {
         return; // Success, exit retry loop
       } catch (e) {
         attempt++;
-        if (deliveredAnyChunk || attempt > maxRetries || !_isRetryable(e)) {
+        if (deliveredAnyChunk || attempt > maxRetries || !isRetryable(e)) {
           rethrow;
         }
         onLogAdded?.call('Stream failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
@@ -346,12 +358,20 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    return await _dispatcher.startLongRunning(
+    final operationName = await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
+    // Video jobs never flow back through request()/requestStream(), so the
+    // accepted submission is the only moment they can be billed at all —
+    // without this every Veo/Sora/xAI generation was invisible to the metrics
+    // page and to request-billed channels. Providers report no token usage at
+    // submit time; the row records the request itself (tokens 0).
+    _recordUsage(config.modelId, config, const {'operation': 'submit'},
+        modelDbId: modelIdentifier is int ? modelIdentifier : null);
+    return operationName;
   }
 
   Future<Map<String, dynamic>> checkOperation({

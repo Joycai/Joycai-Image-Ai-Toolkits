@@ -52,6 +52,23 @@ class LLMDispatcher {
         model: ModelDescriptor.of(config.modelId),
       );
 
+  /// How long a synchronous [generate] may run before the caller times it
+  /// out.
+  ///
+  /// Midjourney is the outlier: its generate() *contains* the whole
+  /// submit → poll → download cycle (up to 10 minutes, see
+  /// [MidjourneyProtocol]), so the 120 s guard that fits a single chat
+  /// completion would fail every non-streaming Midjourney call at exactly
+  /// 120 s. The streaming path is unaffected — progress chunks reset the
+  /// caller's timeout — which is why this only ever mattered for
+  /// `useStream: false`.
+  Duration generateTimeout(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    return target.vendor.family == ProtocolFamily.midjourney
+        ? const Duration(minutes: 11)
+        : const Duration(seconds: 120);
+  }
+
   // ---------------------------------------------------------------------------
   // Synchronous generation
   // ---------------------------------------------------------------------------

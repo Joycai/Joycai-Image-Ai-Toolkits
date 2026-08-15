@@ -492,7 +492,9 @@ class AnthropicChatProtocol implements ChatProtocol {
 
       if (response.statusCode != 200) {
         logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw Exception('Anthropic API Request failed: ${response.statusCode} - ${response.body}');
+        throw LLMApiException(
+            'Anthropic API Request failed: ${response.statusCode} - ${response.body}',
+            statusCode: response.statusCode);
       }
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
@@ -592,7 +594,9 @@ class AnthropicChatProtocol implements ChatProtocol {
       }
       client.close();
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
-      throw Exception('Anthropic API Stream Request failed: ${response.statusCode} - $body');
+      throw LLMApiException(
+          'Anthropic API Stream Request failed: ${response.statusCode} - $body',
+          statusCode: response.statusCode);
     }
 
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');

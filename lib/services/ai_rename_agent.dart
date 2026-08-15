@@ -196,10 +196,25 @@ class AiRenameAgent {
         toolCalls: response.toolCalls,
       ));
 
+      // Pairing invariant (same rule PromptOptimizerAgent enforces): once the
+      // assistant message with tool calls is in [messages], every call gets a
+      // paired result before this method returns — a cancellation mid-batch
+      // stubs the remaining calls instead of leaving them dangling. Today
+      // [messages] is batch-local and discarded, so an unpaired history could
+      // not hurt anyone yet; the stubs keep the invariant true so the day this
+      // history is persisted or reused does not turn a quirk into a bug.
+      var cancelledMidBatch = false;
       for (final call in response.toolCalls) {
-        if (isCancelled?.call() ?? false) return;
-
-        final result = _executeTool(call, chunk, proposals, onLog);
+        final Map<String, dynamic> result;
+        if (cancelledMidBatch || (isCancelled?.call() ?? false)) {
+          cancelledMidBatch = true;
+          result = {
+            'status': 'cancelled',
+            'message': 'The task was cancelled before this tool ran.',
+          };
+        } else {
+          result = _executeTool(call, chunk, proposals, onLog);
+        }
         messages.add(LLMMessage(
           role: LLMRole.tool,
           content: jsonEncode(result),
@@ -207,6 +222,7 @@ class AiRenameAgent {
           toolName: call.name,
         ));
       }
+      if (cancelledMidBatch) return;
     }
   }
 

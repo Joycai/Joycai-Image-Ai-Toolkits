@@ -6,6 +6,37 @@ import 'package:http/io_client.dart';
 
 enum LLMRole { system, user, assistant, tool }
 
+/// A failed API call, structured enough that retry policy can be decided
+/// without parsing exception prose.
+///
+/// Protocols throw this for non-2xx responses (with [statusCode] set) and for
+/// 200-with-error-envelope bodies ([isEnvelope] true, [statusCode] null).
+/// `LLMService` retries only transient codes (5xx / 429). Before this existed
+/// it fished the first three-digit number out of `e.toString()` with a regex,
+/// which read "retry after 500ms" in an error body as a server error — and
+/// missed real 5xxs whose message led with some other number.
+class LLMApiException implements Exception {
+  final String message;
+
+  /// HTTP status of the failed response, or null when the failure was carried
+  /// inside a 2xx body ([isEnvelope]) or never reached HTTP at all.
+  final int? statusCode;
+
+  /// True when a 2xx response body was an error envelope (`error` field or
+  /// MiniMax `base_resp`). Envelope errors are never retried — the transport
+  /// succeeded; the request itself was rejected.
+  final bool isEnvelope;
+
+  LLMApiException(this.message, {this.statusCode, this.isEnvelope = false});
+
+  bool get isTransient =>
+      statusCode != null &&
+      (statusCode == 429 || (statusCode! >= 500 && statusCode! < 600));
+
+  @override
+  String toString() => message;
+}
+
 enum LLMReferenceType {
   media,
   asset,

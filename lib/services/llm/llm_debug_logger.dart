@@ -81,6 +81,12 @@ class LLMDebugLogger {
   static final RegExp _bearerToken =
       RegExp(r'(Bearer\s+)[A-Za-z0-9._~+/=-]+');
 
+  /// Any string value longer than this is truncated in the log. Catches
+  /// base64 image payloads (MB-sized) protocol-agnostically: the chat
+  /// protocols log their request map as-is, and per-protocol "safe payload"
+  /// helpers only exist where someone remembered to write one.
+  static const int _maxStringChars = 2048;
+
   static dynamic _sanitize(dynamic obj) {
     if (obj is Map) {
       return obj.map((k, v) {
@@ -97,9 +103,14 @@ class LLMDebugLogger {
     } else if (obj is List) {
       return obj.map((e) => _sanitize(e)).toList();
     } else if (obj is String) {
-      return obj
+      final masked = obj
           .replaceAllMapped(_keyQueryParam, (m) => '${m[1]}***MASKED***')
           .replaceAllMapped(_bearerToken, (m) => '${m[1]}***MASKED***');
+      if (masked.length > _maxStringChars) {
+        return '${masked.substring(0, _maxStringChars)}'
+            '…<${masked.length - _maxStringChars} chars omitted>';
+      }
+      return masked;
     }
     return obj;
   }

@@ -356,7 +356,9 @@ class OpenAIChatProtocol implements ChatProtocol {
 
       if (response.statusCode != 200) {
         logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw Exception('OpenAI API Request failed: ${response.statusCode} - ${response.body}');
+        throw LLMApiException(
+            'OpenAI API Request failed: ${response.statusCode} - ${response.body}',
+            statusCode: response.statusCode);
       }
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
@@ -522,7 +524,9 @@ class OpenAIChatProtocol implements ChatProtocol {
       }
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
-      throw Exception('OpenAI API Stream Request failed: ${response.statusCode}');
+      throw LLMApiException(
+          'OpenAI API Stream Request failed: ${response.statusCode}',
+          statusCode: response.statusCode);
     }
 
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');

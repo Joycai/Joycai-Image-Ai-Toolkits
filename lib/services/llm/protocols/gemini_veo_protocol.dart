@@ -64,17 +64,7 @@ class GeminiVeoProtocol implements VideoJobProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      final data = jsonDecode(response.body);
-      if (data['error'] != null) {
-        final err = data['error'];
-        final msg = 'Google LRO Error: [${err['code']}] ${err['message']}';
-        logger?.call(msg, level: 'ERROR');
-        throw Exception(msg);
-      }
-
-      if (response.statusCode != 200) {
-        throw Exception('Google LRO failed: ${response.statusCode} - ${response.body}');
-      }
+      final data = decodeJsonBody(response, apiName: 'Google LRO');
 
       final name = data['name'] as String?;
       if (name == null) {
@@ -105,9 +95,15 @@ class GeminiVeoProtocol implements VideoJobProtocol {
       final response = await client.get(url, headers: headers);
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to check operation: ${response.statusCode} - ${response.body}');
+        throw LLMApiException(
+            'Failed to check operation: ${response.statusCode} - ${response.body}',
+            statusCode: response.statusCode);
       }
 
+      // Deliberately not [decodeJsonBody]: a *failed operation* is reported
+      // inside a 200 as `{done: true, error: {...}}`, and the task executor
+      // consumes that envelope — the shared decoder would turn it into a
+      // thrown exception and change the poll contract.
       return jsonDecode(response.body);
     } finally {
       client.close();

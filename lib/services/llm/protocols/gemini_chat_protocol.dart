@@ -53,20 +53,7 @@ class GeminiChatProtocol implements ChatProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      final data = jsonDecode(response.body);
-
-      // Check for System-level errors (Section 3.3)
-      if (data['error'] != null) {
-        final err = data['error'];
-        final msg = 'Google GenAI Error: [${err['code']}] ${err['message']} (${err['status']})';
-        logger?.call(msg, level: 'ERROR');
-        throw Exception(msg);
-      }
-
-      if (response.statusCode != 200) {
-        logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw Exception('Google GenAI Request failed: ${response.statusCode} - ${response.body}');
-      }
+      final data = decodeJsonBody(response, apiName: 'Google GenAI');
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
 
@@ -75,7 +62,7 @@ class GeminiChatProtocol implements ChatProtocol {
       // have. Only the synchronous path can judge this: in a stream a chunk
       // carrying nothing but usageMetadata is perfectly normal, so
       // parseGoogleChunks must stay tolerant of it.
-      final candidates = data is Map ? data['candidates'] : null;
+      final candidates = data['candidates'];
       if (candidates is! List || candidates.isEmpty) {
         final body = response.body;
         throw Exception('Google GenAI returned no candidates: '
@@ -141,25 +128,20 @@ class GeminiChatProtocol implements ChatProtocol {
     final response = await client.send(request);
 
     if (response.statusCode != 200) {
-      // Try to parse error from body if possible
       final body = await response.stream.bytesToString();
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
       }
       client.close();
-      try {
-        final data = jsonDecode(body);
-        if (data['error'] != null) {
-          final err = data['error'];
-          final msg = 'Google GenAI Stream Error: [${err['code']}] ${err['message']}';
-          logger?.call(msg, level: 'ERROR');
-          throw Exception(msg);
-        }
-      } catch (_) {}
-
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
-      throw Exception('Google GenAI Stream Request failed: ${response.statusCode}');
+      // The shared decoder owns the message shape (provider error text when
+      // the body is JSON, excerpt otherwise) and always throws on non-2xx.
+      decodeJsonBody(http.Response(body, response.statusCode),
+          apiName: 'Google GenAI stream');
+      throw LLMApiException(
+          'Google GenAI stream request failed: ${response.statusCode}',
+          statusCode: response.statusCode);
     }
 
     logger?.call('Stream connection established, waiting for chunks...', level: 'DEBUG');
@@ -175,26 +157,7 @@ class GeminiChatProtocol implements ChatProtocol {
           await LLMDebugLogger.appendLine(debugFile, line);
         }
 
-        String dataLine = line;
-        if (line.startsWith('data: ')) {
-          dataLine = line.substring(6);
-        }
-
-        try {
-          final chunkData = jsonDecode(dataLine);
-
-          // Check for error in chunk
-          if (chunkData['error'] != null) {
-            final err = chunkData['error'];
-            logger?.call('Stream Chunk Error: ${err['message']}', level: 'ERROR');
-            throw Exception(err['message']);
-          }
-
-          yield* Stream.fromIterable(parseGoogleChunks(chunkData, logger: logger));
-        } catch (e) {
-          if (e is Exception) rethrow;
-          // Ignore parse errors for empty/non-json lines
-        }
+        yield* Stream.fromIterable(geminiChunksFromSseLine(line, logger: logger));
       }
     } finally {
       client.close();
@@ -202,6 +165,46 @@ class GeminiChatProtocol implements ChatProtocol {
 
     yield LLMResponseChunk(isDone: true);
   }
+}
+
+/// The chunks carried by one SSE line of a Gemini stream — empty for lines
+/// with no payload.
+///
+/// Line handling follows the shared SSE rules ([sseDataPayload]): the space
+/// after `data:` is optional, `:` keep-alives and `[DONE]` carry nothing, and
+/// named `event:` lines are skipped here (the helper passes unprefixed lines
+/// through for relays that stream bare JSON). A line that then fails to parse
+/// as JSON is relay noise and is *ignored* — the previous inline version
+/// rethrew the `FormatException` (it implements `Exception`), so a single
+/// `data:{…}` without a space or one keep-alive comment killed the whole
+/// stream while the code's own comment claimed the line would be skipped.
+///
+/// An in-chunk error envelope still throws: that is the request failing, not
+/// the line being noise, so it is checked *after* the tolerant decode.
+@visibleForTesting
+Iterable<LLMResponseChunk> geminiChunksFromSseLine(String line,
+    {LLMLogger? logger}) {
+  if (line.startsWith('event:')) return const [];
+  final payload = sseDataPayload(line);
+  if (payload == null) return const [];
+
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(payload);
+  } on FormatException {
+    return const [];
+  }
+  if (decoded is! Map) return const [];
+  final chunkData = decoded.cast<String, dynamic>();
+
+  final err = chunkData['error'];
+  if (err != null) {
+    final msg = err is Map ? err['message'] : err;
+    logger?.call('Stream Chunk Error: $msg', level: 'ERROR');
+    throw LLMApiException('Google GenAI stream error: $msg', isEnvelope: true);
+  }
+
+  return parseGoogleChunks(chunkData, logger: logger);
 }
 
 /// Gemini `GET /models` discovery listing.
