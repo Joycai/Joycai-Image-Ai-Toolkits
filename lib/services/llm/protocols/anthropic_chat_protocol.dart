@@ -64,7 +64,8 @@ class AnthropicHistory {
 ///    tool calls arrives as N tool messages, and all N results have to travel
 ///    in *one* user message immediately after the assistant turn that asked
 ///    for them.
-AnthropicHistory buildAnthropicHistory(List<LLMMessage> history) {
+AnthropicHistory buildAnthropicHistory(List<LLMMessage> history,
+    {String? modelId}) {
   final systemParts = <String>[];
   final messages = <Map<String, dynamic>>[];
 
@@ -101,13 +102,25 @@ AnthropicHistory buildAnthropicHistory(List<LLMMessage> history) {
 
     if (msg.role == LLMRole.assistant) {
       final blocks = <Map<String, dynamic>>[];
-      // Thinking goes back first, and only sealed. With thinking on, ④
-      // rejects a replayed tool-calling turn whose thinking block is missing
-      // or unsigned — and it must precede the text and tool_use blocks it
-      // led to. An unsigned one is dropped rather than sent: the API would
-      // refuse it anyway, and a refused request is worse than a turn the
-      // model has to re-derive.
-      if (msg.reasoningContent != null && msg.reasoningSignature != null) {
+      // Thinking goes back first, verbatim when the raw blocks were captured
+      // (thinking + redacted_thinking, original order and content — the only
+      // history ④ accepts as complete). Replay is model-scoped: blocks from
+      // a different model are not rejected upstream, they are silently
+      // ignored and still billed as input, so a mismatch drops the group.
+      final rawBlocks = msg.rawThinkingBlocks;
+      if (rawBlocks != null && rawBlocks.isNotEmpty) {
+        if (modelId == null || msg.rawThinkingModelId == modelId) {
+          blocks.addAll(rawBlocks);
+        }
+      } else if (msg.reasoningContent != null &&
+          msg.reasoningSignature != null) {
+        // Legacy path (histories persisted before raw-block capture): a
+        // sealed thinking block reconstructed from the display fields. With
+        // thinking on, ④ rejects a replayed tool-calling turn whose thinking
+        // block is missing or unsigned — and it must precede the text and
+        // tool_use blocks it led to. An unsigned one is dropped rather than
+        // sent: the API would refuse it anyway, and a refused request is
+        // worse than a turn the model has to re-derive.
         blocks.add({
           'type': 'thinking',
           'thinking': msg.reasoningContent,
@@ -217,7 +230,8 @@ Map<String, dynamic> prepareAnthropicPayload(
   List<LLMTool>? tools,
   required bool isStreaming,
 }) {
-  final converted = buildAnthropicHistory(history);
+  final converted =
+      buildAnthropicHistory(history, modelId: target.config.modelId);
   final maxTokens = anthropicMaxTokens(options);
   final payload = <String, dynamic>{
     'model': target.config.modelId,
@@ -290,13 +304,24 @@ class AnthropicContent {
   /// reply to a call the model never made.
   final List<ServerToolRun> serverToolRuns;
 
+  /// The turn's thinking-class blocks **verbatim, in original order**: sealed
+  /// `thinking` blocks and opaque `redacted_thinking` blocks. This is the
+  /// replay carrier — reconstructing a thinking block from [thinking] +
+  /// [thinkingSignature] loses exactly the blocks that have no text to
+  /// reconstruct from, and ④'s reaction to an incomplete thinking history is
+  /// not a 400 but *silently disabling thinking for the turn* (while still
+  /// billing it). [thinking]/[thinkingSignature] remain the display/legacy
+  /// carriers.
+  final List<Map<String, dynamic>> rawThinkingBlocks;
+
   const AnthropicContent(
     this.text,
     this.thinking,
     this.thinkingSignature,
     this.toolCalls,
-    this.serverToolRuns,
-  );
+    this.serverToolRuns, {
+    this.rawThinkingBlocks = const [],
+  });
 }
 
 /// Reads a `content` block array. Unknown block types contribute nothing —
@@ -306,6 +331,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
   final text = StringBuffer();
   final thinking = StringBuffer();
   String? signature;
+  final rawThinkingBlocks = <Map<String, dynamic>>[];
   final toolCalls = <LLMToolCall>[];
   final serverToolRuns = <ServerToolRun>[];
   // `server_tool_use` and its result are separate blocks tied by an id, and
@@ -330,7 +356,20 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
         final value = block['thinking'];
         if (value is String) thinking.write(value);
         final seal = block['signature'];
-        if (seal is String && seal.isNotEmpty) signature = seal;
+        if (seal is String && seal.isNotEmpty) {
+          signature = seal;
+          // Only sealed blocks are kept for replay — the API refuses an
+          // unsigned one, and refusing the whole request is worse than the
+          // model re-deriving a thought.
+          rawThinkingBlocks.add(block.cast<String, dynamic>());
+        }
+      } else if (type == 'redacted_thinking') {
+        // Opaque encrypted blob: nothing to show, nothing to count — but it
+        // MUST survive for replay. A tool-calling turn replayed without its
+        // redacted_thinking block is an incomplete thinking history, which ④
+        // silently strips (thinking stops, billing continues) rather than
+        // rejects.
+        rawThinkingBlocks.add(block.cast<String, dynamic>());
       } else if (type == 'tool_use') {
         final input = block['input'];
         toolCalls.add(LLMToolCall(
@@ -380,6 +419,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
     signature,
     toolCalls,
     serverToolRuns,
+    rawThinkingBlocks: rawThinkingBlocks,
   );
 }
 
@@ -539,6 +579,11 @@ class AnthropicChatProtocol implements ChatProtocol {
         // null is what keeps the ① payload builder from inventing a key for
         // it if this history is ever replayed against an ① endpoint.
         reasoningSignature: content.thinkingSignature,
+        rawThinkingBlocks: content.rawThinkingBlocks.isEmpty
+            ? null
+            : content.rawThinkingBlocks,
+        rawThinkingModelId:
+            content.rawThinkingBlocks.isEmpty ? null : config.modelId,
         toolCalls: content.toolCalls,
       );
     } finally {

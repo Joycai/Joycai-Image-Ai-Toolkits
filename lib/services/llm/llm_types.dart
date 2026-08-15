@@ -164,6 +164,19 @@ class LLMMessage {
   /// stays null there, so the ① payload builder never invents a field for it.
   final String? reasoningSignature;
 
+  /// ④'s thinking-class blocks **verbatim** (sealed `thinking` +
+  /// `redacted_thinking`, original order), for replay into a tool-calling
+  /// conversation. [reasoningContent]/[reasoningSignature] stay the display
+  /// carriers; this exists because a redacted block has no text to
+  /// reconstruct from, and ④ answers an incomplete thinking history by
+  /// *silently disabling thinking* (while billing it) rather than erroring.
+  final List<Map<String, dynamic>>? rawThinkingBlocks;
+
+  /// The model that produced [rawThinkingBlocks]. Replay is model-scoped:
+  /// another model silently ignores foreign blocks and still bills them as
+  /// input, so the payload builder drops the group on mismatch.
+  final String? rawThinkingModelId;
+
   /// Tool calls carried by an assistant message (echoed back into history
   /// during an agent loop).
   final List<LLMToolCall> toolCalls;
@@ -182,6 +195,8 @@ class LLMMessage {
     this.reasoningContent,
     this.reasoningFieldName,
     this.reasoningSignature,
+    this.rawThinkingBlocks,
+    this.rawThinkingModelId,
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
@@ -195,6 +210,9 @@ class LLMMessage {
         if (reasoningContent != null) 'reasoningContent': reasoningContent,
         if (reasoningFieldName != null) 'reasoningFieldName': reasoningFieldName,
         if (reasoningSignature != null) 'reasoningSignature': reasoningSignature,
+        if (rawThinkingBlocks != null && rawThinkingBlocks!.isNotEmpty)
+          'rawThinkingBlocks': rawThinkingBlocks,
+        if (rawThinkingModelId != null) 'rawThinkingModelId': rawThinkingModelId,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
@@ -208,6 +226,13 @@ class LLMMessage {
         reasoningContent: json['reasoningContent'] as String?,
         reasoningFieldName: json['reasoningFieldName'] as String?,
         reasoningSignature: json['reasoningSignature'] as String?,
+        rawThinkingBlocks: json['rawThinkingBlocks'] is List
+            ? [
+                for (final b in json['rawThinkingBlocks'] as List)
+                  if (b is Map) b.cast<String, dynamic>(),
+              ]
+            : null,
+        rawThinkingModelId: json['rawThinkingModelId'] as String?,
         attachments: [
           for (final a in (json['attachments'] as List? ?? []))
             if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
@@ -353,6 +378,12 @@ class LLMResponse {
   /// request in a tool-calling conversation is rejected.
   final String? reasoningSignature;
 
+  /// ④'s thinking-class blocks verbatim — see [LLMMessage.rawThinkingBlocks].
+  final List<Map<String, dynamic>>? rawThinkingBlocks;
+
+  /// Producer of [rawThinkingBlocks] — see [LLMMessage.rawThinkingModelId].
+  final String? rawThinkingModelId;
+
   /// Tool calls requested by the model (empty when it answered directly).
   final List<LLMToolCall> toolCalls;
 
@@ -365,6 +396,8 @@ class LLMResponse {
     this.reasoningContent,
     this.reasoningFieldName,
     this.reasoningSignature,
+    this.rawThinkingBlocks,
+    this.rawThinkingModelId,
     this.toolCalls = const [],
   });
 }

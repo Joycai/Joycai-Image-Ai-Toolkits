@@ -1128,6 +1128,8 @@ class PromptOptimizerAgent {
               reasoningContent: response.reasoningContent,
               reasoningFieldName: response.reasoningFieldName,
               reasoningSignature: response.reasoningSignature,
+              rawThinkingBlocks: response.rawThinkingBlocks,
+              rawThinkingModelId: response.rawThinkingModelId,
             ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
@@ -1145,6 +1147,8 @@ class PromptOptimizerAgent {
           reasoningContent: response.reasoningContent,
           reasoningFieldName: response.reasoningFieldName,
           reasoningSignature: response.reasoningSignature,
+          rawThinkingBlocks: response.rawThinkingBlocks,
+          rawThinkingModelId: response.rawThinkingModelId,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -1625,10 +1629,13 @@ class PromptOptimizerAgent {
         content: m.content,
         // Reasoning must survive verbatim: eliding or editing it would break
         // the ① family echo-back contract the same way dropping a
-        // thoughtSignature breaks Gemini's.
+        // thoughtSignature breaks Gemini's — and ④'s raw thinking blocks the
+        // same way (an incomplete replay silently disables thinking).
         reasoningContent: m.reasoningContent,
         reasoningFieldName: m.reasoningFieldName,
         reasoningSignature: m.reasoningSignature,
+        rawThinkingBlocks: m.rawThinkingBlocks,
+        rawThinkingModelId: m.rawThinkingModelId,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -2147,6 +2154,8 @@ class PromptOptimizerAgent {
         reasoningContent: owning.reasoningContent,
         reasoningFieldName: owning.reasoningFieldName,
         reasoningSignature: owning.reasoningSignature,
+        rawThinkingBlocks: owning.rawThinkingBlocks,
+        rawThinkingModelId: owning.rawThinkingModelId,
         toolCalls: [
           for (final c in owning.toolCalls)
             if (c.id != callId) c,

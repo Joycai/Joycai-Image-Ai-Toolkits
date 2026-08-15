@@ -619,4 +619,109 @@ void main() {
       );
     });
   });
+
+  group('raw thinking blocks (verbatim replay)', () {
+    final sealed = {
+      'type': 'thinking',
+      'thinking': 'let me check',
+      'signature': 'sig-1',
+    };
+    final redacted = {'type': 'redacted_thinking', 'data': 'opaque-blob'};
+
+    test('parse keeps sealed thinking and redacted_thinking, in order', () {
+      final content = parseAnthropicContent([
+        sealed,
+        redacted,
+        {'type': 'text', 'text': 'hi'},
+      ]);
+      // redacted_thinking still shows nothing and counts nothing…
+      expect(content.thinking, 'let me check');
+      // …but it must survive for replay: ④ answers an incomplete thinking
+      // history by silently disabling thinking, not by erroring.
+      expect(content.rawThinkingBlocks, [sealed, redacted]);
+    });
+
+    test('an unsigned thinking block is not kept for replay', () {
+      final content = parseAnthropicContent([
+        {'type': 'thinking', 'thinking': 'unsealed'},
+        redacted,
+      ]);
+      expect(content.rawThinkingBlocks, [redacted]);
+    });
+
+    test('replayed verbatim, before text and tool_use, on a model match', () {
+      final p = payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'calling',
+          rawThinkingBlocks: [sealed, redacted],
+          rawThinkingModelId: 'claude-opus-5',
+          toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
+        ),
+        LLMMessage(
+            role: LLMRole.tool, content: 'ok', toolCallId: 't1', toolName: 'f'),
+      ]);
+      final assistant = (p['messages'] as List)[1] as Map;
+      final blocks = assistant['content'] as List;
+      expect(blocks[0], sealed);
+      expect(blocks[1], redacted);
+      expect((blocks[2] as Map)['type'], 'text');
+      expect((blocks[3] as Map)['type'], 'tool_use');
+    });
+
+    test('a different model drops the whole group — no reconstruction', () {
+      // Foreign blocks are not rejected upstream; they are silently ignored
+      // and still billed as input.
+      final p = payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'calling',
+          reasoningContent: 'let me check',
+          reasoningSignature: 'sig-1',
+          rawThinkingBlocks: [sealed, redacted],
+          rawThinkingModelId: 'claude-haiku-4-5',
+          toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
+        ),
+      ]);
+      final assistant = (p['messages'] as List)[1] as Map;
+      final types =
+          [for (final b in assistant['content'] as List) (b as Map)['type']];
+      expect(types, isNot(contains('thinking')));
+      expect(types, isNot(contains('redacted_thinking')));
+    });
+
+    test('legacy histories without raw blocks still reconstruct a sealed one',
+        () {
+      final p = payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: '',
+          reasoningContent: 'old turn',
+          reasoningSignature: 'sig-old',
+          toolCalls: [LLMToolCall(id: 't1', name: 'f', arguments: {})],
+        ),
+      ]);
+      final assistant = (p['messages'] as List)[1] as Map;
+      expect((assistant['content'] as List).first, {
+        'type': 'thinking',
+        'thinking': 'old turn',
+        'signature': 'sig-old',
+      });
+    });
+
+    test('raw blocks survive an LLMMessage JSON round-trip', () {
+      final msg = LLMMessage(
+        role: LLMRole.assistant,
+        content: 'x',
+        rawThinkingBlocks: [sealed, redacted],
+        rawThinkingModelId: 'claude-opus-5',
+      );
+      final revived = LLMMessage.fromJson(msg.toJson());
+      expect(revived.rawThinkingBlocks, [sealed, redacted]);
+      expect(revived.rawThinkingModelId, 'claude-opus-5');
+    });
+  });
 }
