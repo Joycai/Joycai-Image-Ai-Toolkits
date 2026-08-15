@@ -172,10 +172,38 @@ extension TaskExecutors on TaskQueueService {
 
       // Knowledge sub-agent opt-in (Settings, default off). Read here and
       // passed down so the agent stays free of app-state coupling.
-      final kbSubAgentEnabled = (await DatabaseService()
+      var kbSubAgentEnabled = (await DatabaseService()
                   .getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ??
               'false') ==
           'true';
+
+      // Dedicated sub-agent model binding: absent = follow the session's
+      // model. "Enabled" is not "available" (the playbook's double-loss
+      // trap): a binding pointing at a deleted model disables delegation for
+      // this turn — with a log naming the fix — rather than silently running
+      // the sub-agent on a model the user deliberately routed away from.
+      dynamic kbSubAgentModel;
+      int? kbSubAgentWindow;
+      if (kbSubAgentEnabled) {
+        final boundRaw = await DatabaseService()
+            .getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey);
+        final boundId = int.tryParse(boundRaw ?? '');
+        if (boundId != null) {
+          final all = await DatabaseService().getModels();
+          final bound = all
+              .cast<LLMModel?>()
+              .firstWhere((m) => m?.id == boundId, orElse: () => null);
+          if (bound == null) {
+            kbSubAgentEnabled = false;
+            task.addLog('Knowledge sub-agent model binding no longer exists — '
+                'delegation disabled for this turn. Re-pick the model in '
+                'Settings.');
+          } else {
+            kbSubAgentModel = bound.id;
+            kbSubAgentWindow = bound.contextWindow;
+          }
+        }
+      }
 
       // Knowledge mode: resolve and validate the knowledge base, and pre-read
       // its entry file (the file map) for injection into the system prompt.
@@ -208,6 +236,8 @@ extension TaskExecutors on TaskQueueService {
         contextWindow: contextWindow,
         contextRatio: contextRatio,
         kbSubAgentEnabled: kbSubAgentEnabled,
+        kbSubAgentModelIdentifier: kbSubAgentModel,
+        kbSubAgentContextWindow: kbSubAgentWindow,
         onLog: (msg) {
           task.addLog(msg);
           refreshQueue();

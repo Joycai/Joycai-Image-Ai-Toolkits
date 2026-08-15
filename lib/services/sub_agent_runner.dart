@@ -33,6 +33,16 @@ typedef SubAgentRequestFn = Future<LLMResponse> Function(
   List<LLMTool>? tools,
 );
 
+/// A tool executor for one sub-agent run. [occupiedChars] is the run's
+/// current context occupancy (every message so far, including results already
+/// paired in this batch) — recomputed **per call**, not per turn, so a batch
+/// of reads converges on the remaining window instead of each claiming all
+/// of it. The same rule the main loop's read cap follows.
+typedef SubAgentToolFn = Map<String, dynamic> Function(
+  LLMToolCall call,
+  int occupiedChars,
+);
+
 /// A bounded, reusable tool loop for delegated work — the sub-agent runtime.
 ///
 /// This is deliberately *not* a refactor of [PromptOptimizerAgent.runTurn]:
@@ -70,7 +80,7 @@ class SubAgentRunner {
     required String systemPrompt,
     required String task,
     required List<LLMTool> tools,
-    required Map<String, dynamic> Function(LLMToolCall call) executeTool,
+    required SubAgentToolFn executeTool,
     int maxTurns = _defaultMaxTurns,
     bool Function()? isCancelled,
     void Function(String message)? onLog,
@@ -139,7 +149,12 @@ class SubAgentRunner {
           };
         } else {
           try {
-            result = executeTool(call);
+            // Occupancy folds over the *current* messages, so a result
+            // paired earlier in this same batch already counts against the
+            // next call's budget.
+            final occupied =
+                messages.fold<int>(0, (sum, m) => sum + m.content.length);
+            result = executeTool(call, occupied);
           } catch (e) {
             onLog?.call('Tool ${call.name} failed: $e');
             result = {

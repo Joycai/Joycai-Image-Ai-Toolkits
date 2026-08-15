@@ -8,6 +8,7 @@ import '../../../core/app_paths.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/llm_model.dart';
 import '../../../services/database_service.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
@@ -38,6 +39,8 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   static const List<double> _contextRatios = [0.4, 0.5, 0.6, 0.7, 0.8];
   double _assistantContextRatio = PromptOptimizerAgent.defaultContextRatio;
   bool _kbSubAgentEnabled = false;
+  int? _kbSubAgentModelId;
+  List<LLMModel> _kbSubAgentModels = const [];
 
   @override
   void initState() {
@@ -60,6 +63,15 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ??
                 'false') ==
             'true';
+    _kbSubAgentModelId = int.tryParse(
+        await _db.getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey) ??
+            '');
+    // Chat-capable models only: image/video generators cannot run the
+    // research tool loop.
+    _kbSubAgentModels = [
+      for (final m in await _db.getModels())
+        if (m.tag != 'image' && m.tag != 'video') m,
+    ];
     if (mounted) setState(() {});
   }
 
@@ -173,7 +185,44 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             setState(() => _kbSubAgentEnabled = v);
           },
         ),
+        if (_kbSubAgentEnabled) _buildKbSubAgentModelTile(l10n),
       ],
+    );
+  }
+
+  /// Model the sub-agent runs on. Null = follow the session's model. A
+  /// binding whose model has been deleted shows a warning here (and disables
+  /// delegation at run time) instead of silently falling back.
+  Widget _buildKbSubAgentModelTile(AppLocalizations l10n) {
+    final bound = _kbSubAgentModelId;
+    final boundExists =
+        bound == null || _kbSubAgentModels.any((m) => m.id == bound);
+    return ListTile(
+      title: Text(l10n.kbSubAgentModel),
+      subtitle: boundExists
+          ? null
+          : Text(
+              l10n.kbSubAgentModelMissing,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+      trailing: DropdownButton<int?>(
+        value: boundExists ? bound : null,
+        underline: const SizedBox.shrink(),
+        items: [
+          DropdownMenuItem<int?>(
+            value: null,
+            child: Text(l10n.kbSubAgentModelFollow),
+          ),
+          for (final m in _kbSubAgentModels)
+            DropdownMenuItem<int?>(value: m.id, child: Text(m.modelName)),
+        ],
+        onChanged: (v) async {
+          await _db.saveSetting(
+              PromptOptimizerAgent.kbSubAgentModelSettingKey,
+              v?.toString() ?? '');
+          setState(() => _kbSubAgentModelId = v);
+        },
+      ),
     );
   }
 

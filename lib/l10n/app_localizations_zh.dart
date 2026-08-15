@@ -1396,6 +1396,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get kbSubAgentDesc => '允许助手把知识库检索交给子代理，在独立上下文中通读文件，保持主对话轻量。实验性功能。';
 
   @override
+  String get kbSubAgentModel => '子代理模型';
+
+  @override
+  String get kbSubAgentModelFollow => '跟随会话模型';
+
+  @override
+  String get kbSubAgentModelMissing => '绑定的模型已不存在——在重新选择之前，委托功能将被停用。';
+
+  @override
   String get assistantRetention => '助手会话保留数量';
 
   @override
@@ -3991,6 +4000,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get kbSubAgentDesc => '允許助手把知識庫檢索交給子代理，在獨立上下文中通讀檔案，保持主對話輕量。實驗性功能。';
+
+  @override
+  String get kbSubAgentModel => '子代理模型';
+
+  @override
+  String get kbSubAgentModelFollow => '跟隨會話模型';
+
+  @override
+  String get kbSubAgentModelMissing => '綁定的模型已不存在——在重新選擇之前，委託功能將被停用。';
 
   @override
   String get assistantRetention => '助手對話保留數量';

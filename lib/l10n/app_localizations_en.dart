@@ -1443,6 +1443,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Let the assistant hand knowledge-base research to a sub-agent that reads files in its own separate context, keeping the main conversation small. Experimental.';
 
   @override
+  String get kbSubAgentModel => 'Sub-agent Model';
+
+  @override
+  String get kbSubAgentModelFollow => 'Follow session model';
+
+  @override
+  String get kbSubAgentModelMissing =>
+      'The bound model no longer exists — delegation is disabled until you pick another.';
+
+  @override
   String get assistantRetention => 'Assistant Conversations to Keep';
 
   @override
