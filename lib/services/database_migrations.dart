@@ -58,6 +58,7 @@ class DatabaseMigration {
     if (oldVersion < 31) await _createV31Tables(db);
     if (oldVersion < 32) await _createV32Tables(db);
     if (oldVersion < 33) await _createV33Tables(db);
+    if (oldVersion < 34) await _createV34Tables(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -91,7 +92,30 @@ class DatabaseMigration {
     await _createV31Tables(db);
     await _createV32Tables(db);
     await _createV33Tables(db);
+    await _createV34Tables(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Knowledge sub-agent research notes, scoped to the assistant session that
+  /// commissioned them. The delegate tool stores the sub-agent's full
+  /// findings here and hands the model only a digest + note id; `read_note`
+  /// pages the full text back on demand. Deleted together with the session
+  /// (no FK — session deletion is manual, matching assistant_messages).
+  static Future<void> _createV34Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS assistant_notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_assistant_notes_session '
+      'ON assistant_notes (session_id, id)',
+    );
   }
 
   /// Per-task logs, as a JSON array of already-timestamped lines.

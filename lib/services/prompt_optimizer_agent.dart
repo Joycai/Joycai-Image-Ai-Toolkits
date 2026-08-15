@@ -10,6 +10,7 @@ import 'knowledge_base_service.dart';
 import 'llm/context_budget.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
+import 'repositories/assistant_note_repository.dart';
 import 'repositories/assistant_session_repository.dart';
 import 'sub_agent_runner.dart';
 
@@ -573,6 +574,24 @@ class PromptOptimizerSession extends ChangeNotifier {
                   text: '',
                   toolName: 'list_knowledge_files',
                 ));
+              case 'delegate':
+                // A plain chip: the note (if one was stored) lives in the DB
+                // keyed by session, so read_note keeps working after a
+                // restart — nothing else to rebuild.
+                final delegatedTask = call.arguments['task']?.toString() ?? '';
+                entries.add(OptimizerChatEntry(
+                  kind: OptimizerEntryKind.tool,
+                  text: delegatedTask.length > 120
+                      ? '${delegatedTask.substring(0, 120)}…'
+                      : delegatedTask,
+                  toolName: 'delegate',
+                ));
+              case 'read_note':
+                entries.add(OptimizerChatEntry(
+                  kind: OptimizerEntryKind.tool,
+                  text: '#${call.arguments['note_id'] ?? ''}',
+                  toolName: 'read_note',
+                ));
               case 'list_reference_images':
                 entries.add(OptimizerChatEntry(
                   kind: OptimizerEntryKind.tool,
@@ -984,6 +1003,27 @@ class PromptOptimizerAgent {
         'required': ['kind', 'task'],
       },
     ),
+    LLMTool(
+      name: 'read_note',
+      description: 'Read back the full findings of an earlier delegate run in '
+          'this conversation. Large notes are paged — request further pages '
+          'only when needed. The summary you already have is usually enough; '
+          'read the note when you need exact wording or details it omitted.',
+      parameters: {
+        'type': 'object',
+        'properties': {
+          'note_id': {
+            'type': 'integer',
+            'description': 'The note_id a delegate result returned.',
+          },
+          'page': {
+            'type': 'integer',
+            'description': '1-based page number, defaults to 1.',
+          },
+        },
+        'required': ['note_id'],
+      },
+    ),
   ];
 
   /// The toolset for one request, assembled from the session's mode and the
@@ -1321,6 +1361,24 @@ class PromptOptimizerAgent {
               result = {
                 'status': 'error',
                 'message': 'Tool delegate failed: $e',
+              };
+            }
+          } else if (call.name == 'read_note') {
+            // Async (note store lives in SQLite), so alongside delegate
+            // rather than in the synchronous _executeTool switch.
+            try {
+              result = await _executeReadNote(
+                call,
+                session,
+                systemPrompt: systemPromptText,
+                contextWindow: contextWindow,
+                onLog: onLog,
+              );
+            } catch (e) {
+              onLog?.call('Tool read_note failed: $e');
+              result = {
+                'status': 'error',
+                'message': 'Tool read_note failed: $e',
               };
             }
           } else {
@@ -1701,9 +1759,15 @@ class PromptOptimizerAgent {
     ];
   }
 
+  @visibleForTesting
+  static LLMMessage elideForTest(LLMMessage m) => _elide(m);
+
   static LLMMessage _elide(LLMMessage m) {
+    // read_note results elide exactly like knowledge reads: both are bulk
+    // text the model pulled in on demand and can pull in again — notes even
+    // more safely, since nothing ever rewrites a stored note.
     if (m.role == LLMRole.tool &&
-        m.toolName == 'read_knowledge_file' &&
+        (m.toolName == 'read_knowledge_file' || m.toolName == 'read_note') &&
         m.content.length > 300) {
       return LLMMessage(
         role: LLMRole.tool,
@@ -1898,10 +1962,11 @@ class PromptOptimizerAgent {
     return buffer.toString();
   }
 
-  /// Digest cap for what a delegate run reports back into the main context.
-  /// Enough to judge the findings; deliberately not enough to be the whole
-  /// research (M3.2 adds notes so the full findings stay retrievable).
-  static const int _delegateSummaryChars = 2000;
+  /// Digest cap for what a delegate run reports back into the main context —
+  /// enough to judge the findings, deliberately not enough to substitute for
+  /// reading the note (the playbook's 800-char rule: a digest that could
+  /// stand in for the note would just move the flooding one level up).
+  static const int _delegateSummaryChars = 800;
 
   /// Per-read cap for the sub-agent's knowledge reads. A constant rather than
   /// the main loop's live budget arithmetic: the sub-run starts from a fresh
@@ -2003,6 +2068,7 @@ class PromptOptimizerAgent {
       isCancelled: isCancelled,
       onLog: (m) => onLog?.call('[KB sub-agent] $m'),
       contextId: contextId,
+      usageTag: 'subagent:knowledge',
     );
 
     if (result.cancelled) {
@@ -2024,11 +2090,104 @@ class PromptOptimizerAgent {
     }
     onLog?.call('Sub-agent finished in ${result.turnsUsed} turn(s), '
         '${output.length} chars of findings.');
+
+    // Full findings go to the session's note store; the main context gets a
+    // digest and the note id. Best-effort: a storage failure downgrades to
+    // digest-only rather than failing a research run that already succeeded.
+    AssistantNote? note;
+    try {
+      note = await AssistantNoteRepository().insert(
+        sessionId: session.id,
+        title: task.length > 80 ? task.substring(0, 80) : task,
+        content: output,
+      );
+    } catch (e) {
+      onLog?.call('Note storage failed (returning digest only): $e');
+    }
+
+    final truncated = output.length > _delegateSummaryChars;
     return {
       'status': 'ok',
-      'summary': output.length > _delegateSummaryChars
-          ? '${output.substring(0, _delegateSummaryChars)}…(truncated)'
+      if (note != null) 'note_id': note.id,
+      'summary': truncated
+          ? '${output.substring(0, _delegateSummaryChars)}…'
           : output,
+      if (note != null && truncated)
+        'hint': 'Full findings (${output.length} chars) are saved as note '
+            '${note.id} — call read_note with that note_id when you need the '
+            'detail.',
+    };
+  }
+
+  /// Runs one `read_note` call: pages a stored sub-agent note back into the
+  /// conversation. Session-scoped (a foreign note id reads as not-found) and
+  /// behind the same read-cap gate as knowledge reads — its results are
+  /// elided by [_elide] later, exactly like a knowledge read, and can simply
+  /// be re-read then (notes have no staleness: nothing rewrites them).
+  static Future<Map<String, dynamic>> _executeReadNote(
+    LLMToolCall call,
+    PromptOptimizerSession session, {
+    required String systemPrompt,
+    required int? contextWindow,
+    void Function(String message)? onLog,
+  }) async {
+    final rawId = call.arguments['note_id'];
+    final noteId = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
+    if (noteId == null) {
+      return {
+        'status': 'error',
+        'message':
+            'Pass note_id — the integer id a delegate result returned.',
+      };
+    }
+    final rawPage = call.arguments['page'];
+    final page =
+        rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
+    onLog?.call('Tool call: read_note #$noteId (page $page)');
+
+    final cap = _readCapNow(session, systemPrompt, contextWindow);
+    if (cap < _minReadChars) {
+      return {
+        'status': 'error',
+        'message': 'Not enough context left to read the note — work with the '
+            'summary you already have.',
+      };
+    }
+
+    final note =
+        await AssistantNoteRepository().get(noteId, sessionId: session.id);
+    if (note == null) {
+      return {
+        'status': 'error',
+        'message': 'No note $noteId in this conversation. Use the note_id a '
+            'delegate result returned.',
+      };
+    }
+    session._addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.tool,
+      text: '#$noteId ${note.title}',
+      toolName: 'read_note',
+    ));
+
+    // Paged like knowledge reads: a fixed page size keeps page numbers
+    // stable across reads; only a window tighter than one page shrinks it.
+    final pageSize = cap < KnowledgeBaseService.pageSize
+        ? cap
+        : KnowledgeBaseService.pageSize;
+    final content = note.content;
+    final bounds = KnowledgeBaseService.pageBoundaries(content, pageSize);
+    final total = bounds.length;
+    final idx = page < 1 ? 1 : (page > total ? total : page);
+    final start = bounds[idx - 1];
+    final end = idx < total ? bounds[idx] : content.length;
+    return {
+      'note_id': noteId,
+      'page': idx,
+      'total_pages': total,
+      'content': content.substring(start, end),
+      if (total > idx)
+        'note': 'Note continues — request the next page only if this part '
+            'is not enough.',
     };
   }
 

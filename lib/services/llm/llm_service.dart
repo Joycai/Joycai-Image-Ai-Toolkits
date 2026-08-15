@@ -97,7 +97,7 @@ class LLMService {
 
           // Record usage
           if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
+            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
           }
 
           // Update session
@@ -124,7 +124,7 @@ class LLMService {
 
           // Record usage
           if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null);
+            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
           }
 
           // Update session
@@ -267,7 +267,7 @@ class LLMService {
     }
   }
 
-  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId}) async {
+  Future<void> _recordUsage(String modelId, LLMModelConfig config, Map<String, dynamic> metadata, {int? modelDbId, String? taskTag}) async {
     final db = DatabaseService();
 
     // Standardize metadata keys. Three spellings are in play: Google
@@ -284,7 +284,10 @@ class LLMService {
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     await db.recordTokenUsage({
-      'task_id': 'req_${DateTime.now().millisecondsSinceEpoch}',
+      // The tag makes delegated work distinguishable in the usage table
+      // (e.g. `task_id LIKE 'subagent:%'`) — a sub-agent's spend should be
+      // attributable to delegation, not blended into ordinary requests.
+      'task_id': '${taskTag ?? 'req'}_${DateTime.now().millisecondsSinceEpoch}',
       'model_id': modelId,
       'model_pk': modelDbId,
       'timestamp': DateTime.now().toIso8601String(),

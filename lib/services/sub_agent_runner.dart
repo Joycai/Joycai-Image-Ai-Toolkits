@@ -75,13 +75,20 @@ class SubAgentRunner {
     bool Function()? isCancelled,
     void Function(String message)? onLog,
     String? contextId,
+
+    /// Tags this run's usage rows (e.g. `subagent:knowledge`) so delegated
+    /// spend stays attributable in the usage table.
+    String? usageTag,
     @visibleForTesting SubAgentRequestFn? request,
   }) async {
     final requestFn = request ??
         (messages, tools) => LLMService().request(
               modelIdentifier: modelIdentifier,
               messages: messages,
-              options: const {'retryCount': 2},
+              options: {
+                'retryCount': 2,
+                'usageTag': ?usageTag,
+              },
               tools: tools,
               contextId: contextId,
               useStream: false,
