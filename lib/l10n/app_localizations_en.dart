@@ -1436,6 +1436,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.';
 
   @override
+  String get kbSubAgent => 'Knowledge Sub-agent';
+
+  @override
+  String get kbSubAgentDesc =>
+      'Let the assistant hand knowledge-base research to a sub-agent that reads files in its own separate context, keeping the main conversation small. Experimental.';
+
+  @override
   String get assistantRetention => 'Assistant Conversations to Keep';
 
   @override

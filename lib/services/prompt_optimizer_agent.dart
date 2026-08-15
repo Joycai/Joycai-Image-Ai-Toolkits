@@ -11,6 +11,7 @@ import 'llm/context_budget.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 import 'repositories/assistant_session_repository.dart';
+import 'sub_agent_runner.dart';
 
 /// Operating mode of the prompt assistant.
 ///
@@ -710,6 +711,11 @@ class PromptOptimizerAgent {
   /// file in one piece mid-turn, which compaction then reclaims at the next
   /// turn boundary. See [ContextBudget.readCapChars].
   static const String contextRatioSettingKey = 'assistant_context_ratio';
+
+  /// Settings key for the knowledge sub-agent opt-in (default off). Read by
+  /// the task executor and the settings screen; the agent itself only sees
+  /// the resolved boolean via [runTurn]'s `kbSubAgentEnabled`.
+  static const String kbSubAgentSettingKey = 'enable_kb_subagent';
   static const double defaultContextRatio = 0.6;
 
   /// Whether the conversation should be summarized before the next request.
@@ -932,6 +938,88 @@ class PromptOptimizerAgent {
     ),
   ];
 
+  /// Research delegation, added in the knowledge modes when the user has
+  /// enabled the knowledge sub-agent (Settings, default off).
+  ///
+  /// `kind` is an enum with a single value today — future kinds (batch
+  /// drafting, long reads) are new enum values, not new protocols. The
+  /// description teaches the zero-context-inheritance rule: the sub-agent
+  /// sees nothing of this conversation, so the brief must stand alone.
+  ///
+  /// Deliberately additive: `read_knowledge_file` stays in the main toolset.
+  /// Targeted single reads are day-to-day work (taking them away adds a
+  /// round-trip to everything), and the read-before-write rail is anchored
+  /// on the *main* history's live reads — sub-agent research never licenses
+  /// a write.
+  static final List<LLMTool> _delegateTools = [
+    LLMTool(
+      name: 'delegate',
+      description: 'Hand a knowledge-base research task to a sub-agent. The '
+          'sub-agent sees NOTHING of this conversation — write everything it '
+          'needs to know into "task" (the question, relevant context, what '
+          'the answer will be used for). It will browse and read the '
+          'knowledge base in its own separate context and return a findings '
+          'summary, so use it for broad research across files; for reading '
+          'one specific file you already know, call read_knowledge_file '
+          'directly.',
+      parameters: {
+        'type': 'object',
+        'properties': {
+          'kind': {
+            'type': 'string',
+            'enum': ['knowledge'],
+            'description': 'The kind of sub-agent. Only "knowledge" exists.',
+          },
+          'task': {
+            'type': 'string',
+            'description': 'The complete, self-contained research brief.',
+          },
+          'paths': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'description': 'Optional: knowledge-base file paths (relative) '
+                'the sub-agent should start from.',
+          },
+        },
+        'required': ['kind', 'task'],
+      },
+    ),
+  ];
+
+  /// The toolset for one request, assembled from the session's mode and the
+  /// turn's state. Pure so the routing rules are pinnable in tests:
+  ///
+  ///  * capability routing is a toolset change, never a prompt suggestion;
+  ///  * `delegate` is additive to the knowledge tools, not a replacement;
+  ///  * context exhaustion removes `read_knowledge_file` (each refused call
+  ///    costs a full-window request) but keeps `delegate` — the sub-agent
+  ///    researches in its own fresh context, so running out of room here is
+  ///    exactly when delegation is most useful.
+  @visibleForTesting
+  static List<LLMTool> toolsetFor({
+    required bool acceptsImageInput,
+    required bool knowledgeMode,
+    required bool editMode,
+    bool delegateAvailable = false,
+    bool contextExhausted = false,
+  }) {
+    final baseTools = acceptsImageInput
+        ? _tools
+        : [
+            for (final t in _tools)
+              if (t.name != 'view_image' && t.name != 'list_reference_images') t
+          ];
+    final tools = [
+      ...baseTools,
+      if (knowledgeMode || editMode) ..._knowledgeTools,
+      if (editMode) ..._knowledgeWriteTools,
+      if (delegateAvailable && (knowledgeMode || editMode)) ..._delegateTools,
+    ];
+    return contextExhausted
+        ? [for (final t in tools) if (t.name != 'read_knowledge_file') t]
+        : tools;
+  }
+
   /// Runs one agent turn: consumes the pending user message already appended
   /// to [session.history] and loops on tool calls until the model stops.
   ///
@@ -953,6 +1041,7 @@ class PromptOptimizerAgent {
     String? contextId,
     int? contextWindow,
     double contextRatio = defaultContextRatio,
+    bool kbSubAgentEnabled = false,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
   }) async {
@@ -975,15 +1064,7 @@ class PromptOptimizerAgent {
     final effectiveRefs =
         acceptsImageInput ? referenceImages : const <Map<String, String>>[];
     final effectiveForceView = forceViewAllImages && acceptsImageInput;
-    final baseTools = acceptsImageInput
-        ? _tools
-        : [
-            for (final t in _tools)
-              if (t.name != 'view_image' && t.name != 'list_reference_images') t
-          ];
-    final tools = editMode
-        ? [...baseTools, ..._knowledgeTools, ..._knowledgeWriteTools]
-        : (knowledgeMode ? [...baseTools, ..._knowledgeTools] : baseTools);
+    final delegateAvailable = kbSubAgentEnabled && knowledgeMode;
     // Weak local models tend to issue a single tool call per turn, so viewing
     // every reference image one by one needs list + N views + submit turns.
     // Knowledge mode needs extra headroom for file listing/reading rounds.
@@ -1054,10 +1135,15 @@ class PromptOptimizerAgent {
         // the list the model would keep calling it and keep being refused, and
         // each refusal costs another full-window request — the loop still has
         // its remaining iterations to burn. Without it the model can only
-        // answer or submit, and the loop exits on its own.
-        final activeTools = contextExhausted
-            ? [for (final t in tools) if (t.name != 'read_knowledge_file') t]
-            : tools;
+        // answer, submit or delegate (the sub-agent researches in its own
+        // fresh context, so it stays useful exactly when this one is full).
+        final activeTools = toolsetFor(
+          acceptsImageInput: acceptsImageInput,
+          knowledgeMode: knowledgeMode,
+          editMode: editMode,
+          delegateAvailable: delegateAvailable,
+          contextExhausted: contextExhausted,
+        );
 
         final trimmedHistory = _trimForSend(session.history);
         // knowledgeEntryContent is captured once per task, but staging means no
@@ -1214,6 +1300,28 @@ class PromptOptimizerAgent {
                 pendingAskCallId = call.id;
                 continue; // Deliberately NO paired result — see comment above.
               }
+            }
+          } else if (call.name == 'delegate') {
+            // Async (it runs a whole nested agent), so it lives here rather
+            // than in the synchronous _executeTool switch. Same pairing
+            // contract: any escape becomes an error result.
+            try {
+              result = await _executeDelegate(
+                call,
+                session,
+                modelIdentifier,
+                knowledgeRoot,
+                delegateAvailable: delegateAvailable,
+                contextId: contextId,
+                onLog: onLog,
+                isCancelled: isCancelled,
+              );
+            } catch (e) {
+              onLog?.call('Tool delegate failed: $e');
+              result = {
+                'status': 'error',
+                'message': 'Tool delegate failed: $e',
+              };
             }
           } else {
             try {
@@ -1788,6 +1896,193 @@ class PromptOptimizerAgent {
       }
     }
     return buffer.toString();
+  }
+
+  /// Digest cap for what a delegate run reports back into the main context.
+  /// Enough to judge the findings; deliberately not enough to be the whole
+  /// research (M3.2 adds notes so the full findings stay retrievable).
+  static const int _delegateSummaryChars = 2000;
+
+  /// Per-read cap for the sub-agent's knowledge reads. A constant rather than
+  /// the main loop's live budget arithmetic: the sub-run starts from a fresh
+  /// two-message context and is bounded to a handful of turns, so a generous
+  /// fixed cap keeps it simple until a dedicated sub-agent model binding
+  /// (M3.2) makes a real per-model budget worth wiring.
+  static const int _subAgentReadCapChars = 24000;
+
+  /// System prompt of the knowledge research sub-agent. A code asset, not
+  /// user-configurable.
+  static const String _kbSubAgentSystemPrompt =
+      'You are a research sub-agent working over a knowledge base of markdown '
+      'files. You cannot see the main conversation — the task brief in the '
+      'next message is your only context.\n\n'
+      'Use list_knowledge_files to discover files and read_knowledge_file to '
+      'read them (large files are paged — request further pages only when '
+      'needed). Read selectively; do not try to read everything.\n\n'
+      'When you have what you need, answer in plain text (no tool call):\n'
+      '1. The findings, directly answering the brief.\n'
+      '2. The knowledge-base file paths (exactly as listed) each finding '
+      'rests on.\n'
+      '3. Open questions, if any.\n'
+      'Never invent content that is not in the files.';
+
+  /// The sub-agent's task message. Two shapes, not one template with an
+  /// empty slot: a brief without paths must not contain a "start from"
+  /// section at all — a heading over nothing reads as an instruction to go
+  /// find those (nonexistent) sources.
+  @visibleForTesting
+  static String buildDelegateTask(String task, List<String> paths) {
+    if (paths.isEmpty) return task;
+    return '$task\n\nStart from these knowledge-base files:\n'
+        '${paths.map((p) => '- $p').join('\n')}';
+  }
+
+  /// Runs one `delegate` call: validates with zero side effects, then runs a
+  /// [SubAgentRunner] over the knowledge base and returns a digest result.
+  static Future<Map<String, dynamic>> _executeDelegate(
+    LLMToolCall call,
+    PromptOptimizerSession session,
+    dynamic modelIdentifier,
+    String? knowledgeRoot, {
+    required bool delegateAvailable,
+    String? contextId,
+    void Function(String message)? onLog,
+    bool Function()? isCancelled,
+  }) async {
+    // Precondition checks first, with zero side effects: a refused delegate
+    // must not have sent a request or produced a transcript entry.
+    if (knowledgeRoot == null) return _kbUnavailable();
+    if (!delegateAvailable) {
+      // The model can hallucinate a tool it was never offered; what decides
+      // is the setting, not the tool list (same rule as write_knowledge_file).
+      return {
+        'status': 'error',
+        'message': 'The knowledge sub-agent is not enabled. Research the '
+            'knowledge base yourself with list_knowledge_files and '
+            'read_knowledge_file.',
+      };
+    }
+    final kind = call.arguments['kind']?.toString() ?? '';
+    if (kind != 'knowledge') {
+      return {
+        'status': 'error',
+        'message': 'Unknown delegate kind "$kind" — only "knowledge" exists.',
+      };
+    }
+    final task = call.arguments['task']?.toString().trim() ?? '';
+    if (task.isEmpty) {
+      return {
+        'status': 'error',
+        'message': 'The task argument must not be empty. Write a '
+            'self-contained research brief — the sub-agent sees nothing of '
+            'this conversation.',
+      };
+    }
+    final rawPaths = call.arguments['paths'];
+    final paths = [
+      if (rawPaths is List)
+        for (final p in rawPaths)
+          if (p.toString().trim().isNotEmpty) p.toString().trim(),
+    ];
+
+    final taskPreview =
+        task.length > 120 ? '${task.substring(0, 120)}…' : task;
+    onLog?.call('Tool call: delegate (knowledge) — $taskPreview');
+    session._addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.tool,
+      text: taskPreview,
+      toolName: 'delegate',
+    ));
+
+    final result = await SubAgentRunner.run(
+      modelIdentifier: modelIdentifier,
+      systemPrompt: _kbSubAgentSystemPrompt,
+      task: buildDelegateTask(task, paths),
+      tools: _knowledgeTools,
+      executeTool: (c) => _executeSubAgentKbTool(c, knowledgeRoot, onLog),
+      isCancelled: isCancelled,
+      onLog: (m) => onLog?.call('[KB sub-agent] $m'),
+      contextId: contextId,
+    );
+
+    if (result.cancelled) {
+      return {
+        'status': 'cancelled',
+        'message': 'The user cancelled the task while the sub-agent was '
+            'running.',
+      };
+    }
+    final output = result.output.trim();
+    if (output.isEmpty) {
+      // No note, no digest — an empty file would just relocate the nothing.
+      return {
+        'status': 'error',
+        'message': 'The knowledge sub-agent returned nothing. Try a narrower '
+            'task, or research the knowledge base yourself with '
+            'list_knowledge_files and read_knowledge_file.',
+      };
+    }
+    onLog?.call('Sub-agent finished in ${result.turnsUsed} turn(s), '
+        '${output.length} chars of findings.');
+    return {
+      'status': 'ok',
+      'summary': output.length > _delegateSummaryChars
+          ? '${output.substring(0, _delegateSummaryChars)}…(truncated)'
+          : output,
+    };
+  }
+
+  /// The sub-agent's view of the knowledge tools: same wire definitions
+  /// ([_knowledgeTools]), lean execution — no session, no transcript entries,
+  /// no live-read cache (its context is fresh), a fixed read cap instead of
+  /// the main loop's budget arithmetic.
+  static Map<String, dynamic> _executeSubAgentKbTool(
+    LLMToolCall call,
+    String knowledgeRoot,
+    void Function(String message)? onLog,
+  ) {
+    switch (call.name) {
+      case 'list_knowledge_files':
+        final dir = call.arguments['dir']?.toString();
+        onLog?.call('[KB sub-agent] list_knowledge_files (${dir ?? '.'})');
+        try {
+          final files = KnowledgeBaseService().listFiles(knowledgeRoot, dir: dir);
+          return {'files': [for (final f in files) f.toJson()]};
+        } on KbPathException catch (e) {
+          return {'status': 'error', 'message': e.message};
+        } catch (e) {
+          return {'status': 'error', 'message': 'Failed to list knowledge files: $e'};
+        }
+      case 'read_knowledge_file':
+        final relPath = call.arguments['path']?.toString() ?? '';
+        final rawPage = call.arguments['page'];
+        final page =
+            rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
+        onLog?.call('[KB sub-agent] read_knowledge_file $relPath (page $page)');
+        try {
+          final result = KnowledgeBaseService().readFile(knowledgeRoot, relPath,
+              page: page, maxChars: _subAgentReadCapChars);
+          return {
+            'path': relPath,
+            'page': result.page,
+            'total_pages': result.totalPages,
+            'content': result.content,
+            if (result.totalPages > result.page)
+              'note': 'File continues — request the next page only if this '
+                  'part is not enough.',
+          };
+        } on KbPathException catch (e) {
+          return {'status': 'error', 'message': e.message};
+        } catch (e) {
+          return {'status': 'error', 'message': 'Failed to read $relPath: $e'};
+        }
+      default:
+        return {
+          'status': 'error',
+          'message': 'Unknown tool "${call.name}". Available tools: '
+              'list_knowledge_files, read_knowledge_file.',
+        };
+    }
   }
 
   static Map<String, dynamic> _executeTool(

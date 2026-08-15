@@ -1390,6 +1390,12 @@ class AppLocalizationsZh extends AppLocalizations {
       '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
 
   @override
+  String get kbSubAgent => '知识库子代理';
+
+  @override
+  String get kbSubAgentDesc => '允许助手把知识库检索交给子代理，在独立上下文中通读文件，保持主对话轻量。实验性功能。';
+
+  @override
   String get assistantRetention => '助手会话保留数量';
 
   @override
@@ -3979,6 +3985,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get assistantContextRatioDesc =>
       '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
+
+  @override
+  String get kbSubAgent => '知識庫子代理';
+
+  @override
+  String get kbSubAgentDesc => '允許助手把知識庫檢索交給子代理，在獨立上下文中通讀檔案，保持主對話輕量。實驗性功能。';
 
   @override
   String get assistantRetention => '助手對話保留數量';

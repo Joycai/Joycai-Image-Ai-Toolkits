@@ -37,6 +37,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   /// mid-turn, and compaction only reclaims it at the next turn boundary.
   static const List<double> _contextRatios = [0.4, 0.5, 0.6, 0.7, 0.8];
   double _assistantContextRatio = PromptOptimizerAgent.defaultContextRatio;
+  bool _kbSubAgentEnabled = false;
 
   @override
   void initState() {
@@ -55,6 +56,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     _assistantContextRatio = double.tryParse(
             await _db.getSetting(PromptOptimizerAgent.contextRatioSettingKey) ?? '') ??
         PromptOptimizerAgent.defaultContextRatio;
+    _kbSubAgentEnabled =
+        (await _db.getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ??
+                'false') ==
+            'true';
     if (mounted) setState(() {});
   }
 
@@ -156,6 +161,17 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               setState(() => _assistantContextRatio = v);
             },
           ),
+        ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          title: Text(l10n.kbSubAgent),
+          subtitle: Text(l10n.kbSubAgentDesc),
+          value: _kbSubAgentEnabled,
+          onChanged: (v) async {
+            await _db.saveSetting(
+                PromptOptimizerAgent.kbSubAgentSettingKey, v.toString());
+            setState(() => _kbSubAgentEnabled = v);
+          },
         ),
       ],
     );

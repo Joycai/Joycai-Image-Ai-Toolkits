@@ -2729,6 +2729,18 @@ abstract class AppLocalizations {
   /// **'The prompt assistant summarizes the conversation once it fills this share of the model\'s context window, freeing room to keep working. Only applies to models with a context window set.'**
   String get assistantContextRatioDesc;
 
+  /// No description provided for @kbSubAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Sub-agent'**
+  String get kbSubAgent;
+
+  /// No description provided for @kbSubAgentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the assistant hand knowledge-base research to a sub-agent that reads files in its own separate context, keeping the main conversation small. Experimental.'**
+  String get kbSubAgentDesc;
+
   /// No description provided for @assistantRetention.
   ///
   /// In en, this message translates to:

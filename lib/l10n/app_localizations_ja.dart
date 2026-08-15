@@ -1404,6 +1404,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'プロンプトアシスタントは、コンテキスト使用量がモデルのウィンドウのこの割合に達すると会話を要約し、作業を続ける余地を空けます。コンテキストウィンドウが設定されたモデルにのみ適用されます。';
 
   @override
+  String get kbSubAgent => 'ナレッジベース・サブエージェント';
+
+  @override
+  String get kbSubAgentDesc =>
+      'アシスタントがナレッジベースの調査をサブエージェントに委任できるようにします。サブエージェントは独立したコンテキストでファイルを読み、メインの会話を軽く保ちます。実験的機能。';
+
+  @override
   String get assistantRetention => 'アシスタント会話の保持数';
 
   @override
