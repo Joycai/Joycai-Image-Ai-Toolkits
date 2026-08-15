@@ -80,6 +80,8 @@
   "kbMissingEntry": "資料夾中缺少入口檔案 README.md",
   "assistantContextRatio": "助手摘要閾值",
   "assistantContextRatioDesc": "提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。",
+  "kbSubAgent": "知識庫子代理",
+  "kbSubAgentDesc": "允許助手把知識庫檢索交給子代理，在獨立上下文中通讀檔案，保持主對話輕量。實驗性功能。",
   "assistantRetention": "助手對話保留數量",
   "assistantRetentionDesc": "超出數量的較舊提示詞助手對話將被自動刪除",
   "about": "關於",

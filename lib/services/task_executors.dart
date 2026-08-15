@@ -170,6 +170,13 @@ extension TaskExecutors on TaskQueueService {
                   '') ??
           PromptOptimizerAgent.defaultContextRatio;
 
+      // Knowledge sub-agent opt-in (Settings, default off). Read here and
+      // passed down so the agent stays free of app-state coupling.
+      final kbSubAgentEnabled = (await DatabaseService()
+                  .getSetting(PromptOptimizerAgent.kbSubAgentSettingKey) ??
+              'false') ==
+          'true';
+
       // Knowledge mode: resolve and validate the knowledge base, and pre-read
       // its entry file (the file map) for injection into the system prompt.
       String? knowledgeRoot;
@@ -200,6 +207,7 @@ extension TaskExecutors on TaskQueueService {
         contextId: task.id,
         contextWindow: contextWindow,
         contextRatio: contextRatio,
+        kbSubAgentEnabled: kbSubAgentEnabled,
         onLog: (msg) {
           task.addLog(msg);
           refreshQueue();

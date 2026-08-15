@@ -660,6 +660,8 @@
   "kbMissingEntry": "README.md entry file not found in the folder",
   "assistantContextRatio": "Assistant Summary Limit",
   "assistantContextRatioDesc": "The prompt assistant summarizes the conversation once it fills this share of the model's context window, freeing room to keep working. Only applies to models with a context window set.",
+  "kbSubAgent": "Knowledge Sub-agent",
+  "kbSubAgentDesc": "Let the assistant hand knowledge-base research to a sub-agent that reads files in its own separate context, keeping the main conversation small. Experimental.",
   "assistantRetention": "Assistant Conversations to Keep",
   "assistantRetentionDesc": "Older prompt assistant conversations beyond this count are deleted automatically",
   "about": "About",
