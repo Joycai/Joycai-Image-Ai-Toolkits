@@ -66,9 +66,15 @@ class StoredAssistantMessage {
 /// compaction summary keep `compacted = 1` so the full history stays
 /// inspectable while replay skips them.
 class AssistantSessionRepository {
-  final DatabaseService _dbService = DatabaseService();
+  /// [dbProvider] exists for tests (an in-memory database); production code
+  /// uses the default [DatabaseService].
+  AssistantSessionRepository({Future<Database> Function()? dbProvider})
+      : _dbProvider = dbProvider;
 
-  Future<Database> _getDb() async => await _dbService.database;
+  final Future<Database> Function()? _dbProvider;
+
+  Future<Database> _getDb() async =>
+      _dbProvider != null ? await _dbProvider() : await DatabaseService().database;
 
   Future<void> upsertSession({
     required String id,
@@ -218,6 +224,9 @@ class AssistantSessionRepository {
   Future<void> deleteSession(String id) async {
     final db = await _getDb();
     await db.delete('assistant_messages', where: 'session_id = ?', whereArgs: [id]);
+    // Sub-agent notes are session-scoped and die with the session (v34; no
+    // FK, deletion is manual like assistant_messages).
+    await db.delete('assistant_notes', where: 'session_id = ?', whereArgs: [id]);
     await db.delete('assistant_sessions', where: 'id = ?', whereArgs: [id]);
   }
 
