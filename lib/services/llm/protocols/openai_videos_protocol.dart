@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -47,7 +46,15 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     final quality = readStringOption(options, 'videoQuality');
 
     final request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = 'Bearer ${config.apiKey}';
+    // Auth comes from the vendor profile (layer 2) like every other surface —
+    // this was the last protocol with a hardcoded bearer header, which worked
+    // only because today's OpenAI-family vendors all happen to use one.
+    // Content-Type is dropped: the multipart body sets its own with a
+    // boundary. Same fix openai_images_protocol.dart documents.
+    request.headers.addAll(
+      Map.of(target.headers())
+        ..removeWhere((k, _) => k.toLowerCase() == 'content-type'),
+    );
     request.fields['model'] = config.modelId;
     request.fields['prompt'] = prompt;
     if (seconds != null) request.fields['seconds'] = seconds;
@@ -100,7 +107,7 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Video Submit)', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'fields': request.fields,
         'files': request.files.map((f) => f.filename).toList(),
       });
@@ -116,14 +123,11 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('OpenAI video submit failed: ${response.statusCode} - ${response.body}');
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decodeJsonBody(response, apiName: 'OpenAI video submit');
       final id = data['id']?.toString();
       if (id == null || id.isEmpty) {
-        throw Exception('OpenAI video submit returned no id: ${response.body}');
+        throw LLMApiException(
+            'OpenAI video submit returned no id: ${response.body}');
       }
       logger?.call('OpenAI video task id: $id', level: 'DEBUG');
       return id;
@@ -150,10 +154,11 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     final client = config.createClient();
     try {
       final response = await client.get(url, headers: headers);
-      if (response.statusCode != 200) {
-        throw Exception('OpenAI video fetch failed: ${response.statusCode} - ${response.body}');
-      }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      // checkEnvelope: false — a failed job arrives as a 200 with an `error`
+      // field beside `status`; the status machine below owns that case and
+      // names the operation in its message.
+      final data = decodeJsonBody(response,
+          apiName: 'OpenAI video fetch', checkEnvelope: false);
       final status = data['status']?.toString() ?? '';
 
       if (status == 'succeeded') {

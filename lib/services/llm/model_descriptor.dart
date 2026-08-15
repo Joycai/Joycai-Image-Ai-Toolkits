@@ -39,7 +39,7 @@ class ModelDescriptor {
 
   /// True when this id is a Niji variant of Midjourney (drives the proxy's
   /// `botType` field).
-  bool get isNijiVariant => modelId.toLowerCase().contains('niji');
+  bool get isNijiVariant => ModelFamilyClassifier.isNijiVariant(modelId);
 
   /// Whether the model accepts image *input* (multimodal understanding), as
   /// opposed to the generation-side capabilities in [capabilities].
@@ -49,7 +49,11 @@ class ModelDescriptor {
   /// gets silently dropped, so the model answers as if it saw the image.
   ///
   /// Default is true (the historical behavior); only families/ids known to be
-  /// text-only opt out. DeepSeek's chat/completions endpoint takes text only —
-  /// its multimodal models are not served there (as of 2026-08).
-  bool get acceptsImageInput => !modelId.toLowerCase().contains('deepseek');
+  /// text-only opt out — the rule itself lives in the classifier's table.
+  bool get acceptsImageInput => !ModelFamilyClassifier.isTextOnlyChat(modelId);
+
+  /// True for the `mock-*` ids the simulated long-running-operation path
+  /// accepts. Here rather than in the dispatcher because model-id sniffing is
+  /// this layer's monopoly.
+  bool get isMockModel => ModelFamilyClassifier.isMockModel(modelId);
 }

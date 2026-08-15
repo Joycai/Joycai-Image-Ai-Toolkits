@@ -341,7 +341,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       File? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Standard)', {
-          'url': url.toString(),
+          'url': redactUrl(url),
           'headers': headers,
           'body': payload,
         });
@@ -354,27 +354,16 @@ class OpenAIChatProtocol implements ChatProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200) {
-        logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw LLMApiException(
-            'OpenAI API Request failed: ${response.statusCode} - ${response.body}',
-            statusCode: response.statusCode);
-      }
-
       logger?.call('Response received, parsing data...', level: 'DEBUG');
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        // 200 does not mean success on compat layers — check both known
-        // in-body error spellings before trusting the shape.
-        throwIfEnvelopeError(data);
-      }
+      // Status → JSON → shape → envelope, in that order (decodeJsonBody).
+      final data = decodeJsonBody(response, apiName: 'OpenAI API');
       String text = "";
       List<Uint8List> images = [];
       final List<LLMToolCall> toolCalls = [];
       String? reasoningContent;
       String? reasoningFieldName;
 
-      final choice = data is Map<String, dynamic> ? firstChoice(data) : null;
+      final choice = firstChoice(data);
       final rawMessage = choice?['message'];
       final message =
           rawMessage is Map ? rawMessage.cast<String, dynamic>() : null;
@@ -508,7 +497,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Stream)', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'headers': headers,
         'body': payload,
       });
@@ -927,12 +916,9 @@ class OpenAIDiscoveryProtocol implements DiscoveryProtocol {
 
     final response = await http.get(url, headers: headers);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch OpenAI models: ${response.statusCode} - ${response.body}');
-    }
-
-    final data = jsonDecode(response.body);
-    final List<dynamic> modelsJson = data['data'] ?? [];
+    final data = decodeJsonBody(response, apiName: 'OpenAI models');
+    final rawModels = data['data'];
+    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
     return modelsJson.map((m) => DiscoveredModel(
       modelId: m['id']?.toString() ?? '',

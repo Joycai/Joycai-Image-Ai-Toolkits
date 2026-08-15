@@ -477,7 +477,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       File? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Standard)', {
-          'url': url.toString(),
+          'url': redactUrl(url),
           'headers': headers,
           'body': payload,
         });
@@ -490,23 +490,14 @@ class AnthropicChatProtocol implements ChatProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200) {
-        logger?.call('Request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw LLMApiException(
-            'Anthropic API Request failed: ${response.statusCode} - ${response.body}',
-            statusCode: response.statusCode);
-      }
-
       logger?.call('Response received, parsing data...', level: 'DEBUG');
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        // ④ delivers errors as `{"type":"error","error":{…}}`, which the
-        // shared check already recognizes by its `error` field — and a relay
-        // can serve one behind a 200.
-        throwIfEnvelopeError(data);
-      }
+      // Status → JSON → shape → envelope, in that order (decodeJsonBody). ④
+      // delivers errors as `{"type":"error","error":{…}}`, which the shared
+      // envelope check recognizes by its `error` field — and a relay can
+      // serve one behind a 200.
+      final data = decodeJsonBody(response, apiName: 'Anthropic API');
 
-      final rawContent = data is Map ? data['content'] : null;
+      final rawContent = data['content'];
       if (rawContent is! List || rawContent.isEmpty) {
         // Same rule the other two families now follow: a body carrying no
         // content is a failed request, not a model that chose to say nothing.
@@ -578,7 +569,7 @@ class AnthropicChatProtocol implements ChatProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'Anthropic (Stream)', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'headers': headers,
         'body': payload,
       });
@@ -731,12 +722,9 @@ class AnthropicDiscoveryProtocol implements DiscoveryProtocol {
 
     final response = await http.get(url, headers: headers);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch Anthropic models: ${response.statusCode} - ${response.body}');
-    }
-
-    final data = jsonDecode(response.body);
-    final List<dynamic> modelsJson = (data is Map ? data['data'] : null) ?? [];
+    final data = decodeJsonBody(response, apiName: 'Anthropic models');
+    final rawModels = data['data'];
+    final List<dynamic> modelsJson = rawModels is List ? rawModels : const [];
 
     return modelsJson.whereType<Map>().map((m) {
       final id = m['id']?.toString() ?? '';

@@ -50,7 +50,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     keyCtrl = TextEditingController(text: channel?.apiKey ?? '');
     tagCtrl = TextEditingController(text: channel?.tag ?? '');
 
-    type = channel?.type ?? 'google-genai-rest';
+    type = channel?.type ?? Vendors.googleRest;
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
   }

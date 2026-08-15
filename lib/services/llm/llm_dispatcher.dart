@@ -206,7 +206,7 @@ class LLMDispatcher {
           return protocol.submit(target, history, options: options, logger: logger);
         }
 
-        final isSimulation = options?['simulation'] == true || config.modelId.startsWith('mock-');
+        final isSimulation = options?['simulation'] == true || target.model.isMockModel;
         if (isSimulation) {
           logger?.call('Simulating long-running operation for OpenAI-style model: ${config.modelId}', level: 'INFO');
           return 'openai_lro_sim_${DateTime.now().millisecondsSinceEpoch}';
@@ -227,7 +227,39 @@ class LLMDispatcher {
     final target = resolveTarget(config);
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
-        return _midjourney.fetchTaskStatus(target, operationName);
+        // Translated into the same Veo-shaped envelope every other family's
+        // poll returns — the only caller (the videoGenerate executor) speaks
+        // that envelope, and this used to be the one branch handing back the
+        // raw /mj/task JSON instead. Midjourney models classify as an image
+        // family, so the branch is defensive rather than routine; all the
+        // more reason for it to honor the contract when it does fire.
+        final mjTask = await _midjourney.fetchTaskStatus(target, operationName);
+        final mjStatus = mjTask['status']?.toString() ?? '';
+        if (mjStatus == 'FAILURE') {
+          throw LLMApiException(
+              'Midjourney task $operationName failed: ${mjTask['failReason'] ?? mjTask}');
+        }
+        if (mjStatus == 'SUCCESS') {
+          return {
+            'name': operationName,
+            'done': true,
+            'response': {
+              'generateVideoResponse': {
+                'generatedSamples': [
+                  {
+                    'video': {'uri': mjTask['imageUrl']?.toString() ?? ''},
+                  }
+                ],
+              },
+            },
+          };
+        }
+        return {
+          'name': operationName,
+          'done': false,
+          'progress': mjTask['progress'] ?? 0,
+          'status': mjStatus,
+        };
 
       case ProtocolFamily.anthropic:
         throw UnsupportedError(

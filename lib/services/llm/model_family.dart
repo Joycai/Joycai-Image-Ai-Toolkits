@@ -58,7 +58,7 @@ class ModelFamilyClassifier {
     if (id.startsWith('mj_') ||
         id == 'mj' ||
         id.contains('midjourney') ||
-        id.contains('niji')) {
+        isNijiVariant(id)) {
       return ModelFamily.midjourney;
     }
 
@@ -113,6 +113,23 @@ class ModelFamilyClassifier {
   static bool _isOpenAIReasoning(String id) {
     return RegExp(r'(^|[^a-z])o[1-9](-|$)').hasMatch(id);
   }
+
+  /// True when this id is a Niji variant of Midjourney. A variant *within*
+  /// the midjourney family (it drives the proxy's `botType`), which is why it
+  /// is a named predicate here rather than another [ModelFamily] value. Lives
+  /// in this rule table so the string rule exists exactly once.
+  static bool isNijiVariant(String modelId) =>
+      modelId.toLowerCase().contains('niji');
+
+  /// Ids whose chat surface takes text only — image parts either 400 or,
+  /// worse, get silently dropped. DeepSeek's chat/completions endpoint does
+  /// not serve its multimodal models (as of 2026-08).
+  static bool isTextOnlyChat(String modelId) =>
+      modelId.toLowerCase().contains('deepseek');
+
+  /// Mock ids used by the simulated long-running-operation path
+  /// (`mock-*`). A Layer 3 fact so the dispatcher never sniffs a model id.
+  static bool isMockModel(String modelId) => modelId.startsWith('mock-');
 
   /// True for any Gemini/Google-served family. These need the OpenAI-compat
   /// Gemini extensions when routed through an OpenAI-style relay.

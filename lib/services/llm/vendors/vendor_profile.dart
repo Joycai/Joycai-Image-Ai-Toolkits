@@ -155,6 +155,28 @@ class VendorProfile {
     }
   }
 
+  /// Headers for downloading a vendor-hosted asset — the video/image URI a
+  /// generation job hands back, fetched with a plain GET from a CDN or relay
+  /// rather than an API surface (so [headers]' Content-Type would be wrong
+  /// and the full auth ritual unnecessary).
+  ///
+  /// Keyed off the auth scheme so the decision lives on this layer: the task
+  /// executor used to branch on the protocol family itself, and since each
+  /// side silently ignores the header it doesn't recognize, the next
+  /// non-bearer vendor would have sent the wrong header with no error
+  /// anywhere — just a 403 on download.
+  Map<String, String> downloadHeaders(String apiKey) {
+    if (apiKey.isEmpty) return const {};
+    switch (auth) {
+      case AuthScheme.googleApiKey:
+      case AuthScheme.googleApiKeyWithBearerFallback:
+        return {'x-goog-api-key': apiKey};
+      case AuthScheme.bearer:
+      case AuthScheme.anthropicApiKeyWithBearerFallback:
+        return {'Authorization': 'Bearer $apiKey'};
+    }
+  }
+
   /// Vendor-specific URL decoration. Google-keyed vendors append the
   /// documented `?key=` query parameter (preserving existing parameters such
   /// as `alt=sse`); every other scheme returns the URL untouched so the key

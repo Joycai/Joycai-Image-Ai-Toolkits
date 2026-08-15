@@ -186,9 +186,9 @@ else if (id.contains('gemini')) { _modelTag = 'multimodal'; }
 
 直接违反红线一，且 `ModelFamilyClassifier` 已有推断逻辑——这是会独立漂移的第二套规则。修复：调用 Layer 3 的既有推断（models 屏的对应逻辑），删除本地 contains 链。
 
-### V4 · channel wizard/edit dialog 成片裸 vendor id 字面量【建议修】
+### V4 · channel edit dialog 裸 vendor id 字面量【建议修】
 
-`channel_wizard_dialog.dart` 15 处、`channel_edit_dialog.dart:53` 直接写 `'newapi-openai'`/`'newapi-gemini'`/`'midjourney-proxy'`/`'google-genai-rest'` 字符串（红线四：vendor id 引用应使用 `Vendors.*` 常量）。拼写错误只能在运行时暴露（`Vendors.byId` 对未知 id 静默回退 `openAIRest`，错误会被吞掉）。`database_migrations.dart` 中的裸串属迁移代码需冻结，可豁免但建议在红线文档补一条豁免说明。
+**（2026-08 M2 核实后修订）** 初版报告称 `channel_wizard_dialog.dart` 有 15 处裸 vendor id——复核为误报：那些是 `_ProviderPreset.id`（向导自己的预设命名空间，拼写与部分 vendor id 雷同但语义无关），真正写入 `llm_channels.type` 的 `channelType` 字段已全部引用 `Vendors.*` 常量。真实违规仅 `channel_edit_dialog.dart:53` 的 `'google-genai-rest'` 一处（M2 已修）。`database_migrations.dart` 中的裸串属迁移代码冻结豁免——两条豁免均已写入红线文档。
 
 ### V5 · `task_executors.dart:459-463` 认证逻辑写在 Layer 2 之外【建议修】
 

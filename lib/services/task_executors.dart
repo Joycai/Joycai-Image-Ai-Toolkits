@@ -437,7 +437,7 @@ extension TaskExecutors on TaskQueueService {
     try {
       final db = DatabaseService();
       String? apiKey;
-      ProtocolFamily? vendorFamily;
+      VendorProfile? vendor;
       if (task.modelDbId != null) {
         final models = await db.getModels();
         final model = models.cast<LLMModel?>().firstWhere((m) => m?.id == task.modelDbId, orElse: () => null);
@@ -445,22 +445,17 @@ extension TaskExecutors on TaskQueueService {
           final channel = await db.getChannel(model.channelId!);
           if (channel != null) {
             apiKey = channel.apiKey;
-            vendorFamily = Vendors.byId(channel.type).family;
+            vendor = Vendors.byId(channel.type);
           }
         }
       }
 
       final request = await client.getUrl(Uri.parse(url));
-      if (apiKey != null) {
-        // Veo URIs sit on Google's CDN and want `x-goog-api-key`; OpenAI/Sora
-        // URIs sit on the relay and want `Authorization: Bearer`. The header
-        // each side doesn't recognise is silently ignored, so we key off the
-        // channel's vendor family rather than try to sniff the URL host.
-        if (vendorFamily == ProtocolFamily.gemini) {
-          request.headers.add('x-goog-api-key', apiKey);
-        } else {
-          request.headers.add('Authorization', 'Bearer $apiKey');
-        }
+      if (apiKey != null && vendor != null) {
+        // Which header the asset host wants (Google CDN: x-goog-api-key,
+        // relays: bearer) is Layer 2 knowledge — the vendor profile answers,
+        // this executor just applies it.
+        vendor.downloadHeaders(apiKey).forEach(request.headers.add);
       }
 
       final response = await request.close();

@@ -85,7 +85,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
         if (appState.enableApiDebug) {
           debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Edit)', {
-            'url': url.toString(),
+            'url': redactUrl(url),
             'fields': request.fields,
             'files': request.files.map((f) => f.filename).toList(),
           });
@@ -105,7 +105,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
 
         if (appState.enableApiDebug) {
           debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Image Generate)', {
-            'url': url.toString(),
+            'url': redactUrl(url),
             'headers': headers,
             'body': payload,
           });
@@ -119,19 +119,12 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200) {
-        logger?.call('Images request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw Exception('OpenAI Images API failed: ${response.statusCode} - ${response.body}');
-      }
-
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        // 200 does not mean success on a relay — an `{"error": …}` body used
-        // to parse as zero images and report the task as finished with
-        // nothing in it. Same check the chat surface makes.
-        throwIfEnvelopeError(data);
-      }
-      final rawItems = data is Map ? data['data'] : null;
+      // Status → JSON → shape → envelope, in that order (decodeJsonBody).
+      // 200 does not mean success on a relay — an `{"error": …}` body used
+      // to parse as zero images and report the task as finished with
+      // nothing in it.
+      final data = decodeJsonBody(response, apiName: 'OpenAI Images API');
+      final rawItems = data['data'];
       final List<dynamic> items = rawItems is List ? rawItems : const [];
       final List<Uint8List> images = [];
 
@@ -174,7 +167,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         generatedImages: images,
         // gpt-image-1 reports `input_tokens`/`output_tokens` here, not the
         // chat spelling — see LLMService._recordUsage, which reads both.
-        metadata: (data is Map ? data['usage'] : null) is Map
+        metadata: data['usage'] is Map
             ? (data['usage'] as Map).cast<String, dynamic>()
             : const {},
       );

@@ -88,7 +88,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
     File? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'xAI (Image ${isEdit ? 'Edit' : 'Generate'})', {
-        'url': url.toString(),
+        'url': redactUrl(url),
         'body': {
           ...payload,
           if (payload.containsKey('image')) 'image': '[base64 data]',
@@ -110,23 +110,23 @@ class XaiImagesProtocol implements ImageGenProtocol {
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
       }
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        logger?.call('xAI Images request failed with status: ${response.statusCode}', level: 'ERROR');
-        throw Exception('xAI Images API failed: ${response.statusCode} - ${response.body}');
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final List<dynamic> items = data['data'] ?? [];
+      // Status → JSON → shape → envelope, in that order (decodeJsonBody) —
+      // this surface previously checked none of the body spellings, so a
+      // relay's 200-with-error parsed as "no image data" and hid the cause.
+      final data = decodeJsonBody(response, apiName: 'xAI Images API');
+      final rawItems = data['data'];
+      final List<dynamic> items = rawItems is List ? rawItems : const [];
       final List<Uint8List> images = [];
 
       for (final item in items) {
-        final b64 = item['b64_json'] as String?;
-        if (b64 != null) {
+        if (item is! Map) continue;
+        final b64 = item['b64_json'];
+        if (b64 is String && b64.isNotEmpty) {
           images.add(base64Decode(b64));
           continue;
         }
-        final imgUrl = item['url'] as String?;
-        if (imgUrl != null) {
+        final imgUrl = item['url'];
+        if (imgUrl is String && imgUrl.isNotEmpty) {
           try {
             final imgResp = await client.get(Uri.parse(imgUrl));
             if (imgResp.statusCode == 200) images.add(imgResp.bodyBytes);
@@ -144,7 +144,9 @@ class XaiImagesProtocol implements ImageGenProtocol {
       return LLMResponse(
         text: '',
         generatedImages: images,
-        metadata: data['usage'] ?? {},
+        metadata: data['usage'] is Map
+            ? (data['usage'] as Map).cast<String, dynamic>()
+            : const {},
       );
     } finally {
       client.close();
