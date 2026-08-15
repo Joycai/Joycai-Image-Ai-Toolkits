@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:http/http.dart' as http;
 
 import '../llm_types.dart';
 import '../model_descriptor.dart';
@@ -138,16 +141,81 @@ void throwIfEnvelopeError(Map<String, dynamic> data) {
   final err = data['error'];
   if (err != null) {
     final msg = err is Map ? (err['message'] ?? err.toString()) : err.toString();
-    throw Exception('API error in response body: $msg');
+    throw LLMApiException('API error in response body: $msg',
+        isEnvelope: true);
   }
   final baseResp = data['base_resp'];
   if (baseResp is Map) {
     final code = baseResp['status_code'];
     if (code is num && code != 0) {
-      throw Exception(
-          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}');
+      throw LLMApiException(
+          'API error (base_resp $code): ${baseResp['status_msg'] ?? 'unknown'}',
+          isEnvelope: true);
     }
   }
+}
+
+/// Decodes a JSON API response in the one safe order: status first, then
+/// JSON, then shape, then in-body error envelopes. Returns the body as a map.
+///
+/// The order matters. The Gemini protocols used to `jsonDecode` before
+/// checking the status code, so a gateway's HTML 502 surfaced as
+/// `FormatException: Unexpected character` — the real status never appeared
+/// anywhere and the retry policy could not see the 5xx. Checking the status
+/// first keeps the code in the error; decoding second turns "the base URL
+/// points at something that is not this API" (nginx 404 pages, login pages,
+/// CDN errors) into words instead of a parser crash; the envelope check last
+/// catches relays that deliver failures inside a 200 (protocol.dart
+/// [throwIfEnvelopeError]).
+///
+/// On a non-2xx status the body is still probed for a JSON `error.message` so
+/// the thrown message leads with the provider's own words when there are any.
+Map<String, dynamic> decodeJsonBody(http.Response response,
+    {String apiName = 'API'}) {
+  final status = response.statusCode;
+  if (status < 200 || status >= 300) {
+    String detail = _bodyExcerpt(response.body);
+    final decoded = _tryJsonDecode(response.body);
+    if (decoded is Map) {
+      final err = decoded['error'];
+      if (err is Map && err['message'] != null) {
+        detail = '${err['message']}'
+            '${err['status'] != null ? ' (${err['status']})' : ''}';
+      }
+    }
+    throw LLMApiException('$apiName request failed: $status - $detail',
+        statusCode: status);
+  }
+
+  final decoded = _tryJsonDecode(response.body);
+  if (decoded == null) {
+    throw LLMApiException(
+        '$apiName returned a non-JSON body (HTML error page?) — the base URL '
+        'may point at something that is not this API. Body: '
+        '${_bodyExcerpt(response.body)}');
+  }
+  if (decoded is! Map) {
+    throw LLMApiException(
+        '$apiName returned an unexpected body shape '
+        '(${decoded.runtimeType}): ${_bodyExcerpt(response.body)}');
+  }
+
+  final data = decoded.cast<String, dynamic>();
+  throwIfEnvelopeError(data);
+  return data;
+}
+
+Object? _tryJsonDecode(String body) {
+  try {
+    return jsonDecode(body);
+  } on FormatException {
+    return null;
+  }
+}
+
+String _bodyExcerpt(String body) {
+  final s = body.trim();
+  return s.length > 500 ? '${s.substring(0, 500)}…' : s;
 }
 
 /// The payload of one SSE line, or null when the line carries none.
