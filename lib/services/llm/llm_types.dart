@@ -6,6 +6,31 @@ import 'package:http/io_client.dart';
 
 enum LLMRole { system, user, assistant, tool }
 
+/// The app's own reasoning-intensity vocabulary (playbook 03: never let one
+/// vendor's spelling into configuration). Absence — a null wherever this is
+/// carried — means *default*: no field is sent at all, and the endpoint does
+/// whatever it does on its own.
+///
+/// Each protocol family owns its translation: ① spells these as
+/// `reasoning_effort` values; ④'s budget dialect has no intensity knob, so
+/// any level simply means "thinking on" and [off] means the field is not
+/// sent. [off] is sent to ① as `"none"` — an endpoint that predates that
+/// value rejects it audibly (a 400 naming the field), which beats silently
+/// thinking anyway.
+enum ReasoningEffort {
+  off,
+  low,
+  medium,
+  high,
+  max;
+
+  /// Parses a stored name; null/unknown → null (default). Unknown values
+  /// come from newer builds via backup restore — degrading to default beats
+  /// failing the whole model row.
+  static ReasoningEffort? tryParse(String? name) =>
+      name == null ? null : ReasoningEffort.values.asNameMap()[name];
+}
+
 /// A failed API call, structured enough that retry policy can be decided
 /// without parsing exception prose.
 ///
@@ -279,6 +304,20 @@ class LLMModelConfig {
   /// (`ThinkingDialect`); whether to ask for it at all is this flag's.
   final bool enableThinking;
 
+  /// Per-model reasoning intensity, or null for default (nothing sent).
+  /// Prefer [effectiveReasoningEffort], which folds in the legacy flag.
+  final ReasoningEffort? reasoningEffort;
+
+  /// The reasoning level requests should honor.
+  ///
+  /// Falls back to the legacy [enableThinking] flag when no explicit level is
+  /// stored: rows written before v35 (and backups restored from older
+  /// builds) carry only the boolean, and a ④ model that had thinking on must
+  /// keep it on — reading the flag here instead of migrating data keeps that
+  /// true for every past and future restore path.
+  ReasoningEffort? get effectiveReasoningEffort =>
+      reasoningEffort ?? (enableThinking ? ReasoningEffort.medium : null);
+
   /// Per-model opt-in: let the host run its own web searches during a turn.
   final bool enableWebSearch;
 
@@ -305,6 +344,7 @@ class LLMModelConfig {
     required String endpoint,
     required this.apiKey,
     this.enableThinking = false,
+    this.reasoningEffort,
     this.enableWebSearch = false,
     this.inputFee = 0.0,
     this.cacheInputFee,

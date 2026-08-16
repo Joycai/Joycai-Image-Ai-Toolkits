@@ -985,6 +985,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get forceViewAllImagesDesc => '代理必须查看所有参考图后才能提交结果，推荐为本地小模型开启。';
 
   @override
+  String get reasoningEffort => '推理强度';
+
+  @override
+  String get reasoningEffortDesc =>
+      '模型作答前的思考强度。默认＝不发送任何字段（由端点自行决定）；其他档位会消耗输出 token。适用于 OpenAI 与 Anthropic 格式渠道。';
+
+  @override
+  String get reasoningEffortDefault => '默认（不发送）';
+
+  @override
+  String get reasoningEffortOff => '关闭';
+
+  @override
+  String get reasoningEffortLow => '低';
+
+  @override
+  String get reasoningEffortMedium => '中';
+
+  @override
+  String get reasoningEffortHigh => '高';
+
+  @override
+  String get reasoningEffortMax => '最高';
+
+  @override
   String get enableThinking => '深度思考';
 
   @override
@@ -3588,6 +3613,31 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get forceViewAllImagesDesc => '代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。';
+
+  @override
+  String get reasoningEffort => '推理強度';
+
+  @override
+  String get reasoningEffortDesc =>
+      '模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。';
+
+  @override
+  String get reasoningEffortDefault => '預設（不傳送）';
+
+  @override
+  String get reasoningEffortOff => '關閉';
+
+  @override
+  String get reasoningEffortLow => '低';
+
+  @override
+  String get reasoningEffortMedium => '中';
+
+  @override
+  String get reasoningEffortHigh => '高';
+
+  @override
+  String get reasoningEffortMax => '最高';
 
   @override
   String get enableThinking => '深度思考';

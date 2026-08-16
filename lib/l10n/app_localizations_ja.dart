@@ -991,6 +991,31 @@ class AppLocalizationsJa extends AppLocalizations {
       'エージェントは結果を提出する前にすべての参考画像を確認します。小規模なローカルモデルに推奨。';
 
   @override
+  String get reasoningEffort => '推論強度';
+
+  @override
+  String get reasoningEffortDesc =>
+      '回答前にモデルがどれだけ考えるか。デフォルト＝何も送信しない（エンドポイント任せ）。他のレベルは出力トークンを消費します。OpenAI・Anthropic 形式のチャネルに適用。';
+
+  @override
+  String get reasoningEffortDefault => 'デフォルト（送信しない）';
+
+  @override
+  String get reasoningEffortOff => 'オフ';
+
+  @override
+  String get reasoningEffortLow => '低';
+
+  @override
+  String get reasoningEffortMedium => '中';
+
+  @override
+  String get reasoningEffortHigh => '高';
+
+  @override
+  String get reasoningEffortMax => '最高';
+
+  @override
   String get enableThinking => '拡張思考';
 
   @override

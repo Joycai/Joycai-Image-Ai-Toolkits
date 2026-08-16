@@ -1949,6 +1949,54 @@ abstract class AppLocalizations {
   /// **'Agents must view every reference image before delivering a result. Recommended for small local models.'**
   String get forceViewAllImagesDesc;
 
+  /// No description provided for @reasoningEffort.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning Effort'**
+  String get reasoningEffort;
+
+  /// No description provided for @reasoningEffortDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard the model should think before answering. Default sends nothing (the endpoint decides); other levels cost output tokens. OpenAI- and Anthropic-format channels.'**
+  String get reasoningEffortDesc;
+
+  /// No description provided for @reasoningEffortDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (send nothing)'**
+  String get reasoningEffortDefault;
+
+  /// No description provided for @reasoningEffortOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get reasoningEffortOff;
+
+  /// No description provided for @reasoningEffortLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get reasoningEffortLow;
+
+  /// No description provided for @reasoningEffortMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get reasoningEffortMedium;
+
+  /// No description provided for @reasoningEffortHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get reasoningEffortHigh;
+
+  /// No description provided for @reasoningEffortMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get reasoningEffortMax;
+
   /// No description provided for @enableThinking.
   ///
   /// In en, this message translates to:

@@ -73,6 +73,7 @@ class LLMConfigResolver {
       endpoint: endpoint,
       apiKey: apiKey,
       enableThinking: modelData.enableThinking,
+      reasoningEffort: ReasoningEffort.tryParse(modelData.reasoningEffort),
       enableWebSearch: modelData.enableWebSearch,
       inputFee: inputFee,
       cacheInputFee: cacheInputFee,

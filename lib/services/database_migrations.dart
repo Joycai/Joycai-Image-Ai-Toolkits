@@ -59,6 +59,7 @@ class DatabaseMigration {
     if (oldVersion < 32) await _createV32Tables(db);
     if (oldVersion < 33) await _createV33Tables(db);
     if (oldVersion < 34) await _createV34Tables(db);
+    if (oldVersion < 35) await _createV35Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -93,7 +94,17 @@ class DatabaseMigration {
     await _createV32Tables(db);
     await _createV33Tables(db);
     await _createV34Tables(db);
+    await _createV35Columns(db);
     // Presets are synchronized in DatabaseService
+  }
+
+  /// Per-model reasoning intensity (`ReasoningEffort` name, NULL = default).
+  /// Deliberately no data backfill from `enable_thinking`: the fallback lives
+  /// in `LLMModelConfig.effectiveReasoningEffort`, so rows from any era —
+  /// including backups restored from pre-v35 builds — keep their thinking
+  /// behavior without a migration having to have seen them.
+  static Future<void> _createV35Columns(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'reasoning_effort', 'TEXT');
   }
 
   /// Knowledge sub-agent research notes, scoped to the assistant session that

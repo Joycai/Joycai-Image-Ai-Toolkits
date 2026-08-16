@@ -326,4 +326,62 @@ void main() {
       expect(ModelDescriptor.of('gemini-2.5-flash').acceptsImageInput, isTrue);
     });
   });
+
+  group('reasoning effort (① wire)', () {
+    final protocol = OpenAIChatProtocol();
+
+    LLMTarget effortTarget({ReasoningEffort? effort, bool legacy = false}) {
+      final config = LLMModelConfig(
+        modelId: 'o3-mini',
+        channelType: Vendors.openAIRest,
+        endpoint: 'https://api.example.com/v1',
+        apiKey: 'k',
+        enableThinking: legacy,
+        reasoningEffort: effort,
+      );
+      return LLMTarget(
+        config: config,
+        vendor: Vendors.byId(config.channelType),
+        model: ModelDescriptor.of(config.modelId),
+      );
+    }
+
+    Map<String, dynamic> payloadFor(LLMTarget t) => protocol
+        .buildChatPayloadForTest(
+            t, [LLMMessage(role: LLMRole.user, content: 'hi')],
+            isStreaming: false);
+
+    test('default sends no field at all', () {
+      // Minimal common denominator: every proactively sent field is one some
+      // relay can 400 on.
+      expect(payloadFor(effortTarget()), isNot(contains('reasoning_effort')));
+    });
+
+    test('levels translate to the ① spelling, off included', () {
+      expect(payloadFor(effortTarget(effort: ReasoningEffort.off))['reasoning_effort'], 'none');
+      expect(payloadFor(effortTarget(effort: ReasoningEffort.low))['reasoning_effort'], 'low');
+      expect(payloadFor(effortTarget(effort: ReasoningEffort.max))['reasoning_effort'], 'max');
+    });
+
+    test('the legacy thinking flag reads as medium', () {
+      // Pre-v35 rows (and backups from older builds) carry only the boolean.
+      expect(payloadFor(effortTarget(legacy: true))['reasoning_effort'], 'medium');
+    });
+
+    test('an explicit level beats the legacy flag', () {
+      expect(
+          payloadFor(effortTarget(effort: ReasoningEffort.off, legacy: true))[
+              'reasoning_effort'],
+          'none');
+    });
+  });
+
+  group('ReasoningEffort.tryParse', () {
+    test('round-trips names, degrades unknowns to default', () {
+      expect(ReasoningEffort.tryParse('high'), ReasoningEffort.high);
+      expect(ReasoningEffort.tryParse(null), isNull);
+      // A name from a newer build must not fail the model row.
+      expect(ReasoningEffort.tryParse('ultra'), isNull);
+    });
+  });
 }
