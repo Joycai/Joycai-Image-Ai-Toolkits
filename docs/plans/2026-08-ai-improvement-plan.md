@@ -236,12 +236,30 @@ static Future<bool> knowledgeDelegateAvailable(sessionModelId) …
 - **transcript**：新 entry kind `subagent`（折叠卡：task 摘要 → 运行中 spinner → 完成后摘要 + 笔记 chip）；子循环的 onLog 以 `[KB 子代理]` 前缀并入任务日志。恰好落在审查 §5.7 可观测性改进的同一批 UI 工作里，建议同期做停止按钮。
 - **失败呈现**：子代理 LLM 报错 → error 结果回主模型（含「可自行用 read_knowledge_file 继续」的指引，playbook 8.9 错误写成下一步动作）；不中断主 turn。
 
-### 3.10 展望：任务拆分（M3.3，本期只留接口）
+### 3.10 M3.3：`draft` kind（2026-08 定稿）
 
-`kind` 枚举的扩展方向（每个都是「加数据行」）：
-- `draft`：批处理场景按参考图逐张起草 prewrite prompt（主模型只做终审合成）——最对症的第二个 kind，因为批量草稿正是「上下文灾难型」工作。
-- `longread`：通读单个超长 KB 文件出结构化提要。
-扩展前提：M3.1/3.2 的 SubAgentRunner 与笔记存储已稳定。**不做**并行编排——同轮多个 delegate 顺序执行（playbook 9.63）。
+批量参考图场景的「上下文灾难」是图片本身：每张 `view_image` 都把 base64 附件塞进主
+历史（估价 `_attachmentChars=2000`/张，真实成本更高）。`draft` kind 把「看一张图、
+按 brief 起草」整个搬进子代理的独立上下文——**每次委托恰好一张图**，主模型只收
+文字草稿并负责终审合成，主上下文可以全程不装图。
+
+设计要点：
+
+- **工具形状**：`delegate` 的 `kind` 枚举扩为按可用性动态组装（schema 在下发时
+  构造，playbook 8.11 的拷贝注入同理）：`paths` 字段仅 knowledge 可用时出现，
+  `image_id`（1-based，与 `view_image` 同一编号空间）仅 draft 可用时出现。
+- **可用性（每 kind 独立前置条件，playbook 9.44）**：`knowledge` = 开关 + 知识
+  模式；`draft` = 开关 + 会话有参考图 + **生效子代理模型接受图片输入**（Layer 3
+  `acceptsImageInput`；绑定模型由 executor 解析时判定，跟随会话则同会话模型）。
+  任一 kind 可用即挂 `delegate` + `read_note`。
+- **子代理运行形状**：无工具、`maxTurns: 1` 的单发——system（draft 专用 prompt：
+  先描述图中要素，再按 brief 给草稿片段，不得虚构图外内容）+ user（brief + 单图
+  附件，`viewOnly` 引用类型走既有压缩通道）。产出走与 knowledge 相同的
+  笔记 + ≤800 digest 收尾（`subagent:draft` usage 标签）。
+- **不改的东西**：`view_image` 仍在主模型工具集（主模型想亲自看图仍然可以）；
+  `forceViewAllImages` 铁轨不认草稿（该模式的语义就是主模型亲看，与委托互斥由
+  用户选择）；同轮多个 delegate 顺序执行（playbook 9.63）。
+- **展望（未立项）**：`longread` kind——通读单个超长 KB 文件出结构化提要。
 
 ### 3.11 分期与退出标准
 

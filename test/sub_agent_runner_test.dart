@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -203,35 +204,37 @@ void main() {
   group('toolsetFor routing', () {
     Iterable<String> names(List<LLMTool> tools) => tools.map((t) => t.name);
 
-    test('delegate appears only in knowledge modes with the opt-in', () {
+    test('delegate and read_note appear iff any kind is available', () {
       expect(
         names(PromptOptimizerAgent.toolsetFor(
           acceptsImageInput: true,
           knowledgeMode: true,
           editMode: false,
-          delegateAvailable: true,
+          delegateKinds: const {'knowledge'},
         )),
-        contains('delegate'),
+        containsAll(['delegate', 'read_note']),
       );
-      // Enabled but not a knowledge session: nothing to research.
-      expect(
-        names(PromptOptimizerAgent.toolsetFor(
-          acceptsImageInput: true,
-          knowledgeMode: false,
-          editMode: false,
-          delegateAvailable: true,
-        )),
-        isNot(contains('delegate')),
-      );
-      // Knowledge session but the setting is off: the tool does not exist.
-      expect(
-        names(PromptOptimizerAgent.toolsetFor(
-          acceptsImageInput: true,
-          knowledgeMode: true,
-          editMode: false,
-        )),
-        isNot(contains('delegate')),
-      );
+      // No available kind: neither tool exists.
+      final none = names(PromptOptimizerAgent.toolsetFor(
+        acceptsImageInput: true,
+        knowledgeMode: true,
+        editMode: false,
+      ));
+      expect(none, isNot(contains('delegate')));
+      expect(none, isNot(contains('read_note')));
+    });
+
+    test('draft kind works outside knowledge sessions', () {
+      // A system-prompt session with reference images and an image-capable
+      // sub-agent model still gets drafting delegation.
+      final tools = names(PromptOptimizerAgent.toolsetFor(
+        acceptsImageInput: true,
+        knowledgeMode: false,
+        editMode: false,
+        delegateKinds: const {'draft'},
+      ));
+      expect(tools, contains('delegate'));
+      expect(tools, isNot(contains('read_knowledge_file')));
     });
 
     test('delegate is additive — the direct read tool stays', () {
@@ -239,7 +242,7 @@ void main() {
         acceptsImageInput: true,
         knowledgeMode: true,
         editMode: false,
-        delegateAvailable: true,
+        delegateKinds: const {'knowledge'},
       ));
       expect(tools, contains('read_knowledge_file'));
       expect(tools, contains('delegate'));
@@ -252,7 +255,7 @@ void main() {
         acceptsImageInput: true,
         knowledgeMode: true,
         editMode: false,
-        delegateAvailable: true,
+        delegateKinds: const {'knowledge'},
         contextExhausted: true,
       ));
       expect(tools, isNot(contains('read_knowledge_file')));
@@ -264,12 +267,63 @@ void main() {
         acceptsImageInput: false,
         knowledgeMode: true,
         editMode: true,
-        delegateAvailable: true,
+        delegateKinds: const {'knowledge'},
       ));
       expect(tools, contains('write_knowledge_file'));
       expect(tools, contains('delegate'));
       expect(tools, isNot(contains('view_image')));
       expect(tools, isNot(contains('list_reference_images')));
+    });
+  });
+
+  group('delegateToolFor schema shaping', () {
+    Map<String, dynamic> props(LLMTool t) =>
+        (t.parameters['properties'] as Map).cast<String, dynamic>();
+
+    test('the kind enum lists exactly the available kinds', () {
+      final both =
+          PromptOptimizerAgent.delegateToolFor(const {'knowledge', 'draft'});
+      expect((props(both)['kind'] as Map)['enum'], ['draft', 'knowledge']);
+
+      final only = PromptOptimizerAgent.delegateToolFor(const {'knowledge'});
+      expect((props(only)['kind'] as Map)['enum'], ['knowledge']);
+    });
+
+    test("each kind's private field appears only with its kind", () {
+      // A field describing an unavailable capability reads as an
+      // instruction to try it.
+      final knowledge =
+          PromptOptimizerAgent.delegateToolFor(const {'knowledge'});
+      expect(props(knowledge), contains('paths'));
+      expect(props(knowledge), isNot(contains('image_id')));
+
+      final draft = PromptOptimizerAgent.delegateToolFor(const {'draft'});
+      expect(props(draft), contains('image_id'));
+      expect(props(draft), isNot(contains('paths')));
+      expect(draft.description, contains('image_id'));
+      expect(draft.description, isNot(contains('read_knowledge_file')));
+    });
+  });
+
+  group('runner attachments', () {
+    test('attachments ride on the task message only', () async {
+      List<LLMMessage>? seen;
+      await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        attachments: [
+          LLMAttachment.fromBytes(Uint8List.fromList([1, 2, 3]), 'image/png'),
+        ],
+        tools: const [],
+        executeTool: (_, _) => {},
+        request: (messages, tools) async {
+          seen = List.of(messages);
+          return LLMResponse(text: 'done');
+        },
+      );
+      expect(seen![0].attachments, isEmpty);
+      expect(seen![1].attachments, hasLength(1));
     });
   });
 }

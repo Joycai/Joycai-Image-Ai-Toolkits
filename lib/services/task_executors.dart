@@ -184,6 +184,10 @@ extension TaskExecutors on TaskQueueService {
       // the sub-agent on a model the user deliberately routed away from.
       dynamic kbSubAgentModel;
       int? kbSubAgentWindow;
+      // Whether the *effective* sub-agent model can see images decides the
+      // draft kind's availability — following the session means inheriting
+      // the session model's answer.
+      var kbSubAgentAcceptsImages = acceptsImageInput;
       if (kbSubAgentEnabled) {
         final boundRaw = await DatabaseService()
             .getSetting(PromptOptimizerAgent.kbSubAgentModelSettingKey);
@@ -201,6 +205,8 @@ extension TaskExecutors on TaskQueueService {
           } else {
             kbSubAgentModel = bound.id;
             kbSubAgentWindow = bound.contextWindow;
+            kbSubAgentAcceptsImages =
+                ModelDescriptor.of(bound.modelId).acceptsImageInput;
           }
         }
       }
@@ -238,6 +244,7 @@ extension TaskExecutors on TaskQueueService {
         kbSubAgentEnabled: kbSubAgentEnabled,
         kbSubAgentModelIdentifier: kbSubAgentModel,
         kbSubAgentContextWindow: kbSubAgentWindow,
+        kbSubAgentAcceptsImages: kbSubAgentAcceptsImages,
         onLog: (msg) {
           task.addLog(msg);
           refreshQueue();
