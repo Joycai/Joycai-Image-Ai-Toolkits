@@ -79,6 +79,11 @@ class SubAgentRunner {
     required dynamic modelIdentifier,
     required String systemPrompt,
     required String task,
+
+    /// Attached to the task message — e.g. the single reference image of a
+    /// `draft` run. The sub-agent's context is exactly these two messages,
+    /// so this is the only way anything binary reaches it.
+    List<LLMAttachment> attachments = const [],
     required List<LLMTool> tools,
     required SubAgentToolFn executeTool,
     int maxTurns = _defaultMaxTurns,
@@ -106,7 +111,7 @@ class SubAgentRunner {
 
     final messages = <LLMMessage>[
       LLMMessage(role: LLMRole.system, content: systemPrompt),
-      LLMMessage(role: LLMRole.user, content: task),
+      LLMMessage(role: LLMRole.user, content: task, attachments: attachments),
     ];
 
     var lastText = '';
