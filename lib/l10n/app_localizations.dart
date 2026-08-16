@@ -1121,6 +1121,54 @@ abstract class AppLocalizations {
   /// **'Channel Type'**
   String get channelType;
 
+  /// No description provided for @probeChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get probeChannel;
+
+  /// No description provided for @probeOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected and authenticated'**
+  String get probeOk;
+
+  /// No description provided for @probeModels.
+  ///
+  /// In en, this message translates to:
+  /// **'models found'**
+  String get probeModels;
+
+  /// No description provided for @probeConnectedNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected — this endpoint has no model list, which is normal for some relays.'**
+  String get probeConnectedNoModels;
+
+  /// No description provided for @probeAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The endpoint answered, but rejected the API key.'**
+  String get probeAuthFailed;
+
+  /// No description provided for @probeNotAnApi.
+  ///
+  /// In en, this message translates to:
+  /// **'The URL answered with something that is not this API (an HTML page?) — check the base URL.'**
+  String get probeNotAnApi;
+
+  /// No description provided for @probeUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer from the endpoint'**
+  String get probeUnreachable;
+
+  /// No description provided for @probeNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection test is not available for this channel type.'**
+  String get probeNotSupported;
+
   /// No description provided for @enableDiscovery.
   ///
   /// In en, this message translates to:

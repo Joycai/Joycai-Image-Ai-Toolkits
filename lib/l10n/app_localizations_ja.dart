@@ -551,6 +551,32 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelType => 'チャンネルタイプ';
 
   @override
+  String get probeChannel => '接続テスト';
+
+  @override
+  String get probeOk => '接続・認証に成功しました';
+
+  @override
+  String get probeModels => '個のモデル';
+
+  @override
+  String get probeConnectedNoModels =>
+      '接続できました。このエンドポイントにはモデル一覧がありませんが、一部の中継では正常です。';
+
+  @override
+  String get probeAuthFailed => 'エンドポイントは応答しましたが、API キーを拒否しました。';
+
+  @override
+  String get probeNotAnApi =>
+      'この URL は本 API 以外のもの（HTML ページなど）を返しました。ベース URL を確認してください。';
+
+  @override
+  String get probeUnreachable => 'エンドポイントから応答がありません';
+
+  @override
+  String get probeNotSupported => 'このチャネル種別では接続テストを利用できません。';
+
+  @override
   String get enableDiscovery => 'モデル検出を有効にする';
 
   @override
