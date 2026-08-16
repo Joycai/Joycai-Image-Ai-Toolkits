@@ -194,10 +194,14 @@ int anthropicMaxTokens(Map<String, dynamic>? options) {
 /// carved out of the output cap and must leave room for the answer itself.
 Map<String, dynamic>? anthropicThinkingRequest(
   ThinkingDialect dialect, {
-  required bool enabled,
+  required ReasoningEffort? effort,
   required int maxTokens,
 }) {
-  if (!enabled) return null;
+  // ④'s budget dialect has no intensity knob: any level means "thinking
+  // on", off/default mean the field is not sent. The level vocabulary still
+  // matters here because it is the app's single reasoning control — ① turns
+  // the same value into `reasoning_effort`.
+  if (effort == null || effort == ReasoningEffort.off) return null;
   switch (dialect) {
     case ThinkingDialect.none:
       return null;
@@ -241,7 +245,7 @@ Map<String, dynamic> prepareAnthropicPayload(
     'stream': isStreaming,
     'thinking': ?anthropicThinkingRequest(
       target.vendor.thinking,
-      enabled: target.config.enableThinking,
+      effort: target.config.effectiveReasoningEffort,
       maxTokens: maxTokens,
     ),
   };

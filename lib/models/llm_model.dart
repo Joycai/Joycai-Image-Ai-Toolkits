@@ -29,6 +29,11 @@ class LLMModel {
   /// [ThinkingDialect]), not this flag's.
   final bool enableThinking;
 
+  /// Stored `ReasoningEffort` name, or null for default. Raw string here —
+  /// the LLM layer parses it; keeping the model row dumb means an unknown
+  /// name from a newer build survives a round-trip instead of being dropped.
+  final String? reasoningEffort;
+
   /// Let the host run web searches on its own during a turn (④ only, off by
   /// default). Costs tokens and reaches the network on the user's behalf, so
   /// it never turns itself on.
@@ -53,6 +58,7 @@ class LLMModel {
     this.contextWindow,
     this.forceViewAllImages = false,
     this.enableThinking = false,
+    this.reasoningEffort,
     this.enableWebSearch = false,
     this.estMeanMs,
     this.estSdMs,
@@ -74,6 +80,7 @@ class LLMModel {
       contextWindow: map['context_window'] as int?,
       forceViewAllImages: (map['force_view_all_images'] ?? 0) == 1,
       enableThinking: (map['enable_thinking'] ?? 0) == 1,
+      reasoningEffort: map['reasoning_effort'] as String?,
       enableWebSearch: (map['enable_web_search'] ?? 0) == 1,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
@@ -95,6 +102,7 @@ class LLMModel {
       'context_window': contextWindow,
       'force_view_all_images': forceViewAllImages ? 1 : 0,
       'enable_thinking': enableThinking ? 1 : 0,
+      'reasoning_effort': reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,

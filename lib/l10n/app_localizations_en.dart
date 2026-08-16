@@ -1014,6 +1014,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Agents must view every reference image before delivering a result. Recommended for small local models.';
 
   @override
+  String get reasoningEffort => 'Reasoning Effort';
+
+  @override
+  String get reasoningEffortDesc =>
+      'How hard the model should think before answering. Default sends nothing (the endpoint decides); other levels cost output tokens. OpenAI- and Anthropic-format channels.';
+
+  @override
+  String get reasoningEffortDefault => 'Default (send nothing)';
+
+  @override
+  String get reasoningEffortOff => 'Off';
+
+  @override
+  String get reasoningEffortLow => 'Low';
+
+  @override
+  String get reasoningEffortMedium => 'Medium';
+
+  @override
+  String get reasoningEffortHigh => 'High';
+
+  @override
+  String get reasoningEffortMax => 'Max';
+
+  @override
   String get enableThinking => 'Extended thinking';
 
   @override

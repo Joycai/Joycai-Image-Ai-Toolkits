@@ -40,7 +40,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late bool supportsStream;
   late bool supportsStandard;
   late bool forceViewAllImages;
-  late bool enableThinking;
+  String? reasoningEffort;
   late bool enableWebSearch;
 
   /// Context-window slider presets (tokens): 4K … 1M.
@@ -103,7 +103,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     supportsStream = model?.supportsStream ?? true;
     supportsStandard = model?.supportsStandard ?? true;
     forceViewAllImages = model?.forceViewAllImages ?? false;
-    enableThinking = model?.enableThinking ?? false;
+    // Legacy rows carry only the boolean; show its effort equivalent so what
+    // the dropdown displays is what the request layer will actually do.
+    reasoningEffort = model?.reasoningEffort ??
+        ((model?.enableThinking ?? false) ? 'medium' : null);
     enableWebSearch = model?.enableWebSearch ?? false;
 
     // Context window: null = not set, 0 = unlimited, >0 = token limit. A new
@@ -402,19 +405,36 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           secondary: const Icon(Icons.visibility_outlined),
           contentPadding: EdgeInsets.zero,
         ),
-        // Shown only on Anthropic-format channels, where these two exist at
-        // all. Offering them everywhere would put a switch in front of the
-        // user whose only effect on ① or ③ is nothing.
-        if (_isAnthropicChannel(appState)) ...[
-          SwitchListTile(
-            title: Text(l10n.enableThinking, style: textTheme.bodyMedium),
-            subtitle: Text(l10n.enableThinkingDesc,
-                style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-            value: enableThinking,
-            onChanged: (v) => setState(() => enableThinking = v),
-            secondary: const Icon(Icons.psychology_outlined),
-            contentPadding: EdgeInsets.zero,
+        // Reasoning intensity exists on the ① and ④ families (wire spellings
+        // differ; the vocabulary is the app's own). ③/midjourney channels
+        // don't see the control — a knob whose only effect is nothing is
+        // worse than no knob.
+        if (_channelFamily(appState) == ProtocolFamily.openai ||
+            _channelFamily(appState) == ProtocolFamily.anthropic)
+          DropdownButtonFormField<String>(
+            // '' stands in for null: a nullable-valued form field cannot
+            // distinguish "user picked default" from "no selection".
+            initialValue: reasoningEffort ?? '',
+            isExpanded: true,
+            items: [
+              DropdownMenuItem(value: '', child: Text(l10n.reasoningEffortDefault)),
+              DropdownMenuItem(value: 'off', child: Text(l10n.reasoningEffortOff)),
+              DropdownMenuItem(value: 'low', child: Text(l10n.reasoningEffortLow)),
+              DropdownMenuItem(value: 'medium', child: Text(l10n.reasoningEffortMedium)),
+              DropdownMenuItem(value: 'high', child: Text(l10n.reasoningEffortHigh)),
+              DropdownMenuItem(value: 'max', child: Text(l10n.reasoningEffortMax)),
+            ],
+            onChanged: (v) =>
+                setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
+            decoration: InputDecoration(
+              labelText: l10n.reasoningEffort,
+              helperText: l10n.reasoningEffortDesc,
+              helperMaxLines: 3,
+              prefixIcon: const Icon(Icons.psychology_outlined),
+            ),
           ),
+        // Host-run web search only exists on ④.
+        if (_isAnthropicChannel(appState)) ...[
           SwitchListTile(
             title: Text(l10n.enableWebSearch, style: textTheme.bodyMedium),
             subtitle: Text(l10n.enableWebSearchDesc,
@@ -450,15 +470,19 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   }
 
 
-  /// Whether the selected channel speaks Anthropic Messages — the only
-  /// family with a thinking switch or a host-run web search.
-  bool _isAnthropicChannel(AppState appState) {
+  /// The selected channel's protocol family, or null when no channel is
+  /// picked. Read-only Layer 2 consumption, like app_state's video check.
+  ProtocolFamily? _channelFamily(AppState appState) {
     final channel = appState.allChannels
         .cast<LLMChannel?>()
         .firstWhere((c) => c?.id == channelId, orElse: () => null);
-    if (channel == null) return false;
-    return Vendors.byId(channel.type).family == ProtocolFamily.anthropic;
+    return channel == null ? null : Vendors.byId(channel.type).family;
   }
+
+  /// Whether the selected channel speaks Anthropic Messages — the only
+  /// family with a host-run web search.
+  bool _isAnthropicChannel(AppState appState) =>
+      _channelFamily(appState) == ProtocolFamily.anthropic;
 
   Future<void> _save() async {
     final data = {
@@ -469,7 +493,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       'supports_stream': supportsStream ? 1 : 0,
       'supports_standard': supportsStandard ? 1 : 0,
       'force_view_all_images': forceViewAllImages ? 1 : 0,
-      'enable_thinking': enableThinking ? 1 : 0,
+      // The legacy flag is kept in sync so a backup restored into an older
+      // build (which only reads the boolean) preserves thinking behavior.
+      'enable_thinking':
+          (reasoningEffort != null && reasoningEffort != 'off') ? 1 : 0,
+      'reasoning_effort': reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
       'fee_group_id': feeGroupId,
       'channel_id': channelId,

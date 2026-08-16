@@ -807,6 +807,12 @@ class OpenAIChatProtocol implements ChatProtocol {
       "model": target.config.modelId,
       "messages": messages,
       "stream": isStreaming,
+      // Only when the user picked a level — default sends nothing (the
+      // minimal-common-denominator rule: every proactively sent field is one
+      // some relay can 400 on). `off` goes out as "none": an endpoint that
+      // predates the value rejects it audibly, which beats thinking anyway.
+      "reasoning_effort":
+          ?openaiReasoningEffortWire(target.config.effectiveReasoningEffort),
     };
 
     if (tools != null && tools.isNotEmpty) {
@@ -834,6 +840,19 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     return payload;
   }
+
+  /// ①'s spelling of the app's reasoning vocabulary, or null for "send
+  /// nothing". One translation table per family (playbook 03) — the app's
+  /// own words never reach the wire.
+  static String? openaiReasoningEffortWire(ReasoningEffort? effort) =>
+      switch (effort) {
+        null => null,
+        ReasoningEffort.off => 'none',
+        ReasoningEffort.low => 'low',
+        ReasoningEffort.medium => 'medium',
+        ReasoningEffort.high => 'high',
+        ReasoningEffort.max => 'max',
+      };
 
   /// Exposes the payload builder to tests — request-shape rules (reasoning
   /// echo-back, tool nesting, image parts) are pinned in
