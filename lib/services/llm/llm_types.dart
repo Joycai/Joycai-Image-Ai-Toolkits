@@ -27,7 +27,14 @@ class LLMApiException implements Exception {
   /// succeeded; the request itself was rejected.
   final bool isEnvelope;
 
-  LLMApiException(this.message, {this.statusCode, this.isEnvelope = false});
+  /// True when the response body was not JSON at all (an HTML error page, a
+  /// login page, a CDN interstitial) — the classic "the base URL points at
+  /// something that is not this API" signature. Structured so the channel
+  /// probe can classify it without matching message prose.
+  final bool isNonJsonBody;
+
+  LLMApiException(this.message,
+      {this.statusCode, this.isEnvelope = false, this.isNonJsonBody = false});
 
   bool get isTransient =>
       statusCode != null &&

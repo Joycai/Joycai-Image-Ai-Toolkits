@@ -550,6 +550,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get channelType => '渠道类型';
 
   @override
+  String get probeChannel => '测试连接';
+
+  @override
+  String get probeOk => '连接成功且鉴权通过';
+
+  @override
+  String get probeModels => '个模型';
+
+  @override
+  String get probeConnectedNoModels => '已连通——该端点没有模型列表，部分中转属正常情况。';
+
+  @override
+  String get probeAuthFailed => '端点有响应，但拒绝了 API 密钥。';
+
+  @override
+  String get probeNotAnApi => '该地址返回的不是本 API（可能是网页）——请检查 Base URL。';
+
+  @override
+  String get probeUnreachable => '端点无响应';
+
+  @override
+  String get probeNotSupported => '该渠道类型不支持连接测试。';
+
+  @override
   String get enableDiscovery => '启用模型检索';
 
   @override
@@ -3153,6 +3177,30 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get channelType => '通道類型';
+
+  @override
+  String get probeChannel => '測試連線';
+
+  @override
+  String get probeOk => '連線成功且鑑權通過';
+
+  @override
+  String get probeModels => '個模型';
+
+  @override
+  String get probeConnectedNoModels => '已連通——該端點沒有模型列表，部分中轉屬正常情況。';
+
+  @override
+  String get probeAuthFailed => '端點有回應，但拒絕了 API 金鑰。';
+
+  @override
+  String get probeNotAnApi => '該地址回傳的不是本 API（可能是網頁）——請檢查 Base URL。';
+
+  @override
+  String get probeUnreachable => '端點無回應';
+
+  @override
+  String get probeNotSupported => '該渠道類型不支援連線測試。';
 
   @override
   String get enableDiscovery => '啟用模型探索';

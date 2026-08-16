@@ -205,7 +205,8 @@ Map<String, dynamic> decodeJsonBody(http.Response response,
     throw LLMApiException(
         '$apiName returned a non-JSON body (HTML error page?) — the base URL '
         'may point at something that is not this API. Body: '
-        '${_bodyExcerpt(response.body)}');
+        '${_bodyExcerpt(response.body)}',
+        isNonJsonBody: true);
   }
   if (decoded is! Map) {
     throw LLMApiException(

@@ -4,6 +4,8 @@ import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
+import '../../services/llm/channel_probe_service.dart';
+import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
@@ -40,6 +42,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   late String type;
   late bool discovery;
   late int tagColor;
+
+  bool _probing = false;
+  String? _probeMessage;
+  bool? _probeOk;
 
   @override
   void initState() {
@@ -298,7 +304,82 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           contentPadding: EdgeInsets.zero,
           dense: true,
         ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            AppButton(
+              label: l10n.probeChannel,
+              icon: Icons.network_check,
+              variant: AppButtonVariant.text,
+              onPressed: _probing ? null : _runProbe,
+            ),
+            if (_probing) ...[
+              const SizedBox(width: 8),
+              const SizedBox(
+                  width: 14, height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+            ],
+          ],
+        ),
+        if (_probeMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2),
+            child: Text(
+              _probeMessage!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _probeOk == true
+                        ? colorScheme.primary
+                        : (_probeOk == false ? colorScheme.error : colorScheme.outline),
+                  ),
+            ),
+          ),
       ],
     );
   }
+
+  /// Probes with the *form's current values* — the whole point is testing
+  /// what the user is about to save, not what is already stored.
+  Future<void> _runProbe() async {
+    final l10n = widget.l10n;
+    setState(() {
+      _probing = true;
+      _probeMessage = null;
+      _probeOk = null;
+    });
+    final config = LLMModelConfig(
+      modelId: ChannelProbeService.probeModelId,
+      channelType: type,
+      endpoint: epCtrl.text.trim(),
+      apiKey: keyCtrl.text.trim(),
+    );
+    final result = await ChannelProbeService().probe(config);
+    if (!mounted) return;
+    setState(() {
+      _probing = false;
+      switch (result.status) {
+        case ChannelProbeStatus.ok:
+          _probeOk = true;
+          _probeMessage =
+              '${l10n.probeOk} (${result.modelCount} ${l10n.probeModels})';
+        case ChannelProbeStatus.connectedNoModels:
+          _probeOk = true;
+          _probeMessage = l10n.probeConnectedNoModels;
+        case ChannelProbeStatus.authFailed:
+          _probeOk = false;
+          _probeMessage = l10n.probeAuthFailed;
+        case ChannelProbeStatus.notAnApi:
+          _probeOk = false;
+          _probeMessage = l10n.probeNotAnApi;
+        case ChannelProbeStatus.unreachable:
+          _probeOk = false;
+          _probeMessage =
+              '${l10n.probeUnreachable}${result.detail == null ? '' : ' — ${_clip(result.detail!)}'}';
+        case ChannelProbeStatus.notSupported:
+          _probeOk = null;
+          _probeMessage = l10n.probeNotSupported;
+      }
+    });
+  }
+
+  static String _clip(String s) => s.length > 160 ? '${s.substring(0, 160)}…' : s;
 }

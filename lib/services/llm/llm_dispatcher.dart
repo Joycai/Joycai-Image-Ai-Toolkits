@@ -52,6 +52,13 @@ class LLMDispatcher {
         model: ModelDescriptor.of(config.modelId),
       );
 
+  /// Whether [discoverModels] actually reaches the network for this channel —
+  /// i.e. whether its outcome says anything about connectivity. Midjourney's
+  /// discovery returns a built-in catalog without a request, so a probe that
+  /// trusted it would report success against any URL.
+  bool discoveryUsesNetwork(LLMModelConfig config) =>
+      resolveTarget(config).vendor.family != ProtocolFamily.midjourney;
+
   /// How long a synchronous [generate] may run before the caller times it
   /// out.
   ///

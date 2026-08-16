@@ -560,6 +560,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelType => 'Channel Type';
 
   @override
+  String get probeChannel => 'Test connection';
+
+  @override
+  String get probeOk => 'Connected and authenticated';
+
+  @override
+  String get probeModels => 'models found';
+
+  @override
+  String get probeConnectedNoModels =>
+      'Connected — this endpoint has no model list, which is normal for some relays.';
+
+  @override
+  String get probeAuthFailed =>
+      'The endpoint answered, but rejected the API key.';
+
+  @override
+  String get probeNotAnApi =>
+      'The URL answered with something that is not this API (an HTML page?) — check the base URL.';
+
+  @override
+  String get probeUnreachable => 'No answer from the endpoint';
+
+  @override
+  String get probeNotSupported =>
+      'Connection test is not available for this channel type.';
+
+  @override
   String get enableDiscovery => 'Enable Model Discovery';
 
   @override
