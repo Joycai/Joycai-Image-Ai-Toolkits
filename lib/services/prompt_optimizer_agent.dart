@@ -735,6 +735,13 @@ class PromptOptimizerAgent {
   /// the task executor and the settings screen; the agent itself only sees
   /// the resolved boolean via [runTurn]'s `kbSubAgentEnabled`.
   static const String kbSubAgentSettingKey = 'enable_kb_subagent';
+
+  /// Settings key for the sub-agent's dedicated model binding: the model's
+  /// DB id as a string, absent/empty meaning "follow the session's model".
+  /// Resolved by the task executor; a binding pointing at a deleted model
+  /// disables delegation for the turn (with a log) rather than silently
+  /// falling back — the settings screen warns in place.
+  static const String kbSubAgentModelSettingKey = 'kb_subagent_model';
   static const double defaultContextRatio = 0.6;
 
   /// Whether the conversation should be summarized before the next request.
@@ -1082,6 +1089,8 @@ class PromptOptimizerAgent {
     int? contextWindow,
     double contextRatio = defaultContextRatio,
     bool kbSubAgentEnabled = false,
+    dynamic kbSubAgentModelIdentifier,
+    int? kbSubAgentContextWindow,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
   }) async {
@@ -1346,12 +1355,18 @@ class PromptOptimizerAgent {
             // than in the synchronous _executeTool switch. Same pairing
             // contract: any escape becomes an error result.
             try {
+              // The sub-agent runs on the dedicated binding when one is
+              // configured, otherwise on the session's own model — with the
+              // matching window, so its read budget is its own.
               result = await _executeDelegate(
                 call,
                 session,
-                modelIdentifier,
+                kbSubAgentModelIdentifier ?? modelIdentifier,
                 knowledgeRoot,
                 delegateAvailable: delegateAvailable,
+                contextWindow: kbSubAgentModelIdentifier != null
+                    ? kbSubAgentContextWindow
+                    : contextWindow,
                 contextId: contextId,
                 onLog: onLog,
                 isCancelled: isCancelled,
@@ -1968,12 +1983,6 @@ class PromptOptimizerAgent {
   /// stand in for the note would just move the flooding one level up).
   static const int _delegateSummaryChars = 800;
 
-  /// Per-read cap for the sub-agent's knowledge reads. A constant rather than
-  /// the main loop's live budget arithmetic: the sub-run starts from a fresh
-  /// two-message context and is bounded to a handful of turns, so a generous
-  /// fixed cap keeps it simple until a dedicated sub-agent model binding
-  /// (M3.2) makes a real per-model budget worth wiring.
-  static const int _subAgentReadCapChars = 24000;
 
   /// System prompt of the knowledge research sub-agent. A code asset, not
   /// user-configurable.
@@ -2004,12 +2013,19 @@ class PromptOptimizerAgent {
 
   /// Runs one `delegate` call: validates with zero side effects, then runs a
   /// [SubAgentRunner] over the knowledge base and returns a digest result.
+  ///
+  /// [modelIdentifier] and [contextWindow] describe the model the sub-agent
+  /// actually runs on — the session's own by default, or the dedicated
+  /// binding from Settings when one is configured (resolved by the task
+  /// executor; a broken binding disables delegation there rather than
+  /// silently falling back here).
   static Future<Map<String, dynamic>> _executeDelegate(
     LLMToolCall call,
     PromptOptimizerSession session,
     dynamic modelIdentifier,
     String? knowledgeRoot, {
     required bool delegateAvailable,
+    int? contextWindow,
     String? contextId,
     void Function(String message)? onLog,
     bool Function()? isCancelled,
@@ -2064,7 +2080,8 @@ class PromptOptimizerAgent {
       systemPrompt: _kbSubAgentSystemPrompt,
       task: buildDelegateTask(task, paths),
       tools: _knowledgeTools,
-      executeTool: (c) => _executeSubAgentKbTool(c, knowledgeRoot, onLog),
+      executeTool: (c, occupied) =>
+          _executeSubAgentKbTool(c, knowledgeRoot, contextWindow, occupied, onLog),
       isCancelled: isCancelled,
       onLog: (m) => onLog?.call('[KB sub-agent] $m'),
       contextId: contextId,
@@ -2193,11 +2210,15 @@ class PromptOptimizerAgent {
 
   /// The sub-agent's view of the knowledge tools: same wire definitions
   /// ([_knowledgeTools]), lean execution — no session, no transcript entries,
-  /// no live-read cache (its context is fresh), a fixed read cap instead of
-  /// the main loop's budget arithmetic.
+  /// no live-read cache (its context is fresh). Reads are budgeted against
+  /// the **sub-agent's own** model window ([contextWindow], tri-state) and
+  /// its run's occupancy — the whole point of delegation is that this budget
+  /// is independent of how full the main conversation is.
   static Map<String, dynamic> _executeSubAgentKbTool(
     LLMToolCall call,
     String knowledgeRoot,
+    int? contextWindow,
+    int occupiedChars,
     void Function(String message)? onLog,
   ) {
     switch (call.name) {
@@ -2218,9 +2239,18 @@ class PromptOptimizerAgent {
         final page =
             rawPage is int ? rawPage : int.tryParse(rawPage?.toString() ?? '') ?? 1;
         onLog?.call('[KB sub-agent] read_knowledge_file $relPath (page $page)');
+        final cap = ContextBudget.readCapChars(contextWindow, occupiedChars);
+        if (cap < _minReadChars) {
+          return {
+            'status': 'error',
+            'message': 'Not enough context left in this research run to read '
+                'more. Write your findings now from what you have already '
+                'read.',
+          };
+        }
         try {
           final result = KnowledgeBaseService().readFile(knowledgeRoot, relPath,
-              page: page, maxChars: _subAgentReadCapChars);
+              page: page, maxChars: cap);
           return {
             'path': relPath,
             'page': result.page,

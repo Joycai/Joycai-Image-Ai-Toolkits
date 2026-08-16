@@ -20,7 +20,7 @@ void main() {
         systemPrompt: 'sys',
         task: 'brief',
         tools: const [],
-        executeTool: (_) {
+        executeTool: (_, _) {
           executed++;
           return {};
         },
@@ -45,7 +45,7 @@ void main() {
         systemPrompt: 'sys',
         task: 'brief',
         tools: const [],
-        executeTool: (call) => {'ok': call.id},
+        executeTool: (call, _) => {'ok': call.id},
         request: (messages, tools) async {
           turn++;
           if (turn == 1) {
@@ -75,7 +75,7 @@ void main() {
         systemPrompt: 'sys',
         task: 'brief',
         tools: const [],
-        executeTool: (call) =>
+        executeTool: (call, _) =>
             call.id == 'a' ? throw StateError('boom') : {'ok': call.id},
         request: (messages, tools) async {
           turn++;
@@ -102,7 +102,7 @@ void main() {
         task: 'brief',
         tools: const [],
         isCancelled: () => cancelled,
-        executeTool: (call) {
+        executeTool: (call, _) {
           executedIds.add(call.id);
           cancelled = true; // The user stops the task during the first tool.
           return {'ok': call.id};
@@ -124,7 +124,7 @@ void main() {
         task: 'brief',
         tools: [LLMTool(name: 't', description: 'd', parameters: {})],
         maxTurns: 2,
-        executeTool: (_) => {'ok': true},
+        executeTool: (_, _) => {'ok': true},
         request: (messages, tools) async {
           toolsPerTurn.add(tools);
           if (toolsPerTurn.length == 1) {
@@ -140,6 +140,36 @@ void main() {
       expect(result.turnsUsed, 2);
     });
 
+    test('occupancy is recomputed per call, not per turn', () async {
+      // A batch of reads must converge on the remaining window: the first
+      // call's result is already paired (and counted) before the second
+      // call's budget is computed — each claiming the same free window is
+      // exactly the over-grant the main loop's read cap forbids.
+      final occupiedSeen = <int>[];
+      var turn = 0;
+      await SubAgentRunner.run(
+        modelIdentifier: 'm',
+        systemPrompt: 'sys',
+        task: 'brief',
+        tools: const [],
+        executeTool: (call, occupied) {
+          occupiedSeen.add(occupied);
+          return {'bulk': 'x' * 5000};
+        },
+        request: (messages, tools) async {
+          turn++;
+          if (turn == 1) {
+            return LLMResponse(
+                text: '', toolCalls: [toolCall('a'), toolCall('b')]);
+          }
+          return LLMResponse(text: 'done');
+        },
+      );
+      expect(occupiedSeen, hasLength(2));
+      // The second call sees the first call's ~5000-char result.
+      expect(occupiedSeen[1], greaterThan(occupiedSeen[0] + 4000));
+    });
+
     test('an empty run reports empty output for the caller to reject',
         () async {
       final result = await SubAgentRunner.run(
@@ -147,7 +177,7 @@ void main() {
         systemPrompt: 'sys',
         task: 'brief',
         tools: const [],
-        executeTool: (_) => {},
+        executeTool: (_, _) => {},
         request: (messages, tools) async => LLMResponse(text: '   '),
       );
       expect(result.output, isEmpty);

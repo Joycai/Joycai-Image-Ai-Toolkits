@@ -2741,6 +2741,24 @@ abstract class AppLocalizations {
   /// **'Let the assistant hand knowledge-base research to a sub-agent that reads files in its own separate context, keeping the main conversation small. Experimental.'**
   String get kbSubAgentDesc;
 
+  /// No description provided for @kbSubAgentModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-agent Model'**
+  String get kbSubAgentModel;
+
+  /// No description provided for @kbSubAgentModelFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow session model'**
+  String get kbSubAgentModelFollow;
+
+  /// No description provided for @kbSubAgentModelMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The bound model no longer exists — delegation is disabled until you pick another.'**
+  String get kbSubAgentModelMissing;
+
   /// No description provided for @assistantRetention.
   ///
   /// In en, this message translates to:

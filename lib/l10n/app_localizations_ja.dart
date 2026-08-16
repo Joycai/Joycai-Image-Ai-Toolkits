@@ -1411,6 +1411,15 @@ class AppLocalizationsJa extends AppLocalizations {
       'アシスタントがナレッジベースの調査をサブエージェントに委任できるようにします。サブエージェントは独立したコンテキストでファイルを読み、メインの会話を軽く保ちます。実験的機能。';
 
   @override
+  String get kbSubAgentModel => 'サブエージェントのモデル';
+
+  @override
+  String get kbSubAgentModelFollow => 'セッションのモデルに従う';
+
+  @override
+  String get kbSubAgentModelMissing => 'バインドされたモデルは存在しません。再選択するまで委任は無効になります。';
+
+  @override
   String get assistantRetention => 'アシスタント会話の保持数';
 
   @override
