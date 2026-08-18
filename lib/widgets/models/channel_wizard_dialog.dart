@@ -117,6 +117,16 @@ const _presets = <_ProviderPreset>[
     fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     icon: Icons.water_drop_outlined,
   ),
+  // Qianwen Platform (platform.qianwenai.com) — the rebranded front of the
+  // same service: its docs point API calls at dashscope.aliyuncs.com with the
+  // same key, so this is the [Vendors.dashscope] profile under the name users
+  // of that console will look for, not a second vendor.
+  _ProviderPreset(
+    id: 'qianwen',
+    channelType: Vendors.dashscope,
+    fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    icon: Icons.question_answer_outlined,
+  ),
   _ProviderPreset(
     id: 'midjourney-proxy',
     channelType: Vendors.midjourneyProxy,
@@ -274,6 +284,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerMiniMaxAnthropic;
       case 'dashscope':
         return l10n.providerDashScope;
+      case 'qianwen':
+        return l10n.providerQianwen;
       case 'midjourney-proxy':
         return l10n.protocolMidjourney;
       default:
@@ -305,6 +317,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerNewApiDesc;
       case 'dashscope':
         return l10n.providerDashScopeDesc;
+      case 'qianwen':
+        return l10n.providerQianwenDesc;
       case 'midjourney-proxy':
         return l10n.protocolMidjourneyDesc;
       default:
