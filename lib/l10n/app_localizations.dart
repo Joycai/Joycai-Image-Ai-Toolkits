@@ -1655,6 +1655,12 @@ abstract class AppLocalizations {
   /// **'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation'**
   String get providerDashScopeDesc;
 
+  /// No description provided for @endpointOverrideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefilled for this provider. Replace it to use a relay, gateway or international host.'**
+  String get endpointOverrideHint;
+
   /// No description provided for @providerQianwen.
   ///
   /// In en, this message translates to:

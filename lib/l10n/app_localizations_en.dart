@@ -852,6 +852,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation';
 
   @override
+  String get endpointOverrideHint =>
+      'Prefilled for this provider. Replace it to use a relay, gateway or international host.';
+
+  @override
   String get providerQianwen => 'Qianwen Platform';
 
   @override

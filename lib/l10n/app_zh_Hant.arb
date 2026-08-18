@@ -274,6 +274,7 @@
   "providerGoogleCompatibleDesc": "透過 OpenAI 端點的 Google Gemini",
   "providerDashScope": "阿里雲百煉（DashScope）",
   "providerDashScopeDesc": "dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖",
+  "endpointOverrideHint": "已依所選提供商預填，可改為中轉、閘道或國際站位址。",
   "providerQianwen": "千問平台",
   "providerQianwenDesc": "platform.qianwenai.com · API 同 DashScope — 千問對話 + qwen-image / wan2.7 出圖",
   "providerCustom": "自訂供應商",

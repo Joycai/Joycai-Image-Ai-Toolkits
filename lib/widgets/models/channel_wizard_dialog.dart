@@ -26,9 +26,16 @@ class _ProviderPreset {
   /// all defined here yet unreachable in the UI).
   final _ProviderGroup group;
 
-  /// Non-null for hosted providers with a well-known endpoint; null when the
-  /// user must supply one (relays, proxies, custom).
-  final String? fixedEndpoint;
+  /// Endpoint prefilled into step 2 for providers with a well-known host;
+  /// null when there is nothing sensible to suggest (relays, proxies, custom).
+  ///
+  /// A suggestion, never a lock — the field stays editable either way. Every
+  /// hosted provider here has addresses the preset cannot know about: an
+  /// international host (`dashscope-intl.aliyuncs.com`), a corporate gateway,
+  /// a relay fronting the same API. Hiding the field, as this once did, left
+  /// no way to reach them but the `custom` preset, which resolves to a
+  /// different channel type and so silently drops the vendor's own behavior.
+  final String? defaultEndpoint;
 
   /// Version-path suffix auto-appended to New API hosts ('' = keep verbatim).
   final String endpointSuffix;
@@ -38,12 +45,10 @@ class _ProviderPreset {
     required this.id,
     required this.channelType,
     required this.group,
-    this.fixedEndpoint,
+    this.defaultEndpoint,
     this.endpointSuffix = '',
     required this.icon,
   });
-
-  bool get needsEndpoint => fixedEndpoint == null;
 }
 
 /// Step-1 headings, in display order. A preset's [_ProviderPreset.group] is
@@ -56,28 +61,28 @@ const _presets = <_ProviderPreset>[
     id: 'openai-official',
     channelType: Vendors.openAIRest,
     group: _ProviderGroup.openai,
-    fixedEndpoint: 'https://api.openai.com/v1',
+    defaultEndpoint: 'https://api.openai.com/v1',
     icon: Icons.api,
   ),
   _ProviderPreset(
     id: 'xai-official',
     channelType: Vendors.xaiApi,
     group: _ProviderGroup.openai,
-    fixedEndpoint: 'https://api.x.ai/v1',
+    defaultEndpoint: 'https://api.x.ai/v1',
     icon: Icons.rocket_launch_outlined,
   ),
   _ProviderPreset(
     id: 'google-compatible',
     channelType: Vendors.openAIRest,
     group: _ProviderGroup.openai,
-    fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
     icon: Icons.swap_horiz,
   ),
   _ProviderPreset(
     id: 'deepseek',
     channelType: Vendors.deepseek,
     group: _ProviderGroup.openai,
-    fixedEndpoint: 'https://api.deepseek.com',
+    defaultEndpoint: 'https://api.deepseek.com',
     icon: Icons.psychology_outlined,
   ),
   _ProviderPreset(
@@ -97,7 +102,7 @@ const _presets = <_ProviderPreset>[
     id: 'google-official',
     channelType: Vendors.googleRest,
     group: _ProviderGroup.google,
-    fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
     icon: Icons.auto_awesome,
   ),
   _ProviderPreset(
@@ -111,7 +116,7 @@ const _presets = <_ProviderPreset>[
     id: 'anthropic-official',
     channelType: Vendors.anthropicRest,
     group: _ProviderGroup.anthropic,
-    fixedEndpoint: 'https://api.anthropic.com/v1',
+    defaultEndpoint: 'https://api.anthropic.com/v1',
     icon: Icons.forum_outlined,
   ),
   _ProviderPreset(
@@ -129,7 +134,7 @@ const _presets = <_ProviderPreset>[
     id: 'minimax-anthropic',
     channelType: Vendors.minimaxAnthropic,
     group: _ProviderGroup.anthropic,
-    fixedEndpoint: 'https://api.minimaxi.com/anthropic/v1',
+    defaultEndpoint: 'https://api.minimaxi.com/anthropic/v1',
     icon: Icons.grain_outlined,
   ),
   _ProviderPreset(
@@ -139,7 +144,7 @@ const _presets = <_ProviderPreset>[
     // Mainland host only. The international one (dashscope-intl.aliyuncs.com)
     // needs no preset of its own: the image protocol derives its native base
     // from the *path*, so a hand-typed intl endpoint works the same way.
-    fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    defaultEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     icon: Icons.water_drop_outlined,
   ),
   // Qianwen Platform (platform.qianwenai.com) — the rebranded front of the
@@ -150,7 +155,7 @@ const _presets = <_ProviderPreset>[
     id: 'qianwen',
     channelType: Vendors.dashscope,
     group: _ProviderGroup.openai,
-    fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    defaultEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     icon: Icons.question_answer_outlined,
   ),
   _ProviderPreset(
@@ -201,6 +206,22 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       _presets.firstWhere((p) => p.id == _selectedProviderId);
 
   @override
+  void initState() {
+    super.initState();
+    _applyPresetEndpoint();
+  }
+
+  /// Load the selected preset's suggested endpoint into the field.
+  ///
+  /// Called on open and on every card tap, so the field always shows the
+  /// current provider's address — switching presets after editing the URL
+  /// replaces it rather than leaving the previous provider's host behind,
+  /// which would otherwise ship a channel pointed at the wrong company.
+  void _applyPresetEndpoint() {
+    _endpointCtrl.text = _preset.defaultEndpoint ?? '';
+  }
+
+  @override
   void dispose() {
     _endpointCtrl.dispose();
     _apiKeyCtrl.dispose();
@@ -213,9 +234,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   bool _isNextEnabled() {
     if (_currentStep == 1) {
-      if (_preset.needsEndpoint && _endpointCtrl.text.trim().isEmpty) {
-        return false;
-      }
+      if (_endpointCtrl.text.trim().isEmpty) return false;
       if (_apiKeyCtrl.text.trim().isEmpty) return false;
     }
     return true;
@@ -247,7 +266,6 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   String _resolvedEndpoint() {
     final preset = _preset;
-    if (preset.fixedEndpoint != null) return preset.fixedEndpoint!;
     if (preset.endpointSuffix.isNotEmpty) {
       return _resolveNewApiEndpoint(_endpointCtrl.text, preset.endpointSuffix);
     }
@@ -582,7 +600,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     final isSelected = _selectedProviderId == preset.id;
 
     return InkWell(
-      onTap: () => setState(() => _selectedProviderId = preset.id),
+      onTap: () => setState(() {
+        _selectedProviderId = preset.id;
+        _applyPresetEndpoint();
+      }),
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -667,17 +688,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                 _providerTitle(l10n, preset.id),
                 style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const Spacer(),
-              if (preset.fixedEndpoint != null)
-                Flexible(
-                  child: Text(
-                    preset.fixedEndpoint!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelMedium
-                        ?.copyWith(color: colorScheme.outline),
-                  ),
-                ),
+              // No endpoint echo here: the editable field below now shows it,
+              // and the same URL twice reads as one of them being the real one.
             ],
           ),
         ),
@@ -704,30 +716,33 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           const SizedBox(height: 20),
         ],
 
-        if (preset.needsEndpoint) ...[
-          TextField(
-            controller: _endpointCtrl,
-            decoration: InputDecoration(
-              labelText: isNewApi ? l10n.newApiBaseUrl : l10n.endpointUrl,
-              hintText: isNewApi || isMidjourney
-                  ? 'https://your-newapi-host.com'
-                  : 'https://your-api.com/v1',
-              prefixIcon: const Icon(Icons.link),
-              helperText: isNewApi
-                  ? l10n.newApiBaseHint
-                  : isMidjourney
-                      ? l10n.midjourneyEndpointHint
-                      : switch (_customProtocol) {
-                          Vendors.googleRest => l10n.googleV1BetaHint,
-                          Vendors.anthropicRest => l10n.anthropicV1Hint,
-                          _ => l10n.openaiV1Hint,
-                        },
-              helperMaxLines: 3,
-            ),
-            onChanged: (_) => setState(() {}),
+        TextField(
+          controller: _endpointCtrl,
+          decoration: InputDecoration(
+            labelText: isNewApi ? l10n.newApiBaseUrl : l10n.endpointUrl,
+            hintText: isNewApi || isMidjourney
+                ? 'https://your-newapi-host.com'
+                : 'https://your-api.com/v1',
+            prefixIcon: const Icon(Icons.link),
+            // A preset that prefilled the field has already answered "which
+            // path?", so the per-protocol path hints would only restate it;
+            // that slot goes to saying the value may be replaced instead.
+            helperText: isNewApi
+                ? l10n.newApiBaseHint
+                : isMidjourney
+                    ? l10n.midjourneyEndpointHint
+                    : preset.defaultEndpoint != null
+                        ? l10n.endpointOverrideHint
+                        : switch (_customProtocol) {
+                            Vendors.googleRest => l10n.googleV1BetaHint,
+                            Vendors.anthropicRest => l10n.anthropicV1Hint,
+                            _ => l10n.openaiV1Hint,
+                          },
+            helperMaxLines: 3,
           ),
-          const SizedBox(height: 16),
-        ],
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 16),
 
         ApiKeyField(
           controller: _apiKeyCtrl,
