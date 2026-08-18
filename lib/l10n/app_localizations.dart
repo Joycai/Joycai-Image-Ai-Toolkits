@@ -1655,6 +1655,18 @@ abstract class AppLocalizations {
   /// **'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation'**
   String get providerDashScopeDesc;
 
+  /// No description provided for @providerQianwen.
+  ///
+  /// In en, this message translates to:
+  /// **'Qianwen Platform'**
+  String get providerQianwen;
+
+  /// No description provided for @providerQianwenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation'**
+  String get providerQianwenDesc;
+
   /// No description provided for @providerCustom.
   ///
   /// In en, this message translates to:

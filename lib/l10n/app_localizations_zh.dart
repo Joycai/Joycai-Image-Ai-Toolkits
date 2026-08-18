@@ -833,6 +833,13 @@ class AppLocalizationsZh extends AppLocalizations {
       'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
 
   @override
+  String get providerQianwen => '千问平台';
+
+  @override
+  String get providerQianwenDesc =>
+      'platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图';
+
+  @override
   String get providerCustom => '自定义提供商';
 
   @override
@@ -3501,6 +3508,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get providerDashScopeDesc =>
       'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
+
+  @override
+  String get providerQianwen => '千問平台';
+
+  @override
+  String get providerQianwenDesc =>
+      'platform.qianwenai.com · API 同 DashScope — 千問對話 + qwen-image / wan2.7 出圖';
 
   @override
   String get providerCustom => '自訂供應商';

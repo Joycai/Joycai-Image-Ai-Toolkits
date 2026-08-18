@@ -852,6 +852,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation';
 
   @override
+  String get providerQianwen => 'Qianwen Platform';
+
+  @override
+  String get providerQianwenDesc =>
+      'platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation';
+
+  @override
   String get providerCustom => 'Custom Provider';
 
   @override
