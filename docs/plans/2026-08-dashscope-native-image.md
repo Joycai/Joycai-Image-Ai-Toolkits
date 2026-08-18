@@ -201,6 +201,6 @@ if (target.model.family == ModelFamily.dashscopeImage &&
 
 ## 7. 开工前需要确认的事项
 
-1. **通道 endpoint 填哪个**——建议向导预设直接固定 compatible-mode 地址（对话与出图都从它推导），但需确认国内/国际站两个域名是否都给预设，还是只给一个 + 允许改。
+1. ~~通道 endpoint 填哪个~~ —— **已定（产品决策）：只给国内域名**。向导预设固定 `https://dashscope.aliyuncs.com/compatible-mode/v1`，出图协议按 §2.1 从它推导出 `https://dashscope.aliyuncs.com/api/v1`。国际站（`dashscope-intl.aliyuncs.com`）不做预设——推导规则只认路径不认 host，用户手填 intl 地址一样能跑，不必为它单列一项。
 2. ~~z-image / wan 改图的参考图上限~~ —— **已由文档回答**，见 §3.4（qwen 系 3、wan2.7 为 9）。`z-image` 未出现在这两篇文档里，且不属于 wan2.7+ 范围，暂不接。
 3. **B 形状的顶层 `messages`** 是否属实（§2.2 注）——以官方 help.aliyun.com 文档复核一次，或实现时按 400 报错修正。
