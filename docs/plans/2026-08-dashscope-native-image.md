@@ -28,7 +28,7 @@ DashScope 的对话走 compatible-mode，就是 ① 家族；**只有出图是�
 | 1 · protocol | `protocols/dashscope_payload.dart`（新） | **纯函数**：base 推导、payload 构造、响应提图、错误识别、尺寸归一（见 §5 测试策略） |
 | 0 · 路由 | `llm_dispatcher.dart` | `generate` / `generateStream` 的 ① 分支各加一条；`generateTimeout` 改判定依据（见 §3.1） |
 | 3 · model | `model_family.dart` | 新 `ModelFamily.dashscopeImage` + 分类规则；并入 `isImageGeneration` / `inferTag`；**修 `wan2.5-t2i` 误判**（见 §3.2） |
-| 3 · model | `model_capabilities.dart` | 新增 `_dashscopeImage` / `_dashscopeAsyncImage` 参数表 + `asyncTask` 能力位（见 §3.3） |
+| 3 · model | `model_capabilities.dart` | 按模型（不是按家族）建参数表 —— 参考图上限、`n` 上限、size 方言、`asyncTask` / body 形状全按模型分档（见 §3.4） |
 | UI | `widgets/models/channel_wizard_dialog.dart` | `_presets` 加一项 + `_providerTitle` / `_providerSubtitle` 分支 |
 | l10n | `l10n/src/{en,zh,zh_Hant,ja}/*.arb` | `providerDashScope` 等键，四语言同步（走 `joycai-l10n` skill） |
 
@@ -47,25 +47,43 @@ DashScope 的对话走 compatible-mode，就是 ① 家族；**只有出图是�
 幂等要求：输入已是 `.../api/v1`、或是裸 host、或带尾斜杠，都必须得到同一个结果。
 **理由**：同一供应商同一把 key 同时服务文本与出图；逼用户建两个通道意味着同一个 key 在库里存两份，改期失效时只改一处。国内域名与 intl 域名都成立，所以推导只认路径、不认 host。
 
-### 2.2 同步端点（qwen-image-3.0\* / qwen-image-edit\* / z-image-turbo / wan 改图）
+### 2.2 三种 body 形状、三个端点（**不是一种**）
 
-```
-POST {base}/services/aigc/multimodal-generation/generation
-```
+按 [qwen 图像编辑](https://platform.qianwenai.com/docs/developer-guides/image-generation/image-editing) 与 [万相图像编辑](https://platform.qianwenai.com/docs/developer-guides/image-generation/wan-image-editing) 两篇文档核对，DashScope 出图不是一个统一形状，而是三个：
 
-body 两段式：
+| 形状 | 模型 | 端点 | body |
+| --- | --- | --- | --- |
+| **A** | `qwen-image-2.0/3.0/3.0-pro`、`qwen-image-edit(-max/-plus)` | `POST {base}/services/aigc/multimodal-generation/generation` | `input.messages[].content` 是 `{image}`/`{text}` part 数组；旋钮全在 `parameters` |
+| **B** | `wan2.7-image(-pro)`、`wan2.6-image` | 同步同上；异步 `POST {base}/services/aigc/image-generation/generation` | **顶层** `messages[]`（不套 `input`），`watermark` / `n` 也在顶层，其余在 `parameters` |
+| **C** | `wan2.5-i2i-preview` | `POST {base}/services/aigc/image2image/image-synthesis`，**仅异步** | `input.prompt` + `input.images[]` + `parameters` |
 
-- `input.messages[].content` 是 `{image}` / `{text}` part 数组。**改图时 image part 在前、指令在后**；image 收公网 URL 或 data URL（参考图走现有 `readAttachmentBytes` + `extForMime`，参考图张数受 `capabilities.maxReferenceImages` 限制，与 `openai_images_protocol` 同款截断 + WARN 日志）。
-- 旋钮全在 `parameters`：`n` / `size` / `negative_prompt` / `seed` / `watermark` / `prompt_extend`。
-- **顶层只有 `model` 和 `input`**。若将来引入 `extraBody` 逃生口，必须并进 `parameters`，放顶层会被整段忽略（静默）。
+> **B 的顶层 `messages` 待实测确认**：它与 A 的 `input.messages` 直接冲突，来源是镜像站文档的二手摘要。好在这类猜错**会响**（400，不是静默降级），因此按 A 的形状先实现、按端点报错修正即可，不值得为它预付设计预算。以官方 help.aliyun.com 文档为准复核一次。
 
-尺寸方言：DashScope 写 `宽*高`（`1024*1024`），wan 另收 `1K/2K/4K` 预设。
-处理：`ParamSpec` 里存通用的 `1024x1024` 拼写，**发出前归一**成 `*` 拼写；`2K` 这类无宽高比信息的预设原样透传。
+因此 payload 构造必须**按形状分派**，而不是一个函数加 if。形状的选择是 layer 3 声明的能力（同 §3.3 的 `asyncTask`），协议只读、不 sniff。
 
-### 2.3 异步任务流（wan 文生图）
+**A 形状的细节**（覆盖面最大，期一主力）：
+
+- `input.messages[].content`：改图时 image part 在前、指令在后；image 收公网 URL 或 `data:{MIME};base64,{data}`。
+- `parameters`：`n`、`negative_prompt`、`watermark`（默认 false）、`seed`（0–2147483647）、`size`、`prompt_extend`（默认 **true**）、`prompt_extend_mode: "direct"`（仅 3.0）、`enable_thinking`（默认 **true**，仅 qwen-image 系）。
+- **顶层只有 `model` / `input` / `parameters`**。将来引入 `extraBody` 逃生口必须并进 `parameters`，放顶层会被整段忽略（静默）。
+
+尺寸方言按形状而异，`ParamSpec` 存通用 `1024x1024` 拼写、**发出前归一**：
+
+| 形状 | 取值 | 范围 |
+| --- | --- | --- |
+| A（qwen） | `宽*高` | 边长 512–2048 |
+| B（wan2.7/2.6） | `1K` / `2K`（默认）/ `宽*高` | 768×768 – 2048×2048 |
+| C（wan2.5） | 仅 `宽*高` | 768×768 – 1280×1280 |
+
+`1K`/`2K` 这类无宽高比信息的预设不参与按 aspect 挑选，只作兜底。
+
+### 2.3 异步任务流（wan）
+
+**只有 `wan2.5-i2i-preview` 是纯异步**；wan2.7 / wan2.6 同步异步都给，期一按同步接即可，异步留到期二作为长任务的通用能力。
 
 ```
 POST {base}/services/aigc/image-generation/generation   + header X-DashScope-Async: enable
+  （wan2.5 走 {base}/services/aigc/image2image/image-synthesis）
   → output.task_id
 GET  {base}/tasks/{task_id}   → task_status: PENDING / RUNNING → SUCCEEDED / FAILED
 ```
@@ -83,15 +101,15 @@ GET  {base}/tasks/{task_id}   → task_status: PENDING / RUNNING → SUCCEEDED /
 
 ### 2.4 响应与错误
 
-- 出图结果在 `output.choices[].message.content[].image` 或 `output.results[].url`，**是 URL 且 24 小时过期** → 当场 GET 下载成 bytes 返回 `LLMResponse.generatedImages`（与 `openai_images_protocol` 的 URL 分支一致）。下载**不要带 `Authorization`**：那是 OSS 签名地址，多带头有害无益。
-- 错误在**顶层 `{code, message}`**，不是 OpenAI 的 `{error:{…}}`；任务失败时嵌在 `output` 里。共享的 `throwIfEnvelopeError` **不改**（它认 `error` / `base_resp`，加一条"顶层有 `code` 就算错"会误伤别家正常 body），改为在协议内单独判：`HTTP 200` + 非空 `code` → 抛 `LLMApiException`，message 带上 code 原文。
+- 出图结果在 `output.choices[].message.content[].image`（A/B 形状）或 `output.results[].url`（异步任务），**是 URL 且 24 小时过期**（qwen 文档明写 24h；万相文档未标注有效期 —— 按同样处理，别赌） → 当场 GET 下载成 bytes 返回 `LLMResponse.generatedImages`（与 `openai_images_protocol` 的 URL 分支一致）。下载**不要带 `Authorization`**：那是 OSS 签名地址，多带头有害无益。
+- 错误在**顶层 `{status_code, code, message, request_id}`**，不是 OpenAI 的 `{error:{…}}`；任务失败时嵌在 `output` 里。注意**成功响应里也有 `status_code: 200`**，所以判错的依据是「`code` 字段存在且非空」（成功响应无 `code`），不是「有没有 status_code」。共享的 `throwIfEnvelopeError` **不改**（它认 `error` / `base_resp`，加一条"顶层有 `code` 就算错"会误伤别家正常 body），改为在协议内单独判：`HTTP 200` + 非空 `code` → 抛 `LLMApiException`，message 带上 code 原文。
   - `DataInspectionFailed`（内容审核拒绝）必须保住结构化 code，否则会掉进 prose 正则被误读成"端点不支持编辑"，触发**第二次计费**的降级重生成。
   - `Throttling` / 429 → 走 `LLMApiException(statusCode:)`，`_isRetryable` 才认得。
 - **零图必抛**（对齐 B3 教训）：返回空 `LLMResponse` 会被执行器读成"成功生成了 0 张"，与模型拒绝无法区分。
 
 ---
 
-## 3. 三个必须同期改的隐形点（漏一个就是静默失败）
+## 3. 四个必须同期处理的点（前三个漏了就是静默失败）
 
 ### 3.1 `generateTimeout` 的 120s 会砍死异步任务
 
@@ -99,15 +117,35 @@ GET  {base}/tasks/{task_id}   → task_status: PENDING / RUNNING → SUCCEEDED /
 
 **做法**：把判定依据从"family 相等"改成"这次请求要走的 route 是不是长任务"——即读 `target.model.capabilities` 的 `asyncTask` 位（§3.3），midjourney 的既有豁免顺势并进同一个判定，而不是再加一个 `||`。
 
-### 3.2 `wan2.5-t2i` 现在会被判成视频
+### 3.2 `wan2.5-i2i-preview` 现在会被判成视频
 
-`model_family.dart:76` 的视频块用 `id.startsWith('wan2.5')`，任何 `wan2.5-t2i-*` 文生图 id 都会被路由到 `/v1/videos`。新增分类规则时**必须把 `-t2i` / `-i2i` 判定放在视频块之前**，并补测试钉住 `wan2.5-t2v` 仍是视频。
+`model_family.dart:76` 的视频块用 `id.startsWith('wan2.5')`，而万相的图像编辑模型正好叫 `wan2.5-i2i-preview` —— **今天它就会被路由到 `/v1/videos`**（`-i2i` 与视频块匹配的 `-i2v` 只差一个字母，纯属侥幸没更早撞上）。新增分类规则时**必须把 `-t2i` / `-i2i` 判定放在视频块之前**，并补测试钉住 `wan2.5-t2v` / `wan2.5-i2v` 仍是视频。
+`wan2.7-image` / `wan2.6-image` 不匹配任何现有规则（落 `other`），需要新规则接住。
 
 ### 3.3 同步/异步是**声明的能力**，不是协议里的 model-id 分支
 
 "wan 文生图只有异步、qwen-image 全系同步"是事实，但写成协议里的 `if (modelId.startsWith('wan'))` 就违反分层铁律，且改名即崩。
 
 **做法**：在 `ModelCapabilities` 加 `final bool asyncTask`（默认 false），由 layer 3 的参数表声明——`model_capabilities.dart` / `model_family.dart` 是本仓**唯一允许 sniff model-id** 的地方。协议只读 `target.model.capabilities.asyncTask` 决定走哪条端点。声明错了会收到端点自己的明确报错（同步端点收异步模型 → 400），与现有 caps 体系的降级哲学一致。
+
+### 3.4 参考图与 `n` 的上限**按模型分档**，不能按家族填一个数
+
+文档核对结果 —— 这是 `ModelCapabilities` 必须逐模型建表的原因，一个 `_dashscopeImage` 表填不下：
+
+| 模型 | 参考图张数 | 单图大小 | 边长范围 | 输出 `n` | 异步 | body 形状 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `qwen-image-2.0` / `3.0` / `3.0-pro` | 1–3 | ≤10MB | 384–3072（建议） | 1–6 | 否 | A |
+| `qwen-image-edit-max` / `-plus` | 1–3 | ≤10MB | 384–3072 | 1–6 | 否 | A |
+| `qwen-image-edit` | 1–3 | ≤10MB | 384–3072 | **仅 1** | 否 | A |
+| `wan2.7-image` / `-pro` | **0–9** | ≤**20MB** | 240–8000 | — | 可选 | B |
+| `wan2.6-image` | 1–4 | ≤10MB | 240–8000 | — | 可选 | B |
+| `wan2.5-i2i-preview` | 1–3 | ≤10MB | 384–5000 | — | **仅异步** | C |
+
+受支持的输入格式：JPG/JPEG/PNG/BMP/WEBP（qwen 另收 TIFF/GIF）。传入方式：公网 URL 或 `data:{MIME};base64,{data}`（`file://` 仅官方 SDK 支持，本仓用不上）。
+
+**`maxReferenceImages` 因此取 3 / 9 / 4 / 3 四档**，不是原先设想的一个家族值；`n` 也要进 `ParamSpec`（`qwen-image-edit` 的上限 1 与同族其他成员的 6 不同，填错会 400）。
+
+---
 
 ---
 
@@ -144,7 +182,9 @@ if (target.model.family == ModelFamily.dashscopeImage &&
 | 错误识别 | `{code: 'DataInspectionFailed', message: …}`（HTTP 200）→ 抛且 message 含 code；`{output: {code: …}}` 同样识别 |
 | 提图 | `output.choices[].message.content[].image` 与 `output.results[].url` 两种形状都取到；都缺 → 抛而非空返回 |
 | 分类 | `wan2.5-t2i-*` → `dashscopeImage`；`wan2.5-t2v-*` 仍 `openaiVideo`；`qwen-image-edit` → `dashscopeImage` |
-| 能力 | `wan*` 文生图 `asyncTask == true`；`qwen-image-3.0*` == false |
+| 能力 | `wan2.5-i2i-preview` `asyncTask == true`；`qwen-image-3.0*` == false |
+| 能力 | 参考图上限逐模型正确：`wan2.7-image` → 9、`wan2.6-image` → 4、`qwen-image-edit` → 3 且 `n` 上限为 1 |
+| payload 分派 | 同一份 history 在 A / B / C 三种形状下生成三种 body，各自的顶层字段集正确 |
 
 轮询循环本身（节奏、限次、deadline）不做单测——需要注入 client，成本高于收益；改为在期二人工验证一次真实 wan 任务，并把 `task_id` 日志作为可观测兜底。
 
@@ -154,15 +194,16 @@ if (target.model.family == ModelFamily.dashscopeImage &&
 
 | 期 | 内容 | 可独立交付 | 退出标准 |
 | --- | --- | --- | --- |
-| **期一 · 同步出图** | vendor + profile 开关 + 同步端点协议 + payload 纯函数 + family/caps + 向导预设 + l10n。覆盖 qwen-image-3.0\*、qwen-image-edit\*、z-image-turbo、wan 改图 | ✅ | `flutter analyze` 零问题；§5 表中非异步用例全绿；真机跑通一次文生图 + 一次改图 |
-| **期二 · 异步 wan 文生图** | `X-DashScope-Async` 提交 + 轮询循环 + 总 deadline + `generateTimeout` 判定改造 + 取消信号 + `asyncTask` 能力位 | ✅（期一之上） | 真机跑通一次 wan 文生图；任务中途"停止"能在 ≤5s 内生效；`task_id` 出现在日志 |
+| **期一 · 同步出图** | vendor + profile 开关 + 同步端点协议 + payload 纯函数 + family/caps + 向导预设 + l10n。覆盖 A 形状全部（`qwen-image-2.0/3.0/3.0-pro`、`qwen-image-edit(-max/-plus)`）+ B 形状同步（`wan2.7-image(-pro)`、`wan2.6-image`） | ✅ | `flutter analyze` 零问题；§5 表中非异步用例全绿；真机跑通一次文生图 + 一次改图 |
+| **期二 · 异步任务** | `wan2.5-i2i-preview`（仅异步，C 形状）+ `X-DashScope-Async` 提交 + 轮询循环 + 总 deadline + `generateTimeout` 判定改造 + 取消信号 + `asyncTask` 能力位 | ✅（期一之上） | 真机跑通一次 wan 文生图；任务中途"停止"能在 ≤5s 内生效；`task_id` 出现在日志 |
 | **期三 · 可选打磨** | discovery（compatible-mode `/models` 是否可用，探测走 `ChannelProbeService` 的 completion 兜底）、计价分组预设、首启向导下拉项 | ✅ | — |
 
 **风险与回退**：三期彼此独立，任一期回退不影响其余；期一之前所有中继路径行为不变（§4），因此回退面只有新 vendor 自身。
 
 ---
 
-## 7. 开工前需要确认的两件事
+## 7. 开工前需要确认的事项
 
 1. **通道 endpoint 填哪个**——建议向导预设直接固定 compatible-mode 地址（对话与出图都从它推导），但需确认国内/国际站两个域名是否都给预设，还是只给一个 + 允许改。
-2. **z-image / wan 改图的参考图上限**（`maxReferenceImages`）与是否支持多图——决定 `capabilities` 表填 `null`、`0` 还是具体数字；查文档或实测一次即可。
+2. ~~z-image / wan 改图的参考图上限~~ —— **已由文档回答**，见 §3.4（3 / 9 / 4 / 3 四档）。`z-image` 未出现在这两篇文档里，先移出期一范围，需要时单独确认它属于哪种形状。
+3. **B 形状的顶层 `messages`** 是否属实（§2.2 注）——以官方 help.aliyun.com 文档复核一次，或实现时按 400 报错修正。
