@@ -265,6 +265,8 @@ class ModelSelectionSection extends StatelessWidget {
         return l10n.resolution;
       case 'quality':
         return l10n.quality;
+      case 'promptExtend':
+        return l10n.promptExtend;
       case 'mjVersion':
         return l10n.mjVersion;
       case 'mjMode':
@@ -280,6 +282,14 @@ class ModelSelectionSection extends StatelessWidget {
 
   String _optionLabel(AppLocalizations l10n, String paramKey, String value) {
     if (value == 'auto' || value == 'not_set') return l10n.optionAuto;
+    if (paramKey == 'promptExtend') {
+      switch (value) {
+        case 'on':
+          return l10n.promptExtendOn;
+        case 'off':
+          return l10n.promptExtendOff;
+      }
+    }
     if (paramKey == 'quality') {
       switch (value) {
         case 'low':

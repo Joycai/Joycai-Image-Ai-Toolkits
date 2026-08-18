@@ -147,6 +147,8 @@
   "providerGoogleOfficial": "Google GenAI 官方",
   "providerGoogleCompatible": "Google GenAI (OpenAI 兼容)",
   "providerGoogleCompatibleDesc": "通过 OpenAI 适配端点访问 Gemini",
+  "providerDashScope": "阿里云百炼（DashScope）",
+  "providerDashScopeDesc": "dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图",
   "providerCustom": "自定义提供商",
   "providerCustomDesc": "自建或第三方 API 服务商",
   "providerGroupOther": "其他",

@@ -38,6 +38,14 @@ enum ModelFamily {
   /// submit → poll → mp4 URL. Routed through the OpenAI transport, not Google.
   openaiVideo,
 
+  /// Alibaba DashScope's *native* image surface — `qwen-image*` and
+  /// `wan2.7-image*`. These models are not served by the OpenAI-compatible
+  /// images API: the only endpoint that generates them speaks DashScope's
+  /// own `input`/`parameters` body. On a channel that is not DashScope-native
+  /// (a relay), the dispatcher deliberately keeps routing them through chat,
+  /// where relays hand images back in the chat response.
+  dashscopeImage,
+
   /// xAI Grok Imagine image generation (`grok-imagine-image*`). On native
   /// xAI channels this uses xAI's JSON `/images/generations` + `/images/edits`
   /// surface (single `image` or up to 3 `images[]` references); on relays it
@@ -67,6 +75,14 @@ class ModelFamilyClassifier {
     // `grok-imagine` video prefix below.
     if (id.contains('grok-imagine-image')) {
       return ModelFamily.xaiImage;
+    }
+
+    // --- DashScope native image models ---
+    // Must precede the video block, which claims `wan2.5*` wholesale. The
+    // same trick for 2.7 (`startsWith('wan2.7')`) would swallow a future
+    // `wan2.7-t2v`, so this rule names `-image` and claims nothing else.
+    if (id.startsWith('qwen-image') || id.startsWith('wan2.7-image')) {
+      return ModelFamily.dashscopeImage;
     }
 
     // --- OpenAI-compatible video (Sora-style /v1/videos) ---
@@ -152,6 +168,7 @@ class ModelFamilyClassifier {
         f == ModelFamily.geminiImagen ||
         f == ModelFamily.openaiImage ||
         f == ModelFamily.xaiImage ||
+        f == ModelFamily.dashscopeImage ||
         f == ModelFamily.midjourney;
   }
 
@@ -167,6 +184,7 @@ class ModelFamilyClassifier {
         family == ModelFamily.geminiImagen ||
         family == ModelFamily.openaiImage ||
         family == ModelFamily.xaiImage ||
+        family == ModelFamily.dashscopeImage ||
         family == ModelFamily.midjourney) {
       return 'image';
     }

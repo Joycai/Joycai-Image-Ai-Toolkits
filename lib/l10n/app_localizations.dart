@@ -1643,6 +1643,18 @@ abstract class AppLocalizations {
   /// **'Google Gemini via OpenAI endpoint'**
   String get providerGoogleCompatibleDesc;
 
+  /// No description provided for @providerDashScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba DashScope'**
+  String get providerDashScope;
+
+  /// No description provided for @providerDashScopeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation'**
+  String get providerDashScopeDesc;
+
   /// No description provided for @providerCustom.
   ///
   /// In en, this message translates to:
@@ -3526,6 +3538,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quality'**
   String get quality;
+
+  /// No description provided for @promptExtend.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt rewrite'**
+  String get promptExtend;
+
+  /// No description provided for @promptExtendOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get promptExtendOn;
+
+  /// No description provided for @promptExtendOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get promptExtendOff;
 
   /// No description provided for @optionAuto.
   ///

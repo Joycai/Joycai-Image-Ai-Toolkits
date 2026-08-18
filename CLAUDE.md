@@ -24,7 +24,7 @@ lib/
   state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState
   services/             # all business logic
     llm/                # LLMService facade + LLMDispatcher; three-layer API stack (see architecture note)
-      protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, anthropic_chat, midjourney
+      protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, anthropic_chat, midjourney, dashscope_images
       vendors/          # layer 2 — VendorProfile registry (auth, surface overrides); ids stored in llm_channels.type
       model_descriptor.dart  # layer 3 — ModelDescriptor (family + capabilities); sole place model-id sniffing is allowed
     repositories/       # SQLite DAOs: model, prompt, task, usage, assistant session

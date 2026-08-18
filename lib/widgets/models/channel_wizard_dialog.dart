@@ -109,6 +109,15 @@ const _presets = <_ProviderPreset>[
     icon: Icons.grain_outlined,
   ),
   _ProviderPreset(
+    id: 'dashscope',
+    channelType: Vendors.dashscope,
+    // Mainland host only. The international one (dashscope-intl.aliyuncs.com)
+    // needs no preset of its own: the image protocol derives its native base
+    // from the *path*, so a hand-typed intl endpoint works the same way.
+    fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    icon: Icons.water_drop_outlined,
+  ),
+  _ProviderPreset(
     id: 'midjourney-proxy',
     channelType: Vendors.midjourneyProxy,
     icon: Icons.brush_outlined,
@@ -263,6 +272,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         return l10n.providerNewApiAnthropic;
       case 'minimax-anthropic':
         return l10n.providerMiniMaxAnthropic;
+      case 'dashscope':
+        return l10n.providerDashScope;
       case 'midjourney-proxy':
         return l10n.protocolMidjourney;
       default:
@@ -292,6 +303,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       case 'newapi-gemini':
       case 'newapi-anthropic':
         return l10n.providerNewApiDesc;
+      case 'dashscope':
+        return l10n.providerDashScopeDesc;
       case 'midjourney-proxy':
         return l10n.protocolMidjourneyDesc;
       default:

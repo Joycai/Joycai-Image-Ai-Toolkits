@@ -845,6 +845,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google Gemini via OpenAI endpoint';
 
   @override
+  String get providerDashScope => 'Alibaba DashScope';
+
+  @override
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation';
+
+  @override
   String get providerCustom => 'Custom Provider';
 
   @override
@@ -1886,6 +1893,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quality => 'Quality';
+
+  @override
+  String get promptExtend => 'Prompt rewrite';
+
+  @override
+  String get promptExtendOn => 'On';
+
+  @override
+  String get promptExtendOff => 'Off';
 
   @override
   String get optionAuto => 'Auto';

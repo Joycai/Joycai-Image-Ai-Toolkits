@@ -2,6 +2,7 @@ import 'llm_types.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
+import 'protocols/dashscope_images_protocol.dart';
 import 'protocols/gemini_chat_protocol.dart';
 import 'protocols/gemini_imagen_protocol.dart';
 import 'protocols/gemini_veo_protocol.dart';
@@ -33,6 +34,7 @@ class LLMDispatcher {
   static final _openaiImages = OpenAIImagesProtocol();
   static final _openaiVideos = OpenAIVideosProtocol();
   static final _xaiImages = XaiImagesProtocol();
+  static final _dashscopeImages = DashScopeImagesProtocol();
   static final _xaiVideos = XaiVideosProtocol();
   static final _geminiChat = GeminiChatProtocol();
   static final _imagen = GeminiImagenProtocol();
@@ -71,9 +73,23 @@ class LLMDispatcher {
   /// `useStream: false`.
   Duration generateTimeout(LLMModelConfig config) {
     final target = resolveTarget(config);
-    return target.vendor.family == ProtocolFamily.midjourney
-        ? const Duration(minutes: 11)
-        : const Duration(seconds: 120);
+    if (target.vendor.family == ProtocolFamily.midjourney) {
+      return const Duration(minutes: 11);
+    }
+    // Routes whose single request runs the generation to completion upstream
+    // (DashScope's synchronous image surface). Declared per model in layer 3
+    // rather than derived from the family, because the same family also
+    // serves chat models that must keep the short guard.
+    //
+    // Kept separate from the Midjourney rule above rather than folded into
+    // it: Midjourney's exemption belongs to the *protocol* — its generate()
+    // contains the poll loop whatever model id the channel names — and
+    // routing it through a model capability would quietly drop the exemption
+    // for a Midjourney channel whose model id classifies as something else.
+    if (target.model.capabilities.longRunning) {
+      return const Duration(minutes: 5);
+    }
+    return const Duration(seconds: 120);
   }
 
   // ---------------------------------------------------------------------------
@@ -109,6 +125,18 @@ class LLMDispatcher {
         if (target.model.family == ModelFamily.openaiImage) {
           return _openaiImages.generateImage(target, history, options: options, logger: logger);
         }
+        // DashScope's native image models, on a DashScope channel only.
+        // Everywhere else — a relay that lists `qwen-image` — the model keeps
+        // falling through to chat below, which is where those relays actually
+        // serve it (they answer with images in the chat response, and most
+        // expose no /images/generations for it at all). Routing them to an
+        // Images API on the strength of the family alone would break channels
+        // that work today.
+        if (target.model.family == ModelFamily.dashscopeImage &&
+            target.vendor.usesDashScopeNativeImages) {
+          return _dashscopeImages.generateImage(target, history, options: options, logger: logger);
+        }
+
         // Grok Imagine image models: xAI's JSON Images API on native
         // channels; OpenAI-style Images API when served through a relay.
         if (target.model.family == ModelFamily.xaiImage) {
@@ -154,7 +182,9 @@ class LLMDispatcher {
         // The Images APIs do not stream — fall back to a single-shot call
         // and surface the result as chunks.
         if (target.model.family == ModelFamily.openaiImage ||
-            target.model.family == ModelFamily.xaiImage) {
+            target.model.family == ModelFamily.xaiImage ||
+            (target.model.family == ModelFamily.dashscopeImage &&
+                target.vendor.usesDashScopeNativeImages)) {
           logger?.call('Image model does not support streaming; using Images API.', level: 'DEBUG');
           final response = await generate(config, history, options: options, logger: logger);
           yield* _asChunks(response);

@@ -72,6 +72,14 @@ class Vendors {
   /// them does diverge there is somewhere to put it.
   static const String minimaxAnthropic = 'minimax-anthropic';
 
+  /// Alibaba DashScope (Bailian). Its chat is the OpenAI-compatible surface
+  /// under `/compatible-mode/v1`, which is why the family is ① — but image
+  /// generation is served *only* by DashScope's own `/api/v1` protocol, so
+  /// the profile also claims [VendorProfile.usesDashScopeNativeImages] and
+  /// the image protocol derives that base from this channel's endpoint. One
+  /// channel, one key, both surfaces.
+  static const String dashscope = 'dashscope-api';
+
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
 
@@ -137,6 +145,12 @@ class Vendors {
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
       thinking: ThinkingDialect.adaptive,
+    ),
+    VendorProfile(
+      id: dashscope,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      usesDashScopeNativeImages: true,
     ),
     VendorProfile(
       id: midjourneyProxy,

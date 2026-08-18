@@ -826,6 +826,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerGoogleCompatibleDesc => '通过 OpenAI 适配端点访问 Gemini';
 
   @override
+  String get providerDashScope => '阿里云百炼（DashScope）';
+
+  @override
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
+
+  @override
   String get providerCustom => '自定义提供商';
 
   @override
@@ -1823,6 +1830,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get quality => '质量';
+
+  @override
+  String get promptExtend => '提示词扩写';
+
+  @override
+  String get promptExtendOn => '开启';
+
+  @override
+  String get promptExtendOff => '关闭';
 
   @override
   String get optionAuto => '自动';
@@ -3480,6 +3496,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerGoogleCompatibleDesc => '透過 OpenAI 端點的 Google Gemini';
 
   @override
+  String get providerDashScope => '阿里雲百煉（DashScope）';
+
+  @override
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
+
+  @override
   String get providerCustom => '自訂供應商';
 
   @override
@@ -4477,6 +4500,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get quality => '品質';
+
+  @override
+  String get promptExtend => '提示詞擴寫';
+
+  @override
+  String get promptExtendOn => '開啟';
+
+  @override
+  String get promptExtendOff => '關閉';
 
   @override
   String get optionAuto => '自動';
