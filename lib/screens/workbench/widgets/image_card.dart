@@ -77,7 +77,11 @@ class _ImageCardState extends State<ImageCard> {
   @override
   void initState() {
     super.initState();
-    _getImageDimensions();
+    // Seed from the cache first: a tile scrolled back into view already has its
+    // measurement, and going through the async path for it would cost a
+    // scheduled task and a second build to show a value that was in hand.
+    _dimensions = ImageMetadataService().peek(widget.imageFile.path)?.displayString ?? "";
+    if (_dimensions.isEmpty) _getImageDimensions();
     _loadVideoThumbnail();
   }
 
@@ -85,11 +89,14 @@ class _ImageCardState extends State<ImageCard> {
   void didUpdateWidget(covariant ImageCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageFile.path != widget.imageFile.path) {
+      // Same cache-first rule as initState — a recycled tile usually lands on a
+      // file the grid has already measured.
+      final known = ImageMetadataService().peek(widget.imageFile.path);
       setState(() {
-        _dimensions = "";
+        _dimensions = known?.displayString ?? "";
         _videoThumbnailPath = null;
       });
-      _getImageDimensions();
+      if (known == null) _getImageDimensions();
       _loadVideoThumbnail();
     }
   }
@@ -175,7 +182,7 @@ class _ImageCardState extends State<ImageCard> {
     return Image(
       image: ResizeImage(
         widget.imageFile.imageProvider,
-        width: width != null ? (width * MediaQuery.of(context).devicePixelRatio).round() : (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+        width: width != null ? (width * MediaQuery.devicePixelRatioOf(context)).round() : (widget.thumbnailSize * MediaQuery.devicePixelRatioOf(context)).round(),
       ),
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => Container(

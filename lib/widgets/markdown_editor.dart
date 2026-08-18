@@ -12,20 +12,41 @@ import 'app_segmented_control.dart';
 class MarkdownTextEditingController extends TextEditingController {
   MarkdownTextEditingController({super.text});
 
+  /// Compiled once for the class, not once per call.
+  ///
+  /// [buildTextSpan] runs on every repaint of the field — caret blinks and
+  /// selection changes included, not just edits — and building a `RegExp`
+  /// compiles the pattern each time.
+  static final RegExp _syntax = RegExp(
+    r'(?<header>^#+ .*$)|(?<bold>\*\*.*?\*\*)|(?<italic>_.*?_)|(?<link>\[.*?\]\(.*?\))|(?<list>^[*-] .*$|^[0-9]+\. .*$)',
+    multiLine: true,
+  );
+
+  // Last span handed out, with the inputs that produced it. A long prompt is
+  // scanned end to end to build one, so repaints that change none of these —
+  // the caret blink again — reuse it instead of re-scanning the document.
+  String? _cachedText;
+  TextStyle? _cachedStyle;
+  ColorScheme? _cachedScheme;
+  TextSpan? _cachedSpan;
+
   @override
   TextSpan buildTextSpan({
     required BuildContext context,
     TextStyle? style,
     required bool withComposing,
   }) {
-    final List<TextSpan> children = [];
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Basic Markdown Regex Patterns
-    final RegExp regExp = RegExp(
-      r'(?<header>^#+ .*$)|(?<bold>\*\*.*?\*\*)|(?<italic>_.*?_)|(?<link>\[.*?\]\(.*?\))|(?<list>^[*-] .*$|^[0-9]+\. .*$)',
-      multiLine: true,
-    );
+    if (_cachedSpan != null &&
+        _cachedText == text &&
+        _cachedStyle == style &&
+        _cachedScheme == colorScheme) {
+      return _cachedSpan!;
+    }
+
+    final List<TextSpan> children = [];
+    final RegExp regExp = _syntax;
 
     int lastMatchEnd = 0;
     for (final Match match in regExp.allMatches(text)) {
@@ -62,7 +83,12 @@ class MarkdownTextEditingController extends TextEditingController {
       children.add(TextSpan(text: text.substring(lastMatchEnd)));
     }
 
-    return TextSpan(style: style, children: children);
+    final span = TextSpan(style: style, children: children);
+    _cachedText = text;
+    _cachedStyle = style;
+    _cachedScheme = colorScheme;
+    _cachedSpan = span;
+    return span;
   }
 }
 
@@ -293,7 +319,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   void _openLargeEditor() {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final isCompact = MediaQuery.of(context).size.width < 600;
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     bool localMarkdown = widget.isMarkdown;
 
     showDialog(

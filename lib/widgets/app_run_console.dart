@@ -21,34 +21,9 @@ class AppRunConsole extends StatefulWidget {
   State<AppRunConsole> createState() => _AppRunConsoleState();
 }
 
-class _AppRunConsoleState extends State<AppRunConsole>
-    with SingleTickerProviderStateMixin {
+class _AppRunConsoleState extends State<AppRunConsole> {
   double _height = 200;
   bool _heightInitialized = false;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseOpacity;
-  late Animation<double> _pulseScale;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-    _pulseOpacity = Tween<double>(begin: 1.0, end: 0.4).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-    _pulseScale = Tween<double>(begin: 1.0, end: 0.85).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,28 +196,7 @@ class _AppRunConsoleState extends State<AppRunConsole>
     if (isProcessing) color = colorScheme.primary;
     if (hasErrors) color = colorScheme.error;
 
-    final dot = Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: isProcessing
-            ? [BoxShadow(color: color.withAlpha(100), blurRadius: 4, spreadRadius: 1)]
-            : null,
-      ),
-    );
-
-    if (!isProcessing) return dot;
-
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) => Transform.scale(
-        scale: _pulseScale.value,
-        child: Opacity(opacity: _pulseOpacity.value, child: child),
-      ),
-      child: dot,
-    );
+    return _StatusDot(color: color, pulsing: isProcessing);
   }
 
   double _avgProgress(TaskQueueService queue) {
@@ -347,6 +301,91 @@ class _AppRunConsoleState extends State<AppRunConsole>
           return const TaskQueueScreen();
         },
       ),
+    );
+  }
+}
+
+/// The run console's status light, which breathes while work is in flight.
+///
+/// Its own widget so the ticker's lifetime matches the thing it is animating.
+/// The controller used to live on the console and `repeat()` unconditionally
+/// from `initState`, which kept a ticker running — and therefore the engine
+/// waking for every vsync — for the entire life of the app, including the vast
+/// majority of the time when `isProcessing` was false and the pulse was not
+/// even mounted. It also localises the 60fps rebuild to this 8px dot rather
+/// than the console row around it.
+class _StatusDot extends StatefulWidget {
+  final Color color;
+  final bool pulsing;
+
+  const _StatusDot({required this.color, required this.pulsing});
+
+  @override
+  State<_StatusDot> createState() => _StatusDotState();
+}
+
+class _StatusDotState extends State<_StatusDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+  late final Animation<double> _opacity = Tween<double>(begin: 1.0, end: 0.4)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  late final Animation<double> _scale = Tween<double>(begin: 1.0, end: 0.85)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+  @override
+  void initState() {
+    super.initState();
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _StatusDot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pulsing != widget.pulsing) _syncTicker();
+  }
+
+  void _syncTicker() {
+    if (widget.pulsing) {
+      _controller.repeat(reverse: true);
+    } else {
+      // `stop` rather than `reset`: nothing reads the value while idle, and
+      // leaving it where it was avoids a visible jump if work resumes.
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dot = Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: widget.color,
+        shape: BoxShape.circle,
+        boxShadow: widget.pulsing
+            ? [BoxShadow(color: widget.color.withAlpha(100), blurRadius: 4, spreadRadius: 1)]
+            : null,
+      ),
+    );
+
+    if (!widget.pulsing) return dot;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Transform.scale(
+        scale: _scale.value,
+        child: Opacity(opacity: _opacity.value, child: child),
+      ),
+      child: dot,
     );
   }
 }

@@ -37,7 +37,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery.sizeOf(context);
 
     _initPosition(screenSize, isMobile);
 

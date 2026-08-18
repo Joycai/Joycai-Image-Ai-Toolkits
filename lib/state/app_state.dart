@@ -179,26 +179,53 @@ class AppState extends ChangeNotifier {
   List<LLMChannel> _channels = [];
   List<PricingGroup> _pricingGroups = [];
 
+  // Derived views of [_models], computed once per data load rather than per
+  // read. They used to be `_models.where(...).toList()` getters, which meant a
+  // fresh list object on every call — and `context.select` compares with `==`,
+  // which lists do not override. Every selector over one of these therefore
+  // reported "changed" on every notification, so the panels that read them
+  // rebuilt unconditionally and the selector bought nothing.
+  List<LLMModel> _imageModels = const [];
+  List<LLMModel> _chatModels = const [];
+  List<LLMModel> _multimodalModels = const [];
+  List<LLMModel> _videoModels = const [];
+
   List<LLMModel> get allModels => _models;
   List<LLMChannel> get allChannels => _channels;
   List<PricingGroup> get allPricingGroups => _pricingGroups;
 
-  List<LLMModel> get imageModels => _models.where((m) =>
-    m.tag == ModelTag.image.value
-  ).toList();
+  List<LLMModel> get imageModels => _imageModels;
+  List<LLMModel> get chatModels => _chatModels;
+  List<LLMModel> get multimodalModels => _multimodalModels;
+  List<LLMModel> get videoModels => _videoModels;
 
-  List<LLMModel> get chatModels => _models.where((m) =>
-      m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value
-  ).toList();
+  /// Replaces the model/channel/pricing cache and the views derived from it.
+  ///
+  /// The single place these are assigned, so the derived lists cannot drift out
+  /// of sync with the data they summarise. [videoModels] depends on the
+  /// channels as well as the models, which is why all three land together.
+  void _cacheData({
+    required List<LLMModel> models,
+    required List<LLMChannel> channels,
+    required List<PricingGroup> pricingGroups,
+  }) {
+    _models = models;
+    _channels = channels;
+    _pricingGroups = pricingGroups;
 
-  List<LLMModel> get multimodalModels => _models.where((m) =>
-      m.tag == ModelTag.multimodal.value
-  ).toList();
-
-  List<LLMModel> get videoModels => _models.where((m) =>
-      m.tag == ModelTag.video.value &&
-      _supportsVideoForType(m)
-  ).toList();
+    _imageModels =
+        models.where((m) => m.tag == ModelTag.image.value).toList(growable: false);
+    _chatModels = models
+        .where((m) =>
+            m.tag == ModelTag.chat.value || m.tag == ModelTag.multimodal.value)
+        .toList(growable: false);
+    _multimodalModels = models
+        .where((m) => m.tag == ModelTag.multimodal.value)
+        .toList(growable: false);
+    _videoModels = models
+        .where((m) => m.tag == ModelTag.video.value && _supportsVideoForType(m))
+        .toList(growable: false);
+  }
 
   /// Video LRO is currently implemented by:
   ///   * Gemini-family vendors — Veo via `:predictLongRunning`
@@ -375,9 +402,11 @@ class AppState extends ChangeNotifier {
     isMarkdownRefinerSource = (await _db.getSetting('is_markdown_refiner_source') ?? 'true') == 'true';
     isMarkdownRefinerTarget = (await _db.getSetting('is_markdown_refiner_target') ?? 'true') == 'true';
 
-    _models = await _db.getModels();
-    _channels = await _db.getChannels();
-    _pricingGroups = await _db.getPricingGroups();
+    _cacheData(
+      models: await _db.getModels(),
+      channels: await _db.getChannels(),
+      pricingGroups: await _db.getPricingGroups(),
+    );
 
     await downloaderState.loadCookieHistory();
     await loadPromptHistory();

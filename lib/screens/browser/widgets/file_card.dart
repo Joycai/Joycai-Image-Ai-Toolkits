@@ -90,7 +90,7 @@ class _FileCardState extends State<FileCard> {
                                       ? Image(
                                           image: ResizeImage(
                                             widget.file.imageProvider,
-                                            width: (widget.thumbnailSize * MediaQuery.of(context).devicePixelRatio).round(),
+                                            width: (widget.thumbnailSize * MediaQuery.devicePixelRatioOf(context)).round(),
                                           ),
                                           fit: BoxFit.cover,
                                         )

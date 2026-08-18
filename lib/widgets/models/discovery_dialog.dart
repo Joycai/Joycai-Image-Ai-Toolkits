@@ -128,7 +128,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
       );
     }
 
-    final media = MediaQuery.of(context).size;
+    final media = MediaQuery.sizeOf(context);
 
     return AppDialog(
       icon: Icons.auto_awesome_outlined,
