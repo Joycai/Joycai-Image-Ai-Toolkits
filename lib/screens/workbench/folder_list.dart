@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
+import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
@@ -43,14 +44,16 @@ class FolderList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final appState = Provider.of<AppState>(context, listen: false);
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final galleryState = appState.galleryState;
-
-    final sourceDirectories = useFileBrowserState 
-        ? appState.fileBrowserState.sourceDirectories 
-        : appState.sourceDirectories;
+    // Subscribed to the notifier that owns each list. AppState no longer
+    // forwards its sub-states, and this list is the one place both trees are
+    // drawn, so it has to name the one it is actually showing.
+    final galleryState = context.watch<GalleryState>();
+    final sourceDirectories = useFileBrowserState
+        ? context.watch<FileBrowserState>().sourceDirectories
+        : galleryState.sourceDirectories;
 
     return Column(
         children: [

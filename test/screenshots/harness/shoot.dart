@@ -90,7 +90,7 @@ Future<void> shoot(
   appState.locale = locale;
   // Logs accumulate across shots and would make the console strip differ run
   // to run for reasons that have nothing to do with layout.
-  appState.clearLogs();
+  appState.logState.clear();
   seedLogs(appState);
   appState.navigateToScreen(screen.index);
   await before?.call(tester);
@@ -139,6 +139,7 @@ Widget _appTree(AppState appState) {
       // main.dart does not register this one, but several widgets read it.
       ChangeNotifierProvider.value(value: appState.galleryState),
       ChangeNotifierProvider.value(value: appState.downloaderState),
+      ChangeNotifierProvider.value(value: appState.logState),
     ],
     child: const MyApp(version: '3.13.0'),
   );

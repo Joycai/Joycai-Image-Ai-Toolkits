@@ -47,6 +47,38 @@ extension AppStateWorkbench on AppState {
     notify();
   }
 
+  /// Records the workbench prompt as the user types.
+  ///
+  /// Deliberately silent, and deliberately not [updateWorkbenchConfig]: nothing
+  /// in the app rebuilds off [AppState.lastPrompt] except the editor that owns
+  /// the text, and that editor already has it in its own controller. Notifying
+  /// per keystroke meant every character rebuilt the navigation rail, the
+  /// gallery grid, the log console and the sidebar — this is what made typing
+  /// drop frames. The one writer that *does* need the rebuild is
+  /// `_handleOptimizerApply`, which drops a finished prompt in from the
+  /// assistant tab; that keeps going through [updateWorkbenchConfig] so the
+  /// editor picks it up.
+  ///
+  /// The field moves synchronously so it is never stale — only the SQLite write
+  /// is deferred, and it is deferred on [AppState], which outlives the panel,
+  /// so closing the workbench mid-sentence still persists the draft.
+  void setPromptDraft(String prompt) {
+    lastPrompt = prompt;
+    _promptSaveTimer?.cancel();
+    _promptSaveTimer = Timer(const Duration(milliseconds: 500), () {
+      _db.saveSetting('last_prompt', lastPrompt);
+    });
+  }
+
+  /// The video panel's counterpart to [setPromptDraft]; same reasoning.
+  void setVideoPromptDraft(String prompt) {
+    lastVideoPrompt = prompt;
+    _videoPromptSaveTimer?.cancel();
+    _videoPromptSaveTimer = Timer(const Duration(milliseconds: 500), () {
+      _db.saveSetting('last_video_prompt', lastVideoPrompt);
+    });
+  }
+
   // --- Per-family image generation parameters ------------------------------
 
   Future<void> loadImageParams() async {

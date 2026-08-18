@@ -12,6 +12,7 @@ import '../../models/prompt_history_entry.dart';
 import '../../models/tag.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../state/app_state.dart';
+import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
@@ -192,7 +193,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Selector<AppState, List<AppImage>>(
+            // Off GalleryState, which owns the selection — AppState no longer
+            // re-broadcasts it.
+            Selector<GalleryState, List<AppImage>>(
               selector: (_, s) => s.selectedImages,
               builder: (context, selectedImages, _) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +289,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                     maxLines: 15,
                     initiallyPreview: false,
                     hint: l10n.promptHint,
-                    onChanged: (v) => _updateConfig(prompt: v),
+                    // Not _updateConfig: keystrokes take the silent draft path
+                    // so typing does not notify the whole app. See
+                    // AppStateWorkbench.setPromptDraft.
+                    onChanged: (v) => appState.setPromptDraft(v),
                     expand: false, // Don't expand inside scrollable
                   ),
                   const SizedBox(height: 4),
@@ -299,54 +305,63 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
         );
 
         // Primary Execution Button — reused in both mobile (pinned) and desktop (in scroll)
+        //
+        // The enabled state hangs off the controller directly rather than off a
+        // panel rebuild: typing no longer notifies [AppState] (see
+        // setPromptDraft), so nothing else would re-run this. Listening to the
+        // controller keeps the button live at the cost of rebuilding one button
+        // per keystroke instead of the whole sidebar.
         final processButton = SizedBox(
           width: double.infinity,
-          child: Selector<AppState, int>(
+          child: Selector<GalleryState, int>(
             selector: (_, s) => s.selectedImages.length,
-            builder: (context, selectedCount, _) => FilledButton.icon(
-              onPressed: _promptController.text.isEmpty
-                  ? null
-                  : () {
-                      final appState = Provider.of<AppState>(context, listen: false);
-                      if (selectedModelDbId == null) {
-                        AppSnackBar.warning(
-                          context,
-                          l10n.noModelsConfigured,
-                          action: AppSnackBarAction(
-                            label: l10n.models,
-                            onPressed: () => appState.navigateToScreen(6),
-                          ),
-                        );
-                        return;
-                      }
+            builder: (context, selectedCount, _) => ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _promptController,
+              builder: (context, promptValue, _) => FilledButton.icon(
+                onPressed: promptValue.text.isEmpty
+                    ? null
+                    : () {
+                        final appState = Provider.of<AppState>(context, listen: false);
+                        if (selectedModelDbId == null) {
+                          AppSnackBar.warning(
+                            context,
+                            l10n.noModelsConfigured,
+                            action: AppSnackBarAction(
+                              label: l10n.models,
+                              onPressed: () => appState.navigateToScreen(6),
+                            ),
+                          );
+                          return;
+                        }
 
-                      final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
-                      final modelName = selectedModel.modelName;
+                        final selectedModel = appState.imageModels.firstWhere((m) => m.id == selectedModelDbId);
+                        final modelName = selectedModel.modelName;
 
-                      final params = <String, dynamic>{
-                        'prompt': _promptController.text,
-                        ...appState.effectiveImageParams(selectedModel.modelId),
-                      };
+                        final params = <String, dynamic>{
+                          'prompt': _promptController.text,
+                          ...appState.effectiveImageParams(selectedModel.modelId),
+                        };
 
-                      appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
+                        appState.submitTask(selectedModelDbId, params, modelIdDisplay: modelName);
 
-                      if (widget.scrollController != null) {
-                        Navigator.pop(context);
-                      }
+                        if (widget.scrollController != null) {
+                          Navigator.pop(context);
+                        }
 
-                      AppSnackBar.info(context, l10n.taskSubmitted);
-                    },
-              icon: const Icon(Icons.play_arrow_rounded, size: 24),
-              label: Text(
-                selectedCount == 0
-                    ? l10n.processPrompt
-                    : l10n.processImages(selectedCount),
-                style: Theme.of(context).textTheme.titleMedium?.metricsOnly.copyWith(fontWeight: FontWeight.bold),
-              ),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-                elevation: 0,
+                        AppSnackBar.info(context, l10n.taskSubmitted);
+                      },
+                icon: const Icon(Icons.play_arrow_rounded, size: 24),
+                label: Text(
+                  selectedCount == 0
+                      ? l10n.processPrompt
+                      : l10n.processImages(selectedCount),
+                  style: Theme.of(context).textTheme.titleMedium?.metricsOnly.copyWith(fontWeight: FontWeight.bold),
+                ),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                  elevation: 0,
+                ),
               ),
             ),
           ),

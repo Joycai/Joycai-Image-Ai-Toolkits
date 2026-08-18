@@ -41,8 +41,7 @@ class DownloaderToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final state = appState.downloaderState;
+    final state = context.watch<DownloaderState>();
     final colorScheme = Theme.of(context).colorScheme;
 
     final urlField = SizedBox(
@@ -197,8 +196,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final state = appState.downloaderState;
+    final state = context.watch<DownloaderState>();
     final colorScheme = Theme.of(context).colorScheme;
 
     final discoveredCount = state.discoveredImages.length;

@@ -176,8 +176,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   }
 
   Widget _buildDesktopLayout(AppLocalizations l10n) {
-    final appState = Provider.of<AppState>(context);
-    final fileBrowserState = appState.fileBrowserState;
+    final fileBrowserState = context.watch<FileBrowserState>();
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
 

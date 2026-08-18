@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../state/app_state.dart';
+import '../../../state/downloader_state.dart';
 import '../../../widgets/app_button.dart';
 
 class DownloaderResultsArea extends StatelessWidget {
@@ -16,8 +16,7 @@ class DownloaderResultsArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final state = appState.downloaderState;
+    final state = context.watch<DownloaderState>();
     final colorScheme = Theme.of(context).colorScheme;
     final selectedCount = state.discoveredImages.where((i) => i.isSelected).length;
 
@@ -230,7 +229,16 @@ class _ImageDiscoveryCard extends StatelessWidget {
                   child: Container(
                     color: colorScheme.surfaceContainerHighest,
                     child: image.localCachePath != null
-                      ? Image.file(File(image.localCachePath!), fit: BoxFit.cover)
+                      ? Image.file(
+                          File(image.localCachePath!),
+                          fit: BoxFit.cover,
+                          // A scraped page can hand back a grid of full-size
+                          // artwork; decoding each one at native resolution for
+                          // a 220px cell filled the image cache several times
+                          // over and re-decoded the lot on every scroll. The
+                          // ceiling is the grid delegate's maxCrossAxisExtent.
+                          cacheWidth: (220 * MediaQuery.devicePixelRatioOf(context)).round(),
+                        )
                       : const Center(child: Icon(Icons.image, color: Colors.grey)),
                   ),
                 ),

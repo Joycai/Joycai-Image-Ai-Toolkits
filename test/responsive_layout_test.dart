@@ -33,6 +33,7 @@ void main() {
           ChangeNotifierProvider.value(value: appState.fileBrowserState),
           ChangeNotifierProvider.value(value: appState.galleryState),
           ChangeNotifierProvider.value(value: appState.downloaderState),
+          ChangeNotifierProvider.value(value: appState.logState),
         ],
         child: const MyApp(version: 'test'),
       ),

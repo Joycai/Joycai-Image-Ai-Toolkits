@@ -139,7 +139,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
           maxLines: 8,
           hint: l10n.promptHint,
-          onChanged: (v) => appState.updateVideoConfig(prompt: v),
+          // Silent draft path — typing here must not notify the whole app.
+          // See AppStateWorkbench.setVideoPromptDraft.
+          onChanged: (v) => appState.setVideoPromptDraft(v),
           expand: false,
         ),
         SwitchListTile(
@@ -209,12 +211,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final generateButton = Row(
       children: [
         Expanded(
-          child: AppButton(
-            label: l10n.generateVideo,
-            icon: Icons.movie_outlined,
-            size: AppButtonSize.large,
-            fullWidth: true,
-            onPressed: _promptController.text.isEmpty ? null : _handleSubmit,
+          // Enabled state hangs off the controller, not off a panel rebuild:
+          // typing no longer notifies [AppState], so nothing else re-runs this.
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _promptController,
+            builder: (context, promptValue, _) => AppButton(
+              label: l10n.generateVideo,
+              icon: Icons.movie_outlined,
+              size: AppButtonSize.large,
+              fullWidth: true,
+              onPressed: promptValue.text.isEmpty ? null : _handleSubmit,
+            ),
           ),
         ),
         const SizedBox(width: 10),
