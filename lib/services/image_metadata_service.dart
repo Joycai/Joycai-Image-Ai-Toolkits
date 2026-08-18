@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:image_size_getter/file_input.dart';
 import 'package:image_size_getter/image_size_getter.dart';
 
@@ -43,12 +45,42 @@ class ImageMetadataService {
   final Map<String, ImageMetadata> _cache = {};
   final int _maxCacheSize = 500;
 
-  Future<ImageMetadata?> getMetadata(String path) async {
-    // 1. Check cache
-    if (_cache.containsKey(path)) {
-      return _cache[path];
-    }
+  /// Reads already under way, so the same file is measured once no matter how
+  /// many cards ask for it. A scroll that mounts and unmounts the same tile
+  /// twice, or two views showing one picture, used to issue the read twice.
+  final Map<String, Future<ImageMetadata?>> _inFlight = {};
 
+  /// What is already known about [path], without touching the disk.
+  ///
+  /// Lets a thumbnail that has been measured before paint its badge on the
+  /// first frame instead of scheduling a read and a `setState` for a value it
+  /// already had — which is the common case when scrolling back over a grid.
+  ImageMetadata? peek(String path) => _cache[path];
+
+  Future<ImageMetadata?> getMetadata(String path) {
+    final cached = _cache[path];
+    if (cached != null) return Future.value(cached);
+
+    final pending = _inFlight[path];
+    if (pending != null) return pending;
+
+    // Queued through the scheduler rather than started immediately.
+    //
+    // [ImageSizeGetter.getSizeResult] is synchronous file I/O, and this is
+    // called from every thumbnail's initState — flinging the grid mounts a
+    // couple of dozen cards in one frame, and every one of those reads landed
+    // back-to-back on the UI isolate as soon as the `exists` check resolved.
+    // `scheduleTask` at [Priority.animation] runs them in the slack after a
+    // frame and stops when the frame budget is gone, so the reads spread across
+    // frames instead of stalling one.
+    final future = SchedulerBinding.instance
+        .scheduleTask(() => _read(path), Priority.animation)
+        .whenComplete(() => _inFlight.remove(path));
+    _inFlight[path] = future;
+    return future;
+  }
+
+  Future<ImageMetadata?> _read(String path) async {
     try {
       final file = File(path);
       if (!await file.exists()) return null;

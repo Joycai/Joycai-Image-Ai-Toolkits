@@ -103,7 +103,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       context,
       title: l10n.selectRenameTemplate,
       maxWidth: 420,
-      maxHeight: MediaQuery.of(context).size.height * 0.6,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
       content: templates.isEmpty
         ? Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -325,7 +325,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       title: l10n.aiBatchRename,
       subtitle: l10n.imagesSelected(fileCount),
       maxWidth: 640,
-      maxHeight: MediaQuery.of(context).size.height * 0.8,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.8,
       scrollable: true,
       content: Column(
         mainAxisSize: MainAxisSize.min,

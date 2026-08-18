@@ -88,7 +88,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final logs = widget.task.logs;
-    final media = MediaQuery.of(context).size;
+    final media = MediaQuery.sizeOf(context);
 
     return AppDialog(
       maxWidth: 720,

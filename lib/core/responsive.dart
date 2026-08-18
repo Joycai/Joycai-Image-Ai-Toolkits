@@ -4,18 +4,24 @@ class Responsive {
   static const double mobileBreakpoint = 600;
   static const double tabletBreakpoint = 1000;
 
+  // `sizeOf`, not `of`. `MediaQuery.of` subscribes the caller to the whole
+  // MediaQueryData, so every widget asking which breakpoint it is in also
+  // rebuilt when the keyboard opened, the text scale changed, or a system
+  // inset moved — none of which can change the answer. `sizeOf` depends on
+  // the size aspect alone.
+
   static bool isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < mobileBreakpoint;
+      MediaQuery.sizeOf(context).width < mobileBreakpoint;
 
   static bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= mobileBreakpoint &&
-      MediaQuery.of(context).size.width < tabletBreakpoint;
+      MediaQuery.sizeOf(context).width >= mobileBreakpoint &&
+      MediaQuery.sizeOf(context).width < tabletBreakpoint;
 
   static bool isDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= tabletBreakpoint;
+      MediaQuery.sizeOf(context).width >= tabletBreakpoint;
 
   static bool isNarrow(BuildContext context) =>
-      MediaQuery.of(context).size.width < tabletBreakpoint;
+      MediaQuery.sizeOf(context).width < tabletBreakpoint;
 
   /// Returns a value based on the current screen size.
   static T value<T>(
@@ -24,7 +30,7 @@ class Responsive {
     T? tablet,
     required T desktop,
   }) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
     if (width < mobileBreakpoint) return mobile;
     if (width < tabletBreakpoint) return tablet ?? desktop;
     return desktop;

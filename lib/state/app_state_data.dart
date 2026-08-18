@@ -107,9 +107,11 @@ extension AppStateData on AppState {
 
   // Model, Channel & Pricing Group Management
   Future<void> refreshDataCache() async {
-    _models = await _db.getModels();
-    _channels = await _db.getChannels();
-    _pricingGroups = await _db.getPricingGroups();
+    _cacheData(
+      models: await _db.getModels(),
+      channels: await _db.getChannels(),
+      pricingGroups: await _db.getPricingGroups(),
+    );
     notify();
   }
 

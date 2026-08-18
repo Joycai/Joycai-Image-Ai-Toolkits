@@ -679,7 +679,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
 
     if (widget.isMobile) {
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

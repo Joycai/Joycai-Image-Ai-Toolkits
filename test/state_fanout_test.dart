@@ -76,6 +76,25 @@ void main() {
     });
   });
 
+  group('derived model lists are stable', () {
+    test('reading twice returns the same instance', () {
+      final appState = AppState();
+
+      // `context.select` compares with `==`, and List does not override it.
+      // These were `_models.where(...).toList()` getters, so every read handed
+      // back a new object and every selector over one reported "changed" on
+      // every notification — the selector cost something and bought nothing.
+      // Nothing throws when that regresses; the panels just rebuild forever.
+      expect(identical(appState.imageModels, appState.imageModels), isTrue);
+      expect(identical(appState.chatModels, appState.chatModels), isTrue);
+      expect(identical(appState.videoModels, appState.videoModels), isTrue);
+      expect(
+        identical(appState.multimodalModels, appState.multimodalModels),
+        isTrue,
+      );
+    });
+  });
+
   group('sub-state consumers still rebuild', () {
     /// [GalleryState] reads its settings from SQLite while constructing. That
     /// query has to land on the real clock, before the widget binding's fake
