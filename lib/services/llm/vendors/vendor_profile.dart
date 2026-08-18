@@ -105,6 +105,14 @@ class VendorProfile {
   /// swaps the family-default image/video protocols for the xAI ones.
   final bool usesXaiNativeSurfaces;
 
+  /// True for vendors serving Alibaba DashScope's *native* image surface
+  /// (`/api/v1/services/aigc/...`) alongside the OpenAI-compatible chat one.
+  /// The dispatcher swaps the family-default image protocol for the
+  /// DashScope one; on any other vendor the same models keep their existing
+  /// route (chat), because a relay that lists `qwen-image` is serving it
+  /// through its own compatibility layer, not through this surface.
+  final bool usesDashScopeNativeImages;
+
   /// Which `thinking` spelling this vendor understands, for the ④ surface.
   /// [ThinkingDialect.none] on every other family.
   final ThinkingDialect thinking;
@@ -114,6 +122,7 @@ class VendorProfile {
     required this.family,
     required this.auth,
     this.usesXaiNativeSurfaces = false,
+    this.usesDashScopeNativeImages = false,
     this.thinking = ThinkingDialect.none,
   });
 

@@ -830,6 +830,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerGoogleCompatibleDesc => 'OpenAIエンドポイント経由のGoogle Gemini';
 
   @override
+  String get providerDashScope => 'Alibaba DashScope';
+
+  @override
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · Qwen チャット + qwen-image / Wan ネイティブ画像生成';
+
+  @override
   String get providerCustom => 'カスタムプロバイダー';
 
   @override
@@ -1840,6 +1847,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get quality => '品質';
+
+  @override
+  String get promptExtend => 'プロンプト拡張';
+
+  @override
+  String get promptExtendOn => 'オン';
+
+  @override
+  String get promptExtendOff => 'オフ';
 
   @override
   String get optionAuto => '自動';

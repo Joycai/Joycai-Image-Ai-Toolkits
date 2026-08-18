@@ -130,6 +130,26 @@ List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
 }
 
 /// What a model family can do, and which parameters apply to it.
+/// Which request body an image model's endpoint expects, when the family
+/// default (one shape per protocol) is not enough.
+///
+/// DashScope is the reason this exists: its two generations of image models
+/// are served by the same host under the same auth, but disagree about where
+/// the conversation goes — `qwen-image*` nests it under `input`, `wan2.7-*`
+/// puts it at the top level. Declaring the shape here keeps the protocol free
+/// of the model-id branch that would otherwise decide it (layer-1 code may
+/// not sniff ids; this file may).
+enum ImageRequestShape {
+  /// Not a DashScope-native model — the protocol's own default shape.
+  none,
+
+  /// `{model, input: {messages: [...]}, parameters: {...}}`.
+  dashscopeQwen,
+
+  /// `{model, messages: [...], parameters: {...}, watermark, n}`.
+  dashscopeWan,
+}
+
 class ModelCapabilities {
   /// True when the model's primary output is a generated image (and therefore
   /// the image parameter controls should be shown).
@@ -151,6 +171,22 @@ class ModelCapabilities {
   /// `imageParams`. Empty for Veo (the existing fixed controls cover it).
   final List<ParamSpec> videoParams;
 
+  /// True when a single request runs the whole generation upstream, so the
+  /// caller's per-request timeout has to be lifted to generation timescales
+  /// rather than API-response ones.
+  ///
+  /// DashScope's synchronous image endpoint is the case in point: it answers
+  /// only once the image exists, which for a 2K `wan2.7-image` can outlast
+  /// the 120 s that fits a chat completion — and the generation is billed
+  /// before the client gives up, so the default guard turns a paid result
+  /// into a timeout message. Read by `LLMDispatcher.generateTimeout`.
+  final bool longRunning;
+
+  /// Which request body this model's image endpoint expects. [
+  /// ImageRequestShape.none] for every family whose protocol has only one
+  /// shape.
+  final ImageRequestShape imageRequestShape;
+
   /// How many reference (input) images this family accepts for generation:
   ///  * `null` — supported with no enforced limit (e.g. nanoBanana).
   ///  * `0` — not supported at all (e.g. Imagen text-to-image).
@@ -163,6 +199,8 @@ class ModelCapabilities {
     this.imageParams = const [],
     this.videoParams = const [],
     this.maxReferenceImages,
+    this.longRunning = false,
+    this.imageRequestShape = ImageRequestShape.none,
   });
 
   /// Whether the model accepts any reference images at all.
@@ -192,6 +230,12 @@ class ModelCapabilities {
       return _grokImagineVideo;
     }
 
+    // DashScope's two shapes (see [ImageRequestShape]) also differ in their
+    // reference-image ceiling and size vocabulary, so they are two tables.
+    if (family == ModelFamily.dashscopeImage) {
+      return id.startsWith('wan') ? _dashscopeWanImage : _dashscopeQwenImage;
+    }
+
     return forFamily(family);
   }
 
@@ -205,6 +249,11 @@ class ModelCapabilities {
         return _openaiImage;
       case ModelFamily.xaiImage:
         return _xaiImage;
+      case ModelFamily.dashscopeImage:
+        // Reached only for an id that classified into the family but missed
+        // both tables in [forModel]; qwen's is the safer default (the smaller
+        // reference-image ceiling, the stricter size vocabulary).
+        return _dashscopeQwenImage;
       case ModelFamily.midjourney:
         return _midjourney;
       case ModelFamily.openaiVideo:
@@ -517,6 +566,71 @@ class ModelCapabilities {
         defaultValue: '1k',
         options: [ParamOption('1k'), ParamOption('2k')],
       ),
+    ],
+  );
+
+  /// Shared "let DashScope rewrite my prompt" control.
+  ///
+  /// Upstream defaults this to **on**: the endpoint rewrites the prompt
+  /// before generating. For an app whose users hand-tune prompts that is a
+  /// surprise worth surfacing, but flipping the default would be a surprise
+  /// of its own — so `not_set` sends nothing and keeps upstream behavior,
+  /// and the explicit values are how the author opts in or out.
+  static const _dashscopePromptExtend = ParamSpec(
+    key: 'promptExtend',
+    labelKey: 'promptExtend',
+    control: ParamControl.segmented,
+    defaultValue: 'not_set',
+    options: [ParamOption('not_set'), ParamOption('on'), ParamOption('off')],
+  );
+
+  /// `qwen-image*` on DashScope's native surface — the `input.messages`
+  /// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with each
+  /// edge in 512–2048, normalized to DashScope's `W*H` spelling on the wire.
+  ///
+  /// `n` is deliberately not exposed — every request sends 1. The ceiling
+  /// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
+  /// sending the wrong one is a 400, so the control waits until there is a
+  /// reason to produce more than one image per task.
+  static const _dashscopeQwenImage = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 3,
+    longRunning: true,
+    imageRequestShape: ImageRequestShape.dashscopeQwen,
+    imageParams: [
+      ParamSpec(
+        key: 'imageSize',
+        labelKey: 'resolution',
+        control: ParamControl.dropdown,
+        defaultValue: 'not_set',
+        options: [
+          ParamOption('not_set'),
+          ParamOption('1024x1024'),
+          ParamOption('1024x1536'),
+          ParamOption('1536x1024'),
+        ],
+      ),
+      _dashscopePromptExtend,
+    ],
+  );
+
+  /// `wan2.7-image*` on DashScope's native surface — the top-level
+  /// `messages` shape. Up to 9 reference images (20 MB each) and a `1K`/`2K`
+  /// size vocabulary on top of `W*H`.
+  static const _dashscopeWanImage = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 9,
+    longRunning: true,
+    imageRequestShape: ImageRequestShape.dashscopeWan,
+    imageParams: [
+      ParamSpec(
+        key: 'imageSize',
+        labelKey: 'resolution',
+        control: ParamControl.segmented,
+        defaultValue: 'not_set',
+        options: [ParamOption('not_set'), ParamOption('1K'), ParamOption('2K')],
+      ),
+      _dashscopePromptExtend,
     ],
   );
 

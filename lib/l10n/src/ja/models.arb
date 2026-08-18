@@ -98,6 +98,8 @@
   "providerGoogleOfficial": "Google GenAI公式",
   "providerGoogleCompatible": "Google GenAI（OpenAI互換）",
   "providerGoogleCompatibleDesc": "OpenAIエンドポイント経由のGoogle Gemini",
+  "providerDashScope": "Alibaba DashScope",
+  "providerDashScopeDesc": "dashscope.aliyuncs.com · Qwen チャット + qwen-image / Wan ネイティブ画像生成",
   "providerCustom": "カスタムプロバイダー",
   "providerCustomDesc": "セルフホストまたはサードパーティプロバイダー",
   "providerGroupOther": "その他",

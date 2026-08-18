@@ -147,6 +147,8 @@
   "providerGoogleOfficial": "Google GenAI Official",
   "providerGoogleCompatible": "Google GenAI (OpenAI Compatible)",
   "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
+  "providerDashScope": "Alibaba DashScope",
+  "providerDashScopeDesc": "dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation",
   "providerCustom": "Custom Provider",
   "providerCustomDesc": "Self-hosted or 3rd party provider",
   "providerGroupOther": "Other",
