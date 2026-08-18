@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -22,12 +21,11 @@ import '../../widgets/dialogs/import_options_dialog.dart';
 Future<void> importBackupSettings(BuildContext context, AppLocalizations l10n) async {
   final appState = Provider.of<AppState>(context, listen: false);
 
-  FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
-  if (!context.mounted || result == null) return;
+  final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+  if (!context.mounted || picked == null) return;
 
   try {
-    final file = File(result.files.single.path!);
-    final fileContent = await file.readAsString();
+    final fileContent = utf8.decode(await picked.readAsBytes());
     if (!context.mounted) return;
     final Map<String, dynamic> data = jsonDecode(fileContent);
 

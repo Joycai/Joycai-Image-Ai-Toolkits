@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -193,16 +194,15 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
     final l10n = AppLocalizations.of(context)!;
     final state = Provider.of<AppState>(context, listen: false).downloaderState;
 
-    final result = await FilePicker.pickFiles(
+    final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['txt', 'cookie', 'cookies'],
     );
 
-    if (result == null || result.files.single.path == null) return;
+    if (picked == null) return;
 
     try {
-      final file = File(result.files.single.path!);
-      final content = await file.readAsString();
+      final content = utf8.decode(await picked.readAsBytes());
 
       String parsedCookies = "";
       int count = 0;

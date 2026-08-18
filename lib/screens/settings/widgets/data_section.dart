@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -117,22 +116,18 @@ class DataSection extends StatelessWidget {
     final json = jsonEncode(data);
     final bytes = utf8.encode(json);
     
-    String? path = await FilePicker.saveFile(
+    // file_picker >= 12 writes `bytes` itself on every platform and returns the
+    // destination as a Uri, so no follow-up write is needed here.
+    final Uri? saved = await FilePicker.saveFile(
       fileName: 'joycai_backup.json',
       type: FileType.custom,
       allowedExtensions: ['json'],
       bytes: bytes,
     );
-    
+
     if (!context.mounted) return;
 
-    if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      await File(path).writeAsString(json);
-    }
-    
-    if (!context.mounted) return;
-
-    if (path != null) {
+    if (saved != null) {
       AppSnackBar.success(context, l10n.settingsExported);
     }
   }
@@ -239,19 +234,13 @@ class DataSection extends StatelessWidget {
     final appState = Provider.of<AppState>(context, listen: false);
     final importedMsg = l10n.settingsImported;
 
-    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
-    if (!context.mounted || result == null) return;
-    
+    final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+    if (!context.mounted || picked == null) return;
+
     try {
-      final singleFile = result.files.single;
-      final String fileContent;
-      if (singleFile.path != null) {
-        fileContent = await File(singleFile.path!).readAsString();
-      } else {
-        final bytes = await singleFile.readAsBytes();
-        if (bytes.isEmpty) return;
-        fileContent = utf8.decode(bytes);
-      }
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty) return;
+      final String fileContent = utf8.decode(bytes);
       if (!context.mounted) return;
       final Map<String, dynamic> data = jsonDecode(fileContent);
       
