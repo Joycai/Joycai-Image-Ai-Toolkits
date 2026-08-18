@@ -49,6 +49,9 @@ void main() async {
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.fileBrowserState),
         ChangeNotifierProvider.value(value: appState.downloaderState),
+        ChangeNotifierProvider.value(value: appState.galleryState),
+        // Separate from AppState on purpose — see LogState.
+        ChangeNotifierProvider.value(value: appState.logState),
       ],
       child: MyApp(version: packageInfo.version),
     ),

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/app_semantic_colors.dart';
 import '../models/log_entry.dart';
-import '../state/app_state.dart';
+import '../state/log_state.dart';
 import 'app_search_field.dart';
 import 'app_snackbar.dart';
 
@@ -54,24 +54,32 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    final logState = Provider.of<LogState>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Apply filters
-    final filteredLogs = appState.logs.where((log) {
-      final matchesLevel = _filterLevel == null || log.level == _filterLevel;
-      final matchesSearch = _searchQuery.isEmpty || 
-          log.message.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (log.taskId?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-      return matchesLevel && matchesSearch;
-    }).toList();
+    // Apply filters. The unfiltered case — which is how the console spends
+    // nearly all of its time — reads the list straight through rather than
+    // copying a thousand entries on every rebuild.
+    final List<LogEntry> filteredLogs;
+    if (_filterLevel == null && _searchQuery.isEmpty) {
+      filteredLogs = logState.logs;
+    } else {
+      final query = _searchQuery.toLowerCase();
+      filteredLogs = logState.logs.where((log) {
+        final matchesLevel = _filterLevel == null || log.level == _filterLevel;
+        final matchesSearch = query.isEmpty ||
+            log.message.toLowerCase().contains(query) ||
+            (log.taskId?.toLowerCase().contains(query) ?? false);
+        return matchesLevel && matchesSearch;
+      }).toList();
+    }
 
     // Trigger scroll after build if auto-scroll is enabled
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Column(
       children: [
-        if (widget.showHeader) _buildToolbar(context, appState, colorScheme),
+        if (widget.showHeader) _buildToolbar(context, logState, colorScheme),
         Expanded(
           child: Container(
             color: colorScheme.surfaceContainerLowest,
@@ -89,7 +97,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
     );
   }
 
-  Widget _buildToolbar(BuildContext context, AppState appState, ColorScheme colorScheme) {
+  Widget _buildToolbar(BuildContext context, LogState logState, ColorScheme colorScheme) {
     return Container(
       height: 40,
       decoration: BoxDecoration(
@@ -156,7 +164,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             IconButton(
               icon: Icon(Icons.copy_all, size: 18, color: colorScheme.onSurfaceVariant),
               onPressed: () {
-                final text = appState.logs.map((l) => '[${l.level}] ${l.message}').join('\n');
+                final text = logState.logs.map((l) => '[${l.level}] ${l.message}').join('\n');
                 Clipboard.setData(ClipboardData(text: text));
                 AppSnackBar.info(context, 'Logs copied to clipboard');
               },
@@ -164,7 +172,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             ),
             IconButton(
               icon: Icon(Icons.delete_sweep_outlined, size: 18, color: colorScheme.onSurfaceVariant),
-              onPressed: () => appState.clearLogs(),
+              onPressed: () => logState.clear(),
               tooltip: 'Clear',
             ),
           ],

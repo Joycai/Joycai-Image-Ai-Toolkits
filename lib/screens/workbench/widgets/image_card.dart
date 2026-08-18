@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,8 +20,19 @@ import 'image_card_context_menu.dart';
 /// on the app's own surfaces, and a chip tinted to the theme is illegible the
 /// moment someone loads an image in that hue. Black and white carry no hue of
 /// their own, so they stay neutral under the app's grey scale too.
+///
+/// [_chipScrim] and [_barScrim] are heavier than the values they replace,
+/// because there is no blur under them any more. The dimensions badge and the
+/// hover bar were both frosted — a [BackdropFilter] each — and the badge shows
+/// on every card that has finished reading its metadata, so a screen of
+/// thumbnails meant dozens of `saveLayer`-plus-blur passes per frame and the
+/// raster thread never finished one. Opacity alone separates a chip from the
+/// picture just as well at this size; the blur was only ever holding contrast
+/// that these values now hold directly.
 const Color _overlayScrim = Color(0x52000000);
 const Color _overlayScrimStrong = Color(0x73000000);
+const Color _chipScrim = Color(0x99000000);
+const Color _barScrim = Color(0xBF000000);
 const Color _overlayInk = Color(0xEBFFFFFF);
 
 /// A single thumbnail tile in the gallery grid. Handles its own thumbnail
@@ -271,21 +281,19 @@ class _ImageCardState extends State<ImageCard> {
     );
   }
 
-  /// Dimensions and file size, frosted so the chip reads on a busy photo
-  /// without hiding a solid rectangle of it.
+  /// Dimensions and file size, on a scrim dark enough to read against whatever
+  /// corner of the photo it lands on. See [_chipScrim] for why this is a flat
+  /// fill rather than the frosted panel it used to be.
   Widget _buildMetaBadge() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-          color: _overlayScrim,
-          child: Text(
-            _dimensions,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _overlayInk, height: 1.3),
-          ),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: _chipScrim,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        _dimensions,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _overlayInk, height: 1.3),
       ),
     );
   }
@@ -316,48 +324,46 @@ class _ImageCardState extends State<ImageCard> {
     );
   }
 
-  /// Compare / mask / crop, in one bar that appears only under the pointer.
+  /// Compare / mask / crop, in one bar that appears only under the pointer —
+  /// except on touch layouts, where it is permanent, which is the other reason
+  /// it can no longer afford a blur.
   ///
-  /// One frosted capsule rather than three chips inside a fourth container,
-  /// which is what this was: the nested fills read as buttons on top of a
-  /// button, and they sat on the picture permanently on touch layouts.
+  /// One capsule rather than three chips inside a fourth container, which is
+  /// what this was: the nested fills read as buttons on top of a button.
   Widget _buildHoverActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          color: _overlayScrimStrong,
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          // The bar sits over a grid cell whose width is the column count's to
-          // decide, and on a phone three columns leave less than the three
-          // buttons measure. Scaling the capsule down keeps all three reachable
-          // where a Row would put the third one past the edge of the picture.
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildOverlayButton(
-                  icon: Icons.compare,
-                  onPressed: () => _handleCompare(context),
-                  tooltip: l10n.comparator,
-                ),
-                _buildOverlayButton(
-                  icon: Icons.brush,
-                  onPressed: () => _handleMask(context),
-                  tooltip: l10n.maskEditor,
-                ),
-                _buildOverlayButton(
-                  icon: Icons.crop,
-                  onPressed: () => _handleCrop(context),
-                  tooltip: l10n.cropAndResize,
-                ),
-              ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        color: _barScrim,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      // The bar sits over a grid cell whose width is the column count's to
+      // decide, and on a phone three columns leave less than the three
+      // buttons measure. Scaling the capsule down keeps all three reachable
+      // where a Row would put the third one past the edge of the picture.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildOverlayButton(
+              icon: Icons.compare,
+              onPressed: () => _handleCompare(context),
+              tooltip: l10n.comparator,
             ),
-          ),
+            _buildOverlayButton(
+              icon: Icons.brush,
+              onPressed: () => _handleMask(context),
+              tooltip: l10n.maskEditor,
+            ),
+            _buildOverlayButton(
+              icon: Icons.crop,
+              onPressed: () => _handleCrop(context),
+              tooltip: l10n.cropAndResize,
+            ),
+          ],
         ),
       ),
     );

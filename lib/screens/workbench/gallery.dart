@@ -6,7 +6,6 @@ import '../../core/constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../services/file_permission_service.dart';
-import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
 import '../../widgets/placeholders/permission_placeholder.dart';
 import 'widgets/image_card.dart';
@@ -27,8 +26,11 @@ class _GalleryState extends State<Gallery> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final galleryState = appState.galleryState;
+    // Straight to GalleryState. Everything this screen draws lives there, and
+    // AppState no longer re-broadcasts it — going through AppState would mean
+    // the grid rebuilt for every unrelated change in the app and, now that the
+    // forwarding is gone, would not rebuild for gallery changes at all.
+    final galleryState = context.watch<GalleryState>();
 
     return DropTarget(
       onDragDone: (details) {
@@ -47,7 +49,7 @@ class _GalleryState extends State<Gallery> {
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          _buildActiveView(context, galleryState, appState),
+          _buildActiveView(context, galleryState),
           if (_isDragging)
             Container(
               color: Theme.of(context).colorScheme.primary.withAlpha(40),       
@@ -73,20 +75,20 @@ class _GalleryState extends State<Gallery> {
     );
   }
 
-  Widget _buildActiveView(BuildContext context, GalleryState galleryState, AppState appState) {
+  Widget _buildActiveView(BuildContext context, GalleryState galleryState) {
     switch (galleryState.viewMode) {
       case GalleryViewMode.all:
-        return _buildImageGrid(context, galleryState.galleryImages, appState);  
+        return _buildImageGrid(context, galleryState.galleryImages, galleryState);
       case GalleryViewMode.processed:
-        return _buildImageGrid(context, galleryState.processedImages, appState, isResult: true);
+        return _buildImageGrid(context, galleryState.processedImages, galleryState, isResult: true);
       case GalleryViewMode.temp:
-        return _buildImageGrid(context, galleryState.droppedImages, appState, isTemp: true);
+        return _buildImageGrid(context, galleryState.droppedImages, galleryState, isTemp: true);
       case GalleryViewMode.folder:
-        return _buildImageGrid(context, galleryState.folderImages, appState, isResult: galleryState.folderViewIsResult);
+        return _buildImageGrid(context, galleryState.folderImages, galleryState, isResult: galleryState.folderViewIsResult);
     }
   }
 
-  Future<void> _reAuthorize(BuildContext context, AppState state, String path, bool isResult) async {
+  Future<void> _reAuthorize(BuildContext context, GalleryState state, String path, bool isResult) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
       title: isResult ? "Authorize Output Directory" : "Authorize Folder: $path",
@@ -96,18 +98,18 @@ class _GalleryState extends State<Gallery> {
       if (isResult) {
         await state.updateOutputDirectory(newPath);
       } else {
-        state.galleryState.setViewFolder(newPath);
-        state.galleryState.refreshImages();
+        state.setViewFolder(newPath);
+        state.refreshImages();
       }
     }
   }
 
-  Widget _buildImageGrid(BuildContext context, List<AppImage> images, AppState state, {bool isResult = false, bool isTemp = false}) {
+  Widget _buildImageGrid(BuildContext context, List<AppImage> images, GalleryState state, {bool isResult = false, bool isTemp = false}) {
     final l10n = AppLocalizations.of(context)!;
 
     // Check for macOS permission issues
-    final currentPath = isResult ? state.outputDirectory : (state.galleryState.viewMode == GalleryViewMode.folder ? state.galleryState.viewSourcePath : null);  
-    final bool isUnreachable = !isTemp && currentPath != null && state.galleryState.isPathUnreachable(currentPath);
+    final currentPath = isResult ? state.outputDirectory : (state.viewMode == GalleryViewMode.folder ? state.viewSourcePath : null);
+    final bool isUnreachable = !isTemp && currentPath != null && state.isPathUnreachable(currentPath);
 
     if (images.isEmpty) {
       if (isUnreachable) {
@@ -116,7 +118,7 @@ class _GalleryState extends State<Gallery> {
         );
       }
 
-      if (state.galleryState.isScanning) {
+      if (state.isScanning) {
         return const Center(child: CircularProgressIndicator());
       }
 
@@ -143,12 +145,12 @@ class _GalleryState extends State<Gallery> {
     }
 
     // Grouping is memoized in GalleryState — only recomputed when the list identity changes.
-    final grouped = state.galleryState.getGrouped(images);
-    final globalIndexByPath = state.galleryState.getGlobalIndex(images);
+    final grouped = state.getGrouped(images);
+    final globalIndexByPath = state.getGlobalIndex(images);
     // processedImages is pre-sorted by modification date; use memoized paths for other views.
     final sortedPaths = isResult
         ? grouped.keys.toList()
-        : state.galleryState.getSortedPaths(images);
+        : state.getSortedPaths(images);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -156,7 +158,7 @@ class _GalleryState extends State<Gallery> {
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
-        final bool showHeaders = !isTemp && (grouped.length > 1 || state.galleryState.viewMode == GalleryViewMode.all);
+        final bool showHeaders = !isTemp && (grouped.length > 1 || state.viewMode == GalleryViewMode.all);
 
         return ExcludeSemantics(
           child: CustomScrollView(
@@ -210,7 +212,7 @@ class _GalleryState extends State<Gallery> {
                         // when its *place* in the selection shifts (something
                         // earlier was removed, or the strip was reordered),
                         // which a boolean cannot report.
-                        return Selector<AppState, int>(
+                        return Selector<GalleryState, int>(
                           selector: (_, state) => state.selectionNumberOf(imageFile.path),
                           builder: (context, selectionNumber, _) {
                             final isVideo = AppConstants.isVideoFile(imageFile.path);
@@ -222,7 +224,7 @@ class _GalleryState extends State<Gallery> {
                                 if (isVideo) {
                                   showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
                                 } else {
-                                  state.galleryState.toggleImageSelection(imageFile);
+                                  state.toggleImageSelection(imageFile);
                                 }
                               },
                               onDoubleTap: isVideo

@@ -8,7 +8,6 @@ import '../../../core/constants.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
-import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
@@ -22,14 +21,15 @@ class GalleryToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final appState = Provider.of<AppState>(context);
-    final galleryState = appState.galleryState;
+    // Everything this bar shows is gallery state, so it subscribes there
+    // rather than through AppState, which no longer forwards it.
+    final galleryState = context.watch<GalleryState>();
     final isDesktop = Responsive.isDesktop(context);
     final isNarrow = Responsive.isNarrow(context);
-    
-    final selectedCount = appState.selectedImages.length;
+
+    final selectedCount = galleryState.selectedImages.length;
     final selectableCount = galleryState.galleryImages.where((img) => !AppConstants.isVideoFile(img.path)).length;
-    final thumbnailSize = appState.thumbnailSize;
+    final thumbnailSize = galleryState.thumbnailSize;
 
     // Measured against this bar, not the window. The centre panel is what
     // squeezes here -- open both side panels on a wide screen and the screen

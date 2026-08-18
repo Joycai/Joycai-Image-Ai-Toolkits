@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
 import '../../state/app_state.dart';
+import '../../state/downloader_state.dart';
 import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/panel_resizer.dart';
@@ -249,8 +250,12 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final appState = Provider.of<AppState>(context);
-    final state = appState.downloaderState;
+    // Two subscriptions, deliberately: the downloader's own data comes from
+    // DownloaderState, the model list from AppState. AppState no longer
+    // forwards its sub-states' notifications, so watching it alone would leave
+    // this screen frozen while an analysis runs.
+    final state = context.watch<DownloaderState>();
+    final appState = context.watch<AppState>();
     final colorScheme = Theme.of(context).colorScheme;
 
     if (state.selectedModelDbId == null && appState.chatModels.isNotEmpty) {

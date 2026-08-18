@@ -33,7 +33,7 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final counter = Provider.of<AppState>(context).galleryState.refreshCounter;
+    final counter = Provider.of<GalleryState>(context).refreshCounter;
     if (counter != _lastRefreshCounter) {
       _lastRefreshCounter = counter;
       _subDirectories = null;
@@ -81,10 +81,11 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
     final appState = Provider.of<AppState>(context, listen: false);
     final folderName = p.basename(widget.path);
 
-    final isViewing = context.select<AppState, bool>((state) =>
-        state.galleryState.viewMode == GalleryViewMode.folder &&
-        state.galleryState.folderViewIsResult &&
-        state.galleryState.viewSourcePath == widget.path);
+    // Off GalleryState directly — AppState no longer forwards its changes.
+    final isViewing = context.select<GalleryState, bool>((state) =>
+        state.viewMode == GalleryViewMode.folder &&
+        state.folderViewIsResult &&
+        state.viewSourcePath == widget.path);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

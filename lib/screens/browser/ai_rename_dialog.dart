@@ -12,6 +12,7 @@ import '../../services/ai_rename_agent.dart';
 import '../../services/database_service.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
+import '../../state/file_browser_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
@@ -310,7 +311,10 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final fileCount = appState.fileBrowserState.selectedFiles.length;
+    // Watched separately: AppState stopped forwarding its sub-states' changes,
+    // so the selection count would otherwise freeze at whatever it was when the
+    // dialog opened.
+    final fileCount = context.watch<FileBrowserState>().selectedFiles.length;
 
     final chatModels = appState.chatModels;
     // Safety check: ensure the selected PK actually exists in the current list of chat models

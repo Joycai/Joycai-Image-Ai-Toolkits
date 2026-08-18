@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
+import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
 
 /// Folders are amber everywhere in the app. It is the one colour in the tree
@@ -39,8 +40,11 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final appState = Provider.of<AppState>(context);
-    final currentCounter = widget.useFileBrowserState ? appState.browserRefreshCounter : appState.galleryState.refreshCounter;
+    // Depend on the notifier that owns the counter — AppState no longer
+    // forwards either one.
+    final currentCounter = widget.useFileBrowserState
+        ? Provider.of<FileBrowserState>(context).refreshCounter
+        : Provider.of<GalleryState>(context).refreshCounter;
     
     if (currentCounter != _lastRefreshCounter) {
       _lastRefreshCounter = currentCounter;
@@ -128,23 +132,24 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to selection changes efficiently based on the target state
-    final isSelected = context.select<AppState, bool>((state) {
-      if (widget.useFileBrowserState) {
-        return state.fileBrowserState.activeDirectories.contains(widget.path);
-      } else {
-        return state.activeSourceDirectories.contains(widget.path);
-      }
-    });
+    // Listen to selection changes efficiently based on the target state.
+    // Selected off the owning notifier, not off AppState: AppState stopped
+    // re-broadcasting its sub-states, so a selector reading through it would
+    // never fire.
+    final isSelected = widget.useFileBrowserState
+        ? context.select<FileBrowserState, bool>(
+            (state) => state.activeDirectories.contains(widget.path))
+        : context.select<GalleryState, bool>(
+            (state) => state.activeSourceDirectories.contains(widget.path));
 
     // In the gallery, the checkbox controls aggregate inclusion while tapping
     // the name browses just that folder — so the row highlight tracks "you are
     // here" (viewing), distinct from the checkbox/inclusion state.
     final isViewing = !widget.useFileBrowserState &&
-        context.select<AppState, bool>((state) =>
-            state.galleryState.viewMode == GalleryViewMode.folder &&
-            !state.galleryState.folderViewIsResult &&
-            state.galleryState.viewSourcePath == widget.path);
+        context.select<GalleryState, bool>((state) =>
+            state.viewMode == GalleryViewMode.folder &&
+            !state.folderViewIsResult &&
+            state.viewSourcePath == widget.path);
     final highlight = widget.useFileBrowserState ? isSelected : isViewing;
 
     // We no longer need the separate 'isViewing' concept for highlighting, 

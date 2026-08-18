@@ -13,7 +13,6 @@ import '../services/llm/vendors/vendors.dart';
 import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
-import '../models/log_entry.dart';
 import '../models/pricing_group.dart';
 import '../models/prompt.dart';
 import '../models/prompt_history_entry.dart';
@@ -27,6 +26,7 @@ import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
 import 'file_browser_state.dart';
 import 'gallery_state.dart';
+import 'log_state.dart';
 import 'workbench_ui_state.dart';
 
 part 'app_state_data.dart';
@@ -43,12 +43,25 @@ class AppState extends ChangeNotifier {
   final FileBrowserState fileBrowserState = FileBrowserState();
   final WorkbenchUIState workbenchUIState = WorkbenchUIState();
 
-  AppState._internal() {
-    galleryState.addListener(notifyListeners);
-    downloaderState.addListener(notifyListeners);
-    fileBrowserState.addListener(notifyListeners);
-    workbenchUIState.addListener(notifyListeners);
+  /// Execution log. Pointedly absent from the listener wiring below: log lines
+  /// arrive one per streamed chunk, and forwarding them here would rebuild
+  /// every screen in the app for each one. See [LogState].
+  final LogState logState = LogState();
 
+  // Note what is *not* here: the sub-states above used to each do
+  // `addListener(notifyListeners)`, so a change anywhere — a directory rescan,
+  // a queue progress tick, a hover in the comparator — was re-broadcast to
+  // every widget listening to AppState, which is most of them. That made the
+  // whole app rebuild for events that concerned one panel. Each sub-state is
+  // now its own provider and is watched directly by the widgets that draw it;
+  // AppState notifies only for the settings and model data it owns itself.
+  //
+  // The rule this leaves behind: never read a sub-state's data through an
+  // AppState listener. The proxy getters below (`galleryImages`,
+  // `selectedImages`, `outputDirectory`, …) are for one-shot reads and actions
+  // with `listen: false`; anything that has to rebuild when the value changes
+  // must watch the owning notifier.
+  AppState._internal() {
     // Wire up logs
     galleryState.onLog = (msg, {level = 'INFO'}) {
       addLog(msg, level: level);
@@ -68,7 +81,7 @@ class AppState extends ChangeNotifier {
       final l10n = lookupAppLocalizations(locale ?? const Locale('en'));        
 
       if (task.status == TaskStatus.completed) {
-        hasErrors = false; // A successful task clears the stale error indicator
+        logState.clearErrorFlag(); // A success clears the stale error indicator
         NotificationService().showNotification(
           title: l10n.taskCompletedNotification,
           body: l10n.taskCompletedBody(task.id.substring(0, 8)),
@@ -88,16 +101,8 @@ class AppState extends ChangeNotifier {
     LLMService().onLogAdded = (msg, {level = 'INFO', contextId}) {
       addLog(msg, level: level, taskId: contextId);
     };
-
-    taskQueue.addListener(() {
-      isProcessing = taskQueue.runningCount > 0;
-      notifyListeners(); // single listener — also propagates all task queue changes
-    });
   }
 
-  List<LogEntry> logs = [];
-  bool isProcessing = false;
-  bool hasErrors = false;
   bool settingsLoaded = false;
   bool setupCompleted = true;
   int concurrencyLimit = 2;
@@ -241,13 +246,11 @@ class AppState extends ChangeNotifier {
   void dispose() {
     galleryState.dispose();
     fileBrowserState.dispose();
-    taskQueue.removeListener(notifyListeners);
-    galleryState.removeListener(notifyListeners);
-    downloaderState.removeListener(notifyListeners);
-    fileBrowserState.removeListener(notifyListeners);
-    workbenchUIState.removeListener(notifyListeners);
+    logState.dispose();
     _sidebarWidthSaveTimer?.cancel();
     _consoleHeightSaveTimer?.cancel();
+    _promptSaveTimer?.cancel();
+    _videoPromptSaveTimer?.cancel();
     super.dispose();
   }
 
@@ -389,36 +392,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The app-wide entry point for logging, kept here because every producer
+  /// already reaches for [AppState]. It does not notify: the line goes to
+  /// [logState], which is what the console and the run bar listen to.
   void addLog(String message, {String level = 'INFO', String? taskId}) {
-    if (level == 'ERROR') hasErrors = true;
-    if (message.startsWith('[AI]: ') && logs.isNotEmpty && logs.last.message.startsWith('[AI]: ')) {
-      final lastLog = logs.last;
-      if (lastLog.taskId == taskId) {
-        final newText = message.substring(6);
-        logs[logs.length - 1] = LogEntry(
-          timestamp: lastLog.timestamp,
-          level: lastLog.level,
-          message: lastLog.message + newText,
-          taskId: taskId,
-        );
-        notifyListeners();
-        return;
-      }
-    }
-    logs.add(LogEntry(timestamp: DateTime.now(), level: level, message: message, taskId: taskId));
-
-    // Maintain maximum log size
-    if (logs.length > 1000) {
-      logs.removeRange(0, logs.length - 1000);
-    }
-
-    notifyListeners();
-  }
-
-  void clearLogs() {
-    logs.clear();
-    hasErrors = false;
-    notifyListeners();
+    logState.add(message, level: level, taskId: taskId);
   }
 
   /// Forwards to the protected [notifyListeners] so the `part of` extensions
@@ -494,6 +472,12 @@ class AppState extends ChangeNotifier {
   }
 
   Timer? _sidebarWidthSaveTimer;
+
+  // Draft-prompt write debouncers. Fields rather than locals inside the
+  // extension because Dart extensions cannot declare state; see
+  // [AppStateWorkbench.setPromptDraft] for why the writes are deferred at all.
+  Timer? _promptSaveTimer;
+  Timer? _videoPromptSaveTimer;
 
   Future<void> setSidebarWidth(double width) async {
     // Keep in sync with WorkbenchLayout's drag clamp (200–500) — the wider

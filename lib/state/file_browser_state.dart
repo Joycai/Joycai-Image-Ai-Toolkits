@@ -201,11 +201,18 @@ class FileBrowserState extends ChangeNotifier {
     
     final newAllFiles = rawFiles.map((m) => BrowserFile.fromMap(m)).toList();
 
-    // Evict from image cache only if the file was modified or removed
+    // Evict from image cache only if the file was modified or removed.
+    //
+    // Indexed rather than searched: this was a linear `firstWhere` over the
+    // previous listing per file, so a directory of a thousand pictures cost
+    // half a million comparisons on the UI thread every time the watcher fired.
+    final previousModified = {
+      for (final f in allFiles) f.path: f.modified,
+    };
     for (var file in newAllFiles) {
       if (file.category == FileCategory.image) {
-        final existing = allFiles.cast<BrowserFile?>().firstWhere((f) => f?.path == file.path, orElse: () => null);
-        if (existing != null && existing.modified != file.modified) {
+        final existing = previousModified[file.path];
+        if (existing != null && existing != file.modified) {
           PaintingBinding.instance.imageCache.evict(FileImage(File(file.path)));
         }
       }

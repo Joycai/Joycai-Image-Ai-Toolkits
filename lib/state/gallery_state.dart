@@ -12,8 +12,21 @@ import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
 
 /// Top-level function for background disk scanning to keep UI smooth.
-List<String> _scanImagesIsolate(List<String> paths) {
-  List<String> results = [];
+///
+/// Yields `path → [modifiedMsSinceEpoch, sizeBytes]` rather than a bare list of
+/// paths, because both callers that want those numbers used to take them on the
+/// UI thread. The result gallery sorted newest-first by calling
+/// `lastModifiedSync()` *inside the comparator* — O(n log n) blocking stats, on
+/// the order of twenty thousand syscalls for a thousand pictures, on the thread
+/// that draws the frame. Reading them once here costs one stat per file and
+/// happens off the UI isolate.
+///
+/// A map rather than a list of records: only primitives, lists and maps are
+/// guaranteed to survive the [compute] hop. Insertion order is preserved, so
+/// callers that want directory order still have it, and overlapping roots
+/// dedupe for free.
+Map<String, List<int>> _scanImagesIsolate(List<String> paths) {
+  final Map<String, List<int>> results = {};
   for (var path in paths) {
     try {
       final dir = Directory(path);
@@ -22,7 +35,11 @@ List<String> _scanImagesIsolate(List<String> paths) {
         for (var entity in entities) {
           try {
             if (entity is File && AppConstants.isSupportedFile(entity.path)) {
-              results.add(entity.path);
+              final stat = entity.statSync();
+              results[entity.path] = [
+                stat.modified.millisecondsSinceEpoch,
+                stat.size,
+              ];
             }
           } catch (_) {
             // Ignore individual file access errors
@@ -358,16 +375,43 @@ class GalleryState extends ChangeNotifier {
     }
   }
 
-  void _evictImages(List<String> paths) {
-    for (var path in paths) {
-      PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
-    }
+  /// `[modifiedMs, size]` per path, as of the last scan that covered it.
+  final Map<String, List<int>> _fingerprints = {};
+
+  /// Drops the decoded bitmap of every file that actually changed on disk.
+  ///
+  /// The crop and mask tools overwrite the original, which leaves the path — and
+  /// therefore the image cache key — untouched, so without this the cache keeps
+  /// serving the picture from before the edit. What it used to do was evict
+  /// *every* scanned path on *every* scan, and the scans are driven by directory
+  /// watchers: a batch writing its results made the output watcher fire twice a
+  /// second, and each time the whole gallery's decoded bitmaps were thrown away
+  /// and immediately decoded again.
+  ///
+  /// [roots] is the set of directories [scanned] covers, used to forget files
+  /// that have since left them so this map tracks the disk instead of growing
+  /// for the life of the process.
+  void _evictChanged(List<String> roots, Map<String, List<int>> scanned) {
+    final rootSet = roots.toSet();
+    _fingerprints.removeWhere((path, _) =>
+        rootSet.contains(p.dirname(path)) && !scanned.containsKey(path));
+
+    scanned.forEach((path, current) {
+      final previous = _fingerprints[path];
+      if (previous == null) {
+        // First sighting — nothing can be cached under this path yet.
+        _fingerprints[path] = current;
+      } else if (previous[0] != current[0] || previous[1] != current[1]) {
+        PaintingBinding.instance.imageCache.evict(FileImage(File(path)));
+        _fingerprints[path] = current;
+      }
+    });
   }
 
   Future<void> _scanFolder(String path) async {
-    final List<String> paths = await compute(_scanImagesIsolate, [path]);
-    _evictImages(paths); // Ensure edited images are re-loaded from disk
-    folderImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
+    final scanned = await compute(_scanImagesIsolate, [path]);
+    _evictChanged([path], scanned);
+    folderImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
@@ -386,9 +430,9 @@ class GalleryState extends ChangeNotifier {
       return;
     }
 
-    final List<String> paths = await compute(_scanImagesIsolate, activeSourceDirectories);
-    _evictImages(paths);
-    galleryImages = paths.map((p) => AppImage.fromFile(File(p))).toList();
+    final scanned = await compute(_scanImagesIsolate, activeSourceDirectories);
+    _evictChanged(activeSourceDirectories, scanned);
+    galleryImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
     notifyListeners();
   }
 
@@ -406,21 +450,17 @@ class GalleryState extends ChangeNotifier {
     }
 
     try {
-      final List<String> paths = await compute(_scanImagesIsolate, scanPaths);
-      _evictImages(paths);
-      
-      // Use a set to avoid duplicates if directories overlap
-      final uniquePaths = paths.toSet().toList();
-      List<File> files = uniquePaths.map((p) => File(p)).toList();
-      
-      files.sort((a, b) {
-        try {
-          return b.lastModifiedSync().compareTo(a.lastModifiedSync());
-        } catch (e) {
-          return 0;
-        }
-      });
-      processedImages = files.map((f) => AppImage.fromFile(f)).toList();
+      // Overlapping roots dedupe on the way in — the isolate keys by path.
+      final scanned = await compute(_scanImagesIsolate, scanPaths);
+      _evictChanged(scanPaths, scanned);
+
+      // Newest first, from the modification times the isolate already read.
+      // This comparator used to call lastModifiedSync() on both sides of every
+      // comparison, which put an O(n log n) pile of blocking stats on the UI
+      // thread every time the output directory changed.
+      final sorted = scanned.keys.toList()
+        ..sort((a, b) => scanned[b]![0].compareTo(scanned[a]![0]));
+      processedImages = sorted.map((p) => AppImage.fromFile(File(p))).toList();
     } catch (e) {
       processedImages = [];
     }

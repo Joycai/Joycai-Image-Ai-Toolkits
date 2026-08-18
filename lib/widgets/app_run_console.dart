@@ -5,6 +5,7 @@ import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
+import '../state/log_state.dart';
 import 'log_console.dart';
 import 'panel_resizer.dart';
 import '../screens/batch/task_queue_screen.dart';
@@ -56,9 +57,11 @@ class _AppRunConsoleState extends State<AppRunConsole>
       _height = Provider.of<AppState>(context, listen: false).consoleHeight;
     }
     final isConsoleExpanded = context.select<AppState, bool>((s) => s.isConsoleExpanded);
-    final hasErrors = context.select<AppState, bool>((s) => s.hasErrors);
-    final isProcessing = context.select<AppState, bool>((s) => s.isProcessing);
-    final lastLogMessage = context.select<AppState, String?>((s) => s.logs.isEmpty ? null : s.logs.last.message);
+    // Log-derived values come off LogState, which notifies on its own coalesced
+    // schedule rather than through AppState. See LogState.
+    final hasErrors = context.select<LogState, bool>((s) => s.hasErrors);
+    final lastLogMessage =
+        context.select<LogState, String?>((s) => s.logs.isEmpty ? null : s.logs.last.message);
     final queue = context.watch<TaskQueueService>();
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -66,6 +69,10 @@ class _AppRunConsoleState extends State<AppRunConsole>
 
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = queue.runningCount;
+    // Read off the queue rather than a mirrored flag on AppState. The mirror
+    // existed only so this one line could be a selector, and keeping it in sync
+    // is what made AppState notify on every queue tick.
+    final isProcessing = runningCount > 0;
     final hasTasks = pendingCount > 0 || runningCount > 0;
     final avgProgress = _avgProgress(queue);
 

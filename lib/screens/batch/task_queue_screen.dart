@@ -45,7 +45,12 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    // The queue is what this screen renders, so it subscribes to the queue.
+    // AppState no longer re-broadcasts queue changes — it used to, which meant
+    // the 500ms progress tick rebuilt every screen in the app, not just this
+    // one. `appState` stays on as the handle the helpers below reach through.
+    context.watch<TaskQueueService>();
+    final appState = Provider.of<AppState>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
 
     // Embedded presentation (workbench bottom-sheet console): the sheet already
@@ -360,7 +365,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
-          final queue = Provider.of<AppState>(dialogContext).taskQueue;
+          final queue = Provider.of<TaskQueueService>(dialogContext);
           return AppDialog(
             title: l10n.concurrencyLimit(queue.concurrencyLimit),
             content: Column(
@@ -867,6 +872,11 @@ class _TaskCardState extends State<_TaskCard> {
     const size = 44.0;
     final paths = task.resultPaths.take(maxThumbs).toList();
     final overflow = task.resultPaths.length - paths.length;
+    // `width` constrains the layout, not the decode: without this a 44px chip
+    // held a full 2K generation in the image cache — a handful of finished
+    // tasks was enough to blow past the cache ceiling and put every visible
+    // thumbnail back on the decoder, over and over, while scrolling the queue.
+    final decodeWidth = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
     Widget frame({required Widget child}) => Padding(
           padding: const EdgeInsets.only(left: 5),
@@ -882,6 +892,7 @@ class _TaskCardState extends State<_TaskCard> {
               File(path),
               width: size,
               height: size,
+              cacheWidth: decodeWidth,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => Container(
                 width: size,
@@ -1088,6 +1099,8 @@ class _TaskCardState extends State<_TaskCard> {
                   File(task.resultPaths[i]),
                   width: 72,
                   height: 72,
+                  // Decode to the size actually shown — see _buildThumbnailStrip.
+                  cacheWidth: (72 * MediaQuery.devicePixelRatioOf(context)).round(),
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => Container(
                     width: 72,
