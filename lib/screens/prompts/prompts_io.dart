@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -44,18 +43,16 @@ Future<void> exportPrompts(
   final json = jsonEncode(data);
   final bytes = utf8.encode(json);
 
-  String? path = await FilePicker.saveFile(
+  // file_picker >= 12 writes `bytes` itself on every platform and returns the
+  // destination as a Uri, so no follow-up write is needed here.
+  final Uri? saved = await FilePicker.saveFile(
     fileName: 'joycai_prompts.json',
     type: FileType.custom,
     allowedExtensions: ['json'],
     bytes: bytes,
   );
 
-  if (path != null && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-    await File(path).writeAsString(json);
-  }
-
-  if (path != null && context.mounted) {
+  if (saved != null && context.mounted) {
     AppSnackBar.success(context, l10n.settingsExported);
   }
 }
@@ -66,8 +63,8 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   final appState = Provider.of<AppState>(context, listen: false);
   final successMsg = l10n.settingsImported;
 
-  FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
-  if (!context.mounted || result == null) return false;
+  final PlatformFile? picked = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+  if (!context.mounted || picked == null) return false;
 
   final String? importMode = await AppDialog.show<String>(
     context,
@@ -95,8 +92,7 @@ Future<bool> importPrompts(BuildContext context, AppLocalizations l10n) async {
   if (importMode == null) return false;
 
   try {
-    final file = File(result.files.single.path!);
-    final String content = await file.readAsString();
+    final String content = utf8.decode(await picked.readAsBytes());
     final Map<String, dynamic> data = jsonDecode(content);
 
     await appState.importPromptData(data, replace: importMode == 'replace');

@@ -1,9 +1,5 @@
 {
   "ja": [
     "noTasks"
-  ],
-
-  "zh_Hant": [
-    "noTasks"
   ]
 }
