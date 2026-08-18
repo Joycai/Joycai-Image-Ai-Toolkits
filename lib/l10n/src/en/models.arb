@@ -149,6 +149,7 @@
   "providerGoogleCompatibleDesc": "Google Gemini via OpenAI endpoint",
   "providerDashScope": "Alibaba DashScope",
   "providerDashScopeDesc": "dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation",
+  "endpointOverrideHint": "Prefilled for this provider. Replace it to use a relay, gateway or international host.",
   "providerQianwen": "Qianwen Platform",
   "providerQianwenDesc": "platform.qianwenai.com · same DashScope API — Qwen chat + qwen-image / wan2.7 image generation",
   "providerCustom": "Custom Provider",

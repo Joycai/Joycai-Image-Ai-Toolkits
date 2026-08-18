@@ -833,6 +833,9 @@ class AppLocalizationsZh extends AppLocalizations {
       'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
 
   @override
+  String get endpointOverrideHint => '已按所选提供商预填，可改为中转、网关或国际站地址。';
+
+  @override
   String get providerQianwen => '千问平台';
 
   @override
@@ -3508,6 +3511,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get providerDashScopeDesc =>
       'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
+
+  @override
+  String get endpointOverrideHint => '已依所選提供商預填，可改為中轉、閘道或國際站位址。';
 
   @override
   String get providerQianwen => '千問平台';

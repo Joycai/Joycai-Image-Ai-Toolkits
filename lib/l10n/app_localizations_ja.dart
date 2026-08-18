@@ -837,6 +837,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'dashscope.aliyuncs.com · Qwen チャット + qwen-image / Wan ネイティブ画像生成';
 
   @override
+  String get endpointOverrideHint =>
+      '選択したプロバイダーの既定値です。中継・ゲートウェイ・国際版ホストに変更できます。';
+
+  @override
   String get providerQianwen => 'Qianwen プラットフォーム';
 
   @override
