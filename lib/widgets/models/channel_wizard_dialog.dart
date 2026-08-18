@@ -19,6 +19,13 @@ class _ProviderPreset {
   final String id;
   final String channelType;
 
+  /// Which heading this card sits under on step 1. The step renders every
+  /// preset by filtering on this, so a preset added below cannot go missing
+  /// from the picker — which is exactly what happened while the grid was
+  /// driven by hand-written id lists (DeepSeek, MiniMax and DashScope were
+  /// all defined here yet unreachable in the UI).
+  final _ProviderGroup group;
+
   /// Non-null for hosted providers with a well-known endpoint; null when the
   /// user must supply one (relays, proxies, custom).
   final String? fixedEndpoint;
@@ -30,6 +37,7 @@ class _ProviderPreset {
   const _ProviderPreset({
     required this.id,
     required this.channelType,
+    required this.group,
     this.fixedEndpoint,
     this.endpointSuffix = '',
     required this.icon,
@@ -38,63 +46,78 @@ class _ProviderPreset {
   bool get needsEndpoint => fixedEndpoint == null;
 }
 
+/// Step-1 headings, in display order. A preset's [_ProviderPreset.group] is
+/// about the *wire protocol* the card produces, not about the company — which
+/// is why MiniMax appears under both ① and ④.
+enum _ProviderGroup { openai, google, anthropic, other }
+
 const _presets = <_ProviderPreset>[
   _ProviderPreset(
     id: 'openai-official',
     channelType: Vendors.openAIRest,
+    group: _ProviderGroup.openai,
     fixedEndpoint: 'https://api.openai.com/v1',
     icon: Icons.api,
   ),
   _ProviderPreset(
     id: 'xai-official',
     channelType: Vendors.xaiApi,
+    group: _ProviderGroup.openai,
     fixedEndpoint: 'https://api.x.ai/v1',
     icon: Icons.rocket_launch_outlined,
   ),
   _ProviderPreset(
     id: 'google-compatible',
     channelType: Vendors.openAIRest,
+    group: _ProviderGroup.openai,
     fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai',
     icon: Icons.swap_horiz,
   ),
   _ProviderPreset(
     id: 'deepseek',
     channelType: Vendors.deepseek,
+    group: _ProviderGroup.openai,
     fixedEndpoint: 'https://api.deepseek.com',
     icon: Icons.psychology_outlined,
   ),
   _ProviderPreset(
     id: 'minimax',
     channelType: Vendors.minimax,
+    group: _ProviderGroup.openai,
     icon: Icons.grain_outlined,
   ),
   _ProviderPreset(
     id: 'newapi-openai',
     channelType: Vendors.newApiOpenAI,
+    group: _ProviderGroup.openai,
     endpointSuffix: '/v1',
     icon: Icons.hub_outlined,
   ),
   _ProviderPreset(
     id: 'google-official',
     channelType: Vendors.googleRest,
+    group: _ProviderGroup.google,
     fixedEndpoint: 'https://generativelanguage.googleapis.com/v1beta',
     icon: Icons.auto_awesome,
   ),
   _ProviderPreset(
     id: 'newapi-gemini',
     channelType: Vendors.newApiGemini,
+    group: _ProviderGroup.google,
     endpointSuffix: '/v1beta',
     icon: Icons.hub_outlined,
   ),
   _ProviderPreset(
     id: 'anthropic-official',
     channelType: Vendors.anthropicRest,
+    group: _ProviderGroup.anthropic,
     fixedEndpoint: 'https://api.anthropic.com/v1',
     icon: Icons.forum_outlined,
   ),
   _ProviderPreset(
     id: 'newapi-anthropic',
     channelType: Vendors.newApiAnthropic,
+    group: _ProviderGroup.anthropic,
     endpointSuffix: '/v1',
     icon: Icons.hub_outlined,
   ),
@@ -105,12 +128,14 @@ const _presets = <_ProviderPreset>[
   _ProviderPreset(
     id: 'minimax-anthropic',
     channelType: Vendors.minimaxAnthropic,
+    group: _ProviderGroup.anthropic,
     fixedEndpoint: 'https://api.minimaxi.com/anthropic/v1',
     icon: Icons.grain_outlined,
   ),
   _ProviderPreset(
     id: 'dashscope',
     channelType: Vendors.dashscope,
+    group: _ProviderGroup.openai,
     // Mainland host only. The international one (dashscope-intl.aliyuncs.com)
     // needs no preset of its own: the image protocol derives its native base
     // from the *path*, so a hand-typed intl endpoint works the same way.
@@ -124,17 +149,20 @@ const _presets = <_ProviderPreset>[
   _ProviderPreset(
     id: 'qianwen',
     channelType: Vendors.dashscope,
+    group: _ProviderGroup.openai,
     fixedEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     icon: Icons.question_answer_outlined,
   ),
   _ProviderPreset(
     id: 'midjourney-proxy',
     channelType: Vendors.midjourneyProxy,
+    group: _ProviderGroup.other,
     icon: Icons.brush_outlined,
   ),
   _ProviderPreset(
     id: 'custom',
     channelType: Vendors.openAIRest, // resolved by _customProtocol
+    group: _ProviderGroup.other,
     icon: Icons.settings_input_component,
   ),
 ];
@@ -487,29 +515,26 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   // --- Step 1: provider selection -------------------------------------------
 
   Widget _buildProviderStep(AppLocalizations l10n) {
+    // Every preset is rendered, under the heading its own `group` names and in
+    // declaration order — no second list to keep in sync.
+    final headings = {
+      _ProviderGroup.openai: l10n.protocolOpenAI,
+      _ProviderGroup.google: l10n.protocolGoogle,
+      _ProviderGroup.anthropic: l10n.protocolAnthropic,
+      _ProviderGroup.other: l10n.providerGroupOther,
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildGroupLabel(l10n.protocolOpenAI),
-        _buildProviderGrid(l10n, const [
-          'openai-official',
-          'xai-official',
-          'google-compatible',
-          'newapi-openai',
-        ]),
-        const SizedBox(height: 14),
-        _buildGroupLabel(l10n.protocolGoogle),
-        _buildProviderGrid(l10n, const ['google-official', 'newapi-gemini']),
-        const SizedBox(height: 14),
-        _buildGroupLabel(l10n.protocolAnthropic),
-        _buildProviderGrid(l10n, const [
-          'anthropic-official',
-          'newapi-anthropic',
-          'minimax-anthropic',
-        ]),
-        const SizedBox(height: 14),
-        _buildGroupLabel(l10n.providerGroupOther),
-        _buildProviderGrid(l10n, const ['midjourney-proxy', 'custom']),
+        for (final entry in headings.entries) ...[
+          if (entry.key != _ProviderGroup.openai) const SizedBox(height: 14),
+          _buildGroupLabel(entry.value),
+          _buildProviderGrid(
+            l10n,
+            _presets.where((p) => p.group == entry.key).toList(),
+          ),
+        ],
       ],
     );
   }
@@ -527,7 +552,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     );
   }
 
-  Widget _buildProviderGrid(AppLocalizations l10n, List<String> ids) {
+  Widget _buildProviderGrid(
+    AppLocalizations l10n,
+    List<_ProviderPreset> presets,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final twoColumns = constraints.maxWidth >= 440;
@@ -540,11 +568,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
-          itemCount: ids.length,
-          itemBuilder: (context, index) {
-            final preset = _presets.firstWhere((p) => p.id == ids[index]);
-            return _buildProviderCard(l10n, preset);
-          },
+          itemCount: presets.length,
+          itemBuilder: (context, index) =>
+              _buildProviderCard(l10n, presets[index]),
         );
       },
     );
