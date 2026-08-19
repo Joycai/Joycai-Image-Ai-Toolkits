@@ -80,7 +80,7 @@ Supports `en`, `zh`, `zh_Hant`, `ja`. **All four languages must be updated toget
 
 **New task type:** add value to `TaskType` enum in `task_queue_service.dart` → implement `_executeXxxTask()` → wire into `addTask()`.
 
-**New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in `lib/services/llm/vendors/vendors.dart` → add a wizard preset in `widgets/models/channel_wizard_dialog.dart`. **New wire protocol:** implement the interfaces in `lib/services/llm/protocols/protocol.dart` → add a `ProtocolFamily` value → extend the switches in `lib/services/llm/llm_dispatcher.dart`. See [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
+**New LLM vendor (OpenAI/Gemini-compatible supplier):** add a `VendorProfile` in `lib/services/llm/vendors/vendors.dart` → add a wizard preset in `widgets/models/channel_provider_presets.dart`. **New wire protocol:** implement the interfaces in `lib/services/llm/protocols/protocol.dart` → add a `ProtocolFamily` value → extend the switches in `lib/services/llm/llm_dispatcher.dart`. See [docs/architecture/llm-three-layer.md](docs/architecture/llm-three-layer.md).
 
 ## Troubleshooting
 

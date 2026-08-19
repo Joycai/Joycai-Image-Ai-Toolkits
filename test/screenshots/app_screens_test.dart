@@ -164,6 +164,59 @@ void main() {
       });
     }
   }
+
+  // The add-channel dialog (spec D2 12o). It is two layouts of one dialog —
+  // a single page with a provider rail beside the form at desktop width, and
+  // a two-step flow below the tablet breakpoint — and which one renders is
+  // decided by the window, so a single shot could never show both. Neither is
+  // reachable from AppState; both are driven the way a user reaches them.
+  // `step2` walks the fallback past its picker: step 1 is the same card grid
+  // the wizard always had, and the merged connection-plus-appearance step is
+  // the half worth looking at.
+  for (final (String sizeLabel, bool step2) in const <(String, bool)>[
+    ('desktop', false),
+    ('tablet', false),
+    ('tablet', true),
+  ]) {
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets(
+          'channelWizard @ $sizeLabel ${brightness.name}${step2 ? ' step2' : ''}',
+          (WidgetTester tester) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.models,
+          size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
+          brightness: brightness,
+          suffix: step2 ? 'wizard2' : 'wizard',
+          after: (WidgetTester tester) async {
+            Future<void> settle() async {
+              for (int i = 0; i < 5; i++) {
+                await tester.pump(const Duration(milliseconds: 100));
+              }
+            }
+
+            Future<bool> tapText(String label) async {
+              final Finder finder = find.text(label);
+              if (finder.evaluate().isEmpty) return false;
+              await tester.tap(finder.first, warnIfMissed: false);
+              await settle();
+              return true;
+            }
+
+            // Narrow layouts put the channel list behind a tab; on desktop it
+            // is already on screen and this is a no-op.
+            await tapText('渠道管理');
+            final Finder add = find.byTooltip('添加渠道');
+            if (add.evaluate().isEmpty) return;
+            await tester.tap(add.first, warnIfMissed: false);
+            await settle();
+            if (step2) await tapText('下一步');
+          },
+        );
+      });
+    }
+  }
 }
 
 class _FeeGroupShot {
