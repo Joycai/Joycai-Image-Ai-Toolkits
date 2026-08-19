@@ -638,7 +638,6 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final isNarrow = Responsive.isNarrow(context);
 
     // Determine content based on active tab
@@ -827,49 +826,54 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
           case 1:
             return MetadataInspector(scrollController: scrollController);
           case 4:
-            // Listens to the session, not just to WorkbenchUIState: the two
-            // live readings in this panel — the cited files and the context
-            // usage — change while a turn runs, and nothing else in this build
-            // is watching that.
-            return ListenableBuilder(
-              listenable: workbenchUIState.optimizerSession,
-              builder: (context, _) => OptimizerConfigPanel(
-                scrollController: scrollController,
-                selectedModelDbId: workbenchUIState.optSelectedModelDbId,
-                selectedTagId: workbenchUIState.optSelectedTagId,
-                selectedSysPrompt: workbenchUIState.optSelectedSysPrompt,
-                useCustomSysPrompt: workbenchUIState.optUseCustomSysPrompt,
-                mode: workbenchUIState.assistantMode,
-                kbStatus: _kbStatus,
-                kbPath: _kbPath,
-                onModeChanged: _handleAssistantModeChange,
-                onScaffoldKb: _handleScaffoldKb,
-                tags: _optTags,
-                filteredSysPrompts: _optFilteredSysPrompts,
-                citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
-                  workbenchUIState.optimizerSession,
+            // Two listeners, both needed. The Consumer catches the picker
+            // and mode changes: the enclosing build reads WorkbenchUIState
+            // with listen: false, so without it nothing rebuilds this panel
+            // when a segment is tapped — and a mode switch installs a *new*
+            // session object, so the inner builder has to be re-created
+            // against it. The ListenableBuilder catches what moves during a
+            // turn: the cited files and the context usage.
+            return Consumer<WorkbenchUIState>(
+              builder: (context, wui, _) => ListenableBuilder(
+                listenable: wui.optimizerSession,
+                builder: (context, _) => OptimizerConfigPanel(
+                  scrollController: scrollController,
+                  selectedModelDbId: wui.optSelectedModelDbId,
+                  selectedTagId: wui.optSelectedTagId,
+                  selectedSysPrompt: wui.optSelectedSysPrompt,
+                  useCustomSysPrompt: wui.optUseCustomSysPrompt,
+                  mode: wui.assistantMode,
+                  kbStatus: _kbStatus,
+                  kbPath: _kbPath,
+                  onModeChanged: _handleAssistantModeChange,
+                  onScaffoldKb: _handleScaffoldKb,
+                  tags: _optTags,
+                  filteredSysPrompts: _optFilteredSysPrompts,
+                  citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
+                    wui.optimizerSession,
+                  ),
+                  contextUsage: PromptOptimizerAgent.measureContext(
+                    wui.optimizerSession,
+                    // Read from the picker rather than from the last turn: pick a
+                    // different model and the same conversation is measured against
+                    // the new window immediately, which is the question the user is
+                    // asking when they switch.
+                    contextWindowTokens: appState.allModels
+                        .cast<LLMModel?>()
+                        .firstWhere(
+                          (m) => m?.id == wui.optSelectedModelDbId,
+                          orElse: () => null,
+                        )
+                        ?.contextWindow,
+                  ),
+                  onModelChanged: (v) => wui.setOptimizerModel(v),
+                  onTagChanged: (v) {
+                    wui.setOptimizerTag(v);
+                    setState(() => _applyOptimizerFilter(wui));
+                  },
+                  onSysPromptChanged: (v) => wui.setOptimizerSysPrompt(v),
+                  onUseCustomChanged: (v) => wui.setOptimizerSysPromptMode(v),
                 ),
-                contextUsage: PromptOptimizerAgent.measureContext(
-                  workbenchUIState.optimizerSession,
-                  // Read from the picker rather than from the last turn: pick a
-                  // different model and the same conversation is measured against
-                  // the new window immediately, which is the question the user is
-                  // asking when they switch.
-                  contextWindowTokens: appState.allModels
-                      .cast<LLMModel?>()
-                      .firstWhere(
-                        (m) => m?.id == workbenchUIState.optSelectedModelDbId,
-                        orElse: () => null,
-                      )
-                      ?.contextWindow,
-                ),
-                onModelChanged: (v) => workbenchUIState.setOptimizerModel(v),
-                onTagChanged: (v) {
-                  workbenchUIState.setOptimizerTag(v);
-                  setState(() => _applyOptimizerFilter(workbenchUIState));
-                },
-                onSysPromptChanged: (v) => workbenchUIState.setOptimizerSysPrompt(v),
-                onUseCustomChanged: (v) => workbenchUIState.setOptimizerSysPromptMode(v),
               ),
             );
           case 5:
