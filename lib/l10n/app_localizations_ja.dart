@@ -1074,6 +1074,36 @@ class AppLocalizationsJa extends AppLocalizations {
       '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
+  String get addChannelSubtitle => 'プロバイダーを選んで接続まで1画面で完了';
+
+  @override
+  String get searchProviders => 'プロバイダーを検索…';
+
+  @override
+  String get noProviderMatch => '一致するプロバイダーがありません';
+
+  @override
+  String get resetToDefault => '既定値に戻す';
+
+  @override
+  String get apiKeyRequired => 'このプロバイダーはチャンネル追加に API キーが必要です';
+
+  @override
+  String get endpointRequired => 'エンドポイント URL を入力してください';
+
+  @override
+  String get probeRetry => '再試行';
+
+  @override
+  String get customColor => 'カスタムカラー';
+
+  @override
+  String get stepConnectionAppearance => '接続と外観';
+
+  @override
+  String get channelListPreview => '一覧プレビュー';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

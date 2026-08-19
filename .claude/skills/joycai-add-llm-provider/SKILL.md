@@ -45,7 +45,7 @@ a new vendor.
 - [ ] 2. Vendor-specific surface? Set a declarative flag on `VendorProfile`
       (see `usesXaiNativeSurfaces`) and add the protocol selection to the
       dispatcher. Never branch on `vendor.id` inside a protocol.
-- [ ] 3. UI preset: `widgets/models/channel_wizard_dialog.dart` `_presets`
+- [ ] 3. UI preset: `widgets/models/channel_provider_presets.dart` `kChannelProviderPresets`
       list (+ provider title l10n via the `joycai-l10n` skill) and, if it
       should appear in first-run setup, `screens/wizard/setup_wizard.dart`'s
       dropdown.

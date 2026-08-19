@@ -1099,6 +1099,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.';
 
   @override
+  String get addChannelSubtitle =>
+      'Pick a provider and finish the connection on one page';
+
+  @override
+  String get searchProviders => 'Search providers…';
+
+  @override
+  String get noProviderMatch => 'No provider matches this search';
+
+  @override
+  String get resetToDefault => 'Reset to default';
+
+  @override
+  String get apiKeyRequired =>
+      'This provider needs an API key before the channel can be added';
+
+  @override
+  String get endpointRequired => 'Enter the endpoint URL for this channel';
+
+  @override
+  String get probeRetry => 'Retry';
+
+  @override
+  String get customColor => 'Custom color';
+
+  @override
+  String get stepConnectionAppearance => 'Connection & appearance';
+
+  @override
+  String get channelListPreview => 'List preview';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

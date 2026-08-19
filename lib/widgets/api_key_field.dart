@@ -13,12 +13,17 @@ class ApiKeyField extends StatefulWidget {
   final int maxLines;
   final Function(String) onChanged;
 
+  /// Validation message shown under the field, which also turns its border
+  /// and label red — the "this provider needs a key" state.
+  final String? errorText;
+
   const ApiKeyField({
     super.key,
     required this.controller,
     required this.label,
     this.maxLines = 1,
     required this.onChanged,
+    this.errorText,
   });
 
   @override
@@ -43,6 +48,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
       label: widget.label,
       maxLines: widget.maxLines,
       obscureText: canObscure && _obscureText,
+      errorText: widget.errorText,
       onChanged: widget.onChanged,
       suffixIcon: canObscure
           ? IconButton(

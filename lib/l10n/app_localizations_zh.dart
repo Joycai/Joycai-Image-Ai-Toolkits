@@ -1063,6 +1063,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
+  String get addChannelSubtitle => '选择提供商并完成连接，一步搞定';
+
+  @override
+  String get searchProviders => '搜索提供商…';
+
+  @override
+  String get noProviderMatch => '没有匹配的提供商';
+
+  @override
+  String get resetToDefault => '重置为默认';
+
+  @override
+  String get apiKeyRequired => '该提供商需要密钥才能添加渠道';
+
+  @override
+  String get endpointRequired => '请填写接口地址';
+
+  @override
+  String get probeRetry => '重试';
+
+  @override
+  String get customColor => '自定义颜色';
+
+  @override
+  String get stepConnectionAppearance => '连接与外观';
+
+  @override
+  String get channelListPreview => '列表预览';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -3741,6 +3771,36 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
+
+  @override
+  String get addChannelSubtitle => '選擇提供商並完成連線，一步搞定';
+
+  @override
+  String get searchProviders => '搜尋提供商…';
+
+  @override
+  String get noProviderMatch => '沒有符合的提供商';
+
+  @override
+  String get resetToDefault => '重設為預設值';
+
+  @override
+  String get apiKeyRequired => '此提供商需要金鑰才能新增通道';
+
+  @override
+  String get endpointRequired => '請填寫介面位址';
+
+  @override
+  String get probeRetry => '重試';
+
+  @override
+  String get customColor => '自訂顏色';
+
+  @override
+  String get stepConnectionAppearance => '連線與外觀';
+
+  @override
+  String get channelListPreview => '清單預覽';
 
   @override
   String get prompts => '提示';

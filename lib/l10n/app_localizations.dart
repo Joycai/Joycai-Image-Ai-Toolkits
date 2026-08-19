@@ -2099,6 +2099,66 @@ abstract class AppLocalizations {
   /// **'Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.'**
   String get enableWebSearchDesc;
 
+  /// No description provided for @addChannelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a provider and finish the connection on one page'**
+  String get addChannelSubtitle;
+
+  /// No description provided for @searchProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Search providers…'**
+  String get searchProviders;
+
+  /// No description provided for @noProviderMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No provider matches this search'**
+  String get noProviderMatch;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get resetToDefault;
+
+  /// No description provided for @apiKeyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider needs an API key before the channel can be added'**
+  String get apiKeyRequired;
+
+  /// No description provided for @endpointRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the endpoint URL for this channel'**
+  String get endpointRequired;
+
+  /// No description provided for @probeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get probeRetry;
+
+  /// No description provided for @customColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom color'**
+  String get customColor;
+
+  /// No description provided for @stepConnectionAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection & appearance'**
+  String get stepConnectionAppearance;
+
+  /// No description provided for @channelListPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'List preview'**
+  String get channelListPreview;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:
