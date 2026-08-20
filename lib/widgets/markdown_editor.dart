@@ -178,6 +178,14 @@ class MarkdownEditor extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final bool isRefined;
   final bool expand;
+
+  /// Whether to measure the height on offer before laying out.
+  ///
+  /// The measurement is a [LayoutBuilder], and a [LayoutBuilder] makes the
+  /// whole subtree unmeasurable to an ancestor [IntrinsicHeight]. Pass false
+  /// from a parent that guarantees this editor a workable minimum height and
+  /// wants to ask it, in return, how tall it would like to be.
+  final bool probeAvailableHeight;
   final bool selectable;
 
   /// Shows an "expand editor" action that opens the same controller in a
@@ -197,6 +205,7 @@ class MarkdownEditor extends StatefulWidget {
     this.onChanged,
     this.isRefined = false,
     this.expand = false,
+    this.probeAvailableHeight = true,
     this.selectable = true,
     this.allowExpand = true,
   });
@@ -276,6 +285,19 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       ],
     );
 
+    // Laid out against a caller's promise rather than a measurement, when the
+    // caller is willing to make one. A [LayoutBuilder] cannot report intrinsic
+    // dimensions — it would have to run its callback speculatively — so an
+    // ancestor [IntrinsicHeight] over a subtree containing one throws. The
+    // workbench's config panel is exactly that ancestor: it asks the column how
+    // tall it wants to be so it can decide between filling and scrolling.
+    //
+    // So a caller that guarantees the floor itself opts out of the measurement.
+    // Nothing is lost — the fallback below exists for callers that cannot.
+    if (!widget.probeAvailableHeight) {
+      return _buildBodyColumn(colorScheme, header: header);
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // If height is extremely limited (e.g. log console expanded on small screen),
@@ -297,18 +319,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           );
         }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
-          children: [
-            header,
-            const SizedBox(height: 8),
-            if (widget.expand)
-              Expanded(child: _buildEditorContent(colorScheme))
-            else
-              Flexible(child: _buildEditorContent(colorScheme)),
-          ],
-        );
+        return _buildBodyColumn(colorScheme, header: header);
       },
     );
   }
@@ -400,6 +411,27 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           content: SizedBox(height: screen.height * 0.85, child: body),
         );
       },
+    );
+  }
+
+  /// Header over body, with the body taking the rest of the height when
+  /// [expand] is on.
+  ///
+  /// Split out so both paths through [build] — the measured one and the
+  /// caller-guaranteed one — lay the editor out identically. They differ only
+  /// in whether a [LayoutBuilder] sits above this.
+  Widget _buildBodyColumn(ColorScheme colorScheme, {required Widget header}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+      children: [
+        header,
+        const SizedBox(height: 8),
+        if (widget.expand)
+          Expanded(child: _buildEditorContent(colorScheme))
+        else
+          Flexible(child: _buildEditorContent(colorScheme)),
+      ],
     );
   }
 

@@ -34,6 +34,19 @@ import 'widgets/queue_settings_dialog.dart';
 const Color _thumbScrim = Color(0x8A000000);
 const Color _thumbInk = Color(0xFFFFFFFF);
 
+/// Shortest the prompt editor is allowed to be reported as.
+///
+/// Not a layout minimum — inside its [Expanded] the editor is whatever height
+/// is left. This is the height the card claims when asked how tall it *wants*
+/// to be, which is what decides when the panel starts scrolling instead of
+/// squeezing. An `expands: true` field answers zero on its own, so without a
+/// figure here the panel would happily crush the editor to nothing before
+/// giving the user a scrollbar.
+///
+/// 220 is about eight lines at the editor's own type scale — enough that a
+/// prompt is still being written rather than peeked at.
+const double kMinPromptEditorHeight = 220;
+
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
   const WorkbenchConfigPanel({super.key, this.scrollController});
@@ -189,9 +202,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ],
         );
 
-        final content = Column(
+        // `fill: true` lets the prompt editor take whatever height the rest
+        // of the panel leaves. Only the desktop sidebar passes it: the mobile
+        // bottom sheet is scrolled by a controller above this widget, where
+        // the column's height is unbounded and a flex child would throw.
+        Widget buildContent({required bool fill}) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
           children: [
             // Off GalleryState, which owns the selection — AppState no longer
             // re-broadcasts it.
@@ -274,33 +291,59 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
 
             AppSectionLabel(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
             const SizedBox(height: 4),
-            AppCard(
-              outlined: true,
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MarkdownEditor(
-                    controller: _promptController,
-                    label: l10n.prompt,
-                    isMarkdown: isMarkdownWorkbench,
-                    onMarkdownChanged: (v) => Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
-                    maxLines: 15,
-                    initiallyPreview: false,
-                    hint: l10n.promptHint,
-                    // Not _updateConfig: keystrokes take the silent draft path
-                    // so typing does not notify the whole app. See
-                    // AppStateWorkbench.setPromptDraft.
-                    onChanged: (v) => appState.setPromptDraft(v),
-                    expand: false, // Don't expand inside scrollable
+            _fillable(
+              fill: fill,
+              child: ConstrainedBox(
+                // A floor, and the only reason this is a [ConstrainedBox] and
+                // not bare. Inside the [Expanded] the height is already tight,
+                // so this changes nothing about how the card is *laid out* —
+                // what it changes is what the card reports as its **intrinsic**
+                // height, which is what [IntrinsicHeight] above budgets from.
+                //
+                // Without it the editor's intrinsic height is zero (an
+                // `expands: true` field has no natural height of its own), the
+                // panel's intrinsic total under-counts by exactly this card,
+                // and at any window short enough to scroll the editor gets
+                // squeezed to nothing instead of the panel scrolling.
+                constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
+                child: AppCard(
+                  outlined: true,
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                  child: Column(
+                    mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _fillable(
+                        fill: fill,
+                        child: MarkdownEditor(
+                          controller: _promptController,
+                          label: l10n.prompt,
+                          isMarkdown: isMarkdownWorkbench,
+                          onMarkdownChanged: (v) =>
+                              Provider.of<AppState>(context, listen: false).setIsMarkdownWorkbench(v),
+                          maxLines: 15,
+                          initiallyPreview: false,
+                          hint: l10n.promptHint,
+                          // Not _updateConfig: keystrokes take the silent draft
+                          // path so typing does not notify the whole app. See
+                          // AppStateWorkbench.setPromptDraft.
+                          onChanged: (v) => appState.setPromptDraft(v),
+                          expand: fill,
+                          // The panel guarantees the floor via
+                          // [kMinPromptEditorHeight] and asks for an intrinsic
+                          // height in return, which a LayoutBuilder inside here
+                          // would make impossible.
+                          probeAvailableHeight: !fill,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      editorActions,
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  editorActions,
-                ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            if (!fill) const SizedBox(height: 16),
           ],
         );
 
@@ -382,21 +425,46 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 child: SingleChildScrollView(
                   controller: widget.scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: content,
+                  child: buildContent(fill: false),
                 ),
               ),
             ],
           );
         } else {
-          // Desktop sidebar: content scrolls; only the Process button is docked
-          // at the bottom, so the panel ends on exactly one call to action no
-          // matter how long the prompt gets.
+          // Desktop sidebar: the prompt editor takes the height the rest of
+          // the panel leaves, and the panel scrolls only once there is not
+          // enough of it. `10c` draws the editor as the panel's flex child —
+          // it is the thing the user is actually writing in — where this
+          // shipped as one long scroll that pushed it below the fold.
+          //
+          // "Fill if it fits, scroll if it does not" without a height
+          // threshold: the scroll view's viewport sets a floor via the
+          // [ConstrainedBox], [IntrinsicHeight] lets the column ask its
+          // children how tall they want to be, and whichever is larger wins. A
+          // threshold would be the same mistake as a hardcoded breakpoint in a
+          // toolbar — right on the window it was tuned against and wrong on
+          // the next.
+          //
+          // [IntrinsicHeight] costs an extra measuring pass over this column.
+          // It is a handful of cards, and the pass runs on layout rather than
+          // per keystroke, which is why it is affordable here and would not be
+          // inside the editor itself.
           return Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: content,
+                child: LayoutBuilder(
+                  builder: (context, viewport) => SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        // Less the padding above, or the content is a viewport
+                        // tall inside a viewport-tall box and the panel always
+                        // scrolls by exactly 32px.
+                        minHeight: (viewport.maxHeight - 32).clamp(0.0, double.infinity),
+                      ),
+                      child: IntrinsicHeight(child: buildContent(fill: true)),
+                    ),
+                  ),
                 ),
               ),
               ConfigActionBar(child: processButton),
@@ -406,6 +474,16 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
       },
     );
   }
+
+  /// [Expanded] when the column may stretch, the child untouched when it may
+  /// not.
+  ///
+  /// The same subtree is built twice — once for the desktop sidebar, which has
+  /// a bounded height, and once for the mobile bottom sheet, which is scrolled
+  /// from above and has none. A flex child in the second would throw, so the
+  /// difference is one wrapper rather than two copies of the panel.
+  static Widget _fillable({required bool fill, required Widget child}) =>
+      fill ? Expanded(child: child) : child;
 
   /// One setting: name, one line of explanation, switch.
   ///

@@ -79,7 +79,43 @@ Future<void> shoot(
   final String name = '${screen.name}_${size.label}_${brightness.name}'
       '$seedTag${suffix == null ? '' : '_$suffix'}';
 
-  tester.view.physicalSize = size.size;
+  await mountApp(
+    tester,
+    env: env,
+    screen: screen,
+    size: size.size,
+    brightness: brightness,
+    seedColor: seedColor,
+    locale: locale,
+    label: name,
+    before: before,
+    after: after,
+  );
+
+  await expectLater(find.byType(MyApp), matchesGoldenFile('$name.png'));
+}
+
+/// Mounts the real app at [size] on [screen] and settles it.
+///
+/// Split out of [shoot] so tests that need to *measure* the app rather than
+/// photograph it get the same tree, the same fixtures and the same settling —
+/// a layout assertion is worth nothing if it runs against a subtly different
+/// mount than the screenshots do.
+Future<void> mountApp(
+  WidgetTester tester, {
+  required FixtureEnv env,
+  required AppScreen screen,
+  required Size size,
+  Brightness brightness = Brightness.light,
+  Color? seedColor,
+  Locale locale = const Locale('zh'),
+  String label = 'mount',
+  Future<void> Function(WidgetTester tester)? before,
+  Future<void> Function(WidgetTester tester)? after,
+}) async {
+  final String name = label;
+
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
@@ -126,7 +162,6 @@ Future<void> shoot(
   }
 
   await tester.pump();
-  await expectLater(find.byType(MyApp), matchesGoldenFile('$name.png'));
 }
 
 Widget _appTree(AppState appState) {
