@@ -6,7 +6,7 @@
 
 > 动本文件涉及的任何令牌前，先读这里。`test/design_tokens_test.dart` 把下面每一条都钉住了，`test/screenshots/component_gallery_test.dart` 在 8 个种子色 × 明暗下各出一张图。
 
-### 读设计稿时的两个已知陷阱
+### 读设计稿时的已知陷阱
 
 改版把设计稿从 537 KB 重写到 93 KB，有两处没跟着改干净：
 

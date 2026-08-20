@@ -163,16 +163,20 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        // Inset-panel canvas: panels are rounded cards floating on this
-        // tinted background, separated by resizer gutters instead of lines.
+        // The workbench is a [PanelShape.column] screen since the restyle:
+        // three flush columns, hairlines between them, no canvas showing. This
+        // colour is therefore only what the centre column lets through — the
+        // two side columns paint over it — which is why it is the canvas tone
+        // and not the columns' own.
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         body: Column(
           children: [
             if (widget.topBar != null) widget.topBar!,
             Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(8, 8, 8, widget.bottomPanel == null ? 8 : 0),
-                child: Row(
+              // No padding. `A1` runs the three columns edge to edge into the
+              // window; the 8px inset belonged to the card layout, where it was
+              // what let the canvas read as a ground the cards floated on.
+              child: Row(
                   // Stretch, not the default centre. PanelCard is a SizedBox
                   // with a width and no height, so under the loose vertical
                   // constraint a centred Row hands out, a panel whose body is
@@ -184,8 +188,13 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                   children: [
                     // Left Panel
                     if (panels.leftInline) ...[
-                      PanelCard(width: panels.left, child: widget.leftPanel!),
+                      PanelCard(
+                        width: panels.left,
+                        shape: PanelShape.column,
+                        child: widget.leftPanel!,
+                      ),
                       PanelResizer(
+                        shape: PanelShape.column,
                         // Clamped to the same ceiling the layout would enforce
                         // anyway, so the drag stops where the panel stops
                         // instead of running on against an invisible wall.
@@ -203,12 +212,21 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
                     // Center Content
                     Expanded(
-                      child: PanelCard(child: widget.centerContent),
+                      // Transparent, unlike the two side columns. `A1` gives
+                      // the gallery area no ground of its own — the image cards
+                      // sit straight on the window's backdrop — while the
+                      // panels either side stay opaque.
+                      child: PanelCard(
+                        shape: PanelShape.column,
+                        transparent: true,
+                        child: widget.centerContent,
+                      ),
                     ),
 
                     // Right Panel
                     if (panels.rightInline) ...[
                       PanelResizer(
+                        shape: PanelShape.column,
                         onDrag: (delta) {
                           setState(() {
                             _rightWidth = (_rightWidth - delta).clamp(250.0, panels.rightMax);
@@ -219,11 +237,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                       ),
                       PanelCard(
                         width: panels.right,
+                        shape: PanelShape.column,
                         child: widget.rightPanelBuilder!(null),
                       ),
                     ],
                   ],
-                ),
               ),
             ),
             if (widget.bottomPanel != null) widget.bottomPanel!,
@@ -252,7 +270,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     required bool wantsLeft,
     required bool wantsRight,
   }) {
-    const double gutter = 14; // PanelResizer
+    // Has to match what the resizers between these panels actually take, or
+    // the widths worked out here do not add up to the row.
+    final double gutter = PanelResizer.thicknessOf(PanelShape.column);
     const double leftMin = 200;
     const double rightMin = 250;
 
