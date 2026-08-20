@@ -20,11 +20,11 @@ import 'package:flutter/material.dart';
 /// [pill]: the spec's 5–7 collapse to [xs], 8–9 to [control], 10–11 to [md],
 /// 13–14 to [lg], 16 to [dialog].
 ///
-/// The restyle moved two of these. §1 of the spec tabulates 按钮·输入·下拉 at
-/// 10px, but every control the `10a` component frame and the page mockups
-/// actually draw is at 8 — the table is the stale half of that disagreement,
-/// so [control] stays where it was. Cards and dialogs did move, and both
-/// frames and table agree on the new numbers.
+/// The restyle moved exactly one of these, [dialog]. Twice now §1's table has
+/// disagreed with what the frames actually draw, and both times the frames
+/// were right: it tabulates 按钮·输入·下拉 at 10px where every frame draws 8,
+/// and its 窗口·大卡片 row means the window frame rather than the cards inside
+/// it. Read the table for orientation, take the number off a frame.
 class AppRadius {
   /// Checkboxes and other ~18px boxes, where [control] would round a small
   /// square into a blob.
@@ -40,17 +40,21 @@ class AppRadius {
 
   /// Cards and panels.
   ///
-  /// 14 since the restyle, up from 12. The spec's 窗口·大卡片 row and the
-  /// mockups agree; a panel is now visibly rounder than the controls inside
-  /// it rather than a step away from them.
-  static const double lg = 14;
+  /// This was briefly moved to 14 on the strength of the spec's 窗口·大卡片
+  /// row. That row means the **window frame**: 14 is the radius of the 1400×900
+  /// rounded rectangle each page mockup is drawn inside, and it is the only 14
+  /// in any of them. The panels *within* that window are drawn at 10–12 — 12 in
+  /// `D1`'s two settings cards, 10–11 in `10c`. So this stays at 12, where it
+  /// already was.
+  static const double lg = 12;
 
   /// Dialog surfaces. The one shape allowed to be rounder than a card, because
   /// it floats over everything rather than sitting in the grid with it.
   ///
-  /// 16 since the restyle. It has to move whenever [lg] does — the two were
-  /// one step apart before and must stay one step apart, or a dialog stops
-  /// reading as the thing floating above the cards.
+  /// 16 since the restyle, up from 14 — `E1`'s `12i` frame draws the dialog
+  /// shell at 16, and §1's 弹窗容器 row agrees. Unlike [lg] this one really did
+  /// move: it is now two steps clear of a card rather than one, which is what
+  /// the spec wants a dialog to look like.
   static const double dialog = 16;
 
   /// Status badges and any other capsule. Far past half the height of anything
