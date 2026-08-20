@@ -73,6 +73,9 @@ class AppConstants {
   static const double maxThumbnailSize = 400.0;
 
   static const Map<String, Color> presetThemes = {
+    // The design spec's own accent, and the app's default seed. Kept first
+    // so the swatch row opens on the colour the mockups were drawn in.
+    'Blue': Color(0xFF4A72E8),
     'BlueGrey': Colors.blueGrey,
     'Indigo': Colors.indigo,
     'Teal': Colors.teal,

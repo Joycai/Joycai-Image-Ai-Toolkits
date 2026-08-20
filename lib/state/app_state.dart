@@ -123,7 +123,10 @@ class AppState extends ChangeNotifier {
 
   // Theme configuration
   ThemeMode themeMode = ThemeMode.system;
-  Color themeSeedColor = Colors.blueGrey;
+  // The design spec's own accent. Only a default: the seed is the user's to
+  // change in settings, and every accent in the app is derived from whatever
+  // is here rather than from this literal.
+  Color themeSeedColor = const Color(0xFF4A72E8);
   // Font family key. Defaults to the bundled NotoSansSC to preserve the
   // existing look. The sentinel [AppConstants.systemFontKey] means "use the
   // platform default", which maps to a null [ThemeData.fontFamily].

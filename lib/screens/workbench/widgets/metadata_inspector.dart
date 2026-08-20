@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
@@ -217,8 +218,12 @@ class _MetaRow extends StatelessWidget {
           const Spacer(),
           SelectableText(
             value,
-            style: textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
+            // `.mono`, not `fontFamily: 'monospace'`. The bare generic is
+            // whatever the engine falls back to — Courier New on Windows — and
+            // it brings no tabular figures, so a column of dimensions still had
+            // its digits at different widths. Lining those up down the column
+            // is the one thing this panel exists for.
+            style: textTheme.bodySmall?.mono.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
@@ -253,16 +258,23 @@ class _SizeDeltaBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        // `surface` on a `surfaceContainerLow` panel: a half-step up rather
+        // than the step *down* `surfaceContainerHigh` became once the columns
+        // moved. Same inversion the right panel's cards had — a summary that
+        // reads as recessed rather than as the line the panel adds up to.
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: colorScheme.outlineVariant.withAlpha(80)),
+        border: Border.all(color: colorScheme.surfaceContainerHigh),
       ),
       child: Row(
         children: [
           Icon(
             shrank ? Icons.arrow_downward : Icons.arrow_upward,
             size: 14,
-            color: colorScheme.onSurfaceVariant,
+            // The one accent on this panel, and `10n` spends it here: every
+            // row above is a measurement, this is the one line that draws a
+            // conclusion from them.
+            color: colorScheme.onAccentTint,
           ),
           const SizedBox(width: 8),
           Flexible(

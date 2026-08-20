@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 
@@ -222,5 +223,65 @@ void main() {
     expect(style.foregroundColor?.resolve(const {}), theme.colorScheme.error);
     expect(style.side?.resolve(const {}), isNull);
     expect(find.byType(OutlinedButton), findsNothing);
+  });
+
+  testWidgets('tonal is the accent wash, not a secondaryContainer slab', (tester) async {
+    // The tier between primary and secondary, and the app's only user of it is
+    // the assistant's in-card 应用. It has to be the accent ladder — the same
+    // `accentTint` / `onAccentTint` pairing every selected thing uses, whose
+    // contrast design_tokens_test asserts at every seed — and not Material's
+    // tonal, which is a muted derivative of the seed that comes out
+    // grey-with-a-tint at several of them.
+    await tester.pumpWidget(host(AppButton(
+      label: 'Apply',
+      onPressed: () {},
+      variant: AppButtonVariant.tonal,
+    )));
+
+    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final colorScheme = theme.colorScheme;
+    final style = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
+
+    expect(style.backgroundColor?.resolve(const {}), colorScheme.accentTint);
+    expect(style.foregroundColor?.resolve(const {}), colorScheme.onAccentTint);
+    expect(style.backgroundColor?.resolve(const {}), isNot(colorScheme.secondaryContainer));
+
+    // The edge matters as much as the wash: at 12% the fill alone dissolves
+    // into a card that is itself nearly white, which is the state this variant
+    // would otherwise be indistinguishable from a text button in.
+    expect(style.side?.resolve(const {})?.color, colorScheme.accentRing);
+  });
+
+  testWidgets('tonal outranks secondary without reaching primary', (tester) async {
+    // The whole reason the variant exists. If it ever resolves to either
+    // neighbour's colours the three-tier ranking the spec asks for is gone,
+    // and nothing else in the suite would notice.
+    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
+    final colorScheme = theme.colorScheme;
+
+    await tester.pumpWidget(host(AppButton(
+      label: 'Apply',
+      onPressed: () {},
+      variant: AppButtonVariant.tonal,
+    )));
+    final tonal = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
+
+    await tester.pumpWidget(host(AppButton(
+      label: 'Apply',
+      onPressed: () {},
+      variant: AppButtonVariant.secondary,
+    )));
+    final secondary = tester.widget<OutlinedButton>(find.byType(OutlinedButton)).style!;
+
+    expect(
+      tonal.backgroundColor?.resolve(const {}),
+      isNot(secondary.backgroundColor?.resolve(const {})),
+      reason: 'tonal and secondary are the same button',
+    );
+    expect(
+      tonal.foregroundColor?.resolve(const {}),
+      isNot(colorScheme.onPrimary),
+      reason: 'tonal is wearing the primary button\'s label colour',
+    );
   });
 }

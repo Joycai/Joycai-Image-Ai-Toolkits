@@ -3,9 +3,9 @@
 //
 // The screen matrix next door answers "does this screen lay out?". This
 // answers the other question the spec raises: the sheet is drawn in one teal,
-// the app ships seven seeds, and the accent rules only work if the *structure*
+// the app ships eight seeds, and the accent rules only work if the *structure*
 // survives all of them. Fourteen PNGs is few enough to actually look at, which
-// is the point — 8 screens × 7 seeds × 2 brightnesses is not.
+// is the point — 8 screens × 8 seeds × 2 brightnesses is not.
 //
 // What to look for in the output:
 //   · greys stay grey — no seed tint in the panel, the track or the rules
@@ -229,7 +229,7 @@ class _Gallery extends StatelessWidget {
 /// The gallery's own section captions.
 ///
 /// The real component now, not a fourth hand-rolled copy of it — so this sheet
-/// also photographs the label itself under all seven seeds, which is where the
+/// also photographs the label itself under every seed, which is where the
 /// accent tone has to prove it stays legible. Neutral here: these caption the
 /// specimens rather than group a form's controls.
 class _Label extends StatelessWidget {

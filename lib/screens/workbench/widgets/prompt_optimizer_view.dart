@@ -444,7 +444,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             decoration: BoxDecoration(
               // The accent wash, not `primaryContainer`. The spec draws the
               // user's own turn as a 12% tint of the seed — at several of the
-              // seven seeds `primaryContainer` is a saturated slab that made
+              // every seed `primaryContainer` is a saturated slab that made
               // every question the user asked the loudest thing on the screen.
               color: colorScheme.accentTint,
               borderRadius: const BorderRadius.only(
@@ -844,10 +844,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   },
                 ),
                 const SizedBox(width: 8),
+                // Tonal, the one place in the app that gets it. `8a` calls
+                // for it here in the same annotation that makes 应用到工作台
+                // the screen's only solid fill: this button is still the
+                // accent's — it is what puts the model's output to work — and
+                // it is merely outranked. A neutral outline flattened that,
+                // leaving it looking like any other button on the card.
                 AppButton(
                   label: l10n.apply,
                   icon: Icons.check,
-                  variant: AppButtonVariant.secondary,
+                  variant: AppButtonVariant.tonal,
                   size: AppButtonSize.compact,
                   onPressed: () => widget.onApplyPrompt(entry.text),
                 ),

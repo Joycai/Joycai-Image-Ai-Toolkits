@@ -90,8 +90,17 @@ class GalleryToolbar extends StatelessWidget {
         return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+        // The centre column's own header. Opaque #FAFBFF over a transparent
+        // column, matching the toolbar above and the two side columns beside
+        // it — the gallery below is the only part of this screen the spec
+        // leaves bare.
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        // A full pixel, and the panel edge tone rather than the theme divider.
+        // At 0.5 this landed on a half pixel and rendered as a grey smear on
+        // some scale factors and as nothing at all on others.
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh),
+        ),
       ),
       child: Row(
         children: [

@@ -266,7 +266,10 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final mono = textTheme.labelMedium?.copyWith(fontFamily: 'monospace');
+    // `.mono` over the bare generic: the confirm dialog puts the before and
+    // after dimensions one above the other, which only reads as a comparison
+    // if the digits line up.
+    final mono = textTheme.labelMedium?.mono;
 
     return AppDialog.show<bool>(
       context,
@@ -908,7 +911,11 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              // Mono, as `10e` draws it. Safe for the toolbar's fit
+              // prediction, which budgets `_kNumberFieldWidth` for this field
+              // rather than measuring its contents — the value is a number the
+              // user is typing, so its width was never predictable anyway.
+              style: textTheme.bodyMedium?.mono.copyWith(fontWeight: FontWeight.w600),
               keyboardType: TextInputType.number,
             ),
           ),

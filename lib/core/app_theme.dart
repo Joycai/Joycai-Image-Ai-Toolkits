@@ -24,7 +24,123 @@ const double appButtonRadius = AppRadius.control;
 /// [AppIconButton] no longer defaults to this; see [AppSize.iconButton].
 const double appButtonMinHeight = AppSize.control;
 
-/// The app's palette: accents from the user's seed, greys from nobody's.
+/// The neutral ramp the whole app sits on — one set per brightness, shared
+/// by every seed.
+///
+/// Until the restyle these came from a *monochrome* [ColorScheme.fromSeed]:
+/// true greys, zero chroma. That rule was really two rules stacked, and only
+/// one of them was load-bearing. The one that was: the ramp must not move
+/// when the seed does, or every surface tuned against one seed is wrong at
+/// the next, and an element that is *actually* the accent has nothing left to
+/// say. The one that wasn't: that the greys be neutral. The new spec's are
+/// deliberately cool — its canvas is `#ECEFF8` and its body text `#171C3B`,
+/// both several points of blue off grey — and that tint is the look. It is
+/// fixed here, so it stays exactly the same blue when the user picks orange;
+/// it is not the seed hue leaking into the background, which is the failure
+/// the monochrome scheme was guarding against.
+///
+/// The roles are named for the job this app gives them, not for Material's
+/// ordering:
+///
+/// - [surfaceContainer] is the **canvas** a screen paints behind everything.
+/// - [surface] is a **panel** floating on that canvas — one step *up* in
+///   both brightnesses, so a panel is lighter than the canvas in light and
+///   also lighter than it in dark. Material's dark scheme has these the other
+///   way round; the spec's `10b` frame draws 背景 `#0E131F` under 表面
+///   `#192132`, and the design wins here.
+/// - [surfaceContainerHigh] is a **card sitting on a panel** (see [AppCard]),
+///   one more step away from the panel — which means darker in light and
+///   lighter in dark. That is the reason this is a hand-written table and not
+///   a monotonic ladder.
+/// - [surfaceContainerHighest] is a **filled control track**: a text field's
+///   fill, a switch's off state.
+class _Neutrals {
+  const _Neutrals({
+    required this.surface,
+    required this.surfaceDim,
+    required this.surfaceBright,
+    required this.surfaceContainerLowest,
+    required this.surfaceContainerLow,
+    required this.surfaceContainer,
+    required this.surfaceContainerHigh,
+    required this.surfaceContainerHighest,
+    required this.onSurface,
+    required this.onSurfaceVariant,
+    required this.outline,
+    required this.outlineVariant,
+    required this.inverseSurface,
+    required this.onInverseSurface,
+    required this.surfaceTint,
+  });
+
+  final Color surface;
+  final Color surfaceDim;
+  final Color surfaceBright;
+  final Color surfaceContainerLowest;
+  final Color surfaceContainerLow;
+  final Color surfaceContainer;
+  final Color surfaceContainerHigh;
+  final Color surfaceContainerHighest;
+  final Color onSurface;
+  final Color onSurfaceVariant;
+  final Color outline;
+  final Color outlineVariant;
+  final Color inverseSurface;
+  final Color onInverseSurface;
+  final Color surfaceTint;
+
+  /// Spec `10a`, and the values the page mockups actually paint.
+  ///
+  /// `outlineVariant` is the sheet's `#DBE0EF` input border rather than the
+  /// paler `#E4E8F4` it uses for an icon button's edge, because this role is
+  /// also every hairline divider in the app — at `#E4E8F4` a divider is a
+  /// point and a half off the panel it sits on and simply disappears.
+  static const light = _Neutrals(
+    surface: Color(0xFFF5F7FD),
+    surfaceDim: Color(0xFFE6EAF5),
+    surfaceBright: Color(0xFFFAFBFF),
+    surfaceContainerLowest: Color(0xFFFFFFFF),
+    surfaceContainerLow: Color(0xFFFAFBFF),
+    surfaceContainer: Color(0xFFECEFF8),
+    surfaceContainerHigh: Color(0xFFE6EAF5),
+    surfaceContainerHighest: Color(0xFFDFE5F4),
+    onSurface: Color(0xFF171C3B),
+    onSurfaceVariant: Color(0xFF4D5470),
+    outline: Color(0xFFC0C6D8),
+    outlineVariant: Color(0xFFDBE0EF),
+    inverseSurface: Color(0xFF232B4A),
+    onInverseSurface: Color(0xFFECEFF8),
+    surfaceTint: Color(0xFF868DA8),
+  );
+
+  /// Derived from [light], not copied from the sheet.
+  ///
+  /// The spec's `10b` frame was never restyled — its accent is still the old
+  /// teal and its greys are still tinted green — so the only part of it worth
+  /// taking is the surface ladder `#0E131F` / `#192132` / `#28354C`, which
+  /// *is* already the new blue. Everything else here is [light]'s structure
+  /// mapped onto that ladder: the same steps, the same hue, inverted. Replace
+  /// this wholesale if `10b` is ever redrawn.
+  static const dark = _Neutrals(
+    surface: Color(0xFF192132),
+    surfaceDim: Color(0xFF0B0F1A),
+    surfaceBright: Color(0xFF2A354B),
+    surfaceContainerLowest: Color(0xFF090D16),
+    surfaceContainerLow: Color(0xFF131A28),
+    surfaceContainer: Color(0xFF0E131F),
+    surfaceContainerHigh: Color(0xFF212B3F),
+    surfaceContainerHighest: Color(0xFF28334A),
+    onSurface: Color(0xFFE6EAF5),
+    onSurfaceVariant: Color(0xFFA3ABC2),
+    outline: Color(0xFF5C6784),
+    outlineVariant: Color(0xFF28354C),
+    inverseSurface: Color(0xFFE6EAF5),
+    onInverseSurface: Color(0xFF171C3B),
+    surfaceTint: Color(0xFF79809A),
+  );
+}
+
+/// The app's palette: accents from the user's seed, greys from [_Neutrals].
 ///
 /// [ColorScheme.fromSeed] tints *every* role with the seed's hue, greys
 /// included — pick teal and every panel, border and body line comes out
@@ -34,10 +150,8 @@ const double appButtonMinHeight = AppSize.control;
 /// already in the background, an element that is *actually* the accent
 /// colour — selected, focused, pressed — has less left to say.
 ///
-/// So the neutral roles are taken from a monochrome scheme instead. Monochrome
-/// keeps Material's tone structure (the same lightness at each step, in both
-/// brightnesses) and drops only the chroma, leaving true greys. The seeded
-/// scheme still supplies primary/secondary/tertiary/error and their
+/// So the neutral roles are overwritten with the fixed ramp instead. The
+/// seeded scheme still supplies primary/secondary/tertiary/error and their
 /// containers, so the accent survives exactly where it should: on things the
 /// user acts on.
 ColorScheme buildAppColorScheme({
@@ -45,11 +159,7 @@ ColorScheme buildAppColorScheme({
   required Brightness brightness,
 }) {
   final seeded = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
-  final neutral = ColorScheme.fromSeed(
-    seedColor: seedColor,
-    brightness: brightness,
-    dynamicSchemeVariant: DynamicSchemeVariant.monochrome,
-  );
+  final neutral = brightness == Brightness.dark ? _Neutrals.dark : _Neutrals.light;
 
   return seeded.copyWith(
     surface: neutral.surface,
@@ -283,7 +393,10 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
   final base = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
 
   final merged = base.merge(const TextTheme(
-    titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    // 16, not Material's 22 and not the 18 this app shipped before the
+    // restyle: the spec's 页面标题 row reads 16/600, and every page mockup
+    // draws its heading at that size. It is the only slot the restyle moved.
+    titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
     titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
     titleSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
     bodyMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
@@ -335,6 +448,52 @@ ButtonStyle tonalButtonStyle(ColorScheme colorScheme) {
     disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
     elevation: 0,
   );
+}
+
+/// The monospaced faces to ask for, best first.
+///
+/// The spec sets every number, path, timestamp and log line in IBM Plex Mono,
+/// and the app takes the role without taking the font: a bundled face would be
+/// megabytes for text that is nowhere near a headline, and the point of a
+/// monospace here is that digits line up in a column, which any of these do.
+///
+/// Ordered so each desktop platform finds its own system face before the
+/// generic fallback. `monospace` last is what stops this degrading to the UI
+/// font on a machine that has none of them.
+const List<String> kMonoFontFamilyFallback = <String>[
+  'Cascadia Mono', // Windows 11
+  'Consolas', // Windows
+  'SF Mono', // macOS
+  'Menlo', // macOS, older
+  'DejaVu Sans Mono', // Linux
+  'monospace',
+];
+
+/// Numbers, code, paths and log lines set in a monospaced face.
+///
+/// A role rather than a size: take whichever scale slot the surrounding text
+/// uses and pass it through here, so a measurement beside a label stays the
+/// same size as the label and only changes shape.
+///
+/// Worth having beyond looks. A column of file sizes or dimensions in a
+/// proportional face has its digits at different widths, so the numbers do not
+/// line up and the eye cannot compare them down the column — which is the one
+/// thing a metadata panel exists for.
+extension AppMonoText on TextStyle {
+  /// This style, set in a monospaced face.
+  ///
+  /// Sets `fontFamily` to null on purpose. A [TextStyle] carrying an explicit
+  /// family would win over the fallback list, and the app sets one on every
+  /// slot — see [_buildTextTheme]'s `apply`. Leaving it null lets the fallback
+  /// chain decide, which is the whole mechanism.
+  TextStyle get mono => copyWith(
+        fontFamily: null,
+        fontFamilyFallback: kMonoFontFamilyFallback,
+        // Digits at a uniform width even in a face that would otherwise
+        // proportion them. Free where the face is already monospaced, and a
+        // rescue where the fallback landed somewhere unexpected.
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
 }
 
 /// Taking a type-scale slot's size without its colour.

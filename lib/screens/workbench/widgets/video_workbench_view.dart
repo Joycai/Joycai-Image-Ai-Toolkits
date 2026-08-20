@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
@@ -118,8 +119,15 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
             constraints: const BoxConstraints(maxWidth: 320),
             child: Material(
               elevation: 8,
-              borderRadius: BorderRadius.circular(16),
-              color: colorScheme.surfaceContainerHighest,
+              // The lightest surface with an edge, like every other card since
+              // the restyle. `surfaceContainerHighest` is a control-track tone:
+              // as a card floating over the gallery it read as a grey slab
+              // dropped on the pictures rather than as a panel above them.
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.dialog),
+                side: BorderSide(color: colorScheme.surfaceContainerHigh),
+              ),
+              color: colorScheme.surfaceContainerLowest,
               child: Container(
                 padding: const EdgeInsets.all(12),
                 child: Column(

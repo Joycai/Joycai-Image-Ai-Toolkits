@@ -707,7 +707,7 @@ class _Chip extends StatelessWidget {
         decoration: BoxDecoration(
           // The selection wash and its ring, off the accent ladder rather than
           // `primaryContainer` — which is a saturated slab at several of the
-          // seven seeds and made a 20px chip the loudest thing in the panel.
+          // every seed and made a 20px chip the loudest thing in the panel.
           color: selected ? colorScheme.accentTint : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.xs),
           border: Border.all(

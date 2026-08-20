@@ -52,7 +52,8 @@ void main() {
     // can't silently drift away from the value every screen already uses.
     final textTheme = buildAppTheme(seedColor: seed, brightness: Brightness.light).textTheme;
 
-    expect(textTheme.titleLarge?.fontSize, 18);
+    // 16 since the restyle — the spec's 页面标题 row. See _buildTextTheme.
+    expect(textTheme.titleLarge?.fontSize, 16);
     expect(textTheme.titleMedium?.fontSize, 14);
     expect(textTheme.titleSmall?.fontSize, 13);
     expect(textTheme.bodyMedium?.fontSize, 13);

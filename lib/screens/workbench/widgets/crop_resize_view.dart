@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/image_metadata_service.dart';
@@ -432,7 +433,12 @@ class _OutputPreviewBar extends StatelessWidget {
         : '${l10n.cropResizeTempWorkspaceLabel} / $copyFileName';
 
     final textTheme = Theme.of(context).textTheme;
-    final labelStyle = textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
+    // The tracked caption, matching the mask editor's 输出 — the spec gives
+    // both tools the same bar, so they take the same heading treatment.
+    final labelStyle = textTheme.labelMedium?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      letterSpacing: AppType.trackedLabelSpacing,
+    );
 
     return Container(
       // 40 and an accent capsule for the destination, the same strip the mask
@@ -440,8 +446,8 @@ class _OutputPreviewBar extends StatelessWidget {
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+        color: colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: colorScheme.surfaceContainerHigh)),
       ),
       child: Row(
         children: [
@@ -450,7 +456,10 @@ class _OutputPreviewBar extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.cropResizeOutputSummary(originalSize, outputSize, operation, samplingLabel),
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+              // Two dimensions, a percentage and an algorithm name — a line of
+              // measurements, and the one the user reads to check the save
+              // before making it.
+              style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
               overflow: TextOverflow.ellipsis,
             ),
           ),

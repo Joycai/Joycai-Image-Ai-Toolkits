@@ -163,6 +163,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get close => '閉じる';
 
   @override
+  String get minimizeWindow => '最小化';
+
+  @override
+  String get maximizeWindow => '最大化';
+
+  @override
+  String get restoreWindow => '元のサイズに戻す';
+
+  @override
+  String get closeWindow => '閉じる';
+
+  @override
   String get expandEditor => '拡大編集';
 
   @override

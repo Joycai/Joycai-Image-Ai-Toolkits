@@ -87,10 +87,20 @@ class FolderList extends StatelessWidget {
           else if (!useFileBrowserState)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              // Tonal, not filled. Adding a folder sets up the work; running
-              // the model is the work. Two solid accent buttons on one screen
-              // make the user choose which is the point, so the workbench
-              // keeps exactly one -- the process button in the right panel.
+              // An outline, not a fill and not a tonal. Adding a folder sets
+              // up the work; running the model is the work. Two accent buttons
+              // on one screen make the user choose which is the point, so the
+              // workbench keeps exactly one — the process button in the right
+              // panel.
+              //
+              // `10c` draws this one tonal, on an accent wash. Not followed:
+              // its own annotation asks for the button to be *demoted* so that
+              // one solid accent button is left on the screen, and an outline
+              // demotes it further while also keeping §1's rule that the accent
+              // appears only on selection, the main CTA and badges. Tonal here
+              // would put the accent on the action the user is not meant to
+              // take, which is the reason `AppButtonVariant.secondary` stopped
+              // being a tonal in the first place.
               child: SizedBox(
                 width: double.infinity,
                 child: AppButton(

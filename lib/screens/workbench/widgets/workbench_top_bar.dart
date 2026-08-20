@@ -57,10 +57,25 @@ class WorkbenchTopBar extends StatelessWidget {
     ];
 
     return Container(
-      // Transparent so the bar floats on the inset-panel canvas on desktop
-      // (mobile puts this inside an app-bar slot where the scaffold shows
-      // through, which was surface-colored anyway).
-      color: Colors.transparent,
+      // Opaque since the restyle, with a hairline under it. `10c` gives the
+      // toolbar a ground of its own — #FAFBFF, the same tone as the two side
+      // columns — sitting between the title bar above and the columns below.
+      //
+      // It floated transparently before, which only worked while there was an
+      // inset canvas to float on. Over the window backdrop a transparent bar
+      // would put the mesh behind the mode switch, which is the one place in
+      // the window where nothing should compete with the controls.
+      //
+      // Mobile keeps the transparent bar: it goes into an app-bar slot there,
+      // where the scaffold behind it is already this colour.
+      color: isMobile ? Colors.transparent : colorScheme.surfaceContainerLow,
+      foregroundDecoration: isMobile
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: colorScheme.surfaceContainerHigh),
+              ),
+            ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

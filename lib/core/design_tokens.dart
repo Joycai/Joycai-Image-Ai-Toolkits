@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 /// instead of a literal number at each call site.
 ///
 /// These come from the *Joycai 设计规范* sheet. That sheet is drawn once, in
-/// teal — but the app ships seven seed colours, so nothing here stores a hue.
+/// a single blue — but the seed is the user's to pick, so nothing here stores
+/// a hue.
 /// Geometry is absolute; anything coloured is expressed as a role on the
 /// ambient [ColorScheme] plus an alpha from [AppAlpha], which is what lets the
 /// same rule render in whichever colour the user picked. See
@@ -15,8 +16,15 @@ import 'package:flutter/material.dart';
 /// The spec draws eleven distinct radii (5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 /// 16). Most of those differences are a pixel or two and read as noise rather
 /// than as a system — 7 and 9 sit either side of 8 on the *same* control, the
-/// segmented track and the chip inside it. Quantised to six steps: the spec's
-/// 5–7 collapse to [xs]/[control], 9–11 to [md]/[lg], 13–16 to [lg]/[dialog].
+/// segmented track and the chip inside it. Quantised to five steps plus
+/// [pill]: the spec's 5–7 collapse to [xs], 8–9 to [control], 10–11 to [md],
+/// 13–14 to [lg], 16 to [dialog].
+///
+/// The restyle moved exactly one of these, [dialog]. Twice now §1's table has
+/// disagreed with what the frames actually draw, and both times the frames
+/// were right: it tabulates 按钮·输入·下拉 at 10px where every frame draws 8,
+/// and its 窗口·大卡片 row means the window frame rather than the cards inside
+/// it. Read the table for orientation, take the number off a frame.
 class AppRadius {
   /// Checkboxes and other ~18px boxes, where [control] would round a small
   /// square into a blob.
@@ -31,11 +39,23 @@ class AppRadius {
   static const double md = 10;
 
   /// Cards and panels.
+  ///
+  /// This was briefly moved to 14 on the strength of the spec's 窗口·大卡片
+  /// row. That row means the **window frame**: 14 is the radius of the 1400×900
+  /// rounded rectangle each page mockup is drawn inside, and it is the only 14
+  /// in any of them. The panels *within* that window are drawn at 10–12 — 12 in
+  /// `D1`'s two settings cards, 10–11 in `10c`. So this stays at 12, where it
+  /// already was.
   static const double lg = 12;
 
   /// Dialog surfaces. The one shape allowed to be rounder than a card, because
   /// it floats over everything rather than sitting in the grid with it.
-  static const double dialog = 14;
+  ///
+  /// 16 since the restyle, up from 14 — `E1`'s `12i` frame draws the dialog
+  /// shell at 16, and §1's 弹窗容器 row agrees. Unlike [lg] this one really did
+  /// move: it is now two steps clear of a card rather than one, which is what
+  /// the spec wants a dialog to look like.
+  static const double dialog = 16;
 
   /// Status badges and any other capsule. Far past half the height of anything
   /// it is used on, which is what makes the ends semicircular.
@@ -149,7 +169,7 @@ extension AppAccent on ColorScheme {
   /// | light | `#006A60` | `#005048` | `#005048` | `#82D5C8` |
   /// | dark  | `#82D5C8` | `#9EF2E4` | `#005048`   | `#82D5C8` |
   ///
-  /// Two things fall out, both true at all seven seeds:
+  /// Two things fall out, both true at every seed:
   ///
   /// - In **dark**, `primaryFixedDim` is *exactly* [primary]. Using it would
   ///   make the label one tone reading against its own tint — the precise

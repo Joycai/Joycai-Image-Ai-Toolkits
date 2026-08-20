@@ -16,6 +16,12 @@ import 'package:flutter/services.dart';
 ///
 /// Windows-only. Everywhere else the call is a no-op: macOS and Linux either
 /// blend the caption already or leave it to the window manager.
+///
+/// **Mostly dormant since the app started drawing its own title bar.** With
+/// the native caption hidden there is nothing left for DWM to colour, so this
+/// now only takes effect where the platform declined to hide it — which is
+/// still worth keeping, because the failure mode it guards against (a black
+/// caption welded to a white toolbar) is exactly what a refusal would leave.
 class WindowChromeService {
   WindowChromeService._();
 

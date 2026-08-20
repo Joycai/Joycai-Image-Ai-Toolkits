@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -129,7 +130,13 @@ class CanvasBadge extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white),
+                // Mono, because what this says is a measurement — a brush
+                // width, a coverage percentage, a pixel size. `10o` sets it
+                // that way, and it is the same reason the gallery's dimension
+                // badge and the metadata panel's values are: numbers that
+                // change under the pointer should not reflow the label
+                // around them every time a digit does.
+                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(color: Colors.white),
               ),
             ),
           ],

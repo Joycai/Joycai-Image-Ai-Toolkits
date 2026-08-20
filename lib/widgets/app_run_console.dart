@@ -149,15 +149,20 @@ class _AppRunConsoleState extends State<AppRunConsole> {
       return Column(mainAxisSize: MainAxisSize.min, children: [statusBar]);
     }
 
-    // Desktop: the console is an inset card on the canvas. The resize gutter
-    // sits above the card while expanded; collapsed, a plain 8px gap matches
-    // the canvas padding of the panel row above.
+    // Desktop: a strip across the bottom of the window, flush with the
+    // columns above it. It was an inset card with an 8px margin, which stopped
+    // making sense the moment those columns stopped being cards — a rounded
+    // slab under three square-cornered columns reads as a different screen.
+    //
+    // Every screen that hosts a console is on the column language or headed
+    // there, so this changes with the machinery rather than per screen.
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isConsoleExpanded)
           PanelResizer(
             axis: Axis.vertical,
+            shape: PanelShape.column,
             onDrag: (dy) => setState(() {
               _height = (_height - dy).clamp(100.0, 600.0);
             }),
@@ -165,14 +170,13 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                 Provider.of<AppState>(context, listen: false).setConsoleHeight(_height),
           )
         else
-          const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: Material(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
+          // Collapsed there is no gutter to drag, so the hairline is drawn
+          // rather than dragged — without it the status bar and the column
+          // above it run together into one field of the same colour.
+          Container(height: 1, color: colorScheme.surfaceContainerHigh),
+        Material(
+          color: colorScheme.surfaceContainerLow,
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               statusBar,
@@ -184,7 +188,6 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                 ),
               ],
             ],
-            ),
           ),
         ),
       ],
