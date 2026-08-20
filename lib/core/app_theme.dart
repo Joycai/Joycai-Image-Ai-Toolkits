@@ -450,6 +450,52 @@ ButtonStyle tonalButtonStyle(ColorScheme colorScheme) {
   );
 }
 
+/// The monospaced faces to ask for, best first.
+///
+/// The spec sets every number, path, timestamp and log line in IBM Plex Mono,
+/// and the app takes the role without taking the font: a bundled face would be
+/// megabytes for text that is nowhere near a headline, and the point of a
+/// monospace here is that digits line up in a column, which any of these do.
+///
+/// Ordered so each desktop platform finds its own system face before the
+/// generic fallback. `monospace` last is what stops this degrading to the UI
+/// font on a machine that has none of them.
+const List<String> kMonoFontFamilyFallback = <String>[
+  'Cascadia Mono', // Windows 11
+  'Consolas', // Windows
+  'SF Mono', // macOS
+  'Menlo', // macOS, older
+  'DejaVu Sans Mono', // Linux
+  'monospace',
+];
+
+/// Numbers, code, paths and log lines set in a monospaced face.
+///
+/// A role rather than a size: take whichever scale slot the surrounding text
+/// uses and pass it through here, so a measurement beside a label stays the
+/// same size as the label and only changes shape.
+///
+/// Worth having beyond looks. A column of file sizes or dimensions in a
+/// proportional face has its digits at different widths, so the numbers do not
+/// line up and the eye cannot compare them down the column — which is the one
+/// thing a metadata panel exists for.
+extension AppMonoText on TextStyle {
+  /// This style, set in a monospaced face.
+  ///
+  /// Sets `fontFamily` to null on purpose. A [TextStyle] carrying an explicit
+  /// family would win over the fallback list, and the app sets one on every
+  /// slot — see [_buildTextTheme]'s `apply`. Leaving it null lets the fallback
+  /// chain decide, which is the whole mechanism.
+  TextStyle get mono => copyWith(
+        fontFamily: null,
+        fontFamilyFallback: kMonoFontFamilyFallback,
+        // Digits at a uniform width even in a face that would otherwise
+        // proportion them. Free where the face is already monospaced, and a
+        // rescue where the fallback landed somewhere unexpected.
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+}
+
 /// Taking a type-scale slot's size without its colour.
 extension AppTextScaleMetrics on TextStyle {
   /// This slot's metrics, carrying no colour of its own.

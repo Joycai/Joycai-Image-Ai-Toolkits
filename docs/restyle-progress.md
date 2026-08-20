@@ -38,7 +38,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 2c | 工作台内部细节 | `A1` / `10c` | `screens/workbench` · `widgets/app_run_console.dart` | ✅ `38d39d0` |
 | 2d | 工作台右栏：卡片色阶 + 编辑器填满剩余高度 | `A1` / `10c` | `widgets/app_card.dart` · `workbench_config_panel.dart` · `widgets/markdown_editor.dart` | ✅ `3a5b8d6` `1936962` |
 | 3 | 视频工作台 | `A6` / `12e` | `screens/workbench/widgets/video_*.dart` | ✅ |
-| 4 | 对比器 | `A4` / `10m` `10n` | `screens/workbench` | ⬜ |
+| 4 | 对比器 + 等宽角色 | `A4` / `10m` `10n` | `metadata_inspector.dart` · `core/app_theme.dart` | ✅ |
 | 5 | 蒙版编辑器 | `A5` / `10o` | `screens/workbench` | ⬜ |
 | 6 | 裁剪与缩放 | `A3` / `10e` | `screens/workbench` | ⬜ |
 | 7 | 提示词助手 | `A2` / `10d` | `screens/workbench` | ⬜ |
@@ -58,7 +58,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 |---|---|---|
 | 稿子的蓝 `#4A72E8` 是什么地位 | **默认种子色**，选色器保留。所有强调色仍从当前种子色推导，不写死 hex | 第 1 步前 |
 | 暗色主题从哪来 | 从 light **机械推导**。`10b` 唯一还能用的是表面阶梯 `#0E131F`/`#192132`/`#28354C` | 第 1 步前 |
-| 字体 | 界面字体保持现状（系统 + 可下载中文字体），**只补一个等宽角色**给数值/代码/日志 | 第 1 步前 |
+| 字体 | 界面字体保持现状（系统 + 可下载中文字体），**只补一个等宽角色**给数值/代码/日志。第 4 步落地为 `TextStyle.mono`：不打包字体，走系统等宽栈 + tabular figures。全应用还有 26 个文件在用裸的 `fontFamily: monospace`，各屏轮到时顺带迁移 | 第 1 步前 |
 | 灰阶还要不要是纯灰 | 不要。改成**固定的冷蓝 ramp**，"不随种子色移动"那条规则原样保留 | 第 1 步 |
 | 圆角：卡片到底是 12 还是 14 | **12**。§1 的「窗口·大卡片 14」说的是窗口边框，不是卡片；弹窗确实动了，16 | 第 2 步前 |
 | 工具屏的面板语言 | **跟稿子改通栏 + 1px 发丝线**（工作台/文件浏览器/任务队列/下载器），设置保持卡片。推翻此前的 inset-panel 决定 | 第 2 步前 |

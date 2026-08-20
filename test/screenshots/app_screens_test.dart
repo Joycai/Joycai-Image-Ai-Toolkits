@@ -282,9 +282,15 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
     seedComparatorPair(s);
     s.workbenchUIState.setComparatorLayout(ComparatorLayout.slider);
   }),
-  // Unseeded on purpose: the empty state is the first thing anyone opening
-  // the comparator sees, and it is a screen of its own, not a placeholder.
-  _WorkbenchTab('comparator_empty', 1, (AppState s) {}),
+  // The empty state is the first thing anyone opening the comparator sees,
+  // and it is a screen of its own, not a placeholder — the spec draws it as a
+  // frame of its own too.
+  //
+  // Cleared rather than merely unseeded. `WorkbenchUIState` outlives the
+  // shots, so leaving this one to seed nothing meant it photographed whatever
+  // the three comparator shots before it had left in place: this "empty" state
+  // has been a picture of two loaded images for as long as it has existed.
+  _WorkbenchTab('comparator_empty', 1, (AppState s) => s.workbenchUIState.clearComparator()),
   _WorkbenchTab('mask', 2, seedMaskSource),
   _WorkbenchTab('crop', 3, seedCropSource),
   _WorkbenchTab('assistant', 4, seedOptimizerSession),
