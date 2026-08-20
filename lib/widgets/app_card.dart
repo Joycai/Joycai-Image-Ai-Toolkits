@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
+import 'panel_resizer.dart';
 
 /// A rounded content card for grouping related widgets inside a panel — a
 /// settings block, a list row, a summary tile.
@@ -18,11 +19,15 @@ class AppCard extends StatelessWidget {
 
   /// Group with a hairline outline instead of a step in fill.
   ///
-  /// For cards on a panel that is already the lightest surface in play — the
-  /// workbench's right column, whose [PanelCard] is `surface`. A tone *up*
-  /// from there is a grey card on a white panel, which inverts the usual
-  /// figure/ground: the group ends up looking recessed rather than raised.
-  /// Same fill plus an edge reads as a group without that inversion.
+  /// For cards on a panel that is already near the top of the ramp — the
+  /// workbench's right column, a [PanelShape.column] at `surfaceContainerLow`.
+  /// A tone *down* from there is a grey card on a white panel, which inverts
+  /// the usual figure/ground: the group ends up looking recessed rather than
+  /// raised. A hair lighter plus an edge reads as a group without that.
+  ///
+  /// This is what every call site passes, and `10c` draws these cards the same
+  /// way: an edge doing the work and a fill barely distinguishable from the
+  /// panel under it.
   final bool outlined;
 
   const AppCard({
@@ -41,13 +46,28 @@ class AppCard extends StatelessWidget {
     // response of any ListTile/InkWell inside it — the same reason PanelCard
     // uses one.
     return Material(
-      color: outlined ? colorScheme.surface : colorScheme.surfaceContainerHigh,
+      // `surfaceContainerLowest`, not `surface`. The spec fills these with 55%
+      // white over the panel, which lands a hair *above* the panel's own tone;
+      // white is the nearest step on the ramp. It was `surface` while the
+      // right column was too, and the column moving up to
+      // `surfaceContainerLow` left this a step darker than the thing it sits
+      // on — a recessed card, which is the exact inversion [outlined] exists
+      // to avoid.
+      color: outlined ? colorScheme.surfaceContainerLowest : colorScheme.surfaceContainerHigh,
       clipBehavior: Clip.antiAlias,
       // shape, never borderRadius: Material asserts if given both, and the
       // outlined tone needs a side.
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: outlined ? BorderSide(color: colorScheme.outlineVariant) : BorderSide.none,
+        // 10, a step under a panel's 12. `10c` draws every card inside the
+        // right column at this, which is what keeps a stack of them from
+        // reading as rounder than the column holding them.
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        // The panel-edge tone, not `outlineVariant`. Same reasoning as the
+        // column hairlines: the spec draws an edge *between surfaces* softer
+        // than one inside a control.
+        side: outlined
+            ? BorderSide(color: colorScheme.surfaceContainerHigh)
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: onTap,
