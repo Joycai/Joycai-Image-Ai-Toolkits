@@ -444,7 +444,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             decoration: BoxDecoration(
               // The accent wash, not `primaryContainer`. The spec draws the
               // user's own turn as a 12% tint of the seed — at several of the
-              // seven seeds `primaryContainer` is a saturated slab that made
+              // every seed `primaryContainer` is a saturated slab that made
               // every question the user asked the loudest thing on the screen.
               color: colorScheme.accentTint,
               borderRadius: const BorderRadius.only(

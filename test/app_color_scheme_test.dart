@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
+import 'package:joycai_image_ai_toolkits/core/constants.dart';
 
 /// Covers [buildAppColorScheme]'s split: accents from the seed, greys from
 /// nobody.
@@ -16,12 +17,23 @@ void main() {
     return [r, g, b].reduce((a, b) => a > b ? a : b) - [r, g, b].reduce((a, b) => a < b ? a : b);
   }
 
+  /// The colour's hue in degrees, 0–360. Meaningless at zero chroma, so only
+  /// ask for it after checking [chromaOf].
+  double hueOf(Color color) => HSVColor.fromColor(color).hue;
+
   for (final brightness in Brightness.values) {
-    test('every neutral role is a true grey in $brightness', () {
-      // fromSeed alone tints all of these with the seed's hue. Any one of
-      // them drifting off grey puts the accent hue back into the background,
-      // which is what this exists to prevent.
-      final scheme = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
+    test('every neutral role carries the design’s blue, never the seed’s hue in $brightness', () {
+      // Before the restyle this asserted zero chroma: fromSeed tints all of
+      // these with the seed's hue, and any one of them drifting off grey put
+      // the accent hue back into the background.
+      //
+      // The ramp is no longer neutral — the spec's canvas is #ECEFF8 and its
+      // body text #171C3B, both cool by design — so "is it grey" can't be the
+      // question any more. The question that survives is *whose* tint it is.
+      // Seeded here with orange, the hue furthest from the ramp's own: every
+      // neutral must still come out blue. One drifting toward the seed is the
+      // same regression the zero-chroma assertion used to catch.
+      final scheme = buildAppColorScheme(seedColor: Colors.orange, brightness: brightness);
 
       final neutrals = {
         'surface': scheme.surface,
@@ -42,7 +54,11 @@ void main() {
       };
 
       neutrals.forEach((name, color) {
-        expect(chromaOf(color), lessThan(0.01), reason: '$name carries the seed hue in $brightness');
+        // White and near-white have no meaningful hue; nothing to check.
+        if (chromaOf(color) < 0.01) return;
+        expect(hueOf(color), inInclusiveRange(210, 245),
+            reason: '$name is not the ramp’s blue in $brightness — '
+                'it has drifted toward the seed');
       });
     });
 
@@ -85,6 +101,75 @@ void main() {
     });
   }
 
+  test('the ramp is one fixed table, not a per-seed derivation', () {
+    // The invariant the restyle kept when it dropped zero-chroma. Every
+    // neutral role — not just the four spot-checked above — has to be
+    // identical across every seed the user can pick, or the cool tint stops
+    // being the design's and starts being the seed's.
+    for (final brightness in Brightness.values) {
+      final reference = buildAppColorScheme(
+        seedColor: AppConstants.presetThemes.values.first,
+        brightness: brightness,
+      );
+      for (final seed in AppConstants.presetThemes.entries) {
+        final scheme = buildAppColorScheme(seedColor: seed.value, brightness: brightness);
+        expect(
+          [
+            scheme.surface,
+            scheme.surfaceDim,
+            scheme.surfaceBright,
+            scheme.surfaceContainerLowest,
+            scheme.surfaceContainerLow,
+            scheme.surfaceContainer,
+            scheme.surfaceContainerHigh,
+            scheme.surfaceContainerHighest,
+            scheme.onSurface,
+            scheme.onSurfaceVariant,
+            scheme.outline,
+            scheme.outlineVariant,
+            scheme.inverseSurface,
+            scheme.onInverseSurface,
+            scheme.surfaceTint,
+          ],
+          [
+            reference.surface,
+            reference.surfaceDim,
+            reference.surfaceBright,
+            reference.surfaceContainerLowest,
+            reference.surfaceContainerLow,
+            reference.surfaceContainer,
+            reference.surfaceContainerHigh,
+            reference.surfaceContainerHighest,
+            reference.onSurface,
+            reference.onSurfaceVariant,
+            reference.outline,
+            reference.outlineVariant,
+            reference.inverseSurface,
+            reference.onInverseSurface,
+            reference.surfaceTint,
+          ],
+          reason: 'the ramp moved at seed ${seed.key} in $brightness',
+        );
+      }
+    }
+  });
+
+  test('a panel reads as lifted off the canvas in both brightnesses', () {
+    // The app's own role convention, which the dark ramp deliberately gives
+    // the opposite ordering to Material's: surfaceContainer is the canvas a
+    // screen paints, surface is a panel floating on it, and the panel is the
+    // lighter of the two in *both* brightnesses. Material's dark scheme has
+    // these the other way round, so nothing but this test holds it.
+    for (final brightness in Brightness.values) {
+      final scheme = buildAppColorScheme(seedColor: Colors.teal, brightness: brightness);
+      expect(
+        scheme.surface.computeLuminance(),
+        greaterThan(scheme.surfaceContainer.computeLuminance()),
+        reason: 'a panel is not lifted off the canvas in $brightness',
+      );
+    }
+  });
+
   test('the theme hands the neutralised scheme to widgets, not the raw seeded one', () {
     // buildAppTheme could easily go on passing ColorScheme.fromSeed straight
     // through; then every widget reading Theme.of(context).colorScheme would
@@ -93,6 +178,6 @@ void main() {
     final expected = buildAppColorScheme(seedColor: Colors.teal, brightness: Brightness.light);
 
     expect(theme.colorScheme.surfaceContainerHighest, expected.surfaceContainerHighest);
-    expect(chromaOf(theme.colorScheme.surface), lessThan(0.01));
+    expect(hueOf(theme.colorScheme.surface), inInclusiveRange(210, 245));
   });
 }

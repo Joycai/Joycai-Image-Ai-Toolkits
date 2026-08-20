@@ -4,7 +4,7 @@ import 'llm/context_budget.dart';
 
 /// One coloured slice of the context bar.
 ///
-/// A *kind*, not a colour: the app ships seven seed colours and two
+/// A *kind*, not a colour: the app ships eight seed colours and two
 /// brightnesses, so the card resolves each of these against the ambient theme
 /// rather than storing a hue.
 enum ContextUsageSlice {

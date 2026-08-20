@@ -59,7 +59,13 @@ void main() {
     expect(hover.g, neutral.g);
     expect(hover.b, neutral.b);
     expect(hover.a, greaterThan(0), reason: 'Hover produces no visible fill at all');
-    expect(hover.r, hover.b, reason: 'The neutral overlay picked up a hue');
+    // There was a fourth assertion here, `hover.r == hover.b`, standing in for
+    // "no hue". It only ever held because the neutral ramp was monochrome; the
+    // restyle made it cool by design, so equal channels would now fail on a
+    // perfectly correct overlay. Nothing replaces it: the three channel checks
+    // above already pin the overlay to `onSurface` exactly, which is the whole
+    // claim. Hue cannot serve as the proxy either — this test seeds indigo, so
+    // the accent and the ramp share a hue and only their saturation differs.
   });
 
   testWidgets('icon-only mode keeps the label reachable as a tooltip', (tester) async {
