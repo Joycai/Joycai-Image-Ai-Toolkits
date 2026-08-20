@@ -42,7 +42,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 5 | 蒙版编辑器 | `A5` / `10o` | `mask_editor_view.dart` · `canvas_overlays.dart` | ✅ |
 | 6 | 裁剪与缩放 | `A3` / `10e` `10l` | `crop_resize_view.dart` · `crop_resize_toolbar.dart` | ✅ |
 | 7 | 提示词助手 | `A2` / `10d` | `core/context_usage_palette.dart` · `optimizer_context_card.dart` | ✅ |
-| 8 | 文件浏览器 | `B1` | `screens/browser` | ⬜ |
+| 8 | 文件浏览器 | `B1` / `10g` | `file_browser_screen.dart` · `widgets/file_card.dart` | ✅ |
 | 9 | 任务队列 | `C1` | `screens/batch` | ⬜ |
 | 10 | 图像下载器 | `B2` | `screens/downloader` | ⬜ |
 | 11 | 提示词库 + AI 重命名弹窗 | `B3` · `B4` | `screens/prompts` | ⬜ |
@@ -102,4 +102,4 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 - **裁剪与缩放的工具栏**（第 6 步）有既有的 `TextPainter` 自适应折叠逻辑，是为了修一个已经出过两次的裁字 bug。改风格不能把它改回硬编码像素阈值。见 `widgets/.../crop_resize_toolbar.dart` 与 [`architecture/design-tokens.md`](architecture/design-tokens.md)。
 - **模型与渠道管理**（第 12 步）：PR #115 刚把 add-channel 重建成单页两栏，先确认新稿画的是不是同一个方案，别把刚合的推翻。
 - **视频工作台空帧槽还不是虚线**（第 3 步留下的）。`A6` 把空的首帧/尾帧画成虚线描边，而 Flutter 的 `Border` 只有 solid/none，要虚线得自己写 `CustomPainter`。已经统一成同一层主色浅底，虚线单独再说。
-- **提示词助手**（第 7 步）在架构文档 §4 里已经有 6 条故意偏离（面板宽度、工具头高度、上下文占用配色…），要逐条重新判断新稿是否推翻它们。
+- **B1 / C1 是「由深色稿转换」的机械稿**，不像 A1/D1 是手工定稿。它们整个内容区透明那个画法已判定为转换没收干净，不采纳；其余细节（栏宽、行高）遇到冲突时也以 A1/D1 建立的惯例为准。

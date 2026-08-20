@@ -262,16 +262,19 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
             : null,
         bottomNavigationBar: const AppRunConsole(),
-        body: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
+        // Flush columns, no canvas inset. `B1` draws this screen the way `A1`
+        // draws the workbench — a directory column, a hairline, and the grid
+        // taking the rest — and the two are the same kind of screen.
+        body: Row(
             children: [
               if (!isNarrow) ...[
                 PanelCard(
                   width: _sidebarWidth,
+                  shape: PanelShape.column,
                   child: const UnifiedSidebar(useFileBrowserState: true),
                 ),
                 PanelResizer(
+                  shape: PanelShape.column,
                   onDrag: (dx) => setState(() {
                     _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
                   }),
@@ -281,6 +284,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               ],
               Expanded(
                 child: PanelCard(
+                  shape: PanelShape.column,
                   child: Column(
                     children: [
                       header,
@@ -310,7 +314,6 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                 ),
               ),
             ],
-          ),
         ),
       ),
     );
