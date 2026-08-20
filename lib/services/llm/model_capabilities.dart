@@ -129,7 +129,6 @@ List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
   ];
 }
 
-/// What a model family can do, and which parameters apply to it.
 /// Which request body an image model's endpoint expects, when the family
 /// default (one shape per protocol) is not enough.
 ///
@@ -146,10 +145,11 @@ enum ImageRequestShape {
   /// `{model, input: {messages: [...]}, parameters: {...}}`.
   dashscopeQwen,
 
-  /// `{model, messages: [...], parameters: {...}, watermark, n}`.
+  /// `{model, messages: [...], parameters: {...}}`.
   dashscopeWan,
 }
 
+/// What a model family can do, and which parameters apply to it.
 class ModelCapabilities {
   /// True when the model's primary output is a generated image (and therefore
   /// the image parameter controls should be shown).
