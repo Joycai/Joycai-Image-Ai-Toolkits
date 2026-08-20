@@ -37,7 +37,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 2b | 窗口外壳：自绘标题栏 + 极光网格 | `A1` / `D1` | `widgets/app_window_frame.dart` · `main.dart` | ✅ `eb1bf1e` |
 | 2c | 工作台内部细节 | `A1` / `10c` | `screens/workbench` · `widgets/app_run_console.dart` | ✅ `38d39d0` |
 | 2d | 工作台右栏：卡片色阶 + 编辑器填满剩余高度 | `A1` / `10c` | `widgets/app_card.dart` · `workbench_config_panel.dart` · `widgets/markdown_editor.dart` | ✅ `3a5b8d6` `1936962` |
-| 3 | 视频工作台 | `A6` | `screens/workbench` | ⬜ |
+| 3 | 视频工作台 | `A6` / `12e` | `screens/workbench/widgets/video_*.dart` | ✅ |
 | 4 | 对比器 | `A4` / `10m` `10n` | `screens/workbench` | ⬜ |
 | 5 | 蒙版编辑器 | `A5` / `10o` | `screens/workbench` | ⬜ |
 | 6 | 裁剪与缩放 | `A3` / `10e` | `screens/workbench` | ⬜ |
@@ -86,4 +86,5 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 
 - **裁剪与缩放的工具栏**（第 6 步）有既有的 `TextPainter` 自适应折叠逻辑，是为了修一个已经出过两次的裁字 bug。改风格不能把它改回硬编码像素阈值。见 `widgets/.../crop_resize_toolbar.dart` 与 [`architecture/design-tokens.md`](architecture/design-tokens.md)。
 - **模型与渠道管理**（第 12 步）：PR #115 刚把 add-channel 重建成单页两栏，先确认新稿画的是不是同一个方案，别把刚合的推翻。
+- **视频工作台空帧槽还不是虚线**（第 3 步留下的）。`A6` 把空的首帧/尾帧画成虚线描边，而 Flutter 的 `Border` 只有 solid/none，要虚线得自己写 `CustomPainter`。已经统一成同一层主色浅底，虚线单独再说。
 - **提示词助手**（第 7 步）在架构文档 §4 里已经有 6 条故意偏离（面板宽度、工具头高度、上下文占用配色…），要逐条重新判断新稿是否推翻它们。

@@ -13,6 +13,7 @@ import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_card.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/collapsible_card.dart';
@@ -118,8 +119,17 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Model Selection
-        _buildModelSection(l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
+        // Model, channel, resolution, aspect and duration in one card. `A6`
+        // groups them because they are one decision — what to render and how —
+        // where this had them loose on the panel, reading as five unrelated
+        // rows between two headed sections.
+        AppCard(
+          outlined: true,
+          padding: EdgeInsets.zero,
+          child: _buildModelSection(
+              l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
+        ),
+        const SizedBox(height: 12),
 
         AppSectionLabel(
           l10n.prompt,
@@ -144,18 +154,27 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           onChanged: (v) => appState.setVideoPromptDraft(v),
           expand: false,
         ),
-        SwitchListTile(
-          title: Text(l10n.compressReferenceImages, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-          // Carries the colour the ListTile's own subtitle style supplied, which
-          // the slot would otherwise replace with plain onSurface.
-          subtitle: Text(l10n.compressReferenceImagesDesc,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          value: appState.compressReferenceImages,
-          onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
-          secondary: const Icon(Icons.compress, size: 20),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        const SizedBox(height: 12),
+        // In a card, like the image panel's pair of toggles and like `A6`. A
+        // bare [SwitchListTile] between two headed sections read as a stray row
+        // rather than as a setting belonging to the prompt above it.
+        AppCard(
+          outlined: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: SwitchListTile(
+            title: Text(l10n.compressReferenceImages, style: Theme.of(context).textTheme.titleSmall),
+            // Carries the colour the ListTile's own subtitle style supplied, which
+            // the slot would otherwise replace with plain onSurface.
+            subtitle: Text(l10n.compressReferenceImagesDesc,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            value: appState.compressReferenceImages,
+            onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
+            secondary: const Icon(Icons.compress, size: 20),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
         ),
+        const SizedBox(height: 12),
 
         AppSectionLabel(l10n.frames),
         const SizedBox(height: 6),
@@ -173,7 +192,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                     onDrop: (img) => uiState.setVideoFirstFrame(img),
                     onClear: () => uiState.setVideoFirstFrame(null),
                     dropHint: l10n.dropFirstFrameHere,
-                    emptyColor: cs.primaryContainer.withValues(alpha: 0.3),
+                    emptyColor: cs.primary.withValues(alpha: 0.04),
                     emptyIcon: Icons.first_page,
                   ),
                 ),
@@ -186,7 +205,14 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                     onDrop: (img) => uiState.setVideoLastFrame(img),
                     onClear: () => uiState.setVideoLastFrame(null),
                     dropHint: l10n.dropLastFrameHere,
-                    emptyColor: cs.tertiaryContainer.withValues(alpha: 0.3),
+                    // The same wash as the first frame, not `tertiaryContainer`.
+                    // Two drop targets in a row were being told apart by hue —
+                    // an identity colour, derived from the seed, on a control
+                    // whose two halves are already labelled 首帧 and 尾帧. `A6`
+                    // draws both slots identically, and at some seeds the old
+                    // pairing put a lilac box next to a mint one for no reason
+                    // the user could act on.
+                    emptyColor: cs.primary.withValues(alpha: 0.04),
                     emptyIcon: Icons.last_page,
                   ),
                 ),
@@ -195,6 +221,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           },
         ),
 
+        const SizedBox(height: 12),
         AppSectionLabel(l10n.referenceImages),
         const SizedBox(height: 6),
         _ReferenceImagesTarget(

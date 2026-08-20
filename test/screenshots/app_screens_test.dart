@@ -288,4 +288,10 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   _WorkbenchTab('mask', 2, seedMaskSource),
   _WorkbenchTab('crop', 3, seedCropSource),
   _WorkbenchTab('assistant', 4, seedOptimizerSession),
+  // The other half of the workbench. It has its own right panel — model,
+  // resolution, aspect, duration, the first/last-frame drop targets — and
+  // shares nothing with tab 0's below the shell, so leaving it out meant half
+  // the workbench was never photographed at all. Seeded with a selection, as
+  // the frame slots are the point and they are empty without one.
+  _WorkbenchTab('video', 5, (AppState s) => seedImageSelection(s), seedOnSettled: true),
 ];
