@@ -35,7 +35,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 1 | **令牌层** | §1 · `10a` | `core/design_tokens.dart` · `core/app_theme.dart` · `core/constants.dart` | ✅ `6a8debe` |
 | 2a | 面板改通栏（工作台） | `A1` / `10c` | `widgets/panel_resizer.dart` · `screens/workbench/workbench_layout.dart` | ✅ `4979f4a` |
 | 2b | 窗口外壳：自绘标题栏 + 极光网格 | `A1` / `D1` | `widgets/app_window_frame.dart` · `main.dart` | ✅ `eb1bf1e` |
-| 2c | 工作台内部细节 | `A1` / `10c` | `screens/workbench` · `widgets/app_*.dart` | ⬜ |
+| 2c | 工作台内部细节 | `A1` / `10c` | `screens/workbench` · `widgets/app_run_console.dart` | ✅ `38d39d0` |
 | 3 | 视频工作台 | `A6` | `screens/workbench` | ⬜ |
 | 4 | 对比器 | `A4` / `10m` `10n` | `screens/workbench` | ⬜ |
 | 5 | 蒙版编辑器 | `A5` / `10o` | `screens/workbench` | ⬜ |
