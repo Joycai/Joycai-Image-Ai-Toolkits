@@ -163,6 +163,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get close => '关闭';
 
   @override
+  String get minimizeWindow => '最小化';
+
+  @override
+  String get maximizeWindow => '最大化';
+
+  @override
+  String get restoreWindow => '向下还原';
+
+  @override
+  String get closeWindow => '关闭';
+
+  @override
   String get expandEditor => '放大编辑';
 
   @override
@@ -2874,6 +2886,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get close => '關閉';
+
+  @override
+  String get minimizeWindow => '最小化';
+
+  @override
+  String get maximizeWindow => '最大化';
+
+  @override
+  String get restoreWindow => '向下還原';
+
+  @override
+  String get closeWindow => '關閉';
 
   @override
   String get expandEditor => '放大編輯';

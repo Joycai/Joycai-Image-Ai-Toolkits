@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/responsive.dart';
 import '../../services/database_service.dart';
 import '../../state/app_state.dart';
+import '../../widgets/app_window_frame.dart';
 import '../../widgets/panel_resizer.dart';
 
 /// Narrowest the centre panel is allowed to get.
@@ -163,12 +164,16 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        // The workbench is a [PanelShape.column] screen since the restyle:
-        // three flush columns, hairlines between them, no canvas showing. This
-        // colour is therefore only what the centre column lets through — the
-        // two side columns paint over it — which is why it is the canvas tone
-        // and not the columns' own.
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        // Transparent, so the centre column shows [AppWindowBackdrop]. This
+        // is the one screen the spec leaves bare: the two side columns are
+        // opaque and paint over the backdrop, the gallery between them does
+        // not, and the image cards sit straight on the mesh.
+        //
+        // Falls back to the canvas colour on mobile, where there is no window
+        // frame behind this to show.
+        backgroundColor: usesCustomWindowChrome
+            ? Colors.transparent
+            : Theme.of(context).colorScheme.surfaceContainer,
         body: Column(
           children: [
             if (widget.topBar != null) widget.topBar!,

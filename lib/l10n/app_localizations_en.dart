@@ -166,6 +166,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get minimizeWindow => 'Minimize';
+
+  @override
+  String get maximizeWindow => 'Maximize';
+
+  @override
+  String get restoreWindow => 'Restore';
+
+  @override
+  String get closeWindow => 'Close';
+
+  @override
   String get expandEditor => 'Expand editor';
 
   @override

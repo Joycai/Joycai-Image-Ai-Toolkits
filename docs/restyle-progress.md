@@ -33,7 +33,9 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 步 | 屏 | 稿 | 代码 | 状态 |
 |---|---|---|---|---|
 | 1 | **令牌层** | §1 · `10a` | `core/design_tokens.dart` · `core/app_theme.dart` · `core/constants.dart` | ✅ `6a8debe` |
-| 2 | 工作台外壳 · 图像 | `A1` / `10c` | `screens/workbench` · `widgets/app_*.dart` | ⬜ |
+| 2a | 面板改通栏（工作台） | `A1` / `10c` | `widgets/panel_resizer.dart` · `screens/workbench/workbench_layout.dart` | ✅ `4979f4a` |
+| 2b | 窗口外壳：自绘标题栏 + 极光网格 | `A1` / `D1` | `widgets/app_window_frame.dart` · `main.dart` | ⬜ |
+| 2c | 工作台内部细节 | `A1` / `10c` | `screens/workbench` · `widgets/app_*.dart` | ⬜ |
 | 3 | 视频工作台 | `A6` | `screens/workbench` | ⬜ |
 | 4 | 对比器 | `A4` / `10m` `10n` | `screens/workbench` | ⬜ |
 | 5 | 蒙版编辑器 | `A5` / `10o` | `screens/workbench` | ⬜ |
@@ -59,7 +61,8 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 灰阶还要不要是纯灰 | 不要。改成**固定的冷蓝 ramp**，"不随种子色移动"那条规则原样保留 | 第 1 步 |
 | 圆角：卡片到底是 12 还是 14 | **12**。§1 的「窗口·大卡片 14」说的是窗口边框，不是卡片；弹窗确实动了，16 | 第 2 步前 |
 | 工具屏的面板语言 | **跟稿子改通栏 + 1px 发丝线**（工作台/文件浏览器/任务队列/下载器），设置保持卡片。推翻此前的 inset-panel 决定 | 第 2 步前 |
-| 窗口背景 | **做极光网格 + 毛玻璃标题栏**，但只有 36px 标题栏半透明，内容区保持不透明（`A1`/`D1` 的做法） | 第 2 步前 |
+| 窗口背景 | **做极光网格 + 毛玻璃标题栏**。注意 `A1` 的图库区其实也是透明的，网格从那儿透出来——它不滚动、也不带模糊，所以不贵；真正贵的 `BackdropFilter` 只在标题栏那 36px | 第 2 步前 |
+| 标题栏 | **自绘**。稿子那条 36px 毛玻璃标题栏没法和系统 caption 共存，所以隐藏系统 caption 自己画。**这是功能改动**，用户在被告知后明确选择了它：新增 `window_manager` 依赖，拖拽移动、双击最大化、三个窗口按钮都要自己实现 | 第 2b 步前 |
 
 ## 还没定的事
 
@@ -67,6 +70,16 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 |---|---|---|
 | **主 CTA 渐变** | 架构文档把「不做渐变」记为故意偏离：`ButtonStyle` 表达不了，套 `Ink(gradient:)` 会丢 Material 状态层与波纹。新稿仍然画渐变 + 彩色投影 | 第 2 步按现状做完，渐变单独做成一个可回退的小改动，看效果再定 |
 | **面板半透明** | 稿子的面板是 `rgba(255,255,255,.55)` 浮在画布上；第 1 步取的是合成后的不透明值 `#F5F7FD` | 已定：内容区保持不透明，只有标题栏真半透明。`B1`/`C1` 那种整个内容区透明的画法按「由深色稿转换」没收干净处理，不采纳 |
+
+## 平台验证
+
+自绘标题栏动到了原生窗口行为，每个桌面平台都要单独看：
+
+| 平台 | 状态 |
+|---|---|
+| Windows | ✅ `flutter build windows` 通过；标题栏、按钮、拖拽在截图测试里渲染正常 |
+| macOS | ⬜ 未验证。代码里保留了原生红绿灯（`windowButtonVisibility: true`）并给左侧留了 78px，不画自己的按钮 |
+| Linux | ⬜ 未验证 |
 
 ## 需要小心的地方
 

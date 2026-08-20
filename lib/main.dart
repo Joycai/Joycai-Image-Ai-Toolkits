@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'core/app_theme.dart';
 import 'core/design_tokens.dart';
@@ -26,10 +27,13 @@ import 'services/video_thumbnail_service.dart';
 import 'services/window_chrome_service.dart';
 import 'state/app_state.dart';
 import 'widgets/app_status_badge.dart';
+import 'widgets/app_window_frame.dart';
 import 'widgets/task_capsule_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await _hideNativeTitleBar();
 
   await NotificationService().init();
 
@@ -55,6 +59,33 @@ void main() async {
       ],
       child: MyApp(version: packageInfo.version),
     ),
+  );
+}
+
+/// Hands the window's caption over to [AppTitleBar].
+///
+/// The spec draws the app with a title bar of its own, and there is no way to
+/// have both — so this hides the native one. Everything it used to do is now
+/// [AppTitleBar]'s job, which is why that widget carries drag-to-move, a
+/// double-click target and the three buttons rather than just the look.
+///
+/// macOS keeps its traffic lights (`windowButtonVisibility`) and gets no
+/// buttons drawn for it: they sit *inside* the window there, so hiding the bar
+/// does not take them away, and a second set would be two ways to close one
+/// window.
+Future<void> _hideNativeTitleBar() async {
+  if (!usesCustomWindowChrome) return;
+
+  await windowManager.ensureInitialized();
+  await windowManager.waitUntilReadyToShow(
+    const WindowOptions(
+      titleBarStyle: TitleBarStyle.hidden,
+      windowButtonVisibility: true,
+    ),
+    () async {
+      await windowManager.show();
+      await windowManager.focus();
+    },
   );
 }
 
@@ -91,10 +122,12 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      // Wrapped here rather than around MaterialApp: the caption has to match
-      // the theme that actually resolved, and themeMode.system is only
-      // settled below this point.
-      builder: (context, child) => _WindowChromeSync(child: child!),
+      // Wrapped here rather than around MaterialApp: both of these need the
+      // theme that actually resolved, and themeMode.system is only settled
+      // below this point. [AppWindowFrame] is inside the sync rather than
+      // outside so its own colours come from the same resolved theme.
+      builder: (context, child) =>
+          _WindowChromeSync(child: AppWindowFrame(child: child!)),
       home: const MainNavigationScreen(),
     );
 
@@ -285,9 +318,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       children: [
         Scaffold(
           key: _scaffoldKey,
-          // Inset-panel canvas shared with every screen: the nav rail floats
-          // transparently on it, screens lay their cards over it.
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+          // Transparent so [AppWindowBackdrop] shows through wherever a screen
+          // leaves a gap. Most screens paint over all of it; the workbench's
+          // gallery column is the one the spec deliberately leaves bare.
+          //
+          // On mobile there is no backdrop behind this, so it falls back to
+          // the canvas colour the way it always did.
+          backgroundColor: usesCustomWindowChrome
+              ? Colors.transparent
+              : Theme.of(context).colorScheme.surfaceContainer,
           drawer: isMobileUI
               ? _buildMobileDrawer(l10n, filteredDefinitions, secondaryItems, displayIndex, appState, allDefinitions, taskBadge)
               : null,
@@ -500,11 +539,20 @@ class _AppNavRail extends StatelessWidget {
     final railWidth = isTablet ? 64.0 : 78.0;
     final showLabels = !isTablet;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: railWidth,
-      // Transparent: floats on the shared surfaceContainer canvas, matching
-      // the inset-panel look of the screens beside it.
-      color: Colors.transparent,
+      // Opaque since the restyle. `A1` and `D1` both give the rail a ground of
+      // its own — #F5F7FD, a step under the toolbar — and a hairline down its
+      // right edge. It used to float transparently on the canvas, which only
+      // read as deliberate while the screens beside it were inset cards.
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(
+          right: BorderSide(color: colorScheme.surfaceContainerHigh),
+        ),
+      ),
       child: Column(
         children: [
           // Main nav items
