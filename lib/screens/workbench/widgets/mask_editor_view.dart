@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
@@ -356,7 +357,13 @@ class _MaskOutputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final labelStyle = textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
+    // The tracked caption the app names a group of controls with, which is
+    // what `10o` draws here: 输出 is a heading over the line beside it, not a
+    // field label sharing its weight.
+    final labelStyle = textTheme.labelMedium?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      letterSpacing: AppType.trackedLabelSpacing,
+    );
 
     final summary = image == null
         ? '—'
@@ -368,8 +375,11 @@ class _MaskOutputBar extends StatelessWidget {
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+        // The column tone and the panel-edge hairline, like the toolbar above
+        // it and the console below. This was `surface` over a `surface` panel
+        // — a bar with no edge of its own on a ground it matched.
+        color: colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: colorScheme.surfaceContainerHigh)),
       ),
       child: Row(
         children: [
@@ -378,7 +388,9 @@ class _MaskOutputBar extends StatelessWidget {
           Expanded(
             child: Text(
               summary,
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+              // Mono: this is dimensions and a format, and it sits directly
+              // above a console of monospaced log lines.
+              style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
               overflow: TextOverflow.ellipsis,
             ),
           ),

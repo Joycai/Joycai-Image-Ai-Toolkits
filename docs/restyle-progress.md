@@ -39,7 +39,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 2d | 工作台右栏：卡片色阶 + 编辑器填满剩余高度 | `A1` / `10c` | `widgets/app_card.dart` · `workbench_config_panel.dart` · `widgets/markdown_editor.dart` | ✅ `3a5b8d6` `1936962` |
 | 3 | 视频工作台 | `A6` / `12e` | `screens/workbench/widgets/video_*.dart` | ✅ |
 | 4 | 对比器 + 等宽角色 | `A4` / `10m` `10n` | `metadata_inspector.dart` · `core/app_theme.dart` | ✅ |
-| 5 | 蒙版编辑器 | `A5` / `10o` | `screens/workbench` | ⬜ |
+| 5 | 蒙版编辑器 | `A5` / `10o` | `mask_editor_view.dart` · `canvas_overlays.dart` | ✅ |
 | 6 | 裁剪与缩放 | `A3` / `10e` | `screens/workbench` | ⬜ |
 | 7 | 提示词助手 | `A2` / `10d` | `screens/workbench` | ⬜ |
 | 8 | 文件浏览器 | `B1` | `screens/browser` | ⬜ |
@@ -81,6 +81,14 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | Windows | ✅ `flutter build windows` 通过；标题栏、按钮、拖拽在截图测试里渲染正常 |
 | macOS | ⬜ 未验证。代码里保留了原生红绿灯（`windowButtonVisibility: true`）并给左侧留了 78px，不画自己的按钮 |
 | Linux | ⬜ 未验证 |
+
+## `10o` 里没有跟进的差异（内容，不是样式）
+
+蒙版编辑器改版后与稿子的剩余差异都在**说什么**，不在**长什么样**，按「只改风格」的边界没有动：
+
+- 画布角标：稿子写「白色笔刷 · **覆盖 14%**」，应用写「白色笔刷 · 20 px」。覆盖率要实时统计蒙版像素。
+- 输出行：稿子写「**遮罩** 2048×2048 · PNG（黑白）」，应用按当前模式在「合成图 / 遮罩」之间切换，尺寸也是实际图像的。
+- 目标行：稿子写出了文件名 `cha-fix-gpt_mask.png`，应用只写目的地。代码注释解释了原因——保存时才铸出带时间戳的文件名，提前猜一个正是裁剪那条目的地行曾经三处同时出错的原因。
 
 ## 需要小心的地方
 
