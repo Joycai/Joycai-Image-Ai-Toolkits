@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/app_semantic_colors.dart';
+import '../../../core/context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/assistant_context_usage.dart';
@@ -35,13 +35,17 @@ class OptimizerContextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = context.semantic;
     final textTheme = Theme.of(context).textTheme;
 
+    // Its own palette since the restyle, not `primary` / `info` / `warning`.
+    // The default seed is blue and `semantic.info` is also blue, so the first
+    // two slices — the two that sit side by side — came out the same colour.
+    // See [ContextUsagePalette] for why these are identity colours rather than
+    // theme roles.
+    final brightness = colorScheme.brightness;
     final colors = <ContextUsageSlice, Color>{
-      ContextUsageSlice.systemPrompt: colorScheme.primary,
-      ContextUsageSlice.tools: semantic.info,
-      ContextUsageSlice.history: semantic.warning,
+      for (final slice in ContextUsageSlice.values)
+        slice: ContextUsagePalette.of(slice, brightness),
     };
     final labels = <ContextUsageSlice, String>{
       ContextUsageSlice.systemPrompt: l10n.optCtxSystemPrompt,
@@ -76,7 +80,7 @@ class OptimizerContextCard extends StatelessWidget {
           _buildLegendRow(
             colorScheme,
             textTheme,
-            dot: colorScheme.outlineVariant,
+            dot: ContextUsagePalette.remaining(colorScheme.brightness),
             label: l10n.optCtxRemaining,
             // An unlimited model has real figures and no ceiling: the three
             // slices still say what was spent, but there is no remainder to
@@ -144,7 +148,9 @@ class OptimizerContextCard extends StatelessWidget {
       child: SizedBox(
         height: _barHeight,
         child: ColoredBox(
-          color: colorScheme.surfaceContainerHighest,
+          // The unfilled remainder of the bar, which is the same thing the
+          // "remaining window" legend dot names — so it takes the same colour.
+          color: ContextUsagePalette.remaining(colorScheme.brightness),
           child: LayoutBuilder(
             builder: (context, constraints) => Row(
               children: [
