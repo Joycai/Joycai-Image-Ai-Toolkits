@@ -40,7 +40,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 3 | 视频工作台 | `A6` / `12e` | `screens/workbench/widgets/video_*.dart` | ✅ |
 | 4 | 对比器 + 等宽角色 | `A4` / `10m` `10n` | `metadata_inspector.dart` · `core/app_theme.dart` | ✅ |
 | 5 | 蒙版编辑器 | `A5` / `10o` | `mask_editor_view.dart` · `canvas_overlays.dart` | ✅ |
-| 6 | 裁剪与缩放 | `A3` / `10e` | `screens/workbench` | ⬜ |
+| 6 | 裁剪与缩放 | `A3` / `10e` `10l` | `crop_resize_view.dart` · `crop_resize_toolbar.dart` | ✅ |
 | 7 | 提示词助手 | `A2` / `10d` | `screens/workbench` | ⬜ |
 | 8 | 文件浏览器 | `B1` | `screens/browser` | ⬜ |
 | 9 | 任务队列 | `C1` | `screens/batch` | ⬜ |
@@ -81,6 +81,13 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | Windows | ✅ `flutter build windows` 通过；标题栏、按钮、拖拽在截图测试里渲染正常 |
 | macOS | ⬜ 未验证。代码里保留了原生红绿灯（`windowButtonVisibility: true`）并给左侧留了 78px，不画自己的按钮 |
 | Linux | ⬜ 未验证 |
+
+## `10e` 里没有跟进的差异（内容，不是样式）
+
+ 的 7 条改进说明里，1–4、6、7 都早已实现（保存动作分主次、比例进分段控件、自定义收进末位、尺寸输入显示实际值、输出预览条、日志左对齐）。剩下两条属于内容：
+
+- **第 5 条的一半**：稿子在选区角上实时显示「1200 × 900 · 4:3」。三分线网格和 8 个手柄都有了，就地读数没有。
+- **第 7 条的一半**：稿子在工具栏左侧写文件名 + 原图 1568×2712 · 2.4 MB，应用把文件名放在画布左上角的角标里，且不带原始尺寸。
 
 ## `10o` 里没有跟进的差异（内容，不是样式）
 
