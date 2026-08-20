@@ -30,6 +30,30 @@ enum AppButtonVariant {
   /// otherwise paint them fully primary.
   secondary,
 
+  /// A secondary action that is still the accent's: an accent wash behind an
+  /// accent label, one tier under [primary].
+  ///
+  /// For the *second* place on a screen where the accent belongs — the spec's
+  /// `8a` names exactly one, the 应用 inside the assistant's result card, in
+  /// the same annotation that establishes 应用到工作台 as the only solid fill.
+  /// [secondary] would flatten that: it is the neutral tier, and using it here
+  /// makes the button that applies the model's output look like any other
+  /// button on the card.
+  ///
+  /// Deliberately **not** Material's tonal. [tonalButtonStyle] is a
+  /// `secondaryContainer` slab, and `secondaryContainer` is a muted derivative
+  /// of the seed that reads as grey-with-a-tint at several of them. This takes
+  /// the app's own accent ladder instead — [AppAccent.accentTint] behind
+  /// [AppAccent.onAccentTint], the same pairing every selected thing in the app
+  /// uses, whose contrast `design_tokens_test` already asserts at every seed in
+  /// both brightnesses.
+  ///
+  /// Use it sparingly. §1 allows the accent in three places — selection, the
+  /// main CTA, badges — and this is a fourth. It earns that only where the
+  /// action really is the accent's and merely outranked by another one on the
+  /// same screen.
+  tonal,
+
   /// The lowest-emphasis action — cancel, dismiss, "skip this".
   text,
 
@@ -213,6 +237,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.destructiveText:
         return TextButton(style: style, onPressed: onPressed, child: child);
       case AppButtonVariant.secondary:
+      case AppButtonVariant.tonal:
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton(style: style, onPressed: onPressed, child: child);
     }
@@ -242,6 +267,7 @@ class AppButton extends StatelessWidget {
           label: label,
         );
       case AppButtonVariant.secondary:
+      case AppButtonVariant.tonal:
       case AppButtonVariant.destructiveOutline:
         return OutlinedButton.icon(
           style: style,
@@ -273,6 +299,16 @@ class AppButton extends StatelessWidget {
           backgroundColor: colorScheme.surface,
           foregroundColor: colorScheme.onSurface,
           side: BorderSide(color: colorScheme.outlineVariant),
+          disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
+        );
+      case AppButtonVariant.tonal:
+        // An OutlinedButton with a fill, not a FilledButton with a side: the
+        // spec draws both a wash and an edge, and the edge is what keeps the
+        // 12% wash from dissolving into a card that is itself nearly white.
+        return OutlinedButton.styleFrom(
+          backgroundColor: colorScheme.accentTint,
+          foregroundColor: colorScheme.onAccentTint,
+          side: BorderSide(color: colorScheme.accentRing),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );
       case AppButtonVariant.destructive:
@@ -307,6 +343,8 @@ class AppButton extends StatelessWidget {
             colorScheme.onPrimary;
       case AppButtonVariant.secondary:
         return colorScheme.onSurface;
+      case AppButtonVariant.tonal:
+        return colorScheme.onAccentTint;
       case AppButtonVariant.text:
         return colorScheme.primary;
       case AppButtonVariant.destructive:
