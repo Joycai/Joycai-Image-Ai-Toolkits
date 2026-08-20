@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
@@ -236,10 +237,13 @@ class _ImageCardState extends State<ImageCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          // 10, not the 12 a panel gets. `10c` draws these one step tighter
+          // than a card, which is what keeps a grid of them from reading as
+          // rounder than the columns holding it.
+          borderRadius: BorderRadius.circular(AppRadius.md),
           color: colorScheme.surface,
           border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: selected ? colorScheme.primary : colorScheme.surfaceContainerHigh,
             width: selected ? 2 : 1,
           ),
           boxShadow: selected
@@ -250,7 +254,17 @@ class _ImageCardState extends State<ImageCard> {
                     spreadRadius: 1,
                   )
                 ]
-              : null,
+              // A resting lift, which these did not have before. The gallery
+              // sits on the window backdrop rather than on a panel since the
+              // restyle, and without a shadow the cards read as holes punched
+              // in the mesh instead of as tiles laid on it.
+              : [
+                  BoxShadow(
+                    color: colorScheme.shadow.withValues(alpha: 0.05),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         clipBehavior: Clip.antiAlias,
         // A column, not a stack: the file name used to be burned onto the
@@ -267,7 +281,22 @@ class _ImageCardState extends State<ImageCard> {
                   children: [
                     _buildThumbnail(context, colorScheme),
                     if (_dimensions.isNotEmpty)
-                      Positioned(top: 6, left: 6, child: _buildMetaBadge()),
+                      // Bounded on the right, not just placed on the left.
+                      // The badge sizes to its text, and that text is a
+                      // dimension, an aspect ratio and a file size — on a
+                      // three-column grid it is routinely wider than the card,
+                      // and it was being cut off mid-number by the card's own
+                      // clip. Bounding it lets the label ellipsize instead,
+                      // which loses the file size rather than half of it.
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        right: 6,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: _buildMetaBadge(),
+                        ),
+                      ),
                     if ((_isHovering || isMobile) && !isVideo)
                       Positioned(
                         bottom: 8,
@@ -300,6 +329,8 @@ class _ImageCardState extends State<ImageCard> {
       ),
       child: Text(
         _dimensions,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(color: _overlayInk, height: 1.3),
       ),
     );
