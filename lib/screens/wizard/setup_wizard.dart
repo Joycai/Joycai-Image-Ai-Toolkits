@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/app_paths.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
@@ -382,10 +383,19 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 16),
           TextField(
             controller: _endpointController,
+            // Mono, as `D3` sets it — and as the models screen sets the same
+            // value once the channel exists. An endpoint is a path the user
+            // checks segment by segment, and this is the one place they type
+            // it rather than read it.
+            style: Theme.of(context).textTheme.bodyMedium?.mono,
             decoration: InputDecoration(
               labelText: l10n.endpointUrl,
               helperText: endpointHint,
-              helperStyle: const TextStyle(color: Colors.blueGrey),
+              // Was `Colors.blueGrey` — a literal that ignores the theme
+              // entirely, so the hint stayed the same muddy grey in dark mode
+              // and did not move with the seed. The scheme has a role for
+              // exactly this.
+              helperStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(height: 16),

@@ -2,6 +2,8 @@
 
 2026-08 的界面风格改版：设计规范从青色体系重写成蓝色体系，本文件跟踪落地进度。
 
+**16 步全部完成。** 剩下的都记在下面几节里：按「只改风格」边界有意没做的内容改动、看不到的状态、以及尚未验证的平台。
+
 **只改风格，不改功能。** 任何一步里如果发现必须动行为才能对上稿，先停下来问，不要顺手改。
 
 ## 设计源
@@ -49,8 +51,8 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 12 | 模型与渠道管理 | `D2` / `12o` `12p` | `models_screen.dart` · `widgets/models` | ✅ |
 | 13 | 用量与费率组 | `C2` / `10j` `10k` | `screens/metrics` · `widgets/pricing_group_manager.dart` | ✅ |
 | 14 | 设置 | `D1` / `12a` | `screens/settings` | ✅ |
-| 15 | 初始设置向导 | `D3` | `screens/wizard` | ⬜ |
-| 16 | 全局浮层 | `E1`–`E3` | `widgets` | ⬜ |
+| 15 | 初始设置向导 | `D3` / `12c` `12d` | `screens/wizard/setup_wizard.dart` | ✅ |
+| 16 | 全局浮层 | `E1` / `12g` `12h` `12i` | `widgets/task_capsule_monitor.dart` | ✅ |
 
 ## 已定的事
 

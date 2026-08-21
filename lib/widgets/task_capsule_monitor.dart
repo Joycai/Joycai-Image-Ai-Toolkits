@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/design_tokens.dart';
+import '../core/app_theme.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
@@ -84,9 +86,13 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
             width: capsuleWidth,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(180),
+              // `12g` floats this at 92% of a near-white, not 70% of a mid
+              // grey. It sits over whatever screen is behind it — a gallery, a
+              // task list — so it has to read as something laid on top; a grey
+              // at 70% reads as a smudge on the content instead.
+              color: colorScheme.surfaceContainerLowest.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+              border: Border.all(color: colorScheme.surfaceContainerHigh),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(30),
@@ -136,9 +142,12 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                         if (runningCount > 0)
                           Text(
                             "${(avgProgress * 100).toInt()}%",
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            // Mono: this number ticks while the user watches
+                            // it, and a proportional face shifts the chevron
+                            // beside it every time a digit changes width.
+                            style: Theme.of(context).textTheme.titleSmall?.mono.copyWith(
                               fontWeight: FontWeight.w900,
-                              color: colorScheme.primary
+                              color: colorScheme.onAccentTint,
                             ),
                           ),
                         const SizedBox(width: 4),
