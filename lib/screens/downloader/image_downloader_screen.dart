@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
@@ -262,15 +263,15 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
       state.selectedModelDbId = appState.chatModels.first.id;
     }
 
-    // Inset-panel canvas: the whole screen is a single rounded card (header
-    // toolbar, options strip, log console, results grid) floating on the
-    // tinted surfaceContainer background.
+    // One flush column: header toolbar, options strip, log console, results
+    // grid. `B2` draws it edge to edge like the other tool screens — this was
+    // a rounded card inset on the canvas, which is the language the restyle
+    // moved off for everything but 设置.
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainer,
       bottomNavigationBar: const AppRunConsole(),
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: PanelCard(
+      body: PanelCard(
+          shape: PanelShape.column,
           child: Column(
             children: [
               DownloaderToolbar(
@@ -329,7 +330,6 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
               ),
             ],
           ),
-        ),
       ),
     );
   }
@@ -393,9 +393,8 @@ class _DownloaderLogPanel extends StatelessWidget {
                   ),
                   child: Text(
                     '${logs.length}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'monospace',
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -453,8 +452,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                       if (time != null) ...[
                         Text(
                           time,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontFamily: 'monospace',
+                          style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                             color: colorScheme.outline,
                           ),
                         ),
@@ -463,8 +461,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                       Expanded(
                         child: Text(
                           message,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontFamily: 'monospace',
+                          style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                             fontWeight: isNewest ? FontWeight.w600 : FontWeight.normal,
                             color: isError
                                 ? colorScheme.error

@@ -44,7 +44,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 7 | 提示词助手 | `A2` / `10d` | `core/context_usage_palette.dart` · `optimizer_context_card.dart` | ✅ |
 | 8 | 文件浏览器 | `B1` / `10g` | `file_browser_screen.dart` · `widgets/file_card.dart` | ✅ |
 | 9 | 任务队列 | `C1` / `10h` | `screens/batch/task_queue_screen.dart` | ✅ |
-| 10 | 图像下载器 | `B2` | `screens/downloader` | ⬜ |
+| 10 | 图像下载器 | `B2` / `10f` | `screens/downloader` | ✅ |
 | 11 | 提示词库 + AI 重命名弹窗 | `B3` · `B4` | `screens/prompts` | ⬜ |
 | 12 | 模型与渠道管理 | `D2` | `screens/models` | ⬜ |
 | 13 | 用量与费率组 | `C2` | `screens/metrics` | ⬜ |
@@ -96,6 +96,10 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 - 画布角标：稿子写「白色笔刷 · **覆盖 14%**」，应用写「白色笔刷 · 20 px」。覆盖率要实时统计蒙版像素。
 - 输出行：稿子写「**遮罩** 2048×2048 · PNG（黑白）」，应用按当前模式在「合成图 / 遮罩」之间切换，尺寸也是实际图像的。
 - 目标行：稿子写出了文件名 `cha-fix-gpt_mask.png`，应用只写目的地。代码注释解释了原因——保存时才铸出带时间戳的文件名，提前猜一个正是裁剪那条目的地行曾经三处同时出错的原因。
+
+## 第 10 步没能看到的状态
+
+下载器的**分析日志面板**和**缩略图队列**（ 画的主要就是这两块）在截图夹具里出不来——夹具没有分析结果，这一屏只渲染出空态。改动只覆盖了外壳与字型，那两块的排版没有对照过。要么给夹具补一组 ，要么在真机上跑一次分析再看。
 
 ## 需要小心的地方
 

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/downloader_state.dart';
@@ -22,7 +23,7 @@ class DownloaderResultsArea extends StatelessWidget {
 
     return Column(
       children: [
-        // Selection bar sits directly on the PanelCard surface — no fill.
+        // Selection bar sits directly on the column's surface — no fill.
         if (state.discoveredImages case [_, ...]) Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
             child: Row(
@@ -247,9 +248,8 @@ class _ImageDiscoveryCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Text(
                     image.url,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                       color: Colors.white,
-                      fontFamily: 'monospace',
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

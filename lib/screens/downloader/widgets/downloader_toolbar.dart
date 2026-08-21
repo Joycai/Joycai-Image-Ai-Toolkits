@@ -50,7 +50,7 @@ class DownloaderToolbar extends StatelessWidget {
         controller: urlController,
         // Monospace: this is an address, not prose. Fixed widths make a typo in
         // a long path something you can see rather than something you re-read.
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+        style: Theme.of(context).textTheme.bodyMedium?.mono,
         decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
       ),
     );
@@ -102,7 +102,7 @@ class DownloaderToolbar extends StatelessWidget {
       ],
     );
 
-    // Header row of the downloader card: no fill of its own — the PanelCard
+    // Header row of the downloader column: no fill of its own — the panel
     // surface shows through; the bottom border is the internal divider.
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -243,8 +243,7 @@ class DownloaderOptionsStrip extends StatelessWidget {
                 ),
                 child: Text(
                   '${(state.manualHtml.length / 1024).toStringAsFixed(1)} KB',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontFamily: 'monospace',
+                  style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                       color: colorScheme.onSurfaceVariant),
                 ),
               ),
