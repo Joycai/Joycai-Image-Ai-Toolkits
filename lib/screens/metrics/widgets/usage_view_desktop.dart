@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../state/app_state.dart';
@@ -202,10 +203,9 @@ class _UsageViewDesktopState extends State<UsageViewDesktop> {
           padding: const EdgeInsets.only(left: 2),
           child: Text(
             '${fmt.format(_dateRange.start)} ~ ${fmt.format(_dateRange.end)}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurfaceVariant,
-              fontFamily: 'monospace',
             ),
           ),
         ),

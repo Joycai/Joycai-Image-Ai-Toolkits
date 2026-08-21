@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/metric_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
@@ -168,9 +169,8 @@ class UsageList extends StatelessWidget {
                   date,
                   // Two sizes, so two slots: standing in for the day's name the
                   // date takes the larger one, beside it the smaller.
-                  style: (name == null ? textTheme.bodySmall : textTheme.labelMedium)?.copyWith(
+                  style: (name == null ? textTheme.bodySmall : textTheme.labelMedium)?.mono.copyWith(
                     fontWeight: name == null ? FontWeight.w700 : FontWeight.w400,
-                    fontFamily: 'monospace',
                     color: name == null ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -192,9 +192,8 @@ class UsageList extends StatelessWidget {
           if (!partial)
             Text(
               '\$${total.toStringAsFixed(4)}',
-              style: textTheme.bodySmall?.copyWith(
+              style: textTheme.bodySmall?.mono.copyWith(
                 fontWeight: FontWeight.w700,
-                fontFamily: 'monospace',
                 color: usageCostAccent,
               ),
             ),
@@ -342,8 +341,7 @@ class _UsageRowState extends State<_UsageRow> {
           child: Text(
             DateFormat('HH:mm').format(time),
             textAlign: TextAlign.end,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontFamily: 'monospace',
+            style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
@@ -369,8 +367,7 @@ class _UsageRowState extends State<_UsageRow> {
                 children: [
                   Text(
                     DateFormat('HH:mm').format(time),
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontFamily: 'monospace',
+                    style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -429,9 +426,8 @@ class _UsageRowState extends State<_UsageRow> {
           Flexible(
             child: Text(
               name,
-              style: textTheme.bodySmall?.copyWith(
+              style: textTheme.bodySmall?.mono.copyWith(
                 fontWeight: FontWeight.w500,
-                fontFamily: 'monospace',
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -497,7 +493,7 @@ class _UsageRowState extends State<_UsageRow> {
         const SizedBox(width: 3),
         Text(
           _abbreviate((tokens as int?) ?? 0),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+          style: Theme.of(context).textTheme.labelMedium?.mono,
         ),
       ],
     );
@@ -509,9 +505,8 @@ class _UsageRowState extends State<_UsageRow> {
     return Text(
       '\$${cost.toStringAsFixed(4)}',
       textAlign: TextAlign.end,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+      style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
         fontWeight: FontWeight.w700,
-        fontFamily: 'monospace',
         color: cost > 0 ? colorScheme.onSurface : colorScheme.outline,
       ),
     );

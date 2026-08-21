@@ -92,10 +92,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   // --- Inset Panel Layout (tablet + desktop) ---
   //
-  // Master-detail on a `surfaceContainer` canvas: a channels card on the
-  // left (with the screen header and add-channel action) and a detail card
-  // on the right showing the selected channel and its models. The two cards
-  // are separated by a draggable PanelResizer gutter.
+  // Master-detail in two flush columns: channels on the left (with the screen
+  // header and add-channel action), the selected channel and its models on the
+  // right, a draggable hairline between.
+  //
+  // `D2` never draws this page — it is all add-channel dialog, with the page
+  // behind it only as a scrim — so this follows the app-wide pattern rather
+  // than a frame. Every screen with a sidebar the spec *does* draw is a column
+  // screen, and 设置 is the one named exception; leaving this the only other
+  // card layout would be an inconsistency with nothing behind it.
   Widget _buildPanelLayout(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     return Consumer<AppState>(
@@ -109,15 +114,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
         return Scaffold(
           backgroundColor: colorScheme.surfaceContainer,
-          body: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
+          body: Row(
               children: [
                 PanelCard(
                   width: _sidebarWidth,
+                  shape: PanelShape.column,
                   child: _buildChannelsPanel(l10n, appState, channels),
                 ),
                 PanelResizer(
+                  shape: PanelShape.column,
                   onDrag: (dx) => setState(() {
                     _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
                   }),
@@ -126,6 +131,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
                 Expanded(
                   child: PanelCard(
+                    shape: PanelShape.column,
                     child: selectedChannel == null
                         ? Center(
                             child: Text(
@@ -137,7 +143,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ),
                 ),
               ],
-            ),
           ),
         );
       },
@@ -185,10 +190,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
                 Text(
                   l10n.modelsAndChannelsCount(modelCount, channels.length),
-                  style: textTheme.labelMedium?.copyWith(
+                  style: textTheme.labelMedium?.mono.copyWith(
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -284,10 +288,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
                 Text(
                   channel.endpoint,
-                  style: textTheme.labelMedium?.copyWith(
+                  // `12o` sets the endpoint in mono, and it is the clearest
+                  // case on this screen: two channels differing by one path
+                  // segment only look different when the segments line up.
+                  style: textTheme.labelMedium?.mono.copyWith(
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

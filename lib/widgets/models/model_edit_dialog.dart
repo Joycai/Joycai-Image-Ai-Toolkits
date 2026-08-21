@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -220,9 +221,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               if (isEdit)
                 Text(
                   widget.model!.modelId,
-                  style: textTheme.bodySmall?.copyWith(
+                  style: textTheme.bodySmall?.mono.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
