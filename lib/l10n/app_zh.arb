@@ -513,6 +513,17 @@
   "customColor": "自定义颜色",
   "stepConnectionAppearance": "连接与外观",
   "channelListPreview": "列表预览",
+  "pickerNoMatches": "没有匹配项",
+  "pickerMatchCount": "共 {count} 项",
+  "@pickerMatchCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAChannel": "选择渠道",
+  "searchChannels": "搜索渠道名称或标签...",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

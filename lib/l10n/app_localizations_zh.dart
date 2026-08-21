@@ -138,7 +138,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get featureLimitedOnMobile => '功能受限于移动端';
 
   @override
-  String get fileBrowserDesktopOnlyDesc => '由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。';
+  String get fileBrowserDesktopOnlyDesc =>
+      '由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。';
 
   @override
   String get fileBrowseriOSHint => '请使用系统文件 App 来管理您的生成图像。';
@@ -821,7 +822,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 接口';
 
   @override
-  String get midjourneyEndpointHint => '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
+  String get midjourneyEndpointHint =>
+      '填写主机根地址（如 https://your-newapi.com），/mj/* 路径将自动补全。';
 
   @override
   String get providerOpenAIOfficial => 'OpenAI 官方';
@@ -839,7 +841,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerDashScope => '阿里云百炼（DashScope）';
 
   @override
-  String get providerDashScopeDesc => 'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
 
   @override
   String get endpointOverrideHint => '已按所选提供商预填，可改为中转、网关或国际站地址。';
@@ -848,7 +851,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerQianwen => '千问平台';
 
   @override
-  String get providerQianwenDesc => 'platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图';
+  String get providerQianwenDesc =>
+      'platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图';
 
   @override
   String get providerCustom => '自定义提供商';
@@ -1037,7 +1041,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reasoningEffort => '推理强度';
 
   @override
-  String get reasoningEffortDesc => '模型作答前的思考强度。默认＝不发送任何字段（由端点自行决定）；其他档位会消耗输出 token。适用于 OpenAI 与 Anthropic 格式渠道。';
+  String get reasoningEffortDesc =>
+      '模型作答前的思考强度。默认＝不发送任何字段（由端点自行决定）；其他档位会消耗输出 token。适用于 OpenAI 与 Anthropic 格式渠道。';
 
   @override
   String get reasoningEffortDefault => '默认（不发送）';
@@ -1098,6 +1103,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get channelListPreview => '列表预览';
+
+  @override
+  String get pickerNoMatches => '没有匹配项';
+
+  @override
+  String pickerMatchCount(int count) {
+    return '共 $count 项';
+  }
+
+  @override
+  String get selectAChannel => '选择渠道';
+
+  @override
+  String get searchChannels => '搜索渠道名称或标签...';
 
   @override
   String get prompts => '提示词';
@@ -1403,7 +1422,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importSettingsTitle => '导入设置？';
 
   @override
-  String get importSettingsConfirm => '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
+  String get importSettingsConfirm =>
+      '这将替换您当前所有的模型、渠道和分类。\n\n注意：提示词库不受此导入影响。请在提示词页面管理提示词数据。';
 
   @override
   String get importAndReplace => '导入并替换';
@@ -1421,7 +1441,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importMode => '导入模式';
 
   @override
-  String get importModeDesc => '选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。';
+  String get importModeDesc =>
+      '选择导入提示词的方式：\n\n合并：将新项添加到您的库中。\n替换：删除当前库并使用导入的数据。';
 
   @override
   String get merge => '合并';
@@ -1487,7 +1508,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantContextRatio => '助手摘要阈值';
 
   @override
-  String get assistantContextRatioDesc => '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
+  String get assistantContextRatioDesc =>
+      '提示词助手在上下文占用达到模型窗口的该比例时自动摘要对话，腾出空间继续工作。仅对已设置上下文大小的模型生效。';
 
   @override
   String get kbSubAgent => '知识库子代理';
@@ -1728,7 +1750,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get openaiEndpointHint => '提示：OpenAI 兼容接口通常以 \'/v1\' 结尾';
 
   @override
-  String get googleEndpointHint => '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
+  String get googleEndpointHint =>
+      '提示：Google GenAI 接口通常以 \'/v1beta\' 结尾（内部已处理）';
 
   @override
   String get workbench => '工作台';
@@ -2150,7 +2173,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cropResizeOutputPreview => '输出预览';
 
   @override
-  String cropResizeOutputSummary(String originalSize, String outputSize, String operation, String sampling) {
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
     return '$originalSize → $outputSize · $operation · $sampling';
   }
 
@@ -2391,7 +2419,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mobileSandboxActive => '移动端存储限制生效';
 
   @override
-  String get mobileSandboxDesc => '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
+  String get mobileSandboxDesc =>
+      '在移动设备上，直接访问文件夹可能受限。建议使用上方工具栏的“从系统图库导入”按钮将图片添加到临时工作区。';
 
   @override
   String get filesAppSuffix => ' (文件 App)';
@@ -2451,7 +2480,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetySettings => '安全设置';
 
   @override
-  String get safetySettingsDesc => 'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
+  String get safetySettingsDesc =>
+      'Gemini 内容过滤阈值，随每个请求发送（从严格到宽松）。Veo/Imagen 不支持。';
 
   @override
   String get safetyCategoryHarassment => '骚扰内容';
@@ -2513,7 +2543,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optDeleteSessionConfirm => '确定永久删除该会话？';
 
   @override
-  String get optKbEntryTooLarge => '知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。';
+  String get optKbEntryTooLarge =>
+      '知识库的 README.md 占用了该模型上下文窗口的很大一部分。它每次请求都会重发，且摘要无法压缩它——请精简它，或改用窗口更大的模型。';
 
   @override
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
@@ -2714,7 +2745,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
 class AppLocalizationsZhHant extends AppLocalizationsZh {
-  AppLocalizationsZhHant(): super('zh_Hant');
+  AppLocalizationsZhHant() : super('zh_Hant');
 
   @override
   String get fileBrowser => '檔案瀏覽器';
@@ -2846,7 +2877,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get featureLimitedOnMobile => '功能受限於行動裝置';
 
   @override
-  String get fileBrowserDesktopOnlyDesc => '由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。';
+  String get fileBrowserDesktopOnlyDesc =>
+      '由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。';
 
   @override
   String get fileBrowseriOSHint => '請使用系統「檔案」App 來管理您產生的圖像。';
@@ -3526,7 +3558,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolAnthropicDesc => 'Claude 原生 /v1/messages 介面';
 
   @override
-  String get midjourneyEndpointHint => '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
+  String get midjourneyEndpointHint =>
+      '填寫主機根位址（如 https://your-newapi.com），/mj/* 路徑將自動補全。';
 
   @override
   String get providerOpenAIOfficial => 'OpenAI 官方';
@@ -3544,7 +3577,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerDashScope => '阿里雲百煉（DashScope）';
 
   @override
-  String get providerDashScopeDesc => 'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
 
   @override
   String get endpointOverrideHint => '已依所選提供商預填，可改為中轉、閘道或國際站位址。';
@@ -3553,7 +3587,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerQianwen => '千問平台';
 
   @override
-  String get providerQianwenDesc => 'platform.qianwenai.com · API 同 DashScope — 千問對話 + qwen-image / wan2.7 出圖';
+  String get providerQianwenDesc =>
+      'platform.qianwenai.com · API 同 DashScope — 千問對話 + qwen-image / wan2.7 出圖';
 
   @override
   String get providerCustom => '自訂供應商';
@@ -3742,7 +3777,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get reasoningEffort => '推理強度';
 
   @override
-  String get reasoningEffortDesc => '模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。';
+  String get reasoningEffortDesc =>
+      '模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。';
 
   @override
   String get reasoningEffortDefault => '預設（不傳送）';
@@ -3803,6 +3839,20 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get channelListPreview => '清單預覽';
+
+  @override
+  String get pickerNoMatches => '沒有符合項目';
+
+  @override
+  String pickerMatchCount(int count) {
+    return '共 $count 項';
+  }
+
+  @override
+  String get selectAChannel => '選擇通道';
+
+  @override
+  String get searchChannels => '搜尋通道名稱或標籤...';
 
   @override
   String get prompts => '提示';
@@ -4108,7 +4158,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get importSettingsTitle => '匯入設定？';
 
   @override
-  String get importSettingsConfirm => '這將會取代您目前所有的模型、通道和類別。\n\n注意：獨立的提示庫不受此匯入影響。請使用「提示」畫面進行提示資料管理。';
+  String get importSettingsConfirm =>
+      '這將會取代您目前所有的模型、通道和類別。\n\n注意：獨立的提示庫不受此匯入影響。請使用「提示」畫面進行提示資料管理。';
 
   @override
   String get importAndReplace => '匯入並取代';
@@ -4126,7 +4177,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get importMode => '匯入模式';
 
   @override
-  String get importModeDesc => '選擇您要如何匯入提示：\n\n合併：將新項目新增至您的媒體庫。\n取代：刪除目前的媒體庫並使用匯入的資料。';
+  String get importModeDesc =>
+      '選擇您要如何匯入提示：\n\n合併：將新項目新增至您的媒體庫。\n取代：刪除目前的媒體庫並使用匯入的資料。';
 
   @override
   String get merge => '合併';
@@ -4165,7 +4217,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableApiDebug => '啟用 API 偵錯記錄';
 
   @override
-  String get apiDebugDesc => '將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。';
+  String get apiDebugDesc =>
+      '將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。';
 
   @override
   String get openLogFolder => '開啟記錄資料夾';
@@ -4192,7 +4245,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get assistantContextRatio => '助手摘要閾值';
 
   @override
-  String get assistantContextRatioDesc => '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
+  String get assistantContextRatioDesc =>
+      '提示詞助手在上下文佔用達到模型視窗的該比例時自動摘要對話，騰出空間繼續工作。僅對已設定上下文大小的模型生效。';
 
   @override
   String get kbSubAgent => '知識庫子代理';
@@ -4855,7 +4909,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get cropResizeOutputPreview => '輸出預覽';
 
   @override
-  String cropResizeOutputSummary(String originalSize, String outputSize, String operation, String sampling) {
+  String cropResizeOutputSummary(
+    String originalSize,
+    String outputSize,
+    String operation,
+    String sampling,
+  ) {
     return '$originalSize → $outputSize · $operation · $sampling';
   }
 
@@ -5096,7 +5155,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get mobileSandboxActive => '行動裝置儲存限制';
 
   @override
-  String get mobileSandboxDesc => '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
+  String get mobileSandboxDesc =>
+      '在行動裝置上，操作系統可能會限制直接存取資料夾。建議使用頂部工具列中的「從圖庫匯入」按鈕。';
 
   @override
   String get filesAppSuffix => ' (檔案 App)';
@@ -5156,7 +5216,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get safetySettings => '安全設定';
 
   @override
-  String get safetySettingsDesc => 'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
+  String get safetySettingsDesc =>
+      'Gemini 內容過濾閾值，隨每個請求送出（由嚴格到寬鬆）。Veo/Imagen 不支援。';
 
   @override
   String get safetyCategoryHarassment => '騷擾內容';
@@ -5218,7 +5279,8 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get optDeleteSessionConfirm => '確定永久刪除該對話？';
 
   @override
-  String get optKbEntryTooLarge => '知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。';
+  String get optKbEntryTooLarge =>
+      '知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。';
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';

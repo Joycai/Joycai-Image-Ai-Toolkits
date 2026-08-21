@@ -1143,6 +1143,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelListPreview => 'List preview';
 
   @override
+  String get pickerNoMatches => 'No matches';
+
+  @override
+  String pickerMatchCount(int count) {
+    return '$count available';
+  }
+
+  @override
+  String get selectAChannel => 'Select a channel';
+
+  @override
+  String get searchChannels => 'Search channel name or tag...';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

@@ -1116,6 +1116,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelListPreview => '一覧プレビュー';
 
   @override
+  String get pickerNoMatches => '一致する項目がありません';
+
+  @override
+  String pickerMatchCount(int count) {
+    return '$count 件';
+  }
+
+  @override
+  String get selectAChannel => 'チャンネルを選択';
+
+  @override
+  String get searchChannels => 'チャンネル名またはタグを検索...';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override
