@@ -61,7 +61,7 @@ class _AboutSectionState extends State<AboutSection> {
         ListTile(
           title: Text(l10n.aboutGithubRepo),
           subtitle: Text(l10n.aboutViewSource),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
           leading: const Icon(Icons.code),
           trailing: const Icon(Icons.open_in_new, size: 18),
           onTap: () => FileUtils.openUri(Uri.parse(_githubUrl)),
@@ -70,7 +70,7 @@ class _AboutSectionState extends State<AboutSection> {
         ListTile(
           title: Text(l10n.aboutLicense),
           subtitle: const Text('MIT License'),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
           leading: const Icon(Icons.gavel_outlined),
         ),
         const SizedBox(height: 24),

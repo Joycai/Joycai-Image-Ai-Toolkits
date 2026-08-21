@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/app_paths.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
@@ -137,7 +138,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         ListTile(
           title: Text(l10n.assistantRetention),
           subtitle: Text(l10n.assistantRetentionDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
           trailing: DropdownButton<int>(
             value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
             underline: const SizedBox.shrink(),
@@ -155,7 +156,7 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         ListTile(
           title: Text(l10n.assistantContextRatio),
           subtitle: Text(l10n.assistantContextRatioDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
           trailing: DropdownButton<double>(
             value: _contextRatios.contains(_assistantContextRatio)
                 ? _assistantContextRatio
@@ -246,11 +247,19 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     }
     return ListTile(
       title: Text(l10n.knowledgeBaseFolder),
+      // Mono, as `D1` sets both of this screen's paths. A path is the one
+      // string here the user reads character by character to check, and the
+      // two rows sit one above the other — different glyph widths make two
+      // paths that share a prefix look like they do not.
       subtitle: Text(
         subtitle,
-        style: warn ? TextStyle(color: colorScheme.error) : null,
+        style: Theme.of(context).textTheme.bodyMedium?.mono.copyWith(
+              color: warn ? colorScheme.error : colorScheme.onSurfaceVariant,
+            ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+      shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -285,9 +294,16 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       children: [
         ListTile(
           title: Text(l10n.outputDirectory),
-          subtitle: Text(_outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text),
+          subtitle: Text(
+            _outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text,
+            style: Theme.of(context).textTheme.bodyMedium?.mono.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           trailing: const Icon(Icons.folder_open),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(AppRadius.control)),
+          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
           onTap: () async {
             String? path = await FilePicker.getDirectoryPath();
             if (path != null) {

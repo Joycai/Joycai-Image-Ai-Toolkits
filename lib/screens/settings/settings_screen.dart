@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/panel_resizer.dart';
@@ -243,8 +244,18 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
       child: ListTile(
         dense: true,
         selected: isSelected,
-        selectedTileColor: colorScheme.primaryContainer.withAlpha(90),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        // `accentTint`, not `primaryContainer`: the container role is a muted
+        // derivative of the seed that comes out grey-with-a-tint at several of
+        // them, where the tint ladder is the pairing every other selected thing
+        // in the app uses. `D1` draws this row at the accent's 10%.
+        selectedTileColor: colorScheme.accentTint,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          // The ring `D1` draws inside the selected row. Without it the tint
+          // alone is a faint wash that, at the pale end of the seed range, is
+          // hard to tell from a hover.
+          side: isSelected ? BorderSide(color: colorScheme.accentRing) : BorderSide.none,
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10),
         leading: Container(
           padding: const EdgeInsets.all(6),
@@ -258,7 +269,11 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
           _categoryLabel(category, widget.l10n),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? colorScheme.primary : null,
+            // `onAccentTint` — this label sits *on* the tint above, and
+            // `primary` on its own tint is one tone reading against itself:
+            // legible in light by luck, washed out in dark where primary is
+            // already a pale tone 80.
+            color: isSelected ? colorScheme.onAccentTint : null,
           ),
           overflow: TextOverflow.ellipsis,
         ),
