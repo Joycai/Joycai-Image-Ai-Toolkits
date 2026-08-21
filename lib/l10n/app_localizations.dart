@@ -2183,6 +2183,30 @@ abstract class AppLocalizations {
   /// **'List preview'**
   String get channelListPreview;
 
+  /// No description provided for @pickerNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get pickerNoMatches;
+
+  /// No description provided for @pickerMatchCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} available'**
+  String pickerMatchCount(int count);
+
+  /// No description provided for @selectAChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a channel'**
+  String get selectAChannel;
+
+  /// No description provided for @searchChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search channel name or tag...'**
+  String get searchChannels;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

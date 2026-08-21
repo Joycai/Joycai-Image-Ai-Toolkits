@@ -386,6 +386,17 @@
   "customColor": "自訂顏色",
   "stepConnectionAppearance": "連線與外觀",
   "channelListPreview": "清單預覽",
+  "pickerNoMatches": "沒有符合項目",
+  "pickerMatchCount": "共 {count} 項",
+  "@pickerMatchCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAChannel": "選擇通道",
+  "searchChannels": "搜尋通道名稱或標籤...",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

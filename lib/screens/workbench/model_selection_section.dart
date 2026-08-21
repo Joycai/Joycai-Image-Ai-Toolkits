@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/llm_channel.dart';
+import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
+import '../../widgets/searchable_picker.dart';
 
 class ModelSelectionSection extends StatelessWidget {
-  final List<Map<String, dynamic>> availableModels;
-  final List<Map<String, dynamic>> channels;
+  /// The image models to choose from, in the type the state already holds
+  /// them in.
+  ///
+  /// These used to arrive as `Map<String, dynamic>` — one freshly allocated
+  /// eighteen-entry map per model per build of the panel, read back out with
+  /// string keys. The panel rebuilds on any [AppState] notification, so a
+  /// relay channel's worth of models was being converted, and thrown away,
+  /// several times a second.
+  final List<LLMModel> availableModels;
+  final List<LLMChannel> channels;
   final int? selectedChannelId;
   final int? selectedModelDbId;
   final bool isExpanded;
@@ -39,17 +50,27 @@ class ModelSelectionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final filteredModels = availableModels.where((m) => m['channel_id'] == selectedChannelId).toList();
 
-    // Resolve subtitle model name safely
-    String? collapsedModelName;
-    if (!isExpanded && selectedModelDbId != null) {
-      final match = availableModels.cast<Map<String, dynamic>?>().firstWhere(
-        (m) => m?['id'] == selectedModelDbId,
-        orElse: () => null,
-      );
-      collapsedModelName = match?['model_name'] as String?;
+    // One pass over the models, for the two things a build actually needs: the
+    // selected model, and whether the selected channel has any models at all.
+    // The channel's *list* is not built here — see the pickers' optionsBuilder,
+    // which runs only when one is opened.
+    LLMModel? selectedModel;
+    bool channelHasModels = false;
+    for (final m in availableModels) {
+      if (m.id == selectedModelDbId) selectedModel = m;
+      if (m.channelId == selectedChannelId) channelHasModels = true;
     }
+    final selectedChannel = channels.cast<LLMChannel?>().firstWhere(
+      (c) => c?.id == selectedChannelId,
+      orElse: () => null,
+    );
+    // A model whose channel is not the selected one is a stale selection, and
+    // showing its name under the wrong channel is what made the pair look
+    // unclickable the last time these two got out of step.
+    final modelInChannel = selectedModel?.channelId == selectedChannelId ? selectedModel : null;
+
+    final collapsedModelName = !isExpanded ? selectedModel?.modelName : null;
 
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -66,91 +87,70 @@ class ModelSelectionSection extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.channel, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    _buildChannelDropdown(context, colorScheme),
-                  ],
+                child: _LabelledField(
+                  label: l10n.channel,
+                  child: SearchablePickerField<int>(
+                    selected: selectedChannel == null ? null : _channelOption(selectedChannel),
+                    optionsBuilder: () => channels.map(_channelOption).toList(),
+                    onChanged: onChannelChanged,
+                    hint: l10n.selectAChannel,
+                    searchHint: l10n.searchChannels,
+                    dialogIcon: Icons.hub_outlined,
+                    enabled: channels.isNotEmpty,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.modelSelection, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    DropdownButton<int>(
-                      isExpanded: true,
-                      value: (filteredModels.any((m) => m['id'] == selectedModelDbId))
-                          ? selectedModelDbId
-                          : null,
-                      hint: Text(l10n.selectAModel),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-                      underline: Container(height: 1, color: colorScheme.outlineVariant),
-                      items: filteredModels.map((m) => DropdownMenuItem(
-                        value: m['id'] as int,
-                        child: Text(m['model_name']),
-                      )).toList(),
-                      onChanged: onModelChanged,
-                    ),
-                  ],
+                child: _LabelledField(
+                  label: l10n.modelSelection,
+                  child: SearchablePickerField<int>(
+                    selected: modelInChannel == null ? null : _modelOption(modelInChannel),
+                    // Built on open, not on build. This is the list that used
+                    // to freeze the window for hundreds of milliseconds.
+                    optionsBuilder: () => [
+                      for (final m in availableModels)
+                        if (m.channelId == selectedChannelId) _modelOption(m),
+                    ],
+                    onChanged: onModelChanged,
+                    hint: l10n.selectAModel,
+                    searchHint: l10n.searchModels,
+                    dialogIcon: Icons.memory_outlined,
+                    enabled: channelHasModels,
+                  ),
                 ),
               ),
             ],
           ),
-          if (selectedModelDbId != null)
-            Builder(
-              builder: (context) {
-                final model = availableModels.firstWhere((m) => m['id'] == selectedModelDbId, orElse: () => {});
-                if (model.isNotEmpty) {
-                  return _buildModelSpecificOptions(context, model['model_id'] as String, l10n);
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+          if (selectedModel != null)
+            _buildModelSpecificOptions(context, selectedModel.modelId, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildChannelDropdown(BuildContext context, ColorScheme colorScheme) {
-    return DropdownButton<int>(
-      isExpanded: true,
-      // Guard: the selected id must exist in the (filtered) channel list,
-      // otherwise DropdownButton throws an assertion error.
-      value: channels.any((c) => c['id'] == selectedChannelId) ? selectedChannelId : null,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-      underline: Container(height: 1, color: colorScheme.outlineVariant),
-      items: channels.map((c) => DropdownMenuItem<int>(
-        value: c['id'] as int,
-        child: Row(
-          children: [
-            if (c['tag'] != null)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Color(c['tag_color'] ?? 0xFF607D8B).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  c['tag'],
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Color(c['tag_color'] ?? 0xFF607D8B),
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-            Expanded(child: Text(c['display_name'], overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-      )).toList(),
-      onChanged: onChannelChanged,
-    );
-  }
+  /// The default channel tag colour, matching what the channel list draws for
+  /// a channel the user never gave one.
+  static const int _defaultTagColor = 0xFF607D8B;
+
+  PickerOption<int> _channelOption(LLMChannel c) => PickerOption<int>(
+        value: c.id!,
+        label: c.displayName,
+        badge: c.tag,
+        badgeColor: c.tag == null ? null : Color(c.tagColor ?? _defaultTagColor),
+      );
+
+  /// The model id goes in as the secondary line rather than being dropped, so
+  /// two entries a relay names identically are still tellable apart — and so
+  /// searching for `gpt-image` finds a model someone renamed to "Fast".
+  PickerOption<int> _modelOption(LLMModel m) => PickerOption<int>(
+        value: m.id!,
+        label: m.modelName,
+        secondary: m.modelId == m.modelName ? null : m.modelId,
+      );
 
   Widget _buildModelSpecificOptions(BuildContext context, String modelId, AppLocalizations l10n) {
     final caps = ModelCapabilities.forModel(modelId);
@@ -177,11 +177,17 @@ class ModelSelectionSection extends StatelessWidget {
     Widget control;
     switch (spec.control) {
       case ParamControl.dropdown:
-        control = DropdownButton<String>(
+        // A themed field rather than a bare [DropdownButton] under a
+        // hand-drawn rule. An option set is short enough that Material's own
+        // menu costs nothing here — what it was missing was the box, which
+        // left it reading as a different family of control from the two
+        // pickers directly above it in the same card.
+        control = DropdownButtonFormField<String>(
           isExpanded: true,
-          value: current,
+          isDense: true,
+          initialValue: current,
+          decoration: const InputDecoration(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-          underline: Container(height: 1, color: colorScheme.outlineVariant),
           items: spec.options
               .map((o) => DropdownMenuItem(
                     value: o.value,
@@ -301,5 +307,33 @@ class ModelSelectionSection extends StatelessWidget {
       }
     }
     return value;
+  }
+}
+
+/// A control under its own bold caption.
+///
+/// The caption is [TextTheme.labelMedium] in bold, which is what the parameter
+/// rows below already use for theirs — the two pickers and the aspect-ratio
+/// row beneath them are labelled the same way rather than each inventing a
+/// weight.
+class _LabelledField extends StatelessWidget {
+  const _LabelledField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        child,
+      ],
+    );
   }
 }

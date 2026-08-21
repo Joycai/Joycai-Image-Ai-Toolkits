@@ -22,29 +22,46 @@ extension AppStateWorkbench on AppState {
     notify();
   }
 
+  /// Moves the workbench's configuration and persists it.
+  ///
+  /// The fields move and [AppState.notify] fires **before** anything is
+  /// written, which is the whole shape of this method. Awaiting each
+  /// `saveSetting` first put a SQLite round trip between the user's click on a
+  /// model and the panel showing it — on Windows the write is a real
+  /// transaction on a file the virus scanner is watching, so the control
+  /// visibly lagged the pointer. Nothing here reads back from the database, so
+  /// the write has no business being on that path.
+  ///
+  /// Still returns the writes' future, so a caller that needs the value on
+  /// disk — a test, or a shutdown path — can wait for it.
   Future<void> updateWorkbenchConfig({
     String? modelId,
     String? prompt,
     bool? useStream,
     bool? compressReferenceImages,
-  }) async {
+  }) {
+    final writes = <Future<void>>[];
+
     if (modelId != null) {
       lastSelectedModelId = modelId;
-      await _db.saveSetting('last_model_id', modelId);
+      writes.add(_db.saveSetting('last_model_id', modelId));
     }
     if (prompt != null) {
       lastPrompt = prompt;
-      await _db.saveSetting('last_prompt', prompt);
+      writes.add(_db.saveSetting('last_prompt', prompt));
     }
     if (useStream != null) {
       this.useStream = useStream;
-      await _db.saveSetting('workbench_use_stream', useStream.toString());
+      writes.add(_db.saveSetting('workbench_use_stream', useStream.toString()));
     }
     if (compressReferenceImages != null) {
       this.compressReferenceImages = compressReferenceImages;
-      await _db.saveSetting('workbench_compress_reference_images', compressReferenceImages.toString());
+      writes.add(_db.saveSetting(
+          'workbench_compress_reference_images', compressReferenceImages.toString()));
     }
+
     notify();
+    return Future.wait(writes);
   }
 
   /// Records the workbench prompt as the user types.

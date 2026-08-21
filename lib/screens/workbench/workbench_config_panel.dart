@@ -131,13 +131,17 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     int? selectedModelDbId;
     int? selectedChannelId;
     String? selectedModelIdStr;
+    final imageChannelIds = <int?>{};
 
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
-      final match = imageModels.cast<LLMModel?>().firstWhere(
-        (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,
-        orElse: () => null,
-      );
+      LLMModel? match;
+      for (final m in imageModels) {
+        imageChannelIds.add(m.channelId);
+        if (match == null && (m.id.toString() == savedModelId || m.modelId == savedModelId)) {
+          match = m;
+        }
+      }
 
       final resolved = match ?? imageModels.first;
       selectedModelDbId = resolved.id;
@@ -230,13 +234,15 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               outlined: true,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: ModelSelectionSection(
-              availableModels: imageModels.map((m) => m.toMap()).toList(),
+              availableModels: imageModels,
               // Only offer channels that actually serve image models — a
               // chat-only channel (e.g. DeepSeek) has nothing selectable here.
-              channels: allChannels
-                  .where((c) => imageModels.any((m) => m.channelId == c.id))
-                  .map((c) => c.toMap())
-                  .toList(),
+              //
+              // Through a Set, not a nested `any`: the pair was O(channels ×
+              // models) on every build of the panel, which on a relay with a
+              // few thousand image models is tens of thousands of comparisons
+              // per frame to answer a question about a dozen channels.
+              channels: allChannels.where((c) => imageChannelIds.contains(c.id)).toList(),
               selectedChannelId: selectedChannelId,
               selectedModelDbId: selectedModelDbId,
               isExpanded: _isModelSettingsExpanded,
