@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/fee_group_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/pricing_group.dart';
@@ -103,9 +104,8 @@ class UsageGroupCosts extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '\$${cost.toStringAsFixed(4)}',
-                  style: textTheme.titleMedium?.copyWith(
+                  style: textTheme.titleMedium?.mono.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'monospace',
                     color: colorScheme.onSurface,
                   ),
                 ),

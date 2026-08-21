@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/metric_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/panel_resizer.dart';
@@ -134,10 +135,9 @@ class UsageSummary extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '\$${stats.totalCost.toStringAsFixed(4)}',
-                  style: textTheme.headlineLarge?.copyWith(
+                  style: textTheme.headlineLarge?.mono.copyWith(
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
-                    fontFamily: 'monospace',
                     height: 1.1,
                   ),
                 ),
@@ -236,10 +236,9 @@ class UsageSummary extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               _fmt(value),
-              style: textTheme.headlineMedium?.copyWith(
+              style: textTheme.headlineMedium?.mono.copyWith(
                 fontWeight: FontWeight.w700,
                 color: accent,
-                fontFamily: 'monospace',
                 height: 1.1,
               ),
             ),
@@ -278,9 +277,8 @@ class UsageSummary extends StatelessWidget {
                 // An em dash, not "0.0%": with no prompt tokens in range the
                 // cache was never asked, which is not the same as never hit.
                 rate == null ? '—' : '${(rate * 100).toStringAsFixed(1)}%',
-                style: textTheme.titleSmall?.copyWith(
+                style: textTheme.titleSmall?.mono.copyWith(
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace',
                   color: rate == null ? colorScheme.outline : usageCacheAccent,
                 ),
               ),

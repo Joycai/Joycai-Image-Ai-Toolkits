@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/app_theme.dart';
 import '../core/fee_group_palette.dart';
 import '../core/metric_palette.dart';
 import '../core/responsive.dart';
@@ -469,7 +470,7 @@ class _GroupCardState extends State<_GroupCard> {
       message: widget.models.join('\n'),
       child: Text(
         widget.models.join(', '),
-        style: textTheme.labelMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.outline),
+        style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -561,21 +562,19 @@ class _GroupCardState extends State<_GroupCard> {
             // number alone cannot say which it is.
             TextSpan(
               text: '/$unit',
-              style: textTheme.labelSmall?.copyWith(
+              style: textTheme.labelSmall?.mono.copyWith(
                 fontWeight: FontWeight.w600,
                 // Spelled out even though the Text's own style below sets it:
                 // a scale slot carries the app font, which would otherwise
                 // replace the monospace this span used to inherit.
-                fontFamily: 'monospace',
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
         maxLines: 1,
-        style: (large ? textTheme.titleLarge : textTheme.bodySmall)?.copyWith(
+        style: (large ? textTheme.titleLarge : textTheme.bodySmall)?.mono.copyWith(
           fontWeight: FontWeight.w700,
-          fontFamily: 'monospace',
           fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
           color: inherited ? colorScheme.outline : colorScheme.onSurface,
         ),
@@ -908,7 +907,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: textTheme.titleLarge?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w700),
+      style: textTheme.titleLarge?.mono.copyWith(fontWeight: FontWeight.w700),
       onChanged: (_) {
         if (_invalidFields.remove(ctrl)) setState(() {});
       },
@@ -926,8 +925,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         prefixIcon: Icon(icon, size: 19, color: accent),
         prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
         hintText: hintText,
-        hintStyle: textTheme.titleMedium?.copyWith(
-          fontFamily: 'monospace',
+        hintStyle: textTheme.titleMedium?.mono.copyWith(
           fontStyle: FontStyle.italic,
           fontWeight: FontWeight.w400,
           color: colorScheme.outline,
