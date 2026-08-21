@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../services/ai_rename_agent.dart';
@@ -548,7 +549,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text('${index + 1}', style: textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
+              child: Text('${index + 1}',
+                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline)),
             ),
           ),
           const SizedBox(width: 12),
@@ -556,9 +558,14 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Both names in mono, as `12f` draws them. This list exists to
+                // be read down the left edge — old name above, new name below,
+                // five pairs at a time — and a proportional face puts the two
+                // versions of the same stem at different widths, which is the
+                // one comparison the dialog is for.
                 Text(
                   item['old_name']!,
-                  style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+                  style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 3),
@@ -573,7 +580,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                     Expanded(
                       child: Text(
                         item['new_name']!,
-                        style: textTheme.titleSmall?.copyWith(
+                        style: textTheme.titleSmall?.mono.copyWith(
                           fontWeight: FontWeight.w600,
                           color: hasConflict ? colorScheme.error : colorScheme.onSurface,
                         ),

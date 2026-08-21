@@ -45,7 +45,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 8 | 文件浏览器 | `B1` / `10g` | `file_browser_screen.dart` · `widgets/file_card.dart` | ✅ |
 | 9 | 任务队列 | `C1` / `10h` | `screens/batch/task_queue_screen.dart` | ✅ |
 | 10 | 图像下载器 | `B2` / `10f` | `screens/downloader` | ✅ |
-| 11 | 提示词库 + AI 重命名弹窗 | `B3` · `B4` | `screens/prompts` | ⬜ |
+| 11 | 提示词库 + AI 重命名弹窗 | `B3` / `10i` · `B4` / `12f` | `prompts_screen.dart` · `browser/ai_rename_dialog.dart` | ✅ |
 | 12 | 模型与渠道管理 | `D2` | `screens/models` | ⬜ |
 | 13 | 用量与费率组 | `C2` | `screens/metrics` | ⬜ |
 | 14 | 设置 | `D1` | `screens/settings` | ⬜ |
