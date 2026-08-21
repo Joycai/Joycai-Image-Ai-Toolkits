@@ -42,10 +42,10 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 5 | 蒙版编辑器 | `A5` / `10o` | `mask_editor_view.dart` · `canvas_overlays.dart` | ✅ |
 | 6 | 裁剪与缩放 | `A3` / `10e` `10l` | `crop_resize_view.dart` · `crop_resize_toolbar.dart` | ✅ |
 | 7 | 提示词助手 | `A2` / `10d` | `core/context_usage_palette.dart` · `optimizer_context_card.dart` | ✅ |
-| 8 | 文件浏览器 | `B1` | `screens/browser` | ⬜ |
-| 9 | 任务队列 | `C1` | `screens/batch` | ⬜ |
-| 10 | 图像下载器 | `B2` | `screens/downloader` | ⬜ |
-| 11 | 提示词库 + AI 重命名弹窗 | `B3` · `B4` | `screens/prompts` | ⬜ |
+| 8 | 文件浏览器 | `B1` / `10g` | `file_browser_screen.dart` · `widgets/file_card.dart` | ✅ |
+| 9 | 任务队列 | `C1` / `10h` | `screens/batch/task_queue_screen.dart` | ✅ |
+| 10 | 图像下载器 | `B2` / `10f` | `screens/downloader` | ✅ |
+| 11 | 提示词库 + AI 重命名弹窗 | `B3` / `10i` · `B4` / `12f` | `prompts_screen.dart` · `browser/ai_rename_dialog.dart` | ✅ |
 | 12 | 模型与渠道管理 | `D2` | `screens/models` | ⬜ |
 | 13 | 用量与费率组 | `C2` | `screens/metrics` | ⬜ |
 | 14 | 设置 | `D1` | `screens/settings` | ⬜ |
@@ -97,9 +97,13 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 - 输出行：稿子写「**遮罩** 2048×2048 · PNG（黑白）」，应用按当前模式在「合成图 / 遮罩」之间切换，尺寸也是实际图像的。
 - 目标行：稿子写出了文件名 `cha-fix-gpt_mask.png`，应用只写目的地。代码注释解释了原因——保存时才铸出带时间戳的文件名，提前猜一个正是裁剪那条目的地行曾经三处同时出错的原因。
 
+## 第 10 步没能看到的状态
+
+下载器的**分析日志面板**和**缩略图队列**（`10f` 画的主要就是这两块）在截图夹具里出不来——夹具没有分析结果，这一屏只渲染出空态。改动只覆盖了外壳与字型，那两块的排版没有对照过。要么给夹具补一组 `discoveredImages`，要么在真机上跑一次分析再看。
+
 ## 需要小心的地方
 
 - **裁剪与缩放的工具栏**（第 6 步）有既有的 `TextPainter` 自适应折叠逻辑，是为了修一个已经出过两次的裁字 bug。改风格不能把它改回硬编码像素阈值。见 `widgets/.../crop_resize_toolbar.dart` 与 [`architecture/design-tokens.md`](architecture/design-tokens.md)。
 - **模型与渠道管理**（第 12 步）：PR #115 刚把 add-channel 重建成单页两栏，先确认新稿画的是不是同一个方案，别把刚合的推翻。
 - **视频工作台空帧槽还不是虚线**（第 3 步留下的）。`A6` 把空的首帧/尾帧画成虚线描边，而 Flutter 的 `Border` 只有 solid/none，要虚线得自己写 `CustomPainter`。已经统一成同一层主色浅底，虚线单独再说。
-- **提示词助手**（第 7 步）在架构文档 §4 里已经有 6 条故意偏离（面板宽度、工具头高度、上下文占用配色…），要逐条重新判断新稿是否推翻它们。
+- **B1 / C1 是「由深色稿转换」的机械稿**，不像 A1/D1 是手工定稿。它们整个内容区透明那个画法已判定为转换没收干净，不采纳；其余细节（栏宽、行高）遇到冲突时也以 A1/D1 建立的惯例为准。

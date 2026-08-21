@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
@@ -496,9 +497,8 @@ class _FilterPill extends StatelessWidget {
                 ),
                 child: Text(
                   '$count',
-                  style: textTheme.labelMedium?.copyWith(
+                  style: textTheme.labelMedium?.mono.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'monospace',
                     color: accent,
                   ),
                 ),
@@ -599,17 +599,29 @@ class _TaskCardState extends State<_TaskCard> {
 
     // A card of its own rather than a PanelCard: the stripe has to reach both
     // edges, and a failed card carries a wash of its status through the surface.
+    //
+    // `surfaceContainerLowest` since the restyle. `C1` draws these white with a
+    // hairline, and the tone matters more than it used to: the rows are the
+    // only thing on this screen, so they are what has to lift off the ground
+    // rather than sit level with it.
+    final base = colorScheme.surfaceContainerLowest;
     final surface = isFailed
-        ? Color.alphaBlend(colorScheme.error.withValues(alpha: 0.06), colorScheme.surface)
+        ? Color.alphaBlend(colorScheme.error.withValues(alpha: 0.06), base)
         : isProcessing
-            ? Color.alphaBlend(colorScheme.primary.withValues(alpha: 0.05), colorScheme.surface)
-            : colorScheme.surface;
+            ? Color.alphaBlend(colorScheme.primary.withValues(alpha: 0.05), base)
+            : base;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
         color: surface,
-        borderRadius: BorderRadius.circular(12),
+        // An edge as well as a fill: at white on a near-white ground the fill
+        // alone stops separating them, which is the same reason every other
+        // card in the app gained one.
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: BorderSide(color: colorScheme.surfaceContainerHigh),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -725,7 +737,7 @@ class _TaskCardState extends State<_TaskCard> {
               _shortModelId(modelId),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: muted.copyWith(fontFamily: 'monospace'),
+              style: muted.mono,
             ),
           ),
         ],
@@ -816,8 +828,7 @@ class _TaskCardState extends State<_TaskCard> {
       case TaskStatus.processing:
         widgets.add(Text(
           _progressLabel(task),
-          style: textTheme.bodySmall?.copyWith(
-            fontFamily: 'monospace',
+          style: textTheme.bodySmall?.mono.copyWith(
             fontWeight: FontWeight.w600,
             color: colorScheme.primary,
           ),
@@ -850,8 +861,7 @@ class _TaskCardState extends State<_TaskCard> {
     if (!widget.isMobile) {
       widgets.add(Text(
         _formatClock(task.endTime ?? task.startTime),
-        style: textTheme.bodySmall?.copyWith(
-          fontFamily: 'monospace',
+        style: textTheme.bodySmall?.mono.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),
       ));
@@ -1130,8 +1140,7 @@ class _TaskCardState extends State<_TaskCard> {
                     Expanded(
                       child: Text(
                         task.logs.last,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontFamily: 'monospace',
+                        style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 2,
@@ -1264,9 +1273,8 @@ class _MetaBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
           fontWeight: FontWeight.w700,
-          fontFamily: 'monospace',
           color: color,
         ),
       ),

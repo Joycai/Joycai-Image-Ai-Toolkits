@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../workbench/widgets/preview/video_thumbnail.dart';
@@ -99,18 +100,28 @@ class _FileCardState extends State<FileCard> {
                                           : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
                                 ),
                   
+                  // A footer strip on the card, not a scrim on the picture.
+                  // `B1` draws it the way the workbench's gallery card already
+                  // does — the name below the image with a hairline between,
+                  // rather than a black band covering whatever the thumbnail
+                  // had along its bottom edge. Left-aligned for the same
+                  // reason a filename is: the end is what gets truncated, so
+                  // the beginning has to start in a predictable place.
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                    color: Colors.black.withValues(alpha: 0.55),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                      border: Border(
+                        top: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh),
+                      ),
+                    ),
                     child: Text(
                       widget.file.name,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontFamily: 'monospace',
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
@@ -132,10 +143,9 @@ class _FileCardState extends State<FileCard> {
                       ),
                       child: Text(
                         _dimensions,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
-                          fontFamily: 'monospace',
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

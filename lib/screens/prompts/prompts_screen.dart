@@ -279,7 +279,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
     );
   }
 
-  // --- Desktop/Tablet Layout (inset panels on a tinted canvas) ---
+  // --- Desktop/Tablet Layout (flush columns, hairlines between) ---
   Widget _buildDesktopLayout(AppLocalizations l10n, {bool isTablet = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     final tagCounts = _computeTagCounts();
@@ -287,13 +287,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainer,
-      body: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
+      // Flush columns. `10i` gives the category sidebar a right hairline and
+      // runs both columns into the window, the same as the other resource
+      // screens; this was the last one still inset on the canvas.
+      body: Row(
           children: [
-            // ── Left card: library header + category filter ────────────────
+            // ── Left column: library header + category filter ──────────────
             PanelCard(
               width: _sidebarWidth,
+              shape: PanelShape.column,
               child: Column(
                 children: [
                   _buildSidebarHeader(l10n, colorScheme, isCategories: isCategories),
@@ -322,6 +324,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               ),
             ),
             PanelResizer(
+              shape: PanelShape.column,
               onDrag: (dx) => setState(() {
                 _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
               }),
@@ -329,9 +332,10 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
                   .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString()),
             ),
 
-            // ── Main card: 56px in-card header + content ────────────────────
+            // ── Main column: 56px header + content ─────────────────────────
             Expanded(
               child: PanelCard(
+                shape: PanelShape.column,
                 child: Column(
                   children: [
                     Container(
@@ -359,7 +363,6 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               ),
             ),
           ],
-        ),
       ),
     );
   }
