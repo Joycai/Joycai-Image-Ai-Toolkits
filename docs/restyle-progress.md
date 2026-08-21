@@ -43,7 +43,7 @@ Claude Design 项目 `925a4d48-684e-4733-bca2-1aa808b7e18f`（"Joycai Image Tool
 | 6 | 裁剪与缩放 | `A3` / `10e` `10l` | `crop_resize_view.dart` · `crop_resize_toolbar.dart` | ✅ |
 | 7 | 提示词助手 | `A2` / `10d` | `core/context_usage_palette.dart` · `optimizer_context_card.dart` | ✅ |
 | 8 | 文件浏览器 | `B1` / `10g` | `file_browser_screen.dart` · `widgets/file_card.dart` | ✅ |
-| 9 | 任务队列 | `C1` | `screens/batch` | ⬜ |
+| 9 | 任务队列 | `C1` / `10h` | `screens/batch/task_queue_screen.dart` | ✅ |
 | 10 | 图像下载器 | `B2` | `screens/downloader` | ⬜ |
 | 11 | 提示词库 + AI 重命名弹窗 | `B3` · `B4` | `screens/prompts` | ⬜ |
 | 12 | 模型与渠道管理 | `D2` | `screens/models` | ⬜ |
