@@ -11,6 +11,7 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/llm_model.dart';
 import '../../../services/database_service.dart';
+import '../../../services/gpu_preference_service.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/prompt_optimizer_agent.dart';
@@ -44,6 +45,11 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   int? _kbSubAgentModelId;
   List<LLMModel> _kbSubAgentModels = const [];
 
+  // The registry is the source of truth (shared with the Windows Settings
+  // page), so this is section-local state rather than an AppState field.
+  final GpuPreferenceService _gpuPreference = GpuPreferenceService();
+  bool _gpuHighPerformance = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +80,17 @@ class _ApplicationSectionState extends State<ApplicationSection> {
       for (final m in await _db.getModels())
         if (m.tag != 'image' && m.tag != 'video') m,
     ];
+    _gpuHighPerformance = await _gpuPreference.isHighPerformanceSet();
     if (mounted) setState(() {});
+  }
+
+  Future<void> _setGpuHighPerformance(bool value) async {
+    setState(() => _gpuHighPerformance = value);
+    final ok = await _gpuPreference.setHighPerformance(value);
+    if (!ok && mounted) {
+      // The registry write failed — reflect reality rather than the wish.
+      setState(() => _gpuHighPerformance = !value);
+    }
   }
 
   @override
@@ -90,6 +106,15 @@ class _ApplicationSectionState extends State<ApplicationSection> {
           value: appState.notificationsEnabled,
           onChanged: (v) => appState.setNotificationsEnabled(v),
         ),
+        if (_gpuPreference.isSupported) ...[
+          const SizedBox(height: 8),
+          SwitchListTile(
+            title: Text(l10n.preferHighPerformanceGpu),
+            subtitle: Text(l10n.preferHighPerformanceGpuDesc),
+            value: _gpuHighPerformance,
+            onChanged: (v) => _setGpuHighPerformance(v),
+          ),
+        ],
         const SizedBox(height: 8),
         Column(
           children: [

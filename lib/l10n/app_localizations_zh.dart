@@ -1326,6 +1326,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fontDownloadFailed => '字体下载失败，请检查网络后重试。';
 
   @override
+  String get preferHighPerformanceGpu => '优先使用高性能 GPU';
+
+  @override
+  String get preferHighPerformanceGpuDesc => '让 Windows 使用独立显卡运行本应用，下次启动时生效。';
+
+  @override
   String get reduceVisualEffects => '减少视觉效果';
 
   @override
@@ -4066,6 +4072,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fontDownloadFailed => '字型下載失敗，請檢查網路後重試。';
+
+  @override
+  String get preferHighPerformanceGpu => '優先使用高效能 GPU';
+
+  @override
+  String get preferHighPerformanceGpuDesc =>
+      '讓 Windows 使用獨立顯示卡執行本應用程式，下次啟動時生效。';
 
   @override
   String get reduceVisualEffects => '減少視覺效果';

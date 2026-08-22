@@ -19,6 +19,8 @@
   "fontDownloadAction": "ダウンロード",
   "fontDownloading": "フォントをダウンロード中…",
   "fontDownloadFailed": "フォントのダウンロードに失敗しました。接続を確認して再試行してください。",
+  "preferHighPerformanceGpu": "高性能GPUを優先",
+  "preferHighPerformanceGpuDesc": "Windowsにディスクリート（専用）GPUでの実行を要求します。次回起動時に反映されます。",
   "reduceVisualEffects": "視覚効果を減らす",
   "reduceVisualEffectsDesc": "ぼかし効果を無効にして、内蔵GPUや低性能GPUでも滑らかに動作させます。",
   "googleGenAiSettings": "Google GenAI REST設定",

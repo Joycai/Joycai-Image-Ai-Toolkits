@@ -2597,6 +2597,18 @@ abstract class AppLocalizations {
   /// **'Font download failed. Check your connection and try again.'**
   String get fontDownloadFailed;
 
+  /// No description provided for @preferHighPerformanceGpu.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer high-performance GPU'**
+  String get preferHighPerformanceGpu;
+
+  /// No description provided for @preferHighPerformanceGpuDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks Windows to run the app on the dedicated graphics card. Takes effect the next time the app starts.'**
+  String get preferHighPerformanceGpuDesc;
+
   /// No description provided for @reduceVisualEffects.
   ///
   /// In en, this message translates to:
