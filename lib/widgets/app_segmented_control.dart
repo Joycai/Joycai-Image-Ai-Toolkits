@@ -128,8 +128,8 @@ class AppSegmentedControl<T> extends StatelessWidget {
       onTap: selected || !segment.enabled ? null : () => onChanged(segment.value),
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+        duration: AppMotion.state,
+        curve: AppMotion.enter,
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 10 : 14,
           vertical: compact ? 7 : 11,

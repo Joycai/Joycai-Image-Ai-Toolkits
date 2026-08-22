@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../models/prompt.dart';
@@ -67,8 +68,16 @@ class PromptCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(context, colorScheme),
-                  if (isExpanded) _buildExpandedContent(context, colorScheme)
-                  else _buildCollapsedContent(context, colorScheme),
+                  ClipRect(
+                    child: AnimatedSize(
+                      duration: AppMotion.reveal,
+                      curve: AppMotion.enter,
+                      alignment: Alignment.topCenter,
+                      child: isExpanded
+                          ? _buildExpandedContent(context, colorScheme)
+                          : _buildCollapsedContent(context, colorScheme),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -100,7 +109,8 @@ class PromptCard extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 AnimatedRotation(
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppMotion.reveal,
+                  curve: AppMotion.enter,
                   turns: isExpanded ? 0.25 : 0,
                   child: Icon(
                     Icons.chevron_right_rounded,

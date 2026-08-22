@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 
 /// Width a side panel takes on a window wide enough to slide one in.
@@ -67,14 +68,14 @@ class AppSidePanel extends StatelessWidget {
       // Material's own translated label, not the bare English "Dismiss" the
       // copies used — this is what a screen reader announces for the barrier.
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: AppMotion.panel,
       pageBuilder: (context, _, _) => Align(
         alignment: Alignment.centerRight,
         child: AppSidePanel(width: width, child: builder(context)),
       ),
       transitionBuilder: (context, animation, _, child) => SlideTransition(
         position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            .animate(CurvedAnimation(parent: animation, curve: AppMotion.enter)),
         child: child,
       ),
     );

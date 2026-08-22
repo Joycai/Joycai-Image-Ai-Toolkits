@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
@@ -477,8 +478,8 @@ class GalleryToolbar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
+      duration: AppMotion.state,
+      curve: AppMotion.enter,
       decoration: BoxDecoration(
         color: selected ? colorScheme.surface : Colors.transparent,
         borderRadius: BorderRadius.circular(7),

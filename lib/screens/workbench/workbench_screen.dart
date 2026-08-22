@@ -542,7 +542,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       _lastKnownTabIndex = _appState!.workbenchTabIndex;
       final targetIndex = _lastKnownTabIndex.clamp(0, _tabController.length - 1);
       if (_tabController.index != targetIndex) {
-         _tabController.animateTo(targetIndex);
+         _tabController.index = targetIndex;
       }
       
       // Re-validate the knowledge base whenever the assistant tab is opened

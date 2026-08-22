@@ -131,8 +131,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     if (!_scrollCtrl.hasClients) return;
     _scrollCtrl.animateTo(
       _scrollCtrl.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      duration: AppMotion.panel,
+      curve: AppMotion.enter,
     );
   }
 

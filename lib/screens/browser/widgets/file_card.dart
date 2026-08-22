@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_decode.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
@@ -68,7 +69,8 @@ class _FileCardState extends State<FileCard> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: AppMotion.state,
+          curve: AppMotion.enter,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: colorScheme.surfaceContainerHighest.withAlpha(widget.isSelected ? 100 : 50),

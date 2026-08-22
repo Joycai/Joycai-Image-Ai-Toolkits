@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
+import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
 import '../services/font_service.dart';
 import '../state/app_state.dart';
@@ -77,7 +78,8 @@ class ThemeColorSelector extends StatelessWidget {
                 onTap: () => appState.setThemeSeedColor(entry.value),
                 borderRadius: BorderRadius.circular(20),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppMotion.state,
+                  curve: AppMotion.enter,
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
@@ -371,7 +373,8 @@ class _LanguageCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.state,
+        curve: AppMotion.enter,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected

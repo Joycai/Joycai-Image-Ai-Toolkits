@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/app_paths.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_types.dart';
@@ -115,7 +116,7 @@ class _SetupWizardState extends State<SetupWizard> {
     }
 
     if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
       setState(() => _currentStep++);
     } else {
       _finishSetup();
@@ -138,13 +139,13 @@ class _SetupWizardState extends State<SetupWizard> {
         _createdChannelId = id;
         _currentStep++;
       });
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
     } else {
       // Skip model step if no channel added
       setState(() {
         _currentStep = 4; // Jump to finish
       });
-      _pageController.animateToPage(4, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.animateToPage(4, duration: AppMotion.panel, curve: AppMotion.move);
     }
   }
 
@@ -161,7 +162,7 @@ class _SetupWizardState extends State<SetupWizard> {
     }
     
     setState(() => _currentStep++);
-    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
   }
 
   Future<void> _finishSetup() async {
@@ -221,7 +222,7 @@ class _SetupWizardState extends State<SetupWizard> {
                         if (_currentStep == 4 && _createdChannelId == null) {
                           prev = 2; // Go back to channel if model was skipped
                         }
-                        _pageController.animateToPage(prev, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        _pageController.animateToPage(prev, duration: AppMotion.panel, curve: AppMotion.move);
                         setState(() => _currentStep = prev);
                       },
                     ),

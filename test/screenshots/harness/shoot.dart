@@ -141,8 +141,8 @@ Future<void> mountApp(
     await tester.pump();
   });
 
-  // 800ms covers the nav rail's 140ms AnimatedContainer and the 200ms
-  // AppConstants.animationDuration used across the screens.
+  // 800ms covers every AppMotion duration used across the screens (the
+  // ladder tops out at AppMotion.panel, 300ms).
   for (int i = 0; i < 8; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }

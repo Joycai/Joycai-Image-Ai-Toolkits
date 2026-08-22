@@ -657,7 +657,8 @@ class _RailItemState extends State<_RailItem> {
         child: GestureDetector(
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
+            duration: AppMotion.state,
+            curve: AppMotion.enter,
             width: widget.railWidth - 16,
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(

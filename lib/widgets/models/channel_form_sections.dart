@@ -212,7 +212,10 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
           ],
         ),
         AnimatedCrossFade(
-          duration: const Duration(milliseconds: 200),
+          duration: AppMotion.reveal,
+          firstCurve: AppMotion.enter,
+          secondCurve: AppMotion.enter,
+          sizeCurve: AppMotion.enter,
           crossFadeState: _expanded
               ? CrossFadeState.showSecond
               : CrossFadeState.showFirst,

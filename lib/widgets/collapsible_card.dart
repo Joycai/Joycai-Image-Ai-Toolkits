@@ -2,7 +2,7 @@
 // ignore_for_file: use_if_null_to_and_then
 import 'package:flutter/material.dart';
 
-import '../core/constants.dart';
+import '../core/design_tokens.dart';
 
 class CollapsibleCard extends StatefulWidget {
   final String title;
@@ -38,10 +38,10 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: AppConstants.animationDuration,
+      duration: AppMotion.reveal,
       vsync: this,
     );
-    _heightFactor = _controller.drive(CurveTween(curve: Curves.easeInOut));
+    _heightFactor = _controller.drive(CurveTween(curve: AppMotion.enter));
     if (widget.isExpanded) {
       _controller.value = 1.0;
     }
@@ -97,7 +97,7 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       SizeTransition(
-                        sizeFactor: _controller.drive(Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeInOut))),
+                        sizeFactor: _controller.drive(Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: AppMotion.enter))),
                         child: widget.subtitle != null 
                           ? Text(
                               widget.subtitle!,

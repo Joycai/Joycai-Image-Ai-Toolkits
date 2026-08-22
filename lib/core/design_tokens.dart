@@ -189,3 +189,35 @@ extension AppAccent on ColorScheme {
   Color get onAccentTint =>
       brightness == Brightness.light ? onPrimaryFixedVariant : onPrimaryContainer;
 }
+
+/// Motion tokens. One duration per job, one curve per direction of travel —
+/// not per hand-typed value. Before this class the app had nine durations
+/// (90–350ms) and three curves doing four jobs, 19 sites shipping Flutter's
+/// default `Curves.linear`. The ladder is quantised the same way AppRadius
+/// and AppAlpha are: using a value not on it is how motion drifts.
+class AppMotion {
+  /// Hover / focus micro-feedback. Short enough to feel attached to the
+  /// pointer; anything longer trails it.
+  static const Duration hover = Duration(milliseconds: 120);
+
+  /// Selection state: card borders, chip fills, segment pills. 160 sits in
+  /// the press-feedback band (100–160ms) — selection is feedback, not a scene
+  /// change, and grids animate many tiles at once (Ctrl+A), so shorter is
+  /// calmer.
+  static const Duration state = Duration(milliseconds: 160);
+
+  /// Disclosure and reveal: expand/collapse, crossfades, overlay fades.
+  static const Duration reveal = Duration(milliseconds: 200);
+
+  /// Panels and paging: drawers, side panels, wizard pages. Top of the UI
+  /// budget; nothing in the app should exceed this.
+  static const Duration panel = Duration(milliseconds: 300);
+
+  /// Entrances, exits and state changes — starts fast, lands softly, so the
+  /// change registers the moment it begins. Never use easeIn on UI.
+  static const Curve enter = Curves.easeOutCubic;
+
+  /// On-screen movement (width morphs, page slides): accelerates and
+  /// decelerates because both endpoints are visible.
+  static const Curve move = Curves.easeInOutCubic;
+}
