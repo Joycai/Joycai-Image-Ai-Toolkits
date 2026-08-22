@@ -6,6 +6,7 @@ import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
+import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/searchable_picker.dart';
 
 class ModelSelectionSection extends StatelessWidget {
@@ -100,8 +101,8 @@ class ModelSelectionSection extends StatelessWidget {
                 child: _LabelledField(
                   label: l10n.channel,
                   child: SearchablePickerField<int>(
-                    selected: selectedChannel == null ? null : _channelOption(selectedChannel),
-                    optionsBuilder: () => channels.map(_channelOption).toList(),
+                    selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
+                    optionsBuilder: () => channels.map(channelPickerOption).toList(),
                     onChanged: onChannelChanged,
                     hint: l10n.selectAChannel,
                     searchHint: l10n.searchChannels,
@@ -115,12 +116,12 @@ class ModelSelectionSection extends StatelessWidget {
                 child: _LabelledField(
                   label: l10n.modelSelection,
                   child: SearchablePickerField<int>(
-                    selected: modelInChannel == null ? null : _modelOption(modelInChannel),
+                    selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
                     // Built on open, not on build. This is the list that used
                     // to freeze the window for hundreds of milliseconds.
                     optionsBuilder: () => [
                       for (final m in availableModels)
-                        if (m.channelId == selectedChannelId) _modelOption(m),
+                        if (m.channelId == selectedChannelId) modelPickerOption(m),
                     ],
                     onChanged: onModelChanged,
                     hint: l10n.selectAModel,
@@ -138,26 +139,6 @@ class ModelSelectionSection extends StatelessWidget {
       ),
     );
   }
-
-  /// The default channel tag colour, matching what the channel list draws for
-  /// a channel the user never gave one.
-  static const int _defaultTagColor = 0xFF607D8B;
-
-  PickerOption<int> _channelOption(LLMChannel c) => PickerOption<int>(
-        value: c.id!,
-        label: c.displayName,
-        badge: c.tag,
-        badgeColor: c.tag == null ? null : Color(c.tagColor ?? _defaultTagColor),
-      );
-
-  /// The model id goes in as the secondary line rather than being dropped, so
-  /// two entries a relay names identically are still tellable apart — and so
-  /// searching for `gpt-image` finds a model someone renamed to "Fast".
-  PickerOption<int> _modelOption(LLMModel m) => PickerOption<int>(
-        value: m.id!,
-        label: m.modelName,
-        secondary: m.modelId == m.modelName ? null : m.modelId,
-      );
 
   Widget _buildModelSpecificOptions(BuildContext context, String modelId, AppLocalizations l10n) {
     final caps = ModelCapabilities.forModel(modelId);

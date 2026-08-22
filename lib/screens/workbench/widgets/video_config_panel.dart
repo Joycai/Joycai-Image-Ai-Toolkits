@@ -19,6 +19,8 @@ import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/collapsible_card.dart';
 import '../../../widgets/dialogs/prompt_history_dialog.dart';
 import '../../../widgets/markdown_editor.dart';
+import '../../../widgets/models/model_picker_options.dart';
+import '../../../widgets/searchable_picker.dart';
 import 'config_action_bar.dart';
 import '../../../widgets/app_section_label.dart';
 import 'queue_settings_dialog.dart';
@@ -92,27 +94,33 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final l10n = AppLocalizations.of(context)!;
 
     final videoModels = appState.videoModels;
-    final videoChannels = appState.allChannels.where((c) => videoModels.any((m) => m.channelId == c.id)).toList();
 
     // Determine selected model
-    int? selectedModelDbId;
-    int? selectedChannelId;
+    LLMModel? selectedModel;
 
+    // Through a Set, not a nested `any`: the pair was O(channels × models) on
+    // every build of the panel, which on a relay serving a few hundred video
+    // models is thousands of comparisons per frame to answer a question about
+    // a dozen channels. Same shape the image panel was given in #120.
+    final videoChannelIds = <int?>{};
     if (videoModels.isNotEmpty) {
       final savedModelId = appState.lastVideoModelId;
-      final match = videoModels.cast<LLMModel?>().firstWhere(
-        (m) => m?.id.toString() == savedModelId || m?.modelId == savedModelId,  
-        orElse: () => null,
-      );
-
-      if (match != null) {
-        selectedModelDbId = match.id;
-        selectedChannelId = match.channelId;
-      } else {
-        selectedModelDbId = videoModels.first.id;
-        selectedChannelId = videoModels.first.channelId;
+      final savedDbId = int.tryParse(savedModelId ?? '');
+      for (final m in videoModels) {
+        videoChannelIds.add(m.channelId);
+        if (selectedModel == null && (m.id == savedDbId || m.modelId == savedModelId)) {
+          selectedModel = m;
+        }
       }
+
+      selectedModel ??= videoModels.first;
     }
+    final videoChannels =
+        appState.allChannels.where((c) => videoChannelIds.contains(c.id)).toList();
+    final selectedChannel = videoChannels.cast<LLMChannel?>().firstWhere(
+      (c) => c?.id == selectedModel?.channelId,
+      orElse: () => null,
+    );
 
     final bool isMobile = Responsive.isMobile(context);
 
@@ -127,7 +135,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           outlined: true,
           padding: EdgeInsets.zero,
           child: _buildModelSection(
-              l10n, videoModels, videoChannels, selectedChannelId, selectedModelDbId, appState, uiState),
+              l10n, videoModels, videoChannels, selectedChannel, selectedModel, appState, uiState),
         ),
         const SizedBox(height: 12),
 
@@ -307,35 +315,30 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
   Widget _buildModelSection(
     AppLocalizations l10n,
     List<LLMModel> videoModels,
-    List<LLMChannel> allChannels,
-    int? selectedChannelId,
-    int? selectedModelDbId,
+    List<LLMChannel> videoChannels,
+    LLMChannel? selectedChannel,
+    LLMModel? selectedModel,
     AppState appState,
     WorkbenchUIState uiState,
   ) {
-    String? collapsedModelName;
-    if (!_isModelSettingsExpanded && selectedModelDbId != null) {
-      final match = videoModels.cast<LLMModel?>().firstWhere(
-        (m) => m?.id == selectedModelDbId,
-        orElse: () => null,
-      );
-      collapsedModelName = match?.modelName;
-    }
+    final selectedChannelId = selectedChannel?.id;
+    // The model the caller already resolved, rather than a second scan of the
+    // list to recover a name it was holding all along.
+    final collapsedModelName = _isModelSettingsExpanded ? null : selectedModel?.modelName;
+    // A model whose channel is not the selected one is a stale pair, and the
+    // card below would otherwise name it under the wrong channel — the same
+    // guard the image panel carries.
+    final modelInChannel =
+        selectedModel?.channelId == selectedChannelId ? selectedModel : null;
 
     // Some families (e.g. grok-imagine-video-1.5) declare their own
     // aspectRatio/resolution videoParams with a different option set than
     // the shared Veo dropdowns below — hide the shared control for whichever
     // key that family overrides so the panel doesn't show two conflicting
     // resolution/aspect-ratio pickers.
-    final selectedModel = selectedModelDbId == null
-        ? null
-        : videoModels.cast<LLMModel?>().firstWhere(
-            (m) => m?.id == selectedModelDbId,
-            orElse: () => null,
-          );
-    final caps = selectedModel == null
+    final caps = modelInChannel == null
         ? const ModelCapabilities()
-        : ModelCapabilities.forModel(selectedModel.modelId);
+        : ModelCapabilities.forModel(modelInChannel.modelId);
     final overridesResolution = caps.videoParams.any((p) => p.key == 'resolution');
     final overridesAspectRatio = caps.videoParams.any((p) => p.key == 'aspectRatio');
 
@@ -374,33 +377,37 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
       onToggle: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
       content: Column(
         children: [
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(labelText: l10n.channel),
-            initialValue: selectedChannelId,
-            items: allChannels.map((c) => DropdownMenuItem(
-              value: c.id,
-              child: Text(c.displayName),
-            )).toList(),
+          SearchablePickerField<int>(
+            selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
+            optionsBuilder: () => videoChannels.map(channelPickerOption).toList(),
             onChanged: (val) {
               final firstVideoInChannel = videoModels.where((m) => m.channelId == val).firstOrNull;
               if (firstVideoInChannel != null) {
                 appState.updateVideoConfig(modelId: firstVideoInChannel.id.toString());
               }
             },
+            hint: l10n.selectAChannel,
+            searchHint: l10n.searchChannels,
+            decoration: InputDecoration(labelText: l10n.channel),
+            dialogIcon: Icons.hub_outlined,
+            enabled: videoChannels.isNotEmpty,
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(labelText: l10n.model),  
-            initialValue: selectedModelDbId,
-            items: videoModels.where((m) => m.channelId == selectedChannelId).map((m) => DropdownMenuItem(
-              value: m.id,
-              child: Text(m.modelName),
-            )).toList(),
-            onChanged: (val) {
-              if (val != null) {
-                appState.updateVideoConfig(modelId: val.toString());
-              }
-            },
+          SearchablePickerField<int>(
+            selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
+            // Built on open, not on build — the same reason the image panel's
+            // is: a relay's worth of video models used to be mounted as
+            // `DropdownMenuItem`s on every frame to render one line.
+            optionsBuilder: () => [
+              for (final m in videoModels)
+                if (m.channelId == selectedChannelId && m.id != null) modelPickerOption(m),
+            ],
+            onChanged: (val) => appState.updateVideoConfig(modelId: val.toString()),
+            hint: l10n.selectAModel,
+            searchHint: l10n.searchModels,
+            decoration: InputDecoration(labelText: l10n.model),
+            dialogIcon: Icons.memory_outlined,
+            enabled: videoModels.any((m) => m.channelId == selectedChannelId),
           ),
           if (sharedControls.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -409,9 +416,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           // Per-model extras (seconds / quality for openaiVideo; aspectRatio /
           // resolution / seconds slider for grok-imagine-video-1.5; nothing
           // for Veo). Rebuilds when the user changes a value or switches model.
-          if (selectedModelDbId != null) ...[
+          if (modelInChannel != null) ...[
             const SizedBox(height: 8),
-            _buildVideoParamControls(l10n, videoModels, selectedModelDbId, appState),
+            _buildVideoParamControls(l10n, modelInChannel, appState),
           ],
         ],
       ),
@@ -420,16 +427,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
 
   Widget _buildVideoParamControls(
     AppLocalizations l10n,
-    List<LLMModel> videoModels,
-    int selectedModelDbId,
+    LLMModel model,
     AppState appState,
   ) {
-    final model = videoModels.cast<LLMModel?>().firstWhere(
-      (m) => m?.id == selectedModelDbId,
-      orElse: () => null,
-    );
-    if (model == null) return const SizedBox.shrink();
-
     final caps = ModelCapabilities.forModel(model.modelId);
     if (caps.videoParams.isEmpty) return const SizedBox.shrink();
 
