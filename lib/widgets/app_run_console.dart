@@ -79,7 +79,6 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                         l10n.executionLogs,
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w500,
-                          letterSpacing: 0.4,
                           color: colorScheme.onSurfaceVariant,
                         ),
                         overflow: TextOverflow.ellipsis,

@@ -343,7 +343,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
                     '${l10n.cropResizeWillSaveTo(copyDestination)}',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onAccentTint,
-                      height: 1.5,
+                      height: AppType.looseHeight,
                     ),
                   ),
                 ),

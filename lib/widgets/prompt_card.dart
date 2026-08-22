@@ -215,7 +215,7 @@ class PromptCard extends StatelessWidget {
                       data: prompt.content,
                       styleSheet: MarkdownStyleSheet(
                         p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              height: 1.6,
+                              height: AppType.looseHeight,
                               color: colorScheme.onSurface.withAlpha(230),
                             ),
                         code: TextStyle(
@@ -230,7 +230,7 @@ class PromptCard extends StatelessWidget {
                       prompt.content,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                            height: 1.5,
+                            height: AppType.looseHeight,
                           ),
                     ),
                   ),
@@ -266,7 +266,6 @@ class PromptCard extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: color.withAlpha(220),
-              letterSpacing: 0.5,
             ),
       ),
     );

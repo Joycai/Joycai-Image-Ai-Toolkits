@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/design_tokens.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/metric_palette.dart';
 import '../../../l10n/app_localizations.dart';
@@ -138,7 +139,7 @@ class UsageSummary extends StatelessWidget {
                   style: textTheme.headlineLarge?.mono.copyWith(
                     fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
-                    height: 1.1,
+                    height: AppType.displayHeight,
                   ),
                 ),
               ),
@@ -239,7 +240,7 @@ class UsageSummary extends StatelessWidget {
               style: textTheme.headlineMedium?.mono.copyWith(
                 fontWeight: FontWeight.w700,
                 color: accent,
-                height: 1.1,
+                height: AppType.displayHeight,
               ),
             ),
           ),

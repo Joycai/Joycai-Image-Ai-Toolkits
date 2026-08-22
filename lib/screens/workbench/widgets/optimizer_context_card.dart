@@ -95,7 +95,7 @@ class OptimizerContextCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               l10n.optCtxWindowAssumed,
-              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: 1.5),
+              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: AppType.looseHeight),
             ),
           ],
         ],

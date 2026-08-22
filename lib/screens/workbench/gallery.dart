@@ -217,7 +217,6 @@ class _GalleryState extends State<Gallery> {
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.secondary,
-                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
