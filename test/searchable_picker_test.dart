@@ -5,10 +5,11 @@ import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/searchable_picker.dart';
 
-/// Covers [SearchablePickerField]'s four load-bearing behaviours, each of which
+/// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
 /// went wrong in a way that only shows up under a state a single mount does not
 /// reach: a keypress before any typing, a query that matched nothing, a text
-/// scale above 1.0, and a tag longer than the field.
+/// scale above 1.0, a tag longer than the field, and a `T` that is itself
+/// nullable — where `null` is an answer rather than an absence.
 ///
 /// The scroll and overflow cases in particular are worth pinning because they
 /// are held by an arrangement rather than a number — a `ScrollPosition` that
@@ -165,6 +166,65 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('GPT Image 1'), findsOneWidget);
+  });
+
+  group('a picker whose T is itself nullable', () {
+    /// The settings screen's knowledge-base sub-agent binding: `null` is not
+    /// "nothing chosen", it is "follow the main model". A bare `T?` return
+    /// cannot tell that apart from a dismissal.
+    Widget nullableHost({required void Function(int?) onChanged}) {
+      final opts = [
+        PickerOption<int?>(value: null, label: 'Follow the main model'),
+        PickerOption<int?>(value: 7, label: 'Claude Sonnet'),
+      ];
+      return MaterialApp(
+        theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 400,
+              child: SearchablePickerField<int?>(
+                selected: opts[1],
+                optionsBuilder: () => opts,
+                onChanged: onChanged,
+                hint: 'Select a model',
+                searchHint: 'Search models',
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('choosing the null row fires onChanged with null', (tester) async {
+      final picked = <int?>[];
+      await tester.pumpWidget(nullableHost(onChanged: picked.add));
+      await openPicker(tester);
+
+      await tester.tap(find.text('Follow the main model'));
+      await tester.pumpAndSettle();
+
+      // Not `isEmpty`: the callback must have run, carrying null.
+      expect(picked, [null]);
+    });
+
+    testWidgets('dismissing fires nothing', (tester) async {
+      final picked = <int?>[];
+      await tester.pumpWidget(nullableHost(onChanged: picked.add));
+      await openPicker(tester);
+
+      Navigator.of(tester.element(find.byType(ListView))).pop();
+      await tester.pumpAndSettle();
+
+      expect(picked, isEmpty);
+    });
   });
 
   testWidgets('the field carries a button role and its value', (tester) async {

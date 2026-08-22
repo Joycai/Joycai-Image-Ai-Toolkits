@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../state/app_state.dart';
+import 'models/model_picker_options.dart';
+import 'searchable_picker.dart';
 
 /// How a [ChatModelSelector] presents itself.
 enum ChatModelSelectorStyle {
@@ -45,8 +47,43 @@ class ChatModelSelector extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isCard = style == ChatModelSelectorStyle.card;
 
-    return DropdownButtonFormField<int>(
-      initialValue: selectedModelId,
+    // One linear scan for the selected model, and one more for its channel.
+    // What this replaces built a `DropdownMenuItem` per model on every build
+    // and ran a `firstWhere` over every channel inside each one — O(models ×
+    // channels) per frame, on three screens, to render a single line of text.
+    LLMModel? selectedModel;
+    for (final m in chatModels) {
+      if (m.id == selectedModelId) {
+        selectedModel = m;
+        break;
+      }
+    }
+    final selectedChannel = selectedModel == null
+        ? null
+        : appState.allChannels.cast<LLMChannel?>().firstWhere(
+              (c) => c?.id == selectedModel!.channelId,
+              orElse: () => null,
+            );
+
+    return SearchablePickerField<int>(
+      selected: selectedModel == null ? null : modelPickerOption(selectedModel, channel: selectedChannel),
+      // Built on open, not on build — and the channels are indexed once for
+      // the whole list rather than scanned per model.
+      optionsBuilder: () {
+        final byId = <int?, LLMChannel>{
+          for (final c in appState.allChannels) c.id: c,
+        };
+        return [
+          for (final m in chatModels)
+            if (m.id != null) modelPickerOption(m, channel: byId[m.channelId]),
+        ];
+      },
+      onChanged: onChanged,
+      hint: l10n.selectAModel,
+      searchHint: l10n.searchModels,
+      dialogTitle: label ?? l10n.model,
+      dialogIcon: prefixIcon ?? Icons.memory_outlined,
+      enabled: chatModels.isNotEmpty,
       decoration: isCard
           ? InputDecoration(
               labelText: label ?? l10n.model,
@@ -79,40 +116,6 @@ class ChatModelSelector extends StatelessWidget {
               prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-      items: chatModels.map((m) {
-        final channel = appState.allChannels.cast<LLMChannel?>().firstWhere(
-          (c) => c?.id == m.channelId, 
-          orElse: () => null,
-        );
-        
-        return DropdownMenuItem(
-          value: m.id,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (channel != null && channel.tag != null)
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: Color(channel.tagColor ?? 0xFF607D8B).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    channel.tag!,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Color(channel.tagColor ?? 0xFF607D8B),
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-              Flexible(child: Text(m.modelName, overflow: TextOverflow.ellipsis)),
-            ],
-          ),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      isExpanded: true,
     );
   }
 }

@@ -96,6 +96,14 @@ class AppConstants {
     (key: 'MiSans', label: 'MiSans'),
   ];
 
+  /// What a tag without a colour of its own is drawn in — the Blue Grey entry
+  /// of [tagColors].
+  ///
+  /// Named because the literal was loose in seven files, every one of them
+  /// assuming the others agreed. Stored as an `int` because that is what
+  /// `llm_channels.tag_color` holds and what the fallback has to compose with.
+  static const int defaultTagColor = 0xFF607D8B;
+
   // Material 3 standard color palette for tags
   static const List<Color> tagColors = [
     // Primary colors

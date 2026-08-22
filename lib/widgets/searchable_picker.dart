@@ -65,6 +65,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     required this.searchHint,
     this.dialogTitle,
     this.dialogIcon,
+    this.decoration = const InputDecoration(),
     this.enabled = true,
   });
 
@@ -91,6 +92,17 @@ class SearchablePickerField<T> extends StatefulWidget {
   /// instruction ("Select a model") and so makes a serviceable title.
   final String? dialogTitle;
   final IconData? dialogIcon;
+
+  /// The field's decoration, before this widget adds its own trailing glyph
+  /// and enabled state.
+  ///
+  /// Bare by default, which is to say whatever
+  /// [ThemeData.inputDecorationTheme] gives every other input in the app —
+  /// the workbench's two pickers draw their captions above themselves and
+  /// want nothing more. Call sites that carry a `labelText` (or a prefix
+  /// glyph, or a panel-specific border) pass one instead of this widget
+  /// growing a parameter per slot of [InputDecoration].
+  final InputDecoration decoration;
 
   final bool enabled;
 
@@ -124,7 +136,7 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
     // unmounts us with the picker still up. [SearchablePickerField.onChanged]
     // reaches for the panel's Provider, so calling it then throws on a
     // deactivated ancestor — the `!mounted` bail `DropdownButton` did for us.
-    if (picked != null && mounted) widget.onChanged(picked);
+    if (picked != null && mounted) widget.onChanged(picked.value);
   }
 
   @override
@@ -155,17 +167,19 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
         onHover: (v) => setState(() => _hovered = v),
         borderRadius: BorderRadius.circular(AppRadius.control),
         child: InputDecorator(
-          // Border, radius and insets are the theme's; only the trailing glyph
-          // is this widget's own.
-          decoration: InputDecoration(
+          // Border, radius and insets are the caller's decoration or, by
+          // default, the theme's; only the trailing glyph is this widget's own.
+          decoration: widget.decoration.copyWith(
             enabled: enabled,
             suffixIcon: Icon(Icons.unfold_more, size: AppSize.iconSm, color: outline),
             suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
           ),
           isFocused: _focused,
           isHovering: _hovered,
-          // The label sits above this field, drawn by the caller, so there is
-          // never a floating one to make room for.
+          // Never "empty", even with nothing selected: this field always draws
+          // something in its content area — the value or [hint] — so a
+          // decoration that carries a `labelText` must float it rather than
+          // lay it over the top.
           isEmpty: false,
           child: value == null
               ? Text(widget.hint, style: valueStyle?.copyWith(color: outline), overflow: TextOverflow.ellipsis)
@@ -194,11 +208,24 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
   }
 }
 
-/// Opens the picker and returns the chosen value, or `null` if dismissed.
+/// What a picker returned, wrapping the chosen value.
+///
+/// A bare `T?` cannot say whether the user chose or dismissed once `T` is
+/// itself nullable, and one of these pickers has `null` as a real answer: the
+/// knowledge-base sub-agent's "follow the main model" row. Without the wrapper
+/// that choice is indistinguishable from pressing Escape, and the field
+/// silently snaps back to what it was showing.
+class PickerResult<T> {
+  const PickerResult(this.value);
+
+  final T value;
+}
+
+/// Opens the picker and returns the choice, or `null` if it was dismissed.
 ///
 /// Exposed separately from [SearchablePickerField] for call sites whose
 /// trigger is something other than a field — a toolbar button, a menu entry.
-Future<T?> showSearchablePicker<T>({
+Future<PickerResult<T>?> showSearchablePicker<T>({
   required BuildContext context,
   required String title,
   required String searchHint,
@@ -206,7 +233,7 @@ Future<T?> showSearchablePicker<T>({
   T? selected,
   IconData? icon,
 }) {
-  return showDialog<T>(
+  return showDialog<PickerResult<T>>(
     context: context,
     builder: (_) => _SearchablePickerDialog<T>(
       title: title,
@@ -361,7 +388,7 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
   /// keypress away on every open.
   void _submitFirst() {
     if (_query.isEmpty || _filtered.isEmpty) return;
-    Navigator.of(context).pop(_filtered.first.value);
+    Navigator.of(context).pop(PickerResult<T>(_filtered.first.value));
   }
 
   @override
@@ -427,7 +454,7 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
                       return _PickerRow<T>(
                         option: option,
                         selected: option.value == widget.selected,
-                        onTap: () => Navigator.of(context).pop(option.value),
+                        onTap: () => Navigator.of(context).pop(PickerResult<T>(option.value)),
                       );
                     },
                   ),

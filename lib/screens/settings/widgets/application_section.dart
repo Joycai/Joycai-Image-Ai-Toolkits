@@ -18,6 +18,7 @@ import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/searchable_picker.dart';
 
 class ApplicationSection extends StatefulWidget {
   const ApplicationSection({super.key});
@@ -206,23 +207,37 @@ class _ApplicationSectionState extends State<ApplicationSection> {
               l10n.kbSubAgentModelMissing,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-      trailing: DropdownButton<int?>(
-        value: boundExists ? bound : null,
-        underline: const SizedBox.shrink(),
-        items: [
-          DropdownMenuItem<int?>(
-            value: null,
-            child: Text(l10n.kbSubAgentModelFollow),
+      trailing: SizedBox(
+        width: 220,
+        child: SearchablePickerField<int?>(
+          // `null` is a real answer here — "follow the main model" — which is
+          // why the picker returns a [PickerResult] rather than a bare `T?`.
+          selected: PickerOption<int?>(
+            value: boundExists ? bound : null,
+            label: boundExists && bound != null
+                ? _kbSubAgentModels.firstWhere((m) => m.id == bound).modelName
+                : l10n.kbSubAgentModelFollow,
           ),
-          for (final m in _kbSubAgentModels)
-            DropdownMenuItem<int?>(value: m.id, child: Text(m.modelName)),
-        ],
-        onChanged: (v) async {
-          await _db.saveSetting(
-              PromptOptimizerAgent.kbSubAgentModelSettingKey,
-              v?.toString() ?? '');
-          setState(() => _kbSubAgentModelId = v);
-        },
+          optionsBuilder: () => [
+            PickerOption<int?>(value: null, label: l10n.kbSubAgentModelFollow),
+            for (final m in _kbSubAgentModels)
+              PickerOption<int?>(
+                value: m.id,
+                label: m.modelName,
+                secondary: m.modelId == m.modelName ? null : m.modelId,
+              ),
+          ],
+          onChanged: (v) async {
+            await _db.saveSetting(
+                PromptOptimizerAgent.kbSubAgentModelSettingKey,
+                v?.toString() ?? '');
+            if (mounted) setState(() => _kbSubAgentModelId = v);
+          },
+          hint: l10n.kbSubAgentModelFollow,
+          searchHint: l10n.searchModels,
+          dialogTitle: l10n.kbSubAgentModel,
+          dialogIcon: Icons.memory_outlined,
+        ),
       ),
     );
   }
