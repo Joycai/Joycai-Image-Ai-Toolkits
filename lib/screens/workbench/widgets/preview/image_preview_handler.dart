@@ -16,17 +16,14 @@ class ImagePreviewHandler implements PreviewHandler {
     required String path,
     required bool isActive,
   }) {
-    return Hero(
-      tag: path,
-      child: InteractiveViewer(
-        minScale: 0.5,
-        maxScale: 5.0,
-        child: Image.file(
-          File(path),
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.broken_image, color: Colors.white54, size: 64),
-        ),
+    return InteractiveViewer(
+      minScale: 0.5,
+      maxScale: 5.0,
+      child: Image.file(
+        File(path),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.broken_image, color: Colors.white54, size: 64),
       ),
     );
   }
