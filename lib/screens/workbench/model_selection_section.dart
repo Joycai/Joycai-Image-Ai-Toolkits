@@ -68,9 +68,16 @@ class ModelSelectionSection extends StatelessWidget {
     // A model whose channel is not the selected one is a stale selection, and
     // showing its name under the wrong channel is what made the pair look
     // unclickable the last time these two got out of step.
+    //
+    // Everything below reads *this*, not `selectedModel`. The guard used to
+    // cover the picker alone, so in the one state it exists for, the card
+    // contradicted itself: the field drew its "select a model" hint while the
+    // subtitle named the stale model and the parameter rows underneath edited
+    // it — writing under its family key, for a model the field said was not
+    // chosen.
     final modelInChannel = selectedModel?.channelId == selectedChannelId ? selectedModel : null;
 
-    final collapsedModelName = !isExpanded ? selectedModel?.modelName : null;
+    final collapsedModelName = !isExpanded ? modelInChannel?.modelName : null;
 
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -125,8 +132,8 @@ class ModelSelectionSection extends StatelessWidget {
               ),
             ],
           ),
-          if (selectedModel != null)
-            _buildModelSpecificOptions(context, selectedModel.modelId, l10n),
+          if (modelInChannel != null)
+            _buildModelSpecificOptions(context, modelInChannel.modelId, l10n),
         ],
       ),
     );
@@ -183,6 +190,15 @@ class ModelSelectionSection extends StatelessWidget {
         // left it reading as a different family of control from the two
         // pickers directly above it in the same card.
         control = DropdownButtonFormField<String>(
+          // Keyed, because a `FormField` owns its value rather than taking it
+          // from the caller every build: `initialValue` only re-syncs when it
+          // *changes* between two builds. Switch model while a parameter write
+          // is still in flight and this element is reused with the old value
+          // against the new model's options — which asserts when the value is
+          // absent from them, and silently displays a value the state does not
+          // hold when it happens to be present. A key per model and parameter
+          // makes it a fresh element instead.
+          key: ValueKey<String>('$modelId.${spec.key}'),
           isExpanded: true,
           isDense: true,
           initialValue: current,

@@ -514,7 +514,7 @@
   "stepConnectionAppearance": "连接与外观",
   "channelListPreview": "列表预览",
   "pickerNoMatches": "没有匹配项",
-  "pickerMatchCount": "共 {count} 项",
+  "pickerMatchCount": "显示 {count} 项",
   "@pickerMatchCount": {
     "placeholders": {
       "count": {

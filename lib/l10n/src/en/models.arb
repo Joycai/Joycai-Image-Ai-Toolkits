@@ -258,7 +258,7 @@
   "stepConnectionAppearance": "Connection & appearance",
   "channelListPreview": "List preview",
   "pickerNoMatches": "No matches",
-  "pickerMatchCount": "{count} available",
+  "pickerMatchCount": "{count} shown",
   "@pickerMatchCount": {
     "placeholders": {
       "count": {

@@ -2192,7 +2192,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickerMatchCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} available'**
+  /// **'{count} shown'**
   String pickerMatchCount(int count);
 
   /// No description provided for @selectAChannel.

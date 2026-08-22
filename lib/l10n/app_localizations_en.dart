@@ -1147,7 +1147,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pickerMatchCount(int count) {
-    return '$count available';
+    return '$count shown';
   }
 
   @override
