@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/app_button.dart';
@@ -28,11 +29,12 @@ class BrowserSelectionBar extends StatelessWidget {
       ignoring: !visible,
       child: AnimatedSlide(
         offset: visible ? Offset.zero : const Offset(0, 2),
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
+        duration: AppMotion.state,
+        curve: AppMotion.enter,
         child: AnimatedOpacity(
           opacity: visible ? 1 : 0,
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.state,
+          curve: AppMotion.enter,
           child: Material(
             color: colorScheme.surfaceContainerHigh,
             elevation: 4,

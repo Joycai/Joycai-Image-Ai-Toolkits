@@ -47,22 +47,29 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
   void _nextImage(int count) {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    if (workbenchUIState.activePreviewIndex < count - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    final i = workbenchUIState.activePreviewIndex;
+    if (i < count - 1) {
+      _pageController.jumpToPage(i + 1);
     }
   }
 
   void _prevImage() {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    if (workbenchUIState.activePreviewIndex > 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    final i = workbenchUIState.activePreviewIndex;
+    if (i > 0) {
+      _pageController.jumpToPage(i - 1);
     }
   }
 
   void _jumpToPage(int index) {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    if (workbenchUIState.activePreviewIndex != index) {
-      _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    final current = workbenchUIState.activePreviewIndex;
+    if (current == index) return;
+    if ((current - index).abs() == 1) {
+      _pageController.animateToPage(index,
+          duration: const Duration(milliseconds: 200), curve: Curves.easeOutCubic);
+    } else {
+      _pageController.jumpToPage(index);
     }
   }
 
@@ -268,9 +275,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                             final isSelected = index == activeIndex;
                             final path = images[index].path;
                             return GestureDetector(
-                              onTap: () {
-                                _pageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                              },
+                              onTap: () => _jumpToPage(index),
                               child: Container(
                                 width: 60,
                                 decoration: BoxDecoration(

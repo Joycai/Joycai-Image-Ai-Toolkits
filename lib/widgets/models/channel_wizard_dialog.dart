@@ -988,7 +988,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   Widget _buildStepBody(AppLocalizations l10n) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
+      duration: AppMotion.reveal,
+      switchInCurve: AppMotion.enter,
+      switchOutCurve: AppMotion.enter,
       transitionBuilder: (child, animation) =>
           FadeTransition(opacity: animation, child: child),
       child: KeyedSubtree(
@@ -1079,7 +1081,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       onTap: () => _selectProvider(preset.id),
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: AppMotion.state,
+        curve: AppMotion.enter,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1143,7 +1146,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       children: [
         for (int i = 0; i < _totalSteps; i++) ...[
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: AppMotion.reveal,
+            curve: AppMotion.move,
             width: i == _currentStep ? 18 : 6,
             height: 6,
             decoration: BoxDecoration(

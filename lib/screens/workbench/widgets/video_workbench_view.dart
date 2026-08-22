@@ -107,8 +107,8 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
         child: TweenAnimationBuilder<double>(
           key: ValueKey(uiState.lastGeneratedVideoPath),
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeOutCubic,
+          duration: AppMotion.panel,
+          curve: AppMotion.enter,
           builder: (context, value, child) {
             return Transform.translate(
               offset: Offset(0, 24 * (1 - value)),
@@ -232,24 +232,31 @@ class _VideoControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Listen to the controller here (leaf) instead of the parent rebuilding
-    // every frame. AnimatedSwitcher only swaps on play/pause transitions.
+    // every frame. The overlay is always present (opacity-driven) so toggling
+    // play/pause never adds or removes a node — AnimatedOpacity retargets
+    // mid-flight instead of cross-fading duplicate children.
     return ValueListenableBuilder<VideoPlayerValue>(
       valueListenable: controller,
       builder: (context, value, _) {
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: value.isPlaying
-              ? const SizedBox.shrink(key: ValueKey('playing'))
-              : Container(
-                  key: const ValueKey('paused'),
-                  color: Colors.black26,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.play_arrow, size: 64, color: Colors.white),
-                      onPressed: () => controller.play(),
-                    ),
+        return IgnorePointer(
+          ignoring: value.isPlaying,
+          child: ExcludeSemantics(
+            excluding: value.isPlaying,
+            child: AnimatedOpacity(
+              opacity: value.isPlaying ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              child: Container(
+                color: Colors.black26,
+                child: Center(
+                  child: IconButton(
+                    icon: const Icon(Icons.play_arrow, size: 64, color: Colors.white),
+                    onPressed: () => controller.play(),
                   ),
                 ),
+              ),
+            ),
+          ),
         );
       },
     );

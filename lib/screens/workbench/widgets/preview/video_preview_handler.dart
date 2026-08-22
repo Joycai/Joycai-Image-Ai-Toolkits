@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../core/constants.dart';
+import '../../../../core/design_tokens.dart';
 import 'preview_handler.dart';
 import 'video_thumbnail.dart';
 
@@ -268,7 +269,8 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
               right: 0,
               child: AnimatedOpacity(
                 opacity: _showOverlay ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
+                duration: AppMotion.reveal,
+                curve: AppMotion.enter,
                 child: ExcludeSemantics(
                   child: IgnorePointer(
                     ignoring: !_showOverlay,
@@ -284,7 +286,8 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
               child: IgnorePointer(
                 child: AnimatedOpacity(
                   opacity: (!_controller!.value.isPlaying && _showOverlay) ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppMotion.reveal,
+                  curve: AppMotion.enter,
                   child: Container(
                     width: 72,
                     height: 72,

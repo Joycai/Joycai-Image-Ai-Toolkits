@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../services/web_scraper_service.dart';
@@ -315,13 +316,21 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                 ),
               ),
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: AppMotion.reveal,
+                curve: AppMotion.enter,
                 height: _showLogs && state.logs.isNotEmpty ? 196 : 0,
-                child: _showLogs && state.logs.isNotEmpty
-                    ? _DownloaderLogPanel(
-                        logs: state.logs,
-                        isAnalyzing: state.isAnalyzing,
-                        onClose: () => setState(() => _showLogs = false),
+                child: state.logs.isNotEmpty
+                    ? ClipRect(
+                        child: OverflowBox(
+                          minHeight: 196,
+                          maxHeight: 196,
+                          alignment: Alignment.topCenter,
+                          child: _DownloaderLogPanel(
+                            logs: state.logs,
+                            isAnalyzing: state.isAnalyzing,
+                            onClose: () => setState(() => _showLogs = false),
+                          ),
+                        ),
                       )
                     : const SizedBox.shrink(),
               ),

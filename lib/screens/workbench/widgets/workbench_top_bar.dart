@@ -120,7 +120,7 @@ class WorkbenchTopBar extends StatelessWidget {
                                   // selection somewhere arbitrary.
                                   ? active
                                   : primary.first.index,
-                              onChanged: tabController.animateTo,
+                              onChanged: (i) => tabController.index = i,
                               style: AppSegmentStyle.raised,
                             ),
                             const SizedBox(width: 12),
@@ -134,7 +134,7 @@ class WorkbenchTopBar extends StatelessWidget {
                               _ToolsMenu(
                                 destinations: tools,
                                 activeIndex: active,
-                                onSelect: (i) => tabController.animateTo(i),
+                                onSelect: (i) => tabController.index = i,
                               )
                             else
                               ...tools.map((t) => Padding(
@@ -144,7 +144,7 @@ class WorkbenchTopBar extends StatelessWidget {
                                       label: t.label,
                                       active: active == t.index,
                                       showLabel: !isNarrow,
-                                      onPressed: () => tabController.animateTo(t.index),
+                                      onPressed: () => tabController.index = t.index,
                                     ),
                                   )),
                           ],

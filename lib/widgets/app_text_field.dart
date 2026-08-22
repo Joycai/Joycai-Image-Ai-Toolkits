@@ -135,8 +135,8 @@ class _AppTextFieldState extends State<AppTextField> {
         if (value != _focused) setState(() => _focused = value);
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOut,
+        duration: AppMotion.hover,
+        curve: AppMotion.enter,
         padding: const EdgeInsets.all(_ringWidth),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),

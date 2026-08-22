@@ -62,7 +62,6 @@ class AppConstants {
   static const double defaultThumbnailSize = 150.0;
   static const int maxConcurrency = 8;
   static const int workbenchTabCount = 6;
-  static const Duration animationDuration = Duration(milliseconds: 200);
 
   // Padding, radius, opacity and font-size constants used to live here and
   // had no call sites at all — the app measured itself in literals instead.
