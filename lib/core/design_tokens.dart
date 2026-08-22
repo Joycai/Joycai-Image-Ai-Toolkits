@@ -220,4 +220,34 @@ class AppMotion {
   /// On-screen movement (width morphs, page slides): accelerates and
   /// decelerates because both endpoints are visible.
   static const Curve move = Curves.easeInOutCubic;
+
+  /// Whether the platform has been asked for less motion — macOS's *Reduce
+  /// motion*, Windows' *Show animations in Windows*, Android's *Remove
+  /// animations*, iOS's *Reduce Motion*.
+  ///
+  /// Distinct from `AppState.reduceVisualEffects`, which is the app's own
+  /// setting and governs *translucency* (the title bar's backdrop blur) rather
+  /// than movement. They answer two different accessibility preferences and
+  /// the platform exposes them separately; a user who cannot tolerate motion
+  /// has not thereby asked to lose the frosted glass, and vice versa.
+  static bool prefersReduced(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context);
+
+  /// [token], or no duration at all where the platform has asked for less
+  /// motion.
+  ///
+  /// Every `duration:` in the app goes through this. Reaching for the raw
+  /// token at a call site is now the drift, the same way a literal `160` was
+  /// before the tokens existed.
+  ///
+  /// Collapsing to zero rather than merely shortening is deliberate: what
+  /// makes motion a problem is the travel, not its length, and a 40ms slide is
+  /// a slide. The end state is identical and arrives immediately, so nothing
+  /// is lost but the journey — which is exactly what was asked for. Where a
+  /// transition carries *meaning* that a cut would destroy — a panel that has
+  /// to be seen arriving from somewhere — swap the transition itself for a
+  /// cross-fade instead, keyed off [prefersReduced]; [AppSidePanel] is the
+  /// worked example.
+  static Duration durationOf(BuildContext context, Duration token) =>
+      prefersReduced(context) ? Duration.zero : token;
 }

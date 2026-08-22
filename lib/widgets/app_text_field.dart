@@ -142,7 +142,7 @@ class _AppTextFieldState extends State<AppTextField> {
         if (value != _focused) setState(() => _focused = value);
       },
       child: AnimatedContainer(
-        duration: AppMotion.hover,
+        duration: AppMotion.durationOf(context, AppMotion.hover),
         curve: AppMotion.enter,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),

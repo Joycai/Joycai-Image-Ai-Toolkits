@@ -478,7 +478,7 @@ class GalleryToolbar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return AnimatedContainer(
-      duration: AppMotion.state,
+      duration: AppMotion.durationOf(context, AppMotion.state),
       curve: AppMotion.enter,
       decoration: BoxDecoration(
         color: selected ? colorScheme.surface : Colors.transparent,

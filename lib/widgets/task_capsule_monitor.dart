@@ -79,7 +79,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
         child: Material( // Fixes yellow underline
           type: MaterialType.transparency,
           child: AnimatedContainer(
-            duration: AppMotion.reveal,
+            duration: AppMotion.durationOf(context, AppMotion.reveal),
             curve: AppMotion.move,
             width: capsuleWidth,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -105,7 +105,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
               // blur would show, while the blur still cost a full backdrop
               // readback every frame the capsule was on screen.
               child: AnimatedSize(
-                duration: AppMotion.reveal,
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
                 curve: AppMotion.move,
                 alignment: Alignment.topCenter,
                 child: Column(

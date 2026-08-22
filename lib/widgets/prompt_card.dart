@@ -70,7 +70,7 @@ class PromptCard extends StatelessWidget {
                   _buildHeader(context, colorScheme),
                   ClipRect(
                     child: AnimatedSize(
-                      duration: AppMotion.reveal,
+                      duration: AppMotion.durationOf(context, AppMotion.reveal),
                       curve: AppMotion.enter,
                       alignment: Alignment.topCenter,
                       child: isExpanded
@@ -109,7 +109,7 @@ class PromptCard extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 AnimatedRotation(
-                  duration: AppMotion.reveal,
+                  duration: AppMotion.durationOf(context, AppMotion.reveal),
                   curve: AppMotion.enter,
                   turns: isExpanded ? 0.25 : 0,
                   child: Icon(

@@ -240,7 +240,7 @@ class _ImageCardState extends State<ImageCard> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
-        duration: AppMotion.state,
+        duration: AppMotion.durationOf(context, AppMotion.state),
         curve: AppMotion.enter,
         decoration: BoxDecoration(
           // 10, not the 12 a panel gets. `10c` draws these one step tighter

@@ -14,6 +14,42 @@ import '../../widgets/panel_resizer.dart';
 /// gallery cards stop being cards. The two side panels are what has to give.
 const double kMinCenterWidth = 400;
 
+/// Narrowest each side panel may be dragged to.
+///
+/// Hoisted out of `_resolvePanels`, where they were locals, because the two
+/// resizer drags have to clamp against the *same* numbers the layout does —
+/// they were repeated as literals at the drag sites, which is how a floor
+/// drifts.
+const double kLeftPanelMin = 200;
+const double kRightPanelMin = 250;
+
+/// Widest the left panel may ever be, independent of the row.
+const double kLeftPanelMax = 500;
+
+/// How far past a bound a resizer drag keeps accumulating before it stops.
+///
+/// A hard clamp on the stored width is what made the resizer let go of the
+/// pointer. Drag 200px past the ceiling and the width stops at the ceiling
+/// while the pointer keeps travelling — so the first 200px of the drag *back*
+/// moves nothing, and by the time the panel re-engages the grip is 200px away
+/// from the cursor. It is the most reliably noticeable thing about the old
+/// resizer, and it reads as the handle having come loose rather than as an
+/// edge.
+///
+/// Not fixed by leaving the width unclamped: the overshoot is then unbounded,
+/// and `_leftWidth` is also AppState's sidebar width, so an enthusiastic drag
+/// would persist 3000 to every other screen.
+///
+/// So the width keeps accumulating past the bound, but only this far, and the
+/// value is snapped back into range on release. The panel itself is still
+/// drawn clamped — `_resolvePanels` sees to that, and the centre column's
+/// floor is a hard layout constraint that cannot be rendered through, so the
+/// spring-past-the-edge that would be the fuller answer is deliberately not
+/// attempted here. What this buys is that the drag back re-engages within
+/// 24px whatever the overshoot, which at any real drag speed is under a
+/// frame's travel and reads as a firm stop.
+const double _kDragSlack = 24;
+
 class WorkbenchLayoutState {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
@@ -129,7 +165,7 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     super.initState();
     // Restore persisted panel widths so the layout matches the last session.
     final appState = Provider.of<AppState>(context, listen: false);
-    _leftWidth = appState.sidebarWidth.clamp(200.0, 500.0);
+    _leftWidth = appState.sidebarWidth.clamp(kLeftPanelMin, kLeftPanelMax);
     _loadRightWidth();
   }
 
@@ -222,15 +258,22 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                       ),
                       PanelResizer(
                         shape: PanelShape.column,
-                        // Clamped to the same ceiling the layout would enforce
-                        // anyway, so the drag stops where the panel stops
-                        // instead of running on against an invisible wall.
+                        // Clamped to the layout's own ceiling plus [_kDragSlack],
+                        // not to the ceiling itself — see that constant for why
+                        // the exact clamp matters more than it looks.
                         onDrag: (delta) {
                           setState(() {
-                            _leftWidth = (_leftWidth + delta).clamp(200.0, panels.leftMax);
+                            _leftWidth = (_leftWidth + delta).clamp(
+                              kLeftPanelMin - _kDragSlack,
+                              panels.leftMax + _kDragSlack,
+                            );
                           });
                         },
                         onDragEnd: () {
+                          // Settle out of the slack before anything persists it.
+                          setState(() {
+                            _leftWidth = _leftWidth.clamp(kLeftPanelMin, panels.leftMax);
+                          });
                           Provider.of<AppState>(context, listen: false)
                               .setSidebarWidth(_leftWidth);
                         },
@@ -256,11 +299,19 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                         shape: PanelShape.column,
                         onDrag: (delta) {
                           setState(() {
-                            _rightWidth = (_rightWidth - delta).clamp(250.0, panels.rightMax);
+                            _rightWidth = (_rightWidth - delta).clamp(
+                              kRightPanelMin - _kDragSlack,
+                              panels.rightMax + _kDragSlack,
+                            );
                           });
                         },
-                        onDragEnd: () => DatabaseService().saveSetting(
-                            'workbench_right_panel_width', _rightWidth.round().toString()),
+                        onDragEnd: () {
+                          setState(() {
+                            _rightWidth = _rightWidth.clamp(kRightPanelMin, panels.rightMax);
+                          });
+                          DatabaseService().saveSetting(
+                              'workbench_right_panel_width', _rightWidth.round().toString());
+                        },
                       ),
                       PanelCard(
                         width: panels.right,
@@ -300,16 +351,14 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     // Has to match what the resizers between these panels actually take, or
     // the widths worked out here do not add up to the row.
     final double gutter = PanelResizer.thicknessOf(PanelShape.column);
-    const double leftMin = 200;
-    const double rightMin = 250;
 
     // Unchanged from before: the right panel may not exceed 40% of the row.
-    final double rightMax = (row * 0.40).clamp(rightMin, 600.0);
+    final double rightMax = (row * 0.40).clamp(kRightPanelMin, 600.0);
 
     bool leftInline = wantsLeft;
     bool rightInline = wantsRight;
-    double left = wantsLeft ? _leftWidth.clamp(leftMin, 500.0) : 0;
-    double right = wantsRight ? _rightWidth.clamp(rightMin, rightMax) : 0;
+    double left = wantsLeft ? _leftWidth.clamp(kLeftPanelMin, kLeftPanelMax) : 0;
+    double right = wantsRight ? _rightWidth.clamp(kRightPanelMin, rightMax) : 0;
 
     double over() =>
         left +
@@ -322,10 +371,10 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     // The right panel gives way first — it holds settings, which the user can
     // finish with, where the left holds the files they are working through.
     if (rightInline && over() > 0) {
-      right = (right - over()).clamp(rightMin, rightMax);
+      right = (right - over()).clamp(kRightPanelMin, rightMax);
     }
     if (leftInline && over() > 0) {
-      left = (left - over()).clamp(leftMin, 500.0);
+      left = (left - over()).clamp(kLeftPanelMin, kLeftPanelMax);
     }
     // Both already at their minimums and the centre still cannot have its
     // floor: the left panel falls back to the drawer it already uses on tablet.
@@ -341,11 +390,11 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
     // What a drag may reach, so the resizer cannot re-create the squeeze.
     final double leftCeiling = leftInline
         ? (row - right - (rightInline ? gutter : 0) - gutter - kMinCenterWidth)
-            .clamp(leftMin, 500.0)
-        : 500.0;
+            .clamp(kLeftPanelMin, kLeftPanelMax)
+        : kLeftPanelMax;
     final double rightCeiling = rightInline
         ? (row - left - (leftInline ? gutter : 0) - gutter - kMinCenterWidth)
-            .clamp(rightMin, rightMax)
+            .clamp(kRightPanelMin, rightMax)
         : rightMax;
 
     return _PanelWidths(
