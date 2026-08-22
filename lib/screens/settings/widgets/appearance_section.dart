@@ -24,6 +24,13 @@ class AppearanceSection extends StatelessWidget {
         FontSelector(appState: appState, l10n: l10n),
         const SizedBox(height: 32),
         LanguageSelector(appState: appState, l10n: l10n),
+        const SizedBox(height: 24),
+        SwitchListTile(
+          title: Text(l10n.reduceVisualEffects),
+          subtitle: Text(l10n.reduceVisualEffectsDesc),
+          value: appState.reduceVisualEffects,
+          onChanged: (v) => appState.setReduceVisualEffects(v),
+        ),
       ],
     );
   }

@@ -1370,6 +1370,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Font download failed. Check your connection and try again.';
 
   @override
+  String get reduceVisualEffects => 'Reduce visual effects';
+
+  @override
+  String get reduceVisualEffectsDesc =>
+      'Turns off the blur effects for smoother performance on integrated or low-power GPUs.';
+
+  @override
   String get googleGenAiSettings => 'Google GenAI REST Settings';
 
   @override

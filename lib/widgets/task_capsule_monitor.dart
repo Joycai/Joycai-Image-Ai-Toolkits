@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -103,9 +101,10 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Column(
+              // No backdrop blur here: the 92%-opaque fill above hides what a
+              // blur would show, while the blur still cost a full backdrop
+              // readback every frame the capsule was on screen.
+              child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
@@ -208,7 +207,6 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                     ],
                   ],
                 ),
-              ),
             ),
           ),
         ),

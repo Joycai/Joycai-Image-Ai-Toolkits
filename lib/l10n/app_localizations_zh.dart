@@ -1326,6 +1326,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fontDownloadFailed => '字体下载失败，请检查网络后重试。';
 
   @override
+  String get reduceVisualEffects => '减少视觉效果';
+
+  @override
+  String get reduceVisualEffectsDesc => '关闭模糊效果，在核显或低性能 GPU 上获得更流畅的体验。';
+
+  @override
   String get googleGenAiSettings => 'Google GenAI REST 设置';
 
   @override
@@ -4060,6 +4066,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fontDownloadFailed => '字型下載失敗，請檢查網路後重試。';
+
+  @override
+  String get reduceVisualEffects => '減少視覺效果';
+
+  @override
+  String get reduceVisualEffectsDesc => '關閉模糊效果，在內顯或低效能 GPU 上獲得更流暢的體驗。';
 
   @override
   String get googleGenAiSettings => 'Google GenAI REST 設定';

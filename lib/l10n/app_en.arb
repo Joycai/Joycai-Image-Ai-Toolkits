@@ -645,6 +645,8 @@
   "fontDownloadAction": "Download",
   "fontDownloading": "Downloading font…",
   "fontDownloadFailed": "Font download failed. Check your connection and try again.",
+  "reduceVisualEffects": "Reduce visual effects",
+  "reduceVisualEffectsDesc": "Turns off the blur effects for smoother performance on integrated or low-power GPUs.",
   "googleGenAiSettings": "Google GenAI REST Settings",
   "openAiApiSettings": "OpenAI API REST Settings",
   "standardConfig": "Standard Config",
