@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/design_tokens.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_text_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_side_panel.dart';
 
 /// Pins the app's answer to the platform's reduce-motion flag.
@@ -87,8 +88,35 @@ void main() {
     });
 
     testWidgets('reaches a real widget, not just the token', (tester) async {
-      // AppSegmentedControl stands in for the ~30 AnimatedContainers that took
-      // the same edit. If the pass missed a file, it missed it this way.
+      // AppTextField's focus ring stands in for the AnimatedContainers that
+      // took the same edit across ~20 files. If the pass missed a file, it
+      // missed it this way.
+      await tester.pumpWidget(harness(
+        disableAnimations: true,
+        child: const AppTextField(label: 'Key'),
+      ));
+      expect(
+        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+            .map((w) => w.duration),
+        everyElement(Duration.zero),
+      );
+
+      await tester.pumpWidget(harness(
+        disableAnimations: false,
+        child: const AppTextField(label: 'Key'),
+      ));
+      expect(
+        tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+            .map((w) => w.duration),
+        everyElement(AppMotion.hover),
+      );
+    });
+
+    testWidgets('reaches the segmented control indicator too',
+        (tester) async {
+      // A different animated primitive, deliberately: the indicator is an
+      // AnimatedPositioned, so it would not have been caught by the sweep
+      // above even if it had been missed.
       Widget control() => AppSegmentedControl<int>(
             segments: const [
               AppSegment(value: 0, label: 'A'),
@@ -98,18 +126,21 @@ void main() {
             onChanged: (_) {},
           );
 
-      await tester.pumpWidget(harness(disableAnimations: true, child: control()));
-      final reduced = tester
-          .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
-          .map((w) => w.duration);
-      expect(reduced, isNotEmpty);
-      expect(reduced, everyElement(Duration.zero));
+      for (final (disabled, expected) in [
+        (true, Duration.zero),
+        (false, AppMotion.state),
+      ]) {
+        await tester.pumpWidget(harness(disableAnimations: disabled, child: control()));
+        // The indicator is positioned from a measurement taken after layout,
+        // so it does not exist on the first frame.
+        await tester.pump();
 
-      await tester.pumpWidget(harness(disableAnimations: false, child: control()));
-      final normal = tester
-          .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
-          .map((w) => w.duration);
-      expect(normal, everyElement(AppMotion.state));
+        final positioned = tester
+            .widgetList<AnimatedPositioned>(find.byType(AnimatedPositioned))
+            .map((w) => w.duration);
+        expect(positioned, isNotEmpty, reason: 'disabled=$disabled');
+        expect(positioned, everyElement(expected), reason: 'disabled=$disabled');
+      }
     });
   });
 

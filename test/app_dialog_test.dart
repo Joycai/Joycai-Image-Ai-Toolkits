@@ -104,4 +104,76 @@ void main() {
     expect(dialog.backgroundColor, theme.colorScheme.surfaceContainer);
     expect(shape.borderRadius, BorderRadius.circular(appDialogRadius));
   });
+
+  group('the dialog grows into place', () {
+    // showDialog's own transition is opacity alone, so a dialog arrived at
+    // final size getting less see-through — present before it had finished
+    // appearing. A surface that scales while it fades reads as arriving.
+    testWidgets('scales up on the way in and is settled by the end',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: buildAppTheme(seedColor: Colors.indigo, brightness: Brightness.light),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => AppDialog.show(
+              context,
+              title: 'Overwrite?',
+              content: const Text('body'),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ));
+
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      double scaleOf(WidgetTester t) => t
+          .widget<ScaleTransition>(
+            find.ancestor(of: find.byType(Dialog), matching: find.byType(ScaleTransition)).first,
+          )
+          .scale
+          .value;
+
+      final mid = scaleOf(tester);
+      expect(mid, greaterThan(0.9), reason: 'never small enough to read as a zoom');
+      expect(mid, lessThan(1.0), reason: 'still growing');
+
+      await tester.pumpAndSettle();
+      expect(scaleOf(tester), 1.0);
+    });
+
+    testWidgets('drops the scale entirely under reduce-motion', (tester) async {
+      // The fade stays — it is opacity, not travel, and it is what tells the
+      // user something appeared at all.
+      await tester.pumpWidget(MaterialApp(
+        theme: buildAppTheme(seedColor: Colors.indigo, brightness: Brightness.light),
+        builder: (context, navigator) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: navigator!,
+        ),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => AppDialog.show(
+              context,
+              title: 'Overwrite?',
+              content: const Text('body'),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ));
+
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      expect(
+        find.ancestor(of: find.byType(Dialog), matching: find.byType(ScaleTransition)),
+        findsNothing,
+      );
+      expect(find.text('Overwrite?'), findsOneWidget);
+    });
+  });
 }

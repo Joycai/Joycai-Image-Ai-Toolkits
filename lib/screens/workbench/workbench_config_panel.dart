@@ -25,6 +25,7 @@ import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
 import '../../widgets/app_section_label.dart';
 import 'widgets/queue_settings_dialog.dart';
+import '../../widgets/scroll_edge_fade.dart';
 
 /// Ink laid over a thumbnail. Neutral by construction rather than taken from
 /// the [ColorScheme] — these sit on the user's own photographs, where a chip
@@ -429,10 +430,12 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 child: processButton,
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: buildContent(fill: false),
+                child: ScrollEdgeFade(
+                  child: SingleChildScrollView(
+                    controller: widget.scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: buildContent(fill: false),
+                  ),
                 ),
               ),
             ],
@@ -459,17 +462,23 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           return Column(
             children: [
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, viewport) => SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        // Less the padding above, or the content is a viewport
-                        // tall inside a viewport-tall box and the panel always
-                        // scrolls by exactly 32px.
-                        minHeight: (viewport.maxHeight - 32).clamp(0.0, double.infinity),
+                // The body runs under [ConfigActionBar], so whatever card sits
+                // at the boundary was being sliced square — the prompt field
+                // cut through its own rounded corner, which reads as a
+                // rendering fault rather than as "there is more below".
+                child: ScrollEdgeFade(
+                  child: LayoutBuilder(
+                    builder: (context, viewport) => SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          // Less the padding above, or the content is a viewport
+                          // tall inside a viewport-tall box and the panel always
+                          // scrolls by exactly 32px.
+                          minHeight: (viewport.maxHeight - 32).clamp(0.0, double.infinity),
+                        ),
+                        child: IntrinsicHeight(child: buildContent(fill: true)),
                       ),
-                      child: IntrinsicHeight(child: buildContent(fill: true)),
                     ),
                   ),
                 ),
