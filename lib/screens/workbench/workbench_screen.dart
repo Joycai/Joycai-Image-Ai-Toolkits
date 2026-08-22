@@ -819,12 +819,26 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       topBar: WorkbenchTopBar(tabController: _tabController),
       leftPanel: leftPanel,
       centerContent: centerContent,
+      // Const where there is no controller to thread, which is both places the
+      // layout draws the panel inline or in its drawer. This builder is
+      // re-invoked from `_WorkbenchLayoutState.build` — so on every splitter
+      // drag frame, and on every `AppState` notification through the enclosing
+      // build — and a freshly allocated widget always forces the child to
+      // rebuild, because `Widget` has no `==` and `Element.updateChild` can
+      // only skip when the two are identical. A canonicalised const instance
+      // is identical, so the panels' own `context.select` calls decide when
+      // they rebuild instead of being overruled from above. `leftPanel` above
+      // is const for the same reason.
       rightPanelBuilder: (scrollController) {
         switch (appState.workbenchTabIndex) {
           case 0:
-            return WorkbenchConfigPanel(scrollController: scrollController);
+            return scrollController == null
+                ? const WorkbenchConfigPanel()
+                : WorkbenchConfigPanel(scrollController: scrollController);
           case 1:
-            return MetadataInspector(scrollController: scrollController);
+            return scrollController == null
+                ? const MetadataInspector()
+                : MetadataInspector(scrollController: scrollController);
           case 4:
             // Two listeners, both needed. The Consumer catches the picker
             // and mode changes: the enclosing build reads WorkbenchUIState
