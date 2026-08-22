@@ -20,6 +20,19 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
   bool _isExpanded = false;
   Offset? _offset;
 
+  /// Drag bookkeeping, allowed [_kDragSlack] past the screen bounds so the
+  /// capsule re-engages where the pointer actually is after being pushed into
+  /// an edge — clamping the accumulator itself detached it from the cursor
+  /// for the rest of the drag. Null when no drag is live.
+  static const double _kDragSlack = 24;
+  Offset? _dragOffset;
+  bool _dragging = false;
+  bool _pressed = false;
+
+  /// Where a flick would come to rest under scroll-style deceleration —
+  /// the momentum-projection form (v/1000)·d/(1−d), d = 0.998.
+  static double _project(double velocity) => velocity / 1000 * 0.998 / (1 - 0.998);
+
   void _initPosition(Size screenSize, bool isMobile) {
     if (_offset != null) return;
     if (isMobile) {
@@ -45,8 +58,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
     final runningCount = queue.runningCount;
     final activeTasks = queue.queue.where((t) => t.status == TaskStatus.processing).toList();
-    
-    if (pendingCount == 0 && runningCount == 0) return const SizedBox.shrink();
+
+    // Resident, never unmounted: a floating, shadowed surface blinking into
+    // and out of existence was the one overlay in the app that neither slid
+    // nor faded. Both visibility triggers — the queue emptying and being on
+    // the workbench (which has its own console) — now fade the same way.
+    final onWorkbench =
+        context.select<AppState, int>((s) => s.activeScreenIndex) == 0;
+    final visible = (pendingCount > 0 || runningCount > 0) && !onWorkbench;
 
     double avgProgress = 0;
     if (activeTasks.isNotEmpty) {
@@ -63,20 +82,83 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
 
     final capsuleWidth = isMobile ? (screenSize.width - 32) : (_isExpanded ? 300.0 : 180.0);
 
-    return Positioned(
+    final maxX = screenSize.width - capsuleWidth;
+    final maxY = screenSize.height - 80;
+
+    // AnimatedPositioned with a zero duration while the pointer is down: the
+    // drag tracks 1:1, and the same node then glides the release — the flick
+    // settle and any future repositioning ride one mechanism.
+    return AnimatedPositioned(
+      duration: _dragging
+          ? Duration.zero
+          : AppMotion.durationOf(context, AppMotion.panel),
+      curve: AppMotion.enter,
       left: _offset!.dx,
       top: _offset!.dy,
-      child: GestureDetector(
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: Listener(
+          // Raw pointer events: with the pan recognizer in the arena, onTapDown
+          // waits out the press timeout, and a floating control should take
+          // the press the moment the pointer lands.
+          onPointerDown: (_) => setState(() => _pressed = true),
+          onPointerUp: (_) => setState(() => _pressed = false),
+          onPointerCancel: (_) => setState(() => _pressed = false),
+          child: GestureDetector(
+        onPanStart: (_) => setState(() {
+          _dragging = true;
+          _dragOffset = _offset;
+        }),
         onPanUpdate: (details) {
           setState(() {
+            final raw = _dragOffset! + details.delta;
+            _dragOffset = Offset(
+              raw.dx.clamp(0.0 - _kDragSlack, maxX + _kDragSlack),
+              raw.dy.clamp(0.0 - _kDragSlack, maxY + _kDragSlack),
+            );
             _offset = Offset(
-              (_offset!.dx + details.delta.dx).clamp(0, screenSize.width - capsuleWidth),
-              (_offset!.dy + details.delta.dy).clamp(0, screenSize.height - 80),
+              _dragOffset!.dx.clamp(0.0, maxX),
+              _dragOffset!.dy.clamp(0.0, maxY),
             );
           });
         },
+        onPanEnd: (details) {
+          // The canonical velocity-handoff case: project where the throw was
+          // going, park on the nearer horizontal edge of that point, and let
+          // AnimatedPositioned carry it there. A release with no velocity
+          // projects to where it already is and simply stays.
+          final v = details.velocity.pixelsPerSecond;
+          final projected = Offset(
+            _offset!.dx + _project(v.dx),
+            _offset!.dy + _project(v.dy),
+          );
+          setState(() {
+            _dragging = false;
+            _dragOffset = null;
+            final snapX = (projected.dx + capsuleWidth / 2) < screenSize.width / 2
+                ? 16.0
+                : maxX - 16.0;
+            _offset = Offset(
+              v.distance < 100 ? _offset!.dx : snapX,
+              projected.dy.clamp(16.0, maxY),
+            );
+          });
+        },
+        onPanCancel: () => setState(() {
+          _dragging = false;
+          _dragOffset = null;
+        }),
         onTap: () => setState(() => _isExpanded = !_isExpanded),
-        child: Material( // Fixes yellow underline
+        child: AnimatedOpacity(
+          opacity: visible ? 1.0 : 0.0,
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
+          child: AnimatedScale(
+            scale: !visible ? 0.9 : (_pressed ? 0.97 : 1.0),
+            duration: AppMotion.durationOf(
+                context, visible && !_pressed ? AppMotion.reveal : AppMotion.hover),
+            curve: AppMotion.enter,
+            child: Material( // Fixes yellow underline
           type: MaterialType.transparency,
           child: AnimatedContainer(
             duration: AppMotion.durationOf(context, AppMotion.reveal),
@@ -209,6 +291,10 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
               ),
             ),
           ),
+            ),
+          ),
+          ),
+        ),
         ),
       ),
     );

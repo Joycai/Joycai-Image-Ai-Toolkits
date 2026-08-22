@@ -631,8 +631,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   child: Text(
                     entry.targetPath ?? '',
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+                    style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
                       color: colorScheme.onSurface,
                     ),
                   ),
@@ -709,9 +708,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               child: SingleChildScrollView(
                 child: SelectableText(
                   content,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                     height: AppType.proseHeight,
-                    fontFamily: 'monospace',
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -823,8 +821,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   ),
                   child: Text(
                     'v${entry.version ?? 1}',
-                    style: textTheme.labelSmall?.copyWith(
-                      fontFamily: 'monospace',
+                    style: textTheme.labelSmall?.mono.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurfaceVariant,
                     ),

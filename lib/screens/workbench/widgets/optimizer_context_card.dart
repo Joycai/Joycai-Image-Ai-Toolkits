@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/context_usage_palette.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
@@ -117,7 +118,7 @@ class OptimizerContextCard extends StatelessWidget {
       );
     }
 
-    final base = textTheme.labelMedium?.copyWith(fontFamily: 'monospace');
+    final base = textTheme.labelMedium?.mono;
     return Text.rich(
       TextSpan(
         children: [
@@ -201,8 +202,7 @@ class OptimizerContextCard extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             value == null ? '—' : _formatChars(value),
-            style: textTheme.labelMedium?.copyWith(
-              fontFamily: 'monospace',
+            style: textTheme.labelMedium?.mono.copyWith(
               color: valueColor,
             ),
           ),

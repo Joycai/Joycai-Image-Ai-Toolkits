@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
@@ -265,7 +266,7 @@ class _MaskEditorToolbarState extends State<MaskEditorToolbar> {
         const SizedBox(width: 4),
         Text(
           readout,
-          style: textTheme.labelMedium?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
+          style: textTheme.labelMedium?.mono.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

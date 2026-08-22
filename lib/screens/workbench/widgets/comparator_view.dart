@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
@@ -55,6 +56,10 @@ class _ComparatorViewState extends State<ComparatorView> {
   /// Two-way rather than the old one-way copy: with a controller on each pane
   /// both are interactive, and mirroring only the left one meant panning the
   /// right pane silently broke the alignment the mode exists to hold.
+  /// The curtain drag's own accumulator, in pixels, allowed slightly past the
+  /// pane so the handle keeps its grab offset at the edges. Null between drags.
+  double? _dragScanPos;
+
   void _mirror(TransformationController from, TransformationController to) {
     if (!_sync || _mirroring || from.value == to.value) return;
     _mirroring = true;
@@ -215,12 +220,24 @@ class _ComparatorViewState extends State<ComparatorView> {
                       valueListenable: _scanRatio,
                       child: GestureDetector(
                         behavior: HitTestBehavior.translucent,
+                        onHorizontalDragStart: (_) =>
+                            _dragScanPos = constraints.maxWidth * _scanRatio.value,
+                        // The accumulator, not the ratio, absorbs the drag:
+                        // recomputing from the clamped ratio meant that once
+                        // the curtain pinned at an edge, the handle re-engaged
+                        // the moment the pointer reversed — wherever the
+                        // pointer happened to be. 24px of slack, same as the
+                        // panel resizers.
                         onHorizontalDragUpdate: (details) {
-                          final newPos =
-                              constraints.maxWidth * _scanRatio.value + details.delta.dx;
+                          _dragScanPos = ((_dragScanPos ??
+                                      constraints.maxWidth * _scanRatio.value) +
+                                  details.delta.dx)
+                              .clamp(-24.0, constraints.maxWidth + 24.0);
                           _scanRatio.value =
-                              (newPos / constraints.maxWidth).clamp(0.0, 1.0);
+                              (_dragScanPos! / constraints.maxWidth).clamp(0.0, 1.0);
                         },
+                        onHorizontalDragEnd: (_) => _dragScanPos = null,
+                        onHorizontalDragCancel: () => _dragScanPos = null,
                         child: _CurtainHandle(colorScheme: colorScheme),
                       ),
                       builder: (context, ratio, child) => Stack(
@@ -410,9 +427,8 @@ class _FileNameOverlay extends StatelessWidget {
         path.split(Platform.pathSeparator).last,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
               color: Colors.white,
-              fontFamily: 'monospace',
             ),
       ),
     );
@@ -455,8 +471,7 @@ class _FooterEntry extends StatelessWidget {
             path?.split(Platform.pathSeparator).last ?? '—',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
+            style: textTheme.bodySmall?.mono.copyWith(
               color: isAfter ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
             ),
           ),

@@ -50,7 +50,7 @@ class CanvasZoomPill extends StatelessWidget {
             child: Text(
               '${percent.round()}%',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+              style: Theme.of(context).textTheme.labelMedium?.mono,
             ),
           ),
           _pillIcon(context, Icons.add, onZoomIn),

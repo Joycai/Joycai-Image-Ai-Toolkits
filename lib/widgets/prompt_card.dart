@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
@@ -219,8 +220,7 @@ class PromptCard extends StatelessWidget {
                             ),
                         code: TextStyle(
                           backgroundColor: colorScheme.surfaceContainerHighest,
-                          fontFamily: 'monospace',
-                        ),
+                        ).mono,
                       ),
                     ),
                   )

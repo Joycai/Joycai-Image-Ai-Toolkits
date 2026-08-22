@@ -33,6 +33,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
   int? _selectedChannelId;
   double _sidebarWidth = 300;
 
+  /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
+  /// re-engages where the pointer actually is after a drag past the end,
+  /// instead of the instant the pointer reverses. Null when no drag is live.
+  static const double _kDragSlack = 24;
+  double? _dragSidebarWidth;
+
   @override
   void initState() {
     super.initState();
@@ -125,10 +131,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 PanelResizer(
                   shape: PanelShape.column,
                   onDrag: (dx) => setState(() {
-                    _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                    _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
+                        .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+                    _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
                   }),
-                  onDragEnd: () => DatabaseService()
-                      .saveSetting('models_sidebar_width', _sidebarWidth.round().toString()),
+                  onDragEnd: () {
+                    _dragSidebarWidth = null;
+                    DatabaseService()
+                        .saveSetting('models_sidebar_width', _sidebarWidth.round().toString());
+                  },
                 ),
                 Expanded(
                   child: PanelCard(

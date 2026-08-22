@@ -36,6 +36,12 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   late TabController _tabController;
   double _sidebarWidth = 230;
 
+  /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
+  /// re-engages where the pointer actually is after a drag past the end,
+  /// instead of the instant the pointer reverses. Null when no drag is live.
+  static const double _kDragSlack = 24;
+  double? _dragSidebarWidth;
+
   List<Prompt> _userPrompts = [];
   List<SystemPrompt> _systemPrompts = [];
   List<PromptTag> _tags = [];
@@ -334,10 +340,15 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             PanelResizer(
               shape: PanelShape.column,
               onDrag: (dx) => setState(() {
-                _sidebarWidth = (_sidebarWidth + dx).clamp(_minSidebarWidth, _maxSidebarWidth);
+                _dragSidebarWidth = ((_dragSidebarWidth ?? _sidebarWidth) + dx)
+                    .clamp(_minSidebarWidth - _kDragSlack, _maxSidebarWidth + _kDragSlack);
+                _sidebarWidth = _dragSidebarWidth!.clamp(_minSidebarWidth, _maxSidebarWidth);
               }),
-              onDragEnd: () => DatabaseService()
-                  .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString()),
+              onDragEnd: () {
+                _dragSidebarWidth = null;
+                DatabaseService()
+                    .saveSetting('prompts_sidebar_width', _sidebarWidth.round().toString());
+              },
             ),
 
             // ── Main column: 56px header + content ─────────────────────────

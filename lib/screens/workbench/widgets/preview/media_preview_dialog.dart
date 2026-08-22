@@ -85,8 +85,9 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     final current = workbenchUIState.activePreviewIndex;
     if (current == index) return;
     if ((current - index).abs() == 1) {
+      // `move`, not `enter`: both endpoints of a page slide are visible.
       _pageController.animateToPage(index,
-          duration: const Duration(milliseconds: 200), curve: Curves.easeOutCubic);
+          duration: AppMotion.durationOf(context, AppMotion.reveal), curve: AppMotion.move);
     } else {
       _pageController.jumpToPage(index);
     }
@@ -206,13 +207,16 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                   ),
                 ),
 
-                // Custom Top Toolbar
-                if (_showControls)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
+                // Custom Top Toolbar. Resident and opacity-driven, like the
+                // video handler's overlay: toggling chrome used to add and
+                // remove these subtrees between two frames, the one overlay
+                // family in this screen that neither faded in nor out.
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _controlsLayer(
+                    Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -261,16 +265,21 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       ),
                     ),
                   ),
+                ),
 
-                // Side Navigation Buttons (Desktop/Tablet Only)
-                if (_showControls && !Responsive.isMobile(context)) ...[
+                // Side Navigation Buttons (Desktop/Tablet Only). The index
+                // conditions stay structural — a chevron with no page beyond
+                // it is absent, not dimmed — while the chrome toggle fades.
+                if (!Responsive.isMobile(context)) ...[
                   if (activeIndex > 0)
                     Positioned(
                       left: 16,
                       top: 0,
                       bottom: 0,
-                      child: Center(
-                        child: _buildNavButton(Icons.chevron_left, _prevImage),
+                      child: _controlsLayer(
+                        Center(
+                          child: _buildNavButton(Icons.chevron_left, _prevImage),
+                        ),
                       ),
                     ),
                   if (activeIndex < images.length - 1)
@@ -278,19 +287,21 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       right: 16,
                       top: 0,
                       bottom: 0,
-                      child: Center(
-                        child: _buildNavButton(Icons.chevron_right, () => _nextImage(images.length)),
+                      child: _controlsLayer(
+                        Center(
+                          child: _buildNavButton(Icons.chevron_right, () => _nextImage(images.length)),
+                        ),
                       ),
                     ),
                 ],
 
                 // Bottom Thumbnail Strip
-                if (_showControls)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _controlsLayer(
+                    Container(
                       height: 110,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -329,10 +340,26 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// The chrome toggle's shared presentation: resident in the tree, faded by
+  /// [_showControls], and inert the moment it starts leaving — an overlay
+  /// mid-fade-out should not swallow the tap that was aimed at the picture.
+  Widget _controlsLayer(Widget child) {
+    return IgnorePointer(
+      ignoring: !_showControls,
+      child: AnimatedOpacity(
+        opacity: _showControls ? 1.0 : 0.0,
+        duration: AppMotion.durationOf(context, AppMotion.reveal),
+        curve: AppMotion.enter,
+        child: child,
       ),
     );
   }

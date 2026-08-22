@@ -118,12 +118,12 @@ class _MetadataInspectorState extends State<MetadataInspector> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_rawMeta != null) ...[
-            _SectionHeader(label: l10n.labelRaw, isAfter: false),
+            _SectionHeader(label: l10n.labelRaw.toUpperCase(), isAfter: false),
             ..._buildRows(_rawMeta!, l10n),
           ],
           if (_afterMeta != null) ...[
             if (_rawMeta != null) const SizedBox(height: 14),
-            _SectionHeader(label: l10n.labelAfter, isAfter: true),
+            _SectionHeader(label: l10n.labelAfter.toUpperCase(), isAfter: true),
             ..._buildRows(_afterMeta!, l10n),
           ],
           if (_rawMeta != null && _afterMeta != null) ...[

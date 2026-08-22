@@ -451,7 +451,7 @@ class _OutputPreviewBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(l10n.cropResizeOutputPreview, style: labelStyle),
+          Text(l10n.cropResizeOutputPreview.toUpperCase(), style: labelStyle),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -428,7 +428,7 @@ class _MaskOutputBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(l10n.maskOutputLabel, style: labelStyle),
+          Text(l10n.maskOutputLabel.toUpperCase(), style: labelStyle),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

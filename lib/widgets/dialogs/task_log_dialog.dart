@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
@@ -185,8 +186,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Text(
         line,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontFamily: 'monospace',
+        style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
               height: AppType.proseHeight,
               color: color,
               fontWeight: isError ? FontWeight.w600 : FontWeight.normal,

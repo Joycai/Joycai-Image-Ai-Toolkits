@@ -574,8 +574,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final originalBinaryMode = _maskIsBinaryMode;
     if (binary != _maskIsBinaryMode) {
       setState(() => _maskIsBinaryMode = binary);
-      // Wait for the next frame to ensure the UI has updated to show/hide the image
-      await Future.delayed(const Duration(milliseconds: 50));
+      // Wait for the frame that carries the mode flip — endOfFrame is the
+      // actual thing being waited on; the 50ms this replaced was a guess at
+      // it, and sat between the user's Save and any feedback.
+      await WidgetsBinding.instance.endOfFrame;
     }
 
     try {
