@@ -3,10 +3,12 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
+import '../state/app_state.dart';
 
 /// Whether this build draws its own window chrome.
 ///
@@ -137,6 +139,37 @@ class AppWindowBackdrop extends StatelessWidget {
   }
 }
 
+/// The title bar's frosted glass, honouring the reduce-visual-effects setting.
+///
+/// A full-width backdrop blur is the single most expensive draw in the app —
+/// measured at ~19ms per frame on an integrated GPU at 4K, which alone is more
+/// than a whole 60fps frame budget. When the user opts out the bar keeps its
+/// translucent fill and loses only the blur.
+class _TitleBarFrost extends StatelessWidget {
+  const _TitleBarFrost({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = context.select<AppState, bool>((s) => s.reduceVisualEffects);
+    if (reduce) return child;
+    return BackdropFilter(
+      // blur(30px) saturate(180%), composed rather than nested: two
+      // BackdropFilters would sample the layer twice, and the outer one
+      // would be filtering the inner one's output instead of the backdrop.
+      //
+      // sigma 15 for a 30px CSS blur — CSS states a radius, Skia a standard
+      // deviation, and the conversion the platforms agree on is radius/2.
+      filter: ui.ImageFilter.compose(
+        outer: ui.ColorFilter.matrix(AppTitleBar.saturationMatrix(1.8)),
+        inner: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+      ),
+      child: child,
+    );
+  }
+}
+
 /// The app's own title bar, drawn because the spec draws one.
 ///
 /// The window's caption is hidden at startup (see `main`), so everything a
@@ -163,17 +196,7 @@ class AppTitleBar extends StatelessWidget {
     return SizedBox(
       height: kTitleBarHeight,
       child: ClipRect(
-        child: BackdropFilter(
-          // blur(30px) saturate(180%), composed rather than nested: two
-          // BackdropFilters would sample the layer twice, and the outer one
-          // would be filtering the inner one's output instead of the backdrop.
-          //
-          // sigma 15 for a 30px CSS blur — CSS states a radius, Skia a standard
-          // deviation, and the conversion the platforms agree on is radius/2.
-          filter: ui.ImageFilter.compose(
-            outer: ui.ColorFilter.matrix(saturationMatrix(1.8)),
-            inner: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          ),
+        child: _TitleBarFrost(
           child: DecoratedBox(
             decoration: BoxDecoration(
               // The spec's rgba(255,255,255,.55), left translucent. This is the

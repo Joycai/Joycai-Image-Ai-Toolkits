@@ -116,6 +116,10 @@ class AppState extends ChangeNotifier {
   double sidebarWidth = 400.0;
   double consoleHeight = 200.0;
   bool enableApiDebug = false;
+  // Skips the costliest cosmetic draws (backdrop blurs). Off by default so the
+  // designed look stays; users on weak/integrated GPUs can trade it for frame
+  // rate — measured at ~19ms/frame on an iGPU at 4K.
+  bool reduceVisualEffects = false;
 
   // Navigation State
   int activeScreenIndex = 0;
@@ -383,6 +387,7 @@ class AppState extends ChangeNotifier {
     }
 
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
+    reduceVisualEffects = (await _db.getSetting('reduce_visual_effects') ?? 'false') == 'true';
 
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
@@ -572,6 +577,12 @@ class AppState extends ChangeNotifier {
       }
     }
     await _db.saveSetting('locale', localeStr);
+    notifyListeners();
+  }
+
+  Future<void> setReduceVisualEffects(bool value) async {
+    reduceVisualEffects = value;
+    await _db.saveSetting('reduce_visual_effects', value.toString());
     notifyListeners();
   }
 

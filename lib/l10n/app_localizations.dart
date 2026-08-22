@@ -2597,6 +2597,18 @@ abstract class AppLocalizations {
   /// **'Font download failed. Check your connection and try again.'**
   String get fontDownloadFailed;
 
+  /// No description provided for @reduceVisualEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce visual effects'**
+  String get reduceVisualEffects;
+
+  /// No description provided for @reduceVisualEffectsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns off the blur effects for smoother performance on integrated or low-power GPUs.'**
+  String get reduceVisualEffectsDesc;
+
   /// No description provided for @googleGenAiSettings.
   ///
   /// In en, this message translates to:

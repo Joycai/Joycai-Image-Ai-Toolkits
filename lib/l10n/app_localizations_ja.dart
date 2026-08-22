@@ -1338,6 +1338,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fontDownloadFailed => 'フォントのダウンロードに失敗しました。接続を確認して再試行してください。';
 
   @override
+  String get reduceVisualEffects => '視覚効果を減らす';
+
+  @override
+  String get reduceVisualEffectsDesc => 'ぼかし効果を無効にして、内蔵GPUや低性能GPUでも滑らかに動作させます。';
+
+  @override
   String get googleGenAiSettings => 'Google GenAI REST設定';
 
   @override

@@ -631,6 +631,8 @@
   "fontDownloadAction": "下载",
   "fontDownloading": "正在下载字体…",
   "fontDownloadFailed": "字体下载失败，请检查网络后重试。",
+  "reduceVisualEffects": "减少视觉效果",
+  "reduceVisualEffectsDesc": "关闭模糊效果，在核显或低性能 GPU 上获得更流畅的体验。",
   "googleGenAiSettings": "Google GenAI REST 设置",
   "openAiApiSettings": "OpenAI API REST 设置",
   "standardConfig": "标准配置",
