@@ -312,9 +312,13 @@ class AppButton extends StatelessWidget {
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );
       case AppButtonVariant.destructive:
+        // `errorFillScheme`, not `colorScheme.error` — see its doc. The error
+        // role is tuned to be read *as a foreground*, which is what the two
+        // variants below want and the opposite of what a fill wants.
+        final errorFill = errorFillScheme();
         return FilledButton.styleFrom(
-          backgroundColor: colorScheme.error,
-          foregroundColor: colorScheme.onError,
+          backgroundColor: errorFill.primary,
+          foregroundColor: errorFill.onPrimary,
           disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.12),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: 0.38),
         );
@@ -348,7 +352,7 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.text:
         return colorScheme.primary;
       case AppButtonVariant.destructive:
-        return colorScheme.onError;
+        return errorFillScheme().onPrimary;
       case AppButtonVariant.destructiveOutline:
       case AppButtonVariant.destructiveText:
         return colorScheme.error;

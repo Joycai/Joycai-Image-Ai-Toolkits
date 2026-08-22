@@ -434,6 +434,38 @@ ColorScheme buttonFillScheme(Color seedColor) {
   );
 }
 
+/// The source red every destructive *fill* is derived from.
+///
+/// Material's own error source. Named rather than inlined because it is the
+/// one hex in this file that is neither a neutral nor the user's seed, and a
+/// reader has to be able to tell it isn't a hand-picked red.
+const Color _errorSource = Color(0xFFB3261E);
+
+/// The scheme a destructive button takes its fill and label from.
+///
+/// [buttonFillScheme]'s counterpart, and it exists for exactly the same reason
+/// — restated because the symmetry is the whole argument. A filled button
+/// needs a *dark, saturated* ground under a light label in both brightnesses;
+/// [ColorScheme.error] is not that. It is tone 40 in light and tone 80 in
+/// dark, because its job is to be legible *as a foreground* — which is right
+/// for [AppButtonVariant.destructiveOutline] and `destructiveText`, and wrong
+/// for a fill. Used as one it produced a pale pink slab with dark text in dark
+/// mode: the app's only irreversible action rendering *lighter* than the
+/// ordinary primary beside it, inverting the emphasis on the one button where
+/// emphasis matters most. At the Rose and Orange seeds the two were also the
+/// same hue family, so colour told the user nothing at all.
+///
+/// Always light + vibrant, so the fill is the same committed red under both
+/// brightnesses — the same trick [buttonFillScheme] plays with the seed, and
+/// the reason it takes no [Brightness].
+ColorScheme errorFillScheme() {
+  return ColorScheme.fromSeed(
+    seedColor: _errorSource,
+    brightness: Brightness.light,
+    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
+}
+
 /// The colours [FilledButton.tonal] is supposed to have.
 ///
 /// Pass this to every tonal button: the app-wide [FilledButtonTheme] above
