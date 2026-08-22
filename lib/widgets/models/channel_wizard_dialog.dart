@@ -385,7 +385,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           letterSpacing: AppType.trackedLabelSpacing,
           color: theme.colorScheme.onSurfaceVariant,
         ),
@@ -430,7 +430,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                   // The label's colour belongs to the row it sits in, not to
                   // the slot it borrows its metrics from.
                   style: textTheme.bodyMedium?.metricsOnly.copyWith(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? colorScheme.onAccentTint
                         : colorScheme.onSurface,
@@ -525,7 +525,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                 channelProviderTitle(l10n, preset.id),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.titleMedium,
               ),
               Text(
                 channelProviderSubtitle(l10n, preset),
@@ -601,7 +601,6 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.titleSmall?.metricsOnly.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colorScheme.onAccentTint,
                   ),
                 ),
@@ -632,7 +631,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         Text(
           l10n.channelType,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
@@ -755,7 +754,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         Text(
           l10n.tagColor,
           style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -789,7 +788,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               children: [
                 Text(
                   l10n.enableDiscovery,
-                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.titleSmall,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1112,7 +1111,6 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.titleSmall?.metricsOnly.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: isSelected
                           ? colorScheme.onAccentTint
                           : colorScheme.onSurface,

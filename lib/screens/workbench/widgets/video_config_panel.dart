@@ -447,7 +447,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 SizedBox(
                   width: 80,
                   child: Text(_videoParamLabel(l10n, spec.labelKey),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
                 ),
                 Expanded(
                   child: _buildVideoParamControl(spec, model.modelId, appState, colorScheme, l10n),
@@ -591,7 +591,7 @@ class _FrameDropTarget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         DropTarget(
           onDragDone: (details) {

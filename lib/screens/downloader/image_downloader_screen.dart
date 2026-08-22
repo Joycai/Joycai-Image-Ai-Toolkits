@@ -391,7 +391,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                 const SizedBox(width: 9),
                 Text(
                   l10n.logs,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(width: 8),
                 Container(
@@ -403,7 +403,7 @@ class _DownloaderLogPanel extends StatelessWidget {
                   child: Text(
                     '${logs.length}',
                     style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),

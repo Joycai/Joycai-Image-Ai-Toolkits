@@ -35,19 +35,28 @@ class BrowserSelectionBar extends StatelessWidget {
           opacity: visible ? 1 : 0,
           duration: AppMotion.durationOf(context, AppMotion.state),
           curve: AppMotion.enter,
-          child: Material(
-            color: colorScheme.surfaceContainerHigh,
-            elevation: 4,
-            shadowColor: Colors.black.withAlpha(60),
-            borderRadius: BorderRadius.circular(28),
-            child: Padding(
+          // One spec for both bulk-selection bars (this one and the prompts
+          // screen's): neutral surface, pill ends, the overlay rung — not
+          // Material elevation with a black literal that vanishes on a dark
+          // canvas. Neutral because a selection bar is chrome: the accent is
+          // reserved for selection, the primary CTA and badges.
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: colorScheme.shadowOverlay,
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 6, 6, 6),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     l10n.imagesSelected(state.selectedFiles.length),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(width: 12),
                   AppButton(
@@ -76,6 +85,7 @@ class BrowserSelectionBar extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
               ),
             ),
           ),

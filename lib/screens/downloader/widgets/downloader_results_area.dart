@@ -31,14 +31,13 @@ class DownloaderResultsArea extends StatelessWidget {
               children: [
                 Text(
                   l10n.selectImagesToDownload,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   '(${l10n.imagesSelected(selectedCount)})',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const Spacer(),
@@ -154,7 +153,7 @@ class _GuideStep extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 3),
           Text(

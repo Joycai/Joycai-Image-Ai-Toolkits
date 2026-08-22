@@ -148,7 +148,7 @@ class DataSection extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.exportOptions, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(l10n.exportOptions, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 24),
               _buildExportOption(context, l10n.includeDirectories, l10n.includeDirectoriesDesc, d, (v) => setState(() => d = v)),
               const Divider(height: 32),

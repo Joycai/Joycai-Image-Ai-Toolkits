@@ -485,7 +485,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   children: [
                     Text(
                       l10n.appTitle,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ],
                 ),

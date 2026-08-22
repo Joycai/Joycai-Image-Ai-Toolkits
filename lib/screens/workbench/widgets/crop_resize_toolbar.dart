@@ -590,7 +590,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
   /// 8 the track's — see [AppSegmentedControl]. Measured at the selected
   /// weight, which is the wider of the two.
   double _ratioGroupWidth(AppLocalizations l10n, bool allRatios) {
-    final style = Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700);
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600);
     final labels = <String>[
       l10n.cropResizeFreeRatio,
       '1:1',
@@ -801,7 +801,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       child: TextField(
         controller: ctrl,
         decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
       ),
@@ -933,7 +933,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 4, offset: const Offset(0, -2))],
+        boxShadow: colorScheme.shadowRaisedUp,
       ),
       child: SafeArea(
         top: false,
@@ -1002,7 +1002,7 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(l10n.aspectRatio, style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(l10n.aspectRatio, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
             const Divider(height: 1),
             Flexible(

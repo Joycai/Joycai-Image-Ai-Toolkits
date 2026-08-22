@@ -97,7 +97,7 @@ class DownloaderToolbar extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           l10n.imageDownloader,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
       ],
     );

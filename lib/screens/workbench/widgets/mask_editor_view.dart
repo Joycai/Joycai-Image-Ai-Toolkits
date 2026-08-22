@@ -240,13 +240,7 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(_kCanvasImageRadius),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.shadow.withValues(alpha: 0.18),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
+                          boxShadow: colorScheme.shadowPanel,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(_kCanvasImageRadius),

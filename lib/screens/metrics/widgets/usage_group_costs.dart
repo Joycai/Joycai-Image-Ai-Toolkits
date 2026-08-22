@@ -48,7 +48,7 @@ class UsageGroupCosts extends StatelessWidget {
       children: [
         Text(
           l10n.usageByGroup,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 10),
         LayoutBuilder(
@@ -96,7 +96,7 @@ class UsageGroupCosts extends StatelessWidget {
                 Expanded(
                   child: Text(
                     group.name,
-                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    style: textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -105,7 +105,6 @@ class UsageGroupCosts extends StatelessWidget {
                 Text(
                   '\$${cost.toStringAsFixed(4)}',
                   style: textTheme.titleMedium?.mono.copyWith(
-                    fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
                   ),
                 ),

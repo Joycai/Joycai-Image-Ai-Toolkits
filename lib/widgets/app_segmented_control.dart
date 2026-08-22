@@ -197,13 +197,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
         // and a chip is the same size whichever one it is wearing. See
         // [_chipHitDecoration].
         border: Border.all(color: Colors.transparent),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        boxShadow: colorScheme.shadowRaised,
       );
     }
     return BoxDecoration(
@@ -291,7 +285,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
                             ? Theme.of(context).textTheme.labelMedium
                             : Theme.of(context).textTheme.bodySmall)
                         ?.copyWith(
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                       color: tint,
                     ),
                   ),

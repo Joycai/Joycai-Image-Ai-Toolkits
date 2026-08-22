@@ -80,6 +80,7 @@ class ImageCard extends StatefulWidget {
 class _ImageCardState extends State<ImageCard> {
   String _dimensions = "";
   bool _isHovering = false;
+  bool _isPressed = false;
   String? _videoThumbnailPath;
 
   @override
@@ -225,15 +226,34 @@ class _ImageCardState extends State<ImageCard> {
         opacity: 0.3,
         child: _buildCardContent(context, colorScheme, isMobile),
       ),
+      // A drag steals the pointer stream: the Listener below never sees the
+      // up event once the drag proxy takes over, so the press is released
+      // here or it sticks at 0.97 until the next click.
+      onDragStarted: () => setState(() => _isPressed = false),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovering = true),
         onExit: (_) => setState(() => _isHovering = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          onDoubleTap: widget.onDoubleTap,
-          onSecondaryTapDown: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
-          onLongPressStart: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
-          child: _buildCardContent(context, colorScheme, isMobile),
+        // A Listener, not onTapDown: with the double-tap recognizer in the
+        // arena, a quick click's onTapDown fires only after the 300ms
+        // disambiguation timeout — the press would light up after the finger
+        // had already left. The selection *commit* keeps that deferral (click
+        // selects, double-click opens); the feedback must not wait with it.
+        child: Listener(
+          onPointerDown: (_) => setState(() => _isPressed = true),
+          onPointerUp: (_) => setState(() => _isPressed = false),
+          onPointerCancel: (_) => setState(() => _isPressed = false),
+          child: GestureDetector(
+            onTap: widget.onTap,
+            onDoubleTap: widget.onDoubleTap,
+            onSecondaryTapDown: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
+            onLongPressStart: (details) => showImageCardContextMenu(context, imageFile: widget.imageFile, position: details.globalPosition),
+            child: AnimatedScale(
+              scale: _isPressed ? 0.97 : 1.0,
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              curve: AppMotion.enter,
+              child: _buildCardContent(context, colorScheme, isMobile),
+            ),
+          ),
         ),
       ),
     );
@@ -270,13 +290,7 @@ class _ImageCardState extends State<ImageCard> {
               // sits on the window backdrop rather than on a panel since the
               // restyle, and without a shadow the cards read as holes punched
               // in the mesh instead of as tiles laid on it.
-              : [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha: 0.05),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+              : colorScheme.shadowResting,
         ),
         clipBehavior: Clip.antiAlias,
         // A column, not a stack: the file name used to be burned onto the
@@ -377,7 +391,7 @@ class _ImageCardState extends State<ImageCard> {
         '${widget.selectionNumber}',
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
           color: colorScheme.onPrimary,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           height: 1,
         ),
       ),

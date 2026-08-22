@@ -622,7 +622,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 Text(
                   isCreate ? l10n.kbEditProposedCreate : l10n.kbEditProposedUpdate,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.primary,
                   ),
                 ),
@@ -1019,13 +1019,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               // The spec lifts the composer off the transcript rather than
               // leaving it flush with it — it is the one thing on this screen
               // that is always available, whatever is scrolled above it.
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.shadow.withValues(alpha: 0.10),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: colorScheme.shadowOverlay,
             ),
             // Zero here, with the insets carried by the two children instead:
             // the field's own top padding and the footer's bottom one are not
@@ -1281,7 +1275,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                   child: Text(
                     l10n.optAskUserTitle,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       color: colorScheme.primary,
                     ),
                   ),
@@ -1326,7 +1320,7 @@ class _AskUserCardState extends State<_AskUserCard> {
                   question.header,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),

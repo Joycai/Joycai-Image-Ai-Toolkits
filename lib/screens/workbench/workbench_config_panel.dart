@@ -406,7 +406,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   selectedCount == 0
                       ? l10n.processPrompt
                       : l10n.processImages(selectedCount),
-                  style: Theme.of(context).textTheme.titleMedium?.metricsOnly.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.metricsOnly,
                 ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -617,7 +617,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           children: [
             Text(
               l10n.selectedCount(selectedImages.length),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             AppButton(
               label: l10n.clear,
@@ -681,7 +681,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                           '${index + 1}',
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                                 color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 height: 1,
                               ),
                         ),

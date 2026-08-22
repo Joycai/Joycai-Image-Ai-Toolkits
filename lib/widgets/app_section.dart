@@ -25,7 +25,6 @@ class AppSection extends StatelessWidget {
             child: Text(
               title,
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
               ),
             ),

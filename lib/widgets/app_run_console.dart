@@ -259,7 +259,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
               const SizedBox(width: 7),
               Text(
                 '$pct%',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.primary),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.primary),
               ),
             ],
           ],

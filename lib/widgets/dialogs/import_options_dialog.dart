@@ -92,10 +92,7 @@ Future<bool?> showImportOptionsDialog(
             children: [
               Text(
                 l10n.importOptions,
-                style: Theme.of(sheetContext)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(sheetContext).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               _Caption(l10n.importSettingsConfirm),

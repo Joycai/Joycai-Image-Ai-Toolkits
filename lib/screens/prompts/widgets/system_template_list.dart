@@ -58,7 +58,7 @@ class _SystemTemplateListState extends State<SystemTemplateList> {
             const SizedBox(height: 16),
             Text(
               l10n.noPromptsSaved,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+              style: Theme.of(context).textTheme.titleLarge
             ),
             const SizedBox(height: 8),
             Text(

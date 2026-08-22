@@ -236,7 +236,7 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                                 children: [
                                   Text(
                                     activeFile.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(

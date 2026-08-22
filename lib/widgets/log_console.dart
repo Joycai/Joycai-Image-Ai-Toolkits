@@ -191,7 +191,7 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
             style: Theme.of(context)
                 .textTheme
                 .labelSmall
-                ?.copyWith(fontWeight: FontWeight.bold, color: color)),
+                ?.copyWith(fontWeight: FontWeight.w600, color: color)),
         backgroundColor: isSelected ? color.withAlpha(100) : Colors.transparent,
         side: BorderSide(color: color.withAlpha(isSelected ? 255 : 100)),
         padding: EdgeInsets.zero,
@@ -236,7 +236,7 @@ class _LogLine extends StatelessWidget {
               text: '[${log.level}] ',
               style: TextStyle(
                 color: _getLevelColor(log.level, colorScheme, semantic),
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
               ),
             ),
             TextSpan(

@@ -102,7 +102,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           Expanded(
             child: Text(
               l10n.promptLibrary,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           SizedBox(
@@ -144,7 +144,7 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
           return FilterChip(
             label: Text(tag.name, style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400
             )),
             selected: isSelected,
             onSelected: (val) {
@@ -219,7 +219,7 @@ class _CompactPromptCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     prompt.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -235,7 +235,7 @@ class _CompactPromptCard extends StatelessWidget {
                       prompt.tags.first.name,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Color(prompt.tags.first.color),
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
                           ),
                     ),
                   ),

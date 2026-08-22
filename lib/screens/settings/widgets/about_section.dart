@@ -48,7 +48,7 @@ class _AboutSectionState extends State<AboutSection> {
             const SizedBox(height: 12),
             Text(
               l10n.appTitle,
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
             Text(

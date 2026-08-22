@@ -344,7 +344,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                 Text(
                   l10n.contextTokens(_formatTokens(_contextSizes[contextSizeIdx.round()])),
                   style: textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                      ?.copyWith(color: colorScheme.primary),
                 ),
               ],
             ),
@@ -521,7 +521,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         Text(
           title.toUpperCase(),
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
                 letterSpacing: AppType.trackedLabelSpacing,
               ),

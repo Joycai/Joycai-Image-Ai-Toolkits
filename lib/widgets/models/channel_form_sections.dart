@@ -20,7 +20,7 @@ class ChannelSectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
             ),
       ),
@@ -73,7 +73,7 @@ class ChannelAppearanceSection extends StatelessWidget {
         Text(
           l10n.tagColor,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: colorScheme.outline,
               ),
         ),
