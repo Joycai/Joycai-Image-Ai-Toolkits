@@ -209,7 +209,7 @@
   "stepConnectionAppearance": "接続と外観",
   "channelListPreview": "一覧プレビュー",
   "pickerNoMatches": "一致する項目がありません",
-  "pickerMatchCount": "{count} 件",
+  "pickerMatchCount": "{count} 件を表示",
   "@pickerMatchCount": {
     "placeholders": {
       "count": {

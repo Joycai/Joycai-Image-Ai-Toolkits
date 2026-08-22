@@ -387,7 +387,7 @@
   "stepConnectionAppearance": "連線與外觀",
   "channelListPreview": "清單預覽",
   "pickerNoMatches": "沒有符合項目",
-  "pickerMatchCount": "共 {count} 項",
+  "pickerMatchCount": "顯示 {count} 項",
   "@pickerMatchCount": {
     "placeholders": {
       "count": {

@@ -1120,7 +1120,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String pickerMatchCount(int count) {
-    return '$count 件';
+    return '$count 件を表示';
   }
 
   @override

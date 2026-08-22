@@ -1109,7 +1109,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String pickerMatchCount(int count) {
-    return '共 $count 项';
+    return '显示 $count 项';
   }
 
   @override
@@ -3845,7 +3845,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String pickerMatchCount(int count) {
-    return '共 $count 項';
+    return '顯示 $count 項';
   }
 
   @override

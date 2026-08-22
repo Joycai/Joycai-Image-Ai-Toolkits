@@ -33,7 +33,10 @@ extension AppStateWorkbench on AppState {
   /// the write has no business being on that path.
   ///
   /// Still returns the writes' future, so a caller that needs the value on
-  /// disk — a test, or a shutdown path — can wait for it.
+  /// disk — a test, or a shutdown path — can wait for it. No caller does
+  /// today, which is why the failure path is logged here rather than left to
+  /// them: an unobserved rejection is a silent divergence between what the
+  /// panel is showing and what survives a restart.
   Future<void> updateWorkbenchConfig({
     String? modelId,
     String? prompt,
@@ -61,7 +64,16 @@ extension AppStateWorkbench on AppState {
     }
 
     notify();
-    return Future.wait(writes);
+    // Logged rather than left to the caller: [notify] has already run, so the
+    // panel is showing a value the disk may not have. Without this the two
+    // diverge in silence and the next launch quietly reverts the user's
+    // choice. `Future.wait` keeps only the first failure of the set — it
+    // attaches a handler to each write, so nothing escapes to the zone — which
+    // is enough here, since one message naming the failure is the whole
+    // remedy.
+    return Future.wait(writes).then((_) {}).catchError((Object e) {
+      addLog('Failed to persist workbench config: $e', level: 'ERROR');
+    });
   }
 
   /// Records the workbench prompt as the user types.
