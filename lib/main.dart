@@ -278,7 +278,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isMobileUI = Responsive.isMobile(context);
     final isMobilePlatform = Platform.isAndroid || Platform.isIOS;
-    final taskQueue = context.watch<TaskQueueService>();
 
     final allDefinitions = _getNavDefinitions(l10n);
     final filteredDefinitions = isMobilePlatform
@@ -299,10 +298,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       }
     }
 
-    // Badge count: pending + running tasks
-    final taskBadge = taskQueue.queue
+    // Badge count: pending + running tasks.
+    //
+    // `select`, not `watch`. The queue notifies twice a second for as long as
+    // anything is running (its progress timer), and watching it from here —
+    // the shell every screen is drawn inside — rebuilt the nav rail and the
+    // scaffold on every one of those ticks for a number that had not changed.
+    // The active screen itself is a canonicalised const, so it was always
+    // skipped; the chrome around it was not.
+    final taskBadge = context.select<TaskQueueService, int>((q) => q.queue
         .where((t) => t.status == TaskStatus.pending || t.status == TaskStatus.processing)
-        .length;
+        .length);
 
     void onNavSelect(int filteredIdx) {
       final targetScreen = filteredDefinitions[filteredIdx].screen;

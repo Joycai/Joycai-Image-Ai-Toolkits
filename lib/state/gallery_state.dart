@@ -409,6 +409,7 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> _scanFolder(String path) async {
+    _refreshReachability([path]);
     final scanned = await compute(_scanImagesIsolate, [path]);
     _evictChanged([path], scanned);
     folderImages = scanned.keys.map((p) => AppImage.fromFile(File(p))).toList();
@@ -416,13 +417,11 @@ class GalleryState extends ChangeNotifier {
   }
 
   Future<void> _scanImages() async {
-    final newUnreachable = <String>{};
-    for (var path in sourceDirectories) {
-      if (isPathUnreachable(path)) {
-        newUnreachable.add(path);
-      }
-    }
-    unreachableDirectories = newUnreachable;
+    _refreshReachability(sourceDirectories);
+    unreachableDirectories = {
+      for (final path in sourceDirectories)
+        if (isPathUnreachable(path)) path,
+    };
 
     if (activeSourceDirectories.isEmpty) {
       galleryImages = [];
@@ -448,6 +447,8 @@ class GalleryState extends ChangeNotifier {
       notifyListeners();
       return;
     }
+
+    _refreshReachability(scanPaths);
 
     try {
       // Overlapping roots dedupe on the way in — the isolate keys by path.
@@ -512,11 +513,21 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setThumbnailSize(double size) async {
+  /// Resizes the grid, live. Deliberately does not touch the database.
+  ///
+  /// The size comes off a slider, so this is called on every frame of a drag.
+  /// It used to write the setting each time, which put sixty SQLite writes
+  /// through one gesture; the value is persisted once, by
+  /// [persistThumbnailSize], when the drag ends.
+  void setThumbnailSize(double size) {
+    if (thumbnailSize == size) return;
     thumbnailSize = size;
-    await _db.saveSetting('thumbnail_size', size.toString());
     notifyListeners();
   }
+
+  /// Writes the size the user settled on. Call from a slider's `onChangeEnd`.
+  Future<void> persistThumbnailSize() =>
+      _db.saveSetting('thumbnail_size', thumbnailSize.toString());
 
   Future<void> setImagePrefix(String prefix) async {
     imagePrefix = prefix;
@@ -556,5 +567,32 @@ class GalleryState extends ChangeNotifier {
     }
   }
 
-  bool isPathUnreachable(String? path) => FilePermissionService().isPathUnreachable(path);
+  /// Whether the last scan that covered [path] could not read it.
+  ///
+  /// A lookup, not a probe. [FilePermissionService.isPathUnreachable] is an
+  /// `existsSync` plus a blocking `listSync` of the whole directory — it has
+  /// to be, since on the macOS sandbox a directory can exist and still refuse
+  /// to be listed — and the gallery asks this question from its `build`
+  /// method. Answering it live meant enumerating the output folder on the UI
+  /// thread on every rebuild, so the cost of drawing a frame scaled with how
+  /// many results the user had ever generated. The probe now runs once per
+  /// scan, in [_refreshReachability], where a scan already is.
+  bool isPathUnreachable(String? path) =>
+      path != null && path.isNotEmpty && _unreachablePaths.contains(path);
+
+  /// Paths the last scan could not read. See [isPathUnreachable].
+  final Set<String> _unreachablePaths = {};
+
+  /// Re-probes [paths] and folds the answers into [_unreachablePaths].
+  void _refreshReachability(List<String> paths) {
+    final permissions = FilePermissionService();
+    for (final path in paths) {
+      if (path.isEmpty) continue;
+      if (permissions.isPathUnreachable(path)) {
+        _unreachablePaths.add(path);
+      } else {
+        _unreachablePaths.remove(path);
+      }
+    }
+  }
 }

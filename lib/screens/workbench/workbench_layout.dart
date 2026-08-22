@@ -44,6 +44,28 @@ class WorkbenchLayoutState {
 
   void openLeftPanel() => scaffoldKey.currentState?.openDrawer();
   void openRightPanel() => scaffoldKey.currentState?.openEndDrawer();
+
+  // Value equality, because this is handed to `Provider.value` from a build
+  // method — a fresh instance every time. Without it the default
+  // `updateShouldNotify` (`previous != value`) compares identity, so it was
+  // always true and every dependent was notified on every build of the
+  // layout. [WorkbenchTopBar] watches this, and the layout rebuilds on every
+  // frame of a panel drag, where none of these four values move: the drag
+  // changes the panel widths, not the row's width or which side is in a
+  // drawer. These four are the whole class — the getters and the two openers
+  // are derived from them — so equality here is equality of behaviour.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WorkbenchLayoutState &&
+          scaffoldKey == other.scaffoldKey &&
+          contentWidth == other.contentWidth &&
+          leftInDrawer == other.leftInDrawer &&
+          rightInDrawer == other.rightInDrawer;
+
+  @override
+  int get hashCode =>
+      Object.hash(scaffoldKey, contentWidth, leftInDrawer, rightInDrawer);
 }
 
 typedef WorkbenchRightPanelBuilder = Widget Function(ScrollController? scrollController);

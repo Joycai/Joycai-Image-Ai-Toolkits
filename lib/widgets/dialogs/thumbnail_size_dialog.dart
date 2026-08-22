@@ -19,11 +19,14 @@ const double kMaxThumbnailSize = 400;
 ///
 /// [onChanged] fires on every frame of the drag rather than on release: the
 /// grid resizing underneath *is* the preview, so there is nothing to confirm
-/// and the button only dismisses.
+/// and the button only dismisses. [onChangeEnd] is where the value is meant to
+/// be persisted — writing it from [onChanged] would put one database write per
+/// frame of the drag.
 Future<void> showThumbnailSizeDialog(
   BuildContext context, {
   required double initialSize,
   required ValueChanged<double> onChanged,
+  VoidCallback? onChangeEnd,
 }) {
   final l10n = AppLocalizations.of(context)!;
   // Outside the builder, so it survives the rebuilds the drag causes.
@@ -45,6 +48,7 @@ Future<void> showThumbnailSizeDialog(
               setState(() => size = v);
               onChanged(v);
             },
+            onChangeEnd: (_) => onChangeEnd?.call(),
           ),
           Text('${size.toInt()}px', style: Theme.of(context).textTheme.bodyMedium),
         ],

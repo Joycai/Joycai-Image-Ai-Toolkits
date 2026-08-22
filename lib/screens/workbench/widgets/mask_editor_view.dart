@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,11 +21,25 @@ const double _kCanvasImageRadius = AppRadius.xs;
 
 class MaskEditorView extends StatefulWidget {
   final List<DrawingPath> paths;
+
+  /// Ticks whenever [paths] changes.
+  ///
+  /// The list is mutated in place while a stroke is being drawn, so there is
+  /// nothing about the list itself for the canvas to compare against — this is
+  /// what tells it to repaint. A notifier rather than a rebuild from above
+  /// because the screen that owns the strokes draws the whole workbench, and a
+  /// stroke is a drag: see `_WorkbenchScreenState._maskRevision`.
+  final ValueListenable<int> revision;
+
   final Color selectedColor;
   final double brushSize;
   final bool isBinaryMode;
   final GlobalKey repaintKey;
-  final Offset? mousePosition;
+
+  /// Where the pointer is, or null when it has left the canvas. Drives the
+  /// brush preview only, and moves at pointer rate — hence a notifier.
+  final ValueListenable<Offset?> mousePosition;
+
   final Function(Offset) onPanStart;
   final Function(Offset) onPanUpdate;
   final Function(Offset?) onHover;
@@ -32,11 +47,12 @@ class MaskEditorView extends StatefulWidget {
   const MaskEditorView({
     super.key,
     required this.paths,
+    required this.revision,
     required this.selectedColor,
     required this.brushSize,
     required this.isBinaryMode,
     required this.repaintKey,
-    this.mousePosition,
+    required this.mousePosition,
     required this.onPanStart,
     required this.onPanUpdate,
     required this.onHover,
@@ -52,6 +68,26 @@ class _MaskEditorViewState extends State<MaskEditorView> {
   ui.Image? _imageInfo;
   bool _isLoading = true;
   String? _lastPath;
+
+  /// The two canvas notifiers as one listenable, merged once rather than per
+  /// build — `Listenable.merge` allocates, and re-allocating it every build
+  /// would re-subscribe on every frame of a stroke.
+  late Listenable _canvasRepaint;
+
+  @override
+  void initState() {
+    super.initState();
+    _canvasRepaint = Listenable.merge([widget.revision, widget.mousePosition]);
+  }
+
+  @override
+  void didUpdateWidget(covariant MaskEditorView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.revision != widget.revision ||
+        oldWidget.mousePosition != widget.mousePosition) {
+      _canvasRepaint = Listenable.merge([widget.revision, widget.mousePosition]);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -233,15 +269,30 @@ class _MaskEditorViewState extends State<MaskEditorView> {
                                   child: GestureDetector(
                                     onPanStart: (details) => widget.onPanStart(details.localPosition),
                                     onPanUpdate: (details) => widget.onPanUpdate(details.localPosition),
-                                    child: CustomPaint(
-                                      painter: MaskPainter(paths: widget.paths),
-                                      foregroundPainter: widget.mousePosition != null
-                                          ? BrushPreviewPainter(
-                                              position: widget.mousePosition!,
-                                              size: widget.brushSize,
-                                              color: widget.selectedColor,
-                                            )
-                                          : null,
+                                    // Its own boundary inside the export one:
+                                    // strokes and the brush preview repaint
+                                    // without dragging the picture underneath
+                                    // through the rasteriser with them. The
+                                    // export still captures both — a nested
+                                    // boundary is part of the subtree
+                                    // `toImage` composites.
+                                    child: RepaintBoundary(
+                                      child: ListenableBuilder(
+                                        listenable: _canvasRepaint,
+                                        builder: (context, _) {
+                                          final mouse = widget.mousePosition.value;
+                                          return CustomPaint(
+                                            painter: MaskPainter(paths: widget.paths),
+                                            foregroundPainter: mouse != null
+                                                ? BrushPreviewPainter(
+                                                    position: mouse,
+                                                    size: widget.brushSize,
+                                                    color: widget.selectedColor,
+                                                  )
+                                                : null,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ),

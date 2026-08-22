@@ -73,7 +73,20 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   double _maskOpacity = 1.0;
   bool _maskIsBinaryMode = false;
   final GlobalKey _maskRepaintKey = GlobalKey();
-  Offset? _maskMousePosition;
+
+  /// Bumped whenever [_maskPaths] changes in a way only the canvas cares
+  /// about, and where the pointer is.
+  ///
+  /// Both used to be plain fields updated through `setState`, and `setState`
+  /// here rebuilds the *screen*: the top bar, the mask toolbar and the whole
+  /// canvas subtree. `onHover` fires once per mouse move — 120 times a second
+  /// on a fast display — so moving the pointer across the canvas rebuilt the
+  /// entire workbench at pointer rate to move a brush-preview circle. The
+  /// canvas subscribes to these instead and repaints on its own; the screen
+  /// still rebuilds once per stroke, which is what the toolbar's undo/clear
+  /// enablement needs and no more.
+  final ValueNotifier<int> _maskRevision = ValueNotifier<int>(0);
+  final ValueNotifier<Offset?> _maskMouse = ValueNotifier<Offset?>(null);
   
   // Prompt Optimizer State
   final TextEditingController _optInputCtrl = TextEditingController();
@@ -539,8 +552,19 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   // Mask Editor Helpers
-  void _handleMaskUndo() => setState(() { if (_maskPaths.isNotEmpty) _maskPaths.removeLast(); });
-  void _handleMaskClear() => setState(() => _maskPaths.clear());
+  // Both go through setState as well as the revision: they change whether the
+  // toolbar's undo and clear are enabled, which is drawn from this build.
+  void _handleMaskUndo() => setState(() {
+        if (_maskPaths.isNotEmpty) {
+          _maskPaths.removeLast();
+          _maskRevision.value++;
+        }
+      });
+
+  void _handleMaskClear() => setState(() {
+        _maskPaths.clear();
+        _maskRevision.value++;
+      });
   
   Future<void> _handleMaskSave({bool binary = false, bool selectAfterSave = true}) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
@@ -632,6 +656,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     _workbenchUIState?.removeListener(_onWorkbenchUIChanged);
     _taskSubscription?.cancel();
     _tabController.dispose();
+    _maskRevision.dispose();
+    _maskMouse.dispose();
     super.dispose();
   }
 
@@ -689,23 +715,32 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             Expanded(
               child: MaskEditorView(
                 paths: _maskPaths,
+                revision: _maskRevision,
                 selectedColor: _maskSelectedColor.withValues(alpha: _maskOpacity),
                 brushSize: _maskBrushSize,
                 isBinaryMode: _maskIsBinaryMode,
                 repaintKey: _maskRepaintKey,
-                mousePosition: _maskMousePosition,
-                onHover: (pos) => setState(() => _maskMousePosition = pos),
-                onPanStart: (pos) => setState(() {
+                mousePosition: _maskMouse,
+                // No setState: the canvas listens to the notifier. This is the
+                // callback that fires on every mouse move.
+                onHover: (pos) => _maskMouse.value = pos,
+                onPanStart: (pos) {
                   _maskPaths.add(DrawingPath(
-                    points: [pos], 
-                    color: _maskSelectedColor.withValues(alpha: _maskOpacity), 
-                    strokeWidth: _maskBrushSize
+                    points: [pos],
+                    color: _maskSelectedColor.withValues(alpha: _maskOpacity),
+                    strokeWidth: _maskBrushSize,
                   ));
-                }),
-                onPanUpdate: (pos) => setState(() {
+                  _maskRevision.value++;
+                  // Once per stroke, for the toolbar's `hasPaths`.
+                  setState(() {});
+                },
+                // Also no setState: a stroke is a drag, so this runs at
+                // pointer rate for as long as the button is held.
+                onPanUpdate: (pos) {
                   _maskPaths.last.points.add(pos);
-                  _maskMousePosition = pos;
-                }),
+                  _maskRevision.value++;
+                  _maskMouse.value = pos;
+                },
               ),
             ),
           ],
@@ -724,56 +759,65 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         showLeftPanel = false;
         break;
       case 4: // Prompt Optimizer
-        final taskService = Provider.of<TaskQueueService>(context);
-
         centerContent = Consumer<WorkbenchUIState>(
           builder: (context, wui, _) {
             final session = wui.optimizerSession;
             return ListenableBuilder(
               listenable: session,
               builder: (context, _) {
-                final isBusy = session.isRunning ||
-                    taskService.queue.any((t) =>
-                        t.type == TaskType.promptRefine &&
-                        t.parameters['sessionId'] == session.id &&
-                        (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
-                return Column(
-                  children: [
-                    PromptOptimizerToolbar(
-                      onNewSession: () => wui.newOptimizerSession(),
-                      onHistory: _showAssistantHistory,
-                      onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
-                      isRefining: isBusy,
-                      canApply: session.refinedPrompt != null,
-                      modeLabel: switch (session.mode) {
-                        AssistantMode.systemPrompt =>
-                          AppLocalizations.of(context)!.optModeSystemPrompt,
-                        AssistantMode.knowledgeBase =>
-                          AppLocalizations.of(context)!.optModeKnowledge,
-                        AssistantMode.knowledgeEdit =>
-                          AppLocalizations.of(context)!.optModeKnowledgeEdit,
-                      },
-                      modeIcon: switch (session.mode) {
-                        AssistantMode.systemPrompt => Icons.notes_outlined,
-                        AssistantMode.knowledgeBase => Icons.menu_book_outlined,
-                        AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
-                      },
-                    ),
-                    Expanded(
-                      child: _optIsLoadingData
-                          ? const Center(child: CircularProgressIndicator())
-                          : PromptOptimizerChatView(
-                              inputCtrl: _optInputCtrl,
-                              onSend: _handleOptimizerSend,
-                              onRetry: _handleOptimizerRetry,
-                              onApplyPrompt: _handleOptimizerApply,
-                              onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
-                              onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
-                              onAnswerAskUser: _handleAskUserAnswer,
-                              isBusy: isBusy,
-                            ),
-                    ),
-                  ],
+                // A Selector, not a `Provider.of(context)` up in the enclosing
+                // build. Reading the queue there subscribed the *screen* to it,
+                // so the 500ms progress tick of any unrelated image or video
+                // task rebuilt the whole workbench — top bar, toolbar, chat
+                // view and right panel — while this tab was open. The scan
+                // still runs per notification; only a flip of the flag now
+                // costs a rebuild, and only of this subtree.
+                return Selector<TaskQueueService, bool>(
+                  selector: (_, queue) => queue.queue.any((t) =>
+                      t.type == TaskType.promptRefine &&
+                      t.parameters['sessionId'] == session.id &&
+                      (t.status == TaskStatus.pending || t.status == TaskStatus.processing)),
+                  builder: (context, queuedForSession, _) {
+                    final isBusy = session.isRunning || queuedForSession;
+                    return Column(
+                      children: [
+                        PromptOptimizerToolbar(
+                          onNewSession: () => wui.newOptimizerSession(),
+                          onHistory: _showAssistantHistory,
+                          onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
+                          isRefining: isBusy,
+                          canApply: session.refinedPrompt != null,
+                          modeLabel: switch (session.mode) {
+                            AssistantMode.systemPrompt =>
+                              AppLocalizations.of(context)!.optModeSystemPrompt,
+                            AssistantMode.knowledgeBase =>
+                              AppLocalizations.of(context)!.optModeKnowledge,
+                            AssistantMode.knowledgeEdit =>
+                              AppLocalizations.of(context)!.optModeKnowledgeEdit,
+                          },
+                          modeIcon: switch (session.mode) {
+                            AssistantMode.systemPrompt => Icons.notes_outlined,
+                            AssistantMode.knowledgeBase => Icons.menu_book_outlined,
+                            AssistantMode.knowledgeEdit => Icons.edit_note_outlined,
+                          },
+                        ),
+                        Expanded(
+                          child: _optIsLoadingData
+                              ? const Center(child: CircularProgressIndicator())
+                              : PromptOptimizerChatView(
+                                  inputCtrl: _optInputCtrl,
+                                  onSend: _handleOptimizerSend,
+                                  onRetry: _handleOptimizerRetry,
+                                  onApplyPrompt: _handleOptimizerApply,
+                                  onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
+                                  onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
+                                  onAnswerAskUser: _handleAskUserAnswer,
+                                  isBusy: isBusy,
+                                ),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -891,7 +935,14 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
               ),
             );
           case 5:
-            return VideoConfigPanel(scrollController: scrollController);
+            // Const on the inline path, like cases 0 and 1 — see the note
+            // above this builder. A freshly allocated widget is never
+            // identical to the last one, so returning one unconditionally
+            // forced the whole panel to rebuild on every splitter-drag frame
+            // and every AppState notification.
+            return scrollController == null
+                ? const VideoConfigPanel()
+                : VideoConfigPanel(scrollController: scrollController);
           default:
             return const SizedBox.shrink();
         }

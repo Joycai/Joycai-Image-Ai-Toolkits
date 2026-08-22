@@ -147,7 +147,8 @@ class BrowserFilterBar extends StatelessWidget {
               value: state.thumbnailSize,
               min: 80,
               max: 400,
-              onChanged: (v) => state.setThumbnailSize(v),
+              onChanged: state.setThumbnailSize,
+              onChangeEnd: (_) => state.persistThumbnailSize(),
             ),
           ),
         ),
@@ -161,6 +162,7 @@ class BrowserFilterBar extends StatelessWidget {
       context,
       initialSize: state.thumbnailSize,
       onChanged: state.setThumbnailSize,
+      onChangeEnd: state.persistThumbnailSize,
     );
   }
 

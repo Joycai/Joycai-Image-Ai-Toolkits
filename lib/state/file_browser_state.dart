@@ -306,9 +306,15 @@ class FileBrowserState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resizes the grid, live — no database write. See
+  /// [GalleryState.setThumbnailSize] for why the persistence is split out.
   void setThumbnailSize(double size) {
+    if (thumbnailSize == size) return;
     thumbnailSize = size;
-    _db.saveSetting('browser_thumbnail_size', size.toString());
     notifyListeners();
   }
+
+  /// Writes the size the user settled on. Call from a slider's `onChangeEnd`.
+  Future<void> persistThumbnailSize() =>
+      _db.saveSetting('browser_thumbnail_size', thumbnailSize.toString());
 }

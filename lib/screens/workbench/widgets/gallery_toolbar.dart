@@ -422,7 +422,10 @@ class GalleryToolbar extends StatelessWidget {
               value: thumbnailSize,
               min: 80,
               max: 400,
-              onChanged: (v) => galleryState.setThumbnailSize(v),
+              onChanged: galleryState.setThumbnailSize,
+              // Persisted on release, not per frame: the setter is called
+              // sixty times a second while this is dragged.
+              onChangeEnd: (_) => galleryState.persistThumbnailSize(),
             ),
           ),
         ),
@@ -508,6 +511,7 @@ class GalleryToolbar extends StatelessWidget {
       context,
       initialSize: current,
       onChanged: state.setThumbnailSize,
+      onChangeEnd: state.persistThumbnailSize,
     );
   }
 }
