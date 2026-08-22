@@ -7,6 +7,7 @@ import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_side_panel.dart';
+import '../scroll_edge_fade.dart';
 
 /// Prompt-header action that opens the recent-prompt picker for [type].
 ///
@@ -101,8 +102,11 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
     return Column(
       children: [
         _buildHeader(l10n, colorScheme),
-        const Divider(height: 1),
-        Expanded(child: _buildList(l10n, colorScheme)),
+        // A fade, not a divider: the boundary below is a list and the space
+        // it scrolls through, and the 1px rule sliced the top card square.
+        Expanded(
+          child: ScrollEdgeFade(child: _buildList(l10n, colorScheme)),
+        ),
       ],
     );
   }

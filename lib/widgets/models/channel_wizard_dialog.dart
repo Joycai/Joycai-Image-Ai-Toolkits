@@ -381,7 +381,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 12, 10, 6),
       child: Text(
-        text,
+        text.toUpperCase(),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.labelMedium?.copyWith(

@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_semantic_colors.dart';
+import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 import '../models/log_entry.dart';
 import '../state/log_state.dart';
 import 'app_search_field.dart';
 import 'app_snackbar.dart';
-import '../core/design_tokens.dart';
+import 'scroll_edge_fade.dart';
 
 class LogConsoleWidget extends StatefulWidget {
   final bool showHeader;
@@ -84,13 +86,18 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
         Expanded(
           child: Container(
             color: colorScheme.surfaceContainerLowest,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              itemCount: filteredLogs.length,
-              itemBuilder: (context, index) {
-                return _LogLine(log: filteredLogs[index]);
-              },
+            // The toolbar's hard 1px rule used to sit here, slicing whatever
+            // log line was at the boundary; the soft edge says "continues"
+            // and only appears while there is content beyond it.
+            child: ScrollEdgeFade(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: filteredLogs.length,
+                itemBuilder: (context, index) {
+                  return _LogLine(log: filteredLogs[index]);
+                },
+              ),
             ),
           ),
         ),
@@ -101,10 +108,10 @@ class _LogConsoleWidgetState extends State<LogConsoleWidget> {
   Widget _buildToolbar(BuildContext context, LogState logState, ColorScheme colorScheme) {
     return Container(
       height: 40,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
+      // No bottom rule: the region below is a scrolling log, and its top edge
+      // is now a ScrollEdgeFade — a divider on top of that would restate the
+      // boundary the fade exists to soften.
+      color: colorScheme.surfaceContainerLow,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
@@ -221,7 +228,8 @@ class _LogLine extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .labelMedium
-              ?.copyWith(fontFamily: 'monospace', height: AppType.proseHeight),
+              ?.mono
+              .copyWith(height: AppType.proseHeight),
           children: [
             TextSpan(
               text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ',

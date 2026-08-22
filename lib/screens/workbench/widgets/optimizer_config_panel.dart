@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
+import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../services/assistant_context_usage.dart';
@@ -299,9 +300,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
               ),
               child: _ElidedPath(
                 path: widget.kbPath ?? '',
-                style: textTheme.labelSmall?.copyWith(
+                style: textTheme.labelSmall?.mono.copyWith(
                   color: colorScheme.onSurfaceVariant,
-                  fontFamily: 'monospace',
                 ),
               ),
             ),
@@ -453,9 +453,8 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                         path,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
+                        style: textTheme.bodySmall?.mono.copyWith(
                           color: colorScheme.onSurfaceVariant,
-                          fontFamily: 'monospace',
                         ),
                       ),
                     ),

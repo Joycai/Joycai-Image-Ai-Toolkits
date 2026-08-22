@@ -244,8 +244,8 @@ class _VideoControls extends StatelessWidget {
             excluding: value.isPlaying,
             child: AnimatedOpacity(
               opacity: value.isPlaying ? 0.0 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
+              duration: AppMotion.durationOf(context, AppMotion.reveal),
+              curve: AppMotion.enter,
               child: Container(
                 color: Colors.black26,
                 child: Center(

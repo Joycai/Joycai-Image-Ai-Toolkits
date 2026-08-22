@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
@@ -135,9 +136,8 @@ class FolderList extends StatelessWidget {
                     ),
                     child: Text(
                       '${sourceDirectories.length}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'monospace',
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),

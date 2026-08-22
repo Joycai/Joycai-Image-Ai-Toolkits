@@ -428,7 +428,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : null,
         ),
-        if (appState.activeScreenIndex != 0) const TaskCapsuleMonitor(),
+        // Unconditional: the capsule governs its own visibility (queue state
+        // and the workbench check) so it can fade out instead of unmounting
+        // between two frames — a conditional here would cut its exit off.
+        const TaskCapsuleMonitor(),
       ],
     );
   }

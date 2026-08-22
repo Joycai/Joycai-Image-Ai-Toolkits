@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_card.dart';
@@ -28,9 +29,8 @@ class OptimizerReferencePanel extends StatelessWidget {
               ? null
               : Text(
                   '${images.length}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                         color: colorScheme.outline,
-                        fontFamily: 'monospace',
                       ),
                 ),
         ),
@@ -164,9 +164,8 @@ class OptimizerReferencePanel extends StatelessWidget {
                               image.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                                     color: colorScheme.onSurfaceVariant,
-                                    fontFamily: 'monospace',
                                   ),
                             ),
                           ),
@@ -238,9 +237,8 @@ class _Badge extends StatelessWidget {
       child: text != null
           ? Text(
               text!,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'monospace',
                     color: foreground,
                   ),
             )

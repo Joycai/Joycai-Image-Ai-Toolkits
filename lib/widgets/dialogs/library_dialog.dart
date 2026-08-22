@@ -8,6 +8,7 @@ import '../app_button.dart';
 import '../app_empty_state.dart';
 import '../app_search_field.dart';
 import '../app_side_panel.dart';
+import '../scroll_edge_fade.dart';
 
 class PromptLibrarySheet extends StatefulWidget {
   final List<Prompt> allPrompts;
@@ -84,9 +85,12 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
       children: [
         _buildHeader(l10n, colorScheme, isNarrow),
         _buildTagFilterBar(colorScheme),
-        const Divider(height: 1),
+        // A fade, not a divider: the boundary below is a list and the space
+        // it scrolls through, and the 1px rule sliced the top card square.
         Expanded(
-          child: _buildPromptList(filteredPrompts, l10n, colorScheme),
+          child: ScrollEdgeFade(
+            child: _buildPromptList(filteredPrompts, l10n, colorScheme),
+          ),
         ),
       ],
     );

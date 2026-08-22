@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/app_theme.dart';
+import '../core/design_tokens.dart';
 import '../core/responsive.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
@@ -22,8 +24,17 @@ class AppRunConsole extends StatefulWidget {
 }
 
 class _AppRunConsoleState extends State<AppRunConsole> {
+  /// How far past the height limits a drag keeps its bookkeeping, so the
+  /// handle re-engages where the pointer actually is instead of the moment it
+  /// reverses. Same value and reasoning as the workbench's panel slack.
+  static const double _kDragSlack = 24;
+
   double _height = 200;
   bool _heightInitialized = false;
+
+  /// The drag's own accumulator, allowed to run [_kDragSlack] past the limits
+  /// while a drag is in flight. `null` when no drag is active.
+  double? _dragHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +117,7 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                               alignment: Alignment.centerRight,
                               child: Text(
                                 lastLogMessage,
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  fontFamily: 'monospace',
+                                style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                                   color: colorScheme.onSurfaceVariant.withAlpha(160),
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -162,11 +172,19 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           PanelResizer(
             axis: Axis.vertical,
             shape: PanelShape.column,
+            // The accumulator, not the height, absorbs the drag: clamping the
+            // accumulator itself meant that after dragging 200px past a limit
+            // the panel started moving the instant the pointer reversed, with
+            // the pointer still 200px from the handle.
             onDrag: (dy) => setState(() {
-              _height = (_height - dy).clamp(100.0, 600.0);
+              _dragHeight = ((_dragHeight ?? _height) - dy)
+                  .clamp(100.0 - _kDragSlack, 600.0 + _kDragSlack);
+              _height = _dragHeight!.clamp(100.0, 600.0);
             }),
-            onDragEnd: () =>
-                Provider.of<AppState>(context, listen: false).setConsoleHeight(_height),
+            onDragEnd: () {
+              setState(() => _dragHeight = null);
+              Provider.of<AppState>(context, listen: false).setConsoleHeight(_height);
+            },
           )
         else
           // Collapsed there is no gutter to drag, so the hairline is drawn
@@ -179,13 +197,32 @@ class _AppRunConsoleState extends State<AppRunConsole> {
             mainAxisSize: MainAxisSize.min,
             children: [
               statusBar,
-              if (isConsoleExpanded) ...[
-                const Divider(height: 1),
-                SizedBox(
-                  height: _height,
-                  child: const LogConsoleWidget(),
+              // The console used to hard-insert its full height between two
+              // frames; AppMotion.reveal exists for exactly this disclosure.
+              // Duration collapses to zero while the resizer is dragging so
+              // the height tracks the pointer 1:1 — the animation is for the
+              // expand/collapse toggle, never for the drag.
+              ClipRect(
+                child: AnimatedSize(
+                  duration: _dragHeight != null
+                      ? Duration.zero
+                      : AppMotion.durationOf(context, AppMotion.reveal),
+                  curve: AppMotion.enter,
+                  alignment: Alignment.topCenter,
+                  child: isConsoleExpanded
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Divider(height: 1),
+                            SizedBox(
+                              height: _height,
+                              child: const LogConsoleWidget(),
+                            ),
+                          ],
+                        )
+                      : const SizedBox(width: double.infinity),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -337,10 +374,21 @@ class _StatusDotState extends State<_StatusDot>
   late final Animation<double> _scale = Tween<double>(begin: 1.0, end: 0.85)
       .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
+  /// Read in [didChangeDependencies] — initState cannot see MediaQuery.
+  bool _reduced = false;
+
   @override
-  void initState() {
-    super.initState();
-    _syncTicker();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = AppMotion.prefersReduced(context);
+    if (reduced != _reduced) {
+      _reduced = reduced;
+      _syncTicker();
+    } else if (!_controller.isAnimating) {
+      // First build lands here (initState defers to us); later calls with an
+      // unchanged flag are no-ops either way.
+      _syncTicker();
+    }
   }
 
   @override
@@ -350,7 +398,10 @@ class _StatusDotState extends State<_StatusDot>
   }
 
   void _syncTicker() {
-    if (widget.pulsing) {
+    // Reduce-motion counts as not pulsing: this loop is the one motion in the
+    // app that never ends, which makes it the strongest case that setting
+    // has. The colour and the glow still say "working" without movement.
+    if (widget.pulsing && !_reduced) {
       _controller.repeat(reverse: true);
     } else {
       // `stop` rather than `reset`: nothing reads the value while idle, and
@@ -379,7 +430,7 @@ class _StatusDotState extends State<_StatusDot>
       ),
     );
 
-    if (!widget.pulsing) return dot;
+    if (!widget.pulsing || _reduced) return dot;
 
     return AnimatedBuilder(
       animation: _controller,

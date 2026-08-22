@@ -468,7 +468,10 @@ class _WindowButtonState extends State<_WindowButton> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onPressed,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 90),
+            // The 90 is deliberate — the native Windows caption-button rhythm,
+            // documented in plan 002 — but it still routes through durationOf
+            // so reduce-motion reaches it like everything else.
+            duration: AppMotion.durationOf(context, const Duration(milliseconds: 90)),
             // 46 wide is the Windows caption button, which is what the muscle
             // memory in the top-right corner of every other window expects.
             width: 46,
