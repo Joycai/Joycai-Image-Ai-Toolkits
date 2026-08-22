@@ -105,6 +105,7 @@ class MyApp extends StatelessWidget {
       onGenerateTitle: (context) => '${AppLocalizations.of(context)!.appTitle} v$version',
       themeMode: themeMode,
       locale: locale,
+      scrollBehavior: const _AppScrollBehavior(),
       theme: buildAppTheme(
         seedColor: themeSeedColor,
         brightness: Brightness.light,
@@ -147,6 +148,27 @@ class MyApp extends StatelessWidget {
     }
     return app;
   }
+}
+
+/// Rubber-banding on every scrollable, on every platform.
+///
+/// Windows' platform default is [ClampingScrollPhysics]: a fling into either
+/// end stops flat on the boundary frame, with no overscroll signal at all. A
+/// boundary should resist progressively and settle back — continuous
+/// resistance reads as "responsive, but there's nothing more here", where a
+/// hard stop reads as frozen. [RangeMaintainingScrollPhysics] as the parent is
+/// what the framework pairs with bouncing on iOS: it keeps the offset stable
+/// when the content under the scrollable grows or shrinks mid-scroll.
+///
+/// Deliberately not gated on reduce-motion: the bounce only ever happens under
+/// the user's own gesture and moves with it, which is the one kind of motion
+/// that setting does not ask to remove.
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: RangeMaintainingScrollPhysics());
 }
 
 /// Pushes the resolved theme's canvas colour out to the OS title bar.
@@ -352,7 +374,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     isSettingsActive: filteredDefinitions[displayIndex].screen is SettingsScreen,
                     l10n: l10n,
                   ),
-                Expanded(child: screens[displayIndex]),
+                // The same crossfade the channel wizard gives its steps: the
+                // app already had an opinion about moving between sibling
+                // views, it just never applied it at the top level. Keyed by
+                // index, not by widget — the screens are canonicalised consts,
+                // so without a key the switcher would treat every destination
+                // as the same child and never animate.
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: AppMotion.durationOf(context, AppMotion.reveal),
+                    switchInCurve: AppMotion.enter,
+                    switchOutCurve: AppMotion.enter,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(
+                      key: ValueKey(displayIndex),
+                      child: screens[displayIndex],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

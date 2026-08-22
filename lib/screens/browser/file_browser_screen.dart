@@ -383,6 +383,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               file: file,
               isSelected: state.selectedFiles.contains(file),
               thumbnailSize: state.thumbnailSize,
+              heroScope: kBrowserPreviewHeroScope,
               onTap: () => state.toggleSelection(file),
               onDoubleTap: () => _openWithPreview(context, file, state),
               onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
@@ -433,7 +434,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           .map((f) => AppImage(path: f.path, name: f.name))
           .toList();
       final idx = mediaFiles.indexWhere((m) => m.path == file.path);
-      showMediaPreview(context, galleryImages: mediaFiles, initialIndex: idx >= 0 ? idx : 0);
+      // The scope is passed from the list view too: its rows carry no Hero, so
+      // the tag simply finds no match there and the route's fade covers it.
+      showMediaPreview(context, galleryImages: mediaFiles, initialIndex: idx >= 0 ? idx : 0, heroScope: kBrowserPreviewHeroScope);
     } else {
       _handleOpenFile(file);
     }
