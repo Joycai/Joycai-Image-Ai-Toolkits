@@ -53,9 +53,9 @@ class PickerOption<T> {
 /// channel with several hundred image models that is a third of a second of
 /// frozen UI per tap, and it grows with the list. Here the options are built
 /// only when the picker opens, and the picker itself is a `ListView.builder`
-/// with a fixed extent, so opening costs the same whether the channel serves
+/// with a uniform extent, so opening costs the same whether the channel serves
 /// ten models or two thousand.
-class SearchablePickerField<T> extends StatelessWidget {
+class SearchablePickerField<T> extends StatefulWidget {
   const SearchablePickerField({
     super.key,
     required this.selected,
@@ -94,62 +94,101 @@ class SearchablePickerField<T> extends StatelessWidget {
 
   final bool enabled;
 
-  Future<void> _open(BuildContext context) async {
-    final options = optionsBuilder();
+  @override
+  State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
+}
+
+class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
+  /// Held only so they can be handed to [InputDecorator], which draws the
+  /// theme's `focusedBorder` and hover fill from them and otherwise assumes
+  /// both are false. [InkWell] already makes this reachable and activatable by
+  /// keyboard; without these it was the one input in the app where tabbing
+  /// onto it looked the same as tabbing past it.
+  bool _focused = false;
+  bool _hovered = false;
+
+  Future<void> _open() async {
+    final options = widget.optionsBuilder();
     if (options.isEmpty) return;
 
     final picked = await showSearchablePicker<T>(
       context: context,
-      title: dialogTitle ?? hint,
-      icon: dialogIcon,
-      searchHint: searchHint,
+      title: widget.dialogTitle ?? widget.hint,
+      icon: widget.dialogIcon,
+      searchHint: widget.searchHint,
       options: options,
-      selected: selected?.value,
+      selected: widget.selected?.value,
     );
-    if (picked != null) onChanged(picked);
+    // The dialog can outlive this element: the workbench moves its config
+    // panel into a drawer when the window crosses the tablet breakpoint, which
+    // unmounts us with the picker still up. [SearchablePickerField.onChanged]
+    // reaches for the panel's Provider, so calling it then throws on a
+    // deactivated ancestor — the `!mounted` bail `DropdownButton` did for us.
+    if (picked != null && mounted) widget.onChanged(picked);
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final value = selected;
+    final value = widget.selected;
+    final enabled = widget.enabled;
 
     // bodySmall, matching the dense config panels these sit in and the
     // dropdowns they replace.
     final valueStyle = textTheme.bodySmall?.copyWith(
       color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
     );
+    // Disabled *and* empty is the common state of these fields — they are
+    // empty precisely when there is nothing to choose from — so the hint has
+    // to dim with the border and the glyph instead of keeping its enabled tone.
+    final outline =
+        enabled ? colorScheme.outline : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
 
-    return InkWell(
-      onTap: enabled ? () => _open(context) : null,
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      child: InputDecorator(
-        // Border, radius and insets are the theme's; only the trailing glyph
-        // is this widget's own.
-        decoration: InputDecoration(
-          enabled: enabled,
-          suffixIcon: Icon(
-            Icons.unfold_more,
-            size: AppSize.iconSm,
-            color: enabled ? colorScheme.outline : colorScheme.outline.withValues(alpha: AppAlpha.disabled),
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      value: value?.label ?? widget.hint,
+      child: InkWell(
+        onTap: enabled ? _open : null,
+        onFocusChange: (v) => setState(() => _focused = v),
+        onHover: (v) => setState(() => _hovered = v),
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        child: InputDecorator(
+          // Border, radius and insets are the theme's; only the trailing glyph
+          // is this widget's own.
+          decoration: InputDecoration(
+            enabled: enabled,
+            suffixIcon: Icon(Icons.unfold_more, size: AppSize.iconSm, color: outline),
+            suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
           ),
-          suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
+          isFocused: _focused,
+          isHovering: _hovered,
+          // The label sits above this field, drawn by the caller, so there is
+          // never a floating one to make room for.
+          isEmpty: false,
+          child: value == null
+              ? Text(widget.hint, style: valueStyle?.copyWith(color: outline), overflow: TextOverflow.ellipsis)
+              : LayoutBuilder(
+                  builder: (context, constraints) => Row(
+                    children: [
+                      if (value.badge != null) ...[
+                        ConstrainedBox(
+                          // A third of the field, at most. The channel tag is
+                          // free text with no length limit, and unbounded it
+                          // took the whole row at mobile width and left
+                          // `Expanded` nothing — a RenderFlex overflow with
+                          // the name ellipsized away to start with.
+                          constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                          child: _PickerBadge(label: value.badge!, color: value.badgeColor),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(child: Text(value.label, style: valueStyle, overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ),
         ),
-        // The label sits above this field, drawn by the caller, so there is
-        // never a floating one to make room for.
-        isEmpty: false,
-        child: value == null
-            ? Text(hint, style: valueStyle?.copyWith(color: colorScheme.outline), overflow: TextOverflow.ellipsis)
-            : Row(
-                children: [
-                  if (value.badge != null) ...[
-                    _PickerBadge(label: value.badge!, color: value.badgeColor),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(child: Text(value.label, style: valueStyle, overflow: TextOverflow.ellipsis)),
-                ],
-              ),
       ),
     );
   }
@@ -179,14 +218,14 @@ Future<T?> showSearchablePicker<T>({
   );
 }
 
-/// Row heights, fixed so the list can be given an `itemExtent`.
+/// The vertical space a row spends on anything but type: [_PickerRow]'s 2px
+/// bottom gap, its 6px symmetric inset, and the 1px ring the *selected* row
+/// draws top and bottom.
 ///
-/// That is not a cosmetic choice. Without one, a `ListView` must lay out every
-/// row from the top to work out where row 400 starts, which is the cost this
-/// whole widget exists to remove — jumping to the selected row would put it
-/// straight back.
-const double _rowExtentSingle = 40;
-const double _rowExtentDouble = 54;
+/// The ring is counted for every row because `itemExtent` is uniform — the
+/// extent has to fit the tallest row the list can produce, and leaving those
+/// two pixels out overflowed the selected row alone, at every text scale.
+const double _rowChrome = 2 + 12 + 2;
 
 class _SearchablePickerDialog<T> extends StatefulWidget {
   const _SearchablePickerDialog({
@@ -211,7 +250,16 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
   final TextEditingController _searchCtrl = TextEditingController();
   late ScrollController _scrollCtrl;
   late List<PickerOption<T>> _filtered;
-  late final double _rowExtent;
+  late final bool _hasSecondary;
+
+  /// Every row's height, and so the list's `itemExtent`.
+  ///
+  /// Measured from the real text metrics rather than fixed, because
+  /// `itemExtent` hands the row a **tight** box: a constant sized at 1.0 text
+  /// scale stripes every visible row at once when the OS text-size slider
+  /// moves, and a fixed-extent list has no way to absorb it. Zero until the
+  /// first [didChangeDependencies], which always runs before the first build.
+  double _rowExtent = 0;
 
   /// The query the current [_filtered] was computed from.
   ///
@@ -227,18 +275,59 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
   void initState() {
     super.initState();
     _filtered = widget.options;
-    _rowExtent = widget.options.any((o) => o.secondary != null && o.secondary!.isNotEmpty)
-        ? _rowExtentDouble
-        : _rowExtentSingle;
+    _hasSecondary = widget.options.any((o) => o.secondary != null && o.secondary!.isNotEmpty);
+    _searchCtrl.addListener(_onQueryChanged);
+  }
+
+  /// Lays out one line in each of the roles [_PickerRow] uses and adds the
+  /// chrome around them.
+  ///
+  /// Measured rather than derived from a multiplier because the fonts are the
+  /// user's: the settings screen can swap the whole app onto HarmonyOS Sans or
+  /// MiSans, whose line metrics are not the default's. A [TextPainter] answers
+  /// for whatever is actually installed, once per open.
+  double _measureRowExtent() {
+    final textTheme = Theme.of(context).textTheme;
+    final scaler = MediaQuery.textScalerOf(context);
+
+    double lineHeight(TextStyle? style) => (TextPainter(
+          // Ascender and descender both, so the measurement is the font's full
+          // line box rather than the tallest glyph in some particular name.
+          text: TextSpan(text: 'Ag', style: style),
+          textDirection: TextDirection.ltr,
+          textScaler: scaler,
+          maxLines: 1,
+        )..layout())
+            .height;
+
+    return (lineHeight(textTheme.bodySmall) +
+            (_hasSecondary ? lineHeight(textTheme.labelSmall?.mono) : 0) +
+            _rowChrome)
+        .ceilToDouble();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final extent = _measureRowExtent();
+    if (extent == _rowExtent) return;
+
+    final isFirstMeasure = _rowExtent == 0;
+    _rowExtent = extent;
+    // Only the first measurement seeds the scroll offset. A later one means
+    // the text scale changed under an open picker, which should re-lay the
+    // rows but not yank the viewport back to where it opened.
+    if (!isFirstMeasure) return;
 
     // Open with the current selection in view. A multiplication rather than a
-    // walk, which is the point of the fixed extent above; the ScrollPosition
+    // walk, which is the point of the uniform extent; the ScrollPosition
     // clamps an offset past the end for us.
     final index = widget.options.indexWhere((o) => o.value == widget.selected);
     _scrollCtrl = ScrollController(
-      initialScrollOffset: index <= 0 ? 0 : (index * _rowExtent - _rowExtent * 2).clamp(0, double.infinity),
+      initialScrollOffset:
+          index <= 0 ? 0.0 : (index * _rowExtent - _rowExtent * 2).clamp(0.0, double.infinity),
     );
-    _searchCtrl.addListener(_onQueryChanged);
   }
 
   @override
@@ -260,11 +349,19 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     });
     // A narrowed list is a new list; leaving the viewport where it was would
     // show the user its middle.
-    if (_scrollCtrl.hasClients && _scrollCtrl.offset > 0) _scrollCtrl.jumpTo(0);
+    if (_scrollCtrl.hasClients) _scrollCtrl.jumpTo(0);
   }
 
+  /// Enter takes the top match — which only means anything once a query has
+  /// narrowed the list.
+  ///
+  /// With an empty query `_filtered` is still every option, so submitting its
+  /// first entry would replace the user's selection with an unrelated model
+  /// and persist it. The search field autofocuses, so that was one reflexive
+  /// keypress away on every open.
   void _submitFirst() {
-    if (_filtered.isNotEmpty) Navigator.of(context).pop(_filtered.first.value);
+    if (_query.isEmpty || _filtered.isEmpty) return;
+    Navigator.of(context).pop(_filtered.first.value);
   }
 
   @override
@@ -288,8 +385,11 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
       maxWidth: media.width.clamp(280.0, 480.0),
       maxHeight: desired.clamp(240.0, media.height.clamp(280.0, 560.0)),
       // The list reaches the dialog's edges; the search field brings its own
-      // inset.
+      // inset. Full-bleed means the rows' ink and the selected row's filled
+      // box would paint square across the dialog's rounded corners, so the
+      // body has to be clipped to them.
       contentPadding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       // Committing happens on tap, so there is no footer to dismiss from.
       onClose: () => Navigator.of(context).pop(),
       content: Column(
@@ -307,25 +407,34 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
             ),
           ),
           Expanded(
-            child: _filtered.isEmpty
-                ? _EmptyState(label: l10n.pickerNoMatches)
-                : Scrollbar(
+            // The list stays mounted with nothing in it and the empty state
+            // lies over the top, rather than the two swapping places.
+            // Swapping disposed the ScrollPosition, so `hasClients` went false
+            // and the reset in `_onQueryChanged` was skipped; the list that
+            // remounted on the next matching keystroke then re-applied
+            // `initialScrollOffset` and opened at the bottom of the results.
+            child: Stack(
+              children: [
+                Scrollbar(
+                  controller: _scrollCtrl,
+                  child: ListView.builder(
                     controller: _scrollCtrl,
-                    child: ListView.builder(
-                      controller: _scrollCtrl,
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      itemExtent: _rowExtent,
-                      itemCount: _filtered.length,
-                      itemBuilder: (context, i) {
-                        final option = _filtered[i];
-                        return _PickerRow<T>(
-                          option: option,
-                          selected: option.value == widget.selected,
-                          onTap: () => Navigator.of(context).pop(option.value),
-                        );
-                      },
-                    ),
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    itemExtent: _rowExtent,
+                    itemCount: _filtered.length,
+                    itemBuilder: (context, i) {
+                      final option = _filtered[i];
+                      return _PickerRow<T>(
+                        option: option,
+                        selected: option.value == widget.selected,
+                        onTap: () => Navigator.of(context).pop(option.value),
+                      );
+                    },
                   ),
+                ),
+                if (_filtered.isEmpty) Positioned.fill(child: _EmptyState(label: l10n.pickerNoMatches)),
+              ],
+            ),
           ),
         ],
       ),
@@ -366,7 +475,13 @@ class _PickerRow<T> extends StatelessWidget {
               child: Row(
                 children: [
                   if (option.badge != null) ...[
-                    _PickerBadge(label: option.badge!, color: option.badgeColor),
+                    ConstrainedBox(
+                      // Bounded for the same reason as the collapsed field's:
+                      // a long channel tag would otherwise take the row and
+                      // leave `Expanded` nothing to put the name in.
+                      constraints: const BoxConstraints(maxWidth: 120),
+                      child: _PickerBadge(label: option.badge!, color: option.badgeColor),
+                    ),
                     const SizedBox(width: 8),
                   ],
                   Expanded(
@@ -433,6 +548,10 @@ class _PickerBadge extends StatelessWidget {
       ),
       child: Text(
         label,
+        // The tag is free text with no length limit, so the chip has to give
+        // way rather than push its row over. Callers cap the width.
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: tint,
               fontWeight: FontWeight.bold,

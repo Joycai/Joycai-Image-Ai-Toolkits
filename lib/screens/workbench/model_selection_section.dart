@@ -324,16 +324,21 @@ class _LabelledField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        child,
-      ],
+    // Merged so a screen reader announces the caption and the control it names
+    // as one thing. The control carries its own button role and value; without
+    // this the caption is a separate stop that reads "Channel" and nothing else.
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
     );
   }
 }
