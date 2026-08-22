@@ -158,7 +158,7 @@ class UsageList extends StatelessWidget {
                   Flexible(
                     child: Text(
                       name,
-                      style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -170,7 +170,7 @@ class UsageList extends StatelessWidget {
                   // Two sizes, so two slots: standing in for the day's name the
                   // date takes the larger one, beside it the smaller.
                   style: (name == null ? textTheme.bodySmall : textTheme.labelMedium)?.mono.copyWith(
-                    fontWeight: name == null ? FontWeight.w700 : FontWeight.w400,
+                    fontWeight: name == null ? FontWeight.w600 : FontWeight.w400,
                     color: name == null ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -193,7 +193,7 @@ class UsageList extends StatelessWidget {
             Text(
               '\$${total.toStringAsFixed(4)}',
               style: textTheme.bodySmall?.mono.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: usageCostAccent,
               ),
             ),
@@ -414,7 +414,7 @@ class _UsageRowState extends State<_UsageRow> {
               child: Text(
                 match.group(1)!,
                 style: textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: colorScheme.primary,
                 ),
                 maxLines: 1,
@@ -506,7 +506,7 @@ class _UsageRowState extends State<_UsageRow> {
       '\$${cost.toStringAsFixed(4)}',
       textAlign: TextAlign.end,
       style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: cost > 0 ? colorScheme.onSurface : colorScheme.outline,
       ),
     );

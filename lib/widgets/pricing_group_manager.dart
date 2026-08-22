@@ -75,7 +75,7 @@ class PricingGroupManager extends StatelessWidget {
                       children: [
                         Text(
                           l10n.feeGroups,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         Text(
                           l10n.feeGroupDesc,
@@ -122,7 +122,7 @@ class PricingGroupManager extends StatelessWidget {
                   // and it is what the button on the right adds to.
                   Text(
                     l10n.feeGroups,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -215,7 +215,7 @@ class PricingGroupManager extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(l10n.noFeeGroups,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(l10n.feeGroupDesc, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
             const SizedBox(height: 32),
@@ -381,7 +381,7 @@ class _GroupCardState extends State<_GroupCard> {
             children: [
               Text(
                 widget.group.name,
-                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: textTheme.titleMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -436,7 +436,7 @@ class _GroupCardState extends State<_GroupCard> {
         style: Theme.of(context)
             .textTheme
             .labelSmall
-            ?.copyWith(fontWeight: FontWeight.w700, color: accent),
+            ?.copyWith(fontWeight: FontWeight.w600, color: accent),
       ),
     );
   }
@@ -574,7 +574,7 @@ class _GroupCardState extends State<_GroupCard> {
         ),
         maxLines: 1,
         style: (large ? textTheme.titleLarge : textTheme.bodySmall)?.mono.copyWith(
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           fontStyle: inherited ? FontStyle.italic : FontStyle.normal,
           color: inherited ? colorScheme.outline : colorScheme.onSurface,
         ),
@@ -907,7 +907,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
     return TextField(
       controller: ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: textTheme.titleLarge?.mono.copyWith(fontWeight: FontWeight.w700),
+      style: textTheme.titleLarge?.mono,
       onChanged: (_) {
         if (_invalidFields.remove(ctrl)) setState(() {});
       },
@@ -920,8 +920,8 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
         border: _fieldBorder(colorScheme),
         enabledBorder: _fieldBorder(colorScheme),
         focusedBorder: _fieldBorder(colorScheme, color: accent, width: 2),
-        labelStyle: textTheme.titleMedium?.copyWith(color: accent, fontWeight: FontWeight.w700),
-        floatingLabelStyle: textTheme.titleMedium?.copyWith(color: accent, fontWeight: FontWeight.w700),
+        labelStyle: textTheme.titleMedium?.copyWith(color: accent),
+        floatingLabelStyle: textTheme.titleMedium?.copyWith(color: accent),
         prefixIcon: Icon(icon, size: 19, color: accent),
         prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
         hintText: hintText,
@@ -938,7 +938,7 @@ class _PricingGroupEditorState extends State<_PricingGroupEditor> {
             : null,
         suffixText: suffix,
         suffixStyle:
-            textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant),
+            textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       ),
     );

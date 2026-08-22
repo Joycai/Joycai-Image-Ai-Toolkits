@@ -109,7 +109,7 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
           title: Text(
             folderName,
             style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: isViewing ? FontWeight.bold : FontWeight.w500,
+              fontWeight: isViewing ? FontWeight.w600 : FontWeight.w500,
               color: isViewing ? theme.colorScheme.primary : null,
             ),
             overflow: TextOverflow.ellipsis,

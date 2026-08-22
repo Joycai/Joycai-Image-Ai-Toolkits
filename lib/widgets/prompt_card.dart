@@ -123,7 +123,6 @@ class PromptCard extends StatelessWidget {
                   child: Text(
                     prompt.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: isExpanded ? FontWeight.bold : FontWeight.w600,
                           color: isExpanded ? colorScheme.primary : colorScheme.onSurface,
                         ),
                     overflow: TextOverflow.ellipsis,
@@ -264,7 +263,7 @@ class PromptCard extends StatelessWidget {
       child: Text(
         tag,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: color.withAlpha(220),
             ),
       ),

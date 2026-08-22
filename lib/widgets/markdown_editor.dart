@@ -255,7 +255,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             ] else
               Text(
                 widget.label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
               ),
           ],
         ),
@@ -355,7 +355,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                       Expanded(
                         child: Text(
                           widget.label,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.titleMedium,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

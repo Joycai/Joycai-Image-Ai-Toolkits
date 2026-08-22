@@ -38,6 +38,7 @@ class FileCard extends StatefulWidget {
 
 class _FileCardState extends State<FileCard> {
   String _dimensions = "";
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -80,13 +81,25 @@ class _FileCardState extends State<FileCard> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    return GestureDetector(
+    // Same shape as ImageCard's press: a Listener, not onTapDown, because the
+    // double-tap recognizer defers a quick click's onTapDown past the 300ms
+    // disambiguation window. The open/select commits keep their deferral; the
+    // card visibly taking the press does not.
+    return Listener(
+      onPointerDown: (_) => setState(() => _isPressed = true),
+      onPointerUp: (_) => setState(() => _isPressed = false),
+      onPointerCancel: (_) => setState(() => _isPressed = false),
+      child: GestureDetector(
       onTap: widget.onTap,
       onDoubleTap: widget.onDoubleTap,
       onSecondaryTapDown: (details) => widget.onSecondaryTap(details.globalPosition),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: AnimatedContainer(
+        child: AnimatedScale(
+          scale: _isPressed ? 0.97 : 1.0,
+          duration: AppMotion.durationOf(context, AppMotion.hover),
+          curve: AppMotion.enter,
+          child: AnimatedContainer(
           duration: AppMotion.durationOf(context, AppMotion.state),
           curve: AppMotion.enter,
           decoration: BoxDecoration(
@@ -181,7 +194,9 @@ class _FileCardState extends State<FileCard> {
                 ),
             ],
           ),
+          ),
         ),
+      ),
       ),
     );
   }

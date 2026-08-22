@@ -52,7 +52,7 @@ class PromptsSidebar extends StatelessWidget {
             child: Text(
               l10n.categoriesTab,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),

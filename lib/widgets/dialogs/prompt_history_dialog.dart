@@ -117,7 +117,7 @@ class _PromptHistorySheetState extends State<PromptHistorySheet> {
           Expanded(
             child: Text(
               l10n.promptHistory,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           if (widget.entries.isNotEmpty)

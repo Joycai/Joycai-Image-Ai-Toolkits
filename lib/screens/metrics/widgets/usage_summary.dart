@@ -137,7 +137,6 @@ class UsageSummary extends StatelessWidget {
                 child: Text(
                   '\$${stats.totalCost.toStringAsFixed(4)}',
                   style: textTheme.headlineLarge?.mono.copyWith(
-                    fontWeight: FontWeight.w700,
                     color: colorScheme.onSurface,
                     height: AppType.displayHeight,
                   ),
@@ -167,7 +166,7 @@ class UsageSummary extends StatelessWidget {
           child: Text(
             '${_fmt(stats.totalRequestCount)} ${l10n.requests}',
             style: textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: usageRequestAccent,
             ),
           ),
@@ -238,7 +237,6 @@ class UsageSummary extends StatelessWidget {
             child: Text(
               _fmt(value),
               style: textTheme.headlineMedium?.mono.copyWith(
-                fontWeight: FontWeight.w700,
                 color: accent,
                 height: AppType.displayHeight,
               ),
@@ -279,7 +277,6 @@ class UsageSummary extends StatelessWidget {
                 // cache was never asked, which is not the same as never hit.
                 rate == null ? '—' : '${(rate * 100).toStringAsFixed(1)}%',
                 style: textTheme.titleSmall?.mono.copyWith(
-                  fontWeight: FontWeight.w700,
                   color: rate == null ? colorScheme.outline : usageCacheAccent,
                 ),
               ),

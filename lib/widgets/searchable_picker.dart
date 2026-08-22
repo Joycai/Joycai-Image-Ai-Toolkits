@@ -541,7 +541,7 @@ class _PickerRow<T> extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.bodySmall?.copyWith(
                             color: selected ? colorScheme.onAccentTint : colorScheme.onSurface,
-                            fontWeight: selected ? FontWeight.bold : null,
+                            fontWeight: selected ? FontWeight.w600 : null,
                           ),
                         ),
                         if (secondary != null && secondary.isNotEmpty)

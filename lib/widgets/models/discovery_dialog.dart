@@ -227,7 +227,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
             child: Row(
               children: [
                 Text(l10n.modelsDiscovered(_filtered.length),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
                 const Spacer(),
                 if (available.isNotEmpty)
                   AppButton(
@@ -315,7 +315,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(m.displayName, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(m.displayName, style: textTheme.titleMedium),
                     Text(m.modelId, style: textTheme.labelMedium?.copyWith(color: colorScheme.outline)),
                   ],
                 ),
@@ -323,7 +323,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
               if (isAdded)
                 Text(widget.l10n.alreadyAdded,
                     style: textTheme.labelSmall
-                        ?.copyWith(color: colorScheme.outline, fontWeight: FontWeight.bold))
+                        ?.copyWith(color: colorScheme.outline, fontWeight: FontWeight.w600))
               else
                 ModelTagChip(_inferTag(m)),
             ],
@@ -350,7 +350,7 @@ class _DiscoveryDialogState extends State<DiscoveryDialog> {
           children: [
             Icon(icon, size: 64, color: color.withAlpha(150)),
             const SizedBox(height: 24),
-            Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(subtitle,
                 textAlign: TextAlign.center,

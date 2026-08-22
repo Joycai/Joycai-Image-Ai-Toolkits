@@ -186,7 +186,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               children: [
                 Text(
                   l10n.modelManager,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
@@ -238,7 +238,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         title: Text(
                           channel.displayName,
                           style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                             // ListTile tints a selected title with `primary`; the slot
                             // carries `onSurface`, so that tint has to be re-stated or
                             // the selected row loses it.
@@ -284,7 +284,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               children: [
                 Text(
                   channel.displayName,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
@@ -350,10 +350,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       children: [
                         Text(
                           l10n.modelsTab,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         AppButton(
                           label: l10n.addModel,
@@ -438,7 +435,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(model.modelName, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(model.modelName, style: textTheme.titleMedium),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -487,7 +484,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       return CircleAvatar(
         backgroundColor: Color(channel.tagColor ?? AppConstants.defaultTagColor),
         radius: size / 2,
-        child: Text(channel.tag![0].toUpperCase(), style: TextStyle(color: Colors.white, fontSize: size * 0.5, fontWeight: FontWeight.bold)),
+        child: Text(channel.tag![0].toUpperCase(), style: TextStyle(color: Colors.white, fontSize: size * 0.5, fontWeight: FontWeight.w600)),
       );
     }
     return Icon(Icons.cloud_queue, size: size * 0.8);
@@ -512,7 +509,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
             leading: _buildChannelIcon(channel),
-            title: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text(l10n.countModels(models.length),
                 style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
             children: [

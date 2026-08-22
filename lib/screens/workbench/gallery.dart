@@ -112,7 +112,6 @@ class _GalleryState extends State<Gallery> {
                     Text(
                       l10n.dropFilesHere,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary
                       ),
                     ),
@@ -215,7 +214,7 @@ class _GalleryState extends State<Gallery> {
                             child: Text(
                               path,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                                 color: colorScheme.secondary,
                               ),
                             ),

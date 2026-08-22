@@ -73,7 +73,7 @@ class FolderList extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       Platform.isIOS ? l10n.iosSandboxActive : l10n.mobileSandboxActive,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.primary),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -124,7 +124,7 @@ class FolderList extends StatelessWidget {
                 children: [
                   Text(
                     l10n.directories,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(width: 8),
                   Container(
@@ -136,7 +136,7 @@ class FolderList extends StatelessWidget {
                     child: Text(
                       '${sourceDirectories.length}',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         fontFamily: 'monospace',
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -266,7 +266,7 @@ class FolderList extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   color: colorScheme.onSurfaceVariant,
                   letterSpacing: AppType.trackedLabelSpacing,
                 ),
@@ -302,7 +302,7 @@ class FolderList extends StatelessWidget {
       title: Text(
         label,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           color: isSelected ? colorScheme.primary : colorScheme.onSurface,
         ),
       ),

@@ -225,7 +225,7 @@ class _CategoryPill extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: color,
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
@@ -138,12 +139,21 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
   Widget _buildBulkActionFAB(AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isMobile(context);
-    return Card(
-      elevation: 6,
+    // The same spec as the browser's selection bar: neutral surface, pill
+    // ends, the overlay shadow rung. This was a primaryContainer Card at its
+    // own elevation and radius — the accent spent on chrome, and the app's
+    // two bulk-action bars disagreeing on every axis.
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-      color: colorScheme.primaryContainer,
-      child: Padding(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: colorScheme.shadowOverlay,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -156,10 +166,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             const SizedBox(width: 4),
             Text(
               l10n.nSelected(_selectedIds.length),
-              style: TextStyle(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(width: 12),
             const VerticalDivider(width: 1, indent: 8, endIndent: 8),
@@ -192,6 +199,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
               const SizedBox(width: 8),
             ],
           ],
+        ),
         ),
       ),
     );
@@ -397,7 +405,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           Expanded(
             child: Text(
               l10n.promptLibrary,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -463,7 +471,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           const SizedBox(width: 10),
           Text(
             l10n.categoriesTab,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const Spacer(),
           AppButton(
@@ -709,7 +717,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
             return FilterChip(
               label: Text(l10n.filterAll, style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: allSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-                fontWeight: allSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: allSelected ? FontWeight.w600 : FontWeight.w400,
               )),
               selected: allSelected,
               onSelected: (_) => setState(() => _selectedFilterTagIds.clear()),
@@ -731,7 +739,7 @@ class _PromptsScreenState extends State<PromptsScreen> with SingleTickerProvider
           return FilterChip(
             label: Text(tag.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: isSelected ? Colors.white : color,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             )),
             selected: isSelected,
             onSelected: (val) {

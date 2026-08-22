@@ -66,7 +66,7 @@ class ModelTagChip extends StatelessWidget {
         style: Theme.of(context)
             .textTheme
             .labelSmall
-            ?.copyWith(color: color, fontWeight: FontWeight.bold),
+            ?.copyWith(color: color, fontWeight: FontWeight.w600),
       ),
     );
   }

@@ -239,7 +239,7 @@ class _Badge extends StatelessWidget {
           ? Text(
               text!,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     fontFamily: 'monospace',
                     color: foreground,
                   ),

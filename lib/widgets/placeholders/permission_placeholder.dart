@@ -34,7 +34,6 @@ class PermissionPlaceholder extends StatelessWidget {
               service.getPermissionErrorMessage(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: colorScheme.error,
-                    fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 12),

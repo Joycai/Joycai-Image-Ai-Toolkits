@@ -121,7 +121,7 @@ class _TokenUsageScreenState extends State<TokenUsageScreen> {
                       Text(
                         label,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                           color: color,
                         ),
                       ),

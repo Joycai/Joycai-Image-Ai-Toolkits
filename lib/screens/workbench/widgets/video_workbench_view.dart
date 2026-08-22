@@ -140,7 +140,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
                         Expanded(
                           child: Text(
                             l10n.processResults,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
                         IconButton(

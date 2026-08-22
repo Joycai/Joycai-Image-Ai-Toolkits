@@ -483,9 +483,7 @@ class GalleryToolbar extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected ? colorScheme.surface : Colors.transparent,
         borderRadius: BorderRadius.circular(7),
-        boxShadow: selected
-            ? [BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 4, offset: const Offset(0, 1))]
-            : null,
+        boxShadow: selected ? colorScheme.shadowRaised : null,
       ),
       child: Material(
         color: Colors.transparent,

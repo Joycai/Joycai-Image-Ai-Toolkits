@@ -218,7 +218,7 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
               const SizedBox(width: 10),
               Text(
                 widget.l10n.settings,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),
@@ -268,7 +268,7 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
         title: Text(
           _categoryLabel(category, widget.l10n),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             // `onAccentTint` — this label sits *on* the tint above, and
             // `primary` on its own tint is one tone reading against itself:
             // legible in light by luck, washed out in dark where primary is
@@ -312,7 +312,7 @@ class _SettingsTwoPaneViewState extends State<_SettingsTwoPaneView> {
               const SizedBox(width: 10),
               Text(
                 _categoryLabel(_selected, widget.l10n),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),

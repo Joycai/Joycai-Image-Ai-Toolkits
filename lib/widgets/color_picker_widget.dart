@@ -69,7 +69,7 @@ class ColorPickerWidget extends StatelessWidget {
                 .textTheme
                 .labelMedium
                 ?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),

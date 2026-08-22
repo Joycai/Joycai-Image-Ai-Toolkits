@@ -89,18 +89,15 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
               // task list — so it has to read as something laid on top; a grey
               // at 70% reads as a smudge on the content instead.
               color: colorScheme.surfaceContainerLowest.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(24),
+              // dialog, not the 24 this shipped with: 24 is on no rung of
+              // AppRadius, and the capsule is a floating overlay — the one
+              // class of shape allowed to be rounder than a card.
+              borderRadius: BorderRadius.circular(AppRadius.dialog),
               border: Border.all(color: colorScheme.surfaceContainerHigh),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(30),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                )
-              ],
+              boxShadow: colorScheme.shadowOverlay,
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppRadius.dialog),
               // No backdrop blur here: the 92%-opaque fill above hides what a
               // blur would show, while the blur still cost a full backdrop
               // readback every frame the capsule was on screen.
@@ -126,7 +123,6 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                                   ? l10n.runningCount(runningCount)
                                   : l10n.plannedCount(pendingCount),
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurfaceVariant
                                 ),
                               ),
@@ -149,7 +145,6 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                             // it, and a proportional face shifts the chevron
                             // beside it every time a digit changes width.
                             style: Theme.of(context).textTheme.titleSmall?.mono.copyWith(
-                              fontWeight: FontWeight.w900,
                               color: colorScheme.onAccentTint,
                             ),
                           ),

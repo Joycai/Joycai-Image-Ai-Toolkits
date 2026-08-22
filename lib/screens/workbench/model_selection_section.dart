@@ -88,7 +88,7 @@ class ModelSelectionSection extends StatelessWidget {
         initiallyExpanded: isExpanded,
         onExpansionChanged: (_) => onToggleExpansion(),
         leading: Icon(Icons.tune_outlined, size: 20, color: colorScheme.primary),
-        title: Text(l10n.modelSelection, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+        title: Text(l10n.modelSelection, style: Theme.of(context).textTheme.titleSmall),
         subtitle: collapsedModelName != null
             ? Text(collapsedModelName, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline))
             : null,
@@ -253,7 +253,7 @@ class ModelSelectionSection extends StatelessWidget {
         SizedBox(
           width: 80,
           child: Text(_paramLabel(l10n, spec.labelKey),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600)),
         ),
         Expanded(child: control),
       ],
@@ -330,7 +330,7 @@ class _LabelledField extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           child,

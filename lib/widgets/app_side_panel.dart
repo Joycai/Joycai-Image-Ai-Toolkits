@@ -65,6 +65,13 @@ class AppSidePanel extends StatelessWidget {
     return showGeneralDialog<T>(
       context: context,
       barrierDismissible: true,
+      // 25%, not the 50% black showGeneralDialog defaults to. This surface is
+      // a *place* rather than a question, and its promise is that the work it
+      // belongs to stays visible beside it — a half-black scrim is the
+      // opposite of that promise. Dialogs keep their darker black54 (chosen in
+      // dialogTheme): a modal question wants the world dimmed, a parallel
+      // panel wants it merely held.
+      barrierColor: const Color(0x40000000),
       // Material's own translated label, not the bare English "Dismiss" the
       // copies used — this is what a screen reader announces for the barrier.
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
@@ -114,13 +121,7 @@ class AppSidePanel extends StatelessWidget {
         borderRadius: borderRadius,
         boxShadow: isNarrow
             ? null
-            : [
-                BoxShadow(
-                  color: colorScheme.shadow.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(-5, 0),
-                ),
-              ],
+            : colorScheme.shadowPanelSide,
       ),
       // Material, not a plain Container: these panels are lists of ListTiles
       // and InkWells, whose ink a Container swallows.

@@ -39,13 +39,7 @@ class CanvasZoomPill extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: colorScheme.shadowOverlay,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

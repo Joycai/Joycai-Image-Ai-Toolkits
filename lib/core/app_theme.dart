@@ -212,6 +212,29 @@ ThemeData buildAppTheme({
     inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
     switchTheme: _buildSwitchTheme(colorScheme),
     checkboxTheme: _buildCheckboxTheme(colorScheme),
+    // Both values here were previously reached by omission, not choice:
+    // showDialog bottoms out at Colors.black54 and showGeneralDialog at 50%
+    // black, so the app's modal question (a dialog) and its parallel place (a
+    // side panel) drew the same scrim for two presentations that mean
+    // different things. black54 is now *chosen* for dialogs — a modal question
+    // wants the world dimmed — and AppSidePanel declares its own lighter
+    // barrier, because its docstring promises the work stays visible beside
+    // it. The shape reaches the raw `Dialog`s that don't route through
+    // AppDialog (which already draws 16 itself).
+    dialogTheme: DialogThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.dialog)),
+      barrierColor: Colors.black54,
+    ),
+    // The one family of floating surface that never got a calibration pass:
+    // all ~11 context menus rendered at Material's stock corner and lift.
+    // md, not dialog — a menu is a container holding controls, one step out
+    // from the items it wraps, the same rung as a segmented track.
+    popupMenuTheme: PopupMenuThemeData(
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      elevation: 4,
+      shadowColor: colorScheme.shadow,
+    ),
     dividerTheme: DividerThemeData(
       color: colorScheme.outlineVariant,
       thickness: 1,
@@ -417,9 +440,26 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
   // was documented as preserving in fact come from ThemeData's own Typography
   // merge, downstream of this function. Same pixels, one less thing to believe.
   final merged = TextTheme(
+    // The display band. Nothing on the spec's sheets is set this large — these
+    // exist for the usage screen's headline figures and the wizard's welcome
+    // line, which had been falling through to Material's slots *by omission*:
+    // Material's sizes at Material's w400, with call sites stapling w700 back
+    // on. Declared now so the sizes are owned and the weight is the scale's
+    // single heading weight; tracking lands on [AppType.trackingFor]'s 0.0
+    // floor for everything ≥16, which is also what Material happened to give
+    // them — same pixels, no longer a coincidence.
+    headlineLarge: slot(32, FontWeight.w600),
+    headlineMedium: slot(28, FontWeight.w600),
+    headlineSmall: slot(24, FontWeight.w600),
     // 16, not Material's 22 and not the 18 this app shipped before the
     // restyle: the spec's 页面标题 row reads 16/600, and every page mockup
     // draws its heading at that size. It is the only slot the restyle moved.
+    //
+    // w600 is the ruling for every heading slot, adjudicated 2026-08-23: the
+    // spec says 600, the theme said 600, and 47 call sites said w700/bold —
+    // none of which was a decision anyone had made. The call-site overrides
+    // are gone; a heading that wants to be heavier than its slot is now a
+    // change to *this file*, not a copyWith.
     titleLarge: slot(16, FontWeight.w600),
     titleMedium: slot(14, FontWeight.w600),
     titleSmall: slot(13, FontWeight.w600),

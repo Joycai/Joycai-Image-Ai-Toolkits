@@ -116,7 +116,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             itemBuilder: (context, index) {
               final t = templates[index];
               return ListTile(
-                title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(t.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 // ListTile's subtitle slot is `onSurfaceVariant`; the type slot
                 // carries `onSurface`, so the muted tone is restated here.
                 subtitle: Text(
@@ -340,7 +340,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
           const SizedBox(height: 16),
 
           // System template: the whole card opens the picker.
-          Text(l10n.rulesInstructions, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(l10n.rulesInstructions, style: textTheme.titleSmall),
           const SizedBox(height: 8),
           Material(
             color: colorScheme.surfaceContainerHighest.withAlpha(80),
@@ -360,7 +360,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                         children: [
                           Text(
                             _selectedSystemPrompt?.title ?? l10n.noTemplateSelected,
-                            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            style: textTheme.titleSmall,
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (_selectedSystemPrompt != null) ...[
@@ -475,7 +475,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                 Expanded(
                   child: Text(
                     '${l10n.renamePreviewTitle} (${_proposedRenames.length})',
-                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: textTheme.titleSmall,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -581,7 +581,6 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
                       child: Text(
                         item['new_name']!,
                         style: textTheme.titleSmall?.mono.copyWith(
-                          fontWeight: FontWeight.w600,
                           color: hasConflict ? colorScheme.error : colorScheme.onSurface,
                         ),
                         overflow: TextOverflow.ellipsis,

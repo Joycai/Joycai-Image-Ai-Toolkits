@@ -149,7 +149,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               const SizedBox(height: 24),
               Text(
                 l10n.featureLimitedOnMobile,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
               Text(
@@ -218,7 +218,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             children: [
               Text(
                 l10n.fileBrowser,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 3),
               _buildHeaderSummary(fileCount, selectedCount, l10n, colorScheme),

@@ -235,7 +235,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
             children: [
               Text(
                 l10n.taskQueueManager,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 3),
               _buildHeaderSummary(queue, l10n, colorScheme),
@@ -425,7 +425,7 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           const SizedBox(height: 16),
           Text(
             l10n.noTasksInQueue,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(l10n.submitTaskFromWorkbench, style: TextStyle(color: colorScheme.onSurfaceVariant)),
@@ -484,7 +484,7 @@ class _FilterPill extends StatelessWidget {
               Text(
                 label,
                 style: textTheme.bodySmall?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: accent,
                 ),
               ),
@@ -500,7 +500,7 @@ class _FilterPill extends StatelessWidget {
                 child: Text(
                   '$count',
                   style: textTheme.labelMedium?.mono.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: accent,
                   ),
                 ),
@@ -693,7 +693,6 @@ class _TaskCardState extends State<_TaskCard> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
             color: task.status == TaskStatus.cancelled
                 ? colorScheme.onSurfaceVariant
                 : colorScheme.onSurface,
@@ -1276,7 +1275,7 @@ class _MetaBadge extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: color,
         ),
       ),

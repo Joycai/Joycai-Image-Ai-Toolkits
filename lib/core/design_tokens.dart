@@ -274,6 +274,83 @@ extension AppAccent on ColorScheme {
       brightness == Brightness.light ? onPrimaryFixedVariant : onPrimaryContainer;
 }
 
+/// The shadows a floating surface is allowed to cast.
+///
+/// Before this extension the app drew ten hand-typed shadows: six already on
+/// `colorScheme.shadow` at almost-monotonic strengths (.05 → .20), and four on
+/// `Colors.black` literals — which the theme itself warns about ("on a
+/// near-black canvas a grey shadow is invisible"): the scheme's shadow role is
+/// the one colour that knows what brightness it is being cast in, a black
+/// literal is not. Quantised to four rungs the same way [AppRadius] and
+/// [AppAlpha] are, plus two direction variants for edge-anchored chrome.
+///
+/// Not this ladder's business: anything *coloured* — the accent glow on a
+/// selected card, a CTA's tinted lift, chips sitting on user photographs.
+/// Those say something (selection, commitment, legibility over an image) that
+/// a neutral depth cue does not, and they keep their own values.
+extension AppShadow on ColorScheme {
+  /// A tile at rest in a grid. Just enough lift to read as laid on the mesh
+  /// rather than punched through it.
+  List<BoxShadow> get shadowResting => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.05),
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+      ];
+
+  /// A selected chip lifted out of its strip: a raised segment, a toggle
+  /// pill. One step above the row it sits in.
+  List<BoxShadow> get shadowRaised => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.08),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+        ),
+      ];
+
+  /// [shadowRaised] cast upward, for chrome anchored to the bottom edge — a
+  /// mobile toolbar casts onto the content above it.
+  List<BoxShadow> get shadowRaisedUp => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.08),
+          blurRadius: 4,
+          offset: const Offset(0, -2),
+        ),
+      ];
+
+  /// A bar or capsule floating over scrolling content: the task capsule, a
+  /// selection action bar, a canvas overlay, a sticky composer.
+  List<BoxShadow> get shadowOverlay => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.12),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
+  /// The largest floating surfaces — the ones that read as *thick*: an edge
+  /// panel's sheet, the mask editor's lifted canvas. Bigger surfaces cast
+  /// deeper, which is what keeps a 450px panel from reading as a chip.
+  List<BoxShadow> get shadowPanel => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.20),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ];
+
+  /// [shadowPanel] cast sideways, for a panel anchored to the window's right
+  /// edge casting onto the work beside it.
+  List<BoxShadow> get shadowPanelSide => [
+        BoxShadow(
+          color: shadow.withValues(alpha: 0.20),
+          blurRadius: 24,
+          offset: const Offset(-6, 0),
+        ),
+      ];
+}
+
 /// Motion tokens. One duration per job, one curve per direction of travel —
 /// not per hand-typed value. Before this class the app had nine durations
 /// (90–350ms) and three curves doing four jobs, 19 sites shipping Flutter's
