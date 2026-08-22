@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/core/app_theme.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/widgets/models/model_tag_chip.dart';
 import 'package:joycai_image_ai_toolkits/widgets/searchable_picker.dart';
 
 /// Covers [SearchablePickerField]'s load-bearing behaviours, each of which
@@ -166,6 +167,51 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('GPT Image 1'), findsOneWidget);
+  });
+
+  group('rows carrying a tag chip', () {
+    /// A channel row is the awkward shape: a chip and *no* second line. The
+    /// chip is taller than the one line beside it — its padding and ring on
+    /// top of `labelSmall` — so a row extent measured off the text alone
+    /// leaves it short, and a fixed-extent list squeezes the chip rather than
+    /// growing the row.
+    List<PickerOption<int>> channels(int count) => [
+          for (var i = 0; i < count; i++)
+            PickerOption<int>(
+              value: i,
+              label: 'Channel $i',
+              badge: 'prod',
+              badgeColor: const Color(0xFF2196F3),
+            ),
+        ];
+
+    for (final scale in <double>[1.0, 1.5, 2.0]) {
+      testWidgets('the chip keeps its full height at ${scale}x', (tester) async {
+        await tester.pumpWidget(host(
+          channels(20),
+          onChanged: (_) {},
+          selected: 3,
+          textScaler: TextScaler.linear(scale),
+        ));
+        await openPicker(tester);
+
+        final chips = find.descendant(
+          of: find.byType(ListView),
+          matching: find.byType(ModelTagChip),
+        );
+        expect(chips, findsWidgets);
+
+        // Every chip in the list must render at the same height as the one in
+        // the collapsed field above, which has no height pressure on it.
+        final free = tester.getSize(find
+            .descendant(of: find.byType(InputDecorator), matching: find.byType(ModelTagChip))
+            .first);
+        for (final element in chips.evaluate()) {
+          expect((element.renderObject! as RenderBox).size.height, free.height);
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('a picker whose T is itself nullable', () {

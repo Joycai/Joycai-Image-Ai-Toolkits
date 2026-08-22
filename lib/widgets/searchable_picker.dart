@@ -1,10 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
 import 'app_dialog.dart';
+import 'app_empty_state.dart';
 import 'app_search_field.dart';
+import 'models/model_tag_chip.dart';
 
 /// One row of a [SearchablePickerField]'s picker.
 ///
@@ -194,7 +198,7 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
                           // `Expanded` nothing — a RenderFlex overflow with
                           // the name ellipsized away to start with.
                           constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                          child: _PickerBadge(label: value.badge!, color: value.badgeColor),
+                          child: ModelTagChip(value.badge!, color: value.badgeColor, uppercase: false),
                         ),
                         const SizedBox(width: 8),
                       ],
@@ -278,6 +282,7 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
   late ScrollController _scrollCtrl;
   late List<PickerOption<T>> _filtered;
   late final bool _hasSecondary;
+  late final bool _hasBadge;
 
   /// Every row's height, and so the list's `itemExtent`.
   ///
@@ -303,6 +308,7 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
     super.initState();
     _filtered = widget.options;
     _hasSecondary = widget.options.any((o) => o.secondary != null && o.secondary!.isNotEmpty);
+    _hasBadge = widget.options.any((o) => o.badge != null && o.badge!.isNotEmpty);
     _searchCtrl.addListener(_onQueryChanged);
   }
 
@@ -327,10 +333,16 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
         )..layout())
             .height;
 
-    return (lineHeight(textTheme.bodySmall) +
-            (_hasSecondary ? lineHeight(textTheme.labelSmall?.mono) : 0) +
-            _rowChrome)
-        .ceilToDouble();
+    final text = lineHeight(textTheme.bodySmall) +
+        (_hasSecondary ? lineHeight(textTheme.labelSmall?.mono) : 0);
+    // A chip is taller than the single line it sits beside — its own padding
+    // and ring on top of `labelSmall` — so a row of channels, which carries a
+    // tag and no second line, is sized by the chip rather than by its name.
+    // Left out, the chip was silently squeezed instead of the row growing.
+    final badge =
+        _hasBadge ? lineHeight(textTheme.labelSmall) + ModelTagChip.chromeHeight : 0.0;
+
+    return (math.max(text, badge) + _rowChrome).ceilToDouble();
   }
 
   @override
@@ -459,7 +471,14 @@ class _SearchablePickerDialogState<T> extends State<_SearchablePickerDialog<T>> 
                     },
                   ),
                 ),
-                if (_filtered.isEmpty) Positioned.fill(child: _EmptyState(label: l10n.pickerNoMatches)),
+                if (_filtered.isEmpty)
+                  Positioned.fill(
+                    child: AppEmptyState(
+                      icon: Icons.search_off_outlined,
+                      label: l10n.pickerNoMatches,
+                      compact: true,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -507,7 +526,7 @@ class _PickerRow<T> extends StatelessWidget {
                       // a long channel tag would otherwise take the row and
                       // leave `Expanded` nothing to put the name in.
                       constraints: const BoxConstraints(maxWidth: 120),
-                      child: _PickerBadge(label: option.badge!, color: option.badgeColor),
+                      child: ModelTagChip(option.badge!, color: option.badgeColor, uppercase: false),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -546,64 +565,6 @@ class _PickerRow<T> extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The channel tag ahead of a name. Same tint/ring pair as `ModelTagChip`,
-/// which does the same job for a model's kind.
-class _PickerBadge extends StatelessWidget {
-  const _PickerBadge({required this.label, this.color});
-
-  final String label;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    // The channel's own colour when it has one. Deliberately not the theme
-    // accent: this is an identity, and two channels have to stay tellable
-    // apart when the user changes seed.
-    final tint = color ?? Theme.of(context).colorScheme.outline;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: AppAlpha.tint),
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: tint.withValues(alpha: AppAlpha.ring)),
-      ),
-      child: Text(
-        label,
-        // The tag is free text with no length limit, so the chip has to give
-        // way rather than push its row over. Callers cap the width.
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: tint,
-              fontWeight: FontWeight.bold,
-            ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.search_off_outlined, size: 32, color: colorScheme.outlineVariant),
-          const SizedBox(height: 10),
-          Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.outline)),
-        ],
       ),
     );
   }

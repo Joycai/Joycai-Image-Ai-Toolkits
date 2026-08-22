@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -484,7 +485,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Widget _buildChannelIcon(LLMChannel channel, {double size = 24}) {
     if (channel.tag != null && channel.tag!.isNotEmpty) {
       return CircleAvatar(
-        backgroundColor: Color(channel.tagColor ?? 0xFF607D8B),
+        backgroundColor: Color(channel.tagColor ?? AppConstants.defaultTagColor),
         radius: size / 2,
         child: Text(channel.tag![0].toUpperCase(), style: TextStyle(color: Colors.white, fontSize: size * 0.5, fontWeight: FontWeight.bold)),
       );

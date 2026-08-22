@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+
+import '../../core/constants.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_semantic_colors.dart';
@@ -747,7 +749,7 @@ class _TaskCardState extends State<_TaskCard> {
     if (task.channelTag != null) {
       facts.add(_MetaBadge(
         label: task.channelTag!,
-        color: Color(task.channelColor ?? 0xFF607D8B),
+        color: Color(task.channelColor ?? AppConstants.defaultTagColor),
       ));
     }
 

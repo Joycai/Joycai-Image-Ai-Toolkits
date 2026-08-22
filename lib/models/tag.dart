@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants.dart';
 
 class PromptTag {
   final int? id;
@@ -10,7 +11,7 @@ class PromptTag {
   PromptTag({
     this.id,
     required this.name,
-    this.color = 0xFF607D8B,
+    this.color = AppConstants.defaultTagColor,
     this.isSystem = false,
     this.sortOrder = 0,
   });
@@ -19,7 +20,7 @@ class PromptTag {
     return PromptTag(
       id: map['id'] as int?,
       name: map['name'] as String,
-      color: map['color'] as int? ?? 0xFF607D8B,
+      color: map['color'] as int? ?? AppConstants.defaultTagColor,
       isSystem: (map['is_system'] ?? 0) == 1,
       sortOrder: map['sort_order'] as int? ?? 0,
     );
