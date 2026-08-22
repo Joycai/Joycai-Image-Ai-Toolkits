@@ -42,7 +42,7 @@ void showImageCardContextMenu(
       onTap: () {
         final images = appState.galleryState.currentViewImages;
         final idx = images.indexWhere((img) => img.path == imageFile.path);
-        showMediaPreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0);
+        showMediaPreview(context, galleryImages: images, initialIndex: idx >= 0 ? idx : 0, heroScope: kWorkbenchPreviewHeroScope);
       },
     ),
   ];

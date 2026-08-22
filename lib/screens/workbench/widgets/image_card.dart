@@ -14,6 +14,7 @@ import '../../../services/video_thumbnail_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import 'image_card_context_menu.dart';
+import 'preview/media_preview_dialog.dart' show previewHeroTag;
 
 /// Ink laid over a photograph, for the chips that have to stay readable on
 /// top of one.
@@ -56,6 +57,10 @@ class ImageCard extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onDoubleTap;
 
+  /// Hero namespace pairing this tile's thumbnail with the media preview it
+  /// opens into (see [previewHeroTag]); null leaves the tile un-tagged.
+  final String? heroScope;
+
   const ImageCard({
     super.key,
     required this.imageFile,
@@ -63,6 +68,7 @@ class ImageCard extends StatefulWidget {
     required this.thumbnailSize,
     required this.onTap,
     this.onDoubleTap,
+    this.heroScope,
   });
 
   bool get isSelected => selectionNumber > 0;
@@ -285,7 +291,17 @@ class _ImageCardState extends State<ImageCard> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _buildThumbnail(context, colorScheme),
+                    // During a flight the framework hides this child and flies
+                    // the shuttle in the overlay, leaving the tile's ground
+                    // and badges in place — which is exactly the hole a
+                    // promoted photo should leave behind.
+                    if (widget.heroScope == null)
+                      _buildThumbnail(context, colorScheme)
+                    else
+                      Hero(
+                        tag: previewHeroTag(widget.heroScope!, widget.imageFile.path),
+                        child: _buildThumbnail(context, colorScheme),
+                      ),
                     if (_dimensions.isNotEmpty)
                       // Bounded on the right, not just placed on the left.
                       // The badge sizes to its text, and that text is a

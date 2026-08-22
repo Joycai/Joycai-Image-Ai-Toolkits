@@ -5,6 +5,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_decode.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
+import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
 import '../../workbench/widgets/preview/video_thumbnail.dart';
 
 
@@ -16,6 +17,10 @@ class FileCard extends StatefulWidget {
   final VoidCallback? onDoubleTap;
   final Function(Offset) onSecondaryTap;
 
+  /// Hero namespace pairing this card's thumbnail with the media preview it
+  /// opens into (see [previewHeroTag]); null leaves the card un-tagged.
+  final String? heroScope;
+
   const FileCard({
     super.key,
     required this.file,
@@ -24,6 +29,7 @@ class FileCard extends StatefulWidget {
     required this.onTap,
     this.onDoubleTap,
     required this.onSecondaryTap,
+    this.heroScope,
   });
 
   @override
@@ -58,6 +64,18 @@ class _FileCardState extends State<FileCard> {
     }
   }
 
+  /// Tags media thumbnails for the preview's shared-element flight; documents
+  /// never open into the preview, so they stay un-tagged.
+  Widget _maybeHero(Widget thumbnail) {
+    final isMedia = widget.file.category == FileCategory.image ||
+        widget.file.category == FileCategory.video;
+    if (widget.heroScope == null || !isMedia) return thumbnail;
+    return Hero(
+      tag: previewHeroTag(widget.heroScope!, widget.file.path),
+      child: thumbnail,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -90,20 +108,22 @@ class _FileCardState extends State<FileCard> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                                 Expanded(
-                                  child: widget.file.category == FileCategory.image
-                                      ? Image(
-                                          image: ResizeImage(
-                                            widget.file.imageProvider,
-                                            // Snapped to a ladder, not taken
-                                            // at the painted size — see
-                                            // [thumbnailDecodeWidth].
-                                            width: thumbnailDecodeWidth(context, widget.thumbnailSize),
-                                          ),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : widget.file.category == FileCategory.video
-                                          ? VideoThumbnail(videoPath: widget.file.path, fit: BoxFit.cover)
-                                          : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
+                                  child: _maybeHero(
+                                    widget.file.category == FileCategory.image
+                                        ? Image(
+                                            image: ResizeImage(
+                                              widget.file.imageProvider,
+                                              // Snapped to a ladder, not taken
+                                              // at the painted size — see
+                                              // [thumbnailDecodeWidth].
+                                              width: thumbnailDecodeWidth(context, widget.thumbnailSize),
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : widget.file.category == FileCategory.video
+                                            ? VideoThumbnail(videoPath: widget.file.path, fit: BoxFit.cover)
+                                            : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
+                                  ),
                                 ),
                   
                   // A footer strip on the card, not a scrim on the picture.

@@ -257,9 +257,10 @@ class _GalleryState extends State<Gallery> {
                               imageFile: imageFile,
                               selectionNumber: selectionNumber,
                               thumbnailSize: grid.thumbnailSize,
+                              heroScope: kWorkbenchPreviewHeroScope,
                               onTap: () {
                                 if (isVideo) {
-                                  showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
+                                  showMediaPreview(context, galleryImages: images, initialIndex: globalIndex, heroScope: kWorkbenchPreviewHeroScope);
                                 } else {
                                   state.toggleImageSelection(imageFile);
                                 }
@@ -267,7 +268,7 @@ class _GalleryState extends State<Gallery> {
                               onDoubleTap: isVideo
                                   ? null
                                   : () {
-                                      showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
+                                      showMediaPreview(context, galleryImages: images, initialIndex: globalIndex, heroScope: kWorkbenchPreviewHeroScope);
                                     },
                             );
                           },
