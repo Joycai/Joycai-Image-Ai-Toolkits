@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
+import '../../../core/thumbnail_decode.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../services/image_metadata_service.dart';
@@ -183,7 +184,11 @@ class _ImageCardState extends State<ImageCard> {
     return Image(
       image: ResizeImage(
         widget.imageFile.imageProvider,
-        width: width != null ? (width * MediaQuery.devicePixelRatioOf(context)).round() : (widget.thumbnailSize * MediaQuery.devicePixelRatioOf(context)).round(),
+        // Snapped to a ladder rather than taken at the exact painted size —
+        // see [thumbnailDecodeWidth]. The size slider is a drag, and a decode
+        // width that follows it pixel for pixel re-decodes the whole visible
+        // grid on every frame of that drag.
+        width: thumbnailDecodeWidth(context, width ?? widget.thumbnailSize),
       ),
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => Container(

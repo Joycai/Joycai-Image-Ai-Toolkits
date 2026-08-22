@@ -332,7 +332,8 @@ class AppState extends ChangeNotifier {
   Future<void> toggleDirectory(String path) => galleryState.toggleDirectory(path);
   Future<void> addBaseDirectory(String path) => galleryState.addBaseDirectory(path);
   Future<void> removeBaseDirectory(String path) => galleryState.removeBaseDirectory(path);
-  Future<void> setThumbnailSize(double size) => galleryState.setThumbnailSize(size);
+  void setThumbnailSize(double size) => galleryState.setThumbnailSize(size);
+  Future<void> persistThumbnailSize() => galleryState.persistThumbnailSize();
   Future<void> refreshImages() => galleryState.refreshImages();
   void selectAllImages() => galleryState.selectAllImages();
 

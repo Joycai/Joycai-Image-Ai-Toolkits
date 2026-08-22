@@ -32,7 +32,13 @@ class _ComparatorViewState extends State<ComparatorView> {
   /// way.
   bool _mirroring = false;
 
-  double _scanRatio = 0.5;
+  /// Where the reveal curtain sits, 0–1 across the pane.
+  ///
+  /// A notifier rather than a field behind `setState`: it is driven by
+  /// `MouseRegion.onHover`, so it moves at pointer rate, and a rebuild of this
+  /// view reconstructs both full-size image layers and the footer to move a
+  /// clip rect. Only the curtain, the handle and the two badges read it.
+  final ValueNotifier<double> _scanRatio = ValueNotifier<double>(0.5);
 
   @override
   void initState() {
@@ -62,6 +68,7 @@ class _ComparatorViewState extends State<ComparatorView> {
     _afterController.removeListener(_mirrorFromAfter);
     _rawController.dispose();
     _afterController.dispose();
+    _scanRatio.dispose();
     super.dispose();
   }
 
@@ -177,43 +184,68 @@ class _ComparatorViewState extends State<ComparatorView> {
         color: colorScheme.surfaceContainerHighest,
         child: LayoutBuilder(
           builder: (context, constraints) {
+            // Built once per rebuild of this view, and handed to the builders
+            // below as their `child` so the curtain moving never rebuilds
+            // them. These are full-resolution images inside an
+            // InteractiveViewer; reconstructing them per hover event was the
+            // whole cost.
+            final afterLayer = _buildLayer(uiState.comparatorAfterPath, l10n);
+            final rawLayer = _buildLayer(uiState.comparatorRawPath, l10n);
+
             return MouseRegion(
-              onHover: (event) {
-                setState(() {
-                  _scanRatio = (event.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
-                });
-              },
+              onHover: (event) => _scanRatio.value =
+                  (event.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _buildLayer(uiState.comparatorAfterPath, l10n),
-                  ClipRect(
-                    clipper: _CurtainClipper(_scanRatio),
-                    child: _buildLayer(uiState.comparatorRawPath, l10n),
+                  afterLayer,
+                  ValueListenableBuilder<double>(
+                    valueListenable: _scanRatio,
+                    child: rawLayer,
+                    builder: (context, ratio, child) => ClipRect(
+                      clipper: _CurtainClipper(ratio),
+                      child: child,
+                    ),
                   ),
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: constraints.maxWidth * _scanRatio - 20, // wider hit area
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onHorizontalDragUpdate: (details) {
-                        setState(() {
-                          final newPos = constraints.maxWidth * _scanRatio + details.delta.dx;
-                          _scanRatio = (newPos / constraints.maxWidth).clamp(0.0, 1.0);
-                        });
-                      },
-                      child: _CurtainHandle(colorScheme: colorScheme),
+                  // Positioned has to be the Stack's direct child, so the
+                  // listener sits inside a fill and re-positions the handle
+                  // within a nested Stack of its own.
+                  Positioned.fill(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: _scanRatio,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onHorizontalDragUpdate: (details) {
+                          final newPos =
+                              constraints.maxWidth * _scanRatio.value + details.delta.dx;
+                          _scanRatio.value =
+                              (newPos / constraints.maxWidth).clamp(0.0, 1.0);
+                        },
+                        child: _CurtainHandle(colorScheme: colorScheme),
+                      ),
+                      builder: (context, ratio, child) => Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            left: constraints.maxWidth * ratio - 20, // wider hit area
+                            child: child!,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Positioned(
                     top: 10,
                     left: 10,
                     child: IgnorePointer(
-                      child: _RoleBadge(
-                        label: l10n.labelRaw,
-                        isAfter: false,
-                        opacity: (1.0 - _scanRatio).clamp(0.4, 1.0),
+                      child: ValueListenableBuilder<double>(
+                        valueListenable: _scanRatio,
+                        builder: (context, ratio, _) => _RoleBadge(
+                          label: l10n.labelRaw,
+                          isAfter: false,
+                          opacity: (1.0 - ratio).clamp(0.4, 1.0),
+                        ),
                       ),
                     ),
                   ),
@@ -221,10 +253,13 @@ class _ComparatorViewState extends State<ComparatorView> {
                     top: 10,
                     right: 10,
                     child: IgnorePointer(
-                      child: _RoleBadge(
-                        label: l10n.labelAfter,
-                        isAfter: true,
-                        opacity: _scanRatio.clamp(0.4, 1.0),
+                      child: ValueListenableBuilder<double>(
+                        valueListenable: _scanRatio,
+                        builder: (context, ratio, _) => _RoleBadge(
+                          label: l10n.labelAfter,
+                          isAfter: true,
+                          opacity: ratio.clamp(0.4, 1.0),
+                        ),
                       ),
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/thumbnail_decode.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../workbench/widgets/preview/video_thumbnail.dart';
@@ -91,7 +92,10 @@ class _FileCardState extends State<FileCard> {
                                       ? Image(
                                           image: ResizeImage(
                                             widget.file.imageProvider,
-                                            width: (widget.thumbnailSize * MediaQuery.devicePixelRatioOf(context)).round(),
+                                            // Snapped to a ladder, not taken
+                                            // at the painted size — see
+                                            // [thumbnailDecodeWidth].
+                                            width: thumbnailDecodeWidth(context, widget.thumbnailSize),
                                           ),
                                           fit: BoxFit.cover,
                                         )

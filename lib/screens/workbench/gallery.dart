@@ -11,6 +11,48 @@ import '../../widgets/placeholders/permission_placeholder.dart';
 import 'widgets/image_card.dart';
 import 'widgets/preview/media_preview_dialog.dart';
 
+/// Everything the grid reads out of [GalleryState], gathered so the selector
+/// in `build` can compare it in one go.
+///
+/// Pointedly missing: the selection. It is the one thing a plain click
+/// changes, it is read per cell by the `Selector` inside the sliver delegate,
+/// and putting it here would rebuild every visible card for a change that
+/// concerns one of them.
+///
+/// [images] compares by identity, which is what [GalleryState] guarantees —
+/// it always assigns a fresh list before notifying rather than mutating one
+/// in place.
+typedef _GridInputs = ({
+  GalleryViewMode mode,
+  List<AppImage> images,
+  bool isResult,
+  bool isTemp,
+  String? permissionPath,
+  bool isUnreachable,
+  bool isScanning,
+  double thumbnailSize,
+});
+
+_GridInputs _gridInputs(GalleryState s) {
+  final isResult = s.viewMode == GalleryViewMode.processed ||
+      (s.viewMode == GalleryViewMode.folder && s.folderViewIsResult);
+  final isTemp = s.viewMode == GalleryViewMode.temp;
+  final permissionPath = isResult
+      ? s.outputDirectory
+      : (s.viewMode == GalleryViewMode.folder ? s.viewSourcePath : null);
+  return (
+    mode: s.viewMode,
+    images: s.currentViewImages,
+    isResult: isResult,
+    isTemp: isTemp,
+    permissionPath: permissionPath,
+    isUnreachable:
+        !isTemp && permissionPath != null && s.isPathUnreachable(permissionPath),
+    isScanning: s.isScanning,
+    thumbnailSize: s.thumbnailSize,
+  );
+}
+
 class Gallery extends StatefulWidget {
   const Gallery({
     super.key,
@@ -30,7 +72,15 @@ class _GalleryState extends State<Gallery> {
     // AppState no longer re-broadcasts it — going through AppState would mean
     // the grid rebuilt for every unrelated change in the app and, now that the
     // forwarding is gone, would not rebuild for gallery changes at all.
-    final galleryState = context.watch<GalleryState>();
+    //
+    // `select`, not `watch`: a bare watch rebuilt this widget for *every*
+    // GalleryState notification, which replaced the sliver delegate — and
+    // `SliverChildBuilderDelegate.shouldRebuild` is unconditionally true, so
+    // every visible card was rebuilt anyway and the per-cell `Selector` below
+    // absorbed nothing. Selection is the change that matters here: it fires on
+    // every click and it is exactly what those Selectors exist to scope.
+    final galleryState = context.read<GalleryState>();
+    final grid = context.select<GalleryState, _GridInputs>(_gridInputs);
 
     return DropTarget(
       onDragDone: (details) {
@@ -49,7 +99,7 @@ class _GalleryState extends State<Gallery> {
       onDragExited: (details) => setState(() => _isDragging = false),
       child: Stack(
         children: [
-          _buildActiveView(context, galleryState),
+          _buildImageGrid(context, galleryState, grid),
           if (_isDragging)
             Container(
               color: Theme.of(context).colorScheme.primary.withAlpha(40),       
@@ -75,19 +125,6 @@ class _GalleryState extends State<Gallery> {
     );
   }
 
-  Widget _buildActiveView(BuildContext context, GalleryState galleryState) {
-    switch (galleryState.viewMode) {
-      case GalleryViewMode.all:
-        return _buildImageGrid(context, galleryState.galleryImages, galleryState);
-      case GalleryViewMode.processed:
-        return _buildImageGrid(context, galleryState.processedImages, galleryState, isResult: true);
-      case GalleryViewMode.temp:
-        return _buildImageGrid(context, galleryState.droppedImages, galleryState, isTemp: true);
-      case GalleryViewMode.folder:
-        return _buildImageGrid(context, galleryState.folderImages, galleryState, isResult: galleryState.folderViewIsResult);
-    }
-  }
-
   Future<void> _reAuthorize(BuildContext context, GalleryState state, String path, bool isResult) async {
     final String? newPath = await FilePermissionService().reAuthorize(
       path,
@@ -104,21 +141,22 @@ class _GalleryState extends State<Gallery> {
     }
   }
 
-  Widget _buildImageGrid(BuildContext context, List<AppImage> images, GalleryState state, {bool isResult = false, bool isTemp = false}) {
+  Widget _buildImageGrid(BuildContext context, GalleryState state, _GridInputs grid) {
     final l10n = AppLocalizations.of(context)!;
-
-    // Check for macOS permission issues
-    final currentPath = isResult ? state.outputDirectory : (state.viewMode == GalleryViewMode.folder ? state.viewSourcePath : null);
-    final bool isUnreachable = !isTemp && currentPath != null && state.isPathUnreachable(currentPath);
+    final images = grid.images;
+    final isResult = grid.isResult;
+    final isTemp = grid.isTemp;
 
     if (images.isEmpty) {
-      if (isUnreachable) {
+      // macOS permission trouble, as of the last scan — see
+      // [GalleryState.isPathUnreachable].
+      if (grid.isUnreachable) {
         return PermissionPlaceholder(
-          onReAuthorize: () => _reAuthorize(context, state, currentPath, isResult),
+          onReAuthorize: () => _reAuthorize(context, state, grid.permissionPath!, isResult),
         );
       }
 
-      if (state.isScanning) {
+      if (grid.isScanning) {
         return const Center(child: CircularProgressIndicator());
       }
 
@@ -158,7 +196,7 @@ class _GalleryState extends State<Gallery> {
       builder: (context, constraints) {
         if (constraints.maxWidth <= 0) return const SizedBox.shrink();
 
-        final bool showHeaders = !isTemp && (grouped.length > 1 || state.viewMode == GalleryViewMode.all);
+        final bool showHeaders = !isTemp && (grouped.length > 1 || grid.mode == GalleryViewMode.all);
 
         return ExcludeSemantics(
           child: CustomScrollView(
@@ -194,8 +232,8 @@ class _GalleryState extends State<Gallery> {
                 SliverPadding(
                   padding: const EdgeInsets.all(16),
                   sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(       
-                      maxCrossAxisExtent: state.thumbnailSize,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: grid.thumbnailSize,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
                       childAspectRatio: 1,
@@ -219,7 +257,7 @@ class _GalleryState extends State<Gallery> {
                             return ImageCard(
                               imageFile: imageFile,
                               selectionNumber: selectionNumber,
-                              thumbnailSize: state.thumbnailSize,
+                              thumbnailSize: grid.thumbnailSize,
                               onTap: () {
                                 if (isVideo) {
                                   showMediaPreview(context, galleryImages: images, initialIndex: globalIndex);
