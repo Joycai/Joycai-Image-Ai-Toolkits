@@ -50,7 +50,7 @@ void showFileContextMenu({
                 .map((f) => AppImage(path: f.path, name: f.name))
                 .toList();
             final initialIdx = imageFiles.indexWhere((img) => img.path == file.path);
-            showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0);
+            showMediaPreview(context, galleryImages: imageFiles, initialIndex: initialIdx >= 0 ? initialIdx : 0, heroScope: kBrowserPreviewHeroScope);
           },
         ),
       

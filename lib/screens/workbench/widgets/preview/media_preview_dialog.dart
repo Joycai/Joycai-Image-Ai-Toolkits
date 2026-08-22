@@ -8,12 +8,27 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants.dart';
+import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/app_image.dart';
 import '../../../../state/workbench_ui_state.dart';
 import '../../../../widgets/app_snackbar.dart';
 import 'preview_handler.dart';
+
+/// Hero scope for thumbnails in the workbench gallery.
+const String kWorkbenchPreviewHeroScope = 'workbench-gallery';
+
+/// Hero scope for thumbnails in the file browser's grid.
+const String kBrowserPreviewHeroScope = 'file-browser';
+
+/// The tag shared by a grid thumbnail and the preview page it opens into.
+///
+/// [scope] namespaces the grid that owns the thumbnail: the workbench gallery
+/// and the file browser can both be showing the same file, and during the
+/// top-level navigation crossfade both grids are briefly in the tree at once —
+/// un-namespaced, that is a duplicate-tag assertion waiting on unlucky timing.
+String previewHeroTag(String scope, String path) => '$scope::$path';
 
 /// Full-screen, swipeable preview for a list of media files of any supported
 /// type. The dialog itself is file-type agnostic: it owns the chrome (toolbar,
@@ -22,7 +37,11 @@ import 'preview_handler.dart';
 /// [PreviewRegistry]. New file types are added by implementing a handler — no
 /// changes to this widget are required.
 class MediaPreviewDialog extends StatefulWidget {
-  const MediaPreviewDialog({super.key});
+  /// Namespace of the grid whose thumbnail this preview flew out of, or null
+  /// when the opener has no thumbnail to fly back to (list views).
+  final String? heroScope;
+
+  const MediaPreviewDialog({super.key, this.heroScope});
 
   @override
   State<MediaPreviewDialog> createState() => _MediaPreviewDialogState();
@@ -136,6 +155,10 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
       backgroundColor: Colors.black,
       child: CallbackShortcuts(
         bindings: {
+          // Bound here because this is a PageRoute now: showDialog's barrier
+          // used to translate Escape into a pop for free, a PageRoute doesn't.
+          const SingleActivator(LogicalKeyboardKey.escape): () =>
+              Navigator.maybePop(context),
           const SingleActivator(LogicalKeyboardKey.arrowLeft): _prevImage,
           const SingleActivator(LogicalKeyboardKey.arrowRight): () => _nextImage(images.length),
           const SingleActivator(LogicalKeyboardKey.home): () => _jumpToPage(0),
@@ -160,12 +183,24 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                     itemBuilder: (context, index) {
                       final path = images[index].path;
                       final handler = PreviewRegistry.resolve(path);
-                      return Center(
+                      final Widget content = Center(
                         child: handler.buildContent(
                           context,
                           path: path,
                           isActive: index == activeIndex,
                         ),
+                      );
+                      // Only the active page carries the Hero: on pop the
+                      // flight has to leave from whichever page the user
+                      // ended on, not the one they arrived at — and tagging
+                      // every built page would make each one fly at once.
+                      if (widget.heroScope == null || index != activeIndex) {
+                        return content;
+                      }
+                      return Hero(
+                        tag: previewHeroTag(widget.heroScope!, path),
+                        flightShuttleBuilder: _gridThumbnailShuttle,
+                        child: content,
                       );
                     },
                   ),
@@ -302,6 +337,27 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     );
   }
 
+  /// Flies the grid's own thumbnail in both directions.
+  ///
+  /// The default shuttle is the destination hero's child, which on push is
+  /// this page's full content — a video player still initialising (black), or
+  /// a full-resolution image still decoding. The thumbnail the user just
+  /// clicked is the one thing guaranteed to be painted at flight start, so it
+  /// is the material of the flight; the real content fades in with the route
+  /// underneath it, the way a photos app promotes a tile.
+  static Widget _gridThumbnailShuttle(
+    BuildContext flightContext,
+    Animation<double> animation,
+    HeroFlightDirection flightDirection,
+    BuildContext fromHeroContext,
+    BuildContext toHeroContext,
+  ) {
+    final gridHero = flightDirection == HeroFlightDirection.push
+        ? fromHeroContext.widget
+        : toHeroContext.widget;
+    return (gridHero as Hero).child;
+  }
+
   Widget _buildNavButton(IconData icon, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
@@ -318,12 +374,29 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
 
 /// Opens the full-screen [MediaPreviewDialog] for [galleryImages], starting at
 /// [initialIndex].
-void showMediaPreview(BuildContext context, {required List<AppImage> galleryImages, required int initialIndex}) {
+///
+/// [heroScope] names the grid whose thumbnail the preview should fly out of
+/// (and back into); pass one of the `k…PreviewHeroScope` constants from the
+/// same screen that tagged its thumbnails, or nothing from a view with no
+/// thumbnail to fly to. A tagged tile that has been scrolled out of view or
+/// filtered away simply has no match, and the route's own fade covers it.
+void showMediaPreview(BuildContext context,
+    {required List<AppImage> galleryImages, required int initialIndex, String? heroScope}) {
   final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
   workbenchUIState.setPreviewList(galleryImages, initialIndex);
 
-  showDialog(
-    context: context,
-    builder: (context) => const MediaPreviewDialog(),
-  );
+  // A PageRoute, not showDialog: hero flights only trigger between PageRoutes,
+  // and the lightbox is the one dialog in the app with a real spatial origin —
+  // it is always opened from a specific thumbnail. Transparent, so the grid
+  // stays visible under the black as it fades in; that is what the flight
+  // flies over.
+  Navigator.of(context).push(PageRouteBuilder(
+    opaque: false,
+    fullscreenDialog: true,
+    transitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+    reverseTransitionDuration: AppMotion.durationOf(context, AppMotion.reveal),
+    pageBuilder: (_, _, _) => MediaPreviewDialog(heroScope: heroScope),
+    transitionsBuilder: (_, animation, _, child) =>
+        FadeTransition(opacity: animation, child: child),
+  ));
 }
