@@ -631,6 +631,8 @@
   "fontDownloadAction": "下载",
   "fontDownloading": "正在下载字体…",
   "fontDownloadFailed": "字体下载失败，请检查网络后重试。",
+  "preferHighPerformanceGpu": "优先使用高性能 GPU",
+  "preferHighPerformanceGpuDesc": "让 Windows 使用独立显卡运行本应用，下次启动时生效。",
   "reduceVisualEffects": "减少视觉效果",
   "reduceVisualEffectsDesc": "关闭模糊效果，在核显或低性能 GPU 上获得更流畅的体验。",
   "googleGenAiSettings": "Google GenAI REST 设置",
