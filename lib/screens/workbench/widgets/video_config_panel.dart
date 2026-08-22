@@ -98,25 +98,22 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     // Determine selected model
     LLMModel? selectedModel;
 
-    // Through a Set, not a nested `any`: the pair was O(channels × models) on
-    // every build of the panel, which on a relay serving a few hundred video
-    // models is thousands of comparisons per frame to answer a question about
-    // a dozen channels. Same shape the image panel was given in #120.
-    final videoChannelIds = <int?>{};
     if (videoModels.isNotEmpty) {
       final savedModelId = appState.lastVideoModelId;
       final savedDbId = int.tryParse(savedModelId ?? '');
       for (final m in videoModels) {
-        videoChannelIds.add(m.channelId);
-        if (selectedModel == null && (m.id == savedDbId || m.modelId == savedModelId)) {
+        if (m.id == savedDbId || m.modelId == savedModelId) {
           selectedModel = m;
+          break;
         }
       }
 
       selectedModel ??= videoModels.first;
     }
-    final videoChannels =
-        appState.allChannels.where((c) => videoChannelIds.contains(c.id)).toList();
+    // Derived once per data load rather than filtered here; this was a nested
+    // `any` over the model list, O(channels × models) every frame to answer a
+    // question about a dozen rows. See `AppState._channelsServing`.
+    final videoChannels = appState.videoChannels;
     final selectedChannel = videoChannels.cast<LLMChannel?>().firstWhere(
       (c) => c?.id == selectedModel?.channelId,
       orElse: () => null,

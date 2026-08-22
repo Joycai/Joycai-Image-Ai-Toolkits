@@ -192,12 +192,20 @@ class AppState extends ChangeNotifier {
   List<LLMModel> _chatModels = const [];
   List<LLMModel> _multimodalModels = const [];
   List<LLMModel> _videoModels = const [];
+  List<LLMChannel> _imageChannels = const [];
+  List<LLMChannel> _videoChannels = const [];
 
   List<LLMModel> get allModels => _models;
   List<LLMChannel> get allChannels => _channels;
   List<PricingGroup> get allPricingGroups => _pricingGroups;
 
   List<LLMModel> get imageModels => _imageModels;
+
+  /// The channels serving at least one image / video model — the only ones
+  /// worth offering in the corresponding panel's channel picker. See
+  /// [_channelsServing] for why they live here rather than in a `build`.
+  List<LLMChannel> get imageChannels => _imageChannels;
+  List<LLMChannel> get videoChannels => _videoChannels;
   List<LLMModel> get chatModels => _chatModels;
   List<LLMModel> get multimodalModels => _multimodalModels;
   List<LLMModel> get videoModels => _videoModels;
@@ -228,6 +236,25 @@ class AppState extends ChangeNotifier {
     _videoModels = models
         .where((m) => m.tag == ModelTag.video.value && _supportsVideoForType(m))
         .toList(growable: false);
+
+    _imageChannels = _channelsServing(_imageModels, channels);
+    _videoChannels = _channelsServing(_videoModels, channels);
+  }
+
+  /// The channels that serve at least one model of the given kind.
+  ///
+  /// Derived here rather than in each panel's `build`, where both workbench
+  /// panels were filtering [allChannels] with a nested `any` over the model
+  /// list — O(channels × models) every frame to answer a question about a
+  /// dozen rows. Computing it per load also keeps the list's *identity*
+  /// stable, which is what lets `context.select` tell "unchanged" apart from
+  /// "recomputed into an equal but different list".
+  static List<LLMChannel> _channelsServing(
+    List<LLMModel> models,
+    List<LLMChannel> channels,
+  ) {
+    final served = <int?>{for (final m in models) m.channelId};
+    return channels.where((c) => served.contains(c.id)).toList(growable: false);
   }
 
   /// Video LRO is currently implemented by:

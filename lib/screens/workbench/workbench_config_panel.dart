@@ -117,7 +117,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   Widget build(BuildContext context) {
     // Select specific values to rebuild on change
     final imageModels = context.select<AppState, List<LLMModel>>((s) => s.imageModels);
-    final allChannels = context.select<AppState, List<LLMChannel>>((s) => s.allChannels);
+    // The channels that serve an image model, derived once per data load in
+    // `AppState._cacheData` rather than filtered here. Selecting the narrow
+    // view also means adding a chat-only channel no longer rebuilds this panel.
+    final imageChannels = context.select<AppState, List<LLMChannel>>((s) => s.imageChannels);
     final isMarkdownWorkbench = context.select<AppState, bool>((s) => s.isMarkdownWorkbench);
     final lastSelectedModelId = context.select<AppState, String?>((s) => s.lastSelectedModelId);
     final lastPrompt = context.select<AppState, String>((s) => s.lastPrompt);
@@ -131,15 +134,18 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
     int? selectedModelDbId;
     int? selectedChannelId;
     String? selectedModelIdStr;
-    final imageChannelIds = <int?>{};
 
     if (imageModels.isNotEmpty) {
       final savedModelId = lastSelectedModelId;
+      // `int.tryParse` once, rather than `m.id.toString()` per model: the id is
+      // written to the setting as a stringified int, so the old comparison
+      // allocated a throwaway String for every model ahead of the match.
+      final savedDbId = int.tryParse(savedModelId ?? '');
       LLMModel? match;
       for (final m in imageModels) {
-        imageChannelIds.add(m.channelId);
-        if (match == null && (m.id.toString() == savedModelId || m.modelId == savedModelId)) {
+        if (m.id == savedDbId || m.modelId == savedModelId) {
           match = m;
+          break;
         }
       }
 
@@ -237,12 +243,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               availableModels: imageModels,
               // Only offer channels that actually serve image models — a
               // chat-only channel (e.g. DeepSeek) has nothing selectable here.
-              //
-              // Through a Set, not a nested `any`: the pair was O(channels ×
-              // models) on every build of the panel, which on a relay with a
-              // few thousand image models is tens of thousands of comparisons
-              // per frame to answer a question about a dozen channels.
-              channels: allChannels.where((c) => imageChannelIds.contains(c.id)).toList(),
+              channels: imageChannels,
               selectedChannelId: selectedChannelId,
               selectedModelDbId: selectedModelDbId,
               isExpanded: _isModelSettingsExpanded,
