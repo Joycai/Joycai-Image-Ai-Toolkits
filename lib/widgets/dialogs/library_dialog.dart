@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/prompt.dart';
 import '../../models/tag.dart';
 import '../app_button.dart';
+import '../app_empty_state.dart';
 import '../app_search_field.dart';
 import '../app_side_panel.dart';
 
@@ -167,15 +168,9 @@ class _PromptLibrarySheetState extends State<PromptLibrarySheet> {
 
   Widget _buildPromptList(List<Prompt> prompts, AppLocalizations l10n, ColorScheme colorScheme) {
     if (prompts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_outlined, size: 48, color: colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            Text(l10n.noPromptsSaved, style: TextStyle(color: colorScheme.outline)),
-          ],
-        ),
+      return AppEmptyState(
+        icon: Icons.search_off_outlined,
+        label: l10n.noPromptsSaved,
       );
     }
 
