@@ -29,11 +29,11 @@ class BrowserSelectionBar extends StatelessWidget {
       ignoring: !visible,
       child: AnimatedSlide(
         offset: visible ? Offset.zero : const Offset(0, 2),
-        duration: AppMotion.state,
+        duration: AppMotion.durationOf(context, AppMotion.state),
         curve: AppMotion.enter,
         child: AnimatedOpacity(
           opacity: visible ? 1 : 0,
-          duration: AppMotion.state,
+          duration: AppMotion.durationOf(context, AppMotion.state),
           curve: AppMotion.enter,
           child: Material(
             color: colorScheme.surfaceContainerHigh,

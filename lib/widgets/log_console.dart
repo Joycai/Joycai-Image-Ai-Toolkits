@@ -7,6 +7,7 @@ import '../models/log_entry.dart';
 import '../state/log_state.dart';
 import 'app_search_field.dart';
 import 'app_snackbar.dart';
+import '../core/design_tokens.dart';
 
 class LogConsoleWidget extends StatefulWidget {
   final bool showHeader;
@@ -220,7 +221,7 @@ class _LogLine extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .labelMedium
-              ?.copyWith(fontFamily: 'monospace', height: 1.4),
+              ?.copyWith(fontFamily: 'monospace', height: AppType.proseHeight),
           children: [
             TextSpan(
               text: '[${log.timestamp.toIso8601String().split('T').last.substring(0, 8)}] ',

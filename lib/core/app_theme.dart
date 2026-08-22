@@ -390,21 +390,50 @@ CheckboxThemeData _buildCheckboxTheme(ColorScheme colorScheme) {
 /// set one, so text stays tied to [colorScheme] the way Material's own
 /// default theme is, and only size/weight are opinionated here.
 TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
-  final base = ThemeData(useMaterial3: true, colorScheme: colorScheme).textTheme;
+  /// Size, weight, and the tracking that size implies — as one decision.
+  ///
+  /// Tracking used to be omitted here and left to Material, which meant every
+  /// slot carried spacing tuned for *Material's* size rather than the one this
+  /// app renders it at. Because those values are attached per slot, two slots
+  /// at the same size disagreed: 16px came out at 0.0 as `titleLarge` and 0.5
+  /// as `bodyLarge`, 13px at 0.1 as a title and 0.25 as body. Letter spacing
+  /// is a property of the size, so it is derived from it — see
+  /// [AppType.trackingFor] for the ladder and what shipped before it.
+  ///
+  /// Line height is deliberately still Material's. Its ratios already run the
+  /// right way against size (1.27 on the largest slot, ~1.45 on the smallest)
+  /// and they survive the app's smaller sizes intact, being ratios; restating
+  /// them here would be churn dressed as a decision. The place leading *was*
+  /// drifting is call sites, and those now take [AppType.proseHeight] and its
+  /// two neighbours.
+  TextStyle slot(double size, FontWeight weight) => TextStyle(
+        fontSize: size,
+        fontWeight: weight,
+        letterSpacing: AppType.trackingFor(size),
+      );
 
-  final merged = base.merge(const TextTheme(
+  // No `ThemeData(...).textTheme` to merge onto: that getter returns an empty
+  // TextTheme here, so the old `base.merge(...)` was a no-op and the colours it
+  // was documented as preserving in fact come from ThemeData's own Typography
+  // merge, downstream of this function. Same pixels, one less thing to believe.
+  final merged = TextTheme(
     // 16, not Material's 22 and not the 18 this app shipped before the
     // restyle: the spec's 页面标题 row reads 16/600, and every page mockup
     // draws its heading at that size. It is the only slot the restyle moved.
-    titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-    titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-    titleSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-    bodyMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-    bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-    labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-    labelMedium: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
-    labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-  ));
+    titleLarge: slot(16, FontWeight.w600),
+    titleMedium: slot(14, FontWeight.w600),
+    titleSmall: slot(13, FontWeight.w600),
+    // Named even though nothing in the app sets it deliberately: left unset it
+    // is the one slot that keeps Material's own 16px, and it kept Material's
+    // 0.5 tracking with it — so the app rendered 16px at two different
+    // spacings depending on whether a caller reached for a title or a body.
+    bodyLarge: slot(16, FontWeight.w400),
+    bodyMedium: slot(13, FontWeight.w400),
+    bodySmall: slot(12, FontWeight.w400),
+    labelLarge: slot(13, FontWeight.w500),
+    labelMedium: slot(11.5, FontWeight.w500),
+    labelSmall: slot(10, FontWeight.w500),
+  );
 
   // Applied here rather than left to ThemeData's own `fontFamily` parameter:
   // that parameter does not reliably reach every slot of a caller-supplied
@@ -429,6 +458,38 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
 ColorScheme buttonFillScheme(Color seedColor) {
   return ColorScheme.fromSeed(
     seedColor: seedColor,
+    brightness: Brightness.light,
+    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
+}
+
+/// The source red every destructive *fill* is derived from.
+///
+/// Material's own error source. Named rather than inlined because it is the
+/// one hex in this file that is neither a neutral nor the user's seed, and a
+/// reader has to be able to tell it isn't a hand-picked red.
+const Color _errorSource = Color(0xFFB3261E);
+
+/// The scheme a destructive button takes its fill and label from.
+///
+/// [buttonFillScheme]'s counterpart, and it exists for exactly the same reason
+/// — restated because the symmetry is the whole argument. A filled button
+/// needs a *dark, saturated* ground under a light label in both brightnesses;
+/// [ColorScheme.error] is not that. It is tone 40 in light and tone 80 in
+/// dark, because its job is to be legible *as a foreground* — which is right
+/// for [AppButtonVariant.destructiveOutline] and `destructiveText`, and wrong
+/// for a fill. Used as one it produced a pale pink slab with dark text in dark
+/// mode: the app's only irreversible action rendering *lighter* than the
+/// ordinary primary beside it, inverting the emphasis on the one button where
+/// emphasis matters most. At the Rose and Orange seeds the two were also the
+/// same hue family, so colour told the user nothing at all.
+///
+/// Always light + vibrant, so the fill is the same committed red under both
+/// brightnesses — the same trick [buttonFillScheme] plays with the seed, and
+/// the reason it takes no [Brightness].
+ColorScheme errorFillScheme() {
+  return ColorScheme.fromSeed(
+    seedColor: _errorSource,
     brightness: Brightness.light,
     dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
   );

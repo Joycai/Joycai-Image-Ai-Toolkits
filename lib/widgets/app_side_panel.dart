@@ -68,16 +68,33 @@ class AppSidePanel extends StatelessWidget {
       // Material's own translated label, not the bare English "Dismiss" the
       // copies used — this is what a screen reader announces for the barrier.
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: AppMotion.panel,
+      // Read once, here, rather than inside the transition builder: a route's
+      // duration is fixed when it is pushed, so a builder that disagreed with
+      // it would animate against a clock it cannot change.
+      transitionDuration: AppMotion.prefersReduced(context)
+          ? AppMotion.reveal
+          : AppMotion.panel,
       pageBuilder: (context, _, _) => Align(
         alignment: Alignment.centerRight,
         child: AppSidePanel(width: width, child: builder(context)),
       ),
-      transitionBuilder: (context, animation, _, child) => SlideTransition(
-        position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(CurvedAnimation(parent: animation, curve: AppMotion.enter)),
-        child: child,
-      ),
+      // The one transition in the app that does *not* collapse to nothing
+      // under reduce-motion, and the reason `AppMotion.durationOf` documents
+      // this as the exception. 450px of panel appearing between two frames
+      // reads as the screen having changed rather than as something arriving,
+      // which loses the very thing the slide is there to say. A cross-fade is
+      // the non-vestibular equivalent: no travel, same arrival.
+      transitionBuilder: (context, animation, _, child) {
+        final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
+        if (AppMotion.prefersReduced(context)) {
+          return FadeTransition(opacity: curved, child: child);
+        }
+        return SlideTransition(
+          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(curved),
+          child: child,
+        );
+      },
     );
   }
 

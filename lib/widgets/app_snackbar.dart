@@ -53,9 +53,15 @@ class AppSnackBar {
     final colorScheme = Theme.of(context).colorScheme;
     final semantic = context.semantic;
     final (background, foreground, icon) = switch (kind) {
+      // Green from AppSemanticColors, not `primaryContainer`. This was the
+      // seed's own colour, which makes "saved" orange for a user who picked
+      // orange and pink for one who picked rose — the exact failure the
+      // `warning` branch below spends three paragraphs avoiding, and the rule
+      // `design-tokens.md` §3 states outright. Success is a *verdict*, and a
+      // verdict has to mean the same thing at every seed.
       _AppSnackBarKind.success => (
-          colorScheme.primaryContainer,
-          colorScheme.onPrimaryContainer,
+          semantic.successContainer,
+          semantic.onSuccessContainer,
           Icons.check_circle_outline,
         ),
       _AppSnackBarKind.error => (colorScheme.errorContainer, colorScheme.onErrorContainer, Icons.error_outline),

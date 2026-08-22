@@ -151,6 +151,58 @@ void main() {
     });
   });
 
+  group('the destructive fill is a fill, not the error role', () {
+    // The failure this guards ships silently: `colorScheme.error` is tuned to
+    // be legible as a *foreground*, so in dark mode it is a pale tone 80. Used
+    // as a button's background it made the app's only irreversible action a
+    // pale slab with dark text — quieter than the ordinary primary beside it —
+    // and at Rose and Orange the two were the same hue family besides.
+    final errorFill = errorFillScheme();
+
+    test('the fill is dark enough to carry a light label', () {
+      // Committed, not a wash: a pale ground would be readable and still wrong.
+      expect(luminance(errorFill.primary), lessThan(0.25));
+      expect(contrast(errorFill.primary, errorFill.onPrimary), greaterThan(4.5));
+    });
+
+    test('it is not the error *role*, which is what the bug was', () {
+      // Deliberately checked against dark, where the two diverge. In light
+      // they are near enough that the failure was invisible for eight minor
+      // versions; in dark the role is a tone-80 pink, and a filled button
+      // wearing it is the palest thing in the dialog.
+      final dark = buildAppColorScheme(seedColor: Colors.blue, brightness: Brightness.dark);
+      expect(errorFill.primary, isNot(dark.error));
+      expect(luminance(dark.error), greaterThan(0.4),
+          reason: 'if the role ever stops being a light tone in dark, revisit '
+              'errorFillScheme — it exists because of this');
+    });
+
+    // The rule that keeps emphasis honest. Every `buttonFillScheme` primary
+    // lands in a narrow luminance band by construction (light + vibrant is
+    // tone 40 whatever the hue), so the destructive fill belongs in the *same*
+    // band: equally committed, differing only in hue. Anything outside it is
+    // either a pale slab (the bug) or louder than the design allows.
+    //
+    // Not "darker than primary" — that would be a coincidence of the ramp
+    // rather than a rule, and it would fail the day a seed lands a point
+    // lighter. Band membership is the thing that actually has to hold.
+    for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
+      test('it carries the same weight as the primary CTA — ${seed.key}', () {
+        final primaryFill = buttonFillScheme(seed.value);
+        expect(
+          (luminance(errorFill.primary) - luminance(primaryFill.primary)).abs(),
+          lessThan(0.03),
+          reason: 'destructive and primary fills must read as equally committed '
+              'at ${seed.key}; only their hue may differ',
+        );
+        // Both are white-labelled, which is what makes the band comparison
+        // meaningful in the first place.
+        expect(contrast(errorFill.primary, errorFill.onPrimary), greaterThan(4.5));
+        expect(contrast(primaryFill.primary, primaryFill.onPrimary), greaterThan(4.5));
+      });
+    }
+  });
+
   group('geometry ladder', () {
     test('the button constants are aliases of the ladder, not second opinions', () {
       expect(appButtonRadius, AppRadius.control);

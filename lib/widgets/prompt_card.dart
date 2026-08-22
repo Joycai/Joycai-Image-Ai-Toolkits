@@ -70,7 +70,7 @@ class PromptCard extends StatelessWidget {
                   _buildHeader(context, colorScheme),
                   ClipRect(
                     child: AnimatedSize(
-                      duration: AppMotion.reveal,
+                      duration: AppMotion.durationOf(context, AppMotion.reveal),
                       curve: AppMotion.enter,
                       alignment: Alignment.topCenter,
                       child: isExpanded
@@ -109,7 +109,7 @@ class PromptCard extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 AnimatedRotation(
-                  duration: AppMotion.reveal,
+                  duration: AppMotion.durationOf(context, AppMotion.reveal),
                   curve: AppMotion.enter,
                   turns: isExpanded ? 0.25 : 0,
                   child: Icon(
@@ -215,7 +215,7 @@ class PromptCard extends StatelessWidget {
                       data: prompt.content,
                       styleSheet: MarkdownStyleSheet(
                         p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              height: 1.6,
+                              height: AppType.looseHeight,
                               color: colorScheme.onSurface.withAlpha(230),
                             ),
                         code: TextStyle(
@@ -230,7 +230,7 @@ class PromptCard extends StatelessWidget {
                       prompt.content,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                            height: 1.5,
+                            height: AppType.looseHeight,
                           ),
                     ),
                   ),
@@ -266,7 +266,6 @@ class PromptCard extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: color.withAlpha(220),
-              letterSpacing: 0.5,
             ),
       ),
     );

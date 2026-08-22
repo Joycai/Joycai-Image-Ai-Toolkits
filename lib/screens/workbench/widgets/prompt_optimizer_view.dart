@@ -131,7 +131,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     if (!_scrollCtrl.hasClients) return;
     _scrollCtrl.animateTo(
       _scrollCtrl.position.maxScrollExtent,
-      duration: AppMotion.panel,
+      duration: AppMotion.durationOf(context, AppMotion.panel),
       curve: AppMotion.enter,
     );
   }
@@ -201,7 +201,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               Text(
                 l10n.optEmptyChat,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.5),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: AppType.looseHeight),
               ),
             ],
           ),
@@ -457,7 +457,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
             child: SelectableText(
               entry.text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onAccentTint, height: 1.5),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onAccentTint, height: AppType.looseHeight),
             ),
           ),
         );
@@ -481,7 +481,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               data: entry.text,
               selectable: true,
               styleSheet: MarkdownStyleSheet(
-                p: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.4),
+                p: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: AppType.proseHeight),
               ),
             ),
           ),
@@ -558,7 +558,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 ),
                 child: SelectableText(
                   entry.text,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onErrorContainer, height: 1.4),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onErrorContainer, height: AppType.proseHeight),
                 ),
               ),
               // The failed turn's context (user message, tool results) is
@@ -710,7 +710,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 child: SelectableText(
                   content,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    height: 1.45,
+                    height: AppType.proseHeight,
                     fontFamily: 'monospace',
                     color: colorScheme.onSurface,
                   ),
@@ -870,7 +870,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                 data: entry.text,
                 selectable: true,
                 styleSheet: MarkdownStyleSheet(
-                  p: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: 1.45),
+                  p: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface, height: AppType.proseHeight),
                 ),
               ),
               folded: isLong && !expanded,
@@ -1046,7 +1046,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     controller: widget.inputCtrl,
                     minLines: 1,
                     maxLines: maxLines,
-                    style: textTheme.bodyMedium?.copyWith(height: 1.4),
+                    style: textTheme.bodyMedium?.copyWith(height: AppType.proseHeight),
                     decoration: InputDecoration(
                       hintText: l10n.optChatHint,
                       hintStyle: textTheme.bodyMedium?.copyWith(
@@ -1343,7 +1343,7 @@ class _AskUserCardState extends State<_AskUserCard> {
           const SizedBox(height: 4),
           SelectableText(
             question.question,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4, color: colorScheme.onSurface),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: AppType.proseHeight, color: colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -1374,7 +1374,7 @@ class _AskUserCardState extends State<_AskUserCard> {
             enabled: widget.enabled,
             minLines: 1,
             maxLines: 3,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(height: AppType.proseHeight),
             // setState so the confirm button re-evaluates _allAnswered.
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(

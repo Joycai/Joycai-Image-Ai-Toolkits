@@ -107,7 +107,7 @@ class _VideoWorkbenchOverlayState extends State<VideoWorkbenchOverlay> {
         child: TweenAnimationBuilder<double>(
           key: ValueKey(uiState.lastGeneratedVideoPath),
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: AppMotion.panel,
+          duration: AppMotion.durationOf(context, AppMotion.panel),
           curve: AppMotion.enter,
           builder: (context, value, child) {
             return Transform.translate(

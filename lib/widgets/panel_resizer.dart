@@ -124,7 +124,7 @@ class _PanelResizerState extends State<PanelResizer> {
           height: _isHorizontalDrag ? null : thickness,
           child: Center(
             child: AnimatedContainer(
-              duration: AppMotion.hover,
+              duration: AppMotion.durationOf(context, AppMotion.hover),
               curve: AppMotion.enter,
               width: _isHorizontalDrag ? gripThickness : gripLength,
               height: _isHorizontalDrag ? gripLength : gripThickness,

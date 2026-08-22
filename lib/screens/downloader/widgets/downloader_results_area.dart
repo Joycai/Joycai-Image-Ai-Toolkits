@@ -180,7 +180,7 @@ class _SelectionBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: AppMotion.state,
+      duration: AppMotion.durationOf(context, AppMotion.state),
       curve: AppMotion.enter,
       width: 22,
       height: 22,

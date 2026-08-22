@@ -131,7 +131,91 @@ class AppType {
   /// app's `labelMedium` is 11.5px, so the same ratio would be 0.92; rounded to
   /// 1.0, which is what the workbench copy already used and what the eye reads
   /// as "tracked" at this size either way.
+  ///
+  /// This is a *deliberate* opening-up, for a caption set in caps that is
+  /// naming a group. It is not on the [trackingFor] ladder and must not be
+  /// used as though it were: a run of body text at 1.0 is not tracked, it is
+  /// broken.
   static const double trackedLabelSpacing = 1.0;
+
+  /// Tracking for UI text drawn at [fontSize], in logical pixels.
+  ///
+  /// Letter spacing is a function of **size**, never of which slot happened to
+  /// ask. That is the rule the app was breaking in three places at once, and
+  /// the reason this is a ladder rather than a value per slot.
+  ///
+  /// The scale in [buildAppTheme] sets size and weight and left tracking to
+  /// Material, whose values are tuned to *Material's* sizes — all of which
+  /// this app moved. What actually shipped:
+  ///
+  /// | size | slots | tracking |
+  /// |---|---|---|
+  /// | 16 | `titleLarge`, `bodyLarge` | **0.0 and 0.5** |
+  /// | 14 | `titleMedium` | 0.15 |
+  /// | 13 | `titleSmall`, `labelLarge`, `bodyMedium` | **0.1 and 0.25** |
+  /// | 12 | `bodySmall` | 0.4 |
+  /// | 11.5 | `labelMedium` | 0.5 |
+  /// | 10 | `labelSmall` | **0.5 — the same as 11.5** |
+  ///
+  /// Two collisions (the same size set two ways depending on the slot name)
+  /// and one flat step at the bottom, where tracking should be opening up
+  /// fastest. A 16px heading and a 16px paragraph are the same letters at the
+  /// same size; nothing about the slot they came from should move them apart.
+  ///
+  /// The ladder below is monotonic and runs the right way: ~0 at the top of
+  /// the scale, opening steadily as the text gets smaller, because small text
+  /// needs the air and large text reads as loose if it keeps it. In em that is
+  /// 0 · .007 · .012 · .025 · .035 · .05. Sizes off the ladder interpolate
+  /// between their neighbours rather than snapping, so a slot added at 15px
+  /// does not land on a step by luck.
+  static double trackingFor(double fontSize) {
+    const ladder = <(double size, double tracking)>[
+      (10.0, 0.5),
+      (11.5, 0.4),
+      (12.0, 0.3),
+      (13.0, 0.15),
+      (14.0, 0.1),
+      (16.0, 0.0),
+    ];
+
+    if (fontSize <= ladder.first.$1) return ladder.first.$2;
+    if (fontSize >= ladder.last.$1) return ladder.last.$2;
+    for (int i = 0; i < ladder.length - 1; i++) {
+      final (lowSize, lowTrack) = ladder[i];
+      final (highSize, highTrack) = ladder[i + 1];
+      if (fontSize <= highSize) {
+        final t = (fontSize - lowSize) / (highSize - lowSize);
+        return lowTrack + (highTrack - lowTrack) * t;
+      }
+    }
+    return ladder.last.$2;
+  }
+
+  /// Line height for a paragraph of prose — a chat message, a rendered
+  /// markdown body, a wrapped description.
+  ///
+  /// The app had ten hand-typed heights between 1.3 and 1.5, including a 1.45
+  /// sitting alone between the two values either side of it. Two steps, each
+  /// with one job, the same way [AppAlpha] has four.
+  static const double proseHeight = 1.4;
+
+  /// Line height for prose that wants more air — secondary copy the eye is
+  /// meant to skim rather than read straight through.
+  static const double looseHeight = 1.5;
+
+  /// Line height for a wrapped *label*: a two-line filename under a thumbnail,
+  /// a caption in a dense grid. Tighter than [proseHeight] because the lines
+  /// are a single phrase broken in two, not a paragraph.
+  static const double tightHeight = 1.3;
+
+  /// Line height for a large figure set on its own — the headline numbers on
+  /// the usage screen.
+  ///
+  /// The bottom of the same rule [trackingFor] encodes: leading runs *against*
+  /// size. Small text needs air between its lines; a 30px number given the
+  /// same ratio floats in a box half again as tall as it needs, and reads as
+  /// misaligned with whatever it is labelled by.
+  static const double displayHeight = 1.1;
 }
 
 /// The accent, in the three forms the design spec actually uses it.
@@ -220,4 +304,34 @@ class AppMotion {
   /// On-screen movement (width morphs, page slides): accelerates and
   /// decelerates because both endpoints are visible.
   static const Curve move = Curves.easeInOutCubic;
+
+  /// Whether the platform has been asked for less motion — macOS's *Reduce
+  /// motion*, Windows' *Show animations in Windows*, Android's *Remove
+  /// animations*, iOS's *Reduce Motion*.
+  ///
+  /// Distinct from `AppState.reduceVisualEffects`, which is the app's own
+  /// setting and governs *translucency* (the title bar's backdrop blur) rather
+  /// than movement. They answer two different accessibility preferences and
+  /// the platform exposes them separately; a user who cannot tolerate motion
+  /// has not thereby asked to lose the frosted glass, and vice versa.
+  static bool prefersReduced(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context);
+
+  /// [token], or no duration at all where the platform has asked for less
+  /// motion.
+  ///
+  /// Every `duration:` in the app goes through this. Reaching for the raw
+  /// token at a call site is now the drift, the same way a literal `160` was
+  /// before the tokens existed.
+  ///
+  /// Collapsing to zero rather than merely shortening is deliberate: what
+  /// makes motion a problem is the travel, not its length, and a 40ms slide is
+  /// a slide. The end state is identical and arrives immediately, so nothing
+  /// is lost but the journey — which is exactly what was asked for. Where a
+  /// transition carries *meaning* that a cut would destroy — a panel that has
+  /// to be seen arriving from somewhere — swap the transition itself for a
+  /// cross-fade instead, keyed off [prefersReduced]; [AppSidePanel] is the
+  /// worked example.
+  static Duration durationOf(BuildContext context, Duration token) =>
+      prefersReduced(context) ? Duration.zero : token;
 }

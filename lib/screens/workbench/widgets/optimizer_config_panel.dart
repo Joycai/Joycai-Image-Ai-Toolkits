@@ -702,7 +702,7 @@ class _Chip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppMotion.state,
+        duration: AppMotion.durationOf(context, AppMotion.state),
         curve: AppMotion.enter,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(

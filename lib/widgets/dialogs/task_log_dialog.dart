@@ -11,6 +11,7 @@ import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_snackbar.dart';
+import '../../core/design_tokens.dart';
 
 /// The full log of a single task, in a console the user can read, select and
 /// copy from.
@@ -186,7 +187,7 @@ class _TaskLogDialogState extends State<TaskLogDialog> {
         line,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontFamily: 'monospace',
-              height: 1.45,
+              height: AppType.proseHeight,
               color: color,
               fontWeight: isError ? FontWeight.w600 : FontWeight.normal,
             ),

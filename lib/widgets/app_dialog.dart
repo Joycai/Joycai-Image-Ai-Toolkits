@@ -205,7 +205,7 @@ class AppDialog extends StatelessWidget {
       child: body,
     );
 
-    return Dialog(
+    return _Materialize(child: Dialog(
       // A tone above the canvas, same family PanelCard draws its surface
       // from, so a dialog reads as one more surface in the app rather than
       // Material's own stock white/near-black sheet.
@@ -250,7 +250,7 @@ class AppDialog extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget? _buildHeading(BuildContext context, ColorScheme colorScheme) {
@@ -335,6 +335,48 @@ class AppDialog extends StatelessWidget {
           actions![i],
         ],
       ],
+    );
+  }
+}
+
+/// Grows a dialog into place instead of fading a full-size one in.
+///
+/// `showDialog`'s own transition is opacity alone, which is why a dialog here
+/// arrived as a rectangle that was simply *there*, at final size, getting less
+/// see-through. A surface that scales as it fades reads as a thing arriving —
+/// the same reason a glass panel animates its blur and its size together
+/// rather than only its alpha.
+///
+/// Deliberately small. 0.96 is a couple of pixels on a 560px dialog: enough
+/// for the eye to register a direction of travel, not enough to be a bounce.
+/// A dialog is an interruption, and an interruption that makes an entrance is
+/// worse than one that does not.
+///
+/// The scale rides the route's own animation rather than a controller of its
+/// own, so it is already reversed on the way out — the exit mirrors the
+/// entrance for free, and a dialog dismissed mid-entrance shrinks from
+/// wherever it had got to instead of snapping to full size first.
+///
+/// Drops to a plain fade under reduce-motion, and to nothing at all outside a
+/// route, which is how [AppDialog] renders in widget tests.
+class _Materialize extends StatelessWidget {
+  const _Materialize({required this.child});
+
+  final Widget child;
+
+  /// Where the dialog starts, as a fraction of its final size.
+  static const double _from = 0.96;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null || AppMotion.prefersReduced(context)) return child;
+
+    return ScaleTransition(
+      scale: Tween<double>(begin: _from, end: 1).animate(
+        CurvedAnimation(parent: animation, curve: AppMotion.enter),
+      ),
+      child: child,
     );
   }
 }

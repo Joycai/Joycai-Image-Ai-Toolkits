@@ -5,6 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_section_label.dart';
+import '../../../core/design_tokens.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
@@ -187,7 +188,7 @@ class OptimizerReferencePanel extends StatelessWidget {
               l10n.optRefNumberingHint,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: colorScheme.outline,
-                    height: 1.6,
+                    height: AppType.looseHeight,
                   ),
             ),
           ),

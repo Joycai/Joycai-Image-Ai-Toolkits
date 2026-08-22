@@ -78,7 +78,7 @@ class ThemeColorSelector extends StatelessWidget {
                 onTap: () => appState.setThemeSeedColor(entry.value),
                 borderRadius: BorderRadius.circular(20),
                 child: AnimatedContainer(
-                  duration: AppMotion.state,
+                  duration: AppMotion.durationOf(context, AppMotion.state),
                   curve: AppMotion.enter,
                   width: 36,
                   height: 36,
@@ -373,7 +373,7 @@ class _LanguageCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
-        duration: AppMotion.state,
+        duration: AppMotion.durationOf(context, AppMotion.state),
         curve: AppMotion.enter,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(

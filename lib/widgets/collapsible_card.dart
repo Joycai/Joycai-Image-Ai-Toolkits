@@ -48,6 +48,16 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Not `initState`: MediaQuery is not available there, and the platform's
+    // reduce-motion flag can be toggled while the app is running. A controller
+    // is the one place in the app where the duration outlives the build that
+    // chose it, so it has to be re-read whenever the dependency changes.
+    _controller.duration = AppMotion.durationOf(context, AppMotion.reveal);
+  }
+
+  @override
   void didUpdateWidget(CollapsibleCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isExpanded != oldWidget.isExpanded) {

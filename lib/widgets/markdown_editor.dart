@@ -7,6 +7,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_segmented_control.dart';
+import '../core/design_tokens.dart';
 
 /// A specialized controller that provides basic syntax highlighting for Markdown.
 class MarkdownTextEditingController extends TextEditingController {
@@ -484,7 +485,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           style: Theme.of(context).textTheme.bodyMedium,
           strutStyle: const StrutStyle(
             fontSize: 13,
-            height: 1.5,
+            height: AppType.looseHeight,
             forceStrutHeight: true,
           ),
         ),

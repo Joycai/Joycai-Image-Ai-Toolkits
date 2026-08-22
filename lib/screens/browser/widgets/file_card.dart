@@ -69,7 +69,7 @@ class _FileCardState extends State<FileCard> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
-          duration: AppMotion.state,
+          duration: AppMotion.durationOf(context, AppMotion.state),
           curve: AppMotion.enter,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),

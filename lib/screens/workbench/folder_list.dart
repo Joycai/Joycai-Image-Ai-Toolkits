@@ -14,6 +14,7 @@ import '../../widgets/app_icon_button.dart';
 import '../../widgets/panel_resizer.dart';
 import 'directory_tree_item.dart';
 import 'widgets/result_tree_item.dart';
+import '../../core/design_tokens.dart';
 
 class FolderList extends StatelessWidget {
   final bool useFileBrowserState;
@@ -267,7 +268,7 @@ class FolderList extends StatelessWidget {
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 1.2,
+                  letterSpacing: AppType.trackedLabelSpacing,
                 ),
           ),
           const Spacer(),

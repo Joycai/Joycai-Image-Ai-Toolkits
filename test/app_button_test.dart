@@ -9,8 +9,8 @@ import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 void main() {
   const seed = Colors.indigo;
 
-  Widget host(Widget child) => MaterialApp(
-        theme: buildAppTheme(seedColor: seed, brightness: Brightness.light),
+  Widget host(Widget child, {Brightness brightness = Brightness.light}) => MaterialApp(
+        theme: buildAppTheme(seedColor: seed, brightness: brightness),
         home: Scaffold(body: Center(child: child)),
       );
 
@@ -40,13 +40,31 @@ void main() {
     expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
   });
 
-  testWidgets('destructive fills from colorScheme.error, not the seed', (tester) async {
-    await tester.pumpWidget(host(AppButton(label: 'Delete', onPressed: () {}, variant: AppButtonVariant.destructive)));
+  testWidgets('destructive fills from errorFillScheme, not the seed and not the role',
+      (tester) async {
+    // Was `colorScheme.error`, which is right for a foreground and wrong for a
+    // ground: the role is tone 40 in light but tone 80 in dark, so a filled
+    // button wearing it came out a pale pink slab with dark text — the app's
+    // only irreversible action rendering lighter than the primary beside it.
+    // `errorFillScheme` is the counterpart of `buttonFillScheme` and stays one
+    // committed red under both brightnesses.
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(host(
+        AppButton(label: 'Delete', onPressed: () {}, variant: AppButtonVariant.destructive),
+        brightness: brightness,
+      ));
 
-    final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
-    final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
+      final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
+      expect(style.backgroundColor?.resolve(const {}), errorFillScheme().primary,
+          reason: brightness.name);
+      expect(style.foregroundColor?.resolve(const {}), errorFillScheme().onPrimary,
+          reason: brightness.name);
 
-    expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.error);
+      // The seed must not reach it either — that was never the bug, and it
+      // must not become one.
+      final theme = buildAppTheme(seedColor: seed, brightness: brightness);
+      expect(style.backgroundColor?.resolve(const {}), isNot(theme.colorScheme.primary));
+    }
   });
 
   testWidgets('secondary is an outline, spending no accent on itself', (tester) async {
@@ -200,10 +218,9 @@ void main() {
         size: AppButtonSize.large,
       )));
 
-      final theme = buildAppTheme(seedColor: seed, brightness: Brightness.light);
       final style = tester.widget<FilledButton>(find.byType(FilledButton)).style!;
 
-      expect(style.backgroundColor?.resolve(const {}), theme.colorScheme.error);
+      expect(style.backgroundColor?.resolve(const {}), errorFillScheme().primary);
       expect(paintedSize(tester).height, 48);
     });
   });

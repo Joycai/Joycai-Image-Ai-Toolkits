@@ -115,14 +115,21 @@ class _AppTextFieldState extends State<AppTextField> {
     // theme draws) *plus* a 3px wash of the same accent outside it. Only the
     // border is an InputDecoration's to draw, so the ring is this wrapper.
     //
-    // A padded box rather than a `BoxShadow`, which is the obvious reading and
-    // is wrong here: a shadow is painted as a filled rounded rect behind the
-    // container and is only hidden in the middle by the container's own
-    // background — and this field has none, since the spec's input is outlined
-    // rather than filled. The wash showed straight through the field.
+    // It has to be an actual `Border`, and both of the obvious alternatives
+    // are the same bug twice. A `BoxShadow` paints a filled rounded rect
+    // behind the container, hidden in the middle only by the container's own
+    // background — and this field has none, since the spec's input is
+    // outlined rather than filled, so the wash showed straight through it. A
+    // padded box with `color:` set does *exactly* the same thing: `color` on
+    // a BoxDecoration fills the whole rounded rect, and the transparent field
+    // sitting in the middle of it let 32% of the accent through. That shipped,
+    // and it is what every focused field in the component gallery was tinted
+    // with. A border paints the edge only, which is all this ever wanted.
     //
-    // The padding is unconditional and only the colour animates, so gaining
-    // focus does not nudge everything around the field by three pixels.
+    // The side is always 3px and only its colour animates, so gaining focus
+    // does not nudge everything around the field by three pixels — a Container
+    // folds `decoration.padding` (the border's own dimensions) into its
+    // layout, and a transparent side still measures 3.
     //
     // `Focus` here is an ancestor of the field's own focus node rather than a
     // replacement for it: `hasFocus` on a parent node is true whenever a
@@ -135,12 +142,14 @@ class _AppTextFieldState extends State<AppTextField> {
         if (value != _focused) setState(() => _focused = value);
       },
       child: AnimatedContainer(
-        duration: AppMotion.hover,
+        duration: AppMotion.durationOf(context, AppMotion.hover),
         curve: AppMotion.enter,
-        padding: const EdgeInsets.all(_ringWidth),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.control + _ringWidth),
-          color: _focused ? colorScheme.accentRing : Colors.transparent,
+          border: Border.all(
+            color: _focused ? colorScheme.accentRing : Colors.transparent,
+            width: _ringWidth,
+          ),
         ),
         child: field,
       ),

@@ -316,7 +316,7 @@ class _ImageDownloaderScreenState extends State<ImageDownloaderScreen> {
                 ),
               ),
               AnimatedContainer(
-                duration: AppMotion.reveal,
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
                 curve: AppMotion.enter,
                 height: _showLogs && state.logs.isNotEmpty ? 196 : 0,
                 child: state.logs.isNotEmpty

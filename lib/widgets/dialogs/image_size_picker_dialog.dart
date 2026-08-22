@@ -265,7 +265,7 @@ class _SectionHeader extends StatelessWidget {
       style: Theme.of(context)
           .textTheme
           .labelMedium
-          ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.4),
+          ?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 }

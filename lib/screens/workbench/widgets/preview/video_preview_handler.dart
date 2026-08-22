@@ -269,7 +269,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
               right: 0,
               child: AnimatedOpacity(
                 opacity: _showOverlay ? 1.0 : 0.0,
-                duration: AppMotion.reveal,
+                duration: AppMotion.durationOf(context, AppMotion.reveal),
                 curve: AppMotion.enter,
                 child: ExcludeSemantics(
                   child: IgnorePointer(
@@ -286,7 +286,7 @@ class _VideoPreviewContentState extends State<_VideoPreviewContent> {
               child: IgnorePointer(
                 child: AnimatedOpacity(
                   opacity: (!_controller!.value.isPlaying && _showOverlay) ? 1.0 : 0.0,
-                  duration: AppMotion.reveal,
+                  duration: AppMotion.durationOf(context, AppMotion.reveal),
                   curve: AppMotion.enter,
                   child: Container(
                     width: 72,

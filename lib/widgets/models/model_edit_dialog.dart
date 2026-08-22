@@ -12,6 +12,7 @@ import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 import '../app_segmented_control.dart';
+import '../../core/design_tokens.dart';
 
 class ModelEditDialog extends StatefulWidget {
   final AppLocalizations l10n;
@@ -522,7 +523,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
-                letterSpacing: 1.2,
+                letterSpacing: AppType.trackedLabelSpacing,
               ),
         ),
         const SizedBox(height: 4),

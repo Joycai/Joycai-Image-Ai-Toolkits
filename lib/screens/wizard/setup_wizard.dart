@@ -116,7 +116,7 @@ class _SetupWizardState extends State<SetupWizard> {
     }
 
     if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
+      _pageController.nextPage(duration: AppMotion.durationOf(context, AppMotion.panel), curve: AppMotion.move);
       setState(() => _currentStep++);
     } else {
       _finishSetup();
@@ -124,6 +124,10 @@ class _SetupWizardState extends State<SetupWizard> {
   }
 
   Future<void> _saveChannelAndContinue() async {
+    // Read before the await, not after: `context` is not this method's to
+    // consult once it has yielded, and the page turn is always the last thing
+    // it does.
+    final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
     final apiKey = _apiKeyController.text.trim();
     if (apiKey.isNotEmpty) {
       final id = await _db.addChannel({
@@ -139,17 +143,18 @@ class _SetupWizardState extends State<SetupWizard> {
         _createdChannelId = id;
         _currentStep++;
       });
-      _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
+      _pageController.nextPage(duration: pageTurn, curve: AppMotion.move);
     } else {
       // Skip model step if no channel added
       setState(() {
         _currentStep = 4; // Jump to finish
       });
-      _pageController.animateToPage(4, duration: AppMotion.panel, curve: AppMotion.move);
+      _pageController.animateToPage(4, duration: pageTurn, curve: AppMotion.move);
     }
   }
 
   Future<void> _saveModelAndContinue() async {
+    final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
     if (_modelIdController.text.isNotEmpty && _createdChannelId != null) {
       await _db.addModel({
         'model_id': _modelIdController.text,
@@ -162,7 +167,7 @@ class _SetupWizardState extends State<SetupWizard> {
     }
     
     setState(() => _currentStep++);
-    _pageController.nextPage(duration: AppMotion.panel, curve: AppMotion.move);
+    _pageController.nextPage(duration: pageTurn, curve: AppMotion.move);
   }
 
   Future<void> _finishSetup() async {
@@ -222,7 +227,7 @@ class _SetupWizardState extends State<SetupWizard> {
                         if (_currentStep == 4 && _createdChannelId == null) {
                           prev = 2; // Go back to channel if model was skipped
                         }
-                        _pageController.animateToPage(prev, duration: AppMotion.panel, curve: AppMotion.move);
+                        _pageController.animateToPage(prev, duration: AppMotion.durationOf(context, AppMotion.panel), curve: AppMotion.move);
                         setState(() => _currentStep = prev);
                       },
                     ),
