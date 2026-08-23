@@ -161,7 +161,10 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
             _SectionHeader(label: l10n.imageSizeCustom),
             const SizedBox(height: 8),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // The × belongs on the fields' centre line, not the row's top
+              // edge: the two boxes are ~56px tall, so a start-aligned icon
+              // floats a good 20px above the numbers it sits between.
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: TextField(
