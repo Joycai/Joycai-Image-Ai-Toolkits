@@ -2486,6 +2486,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageSizeCustom => 'カスタム';
 
   @override
+  String get imageSizeRatio => '比率';
+
+  @override
+  String get imageSizeLongEdge => '長辺';
+
+  @override
+  String get imageSizeCompute => '計算';
+
+  @override
   String get imageSizeWidth => '幅';
 
   @override
