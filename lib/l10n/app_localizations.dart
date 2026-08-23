@@ -4690,6 +4690,24 @@ abstract class AppLocalizations {
   /// **'Custom'**
   String get imageSizeCustom;
 
+  /// No description provided for @imageSizeRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Ratio'**
+  String get imageSizeRatio;
+
+  /// No description provided for @imageSizeLongEdge.
+  ///
+  /// In en, this message translates to:
+  /// **'Long edge'**
+  String get imageSizeLongEdge;
+
+  /// No description provided for @imageSizeCompute.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate'**
+  String get imageSizeCompute;
+
   /// No description provided for @imageSizeWidth.
   ///
   /// In en, this message translates to:

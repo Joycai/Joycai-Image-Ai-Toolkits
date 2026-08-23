@@ -37,6 +37,8 @@ class _ImageSizePickerDialog extends StatefulWidget {
 class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
   late final TextEditingController _widthCtrl;
   late final TextEditingController _heightCtrl;
+  late final TextEditingController _ratioCtrl;
+  late final TextEditingController _longEdgeCtrl;
   int? _width;
   int? _height;
 
@@ -48,13 +50,52 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
     _height = parsed?.$2 ?? 1024;
     _widthCtrl = TextEditingController(text: _width!.toString());
     _heightCtrl = TextEditingController(text: _height!.toString());
+    _ratioCtrl = TextEditingController();
+    _longEdgeCtrl = TextEditingController();
+    _seedRatioFields();
   }
 
   @override
   void dispose() {
     _widthCtrl.dispose();
     _heightCtrl.dispose();
+    _ratioCtrl.dispose();
+    _longEdgeCtrl.dispose();
     super.dispose();
+  }
+
+  /// Fills the calculator from the size currently in the editor, so opening
+  /// the dialog on 2160×3840 offers `9:16` / `3840` rather than two blanks.
+  ///
+  /// Only ever called for a size the user chose wholesale — on open, and on a
+  /// preset tap. Re-deriving it from every keystroke in the width field would
+  /// overwrite the ratio they typed with the reduced terms of a half-finished
+  /// number (`3008×1696` reads back as `94:53`).
+  void _seedRatioFields() {
+    final w = _width;
+    final h = _height;
+    if (w == null || h == null) return;
+    _ratioCtrl.text = formatAspectRatio(w, h);
+    _longEdgeCtrl.text = (w > h ? w : h).toString();
+  }
+
+  AspectRatioSpec? get _ratioSpec => parseAspectRatio(_ratioCtrl.text);
+
+  int? get _longEdge {
+    final n = int.tryParse(_longEdgeCtrl.text);
+    return (n == null || n <= 0) ? null : n;
+  }
+
+  /// Ratio + long edge → width × height, straight into the editor fields.
+  void _computeFromRatio() {
+    final spec = _ratioSpec;
+    final long = _longEdge;
+    if (spec == null || long == null) return;
+    final (w, h) = sizeForAspectRatio(spec, long);
+    _setSize(w, h);
+    // The long edge may have been corrected (snapped to the grid, or stepped
+    // to clear the pixel cap); show what was actually used.
+    _longEdgeCtrl.text = (w > h ? w : h).toString();
   }
 
   /// Snap to the nearest multiple of 16, clamped to a sensible range so the
@@ -152,7 +193,9 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
                   selected: isSelected,
                   onSelected: (_) {
                     final parsed = _parseSize(opt.value);
-                    if (parsed != null) _setSize(parsed.$1, parsed.$2);
+                    if (parsed == null) return;
+                    _setSize(parsed.$1, parsed.$2);
+                    _seedRatioFields();
                   },
                 );
               }).toList(),
@@ -160,6 +203,49 @@ class _ImageSizePickerDialogState extends State<_ImageSizePickerDialog> {
             const SizedBox(height: 20),
             _SectionHeader(label: l10n.imageSizeCustom),
             const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 104,
+                  child: TextField(
+                    controller: _ratioCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.imageSizeRatio,
+                      hintText: '16:9',
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9:.x×/]')),
+                    ],
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _computeFromRatio(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _longEdgeCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.imageSizeLongEdge,
+                      suffixText: 'px',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) => _computeFromRatio(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                AppButton(
+                  label: l10n.imageSizeCompute,
+                  icon: Icons.calculate_outlined,
+                  variant: AppButtonVariant.secondary,
+                  onPressed:
+                      (_ratioSpec == null || _longEdge == null) ? null : _computeFromRatio,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Row(
               // The × belongs on the fields' centre line, not the row's top
               // edge: the two boxes are ~56px tall, so a start-aligned icon

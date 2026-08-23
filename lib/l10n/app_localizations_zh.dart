@@ -2462,6 +2462,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageSizeCustom => '自定义';
 
   @override
+  String get imageSizeRatio => '比例';
+
+  @override
+  String get imageSizeLongEdge => '长边';
+
+  @override
+  String get imageSizeCompute => '计算';
+
+  @override
   String get imageSizeWidth => '宽度';
 
   @override
@@ -5209,6 +5218,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get imageSizeCustom => '自訂';
+
+  @override
+  String get imageSizeRatio => '比例';
+
+  @override
+  String get imageSizeLongEdge => '長邊';
+
+  @override
+  String get imageSizeCompute => '計算';
 
   @override
   String get imageSizeWidth => '寬度';

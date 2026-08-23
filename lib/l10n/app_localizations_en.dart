@@ -2543,6 +2543,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageSizeCustom => 'Custom';
 
   @override
+  String get imageSizeRatio => 'Ratio';
+
+  @override
+  String get imageSizeLongEdge => 'Long edge';
+
+  @override
+  String get imageSizeCompute => 'Calculate';
+
+  @override
   String get imageSizeWidth => 'Width';
 
   @override
