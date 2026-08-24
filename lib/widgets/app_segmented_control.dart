@@ -132,9 +132,15 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        // A tone above every surface the app puts this on, so the track is
-        // visible whether it lands on a card or on the canvas.
-        color: colorScheme.surfaceContainerHighest,
+        // The input-field family, not a grey wash. The spec draws every
+        // track as a near-white step above the panel with a hairline edge
+        // (13a/13c: #fafbff on #dbe0ef) — visibility comes from the border,
+        // the way it now does on every input box. It was
+        // `surfaceContainerHighest`, whose blue-grey sat close enough to the
+        // accent tint that track and selection read as one colour family,
+        // exactly what the spec keeps apart: neutral track, accent selection.
+        color: colorScheme.surfaceContainerLow,
+        border: Border.all(color: colorScheme.outlineVariant),
         // One step out from the chips it holds, so the gap between the two
         // curves stays even around the selected option's corners.
         borderRadius: BorderRadius.circular(AppRadius.md),
