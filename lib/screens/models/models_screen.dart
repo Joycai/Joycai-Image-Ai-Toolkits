@@ -624,20 +624,26 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    // A chip, not a pill. `10e` 「筛选 chip」 draws the two apart on purpose:
+    // a status badge is read-only and is a stadium, a filter is a target and
+    // takes an edge plus the radius its neighbouring buttons take. 26 tall,
+    // and the count is its own token — mono, a weight up, six pixels off the
+    // label — rather than a second word inside it.
+    final Color ink = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
+
     return Material(
-      color: selected ? colorScheme.primary.withValues(alpha: AppAlpha.tint) : Colors.transparent,
-      shape: StadiumBorder(
+      color: selected ? colorScheme.accentTint : colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.control),
         side: BorderSide(
-          color: selected
-              ? colorScheme.primary.withValues(alpha: AppAlpha.ring)
-              : colorScheme.outlineVariant,
+          color: selected ? colorScheme.accentRing : colorScheme.outlineVariant,
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+          padding: EdgeInsets.symmetric(horizontal: dot == null ? 10 : 8, vertical: 3),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -650,10 +656,18 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 const SizedBox(width: 6),
               ],
               Text(
-                '$label $count',
-                style: textTheme.labelMedium?.copyWith(
+                label,
+                style: textTheme.bodySmall?.copyWith(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  color: ink,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: textTheme.labelMedium?.mono.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: selected ? colorScheme.onAccentTint : colorScheme.outline,
                 ),
               ),
             ],
