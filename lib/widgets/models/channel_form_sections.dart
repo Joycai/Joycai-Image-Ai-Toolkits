@@ -197,16 +197,16 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
           }).toList(),
         ),
         const SizedBox(height: 10),
-        // Wrap (not Row + Spacer): the edit dialog's column can be < 300px
-        // wide, where chip + button don't fit on one line and a Row would
-        // overflow. Wrap flows the button onto a second line instead.
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        // Row with a Spacer, as `15a` lays it: hex readout hugging the left
+        // edge, "more colors" hugging the right. The Wrap this replaces was
+        // guarding a <300px column, but its space-between only spreads
+        // children across a *full* run — a shrink-wrapped Wrap parked the
+        // button mid-row. The chip is Flexible so the narrow case ellipsizes
+        // instead of overflowing.
+        Row(
           children: [
-            Container(
+            Flexible(
+              child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 border: Border.all(color: colorScheme.outlineVariant),
@@ -224,14 +224,20 @@ class _CompactColorPickerState extends State<CompactColorPicker> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(_hex,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: colorScheme.onSurfaceVariant)),
+                  Flexible(
+                    child: Text(_hex,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: colorScheme.onSurfaceVariant)),
+                  ),
                 ],
               ),
+              ),
             ),
+            const Spacer(),
             TextButton.icon(
               onPressed: () => setState(() => _expanded = !_expanded),
               icon: const Icon(Icons.palette_outlined, size: 16),
