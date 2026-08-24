@@ -73,7 +73,11 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           child: Stack(
             children: [
               Container(
-                height: 40,
+                // `A1 16a` draws the strip at 32 (§1 「状态栏 30px」 agrees to
+                // within a rounding). It shipped at 40, which is eight pixels
+                // of window spent on a bar that carries one line of 11.5px
+                // text and a 23px pill.
+                height: isMobile ? 40 : 32,
                 decoration: isMobile
                     ? BoxDecoration(
                         color: colorScheme.surface,
@@ -261,10 +265,13 @@ class _AppRunConsoleState extends State<AppRunConsole> {
   ) {
     final pct = (avgProgress * 100).round();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
         color: colorScheme.primary.withAlpha(18),
-        borderRadius: BorderRadius.circular(8),
+        // A pill, per `16a` — and per §1, where every badge that states a
+        // count or a state is one. At radius 8 this was the only rounded
+        // rectangle in a status bar of round things.
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

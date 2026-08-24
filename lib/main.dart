@@ -585,7 +585,11 @@ class _AppNavRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTablet = Responsive.isTablet(context) && !Responsive.isDesktop(context);
-    final railWidth = isTablet ? 64.0 : 78.0;
+    // 72 at desktop, per `A1 16a` — a 58px item with 7px either side. The 78
+    // it shipped at was six pixels the centre column never got, which at the
+    // iPad band (a screen just over the desktop breakpoint, a content box just
+    // under it) is the difference the whole band is measured in.
+    final railWidth = isTablet ? 64.0 : 72.0;
     final showLabels = !isTablet;
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -693,7 +697,8 @@ class _RailItemState extends State<_RailItem> {
             : Colors.transparent;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      // 7, so the item lands on `16a`'s 58 inside the 72px rail.
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovering = true),
         onExit: (_) => setState(() => _hovering = false),
@@ -702,8 +707,8 @@ class _RailItemState extends State<_RailItem> {
           child: AnimatedContainer(
             duration: AppMotion.durationOf(context, AppMotion.state),
             curve: AppMotion.enter,
-            width: widget.railWidth - 16,
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            width: widget.railWidth - 14,
+            padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(12),
@@ -714,7 +719,7 @@ class _RailItemState extends State<_RailItem> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(widget.icon, size: 22, color: color),
+                    Icon(widget.icon, size: AppSize.iconLg, color: color),
                     if (widget.badge > 0)
                       Positioned(
                         top: -5,
