@@ -25,6 +25,7 @@ import 'widgets/config_action_bar.dart';
 import '../../widgets/app_section_label.dart';
 import 'widgets/queue_settings_dialog.dart';
 import '../../widgets/scroll_edge_fade.dart';
+import '../../widgets/app_switch.dart';
 
 /// Ink laid over a thumbnail. Neutral by construction rather than taken from
 /// the [ColorScheme] — these sit on the user's own photographs, where a chip
@@ -618,7 +619,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
             ),
           ),
           const SizedBox(width: 8),
-          Switch(value: value, onChanged: onChanged),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

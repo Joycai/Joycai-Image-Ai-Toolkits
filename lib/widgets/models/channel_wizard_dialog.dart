@@ -17,6 +17,7 @@ import '../app_segmented_control.dart';
 import '../app_text_field.dart';
 import 'channel_form_sections.dart';
 import 'channel_provider_presets.dart';
+import '../app_switch.dart';
 
 /// Adding a channel, in one page where there is room and in two steps where
 /// there is not.
@@ -802,7 +803,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
             ),
           ),
           const SizedBox(width: 10),
-          Switch(
+          AppSwitch(
             value: _enableDiscovery,
             onChanged: (v) => setState(() => _enableDiscovery = v),
           ),

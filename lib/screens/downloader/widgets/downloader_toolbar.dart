@@ -11,6 +11,7 @@ import '../../../widgets/app_search_field.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/app_switch.dart';
 
 /// Height of the toolbar's inputs and the controls that line up with them.
 /// Taller than a bare button: these are fields you type a URL into.
@@ -212,12 +213,9 @@ class DownloaderOptionsStrip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Transform.scale(
-            scale: 0.75,
-            child: Switch(
-              value: state.isManualHtml,
-              onChanged: (v) => state.setState(isManualHtml: v),
-            ),
+          AppSwitch(
+            value: state.isManualHtml,
+            onChanged: (v) => state.setState(isManualHtml: v),
           ),
           Text(l10n.manualHtmlMode,
               style: Theme.of(context)
