@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/constants.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
@@ -10,6 +9,7 @@ import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
+import '../../widgets/models/channel_avatar.dart';
 import '../../widgets/models/model_tag_chip.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
@@ -245,7 +245,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         selected: isSelected,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         selectedTileColor: colorScheme.secondaryContainer,
-                        leading: _buildChannelIcon(channel),
+                        leading: ChannelAvatar(channel),
                         title: Text(
                           channel.displayName,
                           style: textTheme.bodyMedium?.copyWith(
@@ -286,7 +286,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       ),
       child: Row(
         children: [
-          _buildChannelIcon(channel, size: 28),
+          ChannelAvatar(channel, size: 28),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -490,17 +490,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildChannelIcon(LLMChannel channel, {double size = 24}) {
-    if (channel.tag != null && channel.tag!.isNotEmpty) {
-      return CircleAvatar(
-        backgroundColor: Color(channel.tagColor ?? AppConstants.defaultTagColor),
-        radius: size / 2,
-        child: Text(channel.tag![0].toUpperCase(), style: TextStyle(color: Colors.white, fontSize: size * 0.5, fontWeight: FontWeight.w600)),
-      );
-    }
-    return Icon(Icons.cloud_queue, size: size * 0.8);
-  }
-
   // --- Mobile Tab Content ---
 
   Widget _buildModelsMobileTab(AppLocalizations l10n, AppState appState) {
@@ -519,7 +508,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
-            leading: _buildChannelIcon(channel),
+            leading: ChannelAvatar(channel),
             title: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text(l10n.countModels(models.length),
                 style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
@@ -581,7 +570,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           final channel = appState.allChannels[index];
           return Card(
             child: ListTile(
-              leading: _buildChannelIcon(channel, size: 32),
+              leading: ChannelAvatar(channel, size: 32),
               title: Text(channel.displayName),
               subtitle: Text(
                 channel.endpoint,
