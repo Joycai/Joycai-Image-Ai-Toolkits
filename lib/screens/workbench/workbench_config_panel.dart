@@ -47,6 +47,29 @@ const Color _thumbInk = Color(0xFFFFFFFF);
 /// prompt is still being written rather than peeked at.
 const double kMinPromptEditorHeight = 220;
 
+/// The 「提示词」 label row above the prompt card.
+///
+/// Pinned rather than measured, and the row is given exactly this height at
+/// the call site rather than allowed to size itself. It is the one term the
+/// head's cap is computed from, so a row that quietly grew — a taller trailing
+/// button, a wider default padding — would eat the editor's floor with nothing
+/// to say it had. (Measuring it instead is what the panel's old
+/// [IntrinsicHeight] did, and what a [LayoutBuilder] anywhere in the column
+/// makes impossible; see the desktop branch of `build`.)
+///
+/// 44 is the trailing controls' own 32 plus the spec's breathing room. The
+/// row used to come out at 72 — `AppSectionLabel`'s 18px top gap over a
+/// full-size text button — where `16a` draws it compact.
+const double _kPromptLabelRow = 44;
+
+/// The least the head is worth pinning for.
+///
+/// Under this the panel gives up on holding the prompt's footer in place and
+/// scrolls as one, the way the bottom sheet does — a head squeezed to a
+/// sliver is not a layout anyone wanted, it is just the arithmetic running
+/// out.
+const double _kMinHeadHeight = 120;
+
 class WorkbenchConfigPanel extends StatefulWidget {
   final ScrollController? scrollController;
   const WorkbenchConfigPanel({super.key, this.scrollController});
@@ -218,13 +241,13 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           ],
         );
 
-        // `fill: true` lets the prompt editor take whatever height the rest
-        // of the panel leaves. Only the desktop sidebar passes it: the mobile
-        // bottom sheet is scrolled by a controller above this widget, where
-        // the column's height is unbounded and a flex child would throw.
-        Widget buildContent({required bool fill}) => Column(
+        // Everything above the prompt: what is selected, which model runs it,
+        // and the two request switches. Fixed content — it is as tall as it is
+        // — so on the desktop sidebar this is the half that gets a scroller
+        // when the window is short, and the prompt below keeps its height.
+        final Widget head = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Off GalleryState, which owns the selection — AppState no longer
             // re-broadcasts it.
@@ -302,22 +325,31 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               ),
             ),
 
-            AppSectionLabel(l10n.prompt, trailing: _buildPromptActions(promptHistory, l10n)),
-            const SizedBox(height: 4),
+          ],
+        );
+
+        // The prompt: its label row, then the card. `fill: true` lets the card
+        // take whatever height the column leaves it. Only the desktop sidebar
+        // passes it — the mobile bottom sheet is scrolled by a controller above
+        // this widget, where the height is unbounded and a flex child throws.
+        Widget buildPrompt({required bool fill}) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _kPromptLabelRow,
+              child: AppSectionLabel(
+                l10n.prompt,
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                trailing: _buildPromptActions(promptHistory, l10n),
+              ),
+            ),
             _fillable(
               fill: fill,
               child: ConstrainedBox(
-                // A floor, and the only reason this is a [ConstrainedBox] and
-                // not bare. Inside the [Expanded] the height is already tight,
-                // so this changes nothing about how the card is *laid out* —
-                // what it changes is what the card reports as its **intrinsic**
-                // height, which is what [IntrinsicHeight] above budgets from.
-                //
-                // Without it the editor's intrinsic height is zero (an
-                // `expands: true` field has no natural height of its own), the
-                // panel's intrinsic total under-counts by exactly this card,
-                // and at any window short enough to scroll the editor gets
-                // squeezed to nothing instead of the panel scrolling.
+                // A floor for the bottom sheet, where nothing else bounds the
+                // card. Under the desktop [Expanded] the height is already
+                // tight and this is a no-op.
                 constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
                 child: AppCard(
                   outlined: true,
@@ -346,10 +378,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                           // AppStateWorkbench.setPromptDraft.
                           onChanged: (v) => appState.setPromptDraft(v),
                           expand: fill,
-                          // The panel guarantees the floor via
-                          // [kMinPromptEditorHeight] and asks for an intrinsic
-                          // height in return, which a LayoutBuilder inside here
-                          // would make impossible.
+                          // Filling, the height is handed down and there is
+                          // nothing to measure; only the bottom sheet, where
+                          // the card sizes itself, still probes.
                           probeAvailableHeight: !fill,
                           // The card around it is the frame; see
                           // [MarkdownEditor.bordered].
@@ -448,52 +479,82 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                   child: SingleChildScrollView(
                     controller: widget.scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: buildContent(fill: false),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [head, buildPrompt(fill: false)],
+                    ),
                   ),
                 ),
               ),
             ],
           );
         } else {
-          // Desktop sidebar: the prompt editor takes the height the rest of
-          // the panel leaves, and the panel scrolls only once there is not
-          // enough of it. `10c` draws the editor as the panel's flex child —
-          // it is the thing the user is actually writing in — where this
-          // shipped as one long scroll that pushed it below the fold.
+          // Desktop sidebar. `A1 16a` draws this column with nothing scrolling
+          // in it: the prompt card is the flex child and everything else is as
+          // tall as it is. So the prompt's own footer — 「发送到提示词助手」 and
+          // the queue-settings gear — is always on screen, which is the point
+          // of putting them in the card rather than beside the Process button.
           //
-          // "Fill if it fits, scroll if it does not" without a height
-          // threshold: the scroll view's viewport sets a floor via the
-          // [ConstrainedBox], [IntrinsicHeight] lets the column ask its
-          // children how tall they want to be, and whichever is larger wins. A
-          // threshold would be the same mistake as a hardcoded breakpoint in a
-          // toolbar — right on the window it was tuned against and wrong on
-          // the next.
+          // The whole panel used to be one scroll view sized by an
+          // [IntrinsicHeight]: the column asked its children how tall they
+          // wanted to be, and whichever was larger — that or the viewport —
+          // won. Two things were wrong with it. Once the total went over the
+          // viewport *everything* scrolled, footer included, so the two
+          // actions the design pins vanished below the fold at any ordinary
+          // window height. And measuring intrinsics is impossible through a
+          // [LayoutBuilder] — expanding 「模型选择」 mounts two
+          // [SearchablePickerField]s, each of which contains one, and the
+          // panel threw during layout and rendered blank.
           //
-          // [IntrinsicHeight] costs an extra measuring pass over this column.
-          // It is a handful of cards, and the pass runs on layout rather than
-          // per keystroke, which is why it is affordable here and would not be
-          // inside the editor itself.
+          // So the split is explicit instead: the head gets a cap, the prompt
+          // gets the rest. Neither side is measured.
           return Column(
             children: [
               Expanded(
-                // The body runs under [ConfigActionBar], so whatever card sits
-                // at the boundary was being sliced square — the prompt field
-                // cut through its own rounded corner, which reads as a
-                // rendering fault rather than as "there is more below".
-                child: ScrollEdgeFade(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: LayoutBuilder(
-                    builder: (context, viewport) => SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          // Less the padding above, or the content is a viewport
-                          // tall inside a viewport-tall box and the panel always
-                          // scrolls by exactly 32px.
-                          minHeight: (viewport.maxHeight - 32).clamp(0.0, double.infinity),
-                        ),
-                        child: IntrinsicHeight(child: buildContent(fill: true)),
-                      ),
-                    ),
+                    builder: (context, box) {
+                      final double promptFloor =
+                          kMinPromptEditorHeight + _kPromptLabelRow;
+
+                      // Not enough column to hold both. Rather than pin a
+                      // footer over a head crushed to nothing, fall back to
+                      // the bottom sheet's arrangement: one scroll, the card
+                      // at its own natural height.
+                      if (box.maxHeight < promptFloor + _kMinHeadHeight) {
+                        return ScrollEdgeFade(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [head, buildPrompt(fill: false)],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ConstrainedBox(
+                            // Everything the prompt does not need. The head
+                            // shrink-wraps under this and scrolls past it, so
+                            // the scroller is invisible until it is needed —
+                            // and while the head fits, every extra pixel of
+                            // window goes to the editor.
+                            constraints: BoxConstraints(
+                              maxHeight: box.maxHeight - promptFloor,
+                            ),
+                            child: ScrollEdgeFade(
+                              child: SingleChildScrollView(child: head),
+                            ),
+                          ),
+                          Expanded(child: buildPrompt(fill: true)),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -577,6 +638,10 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
           label: l10n.library,
           icon: Icons.library_books_outlined,
           variant: AppButtonVariant.text,
+          // Compact, to match the history button beside it — at full size it
+          // was 48 tall and set the whole label row's height, which is the
+          // figure [_kPromptLabelRow] has to hold.
+          size: AppButtonSize.compact,
           onPressed: _allUserPrompts.isEmpty ? null : () => _showPromptPickerMenu(l10n),
         ),
       ],
