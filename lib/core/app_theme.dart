@@ -320,6 +320,11 @@ InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
       );
 
   return InputDecorationTheme(
+    // Outlined, app-wide. `D2` draws its field boxes with a fill a step off
+    // the panel, but that is a D2 reading: the screens the spec has not been
+    // redrawn for put inputs on toolbars and canvases where the outline is
+    // right. `FilledFieldScope` carries the filled skin into the subtrees
+    // that have been aligned to a frame — see `app_text_field.dart`.
     filled: false,
     isDense: true,
     // Tighter than Material's default, which budgets for a floating label on

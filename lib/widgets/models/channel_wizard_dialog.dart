@@ -243,7 +243,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       // The columns carry their own padding and the rail reaches the edges.
       contentPadding: EdgeInsets.zero,
       onClose: () => Navigator.pop(context),
-      content: SizedBox(
+      content: FilledFieldScope(
+        child: SizedBox(
         height: bodyHeight,
         child: Row(
           // Stretch, so the rule between the columns is full height. A
@@ -275,6 +276,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
               ),
             ),
           ],
+        ),
         ),
       ),
       actionsOverride: Row(
