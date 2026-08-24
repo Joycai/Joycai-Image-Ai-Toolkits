@@ -217,6 +217,55 @@ void main() {
       });
     }
   }
+
+  // The model editor (spec D2 13a / 13b / 13c). One dialog in two layouts —
+  // a single column below 1100 and two panes with a summary card above it —
+  // decided by the window, so it takes one shot per band. `newModel` is 13b:
+  // the empty form, whose footer states why Save is unavailable.
+  //
+  // GPT-5 Chat rather than whichever model the screen opens on: it is the
+  // fixture's only OpenAI-format model, and the reasoning-effort field — the
+  // one control the protocol family adds or removes — exists nowhere else.
+  for (final (String sizeLabel, bool newModel, Brightness brightness)
+      in const <(String, bool, Brightness)>[
+    ('desktop', false, Brightness.light),
+    ('desktop', false, Brightness.dark),
+    ('desktop', true, Brightness.light),
+    ('tablet', false, Brightness.light),
+    ('mobile', false, Brightness.light),
+  ]) {
+    testWidgets(
+        'modelEditor @ $sizeLabel ${brightness.name}${newModel ? ' new' : ''}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
+        brightness: brightness,
+        suffix: newModel ? 'editorNew' : 'editor',
+        after: (WidgetTester tester) async {
+          Future<bool> tapText(String label) async {
+            final Finder finder = find.text(label);
+            if (finder.evaluate().isEmpty) return false;
+            await tester.tap(finder.first, warnIfMissed: false);
+            for (int i = 0; i < 5; i++) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+            return true;
+          }
+
+          // On a phone the models tab is already the one on screen and each
+          // channel is a collapsed ExpansionTile, so the channel tap opens the
+          // list rather than selecting a column. Taking the desktop detour
+          // there lands on the channels tab and edits the channel instead.
+          if (sizeLabel != 'mobile') await tapText('渠道管理');
+          await tapText('中转 · OpenAI 兼容');
+          await tapText(newModel ? '添加模型' : 'GPT-5 Chat');
+        },
+      );
+    });
+  }
 }
 
 class _FeeGroupShot {

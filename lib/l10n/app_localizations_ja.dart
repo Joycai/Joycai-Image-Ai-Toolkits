@@ -994,6 +994,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get capabilities => '機能';
 
   @override
+  String get modelSaveRequirementHint => 'チャンネル・名前・ID の 3 項目がそろうと保存できます。';
+
+  @override
+  String get cardPreview => 'カードプレビュー';
+
+  @override
+  String get capabilityStreamingShort => 'ストリーミング';
+
+  @override
+  String get capabilityStandardShort => '標準リクエスト';
+
+  @override
   String get supportsStreaming => 'ストリーミング対応';
 
   @override
