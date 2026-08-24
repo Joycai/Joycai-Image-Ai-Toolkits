@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
+import '../directory_tree_item.dart';
 
 /// Read-only folder tree for the RESULTS section. Unlike [DirectoryTreeItem],
 /// there is no selection/aggregate concept — tapping a row browses just that
@@ -87,23 +88,45 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
         state.folderViewIsResult &&
         state.viewSourcePath == widget.path);
 
+    // Boxed and tinted exactly like a source root. `16a` draws the two trees
+    // as one family — a result folder is a folder — and the outline is what
+    // says where one root's subtree ends. It read as a different kind of row
+    // entirely while this was a bare tile beside the boxed sources.
+    final colorScheme = theme.colorScheme;
+    final Color? boxColor =
+        isViewing ? colorScheme.primary.withValues(alpha: 0.14) : null;
+    final Color borderColor = isViewing
+        ? colorScheme.primary.withValues(alpha: 0.6)
+        : (widget.isRoot ? colorScheme.outlineVariant.withAlpha(120) : Colors.transparent);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
+        Container(
+          margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
+          child: Material(
+            color: boxColor ?? Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: borderColor),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
           dense: true,
           selected: isViewing,
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 0, right: 4),
+          minLeadingWidth: 0,
+          horizontalTitleGap: 6,
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(width: 8),
               Icon(
                 _isExpanded ? Icons.folder_open : Icons.folder,
                 size: 20,
-                color: isViewing ? theme.colorScheme.primary : theme.colorScheme.outline,
+                // Amber, like every other folder in the app — grey here was
+                // the one place the tree's own colour was dropped.
+                color: kFolderAmber,
               ),
-              const SizedBox(width: 8),
             ],
           ),
           title: Text(
@@ -126,6 +149,8 @@ class _ResultTreeItemState extends State<ResultTreeItem> {
                 )
               : null,
           onTap: () => appState.galleryState.setViewFolder(widget.path, isResult: true),
+            ),
+          ),
         ),
         if (_isExpanded && _subDirectories != null)
           Padding(

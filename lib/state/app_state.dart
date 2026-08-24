@@ -113,7 +113,12 @@ class AppState extends ChangeNotifier {
   bool notificationsEnabled = true;
   bool isConsoleExpanded = false;
   bool isSidebarExpanded = true;
-  double sidebarWidth = 400.0;
+  /// `A1 16a` draws the workbench's folder column at 236, and the number
+  /// matters beyond the column: it was 400, which left the centre too narrow
+  /// for the gallery toolbar to lay its controls out inline, so the toolbar's
+  /// measured-drop pass folded them into a kebab at an ordinary window size.
+  /// Only new installs see this — an existing width is restored from settings.
+  double sidebarWidth = 236.0;
   double consoleHeight = 200.0;
   bool enableApiDebug = false;
   // Skips the costliest cosmetic draws (backdrop blurs). Off by default so the
@@ -383,7 +388,7 @@ class AppState extends ChangeNotifier {
 
     final savedSidebarWidth = await _db.getSetting('sidebar_width');
     if (savedSidebarWidth != null) {
-      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 400.0;
+      sidebarWidth = double.tryParse(savedSidebarWidth) ?? 236.0;
     }
 
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';

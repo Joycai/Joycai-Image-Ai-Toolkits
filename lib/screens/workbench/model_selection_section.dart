@@ -5,6 +5,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_text_field.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
 import '../../widgets/models/model_picker_options.dart';
 import '../../widgets/searchable_picker.dart';
@@ -94,7 +95,11 @@ class ModelSelectionSection extends StatelessWidget {
             : null,
         children: [
           const SizedBox(height: 8),
-          Row(
+          // Filled, per `16a`: these two sit inside a card, where an outline
+          // alone leaves them flush with it. Scoped to the pickers rather than
+          // the whole panel — the prompt editor below is deliberately boxless.
+          FilledFieldScope(
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
@@ -132,6 +137,7 @@ class ModelSelectionSection extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
           if (modelInChannel != null)
             _buildModelSpecificOptions(context, modelInChannel.modelId, l10n),

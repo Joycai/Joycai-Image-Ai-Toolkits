@@ -158,7 +158,8 @@ class WorkbenchLayout extends StatefulWidget {
 class _WorkbenchLayoutState extends State<WorkbenchLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late double _leftWidth;
-  double _rightWidth = 350;
+  /// `A1 16a`'s config column.
+  double _rightWidth = 340;
 
   @override
   void initState() {

@@ -13,6 +13,8 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 
+import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
+
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
 import 'harness/shoot.dart';
@@ -88,6 +90,37 @@ void main() {
         );
       });
     }
+  }
+
+  // The image workbench with a selection live (spec A1 16a). Tab 0's own
+  // loop shot only ever catches the empty state, and the right column is a
+  // different panel with images picked: the strip of thumbnails, the model
+  // section and the action bar's count all appear only then.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('workbench · selection @ desktop ${brightness.name}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'selection',
+        // Driven through the grid rather than seeded: the selection lives on
+        // GalleryState's view list, and which images *that* holds depends on
+        // the folder tree having settled — a seed call from here ran before
+        // it had, and picked nothing.
+        after: (WidgetTester tester) async {
+          final Finder cards = find.byType(ImageCard);
+          for (int i = 0; i < 2 && i < cards.evaluate().length; i++) {
+            await tester.tap(cards.at(i), warnIfMissed: false);
+            for (int p = 0; p < 4; p++) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+          }
+        },
+      );
+    });
   }
 
   // The prompt assistant at iPad width. It is the only tab that keeps both side
