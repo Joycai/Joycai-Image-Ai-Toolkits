@@ -550,6 +550,7 @@
       }
     }
   },
+  "previewInList": "列表中的样子",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

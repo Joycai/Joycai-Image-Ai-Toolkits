@@ -293,5 +293,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "previewInList": "List preview"
 }

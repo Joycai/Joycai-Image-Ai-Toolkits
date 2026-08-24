@@ -564,6 +564,7 @@
       }
     }
   },
+  "previewInList": "List preview",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

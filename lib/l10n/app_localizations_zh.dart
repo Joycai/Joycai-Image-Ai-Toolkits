@@ -1159,6 +1159,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get previewInList => '列表中的样子';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -3954,6 +3957,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String countGroups(int count) {
     return '$count 組';
   }
+
+  @override
+  String get previewInList => '列表中的樣子';
 
   @override
   String get prompts => '提示';

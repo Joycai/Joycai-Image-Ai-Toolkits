@@ -18,11 +18,45 @@ class ChannelSectionLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        // Same voice as the model editor's section headers — tracked, and
+        // uppercased where the language has cases to shout in.
+        text.toUpperCase(),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
+              letterSpacing: AppType.trackedLabelSpacing,
             ),
+      ),
+    );
+  }
+}
+
+/// A caption on its own line above [child], the label form every field in
+/// `15a`/`15c` uses — not Material's floating label notched into the border.
+/// Same shape as the model editor's `_labelled` and the workbench's
+/// `_LabelledField`.
+class ChannelLabelledField extends StatelessWidget {
+  const ChannelLabelledField(this.label, {super.key, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
       ),
     );
   }
@@ -37,6 +71,10 @@ class ChannelAppearanceSection extends StatelessWidget {
   final int tagColor;
   final ValueChanged<int> onColorChanged;
 
+  /// Fires as the name or tag is typed. The edit dialog rebuilds its
+  /// list-preview row from this; the wizard passes nothing.
+  final VoidCallback? onChanged;
+
   const ChannelAppearanceSection({
     super.key,
     required this.l10n,
@@ -44,6 +82,7 @@ class ChannelAppearanceSection extends StatelessWidget {
     required this.tagCtrl,
     required this.tagColor,
     required this.onColorChanged,
+    this.onChanged,
   });
 
   @override
@@ -52,21 +91,27 @@ class ChannelAppearanceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: nameCtrl,
-          decoration: InputDecoration(
-            labelText: l10n.displayName,
-            hintText: l10n.nameHint,
-            prefixIcon: const Icon(Icons.label_outline, size: 20),
+        ChannelLabelledField(
+          l10n.displayName,
+          child: TextField(
+            controller: nameCtrl,
+            onChanged: (_) => onChanged?.call(),
+            decoration: InputDecoration(
+              hintText: l10n.nameHint,
+              prefixIcon: const Icon(Icons.label_outline, size: 20),
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: tagCtrl,
-          decoration: InputDecoration(
-            labelText: l10n.tag,
-            hintText: l10n.tagHint,
-            prefixIcon: const Icon(Icons.tag, size: 20),
+        ChannelLabelledField(
+          l10n.tag,
+          child: TextField(
+            controller: tagCtrl,
+            onChanged: (_) => onChanged?.call(),
+            decoration: InputDecoration(
+              hintText: l10n.tagHint,
+              prefixIcon: const Icon(Icons.tag, size: 20),
+            ),
           ),
         ),
         const SizedBox(height: 14),
