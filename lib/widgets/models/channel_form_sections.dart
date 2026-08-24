@@ -16,7 +16,9 @@ class ChannelSectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      // 12, the spec's one column gap — the label was 2px tighter than every
+      // other row in the section, for no reason it could name.
+      padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         // Same voice as the model editor's section headers — tracked, and
         // uppercased where the language has cases to shout in.

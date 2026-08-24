@@ -157,7 +157,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       // divider between them right to the edges.
       contentPadding: EdgeInsets.zero,
       content: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+          // 20 horizontal, matching the shell's own inset so the section
+          // labels share the heading's left edge — it was 24, and the 4px
+          // stagger read as sloppiness, same as the model editor's had.
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
           // No IntrinsicHeight here: the appearance column contains a Wrap,
           // whose intrinsic height is computed as a single run — under a
           // tight intrinsic-derived height it overflows once it actually
@@ -281,7 +284,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ],
           onChanged: (v) => setState(() => type = v!),
           decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.category_outlined, size: 20),
+            // The spec's glyph is a hexagon — a wire format as a package
+            // shape — not Material's circle-square-triangle "category".
+            prefixIcon: Icon(Icons.hexagon_outlined, size: 20),
           ),
           // The style applies to the popup menu items too — it must carry an
           // explicit color or the items render with the wrong default.
