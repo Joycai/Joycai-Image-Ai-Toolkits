@@ -6,6 +6,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_labelled_field.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/dialogs/image_size_picker_dialog.dart';
 import '../../widgets/models/model_picker_options.dart';
@@ -104,7 +105,7 @@ class ModelSelectionSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _LabelledField(
+                child: AppLabelledField(
                   label: l10n.channel,
                   child: SearchablePickerField<int>(
                     selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
@@ -122,7 +123,7 @@ class ModelSelectionSection extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _LabelledField(
+                child: AppLabelledField(
                   // `model`, not `modelSelection` — the card's own heading is
                   // already 「模型选择」, and the caption under it was saying it
                   // a second time. `16a` labels the field 「模型」.
@@ -340,29 +341,3 @@ class ModelSelectionSection extends StatelessWidget {
 /// rows below already use for theirs — the two pickers and the aspect-ratio
 /// row beneath them are labelled the same way rather than each inventing a
 /// weight.
-class _LabelledField extends StatelessWidget {
-  const _LabelledField({required this.label, required this.child});
-
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    // Merged so a screen reader announces the caption and the control it names
-    // as one thing. The control carries its own button role and value; without
-    // this the caption is a separate stop that reads "Channel" and nothing else.
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-}

@@ -12,6 +12,10 @@ import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_text_field.dart';
+import '../../../core/design_tokens.dart';
+import '../../../widgets/app_labelled_field.dart';
+import '../../../widgets/app_switch.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_segmented_control.dart';
@@ -147,36 +151,66 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
             },
           ),
         ),
-        MarkdownEditor(
-          controller: _promptController,
-          label: l10n.prompt,
-          isMarkdown: appState.isMarkdownWorkbench,
-          onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
-          maxLines: 8,
-          hint: l10n.promptHint,
-          // Silent draft path — typing here must not notify the whole app.
-          // See AppStateWorkbench.setVideoPromptDraft.
-          onChanged: (v) => appState.setVideoPromptDraft(v),
-          expand: false,
+        // One box, as `17a` draws it and as the image panel already does: the
+        // card is the frame, and the header is set off by a hairline inside
+        // it. See [MarkdownEditor.bordered].
+        AppCard(
+          outlined: true,
+          padding: EdgeInsets.zero,
+          child: MarkdownEditor(
+            controller: _promptController,
+            label: l10n.prompt,
+            isMarkdown: appState.isMarkdownWorkbench,
+            onMarkdownChanged: (v) => appState.setIsMarkdownWorkbench(v),
+            maxLines: 8,
+            hint: l10n.promptHint,
+            // Silent draft path — typing here must not notify the whole app.
+            // See AppStateWorkbench.setVideoPromptDraft.
+            onChanged: (v) => appState.setVideoPromptDraft(v),
+            expand: false,
+            bordered: false,
+          ),
         ),
         const SizedBox(height: 12),
         // In a card, like the image panel's pair of toggles and like `A6`. A
         // bare [SwitchListTile] between two headed sections read as a stray row
         // rather than as a setting belonging to the prompt above it.
+        // The image panel's toggle row, restated — not a [SwitchListTile].
+        // That widget brings Material's list geometry *and* its 52x32 switch,
+        // where `17a` draws the same 18px glyph, two lines of text and 36px
+        // pill the image panel's two toggles wear a tab away.
         AppCard(
           outlined: true,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: SwitchListTile(
-            title: Text(l10n.compressReferenceImages, style: Theme.of(context).textTheme.titleSmall),
-            // Carries the colour the ListTile's own subtitle style supplied, which
-            // the slot would otherwise replace with plain onSurface.
-            subtitle: Text(l10n.compressReferenceImagesDesc,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            value: appState.compressReferenceImages,
-            onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
-            secondary: const Icon(Icons.compress, size: 20),
-            contentPadding: EdgeInsets.zero,
-            dense: true,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(Icons.compress, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(l10n.compressReferenceImages,
+                          style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 1),
+                      Text(
+                        l10n.compressReferenceImagesDesc,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AppSwitch(
+                  value: appState.compressReferenceImages,
+                  onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -259,12 +293,23 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         const SizedBox(width: 10),
         // Queue settings (concurrency / retry / prefix / safety thresholds),
         // shared with the image workbench.
-        IconButton.filledTonal(
-          onPressed: () => showQueueSettingsDialog(context),
-          icon: const Icon(Icons.settings_outlined, size: 20),
-          tooltip: l10n.queueSettings,
-          style: IconButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        // `17a` draws this as a 48px square washed in the accent at 12% with
+        // an accent glyph — the app's own tonal pair. Material's `filledTonal`
+        // reaches for `secondaryContainer`, which at several of the eight
+        // seeds is a grey that reads as disabled beside the button it sits
+        // next to.
+        SizedBox(
+          width: 48,
+          height: 48,
+          child: IconButton(
+            onPressed: () => showQueueSettingsDialog(context),
+            icon: const Icon(Icons.settings_outlined, size: 20),
+            tooltip: l10n.queueSettings,
+            style: IconButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.accentTint,
+              foregroundColor: Theme.of(context).colorScheme.onAccentTint,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            ),
           ),
         ),
       ],
@@ -321,6 +366,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final selectedChannelId = selectedChannel?.id;
     // The model the caller already resolved, rather than a second scan of the
     // list to recover a name it was holding all along.
+    // The display name. `17a` renders `sora-2-pro` here in the mono face,
+    // which reads as an id — but its own prose says 「只留标题与当前模型名」,
+    // and for a Sora model those two strings are the same, so the markup
+    // cannot settle it and the sentence can. The image panel's identical card
+    // names the model too; a pair of panels one tab apart showing different
+    // fields under the same heading is the thing this pass exists to remove.
     final collapsedModelName = _isModelSettingsExpanded ? null : selectedModel?.modelName;
     // A model whose channel is not the selected one is a stale pair, and the
     // card below would otherwise name it under the wrong channel — the same
@@ -342,82 +393,114 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final sharedControls = <Widget>[
       if (!overridesResolution)
         Expanded(
-          child: DropdownButtonFormField<VeoResolution>(
-            decoration: InputDecoration(labelText: l10n.videoResolution),
-            initialValue: appState.lastVideoResolution,
-            items: VeoResolution.values.map((v) => DropdownMenuItem(
-              value: v,
-              child: Text(v.value),
-            )).toList(),
-            onChanged: (v) => appState.updateVideoConfig(resolution: v),
+          child: AppLabelledField(
+            label: l10n.videoResolution,
+            child: DropdownButtonFormField<VeoResolution>(
+              initialValue: appState.lastVideoResolution,
+              items: VeoResolution.values.map((v) => DropdownMenuItem(
+                value: v,
+                child: Text(v.value),
+              )).toList(),
+              onChanged: (v) => appState.updateVideoConfig(resolution: v),
+            ),
           ),
         ),
-      if (!overridesResolution && !overridesAspectRatio) const SizedBox(width: 12),
+      if (!overridesResolution && !overridesAspectRatio) const SizedBox(width: 16),
       if (!overridesAspectRatio)
         Expanded(
-          child: DropdownButtonFormField<VeoAspectRatio>(
-            decoration: InputDecoration(labelText: l10n.videoAspectRatio),
-            initialValue: appState.lastVideoAspectRatio,
-            items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
-              value: v,
-              child: Text(v.value),
-            )).toList(),
-            onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
+          child: AppLabelledField(
+            label: l10n.videoAspectRatio,
+            child: DropdownButtonFormField<VeoAspectRatio>(
+              initialValue: appState.lastVideoAspectRatio,
+              items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
+                value: v,
+                child: Text(v.value),
+              )).toList(),
+              onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
+            ),
           ),
         ),
     ];
 
     return CollapsibleCard(
+      leadingIcon: Icons.tune_outlined,
       title: l10n.modelSelection,
       subtitle: collapsedModelName,
       isExpanded: _isModelSettingsExpanded,
       onToggle: () => setState(() => _isModelSettingsExpanded = !_isModelSettingsExpanded),
-      content: Column(
-        children: [
-          SearchablePickerField<int>(
-            selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
-            optionsBuilder: () => videoChannels.map(channelPickerOption).toList(),
-            onChanged: (val) {
-              final firstVideoInChannel = videoModels.where((m) => m.channelId == val).firstOrNull;
-              if (firstVideoInChannel != null) {
-                appState.updateVideoConfig(modelId: firstVideoInChannel.id.toString());
-              }
-            },
-            hint: l10n.selectAChannel,
-            searchHint: l10n.searchChannels,
-            decoration: InputDecoration(labelText: l10n.channel),
-            dialogIcon: Icons.hub_outlined,
-            enabled: videoChannels.isNotEmpty,
-          ),
-          const SizedBox(height: 12),
-          SearchablePickerField<int>(
-            selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
-            // Built on open, not on build — the same reason the image panel's
-            // is: a relay's worth of video models used to be mounted as
-            // `DropdownMenuItem`s on every frame to render one line.
-            optionsBuilder: () => [
-              for (final m in videoModels)
-                if (m.channelId == selectedChannelId && m.id != null) modelPickerOption(m),
+      content: FilledFieldScope(
+        child: Column(
+          children: [
+            // Side by side, captioned above, filled — `17b` draws the video
+            // card's fields exactly as `16a` draws the image card's, which is
+            // the point of them being the same card. Stacked with floating
+            // `labelText`s, these two were the only pair of pickers in the app
+            // wearing a different form from every other pair.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: AppLabelledField(
+                    label: l10n.channel,
+                    child: SearchablePickerField<int>(
+                      selected:
+                          selectedChannel == null ? null : channelPickerOption(selectedChannel),
+                      optionsBuilder: () => videoChannels.map(channelPickerOption).toList(),
+                      onChanged: (val) {
+                        final firstVideoInChannel =
+                            videoModels.where((m) => m.channelId == val).firstOrNull;
+                        if (firstVideoInChannel != null) {
+                          appState.updateVideoConfig(
+                              modelId: firstVideoInChannel.id.toString());
+                        }
+                      },
+                      hint: l10n.selectAChannel,
+                      searchHint: l10n.searchChannels,
+                      dialogIcon: Icons.hub_outlined,
+                      enabled: videoChannels.isNotEmpty,
+                      badgeStyle: PickerBadge.dot,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: AppLabelledField(
+                    label: l10n.model,
+                    child: SearchablePickerField<int>(
+                      selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
+                      // Built on open, not on build — the same reason the
+                      // image panel's is: a relay's worth of video models used
+                      // to be mounted as `DropdownMenuItem`s on every frame to
+                      // render one line.
+                      optionsBuilder: () => [
+                        for (final m in videoModels)
+                          if (m.channelId == selectedChannelId && m.id != null)
+                            modelPickerOption(m),
+                      ],
+                      onChanged: (val) => appState.updateVideoConfig(modelId: val.toString()),
+                      hint: l10n.selectAModel,
+                      searchHint: l10n.searchModels,
+                      dialogIcon: Icons.memory_outlined,
+                      enabled: videoModels.any((m) => m.channelId == selectedChannelId),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (sharedControls.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: sharedControls),
             ],
-            onChanged: (val) => appState.updateVideoConfig(modelId: val.toString()),
-            hint: l10n.selectAModel,
-            searchHint: l10n.searchModels,
-            decoration: InputDecoration(labelText: l10n.model),
-            dialogIcon: Icons.memory_outlined,
-            enabled: videoModels.any((m) => m.channelId == selectedChannelId),
-          ),
-          if (sharedControls.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Row(children: sharedControls),
+            // Per-model extras (seconds / quality for openaiVideo; aspectRatio
+            // / resolution / seconds slider for grok-imagine-video-1.5;
+            // nothing for Veo). Rebuilds when the user changes a value or
+            // switches model.
+            if (modelInChannel != null) ...[
+              const SizedBox(height: 8),
+              _buildVideoParamControls(l10n, modelInChannel, appState),
+            ],
           ],
-          // Per-model extras (seconds / quality for openaiVideo; aspectRatio /
-          // resolution / seconds slider for grok-imagine-video-1.5; nothing
-          // for Veo). Rebuilds when the user changes a value or switches model.
-          if (modelInChannel != null) ...[
-            const SizedBox(height: 8),
-            _buildVideoParamControls(l10n, modelInChannel, appState),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -496,6 +579,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
           value: current,
           onChanged: (v) => appState.setVideoParam(modelId, spec.key, v),
           compact: true,
+          // `17b` draws 时长 and 质量 as equal shares with the chosen one
+          // lifted out on white — the same control the image panel's 质量 row
+          // takes, and for the same reason.
+          expand: true,
+          style: AppSegmentStyle.raised,
         );
       case ParamControl.customSize:
         // Not currently used by any video family — video panels render their
