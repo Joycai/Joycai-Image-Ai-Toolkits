@@ -320,16 +320,12 @@ InputDecorationTheme _buildInputDecorationTheme(ColorScheme colorScheme) {
       );
 
   return InputDecorationTheme(
-    // Filled again — but with the *ramp's* step, not the old accent-tied
-    // grey that got the fill removed in the first place. D2's field boxes
-    // (13a/15a, and 14a's search fields) all sit a step off their panel:
-    // 55% white over the surface in light, which lands on
-    // `surfaceContainerLowest` — the same reading AppCard's outlined form
-    // settled on. In dark that role is a step *below* the panel, so a field
-    // reads as a recessed well rather than a raised chip, which is the right
-    // physics for a place you type into.
-    filled: true,
-    fillColor: colorScheme.surfaceContainerLowest,
+    // Outlined, app-wide. `D2` draws its field boxes with a fill a step off
+    // the panel, but that is a D2 reading: the screens the spec has not been
+    // redrawn for put inputs on toolbars and canvases where the outline is
+    // right. `FilledFieldScope` carries the filled skin into the subtrees
+    // that have been aligned to a frame — see `app_text_field.dart`.
+    filled: false,
     isDense: true,
     // Tighter than Material's default, which budgets for a floating label on
     // every field. Most of this app's inputs sit in dense config panels and

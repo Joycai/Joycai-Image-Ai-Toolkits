@@ -33,6 +33,28 @@ enum AppSegmentStyle {
   raised,
 }
 
+/// How the track behind the options is drawn.
+///
+/// Separate from [AppSegmentStyle], which governs the *selection*: a control
+/// can want a quiet track and a tinted selection, or either one alone.
+enum AppSegmentTrack {
+  /// A step up the neutral ramp, no edge. The default, and what every
+  /// control on a toolbar or a bare canvas wants: the fill is what separates
+  /// it from whatever it was dropped onto.
+  fill,
+
+  /// Near-white with a hairline edge — the same skin the app's input boxes
+  /// wear.
+  ///
+  /// For a track sitting *inside a form*, among fields it should read as a
+  /// sibling of. `D2`'s 13a/13c draw the context-window control this way, and
+  /// the reason is legibility rather than taste: [fill]'s tone is deep enough
+  /// into the blue-grey ramp that it and an accent-tinted selection read as
+  /// one colour family, where a form wants the neutral track and the accent
+  /// selection told apart.
+  outlined,
+}
+
 /// A single-choice control: a track holding its options, with the chosen one
 /// filled in.
 ///
@@ -64,6 +86,9 @@ class AppSegmentedControl<T> extends StatefulWidget {
   /// How the chosen option is marked.
   final AppSegmentStyle style;
 
+  /// How the track is drawn. See [AppSegmentTrack].
+  final AppSegmentTrack track;
+
   const AppSegmentedControl({
     super.key,
     required this.segments,
@@ -73,6 +98,7 @@ class AppSegmentedControl<T> extends StatefulWidget {
     this.compact = false,
     this.iconOnly = false,
     this.style = AppSegmentStyle.tinted,
+    this.track = AppSegmentTrack.fill,
   });
 
   @override
@@ -129,18 +155,21 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>> {
 
     final indicator = _indicator;
 
+    final outlinedTrack = widget.track == AppSegmentTrack.outlined;
+
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        // The input-field family, not a grey wash. The spec draws every
-        // track as a near-white step above the panel with a hairline edge
-        // (13a/13c: #fafbff on #dbe0ef) — visibility comes from the border,
-        // the way it now does on every input box. It was
-        // `surfaceContainerHighest`, whose blue-grey sat close enough to the
-        // accent tint that track and selection read as one colour family,
-        // exactly what the spec keeps apart: neutral track, accent selection.
-        color: colorScheme.surfaceContainerLow,
-        border: Border.all(color: colorScheme.outlineVariant),
+        // A tone above every surface the app puts this on, so the track is
+        // visible whether it lands on a card or on the canvas — unless the
+        // caller asked for [AppSegmentTrack.outlined], which carries its
+        // visibility in an edge instead.
+        color: outlinedTrack
+            ? colorScheme.surfaceContainerLow
+            : colorScheme.surfaceContainerHighest,
+        border: outlinedTrack
+            ? Border.all(color: colorScheme.outlineVariant)
+            : null,
         // One step out from the chips it holds, so the gap between the two
         // curves stays even around the selected option's corners.
         borderRadius: BorderRadius.circular(AppRadius.md),

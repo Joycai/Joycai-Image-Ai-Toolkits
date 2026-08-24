@@ -14,6 +14,7 @@ import '../app_button.dart';
 import '../app_card.dart';
 import '../app_dialog.dart';
 import '../app_segmented_control.dart';
+import '../app_text_field.dart';
 import '../searchable_picker.dart';
 import 'channel_avatar.dart';
 import 'model_picker_options.dart';
@@ -220,13 +221,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       // Fields at the spec's 40px. The app theme's dense inputs land at ~44;
       // with a caption now above every field the extra 4px × five fields is
       // what stood between the wide layout and the spec's no-scroll promise.
-      content: Theme(
-        data: Theme.of(context).copyWith(
-          inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
+      content: FilledFieldScope(
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+          ),
+          child: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
         ),
-        child: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
       ),
       // actionsOverride, not actions: the footer pairs a left-aligned reason
       // the save is unavailable with the right-aligned buttons.
@@ -562,6 +565,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         const SizedBox(height: 8),
         AppSegmentedControl<ContextWindowMode>(
           expand: true,
+          // The form skin: this track sits among input boxes and `13a` draws
+          // it as one of them. Every other segmented control in the app is on
+          // a toolbar or a canvas, where the filled track is right.
+          track: AppSegmentTrack.outlined,
           value: contextMode,
           onChanged: (v) => setState(() => contextMode = v),
           segments: [

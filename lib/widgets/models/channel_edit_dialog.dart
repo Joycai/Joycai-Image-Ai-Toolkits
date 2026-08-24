@@ -14,6 +14,7 @@ import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
+import '../app_text_field.dart';
 import 'channel_avatar.dart';
 import 'channel_form_sections.dart';
 import 'model_tag_chip.dart';
@@ -118,7 +119,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
+        body: FilledFieldScope(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,6 +137,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
                 onColorChanged: (c) => setState(() => tagColor = c),
               ),
             ],
+          ),
           ),
         ),
       );
@@ -156,7 +159,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       // The body brings its own padding so its two columns can carry the
       // divider between them right to the edges.
       contentPadding: EdgeInsets.zero,
-      content: SingleChildScrollView(
+      content: FilledFieldScope(
+        child: SingleChildScrollView(
           // 20 horizontal, matching the shell's own inset so the section
           // labels share the heading's left edge — it was 24, and the 4px
           // stagger read as sloppiness, same as the model editor's had.
@@ -210,6 +214,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             ],
           ),
         ),
+      ),
       actions: [
         AppButton(
           label: l10n.cancel,

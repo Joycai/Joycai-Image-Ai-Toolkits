@@ -18,6 +18,7 @@ import '../../widgets/models/channel_avatar.dart';
 import '../../widgets/models/model_tag_chip.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
+import '../../widgets/app_text_field.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
@@ -137,7 +138,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
         return Scaffold(
           backgroundColor: colorScheme.surfaceContainer,
-          body: Row(
+          // `14a` draws both search fields filled, a step off their column.
+          body: FilledFieldScope(
+            child: Row(
               children: [
                 PanelCard(
                   width: _sidebarWidth,
@@ -171,6 +174,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ),
                 ),
               ],
+            ),
           ),
         );
       },

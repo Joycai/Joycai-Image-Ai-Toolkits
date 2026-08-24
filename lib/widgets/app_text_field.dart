@@ -156,3 +156,45 @@ class _AppTextFieldState extends State<AppTextField> {
     );
   }
 }
+
+/// Gives every input under [child] the filled skin `D2` draws: a box a step
+/// off the panel it sits on, rather than the app-wide outlined default.
+///
+/// Scoped rather than themed globally, and the reason is that the two are both
+/// right in their own places. An input on a toolbar or a bare canvas — the
+/// workbench's, the gallery's — wants the outline: its neighbours are buttons
+/// and chips, and a fill there reads as a second surface nobody asked for. An
+/// input *in a form*, among a column of sibling fields, wants the fill: it is
+/// what tells the field apart from the panel behind it when there is nothing
+/// else in the row to do that. `D2`'s frames are all the second kind, which is
+/// why the models screen and its dialogs opt in and nothing else does.
+///
+/// Reach for this per screen as a frame is aligned, not once for the app.
+/// Flipping the theme default instead is what put a fill under half the
+/// workbench in a change that was only ever about the model editor.
+class FilledFieldScope extends StatelessWidget {
+  const FilledFieldScope({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+          filled: true,
+          // The ramp's step, not a tint of the accent — the grey that *was*
+          // accent-tied is what got the fill removed from this widget in the
+          // first place. `surfaceContainerLowest` is the same reading
+          // `AppCard`'s outlined form settled on: a hair above the panel in
+          // light, and in dark a step below it, so a field reads as a well
+          // rather than a raised chip. Which is the right physics for a place
+          // you type into.
+          fillColor: theme.colorScheme.surfaceContainerLowest,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
