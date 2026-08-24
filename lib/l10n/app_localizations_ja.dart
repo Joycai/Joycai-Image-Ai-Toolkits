@@ -1142,6 +1142,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get searchChannels => 'チャンネル名またはタグを検索...';
 
   @override
+  String get kindChat => 'チャット';
+
+  @override
+  String get kindImage => '画像';
+
+  @override
+  String get kindVideo => '動画';
+
+  @override
+  String get kindMultimodal => 'マルチモーダル';
+
+  @override
+  String reasoningChip(String level) {
+    return '推論·$level';
+  }
+
+  @override
+  String get webSearchChip => 'ウェブ検索';
+
+  @override
+  String get viewAllImagesChip => '全参考画像';
+
+  @override
+  String countGroups(int count) {
+    return '$count 組';
+  }
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

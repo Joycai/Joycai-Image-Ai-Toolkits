@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
+import '../../core/fee_group_palette.dart';
+import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
+import '../../services/llm/context_budget.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/channel_avatar.dart';
@@ -18,6 +23,8 @@ import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
 import '../../widgets/panel_resizer.dart';
+import '../../widgets/pricing_group_manager.dart';
+import '../../widgets/scroll_edge_fade.dart';
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
@@ -32,6 +39,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   int? _selectedChannelId;
   double _sidebarWidth = 300;
+
+  /// Live filters, per `14a`: the channel list and the model grid each carry
+  /// their own search, and the grid a kind filter besides. Plain lowercase
+  /// substring match — the lists are at most a few hundred rows.
+  String _channelQuery = '';
+  String _modelQuery = '';
+
+  /// The selected kind chip, a [ModelTag] string value; null is "all".
+  String? _kindFilter;
 
   /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
   /// re-engages where the pointer actually is after a drag past the end,
@@ -179,24 +195,24 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final modelCount = appState.allModels.length;
 
     // Screen header lives inside the top of the card; its bottom border
-    // becomes an internal divider on the inset-panel canvas.
+    // becomes an internal divider on the inset-panel canvas. `14a` titles it
+    // with what the column actually lists — channels — and spends the trailing
+    // slot on a labelled add button rather than a bare plus.
     final header = Container(
       height: 56,
-      padding: const EdgeInsets.only(left: 16, right: 8),
+      padding: const EdgeInsets.only(left: 16, right: 10),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
       ),
       child: Row(
         children: [
-          Icon(Icons.memory, size: 22, color: colorScheme.primary),
-          const SizedBox(width: 10),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l10n.modelManager,
+                  l10n.channels,
                   style: textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -211,18 +227,42 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 22),
+          const SizedBox(width: 8),
+          AppButton(
+            label: l10n.addChannel,
+            icon: Icons.add,
+            size: AppButtonSize.compact,
             onPressed: () => _showChannelDialog(l10n, appState),
-            tooltip: l10n.addChannel,
           ),
         ],
       ),
     );
 
+    final query = _channelQuery.trim().toLowerCase();
+    final visible = query.isEmpty
+        ? channels
+        : [
+            for (final c in channels)
+              if (c.displayName.toLowerCase().contains(query) ||
+                  (c.tag ?? '').toLowerCase().contains(query))
+                c,
+          ];
+
     return Column(
       children: [
         header,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          child: TextField(
+            onChanged: (v) => setState(() => _channelQuery = v),
+            decoration: InputDecoration(
+              hintText: l10n.searchChannels,
+              prefixIcon: const Icon(Icons.search, size: AppSize.iconSm),
+              prefixIconConstraints: const BoxConstraints(minWidth: 36),
+            ),
+            style: textTheme.bodyMedium,
+          ),
+        ),
         Expanded(
           child: channels.isEmpty
               ? Center(
@@ -233,41 +273,131 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(8),
-                  itemCount: channels.length,
-                  itemBuilder: (context, index) {
-                    final channel = channels[index];
-                    final isSelected = channel.id == _selectedChannelId;
-                    final models = appState.getModelsForChannel(channel.id);
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: ListTile(
-                        selected: isSelected,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        selectedTileColor: colorScheme.secondaryContainer,
-                        leading: ChannelAvatar(channel),
-                        title: Text(
-                          channel.displayName,
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            // ListTile tints a selected title with `primary`; the slot
-                            // carries `onSurface`, so that tint has to be re-stated or
-                            // the selected row loses it.
-                            color: isSelected ? colorScheme.primary : null,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          l10n.countModels(models.length),
-                          style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                        onTap: () => setState(() => _selectedChannelId = channel.id),
-                      ),
-                    );
-                  },
+                  itemCount: visible.length,
+                  itemBuilder: (context, index) =>
+                      _buildChannelRow(l10n, appState, visible[index]),
                 ),
         ),
+        // The fee-group entry `14a` pins under the list: pricing lives a
+        // screen away (usage → 费率组), and a model card naming its group is
+        // only actionable if the group is reachable from here.
+        Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
+          ),
+          child: InkWell(
+            onTap: () => _showFeeGroupManager(l10n),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.money_outlined, size: AppSize.iconSm, color: colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.feeManagement,
+                      style: textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    l10n.countGroups(appState.allPricingGroups.length),
+                    style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  /// One channel row: identity disc, name beside the channel's own tag chip,
+  /// and a mono second line pairing the model count with the vendor id — the
+  /// two facts `14a` surfaces so a row answers "which endpoint, how big"
+  /// without being opened.
+  Widget _buildChannelRow(AppLocalizations l10n, AppState appState, LLMChannel channel) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isSelected = channel.id == _selectedChannelId;
+    final models = appState.getModelsForChannel(channel.id);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: isSelected ? colorScheme.primary.withValues(alpha: AppAlpha.tint) : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: isSelected
+              ? BorderSide(color: colorScheme.primary.withValues(alpha: AppAlpha.ring))
+              : BorderSide.none,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() => _selectedChannelId = channel.id),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
+              children: [
+                ChannelAvatar(channel, size: 30),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              channel.displayName,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                color: isSelected ? colorScheme.primary : null,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (channel.tag != null && channel.tag!.isNotEmpty) ...[
+                            const SizedBox(width: 7),
+                            ModelTagChip(
+                              channel.tag!,
+                              color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
+                              uppercase: false,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${l10n.countModels(models.length)} · ${channel.type}',
+                        style: textTheme.labelMedium?.mono.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFeeGroupManager(AppLocalizations l10n) {
+    AppDialog.show<void>(
+      context,
+      title: l10n.feeManagement,
+      icon: Icons.money_outlined,
+      maxWidth: 760,
+      maxHeight: 720,
+      scrollable: true,
+      onClose: () => Navigator.pop(context),
+      content: const PricingGroupManager(),
     );
   }
 
@@ -293,10 +423,35 @@ class _ModelsScreenState extends State<ModelsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  channel.displayName,
-                  style: textTheme.titleMedium,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        channel.displayName,
+                        style: textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // The vendor id, restated as a badge the way `14a` (and
+                    // the model editor's heading) draw it — which wire
+                    // protocol this endpoint speaks is the fact that decides
+                    // what the models under it can do.
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                      ),
+                      child: Text(
+                        channel.type,
+                        style: textTheme.labelSmall?.mono.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   channel.endpoint,
@@ -334,11 +489,27 @@ class _ModelsScreenState extends State<ModelsScreen> {
             onPressed: () => _showChannelDialog(l10n, appState, channel: channel),
             tooltip: l10n.edit,
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            color: colorScheme.error,
-            onPressed: () => _confirmDeleteChannel(l10n, channel, appState),
-            tooltip: l10n.delete,
+          // A kebab, not a bare trash can: `14a` keeps the header to one
+          // restrained row, and delete is the one action that should not sit
+          // a stray click away from "edit".
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 20),
+            tooltip: l10n.more,
+            onSelected: (v) {
+              if (v == 'delete') _confirmDeleteChannel(l10n, channel, appState);
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: AppSize.iconMd, color: colorScheme.error),
+                    const SizedBox(width: 10),
+                    Text(l10n.delete, style: TextStyle(color: colorScheme.error)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -347,35 +518,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
     return Column(
       children: [
         header,
+        _buildModelsToolbar(l10n, appState, channel),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n.modelsTab,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        AppButton(
-                          label: l10n.addModel,
-                          icon: Icons.add,
-                          variant: AppButtonVariant.text,
-                          onPressed: () =>
-                              _showModelDialog(l10n, appState, preChannelId: channel.id),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildModelsGrid(channel, l10n, appState),
-                  ],
-                ),
+                child: _buildModelsGrid(channel, l10n, appState),
               ),
             ),
           ),
@@ -384,87 +534,121 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildModelsGrid(LLMChannel channel, AppLocalizations l10n, AppState appState) {
-    final models = appState.getModelsForChannel(channel.id!);
-    if (models.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(48),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant, style: BorderStyle.solid),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.model_training, size: 48, color: Theme.of(context).colorScheme.outline.withAlpha(100)),
-            const SizedBox(height: 16),
-            Text(l10n.noModelsConfigured, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
-          ],
-        ),
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 800 ? 2 : 1;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            mainAxisExtent: 100,
-          ),
-          itemCount: models.length,
-          itemBuilder: (context, index) => _buildModelCard(models[index], l10n, appState),
-        );
-      },
-    );
-  }
-
-  Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
-    final colorScheme = Theme.of(context).colorScheme;
+  /// The `14a` toolbar: a filter field, one pill per model kind with its
+  /// count, and the add action — replacing the old "模型" heading, which said
+  /// nothing the grid under it didn't.
+  ///
+  /// The pills sit in a horizontal scroller rather than behind a measured
+  /// width threshold; if the row is squeezed the chips scroll, they don't
+  /// vanish.
+  Widget _buildModelsToolbar(AppLocalizations l10n, AppState appState, LLMChannel channel) {
     final textTheme = Theme.of(context).textTheme;
-    final pricingGroup = appState.allPricingGroups.cast<dynamic>().firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
+    final models = appState.getModelsForChannel(channel.id!);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _showModelDialog(l10n, appState, model: model),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final kinds = <(String?, String, Color?)>[
+      (null, l10n.filterAll, null),
+      ('chat', l10n.kindChat, modelTagAccent('chat')),
+      ('image', l10n.kindImage, modelTagAccent('image')),
+      ('video', l10n.kindVideo, modelTagAccent('video')),
+      ('multimodal', l10n.kindMultimodal, modelTagAccent('multimodal')),
+    ];
+
+    int countOf(String? kind) => kind == null
+        ? models.length
+        : models.where((m) => m.tag.toLowerCase() == kind).length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              onChanged: (v) => setState(() => _modelQuery = v),
+              decoration: InputDecoration(
+                hintText: l10n.filterModels,
+                prefixIcon: const Icon(Icons.search, size: AppSize.iconSm),
+                prefixIconConstraints: const BoxConstraints(minWidth: 36),
+              ),
+              style: textTheme.bodyMedium,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: ScrollEdgeFade(
+              axis: Axis.horizontal,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(model.modelName, style: textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Flexible(child: Text(model.modelId, style: textTheme.bodySmall?.copyWith(color: colorScheme.outline), overflow: TextOverflow.ellipsis)),
-                        if (pricingGroup != null) ...[
-                          const SizedBox(width: 8),
-                          _buildFeeBadge(pricingGroup.name, colorScheme),
-                        ],
-                      ],
-                    ),
+                    for (final (kind, label, color) in kinds) ...[
+                      _buildKindPill(
+                        label: label,
+                        count: countOf(kind),
+                        dot: color,
+                        selected: _kindFilter == kind,
+                        onTap: () => setState(() => _kindFilter = kind),
+                      ),
+                      if (kind != 'multimodal') const SizedBox(width: 6),
+                    ],
                   ],
                 ),
               ),
-              ModelTagChip(model.tag),
-              const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.more_vert, size: 20),
-                onPressed: () => _showModelOptions(model, l10n, appState),
+            ),
+          ),
+          const SizedBox(width: 10),
+          AppButton(
+            label: l10n.addModel,
+            icon: Icons.add,
+            size: AppButtonSize.compact,
+            onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKindPill({
+    required String label,
+    required int count,
+    required bool selected,
+    required VoidCallback onTap,
+    Color? dot,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: selected ? colorScheme.primary.withValues(alpha: AppAlpha.tint) : Colors.transparent,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: AppAlpha.ring)
+              : colorScheme.outlineVariant,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (dot != null) ...[
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                '$label $count',
+                style: textTheme.labelMedium?.copyWith(
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -473,21 +657,271 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildFeeBadge(String name, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withAlpha(150),
-        borderRadius: BorderRadius.circular(4),
+  Widget _buildModelsGrid(LLMChannel channel, AppLocalizations l10n, AppState appState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final models = appState.getModelsForChannel(channel.id!);
+    if (models.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(48),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outlineVariant, style: BorderStyle.solid),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.model_training, size: 48, color: colorScheme.outline.withAlpha(100)),
+            const SizedBox(height: 16),
+            Text(l10n.noModelsConfigured, style: TextStyle(color: colorScheme.outline)),
+          ],
+        ),
+      );
+    }
+
+    final query = _modelQuery.trim().toLowerCase();
+    final visible = [
+      for (final m in models)
+        if ((_kindFilter == null || m.tag.toLowerCase() == _kindFilter) &&
+            (query.isEmpty ||
+                m.modelName.toLowerCase().contains(query) ||
+                m.modelId.toLowerCase().contains(query)))
+          m,
+    ];
+
+    if (visible.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Text(l10n.pickerNoMatches, style: TextStyle(color: colorScheme.outline)),
+        ),
+      );
+    }
+
+    // Rows of equal-height pairs rather than a fixed-extent GridView: the
+    // `14a` card's third row wraps, so its height is content-driven, and a
+    // hardcoded mainAxisExtent would either clip the wrapped chips or pad
+    // every unwrapped card. IntrinsicHeight is safe here — nothing in a card
+    // measures via LayoutBuilder.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 800 ? 2 : 1;
+        final cells = <Widget>[
+          for (final m in visible) _buildModelCard(m, l10n, appState),
+          _buildAddModelCard(l10n, appState, channel),
+        ];
+
+        return Column(
+          children: [
+            for (var r = 0; r < cells.length; r += columns)
+              Padding(
+                padding: EdgeInsets.only(top: r == 0 ? 0 : 12),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var c = 0; c < columns; c++) ...[
+                        if (c > 0) const SizedBox(width: 12),
+                        Expanded(
+                          child: r + c < cells.length ? cells[r + c] : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// One model card, `14a`'s information-density upgrade: the fields the edit
+  /// dialog settles — context, capabilities, reasoning, fee group — laid on
+  /// the card, so what a model is configured to do is readable without
+  /// opening it.
+  Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final pricingGroup = appState.allPricingGroups
+        .cast<dynamic>()
+        .firstWhere((g) => g.id == model.feeGroupId, orElse: () => null);
+
+    // Legacy rows carry only the boolean; render its effort equivalent, same
+    // as the edit dialog does.
+    final effort =
+        model.reasoningEffort ?? (model.enableThinking ? 'medium' : null);
+    final effortLabel = switch (effort) {
+      'low' => l10n.reasoningEffortLow,
+      'medium' => l10n.reasoningEffortMedium,
+      'high' => l10n.reasoningEffortHigh,
+      'max' => l10n.reasoningEffortMax,
+      _ => null,
+    };
+
+    final contextLabel = switch (ContextBudget.modeOf(model.contextWindow)) {
+      ContextWindowMode.unset => l10n.contextUnset,
+      ContextWindowMode.unlimited => l10n.contextUnlimited,
+      ContextWindowMode.specified => _formatTokens(model.contextWindow!),
+    };
+
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colorScheme.outlineVariant.withAlpha(100)),
       ),
-      child: Text(
-        name,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
-            ?.copyWith(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w500),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => _showModelDialog(l10n, appState, model: model),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      model.modelName,
+                      style: textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  ModelTagChip(model.tag),
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _showModelOptions(model, l10n, appState),
+                  ),
+                ],
+              ),
+              Text(
+                model.modelId,
+                style: textTheme.labelMedium?.mono
+                    .copyWith(color: colorScheme.onSurfaceVariant),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 9),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _specChip(contextLabel, mono: true),
+                        // One capability chip, the way `14a` curates it:
+                        // streaming is the interesting fact, standard-request
+                        // only worth stating when streaming is off.
+                        if (model.supportsStream)
+                          _specChip(l10n.capabilityStreamingShort)
+                        else if (model.supportsStandard)
+                          _specChip(l10n.capabilityStandardShort),
+                        if (effortLabel != null)
+                          _specChip(l10n.reasoningChip(effortLabel)),
+                        if (model.enableWebSearch)
+                          _specChip(
+                            l10n.webSearchChip,
+                            bg: colorScheme.primary.withValues(alpha: 0.10),
+                            fg: colorScheme.primary,
+                          ),
+                        if (model.forceViewAllImages)
+                          _specChip(l10n.viewAllImagesChip),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  if (pricingGroup != null)
+                    _specChip(
+                      pricingGroup.name,
+                      bg: feeGroupAccent(pricingGroup.id as int?).withValues(alpha: 0.10),
+                      fg: feeGroupAccent(pricingGroup.id as int?),
+                    )
+                  else
+                    _specChip(
+                      l10n.noFeeGroup,
+                      fg: colorScheme.outline,
+                      outlined: true,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  /// A quiet spec token: rounded 6, faint fill, one short fact.
+  Widget _specChip(String text, {Color? bg, Color? fg, bool mono = false, bool outlined = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final base = textTheme.labelSmall?.copyWith(
+      fontWeight: FontWeight.w500,
+      color: fg ?? colorScheme.onSurfaceVariant,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      constraints: const BoxConstraints(maxWidth: 180),
+      decoration: BoxDecoration(
+        color: outlined ? null : (bg ?? colorScheme.surfaceContainerHigh),
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+        border: outlined ? Border.all(color: colorScheme.outlineVariant) : null,
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: mono ? base?.mono : base,
+      ),
+    );
+  }
+
+  /// The dashed add-model cell closing the grid, as `14a` draws it — the same
+  /// affordance the toolbar button offers, restated where the eye ends up
+  /// after scanning the cards.
+  Widget _buildAddModelCard(AppLocalizations l10n, AppState appState, LLMChannel channel) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return CustomPaint(
+      painter: _DashedBorderPainter(
+        color: colorScheme.outlineVariant,
+        radius: AppRadius.lg,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 96),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add, size: AppSize.iconLg, color: colorScheme.outline),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.addModel,
+                  style: textTheme.labelLarge?.copyWith(color: colorScheme.outline),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTokens(int tokens) {
+    if (tokens >= 1048576) return '${tokens ~/ 1048576}M';
+    if (tokens >= 1024) return '${tokens ~/ 1024}K';
+    return '$tokens';
   }
 
   // --- Mobile Tab Content ---
@@ -722,4 +1156,44 @@ class _ModelsScreenState extends State<ModelsScreen> {
       ),
     );
   }
+}
+
+/// A hairline dashed rounded-rect, for the one dashed affordance `14a` draws.
+///
+/// Flutter's [Border] cannot dash; this walks the rounded-rect path and
+/// strokes alternate segments. Cheap enough to repaint freely — one path per
+/// card, only on the models screen.
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Offset.zero & size,
+        Radius.circular(radius),
+      ));
+    const dash = 5.0, gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, (distance + dash).clamp(0, metric.length)),
+          paint,
+        );
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }

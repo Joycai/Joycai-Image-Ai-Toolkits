@@ -271,5 +271,27 @@
     }
   },
   "selectAChannel": "选择渠道",
-  "searchChannels": "搜索渠道名称或标签..."
+  "searchChannels": "搜索渠道名称或标签...",
+  "kindChat": "对话",
+  "kindImage": "图像",
+  "kindVideo": "视频",
+  "kindMultimodal": "多模态",
+  "reasoningChip": "推理·{level}",
+  "@reasoningChip": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "webSearchChip": "联网",
+  "viewAllImagesChip": "看全部参考图",
+  "countGroups": "{count} 组",
+  "@countGroups": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

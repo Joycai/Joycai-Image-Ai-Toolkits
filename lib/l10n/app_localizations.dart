@@ -2231,6 +2231,54 @@ abstract class AppLocalizations {
   /// **'Search channel name or tag...'**
   String get searchChannels;
 
+  /// No description provided for @kindChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get kindChat;
+
+  /// No description provided for @kindImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get kindImage;
+
+  /// No description provided for @kindVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get kindVideo;
+
+  /// No description provided for @kindMultimodal.
+  ///
+  /// In en, this message translates to:
+  /// **'Multimodal'**
+  String get kindMultimodal;
+
+  /// No description provided for @reasoningChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning · {level}'**
+  String reasoningChip(String level);
+
+  /// No description provided for @webSearchChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Web search'**
+  String get webSearchChip;
+
+  /// No description provided for @viewAllImagesChip.
+  ///
+  /// In en, this message translates to:
+  /// **'All ref images'**
+  String get viewAllImagesChip;
+
+  /// No description provided for @countGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} groups'**
+  String countGroups(int count);
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

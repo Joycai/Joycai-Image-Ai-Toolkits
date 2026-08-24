@@ -222,5 +222,27 @@
     }
   },
   "selectAChannel": "チャンネルを選択",
-  "searchChannels": "チャンネル名またはタグを検索..."
+  "searchChannels": "チャンネル名またはタグを検索...",
+  "kindChat": "チャット",
+  "kindImage": "画像",
+  "kindVideo": "動画",
+  "kindMultimodal": "マルチモーダル",
+  "reasoningChip": "推論·{level}",
+  "@reasoningChip": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "webSearchChip": "ウェブ検索",
+  "viewAllImagesChip": "全参考画像",
+  "countGroups": "{count} 組",
+  "@countGroups": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
