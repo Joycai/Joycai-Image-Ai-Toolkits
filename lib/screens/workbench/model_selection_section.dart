@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
@@ -113,13 +114,19 @@ class ModelSelectionSection extends StatelessWidget {
                     searchHint: l10n.searchChannels,
                     dialogIcon: Icons.hub_outlined,
                     enabled: channels.isNotEmpty,
+                    // A dot, not a chip: this field is half a 340px column,
+                    // and `16a` spends what is left on the channel's name.
+                    badgeStyle: PickerBadge.dot,
                   ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _LabelledField(
-                  label: l10n.modelSelection,
+                  // `model`, not `modelSelection` — the card's own heading is
+                  // already 「模型选择」, and the caption under it was saying it
+                  // a second time. `16a` labels the field 「模型」.
+                  label: l10n.model,
                   child: SearchablePickerField<int>(
                     selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
                     // Built on open, not on build. This is the list that used
@@ -213,6 +220,12 @@ class ModelSelectionSection extends StatelessWidget {
           value: current,
           onChanged: (v) => onImageParamChanged(modelId, spec.key, v),
           compact: true,
+          // `16a` gives every option `flex:1` and lifts the chosen one out on
+          // white. Tinted and self-sized, this row read as four unequal
+          // buttons with one of them washed — and on the accent tint the
+          // chosen option was the *dimmest* box in the card.
+          expand: true,
+          style: AppSegmentStyle.raised,
         );
         break;
       case ParamControl.customSize:
@@ -241,6 +254,10 @@ class ModelSelectionSection extends StatelessWidget {
                 child: Text(
                   _optionLabel(l10n, spec.key, current).replaceAll('x', '×'),
                   overflow: TextOverflow.ellipsis,
+                  // A pixel pair is a figure, and `16a` sets it in the mono
+                  // face for the same reason every other id and count in the
+                  // app is: the digits line up between one model and the next.
+                  style: Theme.of(context).textTheme.bodySmall?.mono,
                 ),
               ),
               const Icon(Icons.tune, size: 14),
@@ -271,7 +288,11 @@ class ModelSelectionSection extends StatelessWidget {
       case 'aspectRatio':
         return l10n.aspectRatio;
       case 'resolution':
-        return l10n.resolution;
+        // The image families' `resolution` param is a width×height pair, which
+        // is a size, not a resolution — and `16a` labels the row 「尺寸」. The
+        // video panel's copy of this switch keeps `resolution`: there the
+        // param really is one (720p / 1080p).
+        return l10n.imageSizeLabel;
       case 'quality':
         return l10n.quality;
       case 'promptExtend':

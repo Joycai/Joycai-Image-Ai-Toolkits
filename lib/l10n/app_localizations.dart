@@ -3761,6 +3761,12 @@ abstract class AppLocalizations {
   /// **'Resolution'**
   String get resolution;
 
+  /// No description provided for @imageSizeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get imageSizeLabel;
+
   /// No description provided for @quality.
   ///
   /// In en, this message translates to:
@@ -3962,7 +3968,7 @@ abstract class AppLocalizations {
   /// No description provided for @compressReferenceImagesDesc.
   ///
   /// In en, this message translates to:
-  /// **'Re-encode images over 3MB to JPEG before sending, to reduce request size'**
+  /// **'Re-encode images over 3MB to JPEG'**
   String get compressReferenceImagesDesc;
 
   /// No description provided for @taskSubmitted.

@@ -1950,6 +1950,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resolution => '分辨率';
 
   @override
+  String get imageSizeLabel => '尺寸';
+
+  @override
   String get quality => '质量';
 
   @override
@@ -2059,7 +2062,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get compressReferenceImages => '压缩参考图';
 
   @override
-  String get compressReferenceImagesDesc => '发送前将超过 3MB 的图片重新编码为 JPEG，以减小请求体积';
+  String get compressReferenceImagesDesc => '超过 3MB 的图片重编码为 JPEG';
 
   @override
   String get taskSubmitted => '任务已提交至队列';
@@ -4751,6 +4754,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get resolution => '解析度';
 
   @override
+  String get imageSizeLabel => '尺寸';
+
+  @override
   String get quality => '品質';
 
   @override
@@ -4860,7 +4866,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get compressReferenceImages => '壓縮參考圖';
 
   @override
-  String get compressReferenceImagesDesc => '傳送前將超過 3MB 的圖片重新編碼為 JPEG，以縮小請求體積';
+  String get compressReferenceImagesDesc => '超過 3MB 的圖片重新編碼為 JPEG';
 
   @override
   String get taskSubmitted => '任務已提交至佇列';

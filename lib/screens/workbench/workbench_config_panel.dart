@@ -308,7 +308,9 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildToggleRow(
-                    icon: Icons.stream,
+                    // `waves`, not `stream`: `stream` is a scatter of dots,
+                    // and `16a` draws the sine the model editor already uses.
+                    icon: Icons.waves,
                     title: l10n.useStreaming,
                     description: l10n.useStreamingDesc,
                     value: useStream,
