@@ -228,10 +228,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          // Default height, not compact. The spec labels this 30px, but the
+          // row it has to agree with is the app's: 获取模型, the edit icon and
+          // every dialog footer sit at the 36px control height, and one short
+          // button among them reads as a mistake rather than a size.
           AppButton(
             label: l10n.addChannel,
             icon: Icons.add,
-            size: AppButtonSize.compact,
             onPressed: () => _showChannelDialog(l10n, appState),
           ),
         ],
@@ -600,7 +603,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
           AppButton(
             label: l10n.addModel,
             icon: Icons.add,
-            size: AppButtonSize.compact,
             onPressed: () => _showModelDialog(l10n, appState, preChannelId: channel.id),
           ),
         ],
