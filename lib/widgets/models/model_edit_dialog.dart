@@ -89,6 +89,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     return ChoiceChip(
       selected: selected,
       onSelected: (_) => setState(() => tag = value),
+      // A stadium, not Material's default rounded rectangle: the spec draws
+      // the kind picker as pills, one full step rounder than the input boxes
+      // around it.
+      shape: const StadiumBorder(),
+      visualDensity: VisualDensity.compact,
       label: Text(label),
       labelStyle: textTheme.bodySmall?.copyWith(
         fontWeight: FontWeight.w600,
@@ -204,8 +209,25 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       // shell's leading-icon layout has a place for.
       titleWidget: _buildHeader(context, colorScheme, showChannelBadge: twoPane),
       scrollable: true,
-      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
-      content: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
+      // The narrow layout separates heading from form by spacing alone, as
+      // the spec draws it; the wide one keeps the rule. The footer is ruled
+      // in both.
+      dividedHeading: twoPane,
+      // Horizontal inset matches the shell's own (20), so the section labels
+      // sit on the same left edge as the heading and the footer. It was 24,
+      // and the 4px stagger read as sloppiness rather than intent.
+      contentPadding: EdgeInsets.fromLTRB(20, twoPane ? 12 : 4, 20, 16),
+      // Fields at the spec's 40px. The app theme's dense inputs land at ~44;
+      // with a caption now above every field the extra 4px × five fields is
+      // what stood between the wide layout and the spec's no-scroll promise.
+      content: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+        ),
+        child: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
+      ),
       // actionsOverride, not actions: the footer pairs a left-aligned reason
       // the save is unavailable with the right-aligned buttons.
       actionsOverride: _buildFooter(context, colorScheme),
@@ -271,7 +293,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         // it governs (reasoning effort, host web search) are a pane away.
         if (showChannelBadge && channel != null) ...[
           const SizedBox(width: 12),
-          Flexible(
+          // Non-flex, capped. As a Flexible it shared the row's free space
+          // with the title's Expanded, and its unused share became trailing
+          // blank — parking the badge and the close button mid-row instead of
+          // in the corner the design puts them in.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -385,9 +412,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               // fields side by side in it truncate the very ids they exist to
               // show.
               _basicInfoSection(colorScheme, pairNameAndId: false),
-              const SizedBox(height: 24),
+              // 20, a step under the single column's 24: the wide layout's
+              // whole point is fitting without a scrollbar, and these two
+              // gaps are the cheapest height left.
+              const SizedBox(height: 20),
               _contextSection(colorScheme),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               _billingSection(colorScheme),
             ],
           ),
@@ -399,9 +429,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _capabilitiesSection(colorScheme),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               _agentSection(colorScheme),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               _previewCard(colorScheme),
             ],
           ),
@@ -412,28 +442,57 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   // --- Sections -----------------------------------------------------------
 
+  /// A caption on its own line above [child], as the spec draws every field
+  /// label in this dialog — not Material's floating label notched into the
+  /// border. Same shape and type as the workbench's `_LabelledField`;
+  /// MergeSemantics for the same reason it has it, so a screen reader
+  /// announces the caption and the control as one stop.
+  Widget _labelled(String label, Widget child) {
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
+    );
+  }
+
+
   Widget _basicInfoSection(ColorScheme colorScheme, {required bool pairNameAndId}) {
     final l10n = widget.l10n;
     final appState = widget.appState;
     final textTheme = Theme.of(context).textTheme;
     final channel = _selectedChannel(appState);
 
-    final nameField = TextField(
-      controller: nameCtrl,
-      onChanged: (_) => setState(() {}),
-      decoration: InputDecoration(
-        labelText: l10n.displayName,
-        prefixIcon: const Icon(Icons.badge_outlined),
-        hintText: 'e.g. GPT-4o, Gemini Pro',
+    final nameField = _labelled(
+      l10n.displayName,
+      TextField(
+        controller: nameCtrl,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.badge_outlined),
+          hintText: 'e.g. GPT-4o, Gemini Pro',
+        ),
       ),
     );
-    final idField = TextField(
-      controller: idCtrl,
-      onChanged: (_) => setState(() {}),
-      decoration: InputDecoration(
-        labelText: l10n.modelIdLabel,
-        prefixIcon: const Icon(Icons.fingerprint),
-        hintText: 'e.g. gpt-4, gemini-1.5-pro',
+    final idField = _labelled(
+      l10n.modelIdLabel,
+      TextField(
+        controller: idCtrl,
+        onChanged: (_) => setState(() {}),
+        // Mono: this is an identifier the wire will see verbatim, and the
+        // spec sets it apart from the display name that way.
+        style: textTheme.bodyMedium?.mono,
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.fingerprint),
+          hintText: 'e.g. gpt-4, gemini-1.5-pro',
+        ),
       ),
     );
 
@@ -442,24 +501,28 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader(l10n.basicInfo),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         // The searchable picker, not a `DropdownButton`: it carries the
-        // channel's own tag chip — the identity the design gives this field —
-        // and is the control every other channel choice in the app uses.
-        SearchablePickerField<int>(
-          selected: channel == null ? null : channelPickerOption(channel),
-          optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
-          onChanged: (v) => setState(() => channelId = v),
-          hint: l10n.selectAChannel,
-          searchHint: l10n.searchChannels,
-          dialogIcon: Icons.hub_outlined,
-          enabled: appState.allChannels.isNotEmpty,
-          decoration: InputDecoration(
-            labelText: l10n.channel,
-            prefixIcon: const Icon(Icons.hub_outlined),
+        // channel's own identity disc — the round form the design gives this
+        // field — and is the control every other channel choice in the app
+        // uses.
+        _labelled(
+          l10n.channel,
+          SearchablePickerField<int>(
+            selected: channel == null ? null : channelPickerOption(channel),
+            optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
+            onChanged: (v) => setState(() => channelId = v),
+            hint: l10n.selectAChannel,
+            searchHint: l10n.searchChannels,
+            dialogIcon: Icons.hub_outlined,
+            enabled: appState.allChannels.isNotEmpty,
+            roundBadge: true,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.hub_outlined),
+            ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         if (pairNameAndId)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,10 +534,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           )
         else ...[
           nameField,
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           idField,
         ],
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -536,13 +599,37 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               ],
             ),
           ),
-          Slider(
-            value: contextSizeIdx,
-            min: 0,
-            max: (_contextSizes.length - 1).toDouble(),
-            divisions: _contextSizes.length - 1,
-            label: _formatTokens(_contextSizes[contextSizeIdx.round()]),
-            onChanged: (v) => setState(() => contextSizeIdx = v),
+          // Divisions for the snap, but no tick dots: the spec's track is a
+          // clean line, and the scale row below already says where the stops
+          // are.
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              tickMarkShape: SliderTickMarkShape.noTickMark,
+              // A 14px halo instead of Material's 24: the default budgets
+              // 48px of height for a control the spec draws in 26, and the
+              // difference is most of what pushed the wide layout past its
+              // no-scroll promise.
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            ),
+            child: Slider(
+              value: contextSizeIdx,
+              min: 0,
+              max: (_contextSizes.length - 1).toDouble(),
+              divisions: _contextSizes.length - 1,
+              label: _formatTokens(_contextSizes[contextSizeIdx.round()]),
+              onChanged: (v) => setState(() => contextSizeIdx = v),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (final size in _contextSizes)
+                Text(
+                  _formatTokens(size),
+                  style: textTheme.labelSmall?.mono
+                      .copyWith(color: colorScheme.outline),
+                ),
+            ],
           ),
         ],
         Padding(
@@ -580,6 +667,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => supportsStream = v),
           secondary: const Icon(Icons.waves),
           contentPadding: EdgeInsets.zero,
+          // Compact: the spec's rows sit at 9px of vertical padding, and
+          // ListTile's comfortable default made the right pane visibly
+          // looser than the form beside it.
+          visualDensity: VisualDensity.compact,
         ),
         SwitchListTile(
           title: Text(l10n.supportsStandardRequest, style: textTheme.bodyMedium),
@@ -589,6 +680,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => supportsStandard = v),
           secondary: const Icon(Icons.http),
           contentPadding: EdgeInsets.zero,
+          // Compact: the spec's rows sit at 9px of vertical padding, and
+          // ListTile's comfortable default made the right pane visibly
+          // looser than the form beside it.
+          visualDensity: VisualDensity.compact,
         ),
       ],
     );
@@ -614,6 +709,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => forceViewAllImages = v),
           secondary: const Icon(Icons.visibility_outlined),
           contentPadding: EdgeInsets.zero,
+          // Compact: the spec's rows sit at 9px of vertical padding, and
+          // ListTile's comfortable default made the right pane visibly
+          // looser than the form beside it.
+          visualDensity: VisualDensity.compact,
         ),
         // Reasoning intensity exists on the ① and ④ families (wire spellings
         // differ; the vocabulary is the app's own). ③/midjourney channels
@@ -622,22 +721,24 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: DropdownButtonFormField<String>(
-              // '' stands in for null: a nullable-valued form field cannot
-              // distinguish "user picked default" from "no selection".
-              initialValue: reasoningEffort ?? '',
-              isExpanded: true,
-              items: [
-                for (final (value, label) in _effortOptions)
-                  DropdownMenuItem(value: value, child: Text(label)),
-              ],
-              onChanged: (v) =>
-                  setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
-              decoration: InputDecoration(
-                labelText: l10n.reasoningEffort,
-                helperText: l10n.reasoningEffortDesc,
-                helperMaxLines: 3,
-                prefixIcon: const Icon(Icons.lightbulb_outlined),
+            child: _labelled(
+              l10n.reasoningEffort,
+              DropdownButtonFormField<String>(
+                // '' stands in for null: a nullable-valued form field cannot
+                // distinguish "user picked default" from "no selection".
+                initialValue: reasoningEffort ?? '',
+                isExpanded: true,
+                items: [
+                  for (final (value, label) in _effortOptions)
+                    DropdownMenuItem(value: value, child: Text(label)),
+                ],
+                onChanged: (v) =>
+                    setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
+                decoration: InputDecoration(
+                  helperText: l10n.reasoningEffortDesc,
+                  helperMaxLines: 3,
+                  prefixIcon: const Icon(Icons.lightbulb_outlined),
+                ),
               ),
             ),
           ),
@@ -651,6 +752,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             onChanged: (v) => setState(() => enableWebSearch = v),
             secondary: const Icon(Icons.public),
             contentPadding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
           ),
       ],
     );
@@ -665,8 +767,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader(l10n.billing),
-        const SizedBox(height: 14),
-        DropdownButtonFormField<int>(
+        const SizedBox(height: 12),
+        _labelled(
+          l10n.feeGroup,
+          DropdownButtonFormField<int>(
           initialValue: feeGroupId,
           isExpanded: true,
           items: [
@@ -677,9 +781,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             ...appState.allPricingGroups.map((g) => DropdownMenuItem(value: g.id!, child: Text(g.name))),
           ],
           onChanged: (v) => setState(() => feeGroupId = v),
-          decoration: InputDecoration(
-            labelText: l10n.feeGroup,
-            prefixIcon: const Icon(Icons.money_outlined),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.money_outlined),
+          ),
           ),
         ),
       ],
@@ -858,6 +962,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   }
 
   Widget _sectionHeader(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -865,12 +970,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           title.toUpperCase(),
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
                 letterSpacing: AppType.trackedLabelSpacing,
               ),
         ),
         const SizedBox(height: 4),
-        const Divider(height: 1),
+        // Half-strength. The spec draws these baselines a shade the eye
+        // barely registers; at full outlineVariant five of them plus the
+        // structural heading/footer rules read as a page full of lines.
+        Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: AppAlpha.edge)),
       ],
     );
   }

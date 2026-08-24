@@ -327,7 +327,7 @@
   },
   "addLlmModel": "Add LLM Model",
   "editLlmModel": "Edit LLM Model",
-  "modelIdLabel": "Model ID (e.g. gemini-pro)",
+  "modelIdLabel": "Model ID",
   "displayName": "Display Name",
   "type": "Type",
   "tag": "Tag",

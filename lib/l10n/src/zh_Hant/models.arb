@@ -36,7 +36,7 @@
   "deleteModelConfirmMessage": "您確定要刪除「{name}」嗎？",
   "addLlmModel": "新增 LLM 模型",
   "editLlmModel": "編輯 LLM 模型",
-  "modelIdLabel": "模型 ID（例如 gemini-pro）",
+  "modelIdLabel": "模型 ID",
   "displayName": "顯示名稱",
   "type": "類型",
   "tag": "標籤",
