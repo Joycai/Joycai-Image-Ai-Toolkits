@@ -240,6 +240,70 @@ ThemeData buildAppTheme({
       thickness: 1,
       space: 1,
     ),
+    // §1 「列表行 40–48 px」. Material's own is 56 with a subtitle and 48
+    // without, so the spec's *ceiling* is where Material starts — every list
+    // in the app was a row too tall. `VisualDensity.compact` takes 8 off both,
+    // which lands on 40 and 48 exactly; the figure is Material's, the choice
+    // of density is the spec's.
+    //
+    // The gutters go with it. Material budgets 16px each side, a 40px leading
+    // slot and 16 between that and the title; the frames draw 8–10 (§1 「控件
+    // 内边距 8 / 10 / 12」) and let the row's own leading widget decide its
+    // width. At `A1 16a`'s 236px folder column that reserved-but-unused space
+    // was the difference between a six-letter folder name and an ellipsis —
+    // `directory_tree_item` had already fixed it by hand, for itself alone.
+    //
+    // 72 call sites across 23 files, none of them touched. Anything that
+    // states its own padding still wins: a theme is the floor here, not a cap.
+    listTileTheme: ListTileThemeData(
+      visualDensity: VisualDensity.compact,
+      minLeadingWidth: 0,
+      horizontalTitleGap: 10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+      // `16a` draws the browsed folder as an accent wash, which is the same
+      // selection skin every other list in the app draws by hand. Named here,
+      // a `selected: true` tile gets it without each list restating it.
+      selectedColor: colorScheme.primary,
+      selectedTileColor: colorScheme.accentTint,
+    ),
+    // No tick marks, and a thumb small enough to sit in a toolbar. Material
+    // dots every division of a divided slider, which on the gallery's zoom
+    // control and the model editor's context slider read as a ruler drawn
+    // under a control that is not being measured against one. The editor had
+    // already turned them off in a local [SliderTheme]; this is that override,
+    // stated once.
+    sliderTheme: SliderThemeData(
+      trackHeight: 4,
+      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+      tickMarkShape: SliderTickMarkShape.noTickMark,
+      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+    ),
+    // `A1 16a`'s run console draws its progress as a 4px bar with 2px ends.
+    // Material's is 4px square-ended, which beside the pill-shaped everything
+    // else in that status bar reads as a different family of object.
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      linearMinHeight: 4,
+      borderRadius: BorderRadius.circular(2),
+      linearTrackColor: colorScheme.surfaceContainerHighest,
+    ),
+    // `10a` 「分段控件与页签」 draws a tool tab as a tinted pill — padding
+    // 7×12, radius 8, accent wash under an accent label — not as a label with
+    // a rule under it. Material's underline indicator plus its full-width
+    // divider is a different navigation idiom, and the app has three
+    // [TabBar]s wearing it.
+    tabBarTheme: TabBarThemeData(
+      indicator: BoxDecoration(
+        color: colorScheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: Colors.transparent,
+      labelColor: colorScheme.onAccentTint,
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+      overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+    ),
     filledButtonTheme: FilledButtonThemeData(
       // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
       // `disabledElevation`: it lifts the button in *every* state, disabled
