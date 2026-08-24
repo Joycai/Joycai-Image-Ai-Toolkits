@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/constants.dart';
 import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
+import '../../models/pricing_group.dart';
 import '../../services/llm/context_budget.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
+import '../app_card.dart';
 import '../app_dialog.dart';
 import '../app_segmented_control.dart';
+import '../searchable_picker.dart';
+import 'model_picker_options.dart';
+import 'model_tag_chip.dart';
 import '../../core/design_tokens.dart';
 
 class ModelEditDialog extends StatefulWidget {
@@ -44,6 +50,21 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late bool forceViewAllImages;
   String? reasoningEffort;
   late bool enableWebSearch;
+
+  /// Viewport width at which the form splits into two panes.
+  ///
+  /// Above the desktop breakpoint rather than at it: at 1000 the dialog would
+  /// be as wide as the window and each pane narrower than the single-column
+  /// form it replaces, which is a worse form, not a wider one. 1100 is the
+  /// first width where two 460-ish panes and the dialog's own inset all fit.
+  static const double _twoPaneMinWidth = 1100;
+
+  /// Dialog width in each layout. The single-column figure is the one the
+  /// form was drawn for; the two-pane one is deliberately below
+  /// [_twoPaneMinWidth] so the dialog still floats rather than filling the
+  /// window at the moment it splits.
+  static const double _twoPaneWidth = 1000;
+  static const double _singlePaneWidth = 620;
 
   /// Context-window slider presets (tokens): 4K … 1M.
   static const List<int> _contextSizes = [
@@ -91,6 +112,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     ('video', 'Video'),
     ('multimodal', 'Multimodal'),
   ];
+
+  /// The reasoning-effort ladder, in the order it is offered. `null` is the
+  /// default rung — "send no field at all" — and is spelled `''` in the form
+  /// because a nullable-valued dropdown cannot tell "picked default" from
+  /// "nothing picked". Listed once so the dropdown and the summary card can
+  /// never disagree about what a stored value is called.
+  List<(String, String)> get _effortOptions => [
+        ('', widget.l10n.reasoningEffortDefault),
+        ('off', widget.l10n.reasoningEffortOff),
+        ('low', widget.l10n.reasoningEffortLow),
+        ('medium', widget.l10n.reasoningEffortMedium),
+        ('high', widget.l10n.reasoningEffortHigh),
+        ('max', widget.l10n.reasoningEffortMax),
+      ];
 
   @override
   void initState() {
@@ -154,31 +189,26 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = Responsive.isMobile(context);
+    final twoPane = MediaQuery.sizeOf(context).width >= _twoPaneMinWidth;
 
     return AppDialog(
       clipBehavior: Clip.antiAlias,
-      maxWidth: 620,
-      maxHeight: 760,
+      maxWidth: twoPane ? _twoPaneWidth : _singlePaneWidth,
+      // Taller when split, because the point of splitting is that the form
+      // fits without scrolling and the single-column cap is a hair short of
+      // the taller pane. Both figures are still ceilings — the dialog is
+      // clamped to the window and the body scrolls if it has to.
+      maxHeight: twoPane ? 860 : 760,
       // titleWidget rather than icon/title/subtitle: this heading keeps its
       // tinted icon tile and its own close button, neither of which the
       // shell's leading-icon layout has a place for.
-      titleWidget: _buildHeader(context, colorScheme),
+      titleWidget: _buildHeader(context, colorScheme, showChannelBadge: twoPane),
       scrollable: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-      content: _buildForm(colorScheme, twoColumn: !isMobile),
-      actions: [
-        AppButton(
-          label: widget.l10n.cancel,
-          variant: AppButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-        ),
-        AppButton(
-          label: widget.model == null ? widget.l10n.add : widget.l10n.save,
-          icon: Icons.save,
-          onPressed: _canSave ? _save : null,
-        ),
-      ],
+      contentPadding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
+      content: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
+      // actionsOverride, not actions: the footer pairs a left-aligned reason
+      // the save is unavailable with the right-aligned buttons.
+      actionsOverride: _buildFooter(context, colorScheme),
     );
   }
 
@@ -189,10 +219,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   /// No bottom rule any more — the app's panels gave up hard divider lines
   /// for spacing, and [AppDialog]'s own gap already separates this from the
   /// form. Type comes from the scale so it matches every other dialog title.
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme, {
+    required bool showChannelBadge,
+  }) {
     final l10n = widget.l10n;
     final isEdit = widget.model != null;
     final textTheme = Theme.of(context).textTheme;
+    final channel = _selectedChannel(widget.appState);
 
     return Row(
       children: [
@@ -230,6 +265,30 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             ],
           ),
         ),
+        // Which endpoint this model will be reached through, restated in the
+        // heading. Only in the two-pane layout: there the channel field sits
+        // at the top of a column the eye no longer starts at, and the fields
+        // it governs (reasoning effort, host web search) are a pane away.
+        if (showChannelBadge && channel != null) ...[
+          const SizedBox(width: 12),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+              child: Text(
+                '${channel.displayName} · ${channel.type}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.mono.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
         IconButton(
           icon: const Icon(Icons.close, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -238,12 +297,126 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
-  // --- Form ---------------------------------------------------------------
+  // --- Footer -------------------------------------------------------------
 
-  Widget _buildForm(ColorScheme colorScheme, {required bool twoColumn}) {
+  /// Cancel and save, with the reason save is unavailable beside them.
+  ///
+  /// The hint is on the left rather than under the field that is empty
+  /// because there is no single such field — it is the *combination* of
+  /// channel, name and id that gates the button, and a disabled button with
+  /// nothing explaining it is the thing this dialog was most often stuck on.
+  Widget _buildFooter(BuildContext context, ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _canSave
+              ? const SizedBox.shrink()
+              : Text(
+                  l10n.modelSaveRequirementHint,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: colorScheme.outline),
+                ),
+        ),
+        const SizedBox(width: 12),
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 8),
+        AppButton(
+          label: widget.model == null ? l10n.add : l10n.save,
+          icon: Icons.save,
+          onPressed: _canSave ? _save : null,
+        ),
+      ],
+    );
+  }
+
+  // --- Layouts ------------------------------------------------------------
+
+  /// Every section in one column, in the order the form is read.
+  ///
+  /// Name and id share a row on anything but a phone: they are the same kind
+  /// of short identifier and the 620-wide dialog has room for both.
+  Widget _buildSinglePane(ColorScheme colorScheme) {
+    final pairNameAndId = !Responsive.isMobile(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _basicInfoSection(colorScheme, pairNameAndId: pairNameAndId),
+        const SizedBox(height: 24),
+        _contextSection(colorScheme),
+        const SizedBox(height: 24),
+        _capabilitiesSection(colorScheme),
+        const SizedBox(height: 24),
+        _agentSection(colorScheme),
+        const SizedBox(height: 24),
+        _billingSection(colorScheme),
+      ],
+    );
+  }
+
+  /// Identity on the left, behaviour on the right, with a summary of both
+  /// under the behaviour column.
+  ///
+  /// Separated by a gap rather than the centre rule the spec draws. A rule
+  /// has to span whichever pane is taller, which means [IntrinsicHeight], and
+  /// the channel picker cannot be measured intrinsically — it sizes its tag
+  /// chip against a [LayoutBuilder]. Spacing is also what the rest of the
+  /// app's panels use in place of hard dividers, so the gap is the more
+  /// consistent of the two answers rather than only the cheaper one.
+  Widget _buildTwoPane(ColorScheme colorScheme) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Stacked here, not paired: a pane is half the dialog, and two
+              // fields side by side in it truncate the very ids they exist to
+              // show.
+              _basicInfoSection(colorScheme, pairNameAndId: false),
+              const SizedBox(height: 24),
+              _contextSection(colorScheme),
+              const SizedBox(height: 24),
+              _billingSection(colorScheme),
+            ],
+          ),
+        ),
+        const SizedBox(width: 32),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _capabilitiesSection(colorScheme),
+              const SizedBox(height: 24),
+              _agentSection(colorScheme),
+              const SizedBox(height: 24),
+              _previewCard(colorScheme),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- Sections -----------------------------------------------------------
+
+  Widget _basicInfoSection(ColorScheme colorScheme, {required bool pairNameAndId}) {
     final l10n = widget.l10n;
     final appState = widget.appState;
     final textTheme = Theme.of(context).textTheme;
+    final channel = _selectedChannel(appState);
 
     final nameField = TextField(
       controller: nameCtrl,
@@ -270,20 +443,24 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.basicInfo),
         const SizedBox(height: 14),
-        DropdownButtonFormField<int>(
-          initialValue: channelId,
-          isExpanded: true,
-          items: appState.allChannels
-              .map((c) => DropdownMenuItem(value: c.id!, child: Text(c.displayName)))
-              .toList(),
+        // The searchable picker, not a `DropdownButton`: it carries the
+        // channel's own tag chip — the identity the design gives this field —
+        // and is the control every other channel choice in the app uses.
+        SearchablePickerField<int>(
+          selected: channel == null ? null : channelPickerOption(channel),
+          optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
           onChanged: (v) => setState(() => channelId = v),
+          hint: l10n.selectAChannel,
+          searchHint: l10n.searchChannels,
+          dialogIcon: Icons.hub_outlined,
+          enabled: appState.allChannels.isNotEmpty,
           decoration: InputDecoration(
             labelText: l10n.channel,
             prefixIcon: const Icon(Icons.hub_outlined),
           ),
         ),
         const SizedBox(height: 14),
-        if (twoColumn)
+        if (pairNameAndId)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -306,8 +483,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               _buildTagChoice(value, label, textTheme, colorScheme),
           ],
         ),
+      ],
+    );
+  }
 
-        const SizedBox(height: 24),
+  Widget _contextSection(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         _sectionHeader(l10n.contextWindow),
         const SizedBox(height: 8),
         AppSegmentedControl<ContextWindowMode>(
@@ -369,8 +556,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
           ),
         ),
+      ],
+    );
+  }
 
-        const SizedBox(height: 24),
+  Widget _capabilitiesSection(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         _sectionHeader(l10n.capabilities),
         const SizedBox(height: 4),
         SwitchListTile(
@@ -393,8 +590,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           secondary: const Icon(Icons.http),
           contentPadding: EdgeInsets.zero,
         ),
+      ],
+    );
+  }
 
-        const SizedBox(height: 24),
+  Widget _agentSection(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final appState = widget.appState;
+    final textTheme = Theme.of(context).textTheme;
+    final family = _channelFamily(appState);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         _sectionHeader(l10n.agentBehavior),
         const SizedBox(height: 4),
         SwitchListTile(
@@ -410,32 +619,30 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         // differ; the vocabulary is the app's own). ③/midjourney channels
         // don't see the control — a knob whose only effect is nothing is
         // worse than no knob.
-        if (_channelFamily(appState) == ProtocolFamily.openai ||
-            _channelFamily(appState) == ProtocolFamily.anthropic)
-          DropdownButtonFormField<String>(
-            // '' stands in for null: a nullable-valued form field cannot
-            // distinguish "user picked default" from "no selection".
-            initialValue: reasoningEffort ?? '',
-            isExpanded: true,
-            items: [
-              DropdownMenuItem(value: '', child: Text(l10n.reasoningEffortDefault)),
-              DropdownMenuItem(value: 'off', child: Text(l10n.reasoningEffortOff)),
-              DropdownMenuItem(value: 'low', child: Text(l10n.reasoningEffortLow)),
-              DropdownMenuItem(value: 'medium', child: Text(l10n.reasoningEffortMedium)),
-              DropdownMenuItem(value: 'high', child: Text(l10n.reasoningEffortHigh)),
-              DropdownMenuItem(value: 'max', child: Text(l10n.reasoningEffortMax)),
-            ],
-            onChanged: (v) =>
-                setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
-            decoration: InputDecoration(
-              labelText: l10n.reasoningEffort,
-              helperText: l10n.reasoningEffortDesc,
-              helperMaxLines: 3,
-              prefixIcon: const Icon(Icons.psychology_outlined),
+        if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: DropdownButtonFormField<String>(
+              // '' stands in for null: a nullable-valued form field cannot
+              // distinguish "user picked default" from "no selection".
+              initialValue: reasoningEffort ?? '',
+              isExpanded: true,
+              items: [
+                for (final (value, label) in _effortOptions)
+                  DropdownMenuItem(value: value, child: Text(label)),
+              ],
+              onChanged: (v) =>
+                  setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
+              decoration: InputDecoration(
+                labelText: l10n.reasoningEffort,
+                helperText: l10n.reasoningEffortDesc,
+                helperMaxLines: 3,
+                prefixIcon: const Icon(Icons.psychology_outlined),
+              ),
             ),
           ),
         // Host-run web search only exists on ④.
-        if (_isAnthropicChannel(appState)) ...[
+        if (family == ProtocolFamily.anthropic)
           SwitchListTile(
             title: Text(l10n.enableWebSearch, style: textTheme.bodyMedium),
             subtitle: Text(l10n.enableWebSearchDesc,
@@ -445,9 +652,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             secondary: const Icon(Icons.travel_explore_outlined),
             contentPadding: EdgeInsets.zero,
           ),
-        ],
+      ],
+    );
+  }
 
-        const SizedBox(height: 24),
+  Widget _billingSection(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final appState = widget.appState;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         _sectionHeader(l10n.billing),
         const SizedBox(height: 14),
         DropdownButtonFormField<int>(
@@ -470,20 +686,146 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
+  // --- Summary card -------------------------------------------------------
+
+  /// What the models screen will show for this model once it is saved.
+  ///
+  /// The wide layout has room the narrow one does not, and the thing worth
+  /// spending it on is the answer to "what did I just configure?" — the four
+  /// settings that live on the model card, gathered from both panes so
+  /// neither has to be re-read.
+  Widget _previewCard(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final appState = widget.appState;
+    final textTheme = Theme.of(context).textTheme;
+
+    final channel = _selectedChannel(appState);
+    final family = _channelFamily(appState);
+    final name = nameCtrl.text.trim();
+
+    final capabilities = [
+      if (supportsStream) l10n.capabilityStreamingShort,
+      if (supportsStandard) l10n.capabilityStandardShort,
+    ];
+
+    final feeGroup = appState.allPricingGroups
+        .cast<PricingGroup?>()
+        .firstWhere((g) => g?.id == feeGroupId, orElse: () => null);
+
+    return AppCard(
+      outlined: true,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (channel?.tag != null && channel!.tag!.isNotEmpty) ...[
+                ModelTagChip(
+                  channel.tag!,
+                  color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
+                  uppercase: false,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  name.isEmpty ? l10n.displayName : name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.titleSmall?.copyWith(
+                    color: name.isEmpty ? colorScheme.outline : null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ModelTagChip(tag),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: AppAlpha.tint),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                ),
+                child: Text(
+                  l10n.cardPreview,
+                  style: textTheme.labelSmall?.mono
+                      .copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          _previewRow(
+            colorScheme,
+            l10n.contextWindow,
+            switch (contextMode) {
+              ContextWindowMode.unset => l10n.contextUnset,
+              ContextWindowMode.unlimited => l10n.contextUnlimited,
+              ContextWindowMode.specified =>
+                l10n.contextTokens(_formatTokens(_contextSizes[contextSizeIdx.round()])),
+            },
+          ),
+          _previewRow(
+            colorScheme,
+            l10n.capabilities,
+            capabilities.isEmpty ? '—' : capabilities.join(' · '),
+          ),
+          if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
+            _previewRow(
+              colorScheme,
+              l10n.reasoningEffort,
+              _effortOptions
+                  .firstWhere((o) => o.$1 == (reasoningEffort ?? ''))
+                  .$2,
+            ),
+          _previewRow(colorScheme, l10n.feeGroup, feeGroup?.name ?? l10n.noFeeGroup),
+        ],
+      ),
+    );
+  }
+
+  Widget _previewRow(ColorScheme colorScheme, String label, String value) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Channel lookups ----------------------------------------------------
+
+  /// The channel the form currently points at, or null when none is picked.
+  LLMChannel? _selectedChannel(AppState appState) => appState.allChannels
+      .cast<LLMChannel?>()
+      .firstWhere((c) => c?.id == channelId, orElse: () => null);
 
   /// The selected channel's protocol family, or null when no channel is
   /// picked. Read-only Layer 2 consumption, like app_state's video check.
   ProtocolFamily? _channelFamily(AppState appState) {
-    final channel = appState.allChannels
-        .cast<LLMChannel?>()
-        .firstWhere((c) => c?.id == channelId, orElse: () => null);
+    final channel = _selectedChannel(appState);
     return channel == null ? null : Vendors.byId(channel.type).family;
   }
-
-  /// Whether the selected channel speaks Anthropic Messages — the only
-  /// family with a host-run web search.
-  bool _isAnthropicChannel(AppState appState) =>
-      _channelFamily(appState) == ProtocolFamily.anthropic;
 
   Future<void> _save() async {
     final data = {

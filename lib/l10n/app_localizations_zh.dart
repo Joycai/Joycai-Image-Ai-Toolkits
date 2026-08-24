@@ -988,6 +988,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get capabilities => '能力';
 
   @override
+  String get modelSaveRequirementHint => '渠道、名称、ID 三项齐备后方可保存。';
+
+  @override
+  String get cardPreview => '卡片预览';
+
+  @override
+  String get capabilityStreamingShort => '流式';
+
+  @override
+  String get capabilityStandardShort => '标准请求';
+
+  @override
   String get supportsStreaming => '支持流式传输';
 
   @override
@@ -3743,6 +3755,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get capabilities => '能力';
+
+  @override
+  String get modelSaveRequirementHint => '通道、名稱、ID 三項齊備後方可儲存。';
+
+  @override
+  String get cardPreview => '卡片預覽';
+
+  @override
+  String get capabilityStreamingShort => '串流';
+
+  @override
+  String get capabilityStandardShort => '標準請求';
 
   @override
   String get supportsStreaming => '支援串流傳輸';

@@ -1016,6 +1016,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get capabilities => 'Capabilities';
 
   @override
+  String get modelSaveRequirementHint =>
+      'Pick a channel and fill in both the name and the ID to save.';
+
+  @override
+  String get cardPreview => 'Card preview';
+
+  @override
+  String get capabilityStreamingShort => 'Streaming';
+
+  @override
+  String get capabilityStandardShort => 'Standard requests';
+
+  @override
   String get supportsStreaming => 'Supports Streaming';
 
   @override

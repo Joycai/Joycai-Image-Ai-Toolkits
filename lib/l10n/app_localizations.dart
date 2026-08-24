@@ -1955,6 +1955,30 @@ abstract class AppLocalizations {
   /// **'Capabilities'**
   String get capabilities;
 
+  /// No description provided for @modelSaveRequirementHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a channel and fill in both the name and the ID to save.'**
+  String get modelSaveRequirementHint;
+
+  /// No description provided for @cardPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Card preview'**
+  String get cardPreview;
+
+  /// No description provided for @capabilityStreamingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get capabilityStreamingShort;
+
+  /// No description provided for @capabilityStandardShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard requests'**
+  String get capabilityStandardShort;
+
   /// No description provided for @supportsStreaming.
   ///
   /// In en, this message translates to:
