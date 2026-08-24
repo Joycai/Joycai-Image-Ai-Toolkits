@@ -643,7 +643,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editLlmModel => '编辑 LLM 模型';
 
   @override
-  String get modelIdLabel => '模型 ID (例如 gemini-pro)';
+  String get modelIdLabel => '模型 ID';
 
   @override
   String get displayName => '显示名称';
@@ -3412,7 +3412,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get editLlmModel => '編輯 LLM 模型';
 
   @override
-  String get modelIdLabel => '模型 ID（例如 gemini-pro）';
+  String get modelIdLabel => '模型 ID';
 
   @override
   String get displayName => '顯示名稱';

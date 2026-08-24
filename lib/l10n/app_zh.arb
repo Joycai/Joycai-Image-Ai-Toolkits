@@ -313,7 +313,7 @@
   },
   "addLlmModel": "添加 LLM 模型",
   "editLlmModel": "编辑 LLM 模型",
-  "modelIdLabel": "模型 ID (例如 gemini-pro)",
+  "modelIdLabel": "模型 ID",
   "displayName": "显示名称",
   "type": "类型",
   "tag": "标签",

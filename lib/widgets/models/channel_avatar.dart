@@ -29,9 +29,27 @@ class ChannelAvatar extends StatelessWidget {
     if (tag == null || tag.isEmpty) {
       return Icon(Icons.cloud_queue, size: size * 0.8);
     }
+    return TagAvatar(tag, color: Color(channel.tagColor ?? AppConstants.defaultTagColor), size: size);
+  }
+}
 
+/// The disc itself, from a bare tag string and colour.
+///
+/// Split out of [ChannelAvatar] for callers that hold a `PickerOption` rather
+/// than an [LLMChannel] — the searchable picker's field slot — and so cannot
+/// hand over a record they no longer have. No untagged fallback here: a
+/// caller with only a tag string has, by construction, a tag.
+class TagAvatar extends StatelessWidget {
+  const TagAvatar(this.tag, {super.key, this.color, this.size = 24});
+
+  final String tag;
+  final Color? color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
     return CircleAvatar(
-      backgroundColor: Color(channel.tagColor ?? AppConstants.defaultTagColor),
+      backgroundColor: color ?? const Color(AppConstants.defaultTagColor),
       radius: size / 2,
       child: Text(
         tag[0].toUpperCase(),

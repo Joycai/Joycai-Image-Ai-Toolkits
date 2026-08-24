@@ -36,7 +36,7 @@
   "deleteModelConfirmMessage": "「{name}」を削除してもよろしいですか？",
   "addLlmModel": "LLMモデルを追加",
   "editLlmModel": "LLMモデルを編集",
-  "modelIdLabel": "モデルID（例：gemini-pro）",
+  "modelIdLabel": "モデル ID",
   "displayName": "表示名",
   "type": "タイプ",
   "tag": "タグ",

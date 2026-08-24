@@ -657,7 +657,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editLlmModel => 'Edit LLM Model';
 
   @override
-  String get modelIdLabel => 'Model ID (e.g. gemini-pro)';
+  String get modelIdLabel => 'Model ID';
 
   @override
   String get displayName => 'Display Name';

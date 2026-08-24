@@ -109,6 +109,15 @@ class AppDialog extends StatelessWidget {
   /// sides that actually have a neighbour.
   final bool divided;
 
+  /// Per-side overrides of [divided], null meaning "follow it".
+  ///
+  /// The spec itself splits the two: the model editor's narrow layout
+  /// separates its heading from the form by spacing alone while still ruling
+  /// off the footer, and the wide layout rules both. One flag couldn't say
+  /// that.
+  final bool? dividedHeading;
+  final bool? dividedFooter;
+
   const AppDialog({
     super.key,
     this.title,
@@ -126,6 +135,8 @@ class AppDialog extends StatelessWidget {
     this.clipBehavior = Clip.none,
     this.onClose,
     this.divided = true,
+    this.dividedHeading,
+    this.dividedFooter,
   }) : assert(title == null || titleWidget == null,
             'Give AppDialog a title or a titleWidget, not both');
 
@@ -149,6 +160,8 @@ class AppDialog extends StatelessWidget {
     bool barrierDismissible = true,
     VoidCallback? onClose,
     bool divided = true,
+    bool? dividedHeading,
+    bool? dividedFooter,
   }) {
     return showDialog<T>(
       context: context,
@@ -169,6 +182,8 @@ class AppDialog extends StatelessWidget {
         clipBehavior: clipBehavior,
         onClose: onClose,
         divided: divided,
+        dividedHeading: dividedHeading,
+        dividedFooter: dividedFooter,
       ),
     );
   }
@@ -182,6 +197,8 @@ class AppDialog extends StatelessWidget {
 
     final heading = _buildHeading(context, colorScheme);
     final footer = _buildFooter();
+    final bool ruleAboveBody = dividedHeading ?? divided;
+    final bool ruleBelowBody = dividedFooter ?? divided;
 
     Widget body = scrollable ? SingleChildScrollView(child: content) : content;
 
@@ -199,8 +216,8 @@ class AppDialog extends StatelessWidget {
           EdgeInsets.only(
             left: _pad,
             right: _pad,
-            top: (heading == null || divided) ? _pad : 0,
-            bottom: (footer == null || divided) ? _pad : 0,
+            top: (heading == null || ruleAboveBody) ? _pad : 0,
+            bottom: (footer == null || ruleBelowBody) ? _pad : 0,
           ),
       child: body,
     );
@@ -231,17 +248,17 @@ class AppDialog extends StatelessWidget {
           children: [
             if (heading != null) ...[
               Padding(
-                padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, divided ? _pad : 16),
+                padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, ruleAboveBody ? _pad : 16),
                 child: heading,
               ),
-              if (divided) const Divider(height: 1),
+              if (ruleAboveBody) const Divider(height: 1),
             ],
             // The only slot allowed to take the height left over, so a
             // maxHeight bounds the scrolling body rather than cutting the
             // action row off the bottom of the dialog.
             Flexible(child: body),
             if (footer != null) ...[
-              if (divided) const Divider(height: 1),
+              if (ruleBelowBody) const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.fromLTRB(_pad, _pad, _pad, _pad),
                 child: footer,

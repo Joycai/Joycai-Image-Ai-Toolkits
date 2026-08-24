@@ -1298,7 +1298,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelIdLabel.
   ///
   /// In en, this message translates to:
-  /// **'Model ID (e.g. gemini-pro)'**
+  /// **'Model ID'**
   String get modelIdLabel;
 
   /// No description provided for @displayName.

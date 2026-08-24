@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_empty_state.dart';
 import 'app_search_field.dart';
+import 'models/channel_avatar.dart';
 import 'models/model_tag_chip.dart';
 
 /// One row of a [SearchablePickerField]'s picker.
@@ -71,6 +72,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     this.dialogIcon,
     this.decoration = const InputDecoration(),
     this.enabled = true,
+    this.roundBadge = false,
   });
 
   /// The current selection, already resolved by the caller. `null` draws
@@ -109,6 +111,16 @@ class SearchablePickerField<T> extends StatefulWidget {
   final InputDecoration decoration;
 
   final bool enabled;
+
+  /// Draws the selected option's badge as a [TagAvatar] disc instead of a
+  /// [ModelTagChip].
+  ///
+  /// The design gives a channel two forms: the chip where its full tag has to
+  /// stay readable beside a name — picker rows, the workbench's field — and
+  /// the disc where the channel is being restated rather than chosen. The
+  /// model editor's channel field is the latter; the rows inside the picker
+  /// it opens stay chips either way.
+  final bool roundBadge;
 
   @override
   State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
@@ -175,7 +187,10 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
           // default, the theme's; only the trailing glyph is this widget's own.
           decoration: widget.decoration.copyWith(
             enabled: enabled,
-            suffixIcon: Icon(Icons.unfold_more, size: AppSize.iconSm, color: outline),
+            // expand_more, not unfold_more: the design draws a single
+            // downward chevron on every select-like field, and this is the one
+            // widget behind all of them.
+            suffixIcon: Icon(Icons.expand_more, size: AppSize.iconSm, color: outline),
             suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
           ),
           isFocused: _focused,
@@ -191,15 +206,21 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
                   builder: (context, constraints) => Row(
                     children: [
                       if (value.badge != null) ...[
-                        ConstrainedBox(
-                          // A third of the field, at most. The channel tag is
-                          // free text with no length limit, and unbounded it
-                          // took the whole row at mobile width and left
-                          // `Expanded` nothing — a RenderFlex overflow with
-                          // the name ellipsized away to start with.
-                          constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                          child: ModelTagChip(value.badge!, color: value.badgeColor, uppercase: false),
-                        ),
+                        if (widget.roundBadge)
+                          // Fixed-size, so the free-text cap below does not
+                          // apply: a disc shows one letter no matter how long
+                          // the tag is.
+                          TagAvatar(value.badge!, color: value.badgeColor, size: 20)
+                        else
+                          ConstrainedBox(
+                            // A third of the field, at most. The channel tag is
+                            // free text with no length limit, and unbounded it
+                            // took the whole row at mobile width and left
+                            // `Expanded` nothing — a RenderFlex overflow with
+                            // the name ellipsized away to start with.
+                            constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                            child: ModelTagChip(value.badge!, color: value.badgeColor, uppercase: false),
+                          ),
                         const SizedBox(width: 8),
                       ],
                       Expanded(child: Text(value.label, style: valueStyle, overflow: TextOverflow.ellipsis)),

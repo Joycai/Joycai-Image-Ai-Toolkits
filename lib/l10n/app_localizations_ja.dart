@@ -646,7 +646,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get editLlmModel => 'LLMモデルを編集';
 
   @override
-  String get modelIdLabel => 'モデルID（例：gemini-pro）';
+  String get modelIdLabel => 'モデル ID';
 
   @override
   String get displayName => '表示名';
