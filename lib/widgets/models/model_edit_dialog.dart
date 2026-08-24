@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/constants.dart';
 import '../../core/model_kind_palette.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -16,6 +15,7 @@ import '../app_card.dart';
 import '../app_dialog.dart';
 import '../app_segmented_control.dart';
 import '../searchable_picker.dart';
+import 'channel_avatar.dart';
 import 'model_picker_options.dart';
 import 'model_tag_chip.dart';
 import '../../core/design_tokens.dart';
@@ -330,7 +330,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         const SizedBox(width: 8),
         AppButton(
           label: widget.model == null ? l10n.add : l10n.save,
-          icon: Icons.save,
+          icon: Icons.save_outlined,
           onPressed: _canSave ? _save : null,
         ),
       ],
@@ -578,7 +578,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           value: supportsStream,
           onChanged: (v) => setState(() => supportsStream = v),
-          secondary: const Icon(Icons.stream),
+          secondary: const Icon(Icons.waves),
           contentPadding: EdgeInsets.zero,
         ),
         SwitchListTile(
@@ -637,7 +637,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                 labelText: l10n.reasoningEffort,
                 helperText: l10n.reasoningEffortDesc,
                 helperMaxLines: 3,
-                prefixIcon: const Icon(Icons.psychology_outlined),
+                prefixIcon: const Icon(Icons.lightbulb_outlined),
               ),
             ),
           ),
@@ -649,7 +649,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                 style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
             value: enableWebSearch,
             onChanged: (v) => setState(() => enableWebSearch = v),
-            secondary: const Icon(Icons.travel_explore_outlined),
+            secondary: const Icon(Icons.public),
             contentPadding: EdgeInsets.zero,
           ),
       ],
@@ -679,7 +679,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           onChanged: (v) => setState(() => feeGroupId = v),
           decoration: InputDecoration(
             labelText: l10n.feeGroup,
-            prefixIcon: const Icon(Icons.payments_outlined),
+            prefixIcon: const Icon(Icons.money_outlined),
           ),
         ),
       ],
@@ -721,12 +721,13 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         children: [
           Row(
             children: [
-              if (channel?.tag != null && channel!.tag!.isNotEmpty) ...[
-                ModelTagChip(
-                  channel.tag!,
-                  color: Color(channel.tagColor ?? AppConstants.defaultTagColor),
-                  uppercase: false,
-                ),
+              // A disc, not the chip the picker above draws. The spec gives
+              // the channel its round form wherever it is being *named* rather
+              // than chosen, and this is the same glyph the models screen puts
+              // on a channel row — so the card previews what the row will
+              // actually look like.
+              if (channel != null) ...[
+                ChannelAvatar(channel),
                 const SizedBox(width: 8),
               ],
               Flexible(
