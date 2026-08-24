@@ -287,7 +287,11 @@ ThemeData buildAppTheme({
       // `16a` draws the browsed folder as an accent wash, which is the same
       // selection skin every other list in the app draws by hand. Named here,
       // a `selected: true` tile gets it without each list restating it.
-      selectedColor: colorScheme.primary,
+      //
+      // The label is 主色深, not 主色实底 — `10e` 「列表行」 spells the pair out:
+      // a 12% wash with the *darker* accent on it. `primary` is tuned to be
+      // read as a fill, and on its own tint it is one tone against itself.
+      selectedColor: colorScheme.onAccentTint,
       selectedTileColor: colorScheme.accentTint,
     ),
     // No tick marks, and a thumb small enough to sit in a toolbar. Material
@@ -301,7 +305,10 @@ ThemeData buildAppTheme({
       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
       overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
       tickMarkShape: SliderTickMarkShape.noTickMark,
-      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+      // `#dbe0ef` in `10e` 「滑杆」, which is `outlineVariant` to the digit —
+      // the unfilled track is a rule, not a surface. It was one step down the
+      // ramp at `surfaceContainerHighest`, which reads as a groove.
+      inactiveTrackColor: colorScheme.outlineVariant,
     ),
     // `A1 16a`'s run console draws its progress as a 4px bar with 2px ends.
     // Material's is 4px square-ended, which beside the pill-shaped everything
@@ -309,7 +316,9 @@ ThemeData buildAppTheme({
     progressIndicatorTheme: ProgressIndicatorThemeData(
       linearMinHeight: 4,
       borderRadius: BorderRadius.circular(2),
-      linearTrackColor: colorScheme.surfaceContainerHighest,
+      // `10e` 「进度条」 gives the track as `#dbe0ef`, the same hairline grey
+      // the slider's unfilled track takes and for the same reason.
+      linearTrackColor: colorScheme.outlineVariant,
     ),
     // `10a` 「分段控件与页签」 draws a tool tab as a tinted pill — padding
     // 7×12, radius 8, accent wash under an accent label — not as a label with
@@ -326,6 +335,84 @@ ThemeData buildAppTheme({
       labelColor: colorScheme.onAccentTint,
       unselectedLabelColor: colorScheme.onSurfaceVariant,
       overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+    ),
+    // `10e` 「工具提示」. The app had none, so all ~16 tooltips plus every one
+    // an [IconButton] carries rendered at Material's stock grey slab.
+    //
+    // The ink is a literal, and deliberately: the spec says light and dark
+    // take the *same* ground ("light / dark 同一个"), which no scheme role can
+    // do — `inverseSurface` is the idiomatic choice and it flips with the
+    // brightness. A tooltip is a label pinned over the app rather than a
+    // surface within it, so it keeps one colour throughout.
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: _tooltipInk,
+        // The spec draws 7. The app's radius ladder has no 7, and the same
+        // reconciliation was already made for the segmented chip: take
+        // `control`. See docs/architecture/design-tokens.md.
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: -8,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      verticalOffset: 18,
+      textStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.94),
+        fontSize: 11.5,
+        fontWeight: FontWeight.w500,
+        fontFamily: fontFamily,
+      ),
+      waitDuration: const Duration(milliseconds: 400),
+      exitDuration: const Duration(milliseconds: 80),
+    ),
+    // `10e` 「筛选 chip」. Distinct from a status badge, which is read-only and
+    // is a pill: a chip is a target, so it takes an edge and the radius the
+    // buttons beside it take.
+    chipTheme: ChipThemeData(
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      selectedColor: colorScheme.accentTint,
+      disabledColor: colorScheme.surface,
+      side: WidgetStateBorderSide.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return BorderSide(color: colorScheme.outlineVariant.withValues(alpha: AppAlpha.edge));
+        }
+        if (states.contains(WidgetState.selected)) {
+          return BorderSide(color: colorScheme.accentRing);
+        }
+        return BorderSide(color: colorScheme.outlineVariant);
+      }),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+      labelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: colorScheme.onSurfaceVariant,
+        fontFamily: fontFamily,
+      ),
+      secondaryLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onAccentTint,
+        fontFamily: fontFamily,
+      ),
+      labelPadding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      // The spec's 26px height is *not* set here, because [ChipThemeData]
+      // cannot: the padded touch target comes from the widget's own
+      // `materialTapTargetSize`, which falls back to [ThemeData]'s global one
+      // — and turning that down would shrink every button and checkbox in the
+      // app to reach one chip. A call site that needs the tight height passes
+      // `materialTapTargetSize: MaterialTapTargetSize.shrinkWrap` itself.
+      //
+      // The spec marks the chosen chip with weight and the accent, not with a
+      // tick — a row of filters is scanned, and a checkmark in each selected
+      // one shifts every label beside it.
+      showCheckmark: false,
     ),
     filledButtonTheme: FilledButtonThemeData(
       // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
@@ -600,11 +687,20 @@ ColorScheme buttonFillScheme(Color seedColor) {
   );
 }
 
+/// The ground a tooltip is drawn on, in both brightnesses.
+///
+/// `10e` 「工具提示」 pins it at `rgba(23,28,59,.94)` and says light and dark
+/// share it. Named rather than inlined because it is one of the two colours in
+/// this file that is neither a neutral nor the user's seed, and a reader has
+/// to be able to tell it is not a stray hex.
+const Color _tooltipInk = Color(0xF0171C3B);
+
 /// The source red every destructive *fill* is derived from.
 ///
-/// Material's own error source. Named rather than inlined because it is the
-/// one hex in this file that is neither a neutral nor the user's seed, and a
-/// reader has to be able to tell it isn't a hand-picked red.
+/// Material's own error source. Named rather than inlined because, with
+/// [_tooltipInk], it is one of the two hexes in this file that is neither a
+/// neutral nor the user's seed, and a reader has to be able to tell it isn't a
+/// hand-picked red.
 const Color _errorSource = Color(0xFFB3261E);
 
 /// The scheme a destructive button takes its fill and label from.
