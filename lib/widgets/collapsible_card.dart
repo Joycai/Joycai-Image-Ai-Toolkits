@@ -14,6 +14,14 @@ class CollapsibleCard extends StatefulWidget {
   final IconData? expandedIcon;
   final IconData? collapsedIcon;
 
+  /// The glyph that says what this card is about, at the head of the row.
+  ///
+  /// `A1 17a` leads with it and puts the disclosure chevron at the far end —
+  /// the same order [ExpansionTile] gives the image panel's identical card,
+  /// which is the point: two panels one tab apart were opening the same
+  /// section with the arrow on opposite sides.
+  final IconData? leadingIcon;
+
   const CollapsibleCard({
     super.key,
     required this.title,
@@ -24,6 +32,7 @@ class CollapsibleCard extends StatefulWidget {
     this.trailing,
     this.expandedIcon,
     this.collapsedIcon,
+    this.leadingIcon,
   });
 
   @override
@@ -89,15 +98,20 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
               children: [
-                RotationTransition(
-                  turns: _heightFactor.drive(Tween(begin: 0.0, end: 0.25)),
-                  child: Icon(
-                    widget.collapsedIcon ?? Icons.keyboard_arrow_right,
-                    size: 20,
-                    color: colorScheme.primary,
+                if (widget.leadingIcon != null) ...[
+                  Icon(widget.leadingIcon, size: AppSize.iconLg, color: colorScheme.primary),
+                  const SizedBox(width: 10),
+                ] else ...[
+                  RotationTransition(
+                    turns: _heightFactor.drive(Tween(begin: 0.0, end: 0.25)),
+                    child: Icon(
+                      widget.collapsedIcon ?? Icons.keyboard_arrow_right,
+                      size: 20,
+                      color: colorScheme.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,6 +136,19 @@ class _CollapsibleCardState extends State<CollapsibleCard> with SingleTickerProv
                   ),
                 ),
                 if (widget.trailing != null) widget.trailing!,
+                // The chevron rides at the far end when the head of the row is
+                // spoken for. Half a turn, not a quarter: pointing down when
+                // shut and up when open, which is what `17a` and `17b` draw
+                // between them.
+                if (widget.leadingIcon != null)
+                  RotationTransition(
+                    turns: _heightFactor.drive(Tween(begin: 0.0, end: 0.5)),
+                    child: Icon(
+                      Icons.expand_more,
+                      size: AppSize.iconMd,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
           ),

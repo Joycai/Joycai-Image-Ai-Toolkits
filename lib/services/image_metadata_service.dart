@@ -26,7 +26,15 @@ class ImageMetadata {
   /// The one-line badge an image card carries. Multiplication sign and middot
   /// rather than "x" and a pipe: at the 9-10px this is drawn, a lowercase x
   /// reads as part of the number beside it.
-  String get displayString => width > 0 ? "$width×$height ($aspectRatio) · $sizeString" : sizeString;
+  /// What the badge over a thumbnail says: the pixels and the weight.
+  ///
+  /// No aspect ratio. `A1 16a` draws this as `1568×2712 · 2.4 MB`, and the
+  /// ratio is why it did not fit — the badge is bounded by the card, so the
+  /// parenthesis pushed the file size out through an ellipsis, losing the one
+  /// figure the ratio can be *derived* from to make room for the derivation.
+  /// [params] still carries it for the metadata inspector, which has a column
+  /// to put it in.
+  String get displayString => width > 0 ? "$width×$height · $sizeString" : sizeString;
 
   Map<String, String> get params => {
     if (width > 0) "Width": "$width px",

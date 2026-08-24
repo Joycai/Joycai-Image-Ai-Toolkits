@@ -69,7 +69,9 @@ Future<void> _seedSettings(DatabaseService db, FixtureEnv env) async {
   await db.saveSetting('theme_mode', 'light');
   await db.saveSetting('is_console_expanded', 'true');
   await db.saveSetting('is_sidebar_expanded', 'true');
-  await db.saveSetting('sidebar_width', '400');
+  // `A1 16a`'s folder column. Seeded rather than left to the default so the
+  // shot pins the width the frame was drawn at.
+  await db.saveSetting('sidebar_width', '236');
   await db.saveSetting('console_height', '160');
   await db.saveSetting('thumbnail_size', '150');
   await db.saveSetting('image_prefix', 'result');

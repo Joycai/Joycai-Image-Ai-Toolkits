@@ -189,6 +189,19 @@ class MarkdownEditor extends StatefulWidget {
   final bool probeAvailableHeight;
   final bool selectable;
 
+  /// Whether the body draws an outline of its own.
+  ///
+  /// True where the editor stands on a bare panel. Pass false when the caller
+  /// already puts it inside an outlined card: `A1 16a` draws the workbench
+  /// prompt as *one* box — header, body and footer under a single border, the
+  /// header set off by a hairline instead — and a second outline around the
+  /// body inside that box reads as a field nested in a field.
+  ///
+  /// Unframed, the header also takes the padding the card gave up, so the
+  /// hairline can run the full width of the card rather than stopping short of
+  /// it on both sides.
+  final bool bordered;
+
   /// Shows an "expand editor" action that opens the same controller in a
   /// large dialog (fullscreen on mobile) — for editing long prompts
   /// comfortably. Disabled inside the pop-out itself.
@@ -209,6 +222,7 @@ class MarkdownEditor extends StatefulWidget {
     this.probeAvailableHeight = true,
     this.selectable = true,
     this.allowExpand = true,
+    this.bordered = true,
   });
 
   @override
@@ -263,14 +277,24 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.isMarkdown || widget.isRefined)
+              // Raised and wordless, the way `A1 16a` draws it. Two reasons,
+              // and neither is taste. This picks *which view of the same text*
+              // you are looking at, which is the case `AppSegmentStyle.raised`
+              // exists for — the lift says which one is chosen and the accent
+              // stays free to mean "selected" inside the prompt itself. And
+              // the icons had to go for the control to fit on the header's
+              // one line at the config panel's 340px: with them the [Wrap]
+              // broke, dropping the toggle onto a second row under the
+              // Markdown checkbox, where the design has the two side by side.
               AppSegmentedControl<bool>(
                 segments: [
-                  AppSegment(value: false, label: l10n.edit, icon: Icons.edit),
-                  AppSegment(value: true, label: l10n.preview, icon: Icons.visibility),
+                  AppSegment(value: false, label: l10n.edit),
+                  AppSegment(value: true, label: l10n.preview),
                 ],
                 value: _isPreview,
                 onChanged: (v) => setState(() => _isPreview = v),
                 compact: true,
+                style: AppSegmentStyle.raised,
               ),
             if (widget.allowExpand) ...[
               const SizedBox(width: 4),
@@ -426,8 +450,22 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        header,
-        const SizedBox(height: 8),
+        if (widget.bordered) ...[
+          header,
+          const SizedBox(height: 8),
+        ] else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: AppAlpha.edge),
+                ),
+              ),
+            ),
+            child: header,
+          ),
         if (widget.expand)
           Expanded(child: _buildEditorContent(colorScheme))
         else
@@ -499,7 +537,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         maxHeight: widget.maxLines * 24.0,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: widget.bordered ? Border.all(color: colorScheme.outlineVariant) : null,
         borderRadius: BorderRadius.circular(8),
         color: (_isPreview || widget.isRefined) ? colorScheme.surfaceContainerLowest : null,
       ),

@@ -60,6 +60,27 @@ class PickerOption<T> {
 /// only when the picker opens, and the picker itself is a `ListView.builder`
 /// with a uniform extent, so opening costs the same whether the channel serves
 /// ten models or two thousand.
+/// How a [SearchablePickerField] draws the badge of whatever is selected.
+///
+/// The design gives a channel three forms, and the field's width is what
+/// decides between them.
+enum PickerBadge {
+  /// The tag written out, capped at a third of the field. Where there is room
+  /// for the word and the word is worth reading.
+  chip,
+
+  /// A 20px disc carrying the tag's first letter. For a field that is
+  /// *restating* which channel this is rather than offering a choice among
+  /// several — the model editor's channel field.
+  avatar,
+
+  /// An 8px dot in the tag's colour and nothing else, as `A1 16a` draws the
+  /// workbench's channel field. The two pickers share one row at ~150px each;
+  /// a chip there had its tag ellipsized down to an empty coloured box, which
+  /// says less than a dot and takes six times the width to say it.
+  dot,
+}
+
 class SearchablePickerField<T> extends StatefulWidget {
   const SearchablePickerField({
     super.key,
@@ -72,7 +93,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     this.dialogIcon,
     this.decoration = const InputDecoration(),
     this.enabled = true,
-    this.roundBadge = false,
+    this.badgeStyle = PickerBadge.chip,
   });
 
   /// The current selection, already resolved by the caller. `null` draws
@@ -112,15 +133,12 @@ class SearchablePickerField<T> extends StatefulWidget {
 
   final bool enabled;
 
-  /// Draws the selected option's badge as a [TagAvatar] disc instead of a
-  /// [ModelTagChip].
+  /// How the selected option's badge is drawn. See [PickerBadge].
   ///
-  /// The design gives a channel two forms: the chip where its full tag has to
-  /// stay readable beside a name — picker rows, the workbench's field — and
-  /// the disc where the channel is being restated rather than chosen. The
-  /// model editor's channel field is the latter; the rows inside the picker
-  /// it opens stay chips either way.
-  final bool roundBadge;
+  /// Applies to this field only — the rows inside the picker it opens are
+  /// chips whatever this says, because there the tag is what the user is
+  /// reading the row for.
+  final PickerBadge badgeStyle;
 
   @override
   State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
@@ -206,7 +224,17 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
                   builder: (context, constraints) => Row(
                     children: [
                       if (value.badge != null) ...[
-                        if (widget.roundBadge)
+                        if (widget.badgeStyle == PickerBadge.dot)
+                          // No cap needed: a dot is a dot.
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: value.badgeColor ?? colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        else if (widget.badgeStyle == PickerBadge.avatar)
                           // Fixed-size, so the free-text cap below does not
                           // apply: a disc shows one letter no matter how long
                           // the tag is.

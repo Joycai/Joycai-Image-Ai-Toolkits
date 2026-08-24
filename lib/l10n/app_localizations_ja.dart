@@ -1969,6 +1969,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resolution => '解像度';
 
   @override
+  String get imageSizeLabel => 'サイズ';
+
+  @override
   String get quality => '品質';
 
   @override
@@ -2079,8 +2082,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get compressReferenceImages => '参考画像を圧縮';
 
   @override
-  String get compressReferenceImagesDesc =>
-      '送信前に3MBを超える画像をJPEGに再エンコードし、リクエストサイズを削減します';
+  String get compressReferenceImagesDesc => '3MB を超える画像を JPEG に再エンコード';
 
   @override
   String get taskSubmitted => 'タスクがキューに送信されました';

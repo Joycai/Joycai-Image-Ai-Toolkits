@@ -11,7 +11,7 @@ import '../../state/gallery_state.dart';
 
 /// Folders are amber everywhere in the app. It is the one colour in the tree
 /// that is not reporting state, which is exactly why a folder can keep it.
-const Color _folderAmber = Color(0xFFE0A64B);
+const Color kFolderAmber = Color(0xFFE0A64B);
 
 class DirectoryTreeItem extends StatefulWidget {
   final String path;
@@ -190,6 +190,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
           dense: true,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
+          // ListTile budgets 40px for a leading slot and 16 between it and the
+          // title, both of which this row has already spent inside its own
+          // leading Row. At `16a`'s 236px column that reserved-but-unused
+          // space came out of the folder name — a six-letter name ellipsized
+          // to two.
+          minLeadingWidth: 0,
+          horizontalTitleGap: 6,
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -217,6 +224,10 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                     }
                   },
                   visualDensity: VisualDensity.compact,
+                  // The box, not the 48px tap target around it. `16a` draws a
+                  // 16px square, and in a 236px column the target's padding is
+                  // the difference between a readable name and an ellipsis.
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               Icon(
                 _isExpanded ? Icons.folder_open : Icons.folder,
@@ -225,7 +236,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 // the checkbox beside it and the box around it already report
                 // that, and a tree of grey folders reads as a tree of disabled
                 // ones.
-                color: isUnreachable ? colorScheme.error.withAlpha(100) : _folderAmber,
+                color: isUnreachable ? colorScheme.error.withAlpha(100) : kFolderAmber,
               ),
               const SizedBox(width: 8),
             ],
@@ -256,7 +267,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 IconButton(
                   icon: const Icon(Icons.close, size: 16),
                   onPressed: () => widget.onRemove!(widget.path, folderName),
-                  padding: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.only(left: 4),
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                 ),

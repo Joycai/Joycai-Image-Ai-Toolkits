@@ -526,7 +526,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             searchHint: l10n.searchChannels,
             dialogIcon: Icons.hub_outlined,
             enabled: appState.allChannels.isNotEmpty,
-            roundBadge: true,
+            badgeStyle: PickerBadge.avatar,
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.hub_outlined),
             ),

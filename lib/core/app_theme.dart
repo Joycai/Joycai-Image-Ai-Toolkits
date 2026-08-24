@@ -158,7 +158,30 @@ ColorScheme buildAppColorScheme({
   required Color seedColor,
   required Brightness brightness,
 }) {
-  final seeded = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+  final seeded = ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: brightness,
+    // `vibrant`, not the default `tonalSpot`. `tonalSpot` caps the primary
+    // palette's chroma, and at the spec's own seed — `#4A72E8`, a vivid blue —
+    // it returned `primary` = `#4C5C92`, a slate grey-blue. Everything the
+    // design draws in the accent (a selected row, a badge, a checkbox, a
+    // toggle) came out a tone that changed with the seed but never looked like
+    // it: the user picked a colour and the app rendered its shadow.
+    //
+    // The codebase had already found this once and patched around it for the
+    // one loudest case — [buttonFillScheme] is a light `vibrant` scheme built
+    // solely so the primary button would not be the greyest thing on screen.
+    // Which left the CTA as the only vivid accent in the window and every
+    // other accent a step duller than it. This moves the fix to where the
+    // problem was.
+    //
+    // Only the accent roles survive: the neutrals are overwritten below, so
+    // vibrant's own greys — which are *more* seed-tinted than tonalSpot's —
+    // never reach the app. `buttonFillScheme` still exists, for its other
+    // reason: in dark, `primary` is a pale tone 80 under a dark `onPrimary`,
+    // which is wrong for a fill whatever the variant.
+    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
   final neutral = brightness == Brightness.dark ? _Neutrals.dark : _Neutrals.light;
 
   return seeded.copyWith(
@@ -239,6 +262,70 @@ ThemeData buildAppTheme({
       color: colorScheme.outlineVariant,
       thickness: 1,
       space: 1,
+    ),
+    // §1 「列表行 40–48 px」. Material's own is 56 with a subtitle and 48
+    // without, so the spec's *ceiling* is where Material starts — every list
+    // in the app was a row too tall. `VisualDensity.compact` takes 8 off both,
+    // which lands on 40 and 48 exactly; the figure is Material's, the choice
+    // of density is the spec's.
+    //
+    // The gutters go with it. Material budgets 16px each side, a 40px leading
+    // slot and 16 between that and the title; the frames draw 8–10 (§1 「控件
+    // 内边距 8 / 10 / 12」) and let the row's own leading widget decide its
+    // width. At `A1 16a`'s 236px folder column that reserved-but-unused space
+    // was the difference between a six-letter folder name and an ellipsis —
+    // `directory_tree_item` had already fixed it by hand, for itself alone.
+    //
+    // 72 call sites across 23 files, none of them touched. Anything that
+    // states its own padding still wins: a theme is the floor here, not a cap.
+    listTileTheme: ListTileThemeData(
+      visualDensity: VisualDensity.compact,
+      minLeadingWidth: 0,
+      horizontalTitleGap: 10,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.control)),
+      // `16a` draws the browsed folder as an accent wash, which is the same
+      // selection skin every other list in the app draws by hand. Named here,
+      // a `selected: true` tile gets it without each list restating it.
+      selectedColor: colorScheme.primary,
+      selectedTileColor: colorScheme.accentTint,
+    ),
+    // No tick marks, and a thumb small enough to sit in a toolbar. Material
+    // dots every division of a divided slider, which on the gallery's zoom
+    // control and the model editor's context slider read as a ruler drawn
+    // under a control that is not being measured against one. The editor had
+    // already turned them off in a local [SliderTheme]; this is that override,
+    // stated once.
+    sliderTheme: SliderThemeData(
+      trackHeight: 4,
+      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+      tickMarkShape: SliderTickMarkShape.noTickMark,
+      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+    ),
+    // `A1 16a`'s run console draws its progress as a 4px bar with 2px ends.
+    // Material's is 4px square-ended, which beside the pill-shaped everything
+    // else in that status bar reads as a different family of object.
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      linearMinHeight: 4,
+      borderRadius: BorderRadius.circular(2),
+      linearTrackColor: colorScheme.surfaceContainerHighest,
+    ),
+    // `10a` 「分段控件与页签」 draws a tool tab as a tinted pill — padding
+    // 7×12, radius 8, accent wash under an accent label — not as a label with
+    // a rule under it. Material's underline indicator plus its full-width
+    // divider is a different navigation idiom, and the app has three
+    // [TabBar]s wearing it.
+    tabBarTheme: TabBarThemeData(
+      indicator: BoxDecoration(
+        color: colorScheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: Colors.transparent,
+      labelColor: colorScheme.onAccentTint,
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+      overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
     ),
     filledButtonTheme: FilledButtonThemeData(
       // `.copyWith` on top of `styleFrom`, because `styleFrom` has no
@@ -489,17 +576,22 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
 
 /// The scheme a primary button takes its fill and label from.
 ///
-/// Two things ail the default. Material's dark scheme pairs a pale `primary`
-/// with a dark `onPrimary`, so a filled button comes out a washed-out lavender
-/// slab; and `tonalSpot`, the default palette, caps chroma — so *no* tone of it
-/// is vivid, in either theme. Together they make the one button that commits to
-/// something the greyest thing on the screen.
+/// Material's dark scheme pairs a pale `primary` with a dark `onPrimary`, so a
+/// filled button comes out a washed-out lavender slab — lighter than the
+/// ordinary controls beside it, on the one element that should carry the most
+/// weight. `primary` is tuned to be read *as a foreground* in dark; a fill
+/// wants the opposite.
 ///
-/// The fill therefore comes from a light `vibrant` scheme in both themes:
-/// vibrant maxes colourfulness at the seed's own hue, and light puts white on
-/// it. Both halves still come from one scheme, so the label keeps the contrast
-/// Material computes for it — which a hand-picked "brighter purple" under white
-/// would not, at any seed the user might pick.
+/// So the fill comes from a **light** scheme in both themes, which is why this
+/// takes no [Brightness]. Both halves still come from one scheme, so the label
+/// keeps the contrast Material computes for it — which a hand-picked "brighter
+/// purple" under white would not, at any seed the user might pick.
+///
+/// This used to carry a second job: `tonalSpot` capped chroma, so *no* tone of
+/// the app's palette was vivid, and this was the one place the seed's own
+/// colour survived. [buildAppColorScheme] is `vibrant` now, so in light mode
+/// this and `colorScheme.primary` are the same colour — as they should be. The
+/// dark half is the reason it still exists.
 ColorScheme buttonFillScheme(Color seedColor) {
   return ColorScheme.fromSeed(
     seedColor: seedColor,

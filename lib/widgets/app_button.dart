@@ -128,6 +128,22 @@ class AppButton extends StatelessWidget {
   /// of a bottom sheet, which is expected to span it.
   final bool fullWidth;
 
+  /// Puts the accent on an [AppButtonVariant.secondary]'s label, in place of
+  /// its usual `onSurface`.
+  ///
+  /// For an outlined button that is nonetheless the *only* call to action in
+  /// the column it heads. `A1 16a` draws 「添加文件夹」 this way — a neutral
+  /// hairline box with an accent label — because the folder column has nothing
+  /// else in it to act on, and a second filled button there would compete with
+  /// 「处理 N 张图像」 across the window.
+  ///
+  /// Opt-in per call site rather than the variant's default: the other
+  /// twenty-odd outlined buttons in the app sit *beside* a filled primary,
+  /// where an accent label is the outlined button claiming a weight it does
+  /// not have. Ignored by every other variant — those already own both halves
+  /// of their colour pair.
+  final bool accentLabel;
+
   const AppButton({
     super.key,
     required this.label,
@@ -138,6 +154,7 @@ class AppButton extends StatelessWidget {
     this.loading = false,
     this.size = AppButtonSize.normal,
     this.fullWidth = false,
+    this.accentLabel = false,
   });
 
   /// The label, plus [secondaryLabel] trailing it when set.
@@ -297,7 +314,7 @@ class AppButton extends StatelessWidget {
           // alike, and an unfilled outline over a card's own tone reads as a
           // hole punched in it rather than as a button.
           backgroundColor: colorScheme.surface,
-          foregroundColor: colorScheme.onSurface,
+          foregroundColor: accentLabel ? colorScheme.primary : colorScheme.onSurface,
           side: BorderSide(color: colorScheme.outlineVariant),
           disabledForegroundColor: colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
         );

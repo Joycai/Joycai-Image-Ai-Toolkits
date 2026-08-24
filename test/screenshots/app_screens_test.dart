@@ -90,6 +90,47 @@ void main() {
     }
   }
 
+  // The image workbench with a selection live (spec A1 16a). Tab 0's own
+  // loop shot only ever catches the empty state, and the right column is a
+  // different panel with images picked: the strip of thumbnails, the model
+  // section and the action bar's count all appear only then.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('workbench · selection @ desktop ${brightness.name}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.workbench,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'selection',
+        // `16a` draws the console collapsed. Left expanded it eats half the
+        // window, and the config panel — the whole point of this shot — is
+        // then photographed at a height it never has in the design.
+        before: (_) async {
+          // Tab 0 explicitly: the workbench tab is app state, so whichever
+          // tab the previous test in this file left selected is the one this
+          // would otherwise photograph — the dark pass was shooting the video
+          // panel under the name of the image one.
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+        },
+        // Seeded on the *settled* tree, not before mount: the selection lives
+        // on GalleryState's view list, and which images that holds depends on
+        // the folder scan having finished. Cleared first because
+        // [seedImageSelection] toggles — the second brightness would otherwise
+        // deselect what the first picked and shoot "已选择 0 项".
+        after: (WidgetTester tester) async {
+          AppState().clearImageSelection();
+          seedImageSelection(AppState());
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
   // The prompt assistant at iPad width. It is the only tab that keeps both side
   // panels, so it is the only one that can run out of centre — and the size
   // band it ran out in (screen over the desktop breakpoint, content box under

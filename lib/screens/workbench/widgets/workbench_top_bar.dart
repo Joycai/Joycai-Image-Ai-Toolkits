@@ -84,17 +84,28 @@ class WorkbenchTopBar extends StatelessWidget {
             child: Row(
               children: [
                 // Leading: sidebar toggle (inline panel) / drawer opener
-                if (layout.leftInDrawer)
-                  IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => context.read<WorkbenchLayoutState>().openLeftPanel(),
-                  )
-                else
-                  IconButton(
-                    icon: Icon(isSidebarExpanded ? Icons.menu_open : Icons.menu),
-                    tooltip: l10n.workbench,
-                    onPressed: () => context.read<AppState>().setSidebarExpanded(!isSidebarExpanded),
-                  ),
+                // 36 square, per `16a`. Material's own is 48, and this one
+                // is the tallest thing in the row — it, not the segmented
+                // control beside it, was setting the bar's height.
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: layout.leftInDrawer
+                      ? IconButton(
+                          icon: const Icon(Icons.menu, size: 19),
+                          padding: EdgeInsets.zero,
+                          onPressed: () =>
+                              context.read<WorkbenchLayoutState>().openLeftPanel(),
+                        )
+                      : IconButton(
+                          icon: Icon(isSidebarExpanded ? Icons.menu_open : Icons.menu, size: 19),
+                          padding: EdgeInsets.zero,
+                          tooltip: l10n.workbench,
+                          onPressed: () => context
+                              .read<AppState>()
+                              .setSidebarExpanded(!isSidebarExpanded),
+                        ),
+                ),
 
                 const SizedBox(width: 4),
 

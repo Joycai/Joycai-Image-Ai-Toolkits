@@ -9,16 +9,16 @@ import 'screenshots/harness/fixture_env.dart';
 import 'screenshots/harness/fixture_seed.dart';
 import 'screenshots/harness/shoot.dart';
 
-/// Covers the workbench right panel's one layout rule: the prompt editor fills
-/// whatever height the rest of the panel leaves, and the panel scrolls only
-/// once there is not enough of it to go round.
+/// Covers the workbench right panel's one layout rule: the prompt card takes
+/// whatever height the head above it does not need, keeping its own footer on
+/// screen, and only the head scrolls.
 ///
 /// This is worth pinning because it is held by an arrangement rather than by a
-/// number — a viewport-height floor, an [IntrinsicHeight] asking the column how
-/// tall it wants to be, and a minimum the editor reports so that question has a
-/// sane answer. Any of the three going missing looks fine at one window height
-/// and wrong at the next, which is exactly what a sweep catches and a single
-/// mount does not.
+/// number — a cap on the head computed from the editor's floor and the label
+/// row above it, a loose scroller that shrink-wraps under that cap, and a
+/// fallback for columns too short to hold both. Any of the three going missing
+/// looks fine at one window height and wrong at the next, which is exactly
+/// what a sweep catches and a single mount does not.
 ///
 /// The heights are deliberately either side of the changeover rather than round
 /// numbers: what matters is that *both* regimes are exercised, and that the
@@ -106,6 +106,35 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('the panel survives the model section being expanded', (tester) async {
+    // The regression this pins: the panel used to size itself with an
+    // [IntrinsicHeight], and expanding this section mounts two
+    // [SearchablePickerField]s, each of which contains a [LayoutBuilder] —
+    // which cannot report an intrinsic dimension. Layout threw and the right
+    // column rendered blank, followed by a cascade of mouse-tracker assertions
+    // that made the real cause hard to see.
+    //
+    // Deliberately asserting on the *panel*, not on the arrangement that
+    // happens to avoid the throw today: any future layout here is free, so
+    // long as the section can still be opened.
+    await mountApp(
+      tester,
+      env: env,
+      screen: AppScreen.workbench,
+      size: const Size(width, 900),
+      label: 'fill_model_expanded',
+    );
+
+    await tester.tap(find.text('模型选择'), warnIfMissed: false);
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(tester.takeException(), isNull,
+        reason: 'opening 模型选择 brought the config panel down');
+    expect(editorBoxHeight(tester), greaterThanOrEqualTo(kMinPromptEditorHeight - 1));
+  });
 
   testWidgets('extra window height goes to the editor, not to whitespace',
       (tester) async {

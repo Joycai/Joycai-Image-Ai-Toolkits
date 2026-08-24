@@ -19,27 +19,39 @@ void main() {
   ThemeData dark() => buildAppTheme(seedColor: seed, brightness: Brightness.dark);
   ThemeData light() => buildAppTheme(seedColor: seed, brightness: Brightness.light);
 
-  test('filled buttons take the vibrant fill, not the scheme primary', () {
+  test('filled buttons take the fill scheme, whatever the brightness', () {
     final scheme = buttonFillScheme(seed);
 
     for (final theme in [dark(), light()]) {
-      final fill = resolve(theme, {})!;
-
-      // The theme's own primary is the muted tone this exists to avoid — pale
-      // in dark, chroma-capped in both.
-      expect(fill, isNot(theme.colorScheme.primary));
-      expect(fill, scheme.primary);
+      expect(resolve(theme, {})!, scheme.primary);
       expect(styleOf(theme).foregroundColor?.resolve({}), scheme.onPrimary);
     }
   });
 
-  test('the fill is more colourful than the palette it replaces', () {
-    // The whole point: tonalSpot caps chroma, so its primary is grey-ish at
-    // every tone. If this ever stops holding, the button is back to dull.
-    final vibrant = HSLColor.fromColor(buttonFillScheme(seed).primary);
-    final tonal = HSLColor.fromColor(light().colorScheme.primary);
+  test('the fill is a dark ground in dark mode, where primary is a pale one', () {
+    // What [buttonFillScheme] is still for. It used to be for two things —
+    // dark's pale primary, and `tonalSpot` capping chroma at every tone — and
+    // the second is gone: the whole scheme is `vibrant` now, so in *light* the
+    // fill and `colorScheme.primary` are legitimately the same colour and
+    // asserting they differ would be pinning a workaround to its own scaffold.
+    //
+    // Dark is the half that remains. There `primary` is a pale tone 80 meant
+    // to be read as a foreground, and a button filled with it is a lavender
+    // slab under dark text — lighter than the ordinary controls beside it, on
+    // the one element that should carry the most weight.
+    final fill = HSLColor.fromColor(buttonFillScheme(seed).primary);
+    final darkPrimary = HSLColor.fromColor(dark().colorScheme.primary);
 
-    expect(vibrant.saturation, greaterThan(tonal.saturation));
+    expect(fill.lightness, lessThan(darkPrimary.lightness));
+    expect(resolve(dark(), {})!, isNot(dark().colorScheme.primary));
+  });
+
+  test('light mode no longer needs a second scheme for the fill', () {
+    // The change this records: `buildAppColorScheme` is `vibrant` too, so the
+    // accent a selected row wears and the accent the CTA is filled with are
+    // finally the same colour. Before, the CTA was the only vivid thing in the
+    // window and every other accent a step duller than it.
+    expect(light().colorScheme.primary, buttonFillScheme(seed).primary);
   });
 
   test('the label keeps a readable contrast against the fill', () {
