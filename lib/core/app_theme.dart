@@ -158,7 +158,30 @@ ColorScheme buildAppColorScheme({
   required Color seedColor,
   required Brightness brightness,
 }) {
-  final seeded = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+  final seeded = ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: brightness,
+    // `vibrant`, not the default `tonalSpot`. `tonalSpot` caps the primary
+    // palette's chroma, and at the spec's own seed — `#4A72E8`, a vivid blue —
+    // it returned `primary` = `#4C5C92`, a slate grey-blue. Everything the
+    // design draws in the accent (a selected row, a badge, a checkbox, a
+    // toggle) came out a tone that changed with the seed but never looked like
+    // it: the user picked a colour and the app rendered its shadow.
+    //
+    // The codebase had already found this once and patched around it for the
+    // one loudest case — [buttonFillScheme] is a light `vibrant` scheme built
+    // solely so the primary button would not be the greyest thing on screen.
+    // Which left the CTA as the only vivid accent in the window and every
+    // other accent a step duller than it. This moves the fix to where the
+    // problem was.
+    //
+    // Only the accent roles survive: the neutrals are overwritten below, so
+    // vibrant's own greys — which are *more* seed-tinted than tonalSpot's —
+    // never reach the app. `buttonFillScheme` still exists, for its other
+    // reason: in dark, `primary` is a pale tone 80 under a dark `onPrimary`,
+    // which is wrong for a fill whatever the variant.
+    dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
   final neutral = brightness == Brightness.dark ? _Neutrals.dark : _Neutrals.light;
 
   return seeded.copyWith(
@@ -553,17 +576,22 @@ TextTheme _buildTextTheme(ColorScheme colorScheme, String? fontFamily) {
 
 /// The scheme a primary button takes its fill and label from.
 ///
-/// Two things ail the default. Material's dark scheme pairs a pale `primary`
-/// with a dark `onPrimary`, so a filled button comes out a washed-out lavender
-/// slab; and `tonalSpot`, the default palette, caps chroma — so *no* tone of it
-/// is vivid, in either theme. Together they make the one button that commits to
-/// something the greyest thing on the screen.
+/// Material's dark scheme pairs a pale `primary` with a dark `onPrimary`, so a
+/// filled button comes out a washed-out lavender slab — lighter than the
+/// ordinary controls beside it, on the one element that should carry the most
+/// weight. `primary` is tuned to be read *as a foreground* in dark; a fill
+/// wants the opposite.
 ///
-/// The fill therefore comes from a light `vibrant` scheme in both themes:
-/// vibrant maxes colourfulness at the seed's own hue, and light puts white on
-/// it. Both halves still come from one scheme, so the label keeps the contrast
-/// Material computes for it — which a hand-picked "brighter purple" under white
-/// would not, at any seed the user might pick.
+/// So the fill comes from a **light** scheme in both themes, which is why this
+/// takes no [Brightness]. Both halves still come from one scheme, so the label
+/// keeps the contrast Material computes for it — which a hand-picked "brighter
+/// purple" under white would not, at any seed the user might pick.
+///
+/// This used to carry a second job: `tonalSpot` capped chroma, so *no* tone of
+/// the app's palette was vivid, and this was the one place the seed's own
+/// colour survived. [buildAppColorScheme] is `vibrant` now, so in light mode
+/// this and `colorScheme.primary` are the same colour — as they should be. The
+/// dark half is the reason it still exists.
 ColorScheme buttonFillScheme(Color seedColor) {
   return ColorScheme.fromSeed(
     seedColor: seedColor,
