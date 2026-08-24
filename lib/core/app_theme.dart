@@ -252,11 +252,22 @@ ThemeData buildAppTheme({
     // all ~11 context menus rendered at Material's stock corner and lift.
     // md, not dialog — a menu is a container holding controls, one step out
     // from the items it wraps, the same rung as a segmented track.
+    // `10e` 「下拉菜单 · 展开态」: radius 10, 4px of padding around the items,
+    // an opaque ground (a floating layer does not frost), 12.5/500 labels.
+    //
+    // The item *geometry* — 30 tall, radius 7, hover and selected skins — is
+    // not reachable from here: a [PopupMenuItem]'s height comes from its own
+    // `height`, defaulting to `kMinInteractiveDimension`, and there is no
+    // theme slot for it. Those live at the call sites, and the app's ~10 menus
+    // still draw them at Material's 48.
     popupMenuTheme: PopupMenuThemeData(
       color: colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      menuPadding: const EdgeInsets.all(4),
       elevation: 4,
       shadowColor: colorScheme.shadow,
+      iconColor: colorScheme.onSurfaceVariant,
+      iconSize: AppSize.iconSm,
     ),
     dividerTheme: DividerThemeData(
       color: colorScheme.outlineVariant,

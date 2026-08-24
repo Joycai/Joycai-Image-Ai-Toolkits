@@ -411,9 +411,16 @@ class GalleryToolbar extends StatelessWidget {
           width: 100,
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
+              // `10e` 「滑杆」 splits the family in two: a *parameter* slider
+              // changes a value and takes the accent, a *neutral* one changes
+              // how you are looking at something and stays greyscale. A
+              // thumbnail size is the second kind — the app-wide
+              // [SliderThemeData] is the first, so this row states its own.
+              // Thinner and smaller-thumbed than the accent one, too: 3 and
+              // 12 against 4 and 14.
               trackHeight: 3,
               activeTrackColor: colorScheme.onSurfaceVariant,
-              inactiveTrackColor: colorScheme.surfaceContainerHighest,
+              inactiveTrackColor: colorScheme.outlineVariant,
               thumbColor: colorScheme.onSurfaceVariant,
               overlayColor: colorScheme.onSurface.withValues(alpha: 0.08),
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
