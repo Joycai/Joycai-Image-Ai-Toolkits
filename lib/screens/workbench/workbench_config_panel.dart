@@ -16,7 +16,6 @@ import '../../state/gallery_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
-import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/dialogs/library_dialog.dart';
 import '../../widgets/dialogs/prompt_history_dialog.dart';
@@ -204,10 +203,16 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 ),
               ),
             ),
-            AppIconButton(
-              icon: Icons.settings_outlined,
+            // A plain [IconButton], not an [AppIconButton]: this one sits
+            // *inside* a card, which is the case that widget's own doc sends
+            // elsewhere ("a box around every one of those is noise"). `16a`
+            // draws it as a bare 32px glyph, and the outlined box was reading
+            // as a third control on a row that already has two.
+            IconButton(
+              icon: const Icon(Icons.settings_outlined, size: AppSize.iconSm),
               tooltip: l10n.queueSettings,
-              size: 32,
+              color: colorScheme.onSurfaceVariant,
+              visualDensity: VisualDensity.compact,
               onPressed: () => showQueueSettingsDialog(context),
             ),
           ],
@@ -316,7 +321,11 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                 constraints: const BoxConstraints(minHeight: kMinPromptEditorHeight),
                 child: AppCard(
                   outlined: true,
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                  // Zero, so the editor's header hairline can run the full
+                  // width of the card. `16a` draws one box with a rule across
+                  // it, not a stack of inset pieces — the padding moves inside,
+                  // onto the header, the body and the footer separately.
+                  padding: EdgeInsets.zero,
                   child: Column(
                     mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,10 +351,15 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                           // height in return, which a LayoutBuilder inside here
                           // would make impossible.
                           probeAvailableHeight: !fill,
+                          // The card around it is the frame; see
+                          // [MarkdownEditor.bordered].
+                          bordered: false,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      editorActions,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+                        child: editorActions,
+                      ),
                     ],
                   ),
                 ),

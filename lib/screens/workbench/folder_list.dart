@@ -109,6 +109,13 @@ class FolderList extends StatelessWidget {
                   label: l10n.addFolder,
                   icon: Icons.create_new_folder_outlined,
                   variant: AppButtonVariant.secondary,
+                  // The *label* is the accent, though — `16a` draws it at the
+                  // spec's 主色深 on a neutral hairline box. The box stays
+                  // quiet; the word does not. Without this the button was the
+                  // one thing on the workbench that did not move when the user
+                  // changed their theme, because `secondary` hard-pairs its
+                  // outline with `onSurface`.
+                  accentLabel: true,
                   onPressed: () => _pickDirectory(context, appState),
                 ),
               ),

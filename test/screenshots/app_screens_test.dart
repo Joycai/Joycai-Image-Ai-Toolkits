@@ -13,8 +13,6 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
 
-import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/image_card.dart';
-
 import 'harness/fixture_env.dart';
 import 'harness/fixture_seed.dart';
 import 'harness/shoot.dart';
@@ -106,17 +104,27 @@ void main() {
         size: kShotSizes.last,
         brightness: brightness,
         suffix: 'selection',
-        // Driven through the grid rather than seeded: the selection lives on
-        // GalleryState's view list, and which images *that* holds depends on
-        // the folder tree having settled — a seed call from here ran before
-        // it had, and picked nothing.
+        // `16a` draws the console collapsed. Left expanded it eats half the
+        // window, and the config panel — the whole point of this shot — is
+        // then photographed at a height it never has in the design.
+        before: (_) async {
+          // Tab 0 explicitly: the workbench tab is app state, so whichever
+          // tab the previous test in this file left selected is the one this
+          // would otherwise photograph — the dark pass was shooting the video
+          // panel under the name of the image one.
+          AppState().setWorkbenchTab(0);
+          AppState().isConsoleExpanded = false;
+        },
+        // Seeded on the *settled* tree, not before mount: the selection lives
+        // on GalleryState's view list, and which images that holds depends on
+        // the folder scan having finished. Cleared first because
+        // [seedImageSelection] toggles — the second brightness would otherwise
+        // deselect what the first picked and shoot "已选择 0 项".
         after: (WidgetTester tester) async {
-          final Finder cards = find.byType(ImageCard);
-          for (int i = 0; i < 2 && i < cards.evaluate().length; i++) {
-            await tester.tap(cards.at(i), warnIfMissed: false);
-            for (int p = 0; p < 4; p++) {
-              await tester.pump(const Duration(milliseconds: 100));
-            }
+          AppState().clearImageSelection();
+          seedImageSelection(AppState());
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 120));
           }
         },
       );
