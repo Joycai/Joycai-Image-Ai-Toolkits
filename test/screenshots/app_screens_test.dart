@@ -221,6 +221,47 @@ void main() {
     }
   }
 
+  // The channel editor (spec D2 15a / 15c). Desktop is a 680-wide two-column
+  // dialog reached from the detail header's pencil; mobile is a fullscreen
+  // page reached by tapping a row in the channels tab.
+  for (final (String sizeLabel, Brightness brightness) in const <(String, Brightness)>[
+    ('desktop', Brightness.light),
+    ('desktop', Brightness.dark),
+    ('mobile', Brightness.light),
+  ]) {
+    testWidgets('channelEditor @ $sizeLabel ${brightness.name}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: kShotSizes.firstWhere((ShotSize s) => s.label == sizeLabel),
+        brightness: brightness,
+        suffix: 'channelEdit',
+        after: (WidgetTester tester) async {
+          Future<void> settle() async {
+            for (int i = 0; i < 5; i++) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+          }
+
+          if (sizeLabel == 'mobile') {
+            // The channels tab, then the row itself opens the editor.
+            await tester.tap(find.text('渠道管理').first, warnIfMissed: false);
+            await settle();
+            await tester.tap(find.text('中转 · OpenAI 兼容').first, warnIfMissed: false);
+            await settle();
+          } else {
+            final Finder edit = find.byTooltip('编辑');
+            if (edit.evaluate().isEmpty) return;
+            await tester.tap(edit.first, warnIfMissed: false);
+            await settle();
+          }
+        },
+      );
+    });
+  }
+
   // The model editor (spec D2 13a / 13b / 13c). One dialog in two layouts —
   // a single column below 1100 and two panes with a summary card above it —
   // decided by the window, so it takes one shot per band. `newModel` is 13b:

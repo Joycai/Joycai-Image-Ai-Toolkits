@@ -2279,6 +2279,12 @@ abstract class AppLocalizations {
   /// **'{count} groups'**
   String countGroups(int count);
 
+  /// No description provided for @previewInList.
+  ///
+  /// In en, this message translates to:
+  /// **'List preview'**
+  String get previewInList;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

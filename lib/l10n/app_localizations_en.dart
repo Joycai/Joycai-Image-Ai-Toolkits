@@ -1198,6 +1198,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get previewInList => 'List preview';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

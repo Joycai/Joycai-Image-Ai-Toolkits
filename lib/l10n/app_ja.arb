@@ -423,6 +423,7 @@
       }
     }
   },
+  "previewInList": "リストでの見え方",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

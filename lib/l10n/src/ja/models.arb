@@ -244,5 +244,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "previewInList": "リストでの見え方"
 }

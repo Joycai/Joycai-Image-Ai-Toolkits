@@ -244,5 +244,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "previewInList": "列表中的樣子"
 }

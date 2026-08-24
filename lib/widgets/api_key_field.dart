@@ -9,7 +9,10 @@ import 'app_text_field.dart';
 /// widget only adds the obscure/reveal behaviour on top.
 class ApiKeyField extends StatefulWidget {
   final TextEditingController controller;
-  final String label;
+
+  /// Floating label, or null for a field whose caption is drawn above it by
+  /// the caller (the `15a` form style).
+  final String? label;
   final int maxLines;
   final Function(String) onChanged;
 
@@ -20,7 +23,7 @@ class ApiKeyField extends StatefulWidget {
   const ApiKeyField({
     super.key,
     required this.controller,
-    required this.label,
+    this.label,
     this.maxLines = 1,
     required this.onChanged,
     this.errorText,

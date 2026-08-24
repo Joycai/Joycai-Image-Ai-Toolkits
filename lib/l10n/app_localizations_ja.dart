@@ -1170,6 +1170,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get previewInList => 'リストでの見え方';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

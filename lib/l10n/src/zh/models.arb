@@ -293,5 +293,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "previewInList": "列表中的样子"
 }

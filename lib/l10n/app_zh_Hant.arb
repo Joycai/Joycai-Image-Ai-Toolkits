@@ -423,6 +423,7 @@
       }
     }
   },
+  "previewInList": "列表中的樣子",
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",
