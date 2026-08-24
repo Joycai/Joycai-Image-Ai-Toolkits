@@ -221,13 +221,20 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       // Fields at the spec's 40px. The app theme's dense inputs land at ~44;
       // with a caption now above every field the extra 4px × five fields is
       // what stood between the wide layout and the spec's no-scroll promise.
-      content: FilledFieldScope(
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-          ),
+      //
+      // FilledFieldScope goes *inside*, not outside: it reads the ambient
+      // decoration theme from its own context and adds the fill to it. Wrapped
+      // the other way round, this Theme's `Theme.of(context)` resolves above
+      // the scope and overwrites the fill it had just added — the fields came
+      // out flush with the panel again, which is what a nested override always
+      // does when it rebuilds a value from the wrong context.
+      content: Theme(
+        data: Theme.of(context).copyWith(
+          inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+        ),
+        child: FilledFieldScope(
           child: twoPane ? _buildTwoPane(colorScheme) : _buildSinglePane(colorScheme),
         ),
       ),
