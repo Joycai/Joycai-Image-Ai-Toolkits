@@ -401,6 +401,28 @@
   },
   "selectAChannel": "選擇通道",
   "searchChannels": "搜尋通道名稱或標籤...",
+  "kindChat": "對話",
+  "kindImage": "圖像",
+  "kindVideo": "影片",
+  "kindMultimodal": "多模態",
+  "reasoningChip": "推理·{level}",
+  "@reasoningChip": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "webSearchChip": "聯網",
+  "viewAllImagesChip": "看全部參考圖",
+  "countGroups": "{count} 組",
+  "@countGroups": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompts": "提示",
   "promptLibrary": "提示庫",
   "newPrompt": "新提示",

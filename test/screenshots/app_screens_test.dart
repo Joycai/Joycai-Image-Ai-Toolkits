@@ -207,7 +207,10 @@ void main() {
             // Narrow layouts put the channel list behind a tab; on desktop it
             // is already on screen and this is a no-op.
             await tapText('渠道管理');
-            final Finder add = find.byTooltip('添加渠道');
+            // The add action is a labelled button on desktop and a tooltipped
+            // icon on narrow layouts; accept either spelling.
+            Finder add = find.text('添加渠道');
+            if (add.evaluate().isEmpty) add = find.byTooltip('添加渠道');
             if (add.evaluate().isEmpty) return;
             await tester.tap(add.first, warnIfMissed: false);
             await settle();

@@ -542,6 +542,28 @@
   },
   "selectAChannel": "Select a channel",
   "searchChannels": "Search channel name or tag...",
+  "kindChat": "Chat",
+  "kindImage": "Image",
+  "kindVideo": "Video",
+  "kindMultimodal": "Multimodal",
+  "reasoningChip": "Reasoning · {level}",
+  "@reasoningChip": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "webSearchChip": "Web search",
+  "viewAllImagesChip": "All ref images",
+  "countGroups": "{count} groups",
+  "@countGroups": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

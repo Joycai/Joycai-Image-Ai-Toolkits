@@ -1131,6 +1131,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchChannels => '搜索渠道名称或标签...';
 
   @override
+  String get kindChat => '对话';
+
+  @override
+  String get kindImage => '图像';
+
+  @override
+  String get kindVideo => '视频';
+
+  @override
+  String get kindMultimodal => '多模态';
+
+  @override
+  String reasoningChip(String level) {
+    return '推理·$level';
+  }
+
+  @override
+  String get webSearchChip => '联网';
+
+  @override
+  String get viewAllImagesChip => '看全部参考图';
+
+  @override
+  String countGroups(int count) {
+    return '$count 组';
+  }
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -3898,6 +3926,34 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get searchChannels => '搜尋通道名稱或標籤...';
+
+  @override
+  String get kindChat => '對話';
+
+  @override
+  String get kindImage => '圖像';
+
+  @override
+  String get kindVideo => '影片';
+
+  @override
+  String get kindMultimodal => '多模態';
+
+  @override
+  String reasoningChip(String level) {
+    return '推理·$level';
+  }
+
+  @override
+  String get webSearchChip => '聯網';
+
+  @override
+  String get viewAllImagesChip => '看全部參考圖';
+
+  @override
+  String countGroups(int count) {
+    return '$count 組';
+  }
 
   @override
   String get prompts => '提示';

@@ -1170,6 +1170,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchChannels => 'Search channel name or tag...';
 
   @override
+  String get kindChat => 'Chat';
+
+  @override
+  String get kindImage => 'Image';
+
+  @override
+  String get kindVideo => 'Video';
+
+  @override
+  String get kindMultimodal => 'Multimodal';
+
+  @override
+  String reasoningChip(String level) {
+    return 'Reasoning · $level';
+  }
+
+  @override
+  String get webSearchChip => 'Web search';
+
+  @override
+  String get viewAllImagesChip => 'All ref images';
+
+  @override
+  String countGroups(int count) {
+    return '$count groups';
+  }
+
+  @override
   String get prompts => 'Prompts';
 
   @override
