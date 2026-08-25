@@ -760,6 +760,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     bool showLeftPanel = appState.isSidebarExpanded;
     bool showRightPanel = !isNarrow;
 
+    // Bare over the window backdrop unless a tab asks otherwise — see
+    // [WorkbenchLayout.centerGround].
+    Color? centerGround;
+
     switch (appState.workbenchTabIndex) {
       case 0: // Image Processing
         centerContent = const Column(
@@ -947,6 +951,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
         leftPanel = OptimizerLeftPanel(kbPath: _kbPath);
         showRightPanel = !isNarrow;
         showLeftPanel = !isNarrow; // Show reference images on left
+        // The one centre column the spec gives a ground of its own: `10g`
+        // draws the chat column `#F5F7FD`, a recess between the `#FAFBFF`
+        // panels either side. Every other tab leaves the column bare.
+        centerGround = Theme.of(context).colorScheme.surface;
         break;
       case 5: // Video Generation
         centerContent = const Column(
@@ -984,6 +992,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       topBar: WorkbenchTopBar(tabController: _tabController),
       leftPanel: leftPanel,
       centerContent: centerContent,
+      centerGround: centerGround,
       // Const where there is no controller to thread, which is both places the
       // layout draws the panel inline or in its drawer. This builder is
       // re-invoked from `_WorkbenchLayoutState.build` — so on every splitter
