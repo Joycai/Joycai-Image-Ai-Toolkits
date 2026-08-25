@@ -55,7 +55,18 @@ void main() {
     // The editor knows the crop rect from its first layout; the badge used to
     // wait for an edit that may never come.
     expect(badge(), findsOneWidget);
-    expect((tester.widget<Text>(badge()).data ?? ''), contains('512 × 512'));
+
+    // Against the editor's own numbers, not a literal. Which picture
+    // `seedCropSource` lands on depends on the order the gallery scan returns
+    // files in, which is the filesystem's business and differs between a dev
+    // machine and CI — so a hard-coded `512 × 512` tests the fixture, not the
+    // badge. What has to hold is that the badge reports *this* selection.
+    final dynamic editor = tester.state(find.byType(ExtendedImageEditor).first) as dynamic;
+    final Rect pixels = editor.getCropRect() as Rect;
+    expect(
+      tester.widget<Text>(badge()).data,
+      startsWith('${pixels.width.round()} × ${pixels.height.round()}'),
+    );
   });
 
   testWidgets('the badge sits inside the selection it labels', (WidgetTester tester) async {
