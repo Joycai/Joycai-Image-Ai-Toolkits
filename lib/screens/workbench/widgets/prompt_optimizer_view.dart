@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../core/text_diff.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
@@ -12,6 +16,7 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/app_status_badge.dart';
 
 /// One row of the transcript as drawn, which is not one-to-one with
 /// [OptimizerChatEntry]: a run of consecutive tool calls collapses into a
@@ -48,6 +53,10 @@ class PromptOptimizerChatView extends StatefulWidget {
   final void Function(String callId, List<AskUserAnswer> answers) onAnswerAskUser;
   final bool isBusy;
 
+  /// Cancels the queued or running turn. Null when there is nothing to stop —
+  /// which is also what hides the composer's abort control.
+  final VoidCallback? onAbort;
+
   const PromptOptimizerChatView({
     super.key,
     required this.inputCtrl,
@@ -58,6 +67,7 @@ class PromptOptimizerChatView extends StatefulWidget {
     required this.onRejectKbEdit,
     required this.onAnswerAskUser,
     required this.isBusy,
+    this.onAbort,
   });
 
   @override
@@ -90,6 +100,17 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// Height of the fade that covers the cut edge of a folded prompt.
   static const double _promptFadeHeight = 44;
 
+  /// How tall a knowledge diff is allowed to get before it scrolls
+  /// inside itself. Roughly a screenful of the transcript: past that the
+  /// card stops being a review of one change and becomes the page.
+  static const double _kbDiffMaxHeight = 320;
+
+  /// Card width at which the staged-edit header still fits the path and
+  /// both actions on one line. Measured against the *card*, not the
+  /// window: the transcript is a column inside a panel that can be
+  /// dragged narrow at any screen size.
+  static const double _kbEditWideHeader = 440;
+
   /// How wide a turn is allowed to run.
   ///
   /// Asymmetric on purpose, and both well under the column: a user turn is
@@ -97,6 +118,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// equal, the short user line came out as a wide, near-empty slab.
   static const double _userBubbleMaxWidth = 420;
   static const double _replyMaxWidth = 520;
+
+  /// The spinner that stands in for the timeline's tick while a turn runs —
+  /// the same 18px the plate it replaces occupies, so the header does not
+  /// change height when the turn finishes.
+  static const double _liveGlyphSize = 18;
 
   /// The bubble corner that points back at its speaker.
   static const Radius _tailRadius = Radius.circular(3);
@@ -175,7 +201,6 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   ? _buildEmptyState(l10n, colorScheme)
                   : _buildTranscript(session, l10n, colorScheme),
             ),
-            if (session.isRunning || widget.isBusy) _buildWorkingIndicator(l10n, colorScheme),
             _buildInputBar(l10n, colorScheme, composerLines),
           ],
         );
@@ -243,29 +268,101 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   ) {
     final rows = _groupRows(session.transcript);
 
+    // Where the turn in flight shows itself. If it has already called a tool,
+    // the trailing timeline card is that turn and takes the live treatment
+    // `10i` draws — spinner, elapsed, open, with the step it is working on at
+    // the bottom. If it has not (the first request of a turn, or system-prompt
+    // mode, which calls no tools at all), there is nothing in the transcript
+    // to make live, so one card is appended to stand for it.
+    //
+    // The two flags are deliberately not the same one. Only a session that is
+    // genuinely running may make an existing timeline card live — a *queued*
+    // turn would otherwise light up the previous turn's card, which is
+    // finished. But the standing card follows `isBusy`, so the wait between
+    // enqueueing and starting is not a disabled composer with nothing in the
+    // conversation to explain it.
+    final bool liveTimeline =
+        session.isRunning && rows.isNotEmpty && rows.last.isToolGroup;
+    final int extra = widget.isBusy && !liveTimeline ? 1 : 0;
+
     return ListView.builder(
       controller: _scrollCtrl,
       // 16 horizontal, not the spec's 24: the centre column floors at
       // `kMinCenterWidth` (400), where 48px of gutter is an eighth of the
       // conversation's width.
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-      itemCount: rows.length,
+      itemCount: rows.length + extra,
       itemBuilder: (context, index) {
-        final row = rows[index];
-        final isLast = index == rows.length - 1;
+        final Widget child;
+        if (index == rows.length) {
+          child = _buildRunningCard(session, l10n, colorScheme);
+        } else {
+          final row = rows[index];
+          final isLast = index == rows.length - 1;
+          child = row.isToolGroup
+              ? _buildAgentTimeline(
+                  row,
+                  l10n,
+                  colorScheme,
+                  live: liveTimeline && isLast,
+                  startedAt: session.runStartedAt,
+                )
+              : _buildEntry(row.entries.first, isLast, l10n, colorScheme);
+        }
         return Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 780),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: row.isToolGroup
-                  ? _buildAgentTimeline(row, l10n, colorScheme)
-                  : _buildEntry(row.entries.first, isLast, l10n, colorScheme),
+              child: child,
             ),
           ),
         );
       },
+    );
+  }
+
+  /// The turn in flight, before it has called anything.
+  ///
+  /// Deliberately the same card as a timeline's header row rather than the
+  /// centred spinner this replaced: the run is part of the conversation and
+  /// belongs in its column, and when the first tool result lands this card is
+  /// replaced by a timeline that opens in exactly the same place.
+  Widget _buildRunningCard(
+    PromptOptimizerSession session,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _replyMaxWidth),
+        child: AppCard(
+          outlined: true,
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: _liveGlyphSize,
+                height: _liveGlyphSize,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 9),
+              Flexible(
+                child: Text(
+                  l10n.optAgentStepsRunning,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _ElapsedLabel(since: session.runStartedAt),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -277,11 +374,17 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   Widget _buildAgentTimeline(
     _TranscriptRow row,
     AppLocalizations l10n,
-    ColorScheme colorScheme,
-  ) {
+    ColorScheme colorScheme, {
+    bool live = false,
+    DateTime? startedAt,
+  }) {
     final textTheme = Theme.of(context).textTheme;
     final steps = row.entries;
-    final expanded = _expandedToolGroups.contains(row.startIndex);
+    // A running turn opens itself. `10i` draws the timeline expanded while the
+    // agent works and lets it collapse once it is done: three of ten steps is
+    // a summary of finished work, but of work in progress it is a card that
+    // stops updating three lines in.
+    final expanded = live || _expandedToolGroups.contains(row.startIndex);
     final shown = expanded ? steps : steps.take(_collapsedStepCount).toList();
 
     final images = steps.where((e) => e.toolName == 'view_image').length;
@@ -316,27 +419,48 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
               // tap anywhere in the step list collapsed the card the user had
               // just opened to read it.
               InkWell(
-                onTap: toggle,
+                // Inert while live: the card is held open on purpose, so a tap
+                // that appeared to do nothing would read as a broken control.
+                onTap: live ? null : toggle,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Row(
                     children: [
                       // A tinted plate rather than a bare accent glyph: at 16px
                       // on a white card the outline icon read as an error mark
-                      // as often as a tick.
-                      Container(
-                        width: 18,
-                        height: 18,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: colorScheme.accentTint,
-                          shape: BoxShape.circle,
+                      // as often as a tick. While the turn runs the same slot
+                      // carries the spinner `10i` puts there — the tick is a
+                      // claim that the work finished.
+                      if (live)
+                        const SizedBox(
+                          width: _liveGlyphSize,
+                          height: _liveGlyphSize,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Container(
+                          width: 18,
+                          height: 18,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: colorScheme.accentTint,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.check_rounded, size: 12, color: colorScheme.onAccentTint),
                         ),
-                        child: Icon(Icons.check_rounded, size: 12, color: colorScheme.onAccentTint),
-                      ),
                       const SizedBox(width: 9),
-                      Text(l10n.optAgentSteps(steps.length), style: textTheme.titleSmall),
-                      if (detail.isNotEmpty) ...[
+                      Text(
+                        live ? l10n.optAgentStepsRunning : l10n.optAgentSteps(steps.length),
+                        style: textTheme.titleSmall,
+                      ),
+                      // Elapsed while running, what was done once finished.
+                      // Both answer "how much did this cost me", one in the
+                      // tense that is still true.
+                      if (live) ...[
+                        const SizedBox(width: 8),
+                        _ElapsedLabel(since: startedAt),
+                        const Spacer(),
+                      ] else if (detail.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -347,11 +471,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                         ),
                       ] else
                         const Spacer(),
-                      Icon(
-                        expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        size: AppSize.iconMd,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      if (!live)
+                        Icon(
+                          expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          size: AppSize.iconMd,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                     ],
                   ),
                 ),
@@ -364,7 +489,15 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     for (final step in shown) _buildToolStep(step, l10n, colorScheme),
-                    if (steps.length > _collapsedStepCount)
+                    // The step being worked on now. It has no name yet — a
+                    // tool entry is appended when its *result* lands, so the
+                    // call in flight is not in the transcript — which is why
+                    // this row says only that there is one. `10i` draws the
+                    // in-flight step tinted and spinning at the foot of the
+                    // list; this is that row, minus a label the app cannot
+                    // honestly fill in.
+                    if (live) _buildWorkingStep(l10n, colorScheme),
+                    if (!live && steps.length > _collapsedStepCount)
                       Align(
                         alignment: Alignment.centerLeft,
                         child: AppButton(
@@ -405,6 +538,34 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       default:
         return (l10n.optToolListImages, Icons.checklist_rtl);
     }
+  }
+
+  /// The tinted "working on it" row at the foot of a live timeline.
+  Widget _buildWorkingStep(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.6)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              l10n.optAgentStepWorking,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onAccentTint,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildToolStep(
@@ -582,7 +743,17 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
 
   /// Preview card for a knowledge-base edit the agent proposed. Nothing has
   /// been written yet — this card is the approval gate.
+  ///
+  /// `10h` draws it as a unified diff under a header carrying the path and the
+  /// `+N −N` counts. It used to offer the whole proposed file behind a "show
+  /// 3,140 characters" link, which is not an approval gate: on a two-line
+  /// change inside a long document, the difference between what the agent was
+  /// asked to do and what it actually rewrote is invisible in a wall of new
+  /// text. A create has no diff to show and keeps the folded full content,
+  /// which for a new file is the same thing.
   Widget _buildKbEditCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semantic;
     final state = entry.editState ?? KbEditState.pending;
     final isCreate = entry.oldContent == null;
     final pending = state == KbEditState.pending;
@@ -595,56 +766,113 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
         entry.oldContent!.length > 200 &&
         content.length < entry.oldContent!.length ~/ 2;
 
+    final (added, removed) =
+        isCreate ? (_lineCount(content), 0) : TextDiff.counts(entry.oldContent!, content);
+
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: pending
-              ? colorScheme.accentRing
-              : colorScheme.outlineVariant,
+          color: pending ? colorScheme.accentRing : colorScheme.outlineVariant,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 10, 0),
-            child: Row(
-              children: [
-                Icon(
-                  isCreate ? Icons.note_add_outlined : Icons.edit_note_outlined,
-                  size: 15,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isCreate ? l10n.kbEditProposedCreate : l10n.kbEditProposedUpdate,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    entry.targetPath ?? '',
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
-                      color: colorScheme.onSurface,
+          // A header band, like the refined-prompt card's: this row carries a
+          // path, two counts and two actions, and floating them over the diff
+          // left no line between the file's name and its contents.
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+            // The identity line and the two actions share a row where there is
+            // room and stack where there is not. A single row here overflowed
+            // a mobile-width card by ~200px: the badge, a path, two counts and
+            // two buttons cannot all give way, and the path is the only one of
+            // them that ellipsizing does not make useless.
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final identity = Row(
+                  children: [
+                    // Green for a new file, amber for one being changed —
+                    // `10h`'s own pair, and the distinction that matters: a
+                    // create cannot destroy anything, an update can.
+                    AppStatusBadge(
+                      label: isCreate ? l10n.kbEditProposedCreate : l10n.kbEditProposedUpdate,
+                      kind: isCreate ? AppStatusKind.done : AppStatusKind.warning,
+                      showDot: false,
                     ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        entry.targetPath ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.mono.copyWith(color: colorScheme.onSurface),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (added > 0)
+                      Text('+$added',
+                          style: textTheme.labelSmall?.mono.copyWith(color: semantic.success)),
+                    if (removed > 0) ...[
+                      const SizedBox(width: 6),
+                      Text('−$removed',
+                          style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.error)),
+                    ],
+                  ],
+                );
+
+                if (!pending) return identity;
+
+                final actions = <Widget>[
+                  AppButton(
+                    label: l10n.kbEditReject,
+                    variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.compact,
+                    onPressed: () => widget.onRejectKbEdit(editId),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  AppButton(
+                    label: l10n.kbEditApply,
+                    icon: Icons.save_outlined,
+                    variant: AppButtonVariant.tonal,
+                    size: AppButtonSize.compact,
+                    onPressed: () => widget.onApplyKbEdit(editId),
+                  ),
+                ];
+
+                if (box.maxWidth >= _kbEditWideHeader) {
+                  return Row(children: [
+                    Expanded(child: identity),
+                    const SizedBox(width: 10),
+                    ...actions,
+                  ]);
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    identity,
+                    const SizedBox(height: 8),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
+                  ],
+                );
+              },
             ),
           ),
           if (entry.note != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Text(
                 entry.note!,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                style: textTheme.labelMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -652,7 +880,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             ),
           if (suspiciousShrink)
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Row(
                 children: [
                   Icon(Icons.warning_amber_outlined, size: 14, color: colorScheme.error),
@@ -660,118 +888,198 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   Expanded(
                     child: Text(
                       l10n.kbEditShrinkWarning(entry.oldContent!.length, content.length),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.error),
+                      style: textTheme.labelMedium?.copyWith(color: colorScheme.error),
                     ),
                   ),
                 ],
               ),
             ),
-          // Collapsed by default: a knowledge file can run to thousands of
-          // characters and would bury the rest of the conversation.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 4, 14, 0),
-            child: Row(
-              children: [
-                // Flexible + ellipsis: the label carries a character count and
-                // is translated, so its width is not knowable up front — an
-                // unflexed child here would size past a narrow card.
-                Flexible(
-                  child: TextButton.icon(
-                    onPressed: () => setState(() {
-                      expanded ? _expandedKbEdits.remove(editId) : _expandedKbEdits.add(editId);
-                    }),
-                    icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, size: 16),
-                    label: Text(
-                      expanded ? l10n.kbEditHide : l10n.kbEditShow(content.length),
+          if (isCreate)
+            ..._buildKbEditFullContent(entry, l10n, colorScheme, editId, content, expanded)
+          else
+            _buildKbEditDiff(entry.oldContent!, content, colorScheme, textTheme, semantic),
+          if (!pending)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Row(
+                children: [
+                  Icon(
+                    switch (state) {
+                      KbEditState.applied => Icons.check_circle_outline,
+                      KbEditState.rejected => Icons.cancel_outlined,
+                      _ => Icons.error_outline,
+                    },
+                    size: 14,
+                    color: state == KbEditState.failed ? colorScheme.error : colorScheme.outline,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      switch (state) {
+                        KbEditState.applied => l10n.kbEditApplied,
+                        KbEditState.rejected => l10n.kbEditRejected,
+                        _ => l10n.kbEditFailedShort,
+                      },
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.metricsOnly,
-                    ),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: state == KbEditState.failed ? colorScheme.error : colorScheme.outline,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (expanded)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
-              padding: const EdgeInsets.all(10),
-              constraints: const BoxConstraints(maxHeight: 320),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-              ),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  content,
-                  style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                    height: AppType.proseHeight,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
+                ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 10, 10),
-            child: pending
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      AppButton(
-                        label: l10n.kbEditReject,
-                        variant: AppButtonVariant.text,
-                        size: AppButtonSize.compact,
-                        onPressed: () => widget.onRejectKbEdit(editId),
-                      ),
-                      const SizedBox(width: 6),
-                      AppButton(
-                        label: l10n.kbEditApply,
-                        icon: Icons.save_outlined,
-                        variant: AppButtonVariant.secondary,
-                        size: AppButtonSize.compact,
-                        onPressed: () => widget.onApplyKbEdit(editId),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Icon(
-                        switch (state) {
-                          KbEditState.applied => Icons.check_circle_outline,
-                          KbEditState.rejected => Icons.cancel_outlined,
-                          _ => Icons.error_outline,
-                        },
-                        size: 14,
-                        color: state == KbEditState.failed
-                            ? colorScheme.error
-                            : colorScheme.outline,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          switch (state) {
-                            KbEditState.applied => l10n.kbEditApplied,
-                            KbEditState.rejected => l10n.kbEditRejected,
-                            _ => l10n.kbEditFailedShort,
-                          },
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: state == KbEditState.failed
-                                ? colorScheme.error
-                                : colorScheme.outline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
         ],
       ),
     );
+  }
+
+  /// The diff body: hunk headers over context, removed and added lines.
+  ///
+  /// Each line is a full-width band with a coloured left rule, as `10h` draws
+  /// it — the fill alone is too pale at 9% to survive being read past, and the
+  /// rule is what lets the eye run down the changed region without reading the
+  /// `+`/`−` on every line.
+  Widget _buildKbEditDiff(
+    String oldContent,
+    String newContent,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    AppSemanticColors semantic,
+  ) {
+    final hunks = TextDiff.unified(oldContent, newContent);
+    if (hunks.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Text(
+          AppLocalizations.of(context)!.kbEditNoChange,
+          style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    final mono = textTheme.labelSmall?.mono.copyWith(height: AppType.proseHeight);
+
+    // Capped and scrollable rather than folded behind a link: a diff is read
+    // top to bottom and its first lines are not more important than its last,
+    // which is the assumption a fold makes.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: _kbDiffMaxHeight),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final hunk in hunks) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+                child: Text(
+                  '@@ -${hunk.oldStart} +${hunk.newStart}',
+                  style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+                ),
+              ),
+              for (final line in hunk.lines)
+                _buildDiffLine(line, colorScheme, semantic, mono),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiffLine(
+    DiffLine line,
+    ColorScheme colorScheme,
+    AppSemanticColors semantic,
+    TextStyle? mono,
+  ) {
+    final (Color? fill, Color rule, Color ink, String sign) = switch (line.kind) {
+      DiffLineKind.added => (
+          semantic.success.withValues(alpha: AppAlpha.tint),
+          semantic.success,
+          semantic.success,
+          '+',
+        ),
+      DiffLineKind.removed => (
+          colorScheme.error.withValues(alpha: AppAlpha.tint),
+          colorScheme.error,
+          colorScheme.error,
+          '−',
+        ),
+      DiffLineKind.context => (null, Colors.transparent, colorScheme.onSurfaceVariant, ' '),
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: fill,
+        border: Border(left: BorderSide(color: rule, width: 2)),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
+      child: Text(
+        '$sign ${line.text}',
+        maxLines: 1,
+        // Clipped, not wrapped: a wrapped diff line loses the one-line-per-line
+        // alignment that makes the two sides comparable at a glance.
+        overflow: TextOverflow.ellipsis,
+        style: mono?.copyWith(color: ink),
+      ),
+    );
+  }
+
+  /// The create case, which has no previous version to diff against: the full
+  /// proposed file behind the same show/hide link it always had.
+  List<Widget> _buildKbEditFullContent(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    String editId,
+    String content,
+    bool expanded,
+  ) =>
+      [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(6, 4, 12, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              label: expanded ? l10n.kbEditHide : l10n.kbEditShow(content.length),
+              icon: expanded ? Icons.expand_less : Icons.expand_more,
+              variant: AppButtonVariant.text,
+              size: AppButtonSize.compact,
+              onPressed: () => setState(() {
+                if (!_expandedKbEdits.remove(editId)) _expandedKbEdits.add(editId);
+              }),
+            ),
+          ),
+        ),
+        if (expanded)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+            padding: const EdgeInsets.all(10),
+            constraints: const BoxConstraints(maxHeight: _kbDiffMaxHeight),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                content,
+                style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
+                      height: AppType.proseHeight,
+                      color: colorScheme.onSurface,
+                    ),
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
+      ];
+
+  static int _lineCount(String text) {
+    if (text.isEmpty) return 0;
+    final trimmed = text.endsWith('\n') ? text.substring(0, text.length - 1) : text;
+    return '\n'.allMatches(trimmed).length + 1;
   }
 
   Widget _buildPromptCard(OptimizerChatEntry entry, AppLocalizations l10n, ColorScheme colorScheme) {
@@ -968,23 +1276,6 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
-  Widget _buildWorkingIndicator(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-          const SizedBox(width: 8),
-          Text(
-            l10n.optAgentWorking,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// The composer: what will be sent, the text, and how to send it.
   ///
   /// The send control moved out of `suffixIcon` and onto its own footer row.
@@ -993,7 +1284,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// reference images go with the message — which is the one thing about this
   /// box that is not obvious.
   Widget _buildInputBar(AppLocalizations l10n, ColorScheme colorScheme, int maxLines) {
-    final canSend = !widget.isBusy;
+    final busy = widget.isBusy;
+    final canSend = !busy;
     final textTheme = Theme.of(context).textTheme;
     final attachedCount = context.watch<WorkbenchUIState>().optimizerReferenceImages.length;
 
@@ -1010,13 +1302,18 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
             // types, and it was the only input on the screen still wearing the
             // fill the design spec replaced everywhere else.
             decoration: BoxDecoration(
-              color: colorScheme.surface,
+              // Filled and flat while a turn runs, per `10i`: the composer is
+              // the one control on this screen that is normally always
+              // available, and the whole point of the running state is that
+              // for a moment it is not. Lifting it off the page then would say
+              // the opposite.
+              color: busy ? colorScheme.surfaceContainerHigh : colorScheme.surface,
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: colorScheme.outlineVariant),
               // The spec lifts the composer off the transcript rather than
               // leaving it flush with it — it is the one thing on this screen
               // that is always available, whatever is scrolled above it.
-              boxShadow: colorScheme.shadowOverlay,
+              boxShadow: busy ? null : colorScheme.shadowOverlay,
             ),
             // Zero here, with the insets carried by the two children instead:
             // the field's own top padding and the footer's bottom one are not
@@ -1031,15 +1328,32 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                       widget.onSend();
                       return KeyEventResult.handled;
                     }
+                    // Esc stops the turn, which is what the hint under the
+                    // field promises while one is running. Scoped to the
+                    // composer rather than the screen: that is where the hint
+                    // is, and a global Escape binding on the workbench would
+                    // fight the dialogs and drawers that already use it.
+                    if (busy &&
+                        widget.onAbort != null &&
+                        event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.escape) {
+                      widget.onAbort!();
+                      return KeyEventResult.handled;
+                    }
                     return KeyEventResult.ignored;
                   },
                   child: TextField(
                     controller: widget.inputCtrl,
                     minLines: 1,
                     maxLines: maxLines,
+                    // Still focusable while busy — `enabled: false` would drop
+                    // focus, and the Esc binding above lives on that focus.
+                    // What it must not do is accept text that has nowhere to
+                    // go until the turn ends.
+                    readOnly: busy,
                     style: textTheme.bodyMedium?.copyWith(height: AppType.proseHeight),
                     decoration: InputDecoration(
-                      hintText: l10n.optChatHint,
+                      hintText: busy ? l10n.optChatBusyHint : l10n.optChatHint,
                       hintStyle: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                       ),
@@ -1090,21 +1404,33 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                                 // thing about the composer that is not
                                 // obvious, and a badge is one of the three
                                 // places accent is allowed.
-                                color: colorScheme.accentTint,
+                                //
+                                // Neutral while a turn runs: nothing is about
+                                // to leave with anything, so an accent capsule
+                                // there is announcing a promise the composer
+                                // cannot currently keep.
+                                color: busy
+                                    ? colorScheme.surfaceContainerHighest
+                                    : colorScheme.accentTint,
                                 borderRadius: BorderRadius.circular(AppRadius.pill),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.image_outlined, size: 14, color: colorScheme.onAccentTint),
+                                  Icon(
+                                    Icons.image_outlined,
+                                    size: 14,
+                                    color: busy ? colorScheme.outline : colorScheme.onAccentTint,
+                                  ),
                                   const SizedBox(width: 6),
                                   Flexible(
                                     child: Text(
                                       l10n.optAttachedImages(attachedCount),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: textTheme.labelMedium
-                                          ?.copyWith(color: colorScheme.onAccentTint),
+                                      style: textTheme.labelMedium?.copyWith(
+                                        color: busy ? colorScheme.outline : colorScheme.onAccentTint,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1118,7 +1444,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                                 ? Align(
                                     alignment: Alignment.centerRight,
                                     child: Text(
-                                      l10n.optSendHint,
+                                      // While running the keyboard hint is
+                                      // about the key that *stops* it, not the
+                                      // one that sends.
+                                      busy && widget.onAbort != null
+                                          ? l10n.optAbortHint
+                                          : l10n.optSendHint,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: textTheme.labelSmall
@@ -1128,27 +1459,43 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                                 : const SizedBox.shrink(),
                           ),
                           const SizedBox(width: 10),
-                          // A 32px circle, sized and shaped explicitly:
-                          // Material's own filled icon button is a ~40px
-                          // rounded square even at compact density, which
-                          // outweighed everything else on the footer row.
-                          // Still [IconButton.filled] rather than a hand-rolled
-                          // plate, because it is what supplies the disabled
-                          // fill/foreground pair.
-                          SizedBox(
-                            width: AppSize.iconButton,
-                            height: AppSize.iconButton,
-                            child: IconButton.filled(
-                              icon: const Icon(Icons.send_rounded, size: AppSize.iconMd),
-                              tooltip: l10n.optSend,
-                              padding: EdgeInsets.zero,
-                              style: IconButton.styleFrom(
-                                shape: const CircleBorder(),
-                                minimumSize: const Size.square(AppSize.iconButton),
+                          if (busy && widget.onAbort != null)
+                            // `10i` swaps the send button for a stop control
+                            // outlined in the error colour, which is exactly
+                            // [AppButtonVariant.destructiveOutline]. Outlined,
+                            // not filled: stopping is a way out, not the
+                            // action the screen is built around, and a solid
+                            // red button on the composer reads as a warning
+                            // about the conversation rather than an offer.
+                            AppButton(
+                              label: l10n.optAbort,
+                              icon: Icons.stop_rounded,
+                              variant: AppButtonVariant.destructiveOutline,
+                              size: AppButtonSize.compact,
+                              onPressed: widget.onAbort,
+                            )
+                          else
+                            // A 32px circle, sized and shaped explicitly:
+                            // Material's own filled icon button is a ~40px
+                            // rounded square even at compact density, which
+                            // outweighed everything else on the footer row.
+                            // Still [IconButton.filled] rather than a
+                            // hand-rolled plate, because it is what supplies
+                            // the disabled fill/foreground pair.
+                            SizedBox(
+                              width: AppSize.iconButton,
+                              height: AppSize.iconButton,
+                              child: IconButton.filled(
+                                icon: const Icon(Icons.send_rounded, size: AppSize.iconMd),
+                                tooltip: l10n.optSend,
+                                padding: EdgeInsets.zero,
+                                style: IconButton.styleFrom(
+                                  shape: const CircleBorder(),
+                                  minimumSize: const Size.square(AppSize.iconButton),
+                                ),
+                                onPressed: canSend ? widget.onSend : null,
                               ),
-                              onPressed: canSend ? widget.onSend : null,
                             ),
-                          ),
                         ],
                       ),
                     );
@@ -1159,6 +1506,62 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "已用 12s" — how long the turn now running has been going.
+///
+/// Its own widget with its own ticker so that the second hand costs a rebuild
+/// of one `Text` rather than of the whole transcript. The session notifies
+/// only when a step lands, which on a long knowledge read is tens of seconds
+/// apart — a clock rebuilt on those notifications alone would sit frozen for
+/// exactly as long as the user most wants to see it move.
+class _ElapsedLabel extends StatefulWidget {
+  final DateTime? since;
+
+  const _ElapsedLabel({required this.since});
+
+  @override
+  State<_ElapsedLabel> createState() => _ElapsedLabelState();
+}
+
+class _ElapsedLabelState extends State<_ElapsedLabel> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final since = widget.since;
+    // Nothing rather than "0s" when the start is unknown — a restored session
+    // that was left running has a clock with no zero point, and inventing one
+    // would report a turn as having just begun when it has been going for
+    // however long the app was closed.
+    if (since == null) return const SizedBox.shrink();
+
+    final seconds = DateTime.now().difference(since).inSeconds;
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Text(
+      seconds < 60
+          ? l10n.optElapsedSeconds(seconds)
+          : l10n.optElapsedMinutes(seconds ~/ 60, seconds % 60),
+      style: Theme.of(context).textTheme.bodySmall?.mono.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
     );
   }
 }

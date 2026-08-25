@@ -2359,12 +2359,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPrompt => 'システムプロンプト';
 
   @override
-  String get preset => 'プリセット';
-
-  @override
-  String get customSysPromptHint => 'このセッション用のカスタムシステムプロンプトを入力...';
-
-  @override
   String get refinerIntro => 'AIを使用して画像を分析し、プロンプトを洗練させます。';
 
   @override
@@ -2392,9 +2386,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optNewSession => '新しい会話';
-
-  @override
-  String get optAgentWorking => '最適化中...';
 
   @override
   String get optToolListImages => '参照画像リストを確認しました';
@@ -2832,4 +2823,101 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get optModeKnowledgeEditShort => 'ナレッジ編集';
+
+  @override
+  String get optRunning => '実行中';
+
+  @override
+  String optRunningStep(int count) {
+    return '実行中 · ステップ $count';
+  }
+
+  @override
+  String get optAgentStepsRunning => 'Agent の処理 · 実行中';
+
+  @override
+  String get optAgentStepWorking => '次のステップを実行中…';
+
+  @override
+  String optElapsedSeconds(int seconds) {
+    return '経過 ${seconds}s';
+  }
+
+  @override
+  String optElapsedMinutes(int minutes, int seconds) {
+    return '経過 ${minutes}m ${seconds}s';
+  }
+
+  @override
+  String get optChatBusyHint => 'Agent が実行中です。完了後に入力できます…';
+
+  @override
+  String get optAbort => '中断';
+
+  @override
+  String get optAbortHint => 'Esc で中断';
+
+  @override
+  String get optKbSearching => '検索中';
+
+  @override
+  String get optKbCitedRunning => '実行中';
+
+  @override
+  String get optSysPromptTemplate => 'テンプレート';
+
+  @override
+  String get optSysPromptPick => 'テンプレートを選択';
+
+  @override
+  String get optSysPromptSearch => 'テンプレートを検索…';
+
+  @override
+  String get optSysPromptNone => 'テンプレート未選択';
+
+  @override
+  String get optSysPromptUnsaved => '未保存';
+
+  @override
+  String get optSysPromptSave => '保存';
+
+  @override
+  String get optSysPromptReset => 'リセット';
+
+  @override
+  String get optSysPromptSaved => 'テンプレートを保存しました';
+
+  @override
+  String get optSysPromptHint => 'アシスタントに従わせたい指示を書いてください…';
+
+  @override
+  String optSysPromptChars(int count) {
+    return '$count 文字';
+  }
+
+  @override
+  String optSysPromptTokens(String tokens) {
+    return '約 $tokens tokens';
+  }
+
+  @override
+  String get optSysPromptNoTools =>
+      'このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。';
+
+  @override
+  String get kbEditNoChange => 'この提案はファイルの内容を変更しません。';
+
+  @override
+  String get kbEditPendingTitle => '未確認の変更';
+
+  @override
+  String get kbEditWriteAll => 'すべて書き込む';
+
+  @override
+  String get kbEditDiscardAll => 'すべて破棄';
+
+  @override
+  String kbEditConfirmAll(int count) {
+    return '$count 件を書き込む';
+  }
 }

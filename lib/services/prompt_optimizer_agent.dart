@@ -323,6 +323,15 @@ class PromptOptimizerSession extends ChangeNotifier {
   bool _isRunning = false;
   bool get isRunning => _isRunning;
 
+  /// When the turn now running began, or null while nothing is running.
+  ///
+  /// Kept here rather than derived, because there is nothing in the transcript
+  /// to derive it from: a turn that has not yet called a tool has appended
+  /// nothing at all, and that is exactly the stretch the user most wants a
+  /// clock for. `10i` puts the elapsed time on the timeline card.
+  DateTime? _runStartedAt;
+  DateTime? get runStartedAt => _runStartedAt;
+
   void addUserTurn(String text) {
     history.add(LLMMessage(role: LLMRole.user, content: text));
     _addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: text));
@@ -385,6 +394,14 @@ class PromptOptimizerSession extends ChangeNotifier {
     ];
     notifyListeners();
   }
+
+  /// Puts the session into the state `10i` draws, without a live turn.
+  ///
+  /// The running state is otherwise only reachable by actually calling a
+  /// model, which neither the screenshot harness nor a widget test can do —
+  /// and it is the state with the most UI of its own.
+  @visibleForTesting
+  void setRunningForTest(bool running) => _setRunning(running);
 
   @visibleForTesting
   String stageKbEditForTest({
@@ -472,6 +489,7 @@ class PromptOptimizerSession extends ChangeNotifier {
   void _setRunning(bool running) {
     if (_isRunning == running) return;
     _isRunning = running;
+    _runStartedAt = running ? DateTime.now() : null;
     notifyListeners();
   }
 
@@ -1630,6 +1648,38 @@ class PromptOptimizerAgent {
 
     // Insertion-ordered, so the list reads in the order the agent worked.
     return paths.toList();
+  }
+
+  /// Staged knowledge edits still waiting on the user, oldest first.
+  ///
+  /// Read off the transcript rather than tracked in a list of its own: the
+  /// transcript is where an edit's state actually lives, and a parallel list
+  /// would be one more thing that can disagree with the card on screen about
+  /// whether something has already been written.
+  static List<OptimizerChatEntry> pendingKbEdits(PromptOptimizerSession session) => [
+        for (final e in session.transcript)
+          if (e.kind == OptimizerEntryKind.kbEdit && e.editState == KbEditState.pending) e,
+      ];
+
+  /// How many tool steps the turn now running has taken.
+  ///
+  /// Counted from the last user turn rather than over the whole transcript, so
+  /// the header's "step N" restarts with each question instead of climbing for
+  /// the life of the conversation. Read off the transcript, not the history,
+  /// because it answers a question about what is drawn on screen.
+  ///
+  /// `10i` writes this as `步骤 8 / 10`. There is no total here and there
+  /// cannot be one — the agent decides how many tools to call as it goes — so
+  /// the header reports the count alone.
+  static int currentTurnSteps(PromptOptimizerSession session) {
+    int steps = 0;
+    final transcript = session.transcript;
+    for (int i = transcript.length - 1; i >= 0; i--) {
+      final kind = transcript[i].kind;
+      if (kind == OptimizerEntryKind.user) break;
+      if (kind == OptimizerEntryKind.tool) steps++;
+    }
+    return steps;
   }
 
   /// Below this many chars a read is not worth doing: the model would get a

@@ -353,8 +353,6 @@
   "promptOptimizer": "プロンプトアシスタント",
   "refinerModel": "リファイナーモデル",
   "systemPrompt": "システムプロンプト",
-  "preset": "プリセット",
-  "customSysPromptHint": "このセッション用のカスタムシステムプロンプトを入力...",
   "refinerIntro": "AIを使用して画像を分析し、プロンプトを洗練させます。",
   "roughPrompt": "ラフなプロンプト / アイデア",
   "optimizedPrompt": "最適化されたプロンプト",
@@ -371,7 +369,6 @@
   "optChatHint": "アイデアやラフなプロンプトを入力...",
   "optSend": "送信 (Ctrl+Enter)",
   "optNewSession": "新しい会話",
-  "optAgentWorking": "最適化中...",
   "optToolListImages": "参照画像リストを確認しました",
   "optToolViewImage": "参照画像を確認しました：{name}",
   "@optToolViewImage": {
@@ -666,5 +663,78 @@
     }
   },
   "optRefNumberingHint": "番号はプロンプトで引用されるファイル名に対応します。エージェントはこれらの画像を参照できます。",
-  "optModeKnowledgeEditShort": "ナレッジ編集"
+  "optModeKnowledgeEditShort": "ナレッジ編集",
+  "optRunning": "実行中",
+  "optRunningStep": "実行中 · ステップ {count}",
+  "@optRunningStep": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsRunning": "Agent の処理 · 実行中",
+  "optAgentStepWorking": "次のステップを実行中…",
+  "optElapsedSeconds": "経過 {seconds}s",
+  "@optElapsedSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optElapsedMinutes": "経過 {minutes}m {seconds}s",
+  "@optElapsedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optChatBusyHint": "Agent が実行中です。完了後に入力できます…",
+  "optAbort": "中断",
+  "optAbortHint": "Esc で中断",
+  "optKbSearching": "検索中",
+  "optKbCitedRunning": "実行中",
+  "optSysPromptTemplate": "テンプレート",
+  "optSysPromptPick": "テンプレートを選択",
+  "optSysPromptSearch": "テンプレートを検索…",
+  "optSysPromptNone": "テンプレート未選択",
+  "optSysPromptUnsaved": "未保存",
+  "optSysPromptSave": "保存",
+  "optSysPromptReset": "リセット",
+  "optSysPromptSaved": "テンプレートを保存しました",
+  "optSysPromptHint": "アシスタントに従わせたい指示を書いてください…",
+  "optSysPromptChars": "{count} 文字",
+  "@optSysPromptChars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSysPromptTokens": "約 {tokens} tokens",
+  "@optSysPromptTokens": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "optSysPromptNoTools": "このモードではナレッジツールを読み込まないため、agent はツールを呼び出しません。",
+  "kbEditNoChange": "この提案はファイルの内容を変更しません。",
+  "kbEditPendingTitle": "未確認の変更",
+  "kbEditWriteAll": "すべて書き込む",
+  "kbEditDiscardAll": "すべて破棄",
+  "kbEditConfirmAll": "{count} 件を書き込む",
+  "@kbEditConfirmAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

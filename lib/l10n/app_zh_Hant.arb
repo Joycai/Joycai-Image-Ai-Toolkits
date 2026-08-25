@@ -1117,8 +1117,6 @@
   "promptOptimizer": "提示詞助手",
   "refinerModel": "優化模型",
   "systemPrompt": "系統提示詞",
-  "preset": "預設",
-  "customSysPromptHint": "為本次工作階段輸入自訂系統提示詞...",
   "refinerIntro": "使用 AI 分析圖片並優化您的提示詞。",
   "roughPrompt": "初步想法 / 草稿",
   "optimizedPrompt": "優化後的提示詞",
@@ -1135,7 +1133,6 @@
   "optChatHint": "描述你的想法或貼上粗略提示詞...",
   "optSend": "傳送 (Ctrl+Enter)",
   "optNewSession": "新對話",
-  "optAgentWorking": "優化中...",
   "optToolListImages": "查看了參考圖清單",
   "optToolViewImage": "查看了參考圖：{name}",
   "@optToolViewImage": {
@@ -1430,5 +1427,78 @@
     }
   },
   "optRefNumberingHint": "序號與提示詞中引用的檔名對應，agent 可檢視這些圖片。",
-  "optModeKnowledgeEditShort": "庫編輯"
+  "optModeKnowledgeEditShort": "庫編輯",
+  "optRunning": "執行中",
+  "optRunningStep": "執行中 · 步驟 {count}",
+  "@optRunningStep": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsRunning": "Agent 過程 · 進行中",
+  "optAgentStepWorking": "正在執行下一步…",
+  "optElapsedSeconds": "已用 {seconds}s",
+  "@optElapsedSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optElapsedMinutes": "已用 {minutes}m {seconds}s",
+  "@optElapsedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optChatBusyHint": "Agent 正在執行，完成後可繼續輸入…",
+  "optAbort": "中斷",
+  "optAbortHint": "Esc 中斷",
+  "optKbSearching": "檢索中",
+  "optKbCitedRunning": "進行中",
+  "optSysPromptTemplate": "範本",
+  "optSysPromptPick": "選擇範本",
+  "optSysPromptSearch": "搜尋範本…",
+  "optSysPromptNone": "未選擇範本",
+  "optSysPromptUnsaved": "未儲存",
+  "optSysPromptSave": "儲存",
+  "optSysPromptReset": "重設",
+  "optSysPromptSaved": "範本已儲存",
+  "optSysPromptHint": "寫下希望助手遵循的指令…",
+  "optSysPromptChars": "{count} 字",
+  "@optSysPromptChars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSysPromptTokens": "約 {tokens} tokens",
+  "@optSysPromptTokens": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "optSysPromptNoTools": "此模式不掛載知識庫工具，agent 不產生工具呼叫。",
+  "kbEditNoChange": "此提議未變更檔案內容。",
+  "kbEditPendingTitle": "待確認變更",
+  "kbEditWriteAll": "全部寫入",
+  "kbEditDiscardAll": "全部捨棄",
+  "kbEditConfirmAll": "確認寫入 {count} 處",
+  "@kbEditConfirmAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

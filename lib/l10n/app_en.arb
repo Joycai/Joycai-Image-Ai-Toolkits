@@ -1257,8 +1257,6 @@
   "promptOptimizer": "Prompt Assistant",
   "refinerModel": "Refiner Model",
   "systemPrompt": "System Prompt",
-  "preset": "Preset",
-  "customSysPromptHint": "Enter a custom system prompt for this session...",
   "refinerIntro": "Use AI to analyze images and refine your prompt.",
   "roughPrompt": "Rough Prompt / Ideas",
   "optimizedPrompt": "Optimized Prompt",
@@ -1275,7 +1273,6 @@
   "optChatHint": "Describe your idea or paste a rough prompt...",
   "optSend": "Send (Ctrl+Enter)",
   "optNewSession": "New Conversation",
-  "optAgentWorking": "Optimizing...",
   "optToolListImages": "Checked the reference image list",
   "optToolViewImage": "Viewed reference image: {name}",
   "@optToolViewImage": {
@@ -1570,5 +1567,78 @@
     }
   },
   "optRefNumberingHint": "Numbers match the filenames cited in the prompt; the agent can view these images.",
-  "optModeKnowledgeEditShort": "Edit KB"
+  "optModeKnowledgeEditShort": "Edit KB",
+  "optRunning": "Running",
+  "optRunningStep": "Running · step {count}",
+  "@optRunningStep": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optAgentStepsRunning": "Agent process · running",
+  "optAgentStepWorking": "Working on the next step...",
+  "optElapsedSeconds": "{seconds}s elapsed",
+  "@optElapsedSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optElapsedMinutes": "{minutes}m {seconds}s elapsed",
+  "@optElapsedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "optChatBusyHint": "The agent is working — you can type again when it finishes...",
+  "optAbort": "Stop",
+  "optAbortHint": "Esc to stop",
+  "optKbSearching": "Reading",
+  "optKbCitedRunning": "in progress",
+  "optSysPromptTemplate": "Template",
+  "optSysPromptPick": "Choose a template",
+  "optSysPromptSearch": "Search templates...",
+  "optSysPromptNone": "No template",
+  "optSysPromptUnsaved": "Unsaved",
+  "optSysPromptSave": "Save",
+  "optSysPromptReset": "Reset",
+  "optSysPromptSaved": "Template saved",
+  "optSysPromptHint": "Write the instructions the assistant should follow...",
+  "optSysPromptChars": "{count} characters",
+  "@optSysPromptChars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optSysPromptTokens": "~{tokens} tokens",
+  "@optSysPromptTokens": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
+  "optSysPromptNoTools": "This mode mounts no knowledge tools — the agent makes no tool calls.",
+  "kbEditNoChange": "This proposal changes nothing in the file.",
+  "kbEditPendingTitle": "Pending changes",
+  "kbEditWriteAll": "Write all",
+  "kbEditDiscardAll": "Discard all",
+  "kbEditConfirmAll": "Write {count} changes",
+  "@kbEditConfirmAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

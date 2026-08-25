@@ -4450,18 +4450,6 @@ abstract class AppLocalizations {
   /// **'System Prompt'**
   String get systemPrompt;
 
-  /// No description provided for @preset.
-  ///
-  /// In en, this message translates to:
-  /// **'Preset'**
-  String get preset;
-
-  /// No description provided for @customSysPromptHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a custom system prompt for this session...'**
-  String get customSysPromptHint;
-
   /// No description provided for @refinerIntro.
   ///
   /// In en, this message translates to:
@@ -4515,12 +4503,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Conversation'**
   String get optNewSession;
-
-  /// No description provided for @optAgentWorking.
-  ///
-  /// In en, this message translates to:
-  /// **'Optimizing...'**
-  String get optAgentWorking;
 
   /// No description provided for @optToolListImages.
   ///
@@ -5289,6 +5271,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit KB'**
   String get optModeKnowledgeEditShort;
+
+  /// No description provided for @optRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get optRunning;
+
+  /// No description provided for @optRunningStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Running · step {count}'**
+  String optRunningStep(int count);
+
+  /// No description provided for @optAgentStepsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent process · running'**
+  String get optAgentStepsRunning;
+
+  /// No description provided for @optAgentStepWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working on the next step...'**
+  String get optAgentStepWorking;
+
+  /// No description provided for @optElapsedSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s elapsed'**
+  String optElapsedSeconds(int seconds);
+
+  /// No description provided for @optElapsedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m {seconds}s elapsed'**
+  String optElapsedMinutes(int minutes, int seconds);
+
+  /// No description provided for @optChatBusyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The agent is working — you can type again when it finishes...'**
+  String get optChatBusyHint;
+
+  /// No description provided for @optAbort.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get optAbort;
+
+  /// No description provided for @optAbortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Esc to stop'**
+  String get optAbortHint;
+
+  /// No description provided for @optKbSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get optKbSearching;
+
+  /// No description provided for @optKbCitedRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'in progress'**
+  String get optKbCitedRunning;
+
+  /// No description provided for @optSysPromptTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get optSysPromptTemplate;
+
+  /// No description provided for @optSysPromptPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a template'**
+  String get optSysPromptPick;
+
+  /// No description provided for @optSysPromptSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search templates...'**
+  String get optSysPromptSearch;
+
+  /// No description provided for @optSysPromptNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No template'**
+  String get optSysPromptNone;
+
+  /// No description provided for @optSysPromptUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved'**
+  String get optSysPromptUnsaved;
+
+  /// No description provided for @optSysPromptSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get optSysPromptSave;
+
+  /// No description provided for @optSysPromptReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get optSysPromptReset;
+
+  /// No description provided for @optSysPromptSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Template saved'**
+  String get optSysPromptSaved;
+
+  /// No description provided for @optSysPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the instructions the assistant should follow...'**
+  String get optSysPromptHint;
+
+  /// No description provided for @optSysPromptChars.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} characters'**
+  String optSysPromptChars(int count);
+
+  /// No description provided for @optSysPromptTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'~{tokens} tokens'**
+  String optSysPromptTokens(String tokens);
+
+  /// No description provided for @optSysPromptNoTools.
+  ///
+  /// In en, this message translates to:
+  /// **'This mode mounts no knowledge tools — the agent makes no tool calls.'**
+  String get optSysPromptNoTools;
+
+  /// No description provided for @kbEditNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal changes nothing in the file.'**
+  String get kbEditNoChange;
+
+  /// No description provided for @kbEditPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending changes'**
+  String get kbEditPendingTitle;
+
+  /// No description provided for @kbEditWriteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Write all'**
+  String get kbEditWriteAll;
+
+  /// No description provided for @kbEditDiscardAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard all'**
+  String get kbEditDiscardAll;
+
+  /// No description provided for @kbEditConfirmAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Write {count} changes'**
+  String kbEditConfirmAll(int count);
 }
 
 class _AppLocalizationsDelegate

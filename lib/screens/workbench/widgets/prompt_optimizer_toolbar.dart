@@ -39,6 +39,17 @@ class PromptOptimizerToolbar extends StatelessWidget {
   /// rather than only by their words.
   final IconData modeIcon;
 
+  /// Tool steps the running turn has taken so far. Null while nothing is
+  /// running; zero while the agent is thinking but has called nothing yet.
+  final int? runningSteps;
+
+  /// Knowledge edits staged and waiting on the user. `10h` gives them the
+  /// header's primary slot while there are any: in library-edit mode the
+  /// session's product is the changes, not a prompt to apply.
+  final int pendingKbEdits;
+  final VoidCallback? onWriteAllKbEdits;
+  final VoidCallback? onDiscardAllKbEdits;
+
   const PromptOptimizerToolbar({
     super.key,
     required this.onNewSession,
@@ -48,6 +59,10 @@ class PromptOptimizerToolbar extends StatelessWidget {
     required this.canApply,
     this.modeLabel,
     this.modeIcon = Icons.smart_toy_outlined,
+    this.runningSteps,
+    this.pendingKbEdits = 0,
+    this.onWriteAllKbEdits,
+    this.onDiscardAllKbEdits,
   });
 
   @override
@@ -108,11 +123,29 @@ class PromptOptimizerToolbar extends StatelessWidget {
                       // statement about the session.
                       Flexible(flex: 2, child: _modeBadge(colorScheme, textTheme, l10n)),
                     ],
+                    if (runningSteps != null) ...[
+                      const SizedBox(width: 8),
+                      // `10i` states the run in the header, beside the mode it
+                      // is running in: the transcript can be scrolled away
+                      // from the card that is moving, and a disabled composer
+                      // says only that typing is blocked, not that anything is
+                      // happening.
+                      //
+                      // Flexible like its two neighbours. Three loose children
+                      // share the row's free space and each sizes to its own
+                      // content within its share, so a squeezed header
+                      // ellipsizes rather than overflowing — which a fixed
+                      // third pill on a 520px panel would.
+                      Flexible(flex: 2, child: _runningPill(colorScheme, textTheme, l10n)),
+                    ],
                   ],
                 ),
         ),
 
-        if (isRefining)
+        // Only in the compact header, where the running pill above is not
+        // drawn at all: at full width the pill *is* the progress report, and a
+        // spinner beside it said the same thing twice.
+        if (isRefining && compact)
           const Padding(
             padding: EdgeInsets.only(right: 8),
             child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -122,13 +155,17 @@ class PromptOptimizerToolbar extends StatelessWidget {
           AppIconButton(
             icon: Icons.history,
             tooltip: l10n.optHistory,
-            onPressed: onHistory,
+            // Off during a turn: restoring another conversation mid-run swaps
+            // the session out from under the agent, and starting a new one
+            // leaves the running turn writing into a transcript nobody is
+            // looking at. `10i` dims both.
+            onPressed: isRefining ? null : onHistory,
           ),
           const SizedBox(width: 6),
           AppIconButton(
             icon: Icons.add_comment_outlined,
             tooltip: l10n.optNewSession,
-            onPressed: onNewSession,
+            onPressed: isRefining ? null : onNewSession,
           ),
           const ToolHeaderDivider(),
         ],
@@ -138,12 +175,34 @@ class PromptOptimizerToolbar extends StatelessWidget {
         // is nothing to apply until the agent has produced a prompt, and a
         // filled grey button looks broken where an empty one reads as "not
         // yet".
-        AppButton(
-          label: compact ? l10n.apply : l10n.applyToWorkbench,
-          icon: Icons.check,
-          variant: canApply ? AppButtonVariant.primary : AppButtonVariant.secondary,
-          onPressed: canApply ? onApply : null,
-        ),
+        //
+        // Staged knowledge edits outrank it, per `10h`. Nothing is on disk
+        // until they are answered, so leaving the header pointing at the
+        // workbench while three files wait for a decision aims the user at the
+        // wrong screen — and applying a prompt does not resolve them.
+        if (pendingKbEdits > 0) ...[
+          if (!compact) ...[
+            AppButton(
+              label: l10n.kbEditDiscardAll,
+              variant: AppButtonVariant.secondary,
+              onPressed: onDiscardAllKbEdits,
+            ),
+            const SizedBox(width: 6),
+          ],
+          AppButton(
+            label: compact
+                ? l10n.kbEditApply
+                : l10n.kbEditConfirmAll(pendingKbEdits),
+            icon: Icons.save_outlined,
+            onPressed: onWriteAllKbEdits,
+          ),
+        ] else
+          AppButton(
+            label: compact ? l10n.apply : l10n.applyToWorkbench,
+            icon: Icons.check,
+            variant: canApply ? AppButtonVariant.primary : AppButtonVariant.secondary,
+            onPressed: canApply ? onApply : null,
+          ),
 
         if (compact) ...[
           const SizedBox(width: 4),
@@ -174,6 +233,45 @@ class PromptOptimizerToolbar extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+
+  /// "Running · step 8", with the pulsing dot `10i` draws.
+  ///
+  /// Same capsule as the mode badge beside it, deliberately: they are two
+  /// facts about one session, and giving the live one its own shape made the
+  /// header read as two unrelated widgets. The dot is what separates them.
+  Widget _runningPill(ColorScheme colorScheme, TextTheme textTheme, AppLocalizations l10n) {
+    final steps = runningSteps ?? 0;
+    return Container(
+      height: AppSize.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Static, though `10i` pulses it — for the reason recorded on
+          // [AppStatusBadge]: a repeating animation makes `pumpAndSettle`
+          // never return and the screenshot harness capture a different frame
+          // each run. The dot's presence is what carries the state.
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: colorScheme.onAccentTint, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              steps == 0 ? l10n.optRunning : l10n.optRunningStep(steps),
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

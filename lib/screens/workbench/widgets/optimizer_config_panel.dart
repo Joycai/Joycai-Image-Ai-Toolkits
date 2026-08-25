@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt.dart';
-import '../../../models/tag.dart';
+import '../../../core/app_semantic_colors.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../core/text_diff.dart';
 import '../../../core/file_utils.dart';
 import '../../../services/assistant_context_usage.dart';
+import '../../../services/llm/context_budget.dart';
 import '../../../services/knowledge_base_service.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
@@ -17,19 +19,36 @@ import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_status_badge.dart';
 import '../../../widgets/chat_model_selector.dart';
+import '../../../widgets/searchable_picker.dart';
 import '../../../widgets/app_section_label.dart';
 import 'optimizer_context_card.dart';
 
 class OptimizerConfigPanel extends StatefulWidget {
   final int? selectedModelDbId;
-  final int? selectedTagId;
+
+  /// The system prompt as it will be sent — the editor's text, which may have
+  /// been changed away from the template it was loaded from.
   final String? selectedSysPrompt;
-  final bool useCustomSysPrompt;
+
+  /// Which library template [selectedSysPrompt] came from, or null.
+  final int? sysPromptTemplateId;
   final AssistantMode mode;
   final KbStatus kbStatus;
   final String? kbPath;
-  final List<PromptTag> tags;
-  final List<SystemPrompt> filteredSysPrompts;
+
+  /// Every refiner template in the library. Unfiltered: `10g` draws one
+  /// template picker and no tag control, and the picker itself is searchable —
+  /// including on the tag, which rides along as each row's badge.
+  final List<SystemPrompt> sysPrompts;
+
+  /// True while a turn is queued or running. `10i` puts the knowledge card
+  /// into its "reading" state and takes the actions that would disturb the run
+  /// out of reach.
+  final bool running;
+
+  /// Knowledge edits the agent has staged and the user has not yet answered,
+  /// oldest first. Only ever non-empty in [AssistantMode.knowledgeEdit].
+  final List<OptimizerChatEntry> pendingKbEdits;
 
   /// Knowledge files the current answer rests on, newest turn first. Passed in
   /// rather than read from the session here, so this panel stays
@@ -42,9 +61,19 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// panel should reach for itself.
   final ContextUsageSnapshot contextUsage;
   final Function(int?) onModelChanged;
-  final Function(int?) onTagChanged;
   final Function(String?) onSysPromptChanged;
-  final Function(bool) onUseCustomChanged;
+
+  /// Loads a template into the editor: its id and its text together.
+  final void Function(int? id, String? content) onSysPromptTemplateChanged;
+
+  /// Writes the editor's text back over the template it came from. Owned by
+  /// the parent, which is what holds the repository — this panel stays
+  /// presentational, like it does for the knowledge scaffold below.
+  final Future<void> Function(SystemPrompt template, String content) onSaveTemplate;
+
+  /// Answers every staged edit at once, from `10h`'s 全部写入 / 全部丢弃.
+  final VoidCallback? onWriteAllKbEdits;
+  final VoidCallback? onDiscardAllKbEdits;
   final Function(AssistantMode) onModeChanged;
 
   /// Creates any missing starter knowledge-base file, picking a folder first
@@ -56,20 +85,22 @@ class OptimizerConfigPanel extends StatefulWidget {
   const OptimizerConfigPanel({
     super.key,
     required this.selectedModelDbId,
-    required this.selectedTagId,
     required this.selectedSysPrompt,
-    required this.useCustomSysPrompt,
+    required this.sysPromptTemplateId,
     required this.mode,
     required this.kbStatus,
     this.kbPath,
-    required this.tags,
-    required this.filteredSysPrompts,
+    required this.sysPrompts,
+    this.running = false,
+    this.pendingKbEdits = const [],
+    this.onWriteAllKbEdits,
+    this.onDiscardAllKbEdits,
     this.citedKnowledgeFiles = const [],
     this.contextUsage = ContextUsageSnapshot.placeholder,
     required this.onModelChanged,
-    required this.onTagChanged,
     required this.onSysPromptChanged,
-    required this.onUseCustomChanged,
+    required this.onSysPromptTemplateChanged,
+    required this.onSaveTemplate,
     required this.onModeChanged,
     required this.onScaffoldKb,
     this.scrollController,
@@ -80,8 +111,12 @@ class OptimizerConfigPanel extends StatefulWidget {
 }
 
 class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
-  late final TextEditingController _customCtrl;
+  late final TextEditingController _sysPromptCtrl;
   bool _scaffolding = false;
+  bool _savingTemplate = false;
+
+  /// Line counts per staged edit id — see [_pendingCounts].
+  final Map<String, (int, int)> _kbEditCounts = {};
 
   /// What the knowledge base holds, as of the last scan. Null while scanning
   /// for the first time.
@@ -101,18 +136,20 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
   @override
   void initState() {
     super.initState();
-    _customCtrl = TextEditingController(
-      text: widget.useCustomSysPrompt ? widget.selectedSysPrompt ?? '' : '',
-    );
+    _sysPromptCtrl = TextEditingController(text: widget.selectedSysPrompt ?? '');
     _loadKbStats();
   }
 
   @override
   void didUpdateWidget(OptimizerConfigPanel old) {
     super.didUpdateWidget(old);
-    // When switching into custom mode, pre-populate with the current sys prompt.
-    if (widget.useCustomSysPrompt && !old.useCustomSysPrompt) {
-      _customCtrl.text = widget.selectedSysPrompt ?? '';
+    // Only when the text changed from the outside — a template load, a reset,
+    // a restored session. Assigning on every rebuild would fight the user's
+    // caret: `TextEditingController.text=` collapses the selection to the end,
+    // so every keystroke would jump the cursor there.
+    if (widget.selectedSysPrompt != old.selectedSysPrompt &&
+        widget.selectedSysPrompt != _sysPromptCtrl.text) {
+      _sysPromptCtrl.text = widget.selectedSysPrompt ?? '';
     }
     // A newly configured or repaired base has different contents to count.
     if (widget.kbPath != old.kbPath || widget.kbStatus != old.kbStatus) {
@@ -148,8 +185,19 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
 
   @override
   void dispose() {
-    _customCtrl.dispose();
+    _sysPromptCtrl.dispose();
     super.dispose();
+  }
+
+  /// The library template the editor's text was loaded from, if it is still in
+  /// the library.
+  SystemPrompt? get _template {
+    final id = widget.sysPromptTemplateId;
+    if (id == null) return null;
+    for (final p in widget.sysPrompts) {
+      if (p.id == id) return p;
+    }
+    return null;
   }
 
   @override
@@ -179,7 +227,7 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           // system-prompt session fills the same window, and a long custom
           // prompt is exactly the thing that fills it without the user
           // suspecting it.
-          OptimizerContextCard(usage: widget.contextUsage),
+          OptimizerContextCard(usage: widget.contextUsage, note: l10n.optSysPromptNoTools),
         ] else ...[
           const SizedBox(height: _cardGap),
           _buildKnowledgeStatus(l10n, colorScheme),
@@ -191,6 +239,14 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           // every answer, and reading them as one block invites the two to be
           // confused for each other.
           _buildCitedThisRound(l10n, colorScheme, Theme.of(context).textTheme),
+          // Above the cited list would put a queue of actions between two
+          // read-only reports; below it, it is the last thing in the column
+          // and the one the user came to the panel to act on.
+          if (widget.mode == AssistantMode.knowledgeEdit &&
+              widget.pendingKbEdits.isNotEmpty) ...[
+            const SizedBox(height: _cardGap),
+            _buildPendingKbEdits(l10n, colorScheme, Theme.of(context).textTheme),
+          ],
         ],
       ],
     );
@@ -281,8 +337,13 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
               // `running`, which is the accent-tinted pill with a dot the spec
               // draws here — and the honest reading of the state: a configured
               // base is not a finished job, it is a source the agent reads from
-              // on every turn for as long as the mode is on.
-              if (ok) AppStatusBadge(label: l10n.optKbReady, kind: AppStatusKind.running),
+              // on every turn for as long as the mode is on. While a turn is
+              // actually in flight the same pill says so, per `10i`.
+              if (ok)
+                AppStatusBadge(
+                  label: widget.running ? l10n.optKbSearching : l10n.optKbReady,
+                  kind: AppStatusKind.running,
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -397,7 +458,10 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           icon: Icons.refresh,
           variant: AppButtonVariant.secondary,
           loading: _scanning,
-          onPressed: _loadKbStats,
+          // Off during a turn, as `10i` draws it: the agent is reading this
+          // folder right now, and a count taken mid-run describes a tree the
+          // answer on screen was not built from.
+          onPressed: widget.running ? null : _loadKbStats,
         ),
         AppIconButton(
           icon: Icons.folder_open_outlined,
@@ -430,7 +494,20 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           // The tracked caption, not a card title: the spec draws this and the
           // context card's heading as the same small label, and they sit two
           // cards apart in the same column.
-          AppSectionLabel(l10n.optKbCitedThisRound, padding: EdgeInsets.zero),
+          AppSectionLabel(
+            l10n.optKbCitedThisRound,
+            padding: EdgeInsets.zero,
+            // `10i` writes this as `5 / 进行中`: a list that is still being
+            // added to reads as a complete one otherwise, and "the answer
+            // rests on these four documents" is a different claim from "on
+            // these four so far".
+            trailing: !widget.running
+                ? null
+                : Text(
+                    '${cited.length} · ${l10n.optKbCitedRunning}',
+                    style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
+                  ),
+          ),
           const SizedBox(height: 8),
           if (cited.isEmpty)
             Text(
@@ -478,6 +555,138 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     );
   }
 
+  /// `10h`'s 待确认改动 card: every staged edit in one list, and the two
+  /// bulk answers.
+  ///
+  /// The transcript already carries each edit as its own reviewable card, so
+  /// this is deliberately not a second place to review them — it is the count,
+  /// the files, and the way out of a queue of six without scrolling back
+  /// through six cards to find them.
+  Widget _buildPendingKbEdits(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final semantic = context.semantic;
+    final edits = widget.pendingKbEdits;
+
+    return AppCard(
+      outlined: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppSectionLabel(
+            l10n.kbEditPendingTitle,
+            padding: EdgeInsets.zero,
+            trailing: Text(
+              '${edits.length}',
+              style: textTheme.labelMedium?.mono.copyWith(
+                fontWeight: FontWeight.w600,
+                color: semantic.warning,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final edit in edits)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: _buildPendingRow(edit, colorScheme, textTheme, semantic),
+            ),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: l10n.kbEditWriteAll,
+                  icon: Icons.save_outlined,
+                  variant: AppButtonVariant.tonal,
+                  fullWidth: true,
+                  onPressed: widget.running ? null : widget.onWriteAllKbEdits,
+                ),
+              ),
+              const SizedBox(width: 8),
+              AppButton(
+                label: l10n.kbEditDiscardAll,
+                variant: AppButtonVariant.secondary,
+                onPressed: widget.running ? null : widget.onDiscardAllKbEdits,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingRow(
+    OptimizerChatEntry edit,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    AppSemanticColors semantic,
+  ) {
+    final isCreate = edit.oldContent == null;
+    final (added, removed) = _pendingCounts(edit);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Row(
+        children: [
+          // One glyph rather than the chat card's spelled-out badge: this
+          // column narrows to 250px, and the path is what has to survive.
+          Icon(
+            isCreate ? Icons.note_add_outlined : Icons.edit_note_outlined,
+            size: 14,
+            color: isCreate ? semantic.success : semantic.warning,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: _ElidedPath(
+              path: edit.targetPath ?? '',
+              style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 7),
+          if (added > 0)
+            Text('+$added', style: textTheme.labelSmall?.mono.copyWith(color: semantic.success)),
+          if (removed > 0) ...[
+            const SizedBox(width: 5),
+            Text('−$removed', style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.error)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Line counts for one staged edit, memoized by its id.
+  ///
+  /// A staged edit is immutable — its content is fixed when the agent proposes
+  /// it and only its *state* ever changes — so the cache cannot go stale. It
+  /// is worth having because this panel rebuilds on every session
+  /// notification, and diffing several documents per rebuild is real work to
+  /// redo for an answer that cannot have changed.
+  (int, int) _pendingCounts(OptimizerChatEntry edit) {
+    final id = edit.editId ?? '';
+    final cached = _kbEditCounts[id];
+    if (cached != null) return cached;
+
+    final content = edit.newContent ?? '';
+    final counts = edit.oldContent == null
+        ? (_lineCount(content), 0)
+        : TextDiff.counts(edit.oldContent!, content);
+    _kbEditCounts[id] = counts;
+    return counts;
+  }
+
+  static int _lineCount(String text) {
+    if (text.isEmpty) return 0;
+    final trimmed = text.endsWith('\n') ? text.substring(0, text.length - 1) : text;
+    return '\n'.allMatches(trimmed).length + 1;
+  }
+
   Future<void> _handleScaffold() async {
     setState(() => _scaffolding = true);
     try {
@@ -487,102 +696,218 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
     }
   }
 
+  /// `10g`'s system-prompt card: which template is loaded, its text, what the
+  /// text costs, and the two ways out of an edit.
+  ///
+  /// Replaces a 预设/自定义 chip pair over two bare dropdowns. That arrangement
+  /// made "preset" and "custom" two different places rather than two states of
+  /// one: picking a preset showed its title and never its text, so the
+  /// instructions actually being sent to the model were not visible anywhere,
+  /// and editing them meant flipping to a mode that started from a blank box.
+  /// Here the text is always on screen, a template is where it starts, and the
+  /// edit is a state the card can report and undo.
   Widget _buildSysPromptSection(AppLocalizations l10n, ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+    final textTheme = Theme.of(context).textTheme;
+    final template = _template;
+    final text = widget.selectedSysPrompt ?? '';
+    final dirty = template != null && text != template.content;
+
+    return AppCard(
+      outlined: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.notes_outlined, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.systemPrompt, style: textTheme.titleSmall)),
+              // Amber, not the accent: this is a condition to act on — text
+              // that will be lost when another template is loaded over it —
+              // and the accent in this panel means "selected".
+              if (dirty) AppStatusBadge(label: l10n.optSysPromptUnsaved, kind: AppStatusKind.warning),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildTemplatePicker(l10n, colorScheme, template),
+          const SizedBox(height: 10),
+          _buildSysPromptEditor(l10n, colorScheme),
+          const SizedBox(height: 8),
+          _buildSysPromptMeter(l10n, colorScheme, textTheme, text),
+          if (template != null) ...[
+            const SizedBox(height: 10),
+            _buildSysPromptActions(l10n, template, text, dirty),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The template row. A [SearchablePickerField] rather than the dropdown pair
+  /// it replaces: the tag that used to need its own dropdown rides along as
+  /// each row's badge, and the picker matches on it — so filtering by tag is
+  /// typing its name rather than setting a second control first.
+  Widget _buildTemplatePicker(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    SystemPrompt? template,
+  ) {
+    return SearchablePickerField<int>(
+      selected: template == null
+          ? null
+          : PickerOption<int>(
+              value: template.id!,
+              label: template.title,
+              badge: template.tags.isEmpty ? null : template.tags.first.name,
+              badgeColor: template.tags.isEmpty ? null : Color(template.tags.first.color),
+            ),
+      optionsBuilder: () => [
+        for (final p in widget.sysPrompts)
+          if (p.id != null)
+            PickerOption<int>(
+              value: p.id!,
+              label: p.title,
+              badge: p.tags.isEmpty ? null : p.tags.first.name,
+              badgeColor: p.tags.isEmpty ? null : Color(p.tags.first.color),
+            ),
+      ],
+      onChanged: (id) {
+        final picked = widget.sysPrompts.firstWhere((p) => p.id == id);
+        widget.onSysPromptTemplateChanged(picked.id, picked.content);
+      },
+      hint: l10n.optSysPromptNone,
+      searchHint: l10n.optSysPromptSearch,
+      dialogTitle: l10n.optSysPromptPick,
+      dialogIcon: Icons.notes_outlined,
+      // The caption inside the field rather than above it: the card already
+      // carries a title, and a second label stacked over a 36px row cost more
+      // height than the row it names.
+      decoration: InputDecoration(labelText: l10n.optSysPromptTemplate),
+      // A dot, like the workbench's own channel picker: the panel narrows to
+      // 250px and a spelled-out tag there is a coloured box with no letters
+      // left in it.
+      badgeStyle: PickerBadge.dot,
+    );
+  }
+
+  /// The instructions themselves.
+  ///
+  /// `10g` gives this the remaining height of the panel. Here it is a
+  /// minimum-height box inside the panel's scroll view instead: the column
+  /// this sits in scrolls — it has to, since the context card below it cannot
+  /// be pushed off — and a child that claims the leftover space cannot live in
+  /// a viewport that has none to give.
+  Widget _buildSysPromptEditor(AppLocalizations l10n, ColorScheme colorScheme) {
+    return TextField(
+      controller: _sysPromptCtrl,
+      minLines: 8,
+      maxLines: null,
+      onChanged: widget.onSysPromptChanged,
+      // Monospace, as the spec sets it: this is a written-to-a-machine
+      // document with a numbered structure, and proportional text made its
+      // indentation stop lining up.
+      style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
+            height: AppType.proseHeight,
+            color: colorScheme.onSurface,
+          ),
+      decoration: InputDecoration(
+        hintText: l10n.optSysPromptHint,
+        hintStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+        contentPadding: const EdgeInsets.all(10),
+      ),
+    );
+  }
+
+  /// What the text costs, in the two units the user thinks in.
+  ///
+  /// The token figure is an estimate and says so with `~`: it is the same
+  /// [ContextBudget.charsPerToken] ratio the context card below measures
+  /// against, so the two numbers on this panel cannot disagree about the size
+  /// of the same prompt.
+  Widget _buildSysPromptMeter(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    String text,
+  ) {
+    final tokens = (text.length / ContextBudget.charsPerToken).round();
+    return Row(
       children: [
-        AppSectionLabel(
-          l10n.systemPrompt,
-          trailing: _ModeToggle(
-            useCustom: widget.useCustomSysPrompt,
-            presetLabel: l10n.preset,
-            customLabel: l10n.custom,
-            onChanged: (useCustom) {
-              widget.onUseCustomChanged(useCustom);
-              if (!useCustom) {
-                // Switching back to preset: clear the effective prompt so the
-                // dropdown shows unselected until the user picks one again.
-                widget.onSysPromptChanged(null);
-              }
-            },
+        Expanded(
+          child: Text(
+            l10n.optSysPromptChars(text.length),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ),
-        const SizedBox(height: 4),
-        if (widget.useCustomSysPrompt)
-          _buildCustomEditor(l10n, colorScheme)
-        else ...[
-          _buildTagSelector(l10n, colorScheme),
-          const SizedBox(height: 12),
-          _buildPresetDropdown(l10n, colorScheme),
-        ],
+        const SizedBox(width: 8),
+        Text(
+          l10n.optSysPromptTokens(_formatCount(tokens)),
+          style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
       ],
     );
   }
 
-  Widget _buildTagSelector(AppLocalizations l10n, ColorScheme colorScheme) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: l10n.tag,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int?>(
-          value: widget.selectedTagId,
-          isDense: true,
-          isExpanded: true,
-          onChanged: widget.onTagChanged,
-          items: [
-            DropdownMenuItem<int?>(value: null, child: Text(l10n.catAll)),
-            ...widget.tags.map((t) => DropdownMenuItem<int?>(
-              value: t.id,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(backgroundColor: Color(t.color), radius: 6),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(t.name, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium)),
-                ],
-              ),
-            )),
-          ],
+  /// Commit the edit to the library, or throw it away.
+  ///
+  /// Both are off unless there is an edit to act on, so the pair is inert
+  /// rather than absent while the text still matches its template — the row
+  /// keeps its height and the card does not jump the first time a character is
+  /// typed.
+  Widget _buildSysPromptActions(
+    AppLocalizations l10n,
+    SystemPrompt template,
+    String text,
+    bool dirty,
+  ) {
+    // Compact, and the reset unlabelled by its glyph: at the 250px this panel
+    // narrows to, two full-size labelled buttons overflow the card by ~17px,
+    // and of the two it is the destination — 保存 — whose word has to survive.
+    return Row(
+      children: [
+        Expanded(
+          child: AppButton(
+            label: l10n.optSysPromptSave,
+            icon: Icons.save_outlined,
+            size: AppButtonSize.compact,
+            fullWidth: true,
+            loading: _savingTemplate,
+            onPressed: dirty ? () => _handleSaveTemplate(template, text) : null,
+          ),
         ),
-      ),
+        const SizedBox(width: 8),
+        AppButton(
+          label: l10n.optSysPromptReset,
+          variant: AppButtonVariant.secondary,
+          size: AppButtonSize.compact,
+          onPressed: dirty
+              ? () => widget.onSysPromptTemplateChanged(template.id, template.content)
+              : null,
+        ),
+      ],
     );
   }
 
-  Widget _buildPresetDropdown(AppLocalizations l10n, ColorScheme colorScheme) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: l10n.preset,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: widget.selectedSysPrompt,
-          isDense: true,
-          isExpanded: true,
-          onChanged: widget.onSysPromptChanged,
-          items: widget.filteredSysPrompts.map((p) => DropdownMenuItem(
-            value: p.content,
-            child: Text(p.title, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
-          )).toList(),
-        ),
-      ),
-    );
+  Future<void> _handleSaveTemplate(SystemPrompt template, String text) async {
+    setState(() => _savingTemplate = true);
+    try {
+      await widget.onSaveTemplate(template, text);
+    } finally {
+      if (mounted) setState(() => _savingTemplate = false);
+    }
   }
 
-  Widget _buildCustomEditor(AppLocalizations l10n, ColorScheme colorScheme) {
-    return TextField(
-      controller: _customCtrl,
-      minLines: 4,
-      maxLines: null,
-      onChanged: widget.onSysPromptChanged,
-      decoration: InputDecoration(
-        hintText: l10n.customSysPromptHint,
-        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-        contentPadding: const EdgeInsets.all(12),
-      ),
-      style: Theme.of(context).textTheme.bodyMedium,
-    );
+  /// `18.2K` past a thousand — the same shape [OptimizerContextCard] uses, so
+  /// the two figures on this panel are read off the same scale.
+  static String _formatCount(int value) {
+    if (value < 1000) return '$value';
+    if (value < 1000000) return '${(value / 1000).toStringAsFixed(1)}K';
+    return '${(value / 1000000).toStringAsFixed(1)}M';
   }
 }
 
@@ -642,87 +967,6 @@ class _ElidedPath extends StatelessWidget {
           style: style,
         );
       },
-    );
-  }
-}
-
-class _ModeToggle extends StatelessWidget {
-  final bool useCustom;
-  final String presetLabel;
-  final String customLabel;
-  final ValueChanged<bool> onChanged;
-
-  const _ModeToggle({
-    required this.useCustom,
-    required this.presetLabel,
-    required this.customLabel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _Chip(
-          label: presetLabel,
-          selected: !useCustom,
-          onTap: () { if (useCustom) onChanged(false); },
-          colorScheme: colorScheme,
-        ),
-        const SizedBox(width: 4),
-        _Chip(
-          label: customLabel,
-          selected: useCustom,
-          onTap: () { if (!useCustom) onChanged(true); },
-          colorScheme: colorScheme,
-        ),
-      ],
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-
-  const _Chip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppMotion.durationOf(context, AppMotion.state),
-        curve: AppMotion.enter,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          // The selection wash and its ring, off the accent ladder rather than
-          // `primaryContainer` — which is a saturated slab at several of the
-          // every seed and made a 20px chip the loudest thing in the panel.
-          color: selected ? colorScheme.accentTint : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-          border: Border.all(
-            color: selected ? colorScheme.accentRing : colorScheme.outlineVariant,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            color: selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
     );
   }
 }

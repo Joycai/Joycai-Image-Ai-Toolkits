@@ -23,7 +23,17 @@ import '../../../widgets/app_section_label.dart';
 class OptimizerContextCard extends StatelessWidget {
   final ContextUsageSnapshot usage;
 
-  const OptimizerContextCard({super.key, this.usage = ContextUsageSnapshot.placeholder});
+  /// A line under the legend explaining something about *this mode's* usage —
+  /// `10g` uses it to say that the system-prompt mode mounts no tools, which
+  /// is why one of the slices is always empty there. Null in the modes that
+  /// have nothing to explain.
+  final String? note;
+
+  const OptimizerContextCard({
+    super.key,
+    this.usage = ContextUsageSnapshot.placeholder,
+    this.note,
+  });
 
   /// The height of the stacked bar. Under [AppRadius] territory — it is a rule,
   /// not a container — so it stays a literal beside the pill radius that caps
@@ -96,6 +106,13 @@ class OptimizerContextCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               l10n.optCtxWindowAssumed,
+              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: AppType.looseHeight),
+            ),
+          ],
+          if (note != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              note!,
               style: textTheme.labelSmall?.copyWith(color: colorScheme.outline, height: AppType.looseHeight),
             ),
           ],
