@@ -846,7 +846,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · Qwen チャット + qwen-image / Wan ネイティブ画像生成';
+      'dashscope.aliyuncs.com · チャット・画像・動画を 1 つのチャネルで — Qwen チャット（OpenAI/Anthropic 互換）+ qwen-image / Wan ネイティブ画像 + Wan 動画';
 
   @override
   String get endpointOverrideHint =>
@@ -1318,6 +1318,63 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String providerVariantCount(int count) {
     return '$count 通り';
+  }
+
+  @override
+  String get requestMethod => 'リクエスト方式';
+
+  @override
+  String get interfaceProtocol => 'API プロトコル';
+
+  @override
+  String get protocolAuto => '自動';
+
+  @override
+  String protocolAutoResolved(String name) {
+    return '自動 · 現在は「$name」で解決';
+  }
+
+  @override
+  String get protocolAutoHelper => 'チャネルのプロバイダーに従い、プロバイダー変更時に自動で再解決されます。';
+
+  @override
+  String protocolStaleHelper(String name) {
+    return '以前の選択「$name」は現在のプロバイダーでは利用できないため、自動に戻りました。';
+  }
+
+  @override
+  String get protocolOpenAICompat => 'OpenAI 互換';
+
+  @override
+  String get protocolAnthropicCompat => 'Anthropic 互換';
+
+  @override
+  String get protocolImageSync => '同期生成';
+
+  @override
+  String get protocolImageSyncDesc => '1 回のリクエストで画像を直接返します';
+
+  @override
+  String get protocolImageAsync => '非同期タスク';
+
+  @override
+  String get protocolImageAsyncDesc => '送信後に結果をポーリング。生成中はキャンセル可能';
+
+  @override
+  String get protocolVideoTask => '非同期動画タスク';
+
+  @override
+  String get protocolStreamIgnoredAsync => '非同期タスクはストリーミングを使用しないため、この設定は無視されます';
+
+  @override
+  String get protocolAsyncQueueNote => '送信後はタスクキューでポーリングされ、生成中はキャンセルできます。';
+
+  @override
+  String get protocolPinStale => '選択は無効';
+
+  @override
+  String protocolStaleTooltip(String name) {
+    return '以前の選択「$name」は利用できないため、自動で実行しています。';
   }
 
   @override

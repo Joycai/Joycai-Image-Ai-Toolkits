@@ -2,7 +2,9 @@ import 'llm_types.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
+import 'protocols/dashscope_images_async_protocol.dart';
 import 'protocols/dashscope_images_protocol.dart';
+import 'protocols/dashscope_video_protocol.dart';
 import 'protocols/gemini_chat_protocol.dart';
 import 'protocols/gemini_imagen_protocol.dart';
 import 'protocols/gemini_veo_protocol.dart';
@@ -45,6 +47,8 @@ class LLMDispatcher {
   static final _openaiVideos = OpenAIVideosProtocol();
   static final _xaiImages = XaiImagesProtocol();
   static final _dashscopeImages = DashScopeImagesProtocol();
+  static final _dashscopeImagesAsync = DashScopeImagesAsyncProtocol();
+  static final _dashscopeVideo = DashScopeVideoProtocol();
   static final _xaiVideos = XaiVideosProtocol();
   static final _geminiChat = GeminiChatProtocol();
   static final _imagen = GeminiImagenProtocol();
@@ -63,6 +67,118 @@ class LLMDispatcher {
         vendor: Vendors.byId(config.channelType),
         model: ModelDescriptor.of(config.modelId),
       );
+
+  // ---------------------------------------------------------------------------
+  // Protocol menus and the per-model selection (`llm_models.wire_protocol`)
+  // ---------------------------------------------------------------------------
+
+  /// The surface a model's requests belong to, for menu selection. Video and
+  /// image-generation families get their own surfaces; everything else —
+  /// chat, multimodal, unknown — is the chat surface.
+  static Surface surfaceForModel(String modelId) {
+    final family = ModelDescriptor.of(modelId).family;
+    if (ModelFamilyClassifier.isVideo(family)) return Surface.videoJob;
+    if (ModelFamilyClassifier.isImageGeneration(family)) {
+      return Surface.imageGen;
+    }
+    return Surface.chat;
+  }
+
+  /// The protocol menu offered for this (channel type, model id) pair: the
+  /// vendor's declared menu for the model's surface, intersected with what
+  /// the concrete model supports (layer 3). This is the single source for
+  /// both routing below and the model editor's selector — one entry (or
+  /// none) means there is no choice and no UI.
+  static List<WireProtocol> protocolMenuFor(
+      String channelType, String modelId) {
+    final vendor = Vendors.byId(channelType);
+    final model = ModelDescriptor.of(modelId);
+    final surface = surfaceForModel(modelId);
+    switch (surface) {
+      case Surface.chat:
+        return vendor.menuFor(Surface.chat);
+      case Surface.imageGen:
+        // Only the family the dispatcher actually routes to the vendor's
+        // native image surface gets its menu; every other image family rides
+        // a fixed route (its own protocol, or chat on a relay) and offers no
+        // choice.
+        if (model.family != ModelFamily.dashscopeImage) return const [];
+        final menu = vendor.menuFor(Surface.imageGen);
+        if (!model.capabilities.supportsAsyncImageTask) {
+          return menu
+              .where((p) => p != WireProtocol.dashscopeImagesAsync)
+              .toList();
+        }
+        return menu;
+      case Surface.videoJob:
+        // A video model has exactly one route per vendor today.
+        return vendor.menuFor(Surface.videoJob);
+    }
+  }
+
+  /// What "auto" resolves to for this pair — the menu's first entry. Null
+  /// when the surface has no vendor menu at all (relay image models riding
+  /// chat, families with a single fixed route).
+  static WireProtocol? autoProtocolFor(String channelType, String modelId) {
+    final menu = protocolMenuFor(channelType, modelId);
+    return menu.isEmpty ? null : menu.first;
+  }
+
+  /// Whether a stored selection is stale for this pair: non-empty but no
+  /// longer valid (unknown id, wrong surface, or off the current vendor's
+  /// menu — typically after the channel changed suppliers). Stale values are
+  /// silently ignored by routing and surfaced, not blocked, by the UI.
+  static bool isStaleProtocolSelection(
+      String channelType, String modelId, String? stored) {
+    if (stored == null || stored.isEmpty) return false;
+    final parsed = WireProtocol.tryParse(stored);
+    if (parsed == null) return true;
+    return !protocolMenuFor(channelType, modelId).contains(parsed);
+  }
+
+  /// The model's explicit, still-valid protocol selection for [surface], or
+  /// null for auto. Invalid values (unknown, wrong surface, off the menu)
+  /// degrade to auto here — routing never fails on a stale preference.
+  WireProtocol? _pinnedProtocol(LLMTarget target, Surface surface) {
+    final pinned = WireProtocol.tryParse(target.config.wireProtocol);
+    if (pinned == null || pinned.surface != surface) return null;
+    final menu =
+        protocolMenuFor(target.config.channelType, target.config.modelId);
+    return menu.contains(pinned) ? pinned : null;
+  }
+
+  /// [target] with its endpoint rewritten for a generic protocol served on
+  /// one of this vendor's alternate faces (VendorProfile.protocolBases).
+  /// Identity for everything else.
+  LLMTarget _faceTarget(LLMTarget target, WireProtocol protocol) {
+    final derive = target.vendor.protocolBases[protocol];
+    if (derive == null) return target;
+    return LLMTarget(
+      config: target.config.withEndpoint(derive(target.config.endpoint)),
+      vendor: target.vendor,
+      model: target.model,
+    );
+  }
+
+  /// The chat protocol serving this ①-family target: the model's pinned
+  /// choice, else the vendor's chat default. Only values meaningful on an
+  /// OpenAI-family vendor come back — anything else degrades to [WireProtocol
+  /// .openaiChat].
+  WireProtocol _openaiFamilyChatProtocol(LLMTarget target) {
+    final chosen = _pinnedProtocol(target, Surface.chat) ??
+        target.vendor.menuFor(Surface.chat).first;
+    return chosen == WireProtocol.anthropicChat
+        ? WireProtocol.anthropicChat
+        : WireProtocol.openaiChat;
+  }
+
+  /// The image protocol for a DashScope-native image model on a vendor that
+  /// declares the surface: the model's pinned choice, else sync.
+  ImageGenProtocol _dashscopeImageProtocol(LLMTarget target) =>
+      _pinnedProtocol(target, Surface.imageGen) ==
+              WireProtocol.dashscopeImagesAsync
+          ? _dashscopeImagesAsync
+          : _dashscopeImages;
 
   /// Whether [discoverModels] actually reaches the network for this channel —
   /// i.e. whether its outcome says anything about connectivity. Midjourney's
@@ -127,6 +243,15 @@ class LLMDispatcher {
     // routing it through a model capability would quietly drop the exemption
     // for a Midjourney channel whose model id classifies as something else.
     if (target.model.capabilities.longRunning) {
+      // The async-task alternate runs submit + the whole poll loop inside one
+      // generateImage() call, so this guard must outlive the loop's own
+      // 9-minute overall deadline — otherwise the outer timeout fires first
+      // and reports "timed out" for a task that is still (billed and)
+      // running.
+      if (_pinnedProtocol(target, Surface.imageGen) ==
+          WireProtocol.dashscopeImagesAsync) {
+        return const Duration(minutes: 10);
+      }
       return const Duration(minutes: 5);
     }
 
@@ -196,23 +321,38 @@ class LLMDispatcher {
         if (target.model.family == ModelFamily.openaiImage) {
           return _openaiImages.generateImage(target, history, options: options, logger: logger);
         }
-        // DashScope's native image models, on a DashScope channel only.
-        // Everywhere else — a relay that lists `qwen-image` — the model keeps
-        // falling through to chat below, which is where those relays actually
-        // serve it (they answer with images in the chat response, and most
-        // expose no /images/generations for it at all). Routing them to an
-        // Images API on the strength of the family alone would break channels
-        // that work today.
+        // DashScope's native image models, on a vendor that declares the
+        // surface only. Everywhere else — a relay that lists `qwen-image` —
+        // the model keeps falling through to chat below, which is where those
+        // relays actually serve it (they answer with images in the chat
+        // response, and most expose no /images/generations for it at all).
+        // Routing them to an Images API on the strength of the family alone
+        // would break channels that work today. Sync vs. async is the model's
+        // pinned selection, defaulting to sync.
         if (target.model.family == ModelFamily.dashscopeImage &&
-            target.vendor.usesDashScopeNativeImages) {
-          return _dashscopeImages.generateImage(target, history, options: options, logger: logger);
+            target.vendor.imageMenu.isNotEmpty) {
+          return _dashscopeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
         }
 
         // Grok Imagine image models: xAI's JSON Images API on native
         // channels; OpenAI-style Images API when served through a relay.
         if (target.model.family == ModelFamily.xaiImage) {
-          final protocol = target.vendor.usesXaiNativeSurfaces ? _xaiImages : _openaiImages;
+          final protocol =
+              target.vendor.imageMenu.contains(WireProtocol.xaiImages)
+                  ? _xaiImages
+                  : _openaiImages;
           return protocol.generateImage(target, history, options: options, logger: logger);
+        }
+
+        // The chat surface itself can be multi-face (DashScope's ④-compatible
+        // `/apps/anthropic/v1/messages` beside its ①). The pinned selection
+        // decides; the vendor's protocolBases rewrite the endpoint so the ④
+        // protocol stays vendor-blind.
+        if (_openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat) {
+          return _anthropicChat.generate(
+              _faceTarget(target, WireProtocol.anthropicChat), history,
+              options: options, tools: tools, logger: logger);
         }
         return _openaiChat.generate(target, history, options: options, tools: tools, logger: logger);
     }
@@ -243,6 +383,11 @@ class LLMDispatcher {
             ? false
             : _geminiChat.streamingDeclaresTools;
       case ProtocolFamily.openai:
+        // The ④ face on a multi-face ① vendor streams with tools exactly
+        // like a native ④ channel; the ① chat surface itself does not (yet).
+        return _openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat
+            ? _anthropicChat.streamingDeclaresTools
+            : false;
       case ProtocolFamily.midjourney:
         return false;
     }
@@ -284,10 +429,16 @@ class LLMDispatcher {
         if (target.model.family == ModelFamily.openaiImage ||
             target.model.family == ModelFamily.xaiImage ||
             (target.model.family == ModelFamily.dashscopeImage &&
-                target.vendor.usesDashScopeNativeImages)) {
+                target.vendor.imageMenu.isNotEmpty)) {
           logger?.call('Image model does not support streaming; using Images API.', level: 'DEBUG');
           final response = await generate(config, history, options: options, logger: logger);
           yield* _asChunks(response);
+          return;
+        }
+        if (_openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat) {
+          yield* _anthropicChat.generateStream(
+              _faceTarget(target, WireProtocol.anthropicChat), history,
+              options: options, tools: tools, logger: logger);
           return;
         }
         yield* _openaiChat.generateStream(target, history, options: options, logger: logger);
@@ -336,10 +487,14 @@ class LLMDispatcher {
 
       case ProtocolFamily.openai:
         if (target.model.family == ModelFamily.openaiVideo) {
-          // xAI native channels use their own async video surface
-          // (`/videos/generations` JSON), not the Sora-style multipart
-          // `/videos`.
-          final protocol = target.vendor.usesXaiNativeSurfaces ? _xaiVideos : _openaiVideos;
+          // Vendors with a native async-video surface replace the Sora-style
+          // multipart `/videos` default: xAI's `/videos/generations` JSON,
+          // DashScope's `video-synthesis` task flow.
+          final protocol = switch (target.vendor.videoProtocol) {
+            WireProtocol.xaiVideos => _xaiVideos,
+            WireProtocol.dashscopeVideo => _dashscopeVideo,
+            _ => _openaiVideos,
+          };
           return protocol.submit(target, history, options: options, logger: logger);
         }
 
@@ -427,10 +582,19 @@ class LLMDispatcher {
           };
         }
 
-        // xAI native channels poll `GET /videos/{request_id}` with xAI's own
-        // status vocabulary (pending / done / expired / failed).
-        if (target.vendor.usesXaiNativeSurfaces) {
-          return _xaiVideos.poll(target, operationName, logger: logger);
+        // Vendors with a native video surface poll it with their own status
+        // vocabulary: xAI's `GET /videos/{request_id}`
+        // (pending/done/expired/failed), DashScope's `GET /tasks/{task_id}`
+        // (PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN). Symmetric
+        // with the submit routing above — an operation started on this
+        // channel can only have come from its own surface.
+        switch (target.vendor.videoProtocol) {
+          case WireProtocol.xaiVideos:
+            return _xaiVideos.poll(target, operationName, logger: logger);
+          case WireProtocol.dashscopeVideo:
+            return _dashscopeVideo.poll(target, operationName, logger: logger);
+          default:
+            break;
         }
 
         // Sora-style video task ids start with `video_` (NewAPI / OpenAI Sora

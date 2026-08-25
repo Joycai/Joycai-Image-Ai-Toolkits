@@ -861,7 +861,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation';
+      'dashscope.aliyuncs.com · one channel for chat, image and video — Qwen chat (OpenAI/Anthropic-compatible) + native qwen-image / wan images + wan video';
 
   @override
   String get endpointOverrideHint =>
@@ -1351,6 +1351,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String providerVariantCount(int count) {
     return '$count ways in';
+  }
+
+  @override
+  String get requestMethod => 'Request Method';
+
+  @override
+  String get interfaceProtocol => 'API Protocol';
+
+  @override
+  String get protocolAuto => 'Auto';
+
+  @override
+  String protocolAutoResolved(String name) {
+    return 'Auto · resolves to “$name”';
+  }
+
+  @override
+  String get protocolAutoHelper =>
+      'Follows the channel provider; re-resolved automatically when the provider changes.';
+
+  @override
+  String protocolStaleHelper(String name) {
+    return 'The previous choice “$name” is unavailable with this provider; back to Auto.';
+  }
+
+  @override
+  String get protocolOpenAICompat => 'OpenAI-compatible';
+
+  @override
+  String get protocolAnthropicCompat => 'Anthropic-compatible';
+
+  @override
+  String get protocolImageSync => 'Synchronous';
+
+  @override
+  String get protocolImageSyncDesc => 'One request returns the image directly';
+
+  @override
+  String get protocolImageAsync => 'Async task';
+
+  @override
+  String get protocolImageAsyncDesc =>
+      'Submit, then poll for the result; cancellable while queued';
+
+  @override
+  String get protocolVideoTask => 'Async video task';
+
+  @override
+  String get protocolStreamIgnoredAsync =>
+      'Async tasks do not use streaming; this setting is ignored';
+
+  @override
+  String get protocolAsyncQueueNote =>
+      'Submitted to the task queue and polled; can be cancelled while generating.';
+
+  @override
+  String get protocolPinStale => 'Selection inactive';
+
+  @override
+  String protocolStaleTooltip(String name) {
+    return '“$name” is unavailable; running on Auto.';
   }
 
   @override

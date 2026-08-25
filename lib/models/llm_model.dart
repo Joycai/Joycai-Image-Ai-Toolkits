@@ -39,6 +39,13 @@ class LLMModel {
   /// it never turns itself on.
   final bool enableWebSearch;
 
+  /// Explicit wire-protocol selection (`WireProtocol.id` string), or null for
+  /// auto — the overwhelmingly common state. Raw string here for the same
+  /// reason as [reasoningEffort]: the LLM layer parses and validates it, so
+  /// an unknown value from a newer build survives a round-trip, and one
+  /// stranded by a channel-type change degrades to auto instead of failing.
+  final String? wireProtocol;
+
   // Performance metrics
   final double? estMeanMs;
   final double? estSdMs;
@@ -60,6 +67,7 @@ class LLMModel {
     this.enableThinking = false,
     this.reasoningEffort,
     this.enableWebSearch = false,
+    this.wireProtocol,
     this.estMeanMs,
     this.estSdMs,
     this.tasksSinceUpdate = 0,
@@ -82,6 +90,7 @@ class LLMModel {
       enableThinking: (map['enable_thinking'] ?? 0) == 1,
       reasoningEffort: map['reasoning_effort'] as String?,
       enableWebSearch: (map['enable_web_search'] ?? 0) == 1,
+      wireProtocol: map['wire_protocol'] as String?,
       estMeanMs: map['est_mean_ms'] as double?,
       estSdMs: map['est_sd_ms'] as double?,
       tasksSinceUpdate: map['tasks_since_update'] as int? ?? 0,
@@ -104,6 +113,7 @@ class LLMModel {
       'enable_thinking': enableThinking ? 1 : 0,
       'reasoning_effort': reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
+      'wire_protocol': wireProtocol,
       'est_mean_ms': estMeanMs,
       'est_sd_ms': estSdMs,
       'tasks_since_update': tasksSinceUpdate,

@@ -842,7 +842,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图';
+      'dashscope.aliyuncs.com · 对话 / 生图 / 视频同一通道 —— 通义千问对话（OpenAI/Anthropic 兼容）+ qwen-image / 万相原生出图 + 万相视频';
 
   @override
   String get endpointOverrideHint => '已按所选提供商预填，可改为中转、网关或国际站地址。';
@@ -1302,6 +1302,63 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String providerVariantCount(int count) {
     return '$count 种接入';
+  }
+
+  @override
+  String get requestMethod => '请求方式';
+
+  @override
+  String get interfaceProtocol => '接口协议';
+
+  @override
+  String get protocolAuto => '自动';
+
+  @override
+  String protocolAutoResolved(String name) {
+    return '自动 · 当前解析为「$name」';
+  }
+
+  @override
+  String get protocolAutoHelper => '跟随渠道供应商，换供应商后自动重解析。';
+
+  @override
+  String protocolStaleHelper(String name) {
+    return '原选择「$name」在当前供应商下不可用，已回到自动。';
+  }
+
+  @override
+  String get protocolOpenAICompat => 'OpenAI 兼容';
+
+  @override
+  String get protocolAnthropicCompat => 'Anthropic 兼容';
+
+  @override
+  String get protocolImageSync => '同步生成';
+
+  @override
+  String get protocolImageSyncDesc => '一次请求直接返回图片';
+
+  @override
+  String get protocolImageAsync => '异步任务';
+
+  @override
+  String get protocolImageAsyncDesc => '提交后轮询结果，生成中可取消';
+
+  @override
+  String get protocolVideoTask => '异步视频任务';
+
+  @override
+  String get protocolStreamIgnoredAsync => '异步任务不使用流式传输，此项已忽略';
+
+  @override
+  String get protocolAsyncQueueNote => '提交后进入任务队列轮询，生成中可取消。';
+
+  @override
+  String get protocolPinStale => '点单已失效';
+
+  @override
+  String protocolStaleTooltip(String name) {
+    return '原选择「$name」不可用，正在按自动运行。';
   }
 
   @override
@@ -3956,7 +4013,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · 通義千問對話 + qwen-image / 萬相原生出圖';
+      'dashscope.aliyuncs.com · 對話 / 生圖 / 影片同一通道 —— 通義千問對話（OpenAI/Anthropic 相容）+ qwen-image / 萬相原生出圖 + 萬相影片';
 
   @override
   String get endpointOverrideHint => '已依所選提供商預填，可改為中轉、閘道或國際站位址。';
@@ -4416,6 +4473,63 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String providerVariantCount(int count) {
     return '$count 種接入';
+  }
+
+  @override
+  String get requestMethod => '請求方式';
+
+  @override
+  String get interfaceProtocol => '介面協定';
+
+  @override
+  String get protocolAuto => '自動';
+
+  @override
+  String protocolAutoResolved(String name) {
+    return '自動 · 目前解析為「$name」';
+  }
+
+  @override
+  String get protocolAutoHelper => '跟隨渠道供應商，更換供應商後自動重新解析。';
+
+  @override
+  String protocolStaleHelper(String name) {
+    return '原選擇「$name」在目前供應商下不可用，已回到自動。';
+  }
+
+  @override
+  String get protocolOpenAICompat => 'OpenAI 相容';
+
+  @override
+  String get protocolAnthropicCompat => 'Anthropic 相容';
+
+  @override
+  String get protocolImageSync => '同步生成';
+
+  @override
+  String get protocolImageSyncDesc => '一次請求直接返回圖片';
+
+  @override
+  String get protocolImageAsync => '非同步任務';
+
+  @override
+  String get protocolImageAsyncDesc => '提交後輪詢結果，生成中可取消';
+
+  @override
+  String get protocolVideoTask => '非同步影片任務';
+
+  @override
+  String get protocolStreamIgnoredAsync => '非同步任務不使用串流傳輸，此項已忽略';
+
+  @override
+  String get protocolAsyncQueueNote => '提交後進入任務佇列輪詢，生成中可取消。';
+
+  @override
+  String get protocolPinStale => '點單已失效';
+
+  @override
+  String protocolStaleTooltip(String name) {
+    return '原選擇「$name」不可用，正在按自動運行。';
   }
 
   @override

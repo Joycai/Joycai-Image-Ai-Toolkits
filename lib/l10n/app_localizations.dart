@@ -1676,7 +1676,7 @@ abstract class AppLocalizations {
   /// No description provided for @providerDashScopeDesc.
   ///
   /// In en, this message translates to:
-  /// **'dashscope.aliyuncs.com · Qwen chat + native qwen-image / wan image generation'**
+  /// **'dashscope.aliyuncs.com · one channel for chat, image and video — Qwen chat (OpenAI/Anthropic-compatible) + native qwen-image / wan images + wan video'**
   String get providerDashScopeDesc;
 
   /// No description provided for @endpointOverrideHint.
@@ -2560,6 +2560,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} ways in'**
   String providerVariantCount(int count);
+
+  /// No description provided for @requestMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Method'**
+  String get requestMethod;
+
+  /// No description provided for @interfaceProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'API Protocol'**
+  String get interfaceProtocol;
+
+  /// No description provided for @protocolAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get protocolAuto;
+
+  /// No description provided for @protocolAutoResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto · resolves to “{name}”'**
+  String protocolAutoResolved(String name);
+
+  /// No description provided for @protocolAutoHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows the channel provider; re-resolved automatically when the provider changes.'**
+  String get protocolAutoHelper;
+
+  /// No description provided for @protocolStaleHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous choice “{name}” is unavailable with this provider; back to Auto.'**
+  String protocolStaleHelper(String name);
+
+  /// No description provided for @protocolOpenAICompat.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI-compatible'**
+  String get protocolOpenAICompat;
+
+  /// No description provided for @protocolAnthropicCompat.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic-compatible'**
+  String get protocolAnthropicCompat;
+
+  /// No description provided for @protocolImageSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronous'**
+  String get protocolImageSync;
+
+  /// No description provided for @protocolImageSyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'One request returns the image directly'**
+  String get protocolImageSyncDesc;
+
+  /// No description provided for @protocolImageAsync.
+  ///
+  /// In en, this message translates to:
+  /// **'Async task'**
+  String get protocolImageAsync;
+
+  /// No description provided for @protocolImageAsyncDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit, then poll for the result; cancellable while queued'**
+  String get protocolImageAsyncDesc;
+
+  /// No description provided for @protocolVideoTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Async video task'**
+  String get protocolVideoTask;
+
+  /// No description provided for @protocolStreamIgnoredAsync.
+  ///
+  /// In en, this message translates to:
+  /// **'Async tasks do not use streaming; this setting is ignored'**
+  String get protocolStreamIgnoredAsync;
+
+  /// No description provided for @protocolAsyncQueueNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted to the task queue and polled; can be cancelled while generating.'**
+  String get protocolAsyncQueueNote;
+
+  /// No description provided for @protocolPinStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection inactive'**
+  String get protocolPinStale;
+
+  /// No description provided for @protocolStaleTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is unavailable; running on Auto.'**
+  String protocolStaleTooltip(String name);
 
   /// No description provided for @prompts.
   ///

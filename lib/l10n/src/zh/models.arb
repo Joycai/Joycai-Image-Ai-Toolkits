@@ -148,7 +148,7 @@
   "providerGoogleCompatible": "Google GenAI (OpenAI 兼容)",
   "providerGoogleCompatibleDesc": "通过 OpenAI 适配端点访问 Gemini",
   "providerDashScope": "阿里云百炼（DashScope）",
-  "providerDashScopeDesc": "dashscope.aliyuncs.com · 通义千问对话 + qwen-image / 万相原生出图",
+  "providerDashScopeDesc": "dashscope.aliyuncs.com · 对话 / 生图 / 视频同一通道 —— 通义千问对话（OpenAI/Anthropic 兼容）+ qwen-image / 万相原生出图 + 万相视频",
   "endpointOverrideHint": "已按所选提供商预填，可改为中转、网关或国际站地址。",
   "providerQianwen": "千问平台",
   "providerQianwenDesc": "platform.qianwenai.com · API 同 DashScope — 千问对话 + qwen-image / wan2.7 出图",
@@ -357,5 +357,22 @@
         "type": "int"
       }
     }
-  }
+  },
+  "requestMethod": "请求方式",
+  "interfaceProtocol": "接口协议",
+  "protocolAuto": "自动",
+  "protocolAutoResolved": "自动 · 当前解析为「{name}」",
+  "protocolAutoHelper": "跟随渠道供应商，换供应商后自动重解析。",
+  "protocolStaleHelper": "原选择「{name}」在当前供应商下不可用，已回到自动。",
+  "protocolOpenAICompat": "OpenAI 兼容",
+  "protocolAnthropicCompat": "Anthropic 兼容",
+  "protocolImageSync": "同步生成",
+  "protocolImageSyncDesc": "一次请求直接返回图片",
+  "protocolImageAsync": "异步任务",
+  "protocolImageAsyncDesc": "提交后轮询结果，生成中可取消",
+  "protocolVideoTask": "异步视频任务",
+  "protocolStreamIgnoredAsync": "异步任务不使用流式传输，此项已忽略",
+  "protocolAsyncQueueNote": "提交后进入任务队列轮询，生成中可取消。",
+  "protocolPinStale": "点单已失效",
+  "protocolStaleTooltip": "原选择「{name}」不可用，正在按自动运行。"
 }

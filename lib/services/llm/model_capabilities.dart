@@ -306,6 +306,14 @@ class ModelCapabilities {
   /// shape.
   final ImageRequestShape imageRequestShape;
 
+  /// True when this image model is also served by DashScope's async task
+  /// surface (`image-generation/generation` + `X-DashScope-Async`), making
+  /// sync/async a genuine per-model choice. `wan2.7-image*` documents both
+  /// routes; `qwen-image*` documents only the synchronous one, so its menu
+  /// collapses to a single entry and the protocol selector never renders.
+  /// The dispatcher intersects the vendor's image menu with this.
+  final bool supportsAsyncImageTask;
+
   /// How many reference (input) images this family accepts for generation:
   ///  * `null` — supported with no enforced limit (e.g. nanoBanana).
   ///  * `0` — not supported at all (e.g. Imagen text-to-image).
@@ -320,6 +328,7 @@ class ModelCapabilities {
     this.maxReferenceImages,
     this.longRunning = false,
     this.imageRequestShape = ImageRequestShape.none,
+    this.supportsAsyncImageTask = false,
   });
 
   /// Whether the model accepts any reference images at all.
@@ -347,6 +356,14 @@ class ModelCapabilities {
     // the generic Sora-style openaiVideo table.
     if (family == ModelFamily.openaiVideo && id.contains('grok-imagine-video')) {
       return _grokImagineVideo;
+    }
+
+    // wan3.x on DashScope's native video-synthesis surface: its own
+    // resolution/ratio vocabulary, a 2–30 s duration range and an audio
+    // toggle whose upstream default (on) is billed — so it is exposed rather
+    // than silently inherited.
+    if (family == ModelFamily.openaiVideo && id.startsWith('wan3')) {
+      return _dashscopeWanVideo;
     }
 
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
@@ -646,6 +663,67 @@ class ModelCapabilities {
     ],
   );
 
+  /// `wan3.0-video(-prime)` — DashScope's native async video-synthesis
+  /// surface (docs/api/qianwen-bailian.md §6). Overrides the shared Veo
+  /// resolution/aspect dropdowns with DashScope's own vocabulary:
+  ///  * `resolution` — 480P / 720P / 1080P (upstream default 1080P; the
+  ///    protocol uppercases whatever the shared spelling delivers).
+  ///  * `aspectRatio` — `adaptive` (default) or a fixed ratio.
+  ///  * `seconds` — 2–30 s (`-1` smart mode is not exposed; upstream
+  ///    default 5).
+  ///  * `videoAudio` — whether the model also generates audio. Upstream
+  ///    defaults to **on** and bills for it, which is why it is a visible
+  ///    control instead of an inherited server-side default; the protocol
+  ///    always sends the field explicitly.
+  static const _dashscopeWanVideo = ModelCapabilities(
+    isVideoGenerator: true,
+    maxReferenceImages: 9,
+    videoParams: [
+      ParamSpec(
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'adaptive',
+        options: [
+          ParamOption('adaptive'),
+          ParamOption('16:9'),
+          ParamOption('4:3'),
+          ParamOption('1:1'),
+          ParamOption('3:4'),
+          ParamOption('9:16'),
+        ],
+      ),
+      ParamSpec(
+        key: 'resolution',
+        labelKey: 'resolution',
+        control: ParamControl.segmented,
+        defaultValue: '1080p',
+        options: [
+          ParamOption('480p'),
+          ParamOption('720p'),
+          ParamOption('1080p'),
+        ],
+      ),
+      ParamSpec(
+        key: 'seconds',
+        labelKey: 'videoSeconds',
+        control: ParamControl.slider,
+        defaultValue: '5',
+        options: [],
+        min: 2,
+        max: 30,
+      ),
+      ParamSpec(
+        key: 'videoAudio',
+        labelKey: 'videoAudio',
+        control: ParamControl.segmented,
+        defaultValue: 'on',
+        options: [ParamOption('on'), ParamOption('off')],
+      ),
+      _dashscopePromptExtend,
+    ],
+  );
+
   /// xAI Grok Imagine image (`grok-imagine-image*`). JSON
   /// `/images/generations` + `/images/edits`; accepts one source `image` or
   /// up to 3 `images[]` references (reference them as `<IMAGE_0>`… in the
@@ -740,6 +818,7 @@ class ModelCapabilities {
     isImageGenerator: true,
     maxReferenceImages: 9,
     longRunning: true,
+    supportsAsyncImageTask: true,
     imageRequestShape: ImageRequestShape.dashscopeWan,
     imageParams: [
       ParamSpec(

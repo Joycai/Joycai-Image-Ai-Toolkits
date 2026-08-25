@@ -1,3 +1,4 @@
+import '../protocols/dashscope_payload.dart' show dashscopeAnthropicBase;
 import 'vendor_profile.dart';
 
 export 'vendor_profile.dart';
@@ -72,12 +73,13 @@ class Vendors {
   /// them does diverge there is somewhere to put it.
   static const String minimaxAnthropic = 'minimax-anthropic';
 
-  /// Alibaba DashScope (Bailian). Its chat is the OpenAI-compatible surface
-  /// under `/compatible-mode/v1`, which is why the family is ① — but image
-  /// generation is served *only* by DashScope's own `/api/v1` protocol, so
-  /// the profile also claims [VendorProfile.usesDashScopeNativeImages] and
-  /// the image protocol derives that base from this channel's endpoint. One
-  /// channel, one key, both surfaces.
+  /// Alibaba DashScope (Bailian). Its chat default is the OpenAI-compatible
+  /// surface under `/compatible-mode/v1`, which is why the family is ① — but
+  /// it is the app's first true multi-face vendor: an Anthropic-compatible
+  /// chat alternate (`/apps/anthropic/v1`), a native image surface (sync +
+  /// async task), and a native async video surface, all declared as surface
+  /// menus on the profile and all derived from this one channel's endpoint.
+  /// One channel, one key, every face (docs/api/qianwen-bailian.md).
   static const String dashscope = 'dashscope-api';
 
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
@@ -110,7 +112,11 @@ class Vendors {
       id: xaiApi,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
-      usesXaiNativeSurfaces: true,
+      // xAI's own JSON surfaces replace the family defaults: images via
+      // `/images/generations|edits` (JSON, not multipart), async video via
+      // `/videos/generations` → `GET /videos/{request_id}`.
+      imageMenu: [WireProtocol.xaiImages],
+      videoProtocol: WireProtocol.xaiVideos,
     ),
     VendorProfile(
       id: googleRest,
@@ -170,7 +176,25 @@ class Vendors {
       id: dashscope,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
-      usesDashScopeNativeImages: true,
+      // One channel, one key, every face (docs/api/qianwen-bailian.md).
+      // Chat defaults to the compatible-mode surface; the Anthropic face is a
+      // per-model alternate served under `/apps/anthropic/v1`, derived from
+      // the same stored endpoint. Images default to the native synchronous
+      // surface with the async task flow as a per-model alternate (only
+      // offered where layer 3 says the model supports it); video is the
+      // native async task surface — wan3.x has no other route.
+      chatMenu: [WireProtocol.openaiChat, WireProtocol.anthropicChat],
+      imageMenu: [
+        WireProtocol.dashscopeImagesSync,
+        WireProtocol.dashscopeImagesAsync,
+      ],
+      videoProtocol: WireProtocol.dashscopeVideo,
+      protocolBases: {
+        WireProtocol.anthropicChat: dashscopeAnthropicBase,
+      },
+      // For the ④ face: Bailian documents the official
+      // `{type: enabled, budget_tokens}` spelling. Ignored on the ① face.
+      thinking: ThinkingDialect.anthropicBudget,
     ),
     VendorProfile(
       id: midjourneyProxy,

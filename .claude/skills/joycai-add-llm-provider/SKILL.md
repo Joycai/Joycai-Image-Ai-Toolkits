@@ -42,9 +42,13 @@ a new vendor.
 - [ ] 1. `lib/services/llm/vendors/vendors.dart`: add a `static const String`
       id and a `VendorProfile` entry. Pick `family` (openai/gemini) and
       `auth` (`bearer`, `googleApiKey`, `googleApiKeyWithBearerFallback`).
-- [ ] 2. Vendor-specific surface? Set a declarative flag on `VendorProfile`
-      (see `usesXaiNativeSurfaces`) and add the protocol selection to the
-      dispatcher. Never branch on `vendor.id` inside a protocol.
+- [ ] 2. Vendor-specific surface? Declare it on the `VendorProfile` surface
+      menus (`chatMenu` / `imageMenu` / `videoProtocol`, plus
+      `protocolBases` when a *generic* protocol is served on an alternate
+      face) and add the protocol selection to the dispatcher. A menu longer
+      than one entry automatically surfaces the per-model protocol selector
+      (`llm_models.wire_protocol`). Never branch on `vendor.id` inside a
+      protocol.
 - [ ] 3. UI preset: `widgets/models/channel_provider_presets.dart`
       `kChannelProviderPresets` (+ provider title l10n via the `joycai-l10n`
       skill). Pick the `group` — `vendor` (official, endpoint prefilled) /

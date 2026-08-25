@@ -60,6 +60,7 @@ class DatabaseMigration {
     if (oldVersion < 33) await _createV33Tables(db);
     if (oldVersion < 34) await _createV34Tables(db);
     if (oldVersion < 35) await _createV35Columns(db);
+    if (oldVersion < 36) await _createV36Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -95,6 +96,7 @@ class DatabaseMigration {
     await _createV33Tables(db);
     await _createV34Tables(db);
     await _createV35Columns(db);
+    await _createV36Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -105,6 +107,15 @@ class DatabaseMigration {
   /// behavior without a migration having to have seen them.
   static Future<void> _createV35Columns(Database db) async {
     await _addColumnIfNotExists(db, 'llm_models', 'reasoning_effort', 'TEXT');
+  }
+
+  /// Per-model wire-protocol selection (`WireProtocol.id` string, NULL =
+  /// auto). Not a derivable copy of anything (the v32 lesson does not apply):
+  /// it is user configuration in the same vein as `enable_thinking`, and a
+  /// value stranded by a later channel-type change is ignored at resolve
+  /// time rather than migrated.
+  static Future<void> _createV36Columns(Database db) async {
+    await _addColumnIfNotExists(db, 'llm_models', 'wire_protocol', 'TEXT');
   }
 
   /// Knowledge sub-agent research notes, scoped to the assistant session that

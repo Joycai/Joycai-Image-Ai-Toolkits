@@ -8,6 +8,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../models/pricing_group.dart';
 import '../../services/llm/context_budget.dart';
+import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
@@ -21,6 +22,7 @@ import '../searchable_picker.dart';
 import 'channel_avatar.dart';
 import 'model_picker_options.dart';
 import 'model_tag_chip.dart';
+import 'wire_protocol_labels.dart';
 import '../../core/design_tokens.dart';
 
 class ModelEditDialog extends StatefulWidget {
@@ -53,6 +55,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late bool forceViewAllImages;
   String? reasoningEffort;
   late bool enableWebSearch;
+
+  /// Stored wire-protocol selection (`WireProtocol.id` string), null = auto.
+  /// Kept verbatim while editing — a stale value is *shown* as stale but not
+  /// touched until the user saves, at which point it is silently cleared
+  /// (18a state ④: never mutate what the user hasn't opened).
+  String? wireProtocol;
 
   /// Viewport width at which the form splits into two panes.
   ///
@@ -153,6 +161,7 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     reasoningEffort = model?.reasoningEffort ??
         ((model?.enableThinking ?? false) ? 'medium' : null);
     enableWebSearch = model?.enableWebSearch ?? false;
+    wireProtocol = model?.wireProtocol;
 
     // Context window: null = not set, 0 = unlimited, >0 = token limit. A new
     // model starts unset rather than at a preset — this number now budgets the
@@ -392,6 +401,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         _basicInfoSection(colorScheme, pairNameAndId: pairNameAndId),
         const SizedBox(height: 24),
         _contextSection(colorScheme),
+        // The protocol section leads the settings it governs (17c: the
+        // protocol is the *cause* of the parameters under it) and does not
+        // exist at all on a single-entry menu — unless a stale selection
+        // needs explaining (state ④).
+        if (_showProtocolSection) ...[
+          const SizedBox(height: 24),
+          _protocolSection(colorScheme),
+        ],
         const SizedBox(height: 24),
         _capabilitiesSection(colorScheme),
         const SizedBox(height: 24),
@@ -440,6 +457,14 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // First section of the right pane (17c placement B): the
+              // protocol is the cause of everything under it. Absent
+              // entirely on a single-entry menu (no placeholder height)
+              // unless a stale selection needs explaining (state ④).
+              if (_showProtocolSection) ...[
+                _protocolSection(colorScheme),
+                const SizedBox(height: 20),
+              ],
               _capabilitiesSection(colorScheme),
               const SizedBox(height: 20),
               _agentSection(colorScheme),
@@ -643,6 +668,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   Widget _capabilitiesSection(ColorScheme colorScheme) {
     final l10n = widget.l10n;
+    final textTheme = Theme.of(context).textTheme;
+    final asyncPinned = _asyncImagePinned;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -650,12 +677,21 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.capabilities),
         const SizedBox(height: 4),
-        AppToggleRow(
-          icon: Icons.waves,
-          title: l10n.supportsStreaming,
-          description: l10n.supportsStreamingDesc,
-          value: supportsStream,
-          onChanged: (v) => setState(() => supportsStream = v),
+        // With the async task pinned the streaming toggle is inert: the value
+        // is preserved, not rewritten (18a state ③ — switch back to auto and
+        // it comes back untouched), the row just dims and says why.
+        Opacity(
+          opacity: asyncPinned ? 0.55 : 1.0,
+          child: AppToggleRow(
+            icon: Icons.waves,
+            title: l10n.supportsStreaming,
+            description: asyncPinned
+                ? l10n.protocolStreamIgnoredAsync
+                : l10n.supportsStreamingDesc,
+            value: supportsStream,
+            onChanged:
+                asyncPinned ? null : (v) => setState(() => supportsStream = v),
+          ),
         ),
         AppToggleRow(
           icon: Icons.http,
@@ -663,6 +699,31 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           description: l10n.supportsStandardRequestDesc,
           value: supportsStandard,
           onChanged: (v) => setState(() => supportsStandard = v),
+        ),
+        // The queue note (18a linkage: appears with the async selection).
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: !asyncPinned
+              ? const SizedBox(width: double.infinity)
+              : Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.28)),
+                  ),
+                  child: Text(
+                    l10n.protocolAsyncQueueNote,
+                    style: textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.primary),
+                  ),
+                ),
         ),
       ],
     );
@@ -887,6 +948,111 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     );
   }
 
+  // --- Wire protocol (18a) ------------------------------------------------
+
+  /// The protocol menu for the current channel + model-id pair, or empty when
+  /// either is missing. Length ≤ 1 means the whole section does not render —
+  /// state ①: no section header, no placeholder height.
+  List<WireProtocol> get _protocolMenu {
+    final channel = _selectedChannel(widget.appState);
+    final id = idCtrl.text.trim();
+    if (channel == null || id.isEmpty) return const [];
+    return LLMDispatcher.protocolMenuFor(channel.type, id);
+  }
+
+  /// The stored selection when it is still valid on the current menu; null
+  /// for auto *and* for a stale value (which routes as auto).
+  WireProtocol? get _activePin {
+    final parsed = WireProtocol.tryParse(wireProtocol);
+    if (parsed == null) return null;
+    return _protocolMenu.contains(parsed) ? parsed : null;
+  }
+
+  /// Whether the stored selection exists but no longer applies (18a state ④).
+  bool get _pinIsStale =>
+      wireProtocol != null && wireProtocol!.isNotEmpty && _activePin == null;
+
+  /// The image-generation route is the async task flow — drives the
+  /// stream-toggle downgrade and the queue note in the capabilities section.
+  bool get _asyncImagePinned =>
+      _activePin == WireProtocol.dashscopeImagesAsync;
+
+  /// Whether the protocol section renders at all: a real choice exists, or a
+  /// stale selection needs explaining (18a state ④ shows the section on a
+  /// single-protocol vendor so the fallback note has somewhere to live).
+  bool get _showProtocolSection => _protocolMenu.length > 1 || _pinIsStale;
+
+  Widget _protocolSection(ColorScheme colorScheme) {
+    final l10n = widget.l10n;
+    final textTheme = Theme.of(context).textTheme;
+    final menu = _protocolMenu;
+    final active = _activePin;
+    final auto = menu.isEmpty ? null : menu.first;
+
+    final String? helper;
+    if (_pinIsStale) {
+      // State ④: helper-text tone, not a warning — the model still runs.
+      helper = l10n.protocolStaleHelper(
+          storedProtocolLabel(l10n, wireProtocol!));
+    } else if (active == null) {
+      helper = l10n.protocolAutoHelper;
+    } else {
+      helper = wireProtocolDescription(l10n, active);
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(l10n.requestMethod),
+        const SizedBox(height: 12),
+        AppLabelledField(
+          label: l10n.interfaceProtocol,
+          child: DropdownButtonFormField<String>(
+            // Re-created whenever the pair changes: a form field only reads
+            // initialValue once, and the menu it belongs to changes with the
+            // channel and the id.
+            key: ValueKey(
+                'wire-protocol-${_selectedChannel(widget.appState)?.type}-${idCtrl.text.trim()}'),
+            // '' stands in for auto, same convention as the effort dropdown.
+            // A stale stored value also *displays* as auto (that is how it
+            // routes) — the helper line below says why.
+            initialValue: active?.id ?? '',
+            isExpanded: true,
+            items: [
+              DropdownMenuItem(value: '', child: Text(l10n.protocolAuto)),
+              for (final p in menu)
+                DropdownMenuItem(
+                    value: p.id, child: Text(wireProtocolLabel(l10n, p))),
+            ],
+            // The closed field answers "which one actually runs": the auto
+            // entry names its resolution (18a: 自动 · 当前解析为 X).
+            selectedItemBuilder: (context) => [
+              Text(
+                auto == null
+                    ? l10n.protocolAuto
+                    : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)),
+                overflow: TextOverflow.ellipsis,
+              ),
+              for (final p in menu)
+                Text(wireProtocolLabel(l10n, p),
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: colorScheme.primary)),
+            ],
+            onChanged: (v) => setState(
+                () => wireProtocol = (v == null || v.isEmpty) ? null : v),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.alt_route_outlined),
+              helperText: helper,
+              helperMaxLines: 3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // --- Channel lookups ----------------------------------------------------
 
   /// The channel the form currently points at, or null when none is picked.
@@ -916,6 +1082,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           (reasoningEffort != null && reasoningEffort != 'off') ? 1 : 0,
       'reasoning_effort': reasoningEffort,
       'enable_web_search': enableWebSearch ? 1 : 0,
+      // Auto stores null; a stale value is silently cleared *here* — on the
+      // user's own save, never behind their back (18a state ④ contract).
+      'wire_protocol': _activePin?.id,
       'fee_group_id': feeGroupId,
       'channel_id': channelId,
       'context_window': ContextBudget.store(contextMode, _contextSizes[contextSizeIdx.round()]),
