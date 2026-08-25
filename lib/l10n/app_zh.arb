@@ -631,6 +631,8 @@
   "protocolAsyncQueueNote": "提交后进入任务队列轮询，生成中可取消。",
   "protocolPinStale": "点单已失效",
   "protocolStaleTooltip": "原选择「{name}」不可用，正在按自动运行。",
+  "channelReorderHandleTooltip": "拖动调整顺序",
+  "channelOrderSaveFailed": "顺序未能保存，已恢复原顺序",
   "prompts": "提示词",
   "promptLibrary": "提示词库",
   "newPrompt": "新建提示词",

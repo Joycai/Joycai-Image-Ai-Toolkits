@@ -61,6 +61,7 @@ class DatabaseMigration {
     if (oldVersion < 34) await _createV34Tables(db);
     if (oldVersion < 35) await _createV35Columns(db);
     if (oldVersion < 36) await _createV36Columns(db);
+    if (oldVersion < 37) await _createV37Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -97,6 +98,7 @@ class DatabaseMigration {
     await _createV34Tables(db);
     await _createV35Columns(db);
     await _createV36Columns(db);
+    await _createV37Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -116,6 +118,34 @@ class DatabaseMigration {
   /// time rather than migrated.
   static Future<void> _createV36Columns(Database db) async {
     await _addColumnIfNotExists(db, 'llm_models', 'wire_protocol', 'TEXT');
+  }
+
+  /// User-defined channel order for the models screen's rail.
+  ///
+  /// Backfilled with `id` rather than left at the default, because the rail
+  /// used to render whatever order `SELECT * FROM llm_channels` happened to
+  /// return — rowid order in practice. Seeding the column with the id keeps
+  /// that exact arrangement, so upgrading does not silently reshuffle a list
+  /// the user has been reading by position for months. Sparse values are
+  /// fine: only the relative order matters, and the first drag rewrites the
+  /// whole column to 0..N-1.
+  static Future<void> _createV37Columns(Database db) async {
+    // Guarded on the table's existence, unlike the column steps above it:
+    // those touch `llm_models`, which every database has had since v1, while
+    // `llm_channels` only appears at v10 — and an ALTER against a table that
+    // is not there yet throws rather than being skipped.
+    if (!await _tableExists(db, 'llm_channels')) return;
+    final added = await _addColumnIfNotExists(
+        db, 'llm_channels', 'sort_order', 'INTEGER DEFAULT 0');
+    if (added) await db.execute('UPDATE llm_channels SET sort_order = id');
+  }
+
+  static Future<bool> _tableExists(Database db, String tableName) async {
+    final rows = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      [tableName],
+    );
+    return rows.isNotEmpty;
   }
 
   /// Knowledge sub-agent research notes, scoped to the assistant session that
@@ -613,11 +643,15 @@ class DatabaseMigration {
     await _addColumnIfNotExists(db, 'tasks', 'channel_color', 'INTEGER');
   }
 
-  static Future<void> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
+  /// Adds a column when the table lacks it. Returns true when the column was
+  /// actually added, so a migration can seed the new column *only* on the
+  /// upgrade that introduced it — re-running the backfill on every launch
+  /// would overwrite whatever the user has arranged since.
+  static Future<bool> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
     var tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
     bool columnExists = tableInfo.any((column) => column['name'] == columnName);
-    if (!columnExists) {
-      await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
-    }
+    if (columnExists) return false;
+    await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
+    return true;
   }
 }

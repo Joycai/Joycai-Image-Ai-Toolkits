@@ -58,7 +58,17 @@ class ModelRepository {
   // LLM Channels Methods
   Future<int> addChannel(LLMChannel channel) async {
     final db = await _db;
-    return await db.insert('llm_channels', channel.toMap(includeId: false));
+    // Append rather than inherit the column default: `LLMChannel.toMap` omits
+    // `sort_order` (it is owned by [updateChannelOrder] alone), so an
+    // untouched insert would land at 0 and put every new channel at the *top*
+    // of the rail — the opposite of where a just-added item belongs.
+    final maxRow = await db
+        .rawQuery('SELECT MAX(sort_order) AS m FROM llm_channels');
+    final maxOrder = maxRow.first['m'] as int?;
+    return await db.insert('llm_channels', {
+      ...channel.toMap(includeId: false),
+      'sort_order': (maxOrder ?? -1) + 1,
+    });
   }
 
   Future<void> updateChannel(int id, LLMChannel channel) async {
@@ -78,8 +88,24 @@ class ModelRepository {
 
   Future<List<LLMChannel>> getChannels() async {
     final db = await _db;
-    final maps = await db.query('llm_channels');
+    // `sort_order` is the user's arrangement; `id` breaks ties so channels
+    // restored from a backup written before the column existed (all zeros)
+    // still come back in creation order rather than an arbitrary one.
+    final maps = await db.query('llm_channels', orderBy: 'sort_order ASC, id ASC');
     return maps.map((m) => LLMChannel.fromMap(m)).toList();
+  }
+
+  /// Persists the rail's arrangement: [orderedIds] is the full channel list in
+  /// its new order, rewritten to a dense 0..N-1 range in one transaction so a
+  /// crash mid-write cannot leave two channels claiming the same slot.
+  Future<void> updateChannelOrder(List<int> orderedIds) async {
+    final db = await _db;
+    final batch = db.batch();
+    for (var i = 0; i < orderedIds.length; i++) {
+      batch.update('llm_channels', {'sort_order': i},
+          where: 'id = ?', whereArgs: [orderedIds[i]]);
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<LLMChannel?> getChannel(int id) async {

@@ -1415,6 +1415,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get channelReorderHandleTooltip => 'Drag to reorder';
+
+  @override
+  String get channelOrderSaveFailed =>
+      'Could not save the order; the previous one is back.';
+
+  @override
   String get prompts => 'Prompts';
 
   @override

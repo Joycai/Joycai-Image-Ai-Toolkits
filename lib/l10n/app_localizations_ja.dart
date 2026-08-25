@@ -1378,6 +1378,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get channelReorderHandleTooltip => 'ドラッグして並べ替え';
+
+  @override
+  String get channelOrderSaveFailed => '並び順を保存できませんでした。元の順序に戻しました';
+
+  @override
   String get prompts => 'プロンプト';
 
   @override

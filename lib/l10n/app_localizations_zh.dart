@@ -1362,6 +1362,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get channelReorderHandleTooltip => '拖动调整顺序';
+
+  @override
+  String get channelOrderSaveFailed => '顺序未能保存，已恢复原顺序';
+
+  @override
   String get prompts => '提示词';
 
   @override
@@ -4531,6 +4537,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String protocolStaleTooltip(String name) {
     return '原選擇「$name」不可用，正在按自動運行。';
   }
+
+  @override
+  String get channelReorderHandleTooltip => '拖動調整順序';
+
+  @override
+  String get channelOrderSaveFailed => '順序未能儲存，已恢復原順序';
 
   @override
   String get prompts => '提示';

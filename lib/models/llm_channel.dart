@@ -8,6 +8,18 @@ class LLMChannel {
   final String? tag;
   final int? tagColor;
 
+  /// Position in the channel rail, ascending. Rows are ordered by this and
+  /// then by [id], so equal values (an old backup restored without the
+  /// column) degrade to creation order — what the rail showed before it was
+  /// sortable.
+  ///
+  /// Deliberately absent from [toMap]: the order is owned by
+  /// `ModelRepository.updateChannelOrder` alone. Round-tripping it through
+  /// every edit would let the channel editor — which builds a fresh
+  /// [LLMChannel] with no idea of its position — silently reset a channel to
+  /// the top of the rail on save.
+  final int sortOrder;
+
   LLMChannel({
     this.id,
     required this.displayName,
@@ -17,6 +29,7 @@ class LLMChannel {
     this.enableDiscovery = true,
     this.tag,
     this.tagColor,
+    this.sortOrder = 0,
   });
 
   factory LLMChannel.fromMap(Map<String, dynamic> map) {
@@ -29,6 +42,7 @@ class LLMChannel {
       enableDiscovery: (map['enable_discovery'] ?? 1) == 1,
       tag: map['tag'] as String?,
       tagColor: map['tag_color'] as int?,
+      sortOrder: map['sort_order'] as int? ?? 0,
     );
   }
 

@@ -7,6 +7,8 @@
 // flutter_test_config.dart always overwrites and always passes. See
 // docs/ui-screenshot-harness.md.
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,8 +68,9 @@ void main() {
   // rather than riding the loop.
   for (final _WorkbenchTab tab in _workbenchTabs) {
     for (final Brightness brightness in Brightness.values) {
-      testWidgets('workbench · ${tab.name} @ desktop ${brightness.name}',
-          (WidgetTester tester) async {
+      testWidgets('workbench · ${tab.name} @ desktop ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
         await shoot(
           tester,
           env: env,
@@ -96,8 +99,7 @@ void main() {
   // different panel with images picked: the strip of thumbnails, the model
   // section and the action bar's count all appear only then.
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('workbench · selection @ desktop ${brightness.name}',
-        (WidgetTester tester) async {
+    testWidgets('workbench · selection @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -223,8 +225,9 @@ void main() {
   // to went unphotographed. Driven the way a user reaches it instead.
   for (final _FeeGroupShot shot in _feeGroupShots) {
     for (final Brightness brightness in Brightness.values) {
-      testWidgets('feeGroupEditor · ${shot.name} @ desktop ${brightness.name}',
-          (WidgetTester tester) async {
+      testWidgets('feeGroupEditor · ${shot.name} @ desktop ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
         await shoot(
           tester,
           env: env,
@@ -271,9 +274,9 @@ void main() {
     ('tablet', true),
   ]) {
     for (final Brightness brightness in Brightness.values) {
-      testWidgets(
-          'channelWizard @ $sizeLabel ${brightness.name}${step2 ? ' step2' : ''}',
-          (WidgetTester tester) async {
+      testWidgets('channelWizard @ $sizeLabel ${brightness.name}${step2 ? ' step2' : ''}', (
+        WidgetTester tester,
+      ) async {
         await shoot(
           tester,
           env: env,
@@ -321,8 +324,7 @@ void main() {
     ('desktop', Brightness.dark),
     ('mobile', Brightness.light),
   ]) {
-    testWidgets('channelEditor @ $sizeLabel ${brightness.name}',
-        (WidgetTester tester) async {
+    testWidgets('channelEditor @ $sizeLabel ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -364,15 +366,15 @@ void main() {
   // one control the protocol family adds or removes — exists nowhere else.
   for (final (String sizeLabel, bool newModel, Brightness brightness)
       in const <(String, bool, Brightness)>[
-    ('desktop', false, Brightness.light),
-    ('desktop', false, Brightness.dark),
-    ('desktop', true, Brightness.light),
-    ('tablet', false, Brightness.light),
-    ('mobile', false, Brightness.light),
-  ]) {
-    testWidgets(
-        'modelEditor @ $sizeLabel ${brightness.name}${newModel ? ' new' : ''}',
-        (WidgetTester tester) async {
+        ('desktop', false, Brightness.light),
+        ('desktop', false, Brightness.dark),
+        ('desktop', true, Brightness.light),
+        ('tablet', false, Brightness.light),
+        ('mobile', false, Brightness.light),
+      ]) {
+    testWidgets('modelEditor @ $sizeLabel ${brightness.name}${newModel ? ' new' : ''}', (
+      WidgetTester tester,
+    ) async {
       await shoot(
         tester,
         env: env,
@@ -403,17 +405,48 @@ void main() {
     });
   }
 
+  // The channel rail's drag handle (spec D2 19a, 方案乙). The whole argument
+  // for hover-reveal over an always-on grip is that the resting rail is
+  // untouched, so the shot that matters is the hovered one: the handle sits
+  // inside the row's existing left padding and nothing else has moved.
+  // Platform is forced to macOS because the reveal is pointer-only — on a
+  // touch platform the row is picked up by long press and never shows a
+  // handle at rest.
+  testWidgets('channelHover @ desktop light', (WidgetTester tester) async {
+    // Reset inside the body, not via addTearDown: the framework asserts that
+    // no foundation debug variable outlives the test, and tear-downs run
+    // after that check.
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    try {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: kShotSizes.firstWhere((ShotSize s) => s.label == 'desktop'),
+        brightness: Brightness.light,
+        suffix: 'channelHover',
+        after: (WidgetTester tester) async {
+          final TestGesture pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+          await pointer.addPointer(location: Offset.zero);
+          addTearDown(pointer.removePointer);
+          await pointer.moveTo(tester.getCenter(find.text('阿里云百炼')));
+          for (int i = 0; i < 4; i++) {
+            await tester.pump(const Duration(milliseconds: 60));
+          }
+        },
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   // The protocol selector (spec D2 18a state ③): the one dialog state the
   // GPT-5 shot cannot show, because only the DashScope fixture channel has a
   // menu longer than one entry. wan2.7-image is seeded pinned to the async
   // task, so this frame carries the selector, the dimmed streaming toggle
   // and the queue note in one shot.
-  for (final Brightness brightness in const <Brightness>[
-    Brightness.light,
-    Brightness.dark,
-  ]) {
-    testWidgets('modelEditor protocol @ desktop ${brightness.name}',
-        (WidgetTester tester) async {
+  for (final Brightness brightness in const <Brightness>[Brightness.light, Brightness.dark]) {
+    testWidgets('modelEditor protocol @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
@@ -451,7 +484,8 @@ class _FeeGroupShot {
   final Future<void> Function(
     WidgetTester tester,
     Future<void> Function(String label, {Finder? of}) tapText,
-  ) open;
+  )
+  open;
 }
 
 final List<_FeeGroupShot> _feeGroupShots = <_FeeGroupShot>[

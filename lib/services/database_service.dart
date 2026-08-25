@@ -53,7 +53,7 @@ class DatabaseService {
 
   /// Schema version of this build. Also stamped into full backups so a file
   /// from a newer app can be rejected instead of failing mid-restore.
-  static const int dbVersion = 36;
+  static const int dbVersion = 37;
 
   /// Settings holding absolute paths from the machine that made the backup.
   /// Excluded when the user opts out of directories.
@@ -312,6 +312,7 @@ class DatabaseService {
   Future<void> deleteChannel(int id) => ModelRepository().deleteChannel(id);    
   Future<List<LLMChannel>> getChannels() => ModelRepository().getChannels();    
   Future<LLMChannel?> getChannel(int id) => ModelRepository().getChannel(id);   
+  Future<void> updateChannelOrder(List<int> orderedIds) => ModelRepository().updateChannelOrder(orderedIds);
 
   // Prompt Tags Methods
   Future<int> addPromptTag(Map<String, dynamic> tag) => PromptRepository().addPromptTag(PromptTag.fromMap(tag));
