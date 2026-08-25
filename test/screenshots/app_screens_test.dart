@@ -402,6 +402,43 @@ void main() {
       );
     });
   }
+
+  // The protocol selector (spec D2 18a state ③): the one dialog state the
+  // GPT-5 shot cannot show, because only the DashScope fixture channel has a
+  // menu longer than one entry. wan2.7-image is seeded pinned to the async
+  // task, so this frame carries the selector, the dimmed streaming toggle
+  // and the queue note in one shot.
+  for (final Brightness brightness in const <Brightness>[
+    Brightness.light,
+    Brightness.dark,
+  ]) {
+    testWidgets('modelEditor protocol @ desktop ${brightness.name}',
+        (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.models,
+        size: kShotSizes.firstWhere((ShotSize s) => s.label == 'desktop'),
+        brightness: brightness,
+        suffix: 'editorProtocol',
+        after: (WidgetTester tester) async {
+          Future<bool> tapText(String label) async {
+            final Finder finder = find.text(label);
+            if (finder.evaluate().isEmpty) return false;
+            await tester.tap(finder.first, warnIfMissed: false);
+            for (int i = 0; i < 5; i++) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+            return true;
+          }
+
+          await tapText('渠道管理');
+          await tapText('阿里云百炼');
+          await tapText('万相 2.7 图像');
+        },
+      );
+    });
+  }
 }
 
 class _FeeGroupShot {

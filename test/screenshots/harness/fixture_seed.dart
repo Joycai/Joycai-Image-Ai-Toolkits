@@ -127,6 +127,18 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
     tagColor: 0xFF00897B,
   ).toMap(includeId: false));
 
+  // The one multi-face vendor (D2 17/18): its models exercise the protocol
+  // menu, the pinned-protocol chip and the channel capability subline —
+  // nothing else in the fixture has a menu longer than one entry.
+  final int dashscopeId = await db.addChannel(LLMChannel(
+    displayName: '阿里云百炼',
+    endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKey: 'fixture-key-dashscope',
+    type: Vendors.dashscope,
+    tag: '官方',
+    tagColor: 0xFFFF6A00,
+  ).toMap(includeId: false));
+
   final int flashFee = await db.addPricingGroup(PricingGroup(
     name: 'Gemini Flash',
     inputPrice: 0.075,
@@ -190,6 +202,34 @@ Future<_Catalog> _seedCatalog(DatabaseService db) async {
       feeGroupId: proFee,
       contextWindow: 400000,
       sortOrder: 4,
+    ),
+    LLMModel(
+      modelId: 'qwen-max',
+      modelName: '通义千问 Max',
+      tag: ModelTag.chat.value,
+      channelId: dashscopeId,
+      feeGroupId: flashFee,
+      contextWindow: 131072,
+      sortOrder: 5,
+    ),
+    // Pinned to the async task route — the card grows the primary-tinted
+    // protocol chip (18b) and the editor opens in state ③ (18a).
+    LLMModel(
+      modelId: 'wan2.7-image',
+      modelName: '万相 2.7 图像',
+      tag: ModelTag.image.value,
+      channelId: dashscopeId,
+      feeGroupId: perImageFee,
+      wireProtocol: 'dashscope-images-async',
+      sortOrder: 6,
+    ),
+    LLMModel(
+      modelId: 'wan3.0-video',
+      modelName: '万相 3.0 视频',
+      tag: ModelTag.video.value,
+      channelId: dashscopeId,
+      feeGroupId: perImageFee,
+      sortOrder: 7,
     ),
   ];
 

@@ -25,6 +25,51 @@ library;
 ///   messages, typed SSE events.
 enum ProtocolFamily { openai, gemini, midjourney, anthropic }
 
+/// The call surface a request belongs to. A protocol serves exactly one
+/// surface; a vendor may offer more than one protocol per surface (the menus
+/// on [VendorProfile]), and a model may pick one of them
+/// (`llm_models.wire_protocol`).
+enum Surface { chat, imageGen, videoJob }
+
+/// One concrete wire-protocol implementation the dispatcher can route to —
+/// the unit of the per-surface menus below and of the per-model selection
+/// stored in `llm_models.wire_protocol`.
+///
+/// [id] is the stable string stored in the database; renaming an enum value
+/// is free, renaming an [id] is a data migration. Values are scarce on
+/// purpose: only an implemented protocol earns one, so a stored id always
+/// resolves to code that exists.
+enum WireProtocol {
+  openaiChat('openai-chat', Surface.chat),
+  anthropicChat('anthropic-chat', Surface.chat),
+  geminiChat('gemini-chat', Surface.chat),
+  midjourney('midjourney', Surface.chat),
+  openaiImages('openai-images', Surface.imageGen),
+  xaiImages('xai-images', Surface.imageGen),
+  geminiImagen('gemini-imagen', Surface.imageGen),
+  dashscopeImagesSync('dashscope-images-sync', Surface.imageGen),
+  dashscopeImagesAsync('dashscope-images-async', Surface.imageGen),
+  openaiVideos('openai-videos', Surface.videoJob),
+  xaiVideos('xai-videos', Surface.videoJob),
+  geminiVeo('gemini-veo', Surface.videoJob),
+  dashscopeVideo('dashscope-video', Surface.videoJob);
+
+  final String id;
+  final Surface surface;
+  const WireProtocol(this.id, this.surface);
+
+  /// The enum value a stored id names, or null for an unknown/legacy string —
+  /// callers treat null as "auto", never as an error, so a database written
+  /// by a newer build degrades to today's routing instead of failing.
+  static WireProtocol? tryParse(String? id) {
+    if (id == null || id.isEmpty) return null;
+    for (final p in values) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+}
+
 /// The `anthropic-version` every Anthropic-shaped request must carry.
 ///
 /// Required by Anthropic's own host and by New API's relay of it; MiniMax's
@@ -99,19 +144,42 @@ class VendorProfile {
 
   final AuthScheme auth;
 
-  /// True for vendors exposing xAI's native JSON surfaces: image generation
-  /// via `/images/generations|edits` (JSON, not multipart) and async video
-  /// via `/videos/generations` → `GET /videos/{request_id}`. The dispatcher
-  /// swaps the family-default image/video protocols for the xAI ones.
-  final bool usesXaiNativeSurfaces;
+  /// The chat-surface protocols this vendor serves beyond its [family]
+  /// default, first entry first. Empty for the common single-face vendor —
+  /// the dispatcher then routes by [family] exactly as before this field
+  /// existed.
+  ///
+  /// A non-empty menu makes the *first* entry the vendor's chat default and
+  /// the rest per-model alternates (`llm_models.wire_protocol`). More than
+  /// one entry is what surfaces the protocol selector in the model editor;
+  /// a single-entry menu renders no UI at all.
+  final List<WireProtocol> chatMenu;
 
-  /// True for vendors serving Alibaba DashScope's *native* image surface
-  /// (`/api/v1/services/aigc/...`) alongside the OpenAI-compatible chat one.
-  /// The dispatcher swaps the family-default image protocol for the
-  /// DashScope one; on any other vendor the same models keep their existing
-  /// route (chat), because a relay that lists `qwen-image` is serving it
-  /// through its own compatibility layer, not through this surface.
-  final bool usesDashScopeNativeImages;
+  /// The vendor-native image protocols serving the model families the
+  /// dispatcher routes here (xAI's JSON surface, DashScope's native
+  /// surface). Empty everywhere else — a relay listing `qwen-image` keeps
+  /// its chat route, because the relay serves it through its own
+  /// compatibility layer, not through these surfaces.
+  ///
+  /// First entry is the default; additional entries are per-model alternates
+  /// (DashScope's sync/async pair), gated further by what the concrete model
+  /// supports (layer 3).
+  final List<WireProtocol> imageMenu;
+
+  /// The vendor-native async-video protocol replacing the family default
+  /// (`openaiVideos` / `geminiVeo`), or null to keep the family default.
+  final WireProtocol? videoProtocol;
+
+  /// Base-URL derivations for *generic* protocols this vendor serves on an
+  /// alternate face — e.g. DashScope's Anthropic-compatible chat lives under
+  /// `/apps/anthropic/v1` while the channel stores the compatible-mode base.
+  /// The dispatcher rewrites the target's endpoint through this before
+  /// handing it to the protocol, so the protocol itself stays vendor-blind.
+  ///
+  /// Vendor-specific protocols (the DashScope image/video ones) are not
+  /// listed here: their path shape is the protocol's own knowledge and they
+  /// derive it internally.
+  final Map<WireProtocol, String Function(String endpoint)> protocolBases;
 
   /// Which `thinking` spelling this vendor understands, for the ④ surface.
   /// [ThinkingDialect.none] on every other family.
@@ -143,12 +211,39 @@ class VendorProfile {
     required this.id,
     required this.family,
     required this.auth,
-    this.usesXaiNativeSurfaces = false,
-    this.usesDashScopeNativeImages = false,
+    this.chatMenu = const [],
+    this.imageMenu = const [],
+    this.videoProtocol,
+    this.protocolBases = const {},
     this.thinking = ThinkingDialect.none,
     this.promptCaching = false,
     this.keyOptional = false,
   });
+
+  /// The menu of protocols this vendor offers for [surface], honoring the
+  /// family default when no explicit menu is declared. This is what the
+  /// model editor renders (further intersected with what the concrete model
+  /// supports — layer 3's business, applied by the dispatcher).
+  List<WireProtocol> menuFor(Surface surface) {
+    switch (surface) {
+      case Surface.chat:
+        if (chatMenu.isNotEmpty) return chatMenu;
+        switch (family) {
+          case ProtocolFamily.openai:
+            return const [WireProtocol.openaiChat];
+          case ProtocolFamily.gemini:
+            return const [WireProtocol.geminiChat];
+          case ProtocolFamily.anthropic:
+            return const [WireProtocol.anthropicChat];
+          case ProtocolFamily.midjourney:
+            return const [WireProtocol.midjourney];
+        }
+      case Surface.imageGen:
+        return imageMenu;
+      case Surface.videoJob:
+        return videoProtocol == null ? const [] : [videoProtocol!];
+    }
+  }
 
   /// Request headers for this vendor. [endpoint] is needed because
   /// [AuthScheme.googleApiKeyWithBearerFallback] keys off the endpoint host.

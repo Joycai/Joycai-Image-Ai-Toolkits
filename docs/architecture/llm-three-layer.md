@@ -21,8 +21,8 @@
 
 | 层 | 回答的问题 | 代码 |
 |----|-----------|------|
-| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_images |
-| **2 Vendor** | 谁在提供这个格式：认证方式、是否用厂商私有 surface | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（11 个 profile，id 即 `llm_channels.type`） |
+| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_images · dashscope_images_async · dashscope_video |
+| **2 Vendor** | 谁在提供这个格式：认证方式、每个 surface 的协议菜单 | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（id 即 `llm_channels.type`） |
 | **3 Model** | 这个模型是什么：family 分类、能力、参数表 | `model_descriptor.dart`（包装 `model_family.dart` + `model_capabilities.dart`） |
 
 协议家族（`ProtocolFamily`）有四个：`openai`（chat/completions 及其姊妹
@@ -38,6 +38,36 @@ xAI 的 JSON images/videos surface 是 openai 家族下由 vendor 选择的替�
 ④ 没有可选的。**"新增协议家族要不要动 Layer 3"的判断标准是"这个家族内部要不要
 按模型分流"，不是"这个家族新不新"。**
 
+## Surface × 协议菜单与模型级点单（2026-08 多面供应商重构）
+
+> 完整设计与取舍见
+> [`docs/plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)；
+> 协议事实见 [`docs/api/qianwen-bailian.md`](../api/qianwen-bailian.md)。
+
+百炼一家在同一 surface 上有多条 wire 且**与模型耦合**（qwen-image 仅同步、
+wan2.7 同步异步皆可、④ 兼容面只服务子集），"vendor 固定一个 family + 布尔
+surface 开关"表达不了它。绑定关系升级为：
+
+- **`WireProtocol`**（`vendor_profile.dart`）：每个值 = 一个已实现的协议 +
+  它的 `Surface`（chat / imageGen / videoJob）+ 稳定 `id` 字符串（存库）。
+  **枚举值稀缺**：只有已实现的协议配拥有一个，存了的 id 永远解析得到代码。
+- **`VendorProfile` 的菜单字段**：`chatMenu`（首项为默认，>1 项才出 UI）、
+  `imageMenu`（同前）、`videoProtocol`（原生视频面，替代家族默认）、
+  `protocolBases`（**通用**协议在替代面上的 base 推导 —— dashscope 的 ④ 面
+  复用 `AnthropicChatProtocol`，路径由 vendor 声明推导，协议保持 vendor-blind；
+  **vendor 专属**协议自己推导 base，不进这张表）。原来的
+  `usesXaiNativeSurfaces` / `usesDashScopeNativeImages` 两个布尔已删除。
+- **`llm_models.wire_protocol`**（v36，可空 = auto）：模型级点单。不是可推导
+  副本（v32 教训不适用）——与 `enable_thinking` 同性质的用户配置。
+- **解析顺序**（全部在 dispatcher）：模型点单（合法时）→ vendor 该 surface
+  默认 → 家族推断。点单失效（通道换供应商、未知 id、模型不支持）**静默回退
+  auto**，由 UI 展示而非路由报错；用户下次保存时清空。
+- **单点查询**：菜单/失效判定只经 `LLMDispatcher.protocolMenuFor` /
+  `isStaleProtocolSelection` / `surfaceForModel`（UI 与路由共用，static）。
+  `wire_protocol` 列只由 `LLMConfigResolver` 读取。
+- **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
+  (vendor, model) 组合仍解析到同一条路"。
+
 ## 分层纪律（违反会静默腐化）
 
 1. **只有 `ModelDescriptor` 允许嗅探 modelId。**
@@ -45,7 +75,7 @@ xAI 的 JSON images/videos surface 是 openai 家族下由 vendor 选择的替�
    协议和 vendor 拿到的是解析好的 descriptor，绝不自己 `contains('gemini')`。
 2. **协议不认识 vendor。** 协议从 `LLMTarget` 拿 `headers()` / `decorateUrl()`
    做认证，此外不得出现任何 `vendor.id == ...` 分支。厂商差异要么是
-   `VendorProfile` 上的声明式字段（如 `usesXaiNativeSurfaces`），要么是一个
+   `VendorProfile` 上的声明式字段（如 surface 菜单 `imageMenu`），要么是一个
    独立协议实现，由 dispatcher 选择。
 3. **所有路由 `if` 只住在 `llm_dispatcher.dart`。** 重构前散在
    provider 里的每一条规则（gpt-image 走 Images API、xAI 渠道换 video
@@ -94,7 +124,9 @@ review 时用下面的模式全仓库 grep 一遍即可：
 | 红线模式（grep） | 为什么禁止 | 正确位置 |
 |----------------|-----------|---------|
 | `modelId.contains(` / `modelId.startsWith(` / `id.contains(` 出现在 `model_family.dart`、`model_capabilities.dart`、`model_descriptor.dart` 之外 | 模型分类只能有一个事实来源；散点嗅探曾导致 30+ 条规则互相踩（顺序敏感、改一处漏一处） | 加进 `ModelFamilyClassifier` 的规则表（含 `isNijiVariant` / `isTextOnlyChat` / `isMockModel` 这类具名谓词），消费方读 `ModelDescriptor.of(id)` |
-| `vendor.id ==` 任何位置 | 协议一旦认识具体厂商，厂商差异就会重新散落 | `VendorProfile` 加声明式字段（参考 `usesXaiNativeSurfaces`），dispatcher 据此选协议 |
+| `vendor.id ==` 任何位置 | 协议一旦认识具体厂商，厂商差异就会重新散落 | `VendorProfile` 加声明式字段（surface 菜单 / `protocolBases` / `thinking`），dispatcher 据此选协议 |
+| `if (protocol == ...)` 路由分支出现在 `llm_dispatcher.dart` 之外；UI 自拼协议 id 字符串 | 协议解析必须单点可审计；裸字符串拼错静默失效 | 菜单与失效判定读 `LLMDispatcher.protocolMenuFor` 等 static 查询；显示名走 `wire_protocol_labels.dart` 的唯一映射表 |
+| `llm_models.wire_protocol` 在 `LLMConfigResolver` 之外被读取 | 点单是偏好不是路由事实，多个读取点会各自发明失效语义 | 列 → resolver → `LLMModelConfig.wireProtocol` → dispatcher 消费，一条线 |
 | `channelType ==` / `channel.type ==` 出现在 `vendors/`、`llm_dispatcher.dart` 之外 | 这是重构前 `isXai`/`isNewApiGemini` 散点判断的复活形态 | 语义抬升为 `Vendors.byId(...)` 后读 profile 字段 |
 | UI/state 里出现 `'openai-api-rest'` 这类裸字符串字面量 | 拼错静默失效；重命名时漏改（`Vendors.byId` 对未知 id 静默回退 openAIRest，错拼永远不报错） | 引用 `Vendors.openAIRest` 等常量。**两条豁免**：`database_migrations.dart`（迁移代码按当时的字面量冻结，改成常量反而会让未来的常量重命名悄悄改写历史迁移）；`channel_provider_presets.dart` 的 `ChannelProviderPreset.id`（那是向导自己的预设命名空间，与 vendor id 拼写雷同但语义无关——真正进 `llm_channels.type` 的是 `preset.channelType` 字段，它已全部引用 `Vendors.*`） |
 | `if (family == ...)` 路由分支出现在 `llm_dispatcher.dart` 和 Layer 3 之外 | 路由规则必须单点可审计 | 挪进 dispatcher 对应 switch，加注释说明规则来源 |

@@ -65,12 +65,21 @@ extension TaskExecutors on TaskQueueService {
     List<Uint8List> generatedImages = [];
     final actualUseStream = await _shouldUseStream(task);
 
+    // A fresh map, not a mutation of task.parameters: the probe is a function
+    // value and task.parameters is persisted as JSON. Only the async image
+    // task loop reads it — a cancelled task stops polling within ~1 s instead
+    // of riding the job out.
+    final requestOptions = <String, dynamic>{
+      ...task.parameters,
+      llmCancellationProbeKey: () => task.status == TaskStatus.cancelled,
+    };
+
     if (actualUseStream) {
       final stream = LLMService().requestStream(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
         contextId: task.id,
-        options: task.parameters,
+        options: requestOptions,
       );
 
       await for (final chunk in stream) {
@@ -92,7 +101,7 @@ extension TaskExecutors on TaskQueueService {
       final response = await LLMService().request(
         modelIdentifier: task.modelDbId ?? task.modelId,
         messages: messages,
-        options: task.parameters,
+        options: requestOptions,
         useStream: false,
       );
 

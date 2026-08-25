@@ -12,6 +12,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/database_service.dart';
 import '../../services/llm/context_budget.dart';
+import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/llm_types.dart';
 import '../../state/app_state.dart';
 import '../../widgets/models/channel_avatar.dart';
@@ -24,6 +25,7 @@ import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
+import '../../widgets/models/wire_protocol_labels.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/pricing_group_manager.dart';
 import '../../widgets/scroll_edge_fade.dart';
@@ -377,12 +379,18 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         ],
                       ),
                       const SizedBox(height: 2),
+                      // The capability subline (18c): model count + the faces
+                      // the channel's models actually use, in fixed order.
+                      // Plain type, not mono — it is prose now, no longer a
+                      // vendor-id string (that stays on the detail header and
+                      // in the channel editor for troubleshooting).
                       Text(
-                        '${l10n.countModels(models.length)} · ${channel.type}',
-                        style: textTheme.labelMedium?.mono.copyWith(
+                        _channelSubline(l10n, models),
+                        style: textTheme.labelMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colorScheme.onSurfaceVariant,
                         ),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -727,7 +735,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       builder: (context, constraints) {
         final columns = constraints.maxWidth > 800 ? 2 : 1;
         final cells = <Widget>[
-          for (final m in visible) _buildModelCard(m, l10n, appState),
+          for (final m in visible) _buildModelCard(m, l10n, appState, channel),
           _buildAddModelCard(l10n, appState, channel),
         ];
 
@@ -760,7 +768,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// dialog settles — context, capabilities, reasoning, fee group — laid on
   /// the card, so what a model is configured to do is readable without
   /// opening it.
-  Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState) {
+  Widget _buildModelCard(LLMModel model, AppLocalizations l10n, AppState appState, LLMChannel channel) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final pricingGroup = appState.allPricingGroups
@@ -851,6 +859,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
                           ),
                         if (model.forceViewAllImages)
                           _specChip(l10n.viewAllImagesChip),
+                        // Pinned-protocol chip (18b): after the capability
+                        // chips, before the fee group. Absent on auto — four
+                        // of six cards stay exactly as before.
+                        ?_protocolPinChip(l10n, channel, model),
                       ],
                     ),
                   ),
@@ -873,6 +885,49 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// The channel-card subline (18c): `N 个模型 · 面 · 面 · 面`, faces drawn
+  /// from the channel's models' actual kinds in the fixed chat → image →
+  /// video → multimodal order. Zero models degrades to the count alone.
+  String _channelSubline(AppLocalizations l10n, List<LLMModel> models) {
+    final present = models.map((m) => m.tag).toSet();
+    final faces = [
+      if (present.contains('chat')) l10n.kindChat,
+      if (present.contains('image')) l10n.kindImage,
+      if (present.contains('video')) l10n.kindVideo,
+      if (present.contains('multimodal')) l10n.kindMultimodal,
+    ];
+    final count = l10n.countModels(models.length);
+    return faces.isEmpty ? count : '$count · ${faces.join(' · ')}';
+  }
+
+  /// The pinned-protocol chip (18b, tier 2): visible only when a model has an
+  /// explicit selection. Valid → primary-tinted chip naming the protocol;
+  /// stale → outlined neutral chip ("selection inactive") with the reason in
+  /// a tooltip — helper tone, not a warning, because the model still runs.
+  Widget? _protocolPinChip(
+      AppLocalizations l10n, LLMChannel channel, LLMModel model) {
+    final pin = model.wireProtocol;
+    if (pin == null || pin.isEmpty) return null;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (LLMDispatcher.isStaleProtocolSelection(
+        channel.type, model.modelId, pin)) {
+      return Tooltip(
+        message: l10n.protocolStaleTooltip(storedProtocolLabel(l10n, pin)),
+        child: _specChip(
+          l10n.protocolPinStale,
+          fg: colorScheme.outline,
+          outlined: true,
+        ),
+      );
+    }
+    return _specChip(
+      storedProtocolLabel(l10n, pin),
+      bg: colorScheme.primary.withValues(alpha: 0.10),
+      fg: colorScheme.primary,
     );
   }
 
@@ -963,7 +1018,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
           child: ExpansionTile(
             leading: ChannelAvatar(channel),
             title: Text(channel.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(l10n.countModels(models.length),
+            // Same capability subline as the desktop channel rail (18e: the
+            // subline rides up into the tile header on narrow screens).
+            subtitle: Text(_channelSubline(l10n, models),
                 style: Theme.of(context).textTheme.bodySmall?.metricsOnly),
             children: [
               if (models.isEmpty)

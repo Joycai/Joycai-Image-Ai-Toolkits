@@ -21,14 +21,41 @@ import 'protocol.dart';
 /// host, or either with trailing slashes, all resolve to the same base. The
 /// rule keys off the *path* only, so the international host works too.
 String dashscopeNativeBase(String endpoint) {
+  var base = _dashscopeHostBase(endpoint);
+  return base.endsWith('/api/v1') ? base : '$base/api/v1';
+}
+
+/// The Anthropic-compatible base a channel's endpoint implies
+/// (`…/apps/anthropic/v1`, serving `POST /messages`).
+///
+/// Same contract as [dashscopeNativeBase]: derived from the stored
+/// compatible-mode endpoint so one channel serves the ④ face too, idempotent,
+/// path-only (the international host works unchanged). Note the documented
+/// SDK base is `…/apps/anthropic` *without* `/v1` — this returns the full
+/// `/v1` base because the ④ protocol appends only `/messages`.
+String dashscopeAnthropicBase(String endpoint) {
+  var base = _dashscopeHostBase(endpoint);
+  if (base.endsWith('/apps/anthropic/v1')) return base;
+  if (base.endsWith('/apps/anthropic')) return '$base/v1';
+  return '$base/apps/anthropic/v1';
+}
+
+/// The bare host base with any known DashScope face suffix stripped.
+String _dashscopeHostBase(String endpoint) {
   var base = trimBaseUrl(endpoint);
-  for (final suffix in const ['/compatible-mode/v1', '/compatible-mode']) {
+  for (final suffix in const [
+    '/compatible-mode/v1',
+    '/compatible-mode',
+    '/apps/anthropic/v1',
+    '/apps/anthropic',
+    '/api/v1',
+  ]) {
     if (base.endsWith(suffix)) {
       base = trimBaseUrl(base.substring(0, base.length - suffix.length));
       break;
     }
   }
-  return base.endsWith('/api/v1') ? base : '$base/api/v1';
+  return base;
 }
 
 /// The size string for this request, in DashScope's spelling, or null when

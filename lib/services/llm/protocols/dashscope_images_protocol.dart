@@ -113,7 +113,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       final refs = dashscopeImageRefs(data);
       final images = <Uint8List>[];
       for (final ref in refs) {
-        final bytes = await _resolveImage(ref, client, logger);
+        final bytes = await resolveDashScopeImageRef(ref, client, logger);
         if (bytes != null) images.add(bytes);
       }
 
@@ -143,49 +143,57 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     }
   }
 
-  /// Turn one response reference into bytes.
-  ///
-  /// The endpoint answers with a signed object-storage URL that expires, so
-  /// the bytes are fetched here rather than handed onward as a link — a
-  /// gallery holding those links is empty a day later. The GET carries no
-  /// auth header: the signature is in the URL, and the API key has no meaning
-  /// at that host.
-  Future<Uint8List?> _resolveImage(
-    String ref,
-    http.Client client,
-    LLMLogger? logger,
-  ) async {
-    if (ref.startsWith('data:')) {
-      final comma = ref.indexOf(',');
-      if (comma < 0) return null;
-      try {
-        return base64Decode(ref.substring(comma + 1));
-      } catch (e) {
-        logger?.call('Failed to decode inline image: $e', level: 'WARN');
-        return null;
-      }
-    }
-
-    try {
-      final resp = await client.get(Uri.parse(ref));
-      if (resp.statusCode == 200) return resp.bodyBytes;
-      logger?.call('Image URL returned ${resp.statusCode}: $ref', level: 'WARN');
-    } catch (e) {
-      logger?.call('Failed to fetch image URL: $e', level: 'WARN');
-    }
-    return null;
-  }
-
   /// The payload with reference images replaced by a count — a base64 image
   /// is megabytes of noise in a debug log that exists to be read.
-  Map<String, dynamic> _payloadForLog(Map<String, dynamic> payload, int refs) {
-    if (refs == 0) return payload;
-    final note = '[messages with $refs inline reference image(s)]';
-    return {
-      for (final entry in payload.entries)
-        entry.key: (entry.key == 'input' || entry.key == 'messages')
-            ? note
-            : entry.value,
-    };
+  Map<String, dynamic> _payloadForLog(Map<String, dynamic> payload, int refs) =>
+      dashscopePayloadForLog(payload, refs);
+}
+
+/// Turn one response reference into bytes.
+///
+/// The endpoint answers with a signed object-storage URL that expires, so
+/// the bytes are fetched here rather than handed onward as a link — a
+/// gallery holding those links is empty a day later. The GET carries no
+/// auth header: the signature is in the URL, and the API key has no meaning
+/// at that host.
+///
+/// Top-level rather than a method so the async-task protocol shares the one
+/// implementation.
+Future<Uint8List?> resolveDashScopeImageRef(
+  String ref,
+  http.Client client,
+  LLMLogger? logger,
+) async {
+  if (ref.startsWith('data:')) {
+    final comma = ref.indexOf(',');
+    if (comma < 0) return null;
+    try {
+      return base64Decode(ref.substring(comma + 1));
+    } catch (e) {
+      logger?.call('Failed to decode inline image: $e', level: 'WARN');
+      return null;
+    }
   }
+
+  try {
+    final resp = await client.get(Uri.parse(ref));
+    if (resp.statusCode == 200) return resp.bodyBytes;
+    logger?.call('Image URL returned ${resp.statusCode}: $ref', level: 'WARN');
+  } catch (e) {
+    logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+  }
+  return null;
+}
+
+/// The payload with reference images replaced by a count, safe for logs.
+Map<String, dynamic> dashscopePayloadForLog(
+    Map<String, dynamic> payload, int refs) {
+  if (refs == 0) return payload;
+  final note = '[messages with $refs inline reference image(s)]';
+  return {
+    for (final entry in payload.entries)
+      entry.key: (entry.key == 'input' || entry.key == 'messages')
+          ? note
+          : entry.value,
+  };
 }

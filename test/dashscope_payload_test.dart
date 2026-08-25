@@ -284,8 +284,9 @@ void main() {
         );
 
     test('only the DashScope vendor claims the native image surface', () {
-      expect(Vendors.byId(Vendors.dashscope).usesDashScopeNativeImages, isTrue);
-      expect(Vendors.byId(Vendors.newApiOpenAI).usesDashScopeNativeImages, isFalse);
+      expect(Vendors.byId(Vendors.dashscope).imageMenu,
+          contains(WireProtocol.dashscopeImagesSync));
+      expect(Vendors.byId(Vendors.newApiOpenAI).imageMenu, isEmpty);
     });
 
     test('a synchronous image request outlives a chat completion', () {

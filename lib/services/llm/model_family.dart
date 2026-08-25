@@ -80,9 +80,26 @@ class ModelFamilyClassifier {
     // --- DashScope native image models ---
     // Must precede the video block, which claims `wan2.5*` wholesale. The
     // same trick for 2.7 (`startsWith('wan2.7')`) would swallow a future
-    // `wan2.7-t2v`, so this rule names `-image` and claims nothing else.
-    if (id.startsWith('qwen-image') || id.startsWith('wan2.7-image')) {
+    // `wan2.7-t2v`, so these rules name `-image` and claim nothing else.
+    // wan2.6 has not surfaced in any official model enum yet
+    // (docs/api/qianwen-bailian.md §7) — the rule is parked here so the id
+    // routes correctly the day it appears.
+    if (id.startsWith('qwen-image') ||
+        id.startsWith('wan2.6-image') ||
+        id.startsWith('wan2.7-image')) {
       return ModelFamily.dashscopeImage;
+    }
+
+    // --- DashScope native video (wan3.x, async-task only) ---
+    // `wan3.0-video(-prime)` matches none of the rules below (`wan2.5*`,
+    // `wan-*`, `-t2v`/`-i2v`), so it needs its own — placed with the video
+    // block and spelled `wan3` + `-video` so a future `wan3.x-image` is not
+    // swallowed. Classifies into [ModelFamily.openaiVideo] ("this is an
+    // async video-task model"); *which* video protocol serves it is the
+    // vendor's declaration (`videoProtocol`), so on a relay the same id
+    // keeps the `/v1/videos` route.
+    if (id.startsWith('wan3') && id.contains('-video')) {
+      return ModelFamily.openaiVideo;
     }
 
     // --- OpenAI-compatible video (Sora-style /v1/videos) ---

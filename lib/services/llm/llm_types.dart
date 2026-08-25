@@ -40,6 +40,19 @@ enum ReasoningEffort {
 /// it fished the first three-digit number out of `e.toString()` with a regex,
 /// which read "retry after 500ms" in an error body as a server error — and
 /// missed real 5xxs whose message led with some other number.
+/// Option key for the caller's cancellation probe: a `bool Function()` that
+/// returns true once the surrounding task has been cancelled.
+///
+/// Single-request protocols never look at it — one HTTP call has no
+/// checkpoint to stop at — but a protocol that hides an async task loop
+/// behind the synchronous surface (DashScope's image task flow) polls for
+/// minutes and must stop within seconds of the user pressing stop. Passed
+/// through `options` because that is the only channel an executor already
+/// has to a protocol; the value is a function, so the map carrying it must
+/// never be persisted or JSON-encoded (executors build a fresh map at the
+/// call site).
+const String llmCancellationProbeKey = 'isCancelled';
+
 class LLMApiException implements Exception {
   final String message;
 
@@ -374,6 +387,13 @@ class LLMModelConfig {
   /// Per-model opt-in: let the host run its own web searches during a turn.
   final bool enableWebSearch;
 
+  /// The model's explicit wire-protocol selection (`llm_models.wire_protocol`
+  /// verbatim), or null for "auto". Stored as the raw string — the dispatcher
+  /// parses and validates it against the vendor's menu, so a value written by
+  /// a newer build, or one stranded by a channel-type change, degrades to
+  /// auto instead of failing (and survives a save/restore round-trip intact).
+  final String? wireProtocol;
+
   final double inputFee;
 
   /// Rate for cached input tokens, or null when the fee group leaves it unset —
@@ -399,6 +419,7 @@ class LLMModelConfig {
     this.enableThinking = false,
     this.reasoningEffort,
     this.enableWebSearch = false,
+    this.wireProtocol,
     this.inputFee = 0.0,
     this.cacheInputFee,
     this.outputFee = 0.0,
@@ -409,6 +430,32 @@ class LLMModelConfig {
     this.proxyUsername,
     this.proxyPassword,
   }) : endpoint = normalizeEndpoint(endpoint);
+
+  /// This config pointed at a different base URL — used by the dispatcher
+  /// when a vendor serves a *generic* protocol on an alternate face (e.g.
+  /// DashScope's Anthropic-compatible chat under `/apps/anthropic/v1`), so
+  /// the protocol itself stays vendor-blind. Everything else is carried over
+  /// verbatim.
+  LLMModelConfig withEndpoint(String newEndpoint) => LLMModelConfig(
+        id: id,
+        modelId: modelId,
+        channelType: channelType,
+        endpoint: newEndpoint,
+        apiKey: apiKey,
+        enableThinking: enableThinking,
+        reasoningEffort: reasoningEffort,
+        enableWebSearch: enableWebSearch,
+        wireProtocol: wireProtocol,
+        inputFee: inputFee,
+        cacheInputFee: cacheInputFee,
+        outputFee: outputFee,
+        billingMode: billingMode,
+        requestFee: requestFee,
+        proxyEnabled: proxyEnabled,
+        proxyUrl: proxyUrl,
+        proxyUsername: proxyUsername,
+        proxyPassword: proxyPassword,
+      );
 
   /// Strips surrounding whitespace and trailing slashes from a base URL.
   /// See [endpoint].
