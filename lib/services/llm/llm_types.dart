@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
@@ -423,7 +423,36 @@ class LLMModelConfig {
   /// Rate actually charged per cached input token.
   double get effectiveCacheInputFee => cacheInputFee ?? inputFee;
 
-  http.Client createClient() {
+  /// A client for this channel, shared with every other request that would
+  /// open the same connection.
+  ///
+  /// A client per request is a TCP connection per request, which means a TLS
+  /// handshake and a fresh slow-start ramp for every upload — paid a dozen or
+  /// more times in a single agent turn, against a host that is usually far
+  /// away.
+  ///
+  /// The returned handle's `close()` does nothing: ownership stays with
+  /// [LLMClientPool]. Every protocol closes its client in a `finally`, which
+  /// is right for a private client and fatal for a shared one, and swallowing
+  /// the call is safer than teaching twenty-seven call sites the difference.
+  http.Client createClient() => LLMClientPool.take(this);
+
+  /// Everything that determines which connection a request opens.
+  ///
+  /// The API key is deliberately absent: it travels as a header, so two
+  /// channels with different keys against the same endpoint can share a
+  /// connection. Endpoint and proxy are what cannot be shared.
+  ///
+  /// Being derived rather than stored is what removes the invalidation
+  /// problem: edit a channel's endpoint and the next request simply computes
+  /// a different key and takes a different client.
+  String get connectionKey => proxyEnabled && (proxyUrl?.isNotEmpty ?? false)
+      ? '$endpoint|$proxyUrl|$proxyUsername|$proxyPassword'
+      : endpoint;
+
+  /// Builds the underlying client this config needs. Called by
+  /// [LLMClientPool] on a miss, never directly.
+  http.Client buildClient() {
     if (!proxyEnabled || proxyUrl == null || proxyUrl!.isEmpty) {
       return http.Client();
     }
@@ -449,6 +478,68 @@ class LLMModelConfig {
 
     return IOClient(httpClient);
   }
+}
+
+/// Keeps one live [http.Client] per distinct connection, so requests to the
+/// same endpoint reuse the same sockets.
+///
+/// Deliberately keyed and capped rather than lifecycle-managed. There is no
+/// "channel was edited" hook to forget to call: a changed endpoint or proxy
+/// is a changed [LLMModelConfig.connectionKey], and the stale entry ages out
+/// of the cap on its own.
+class LLMClientPool {
+  /// Small on purpose — a user has a handful of channels, and an entry holds
+  /// open sockets. Past this the least-recently-taken client is closed.
+  static const int _maxClients = 8;
+
+  /// Insertion-ordered, and re-inserted on every hit, so `keys.first` is the
+  /// least recently used.
+  static final Map<String, http.Client> _clients = {};
+
+  static http.Client take(LLMModelConfig config) {
+    final key = config.connectionKey;
+    final cached = _clients.remove(key);
+    if (cached != null) {
+      _clients[key] = cached; // Re-inserted: now the most recently used.
+      return _SharedClient(cached);
+    }
+
+    while (_clients.length >= _maxClients) {
+      final oldest = _clients.keys.first;
+      _clients.remove(oldest)?.close();
+    }
+
+    final client = config.buildClient();
+    _clients[key] = client;
+    return _SharedClient(client);
+  }
+
+  /// Closes every pooled client. For tests and shutdown; nothing in a normal
+  /// session needs to call it.
+  static void disposeAll() {
+    for (final client in _clients.values) {
+      client.close();
+    }
+    _clients.clear();
+  }
+
+  @visibleForTesting
+  static int get liveClients => _clients.length;
+}
+
+/// A pooled client handle whose [close] is a no-op — see
+/// [LLMModelConfig.createClient].
+class _SharedClient extends http.BaseClient {
+  final http.Client _inner;
+
+  _SharedClient(this._inner);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _inner.send(request);
+
+  @override
+  void close() {}
 }
 
 class LLMResponse {
