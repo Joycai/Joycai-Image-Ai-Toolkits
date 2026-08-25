@@ -132,15 +132,43 @@ void main() {
     });
   }
 
-  // The floating task capsule, opened. It is only on screen while the queue
-  // has work and the workbench is not, and its interesting half — the per-task
-  // rows — is behind a tap, so no shot in the loop above has ever caught it.
+  // A queue row opened. `C1 10i` is most of what a row can show — the log, the
+  // parameters, the outputs, the way out — and all of it is behind a tap, so
+  // the loop above only ever photographs the collapsed third of this screen.
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('tasks · capsule @ desktop ${brightness.name}', (WidgetTester tester) async {
+    testWidgets('tasks · expanded @ desktop ${brightness.name}', (WidgetTester tester) async {
       await shoot(
         tester,
         env: env,
         screen: AppScreen.tasks,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'expanded',
+        // Console collapsed: the panel is the point of this shot, and an
+        // expanded console leaves it a third of the window to open into.
+        before: (_) async => AppState().isConsoleExpanded = false,
+        after: (WidgetTester tester) async {
+          // The failed row: the one whose detail panel has something to say.
+          await tester.tap(find.text('source_4.png'));
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+        },
+      );
+    });
+  }
+
+  // The floating task capsule, opened. It is only on screen while the queue has
+  // work and no screen is already showing that queue, and its interesting half
+  // — the per-task rows — is behind a tap, so no shot in the loop above has
+  // ever caught it. Photographed on the prompts screen for the first reason:
+  // `C1` keeps it off both the workbench and the queue.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('prompts · capsule @ desktop ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.prompts,
         size: kShotSizes.last,
         brightness: brightness,
         suffix: 'capsule',

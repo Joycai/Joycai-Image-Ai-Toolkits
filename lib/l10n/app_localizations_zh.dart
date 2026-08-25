@@ -1757,6 +1757,47 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get goToWorkbench => '前往工作台';
+
+  @override
+  String get copyAll => '复制全部';
+
+  @override
+  String get copiedAll => '已复制到剪贴板';
+
+  @override
+  String get noLogsYet => '这个任务还没有日志';
+
+  @override
+  String get sourceFiles => '源文件';
+
+  @override
+  String get requestParameters => '请求参数';
+
+  @override
+  String get outputPaths => '产物路径';
+
+  @override
+  String get copyError => '复制报错';
+
+  @override
+  String taskTotalShort(int count) {
+    return '共 $count';
+  }
+
+  @override
+  String get statusShortRunning => '执行';
+
+  @override
+  String get statusShortPending => '待';
+
+  @override
+  String get statusShortDone => '完成';
+
+  @override
+  String get statusShortFailed => '失败';
+
+  @override
   String get setupWizardTitle => '欢迎设置向导';
 
   @override
@@ -4687,6 +4728,47 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String taskLogLineCount(int count) {
     return '$count 行';
   }
+
+  @override
+  String get goToWorkbench => '前往工作台';
+
+  @override
+  String get copyAll => '複製全部';
+
+  @override
+  String get copiedAll => '已複製到剪貼簿';
+
+  @override
+  String get noLogsYet => '這個任務還沒有日誌';
+
+  @override
+  String get sourceFiles => '來源檔案';
+
+  @override
+  String get requestParameters => '請求參數';
+
+  @override
+  String get outputPaths => '產物路徑';
+
+  @override
+  String get copyError => '複製錯誤';
+
+  @override
+  String taskTotalShort(int count) {
+    return '共 $count';
+  }
+
+  @override
+  String get statusShortRunning => '執行';
+
+  @override
+  String get statusShortPending => '待';
+
+  @override
+  String get statusShortDone => '完成';
+
+  @override
+  String get statusShortFailed => '失敗';
 
   @override
   String get setupWizardTitle => '歡迎設定';

@@ -132,5 +132,25 @@
         "type": "int"
       }
     }
-  }
+  },
+  "goToWorkbench": "前往工作台",
+  "copyAll": "複製全部",
+  "copiedAll": "已複製到剪貼簿",
+  "noLogsYet": "這個任務還沒有日誌",
+  "sourceFiles": "來源檔案",
+  "requestParameters": "請求參數",
+  "outputPaths": "產物路徑",
+  "copyError": "複製錯誤",
+  "taskTotalShort": "共 {count}",
+  "@taskTotalShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusShortRunning": "執行",
+  "statusShortPending": "待",
+  "statusShortDone": "完成",
+  "statusShortFailed": "失敗"
 }

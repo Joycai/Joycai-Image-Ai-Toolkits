@@ -746,6 +746,26 @@
       }
     }
   },
+  "goToWorkbench": "ワークベンチへ",
+  "copyAll": "すべてコピー",
+  "copiedAll": "クリップボードにコピーしました",
+  "noLogsYet": "このタスクにはまだログがありません",
+  "sourceFiles": "元ファイル",
+  "requestParameters": "リクエストパラメータ",
+  "outputPaths": "出力ファイル",
+  "copyError": "エラーをコピー",
+  "taskTotalShort": "計 {count}",
+  "@taskTotalShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusShortRunning": "実行",
+  "statusShortPending": "待機",
+  "statusShortDone": "完了",
+  "statusShortFailed": "失敗",
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
   "getStarted": "始める",

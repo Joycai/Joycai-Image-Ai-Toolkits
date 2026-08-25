@@ -1776,6 +1776,47 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get goToWorkbench => 'ワークベンチへ';
+
+  @override
+  String get copyAll => 'すべてコピー';
+
+  @override
+  String get copiedAll => 'クリップボードにコピーしました';
+
+  @override
+  String get noLogsYet => 'このタスクにはまだログがありません';
+
+  @override
+  String get sourceFiles => '元ファイル';
+
+  @override
+  String get requestParameters => 'リクエストパラメータ';
+
+  @override
+  String get outputPaths => '出力ファイル';
+
+  @override
+  String get copyError => 'エラーをコピー';
+
+  @override
+  String taskTotalShort(int count) {
+    return '計 $count';
+  }
+
+  @override
+  String get statusShortRunning => '実行';
+
+  @override
+  String get statusShortPending => '待機';
+
+  @override
+  String get statusShortDone => '完了';
+
+  @override
+  String get statusShortFailed => '失敗';
+
+  @override
   String get setupWizardTitle => 'ようこそセットアップ';
 
   @override

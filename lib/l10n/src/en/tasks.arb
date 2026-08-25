@@ -124,5 +124,25 @@
         "type": "int"
       }
     }
-  }
+  },
+  "goToWorkbench": "Go to the workbench",
+  "copyAll": "Copy all",
+  "copiedAll": "Copied to clipboard",
+  "noLogsYet": "This task has logged nothing yet",
+  "sourceFiles": "Source files",
+  "requestParameters": "Request parameters",
+  "outputPaths": "Output files",
+  "copyError": "Copy the error",
+  "taskTotalShort": "{count} total",
+  "@taskTotalShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusShortRunning": "run",
+  "statusShortPending": "wait",
+  "statusShortDone": "done",
+  "statusShortFailed": "fail"
 }

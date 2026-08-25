@@ -124,5 +124,25 @@
         "type": "int"
       }
     }
-  }
+  },
+  "goToWorkbench": "前往工作台",
+  "copyAll": "复制全部",
+  "copiedAll": "已复制到剪贴板",
+  "noLogsYet": "这个任务还没有日志",
+  "sourceFiles": "源文件",
+  "requestParameters": "请求参数",
+  "outputPaths": "产物路径",
+  "copyError": "复制报错",
+  "taskTotalShort": "共 {count}",
+  "@taskTotalShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusShortRunning": "执行",
+  "statusShortPending": "待",
+  "statusShortDone": "完成",
+  "statusShortFailed": "失败"
 }

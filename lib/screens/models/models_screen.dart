@@ -17,6 +17,7 @@ import '../../state/app_state.dart';
 import '../../widgets/models/channel_avatar.dart';
 import '../../widgets/models/model_tag_chip.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/dashed_border.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/models/channel_edit_dialog.dart';
@@ -908,11 +909,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return CustomPaint(
-      painter: _DashedBorderPainter(
-        color: colorScheme.outlineVariant,
-        radius: AppRadius.lg,
-      ),
+    return DashedBorder(
+      color: colorScheme.outlineVariant,
+      radius: AppRadius.lg,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1178,42 +1177,3 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 }
 
-/// A hairline dashed rounded-rect, for the one dashed affordance `14a` draws.
-///
-/// Flutter's [Border] cannot dash; this walks the rounded-rect path and
-/// strokes alternate segments. Cheap enough to repaint freely — one path per
-/// card, only on the models screen.
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({required this.color, required this.radius});
-
-  final Color color;
-  final double radius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Offset.zero & size,
-        Radius.circular(radius),
-      ));
-    const dash = 5.0, gap = 4.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, (distance + dash).clamp(0, metric.length)),
-          paint,
-        );
-        distance += dash + gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.radius != radius;
-}
