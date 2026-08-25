@@ -5,6 +5,7 @@ import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/app_setting_row.dart';
 
 const String _githubUrl = 'https://github.com/Joycai/Joycai-Image-Ai-Toolkits';
 const String _copyrightHolder = 'BigBaicai';
@@ -36,8 +37,9 @@ class _AboutSectionState extends State<AboutSection> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    // No title — the pane header already says 「关于」.
     return AppSection(
-      title: l10n.about,
+      gap: 10,
       children: [
         Column(
           children: [
@@ -57,23 +59,22 @@ class _AboutSectionState extends State<AboutSection> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        ListTile(
-          title: Text(l10n.aboutGithubRepo),
-          subtitle: Text(l10n.aboutViewSource),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
-          leading: const Icon(Icons.code),
-          trailing: const Icon(Icons.open_in_new, size: 18),
+        const SizedBox(height: 14),
+        // `D1`'s rows carry no leading glyph. Dropped rather than kept: a
+        // code bracket beside 「GitHub 仓库」 and a gavel beside 「许可证」 were
+        // restating the words next to them.
+        AppSettingRow(
+          title: l10n.aboutGithubRepo,
+          description: l10n.aboutViewSource,
+          trailing: Icon(Icons.open_in_new,
+              size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
           onTap: () => FileUtils.openUri(Uri.parse(_githubUrl)),
         ),
-        const SizedBox(height: 8),
-        ListTile(
-          title: Text(l10n.aboutLicense),
-          subtitle: const Text('MIT License'),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
-          leading: const Icon(Icons.gavel_outlined),
+        AppSettingRow(
+          title: l10n.aboutLicense,
+          description: 'MIT License',
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 14),
         Center(
           child: Text(
             l10n.aboutCopyright(DateTime.now().year, _copyrightHolder),

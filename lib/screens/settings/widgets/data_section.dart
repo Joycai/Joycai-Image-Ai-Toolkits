@@ -13,6 +13,7 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/dialogs/import_options_dialog.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/app_switch.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../wizard/setup_wizard.dart';
 
@@ -25,8 +26,8 @@ class DataSection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     
+    // No title — the pane header already says 「数据管理」.
     return AppSection(
-      title: l10n.dataManagement,
       padding: const EdgeInsets.only(bottom: 64),
       children: [
         _buildAdaptiveDataActions(context, colorScheme, l10n),
@@ -221,12 +222,33 @@ class DataSection extends StatelessWidget {
   Widget _buildExportOption(
       BuildContext context, String title, String desc, bool value, Function(bool) onChanged) {
     final textTheme = Theme.of(context).textTheme;
-    return SwitchListTile(
-      value: value,
-      onChanged: onChanged,
-      title: Text(title, style: textTheme.titleMedium),
-      subtitle: Text(desc, style: textTheme.bodySmall),
-      contentPadding: EdgeInsets.zero,
+    // A dialog option, not a settings row, so it takes no box — but it takes
+    // the app's switch. [SwitchListTile] cannot be given one: the control is
+    // built inside it, at Material's 52×32.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: textTheme.titleSmall),
+                const SizedBox(height: 1),
+                Text(
+                  desc,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          AppSwitch(value: value, onChanged: onChanged),
+        ],
+      ),
     );
   }
 

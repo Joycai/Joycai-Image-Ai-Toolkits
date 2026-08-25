@@ -96,11 +96,17 @@ class AppEmptyState extends StatelessWidget {
                 child: Text(
                   description!,
                   textAlign: TextAlign.center,
-                  // The spec sets 11.5/400 against a ramp of five greys; the
-                  // app has three, and `bodySmall` is 12/400. Half a pixel,
-                  // and the weight — which is the part that carries — matches.
+                  // The spec sets 11.5/400 in `#868da8` against a ramp of five
+                  // greys; the app has three, and `bodySmall` is 12/400. Half
+                  // a pixel, and the weight — the part that carries — matches.
+                  //
+                  // `onSurfaceVariant`, not `outline`. `#868da8` sits midway
+                  // between the app's two, and the lighter one measures about
+                  // 1.8:1 on white — fine for a hairline, unreadable for a
+                  // sentence. When the ramps do not line up, the one that
+                  // clears AA wins.
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.55,
                   ),
                 ),

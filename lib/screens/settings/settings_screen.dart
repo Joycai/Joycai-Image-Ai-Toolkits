@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/settings_category_palette.dart';
 import '../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
@@ -44,20 +45,10 @@ IconData _categoryIcon(SettingsCategory category) {
   }
 }
 
-Color _categoryColor(SettingsCategory category) {
-  switch (category) {
-    case SettingsCategory.appearance:
-      return Colors.blue;
-    case SettingsCategory.connectivity:
-      return Colors.green;
-    case SettingsCategory.application:
-      return Colors.orange;
-    case SettingsCategory.data:
-      return Colors.purple;
-    case SettingsCategory.about:
-      return Colors.teal;
-  }
-}
+/// See [settingsCategoryColor]. These were Material's stock `Colors.blue` /
+/// `green` / `orange` / `purple` / `teal` — five hues from a palette the app
+/// uses nowhere else, next to `D1`'s five, which are the spec's own.
+Color _categoryColor(SettingsCategory category) => settingsCategoryColor(category);
 
 String _categoryLabel(SettingsCategory category, AppLocalizations l10n) {
   switch (category) {
