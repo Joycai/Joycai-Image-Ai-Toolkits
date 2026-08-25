@@ -2339,12 +2339,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPrompt => '系统提示词';
 
   @override
-  String get preset => '预设';
-
-  @override
-  String get customSysPromptHint => '为本次会话输入自定义系统提示词...';
-
-  @override
   String get refinerIntro => '使用 AI 分析图像并优化您的提示词。';
 
   @override
@@ -2372,9 +2366,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optNewSession => '新会话';
-
-  @override
-  String get optAgentWorking => '优化中...';
 
   @override
   String get optToolListImages => '查看了参考图列表';
@@ -2808,6 +2799,102 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get optModeKnowledgeEditShort => '库编辑';
+
+  @override
+  String get optRunning => '执行中';
+
+  @override
+  String optRunningStep(int count) {
+    return '执行中 · 步骤 $count';
+  }
+
+  @override
+  String get optAgentStepsRunning => 'Agent 过程 · 进行中';
+
+  @override
+  String get optAgentStepWorking => '正在执行下一步…';
+
+  @override
+  String optElapsedSeconds(int seconds) {
+    return '已用 ${seconds}s';
+  }
+
+  @override
+  String optElapsedMinutes(int minutes, int seconds) {
+    return '已用 ${minutes}m ${seconds}s';
+  }
+
+  @override
+  String get optChatBusyHint => 'Agent 正在执行，完成后可继续输入…';
+
+  @override
+  String get optAbort => '中断';
+
+  @override
+  String get optAbortHint => 'Esc 中断';
+
+  @override
+  String get optKbSearching => '检索中';
+
+  @override
+  String get optKbCitedRunning => '进行中';
+
+  @override
+  String get optSysPromptTemplate => '模板';
+
+  @override
+  String get optSysPromptPick => '选择模板';
+
+  @override
+  String get optSysPromptSearch => '搜索模板…';
+
+  @override
+  String get optSysPromptNone => '未选择模板';
+
+  @override
+  String get optSysPromptUnsaved => '未保存';
+
+  @override
+  String get optSysPromptSave => '保存';
+
+  @override
+  String get optSysPromptReset => '重置';
+
+  @override
+  String get optSysPromptSaved => '模板已保存';
+
+  @override
+  String get optSysPromptHint => '写下希望助手遵循的指令…';
+
+  @override
+  String optSysPromptChars(int count) {
+    return '$count 字';
+  }
+
+  @override
+  String optSysPromptTokens(String tokens) {
+    return '约 $tokens tokens';
+  }
+
+  @override
+  String get optSysPromptNoTools => '此模式不挂载知识库工具，agent 不产生工具调用。';
+
+  @override
+  String get kbEditNoChange => '此提议未改动文件内容。';
+
+  @override
+  String get kbEditPendingTitle => '待确认改动';
+
+  @override
+  String get kbEditWriteAll => '全部写入';
+
+  @override
+  String get kbEditDiscardAll => '全部丢弃';
+
+  @override
+  String kbEditConfirmAll(int count) {
+    return '确认写入 $count 处';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -5143,12 +5230,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get systemPrompt => '系統提示詞';
 
   @override
-  String get preset => '預設';
-
-  @override
-  String get customSysPromptHint => '為本次工作階段輸入自訂系統提示詞...';
-
-  @override
   String get refinerIntro => '使用 AI 分析圖片並優化您的提示詞。';
 
   @override
@@ -5176,9 +5257,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optNewSession => '新對話';
-
-  @override
-  String get optAgentWorking => '優化中...';
 
   @override
   String get optToolListImages => '查看了參考圖清單';
@@ -5612,4 +5690,100 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optModeKnowledgeEditShort => '庫編輯';
+
+  @override
+  String get optRunning => '執行中';
+
+  @override
+  String optRunningStep(int count) {
+    return '執行中 · 步驟 $count';
+  }
+
+  @override
+  String get optAgentStepsRunning => 'Agent 過程 · 進行中';
+
+  @override
+  String get optAgentStepWorking => '正在執行下一步…';
+
+  @override
+  String optElapsedSeconds(int seconds) {
+    return '已用 ${seconds}s';
+  }
+
+  @override
+  String optElapsedMinutes(int minutes, int seconds) {
+    return '已用 ${minutes}m ${seconds}s';
+  }
+
+  @override
+  String get optChatBusyHint => 'Agent 正在執行，完成後可繼續輸入…';
+
+  @override
+  String get optAbort => '中斷';
+
+  @override
+  String get optAbortHint => 'Esc 中斷';
+
+  @override
+  String get optKbSearching => '檢索中';
+
+  @override
+  String get optKbCitedRunning => '進行中';
+
+  @override
+  String get optSysPromptTemplate => '範本';
+
+  @override
+  String get optSysPromptPick => '選擇範本';
+
+  @override
+  String get optSysPromptSearch => '搜尋範本…';
+
+  @override
+  String get optSysPromptNone => '未選擇範本';
+
+  @override
+  String get optSysPromptUnsaved => '未儲存';
+
+  @override
+  String get optSysPromptSave => '儲存';
+
+  @override
+  String get optSysPromptReset => '重設';
+
+  @override
+  String get optSysPromptSaved => '範本已儲存';
+
+  @override
+  String get optSysPromptHint => '寫下希望助手遵循的指令…';
+
+  @override
+  String optSysPromptChars(int count) {
+    return '$count 字';
+  }
+
+  @override
+  String optSysPromptTokens(String tokens) {
+    return '約 $tokens tokens';
+  }
+
+  @override
+  String get optSysPromptNoTools => '此模式不掛載知識庫工具，agent 不產生工具呼叫。';
+
+  @override
+  String get kbEditNoChange => '此提議未變更檔案內容。';
+
+  @override
+  String get kbEditPendingTitle => '待確認變更';
+
+  @override
+  String get kbEditWriteAll => '全部寫入';
+
+  @override
+  String get kbEditDiscardAll => '全部捨棄';
+
+  @override
+  String kbEditConfirmAll(int count) {
+    return '確認寫入 $count 處';
+  }
 }

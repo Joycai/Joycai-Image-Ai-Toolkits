@@ -428,6 +428,13 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   _WorkbenchTab('mask', 2, seedMaskSource),
   _WorkbenchTab('crop', 3, seedCropSource),
   _WorkbenchTab('assistant', 4, seedOptimizerSession),
+  // The two frames `A2` added beside the finished one. Neither is
+  // reachable from the settled fixture: the running state exists only
+  // while a model is being called, and system-prompt mode replaces the
+  // whole right column with a card the knowledge modes never draw.
+  _WorkbenchTab('assistant_running', 4, seedOptimizerRunning),
+  _WorkbenchTab('assistant_sysprompt', 4, seedOptimizerSystemPrompt),
+  _WorkbenchTab('assistant_kbedit', 4, seedOptimizerKbEdit),
   // The other half of the workbench. It has its own right panel — model,
   // resolution, aspect, duration, the first/last-frame drop targets — and
   // shares nothing with tab 0's below the shell, so leaving it out meant half

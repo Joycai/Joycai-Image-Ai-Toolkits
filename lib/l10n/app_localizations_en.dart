@@ -2414,13 +2414,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPrompt => 'System Prompt';
 
   @override
-  String get preset => 'Preset';
-
-  @override
-  String get customSysPromptHint =>
-      'Enter a custom system prompt for this session...';
-
-  @override
   String get refinerIntro => 'Use AI to analyze images and refine your prompt.';
 
   @override
@@ -2448,9 +2441,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optNewSession => 'New Conversation';
-
-  @override
-  String get optAgentWorking => 'Optimizing...';
 
   @override
   String get optToolListImages => 'Checked the reference image list';
@@ -2896,4 +2886,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optModeKnowledgeEditShort => 'Edit KB';
+
+  @override
+  String get optRunning => 'Running';
+
+  @override
+  String optRunningStep(int count) {
+    return 'Running · step $count';
+  }
+
+  @override
+  String get optAgentStepsRunning => 'Agent process · running';
+
+  @override
+  String get optAgentStepWorking => 'Working on the next step...';
+
+  @override
+  String optElapsedSeconds(int seconds) {
+    return '${seconds}s elapsed';
+  }
+
+  @override
+  String optElapsedMinutes(int minutes, int seconds) {
+    return '${minutes}m ${seconds}s elapsed';
+  }
+
+  @override
+  String get optChatBusyHint =>
+      'The agent is working — you can type again when it finishes...';
+
+  @override
+  String get optAbort => 'Stop';
+
+  @override
+  String get optAbortHint => 'Esc to stop';
+
+  @override
+  String get optKbSearching => 'Reading';
+
+  @override
+  String get optKbCitedRunning => 'in progress';
+
+  @override
+  String get optSysPromptTemplate => 'Template';
+
+  @override
+  String get optSysPromptPick => 'Choose a template';
+
+  @override
+  String get optSysPromptSearch => 'Search templates...';
+
+  @override
+  String get optSysPromptNone => 'No template';
+
+  @override
+  String get optSysPromptUnsaved => 'Unsaved';
+
+  @override
+  String get optSysPromptSave => 'Save';
+
+  @override
+  String get optSysPromptReset => 'Reset';
+
+  @override
+  String get optSysPromptSaved => 'Template saved';
+
+  @override
+  String get optSysPromptHint =>
+      'Write the instructions the assistant should follow...';
+
+  @override
+  String optSysPromptChars(int count) {
+    return '$count characters';
+  }
+
+  @override
+  String optSysPromptTokens(String tokens) {
+    return '~$tokens tokens';
+  }
+
+  @override
+  String get optSysPromptNoTools =>
+      'This mode mounts no knowledge tools — the agent makes no tool calls.';
+
+  @override
+  String get kbEditNoChange => 'This proposal changes nothing in the file.';
+
+  @override
+  String get kbEditPendingTitle => 'Pending changes';
+
+  @override
+  String get kbEditWriteAll => 'Write all';
+
+  @override
+  String get kbEditDiscardAll => 'Discard all';
+
+  @override
+  String kbEditConfirmAll(int count) {
+    return 'Write $count changes';
+  }
 }

@@ -201,6 +201,7 @@ class _Gallery extends StatelessWidget {
                 AppStatusBadge(label: '执行中', kind: AppStatusKind.running),
                 AppStatusBadge(label: '待处理', kind: AppStatusKind.pending),
                 AppStatusBadge(label: '已完成', kind: AppStatusKind.done),
+                AppStatusBadge(label: '未保存', kind: AppStatusKind.warning),
                 AppStatusBadge(label: '失败', kind: AppStatusKind.failed),
                 AppCountBadge(count: 3),
                 AppCountBadge(count: 128),

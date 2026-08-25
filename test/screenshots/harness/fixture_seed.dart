@@ -251,6 +251,48 @@ Future<void> _seedPrompts(DatabaseService db) async {
     );
   }
 
+  // Refiner system prompts. These are what the assistant's system-prompt mode
+  // picks from, and without any the whole `10g` card photographs empty — an
+  // unselected picker over a blank editor, which is the one arrangement that
+  // says nothing about the layout.
+  final List<(String, String, List<int>)> systemPrompts = <(String, String, List<int>)>[
+    (
+      '通用摄影增强 v3',
+      '你是 Joycai 的提示词优化助手。用户会给出粗略想法或草稿提示词，'
+          '你负责将其改写为可直接用于图像模型的结构化提示词。\n\n'
+          '## 输出结构\n'
+          '1. 任务 —— 一句话说明要生成什么。\n'
+          '2. 主体设定 —— 人物 / 物体的外观、材质、姿态。\n'
+          '3. 场景与镜头 —— 环境、光线、机位、焦段。\n'
+          '4. 风格与画质 —— 参考风格、渲染质感、负面约束。\n\n'
+          '## 规则\n'
+          '- 参考图一律用文件名引用，不要描述为「图一」。\n'
+          '- 保留用户明确写出的专有名词，不擅自替换。',
+      <int>[portraitTag],
+    ),
+    (
+      '电商主图规范',
+      '改写为电商主图提示词：纯白底、主体居中、留白 8%，'
+          '保留自然投影，禁止添加文字与水印。',
+      <int>[productTag],
+    ),
+    (
+      '风格化改写',
+      '在保持构图与主体不变的前提下，把用户的想法改写成一段有明确'
+          '风格参照的提示词，风格词写在最后一段。',
+      <int>[styleTag],
+    ),
+  ];
+
+  for (int i = 0; i < systemPrompts.length; i++) {
+    final (String title, String content, List<int> tags) = systemPrompts[i];
+    await db.addSystemPrompt(
+      SystemPrompt(title: title, content: content, type: 'refiner', sortOrder: i)
+          .toMap(includeId: false),
+      tagIds: tags,
+    );
+  }
+
   for (final String entry in <String>[
     '把背景换成纯白，主体不变',
     '增加一点暖色调，模拟黄昏光线',
@@ -581,6 +623,156 @@ void seedOptimizerSession(AppState appState) {
   // photographs with two of its four rows reading '—' — the one state that
   // says least about the layout.
   session.recordRequestBasis(systemPromptChars: 4820, toolSchemaChars: 1960);
+
+  appState.workbenchUIState.adoptOptimizerSession(session, images);
+}
+
+/// The assistant mid-turn — `10i`.
+///
+/// The same conversation as [seedOptimizerSession], cut off after three tool
+/// results and with nothing submitted: the timeline card is the row that is
+/// still moving, so the shot has to end inside one rather than after it. The
+/// running flag is set through the session's test hook because the only other
+/// way in is to actually call a model.
+void seedOptimizerRunning(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+  if (images.isEmpty) return;
+
+  final List<LLMMessage> history = <LLMMessage>[
+    LLMMessage(role: LLMRole.user, content: '让图片 1 中的人物穿上图片 2 中角色的服装'),
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: <LLMToolCall>[
+        LLMToolCall(id: 'r1', name: 'view_image', arguments: <String, dynamic>{'id': '1'}),
+        LLMToolCall(id: 'r2', name: 'view_image', arguments: <String, dynamic>{'id': '2'}),
+        LLMToolCall(
+          id: 'r3',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '04_cosplay照片模版.md'},
+        ),
+      ],
+    ),
+    for (final String id in <String>['r1', 'r2', 'r3'])
+      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+  ];
+
+  final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
+    id: 'fixture-assistant-running',
+    mode: AssistantMode.knowledgeBase,
+    title: 'Cosplay 服装融合',
+    history: history,
+  );
+  session.recordRequestBasis(systemPromptChars: 4820, toolSchemaChars: 1960);
+  session.setRunningForTest(true);
+
+  appState.workbenchUIState.adoptOptimizerSession(session, images);
+}
+
+/// The assistant in system-prompt mode — `10g`.
+///
+/// An empty conversation on purpose: this frame is about the right panel, and
+/// the transcript is the same one every other assistant shot already carries.
+/// The template is picked here rather than left to the screen's own first-load
+/// default, which runs before the fixture database is queried.
+void seedOptimizerSystemPrompt(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+  final PromptOptimizerSession session = PromptOptimizerSession(
+    id: 'fixture-assistant-sysprompt',
+    mode: AssistantMode.systemPrompt,
+  );
+  appState.workbenchUIState.adoptOptimizerSession(session, images);
+}
+
+/// The assistant in library-edit mode with changes staged — `10h`.
+///
+/// Two edits, deliberately of both kinds: an update, which is the only one
+/// that has a diff to draw, and a create, which has not. The update's before
+/// and after differ in one paragraph inside a longer document, because that is
+/// the case the diff exists for — a wholesale replacement would look the same
+/// under the old "show the whole file" card.
+void seedOptimizerKbEdit(AppState appState) {
+  final List<AppImage> images = _galleryImages(appState).take(2).toList();
+
+  const String header = '# 07b 叠穿袜子与高跟鞋\n'
+      '\n'
+      '## 一、适用场景\n'
+      '- 制服 / 校园主题的半身与全身构图。\n'
+      '- 需要在脚踝处形成断色的写实摄影。\n'
+      '\n'
+      '## 二、叠穿组合\n'
+      '  - 白色过膝袜 + 玛丽珍鞋：适合校园与制服主题。\n';
+  const String footer = '\n'
+      '## 三、常见问题\n'
+      '- 袜口过紧会在脚踝留下压痕，写提示词时明确「无压痕」。\n'
+      '- 网袜的孔径要写具体尺寸，否则模型会给出装饰性花纹。\n';
+
+  const String before = '$header'
+      '  - 黑色短袜 + 高跟鞋：注意脚踝处袜口不要压出褶皱。\n'
+      '$footer';
+  const String after = '$header'
+      '  - 黑色短袜 + 高跟鞋：袜口停在踝骨上方 2–3 cm，避免压出褶皱；\n'
+      '    袜口与鞋帮之间留出一段裸露皮肤，形成断色。\n'
+      '  - 网袜叠穿纯色短袜：先写外层网袜的孔径，再写内层袜色。\n'
+      '\n'
+      '提示：叠穿写法一律「由外到内」，与服装分层规则保持一致。\n'
+      '$footer';
+
+  const String created = '# 04b 证件照模版\n'
+      '\n'
+      '## 用途\n'
+      '一寸 / 二寸证件照的标准化提示词模版。\n'
+      '\n'
+      '## 结构\n'
+      '1. 主体 —— 正面免冠，肩线水平，视线平视镜头。\n'
+      '2. 背景 —— 纯色，无渐变、无投影、无纹理。\n'
+      '3. 光线 —— 双侧柔光，鼻下无明显阴影。\n'
+      '4. 输出 —— 不裁切、不磨皮、不做美颜。\n';
+
+  final List<LLMMessage> history = <LLMMessage>[
+    LLMMessage(
+      role: LLMRole.user,
+      content: '把刚才那条 cosplay 提示词里关于袜子叠穿的经验补进知识库，并给证件照单独建一个模版。',
+    ),
+    LLMMessage(
+      role: LLMRole.assistant,
+      content: '',
+      toolCalls: <LLMToolCall>[
+        LLMToolCall(
+          id: 'e1',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '07_footwear/07b_叠穿袜子与高跟鞋.md'},
+        ),
+        LLMToolCall(
+          id: 'e2',
+          name: 'read_knowledge_file',
+          arguments: <String, dynamic>{'path': '04_模板/04_cosplay照片模版.md'},
+        ),
+      ],
+    ),
+    for (final String id in <String>['e1', 'e2'])
+      LLMMessage(role: LLMRole.tool, content: 'ok', toolCallId: id, toolName: 'read_knowledge_file'),
+  ];
+
+  final PromptOptimizerSession session = PromptOptimizerSession.fromStored(
+    id: 'fixture-assistant-kbedit',
+    mode: AssistantMode.knowledgeEdit,
+    title: '补充袜子叠穿经验',
+    history: history,
+  );
+  session.recordRequestBasis(systemPromptChars: 5240, toolSchemaChars: 3100);
+
+  session.stageKbEditForTest(
+    relPath: '07_footwear/07b_叠穿袜子与高跟鞋.md',
+    oldContent: before,
+    newContent: after,
+    note: '把「无褶皱」这条写成可执行的距离，并补上网袜叠穿的写法。',
+  );
+  session.stageKbEditForTest(
+    relPath: '04_模板/04b_证件照模版.md',
+    newContent: created,
+    note: '证件照与 cosplay 的约束几乎不重叠，单独建一篇比塞进现有模版清楚。',
+  );
 
   appState.workbenchUIState.adoptOptimizerSession(session, images);
 }

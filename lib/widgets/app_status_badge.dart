@@ -23,6 +23,12 @@ enum AppStatusKind {
   /// Finished successfully.
   done,
 
+  /// Not broken, but needing the user's attention before it settles — an edit
+  /// that has not been saved, a change waiting to be confirmed. Amber, which
+  /// is the one hue between [pending]'s neutral and [failed]'s red, and the
+  /// colour the spec's 未保存 / 待确认 pills are drawn in.
+  warning,
+
   /// Finished badly.
   failed,
 }
@@ -61,6 +67,7 @@ class AppStatusBadge extends StatelessWidget {
       AppStatusKind.running => (colorScheme.accentTint, colorScheme.onAccentTint),
       AppStatusKind.pending => (colorScheme.surfaceContainerHighest, colorScheme.onSurfaceVariant),
       AppStatusKind.done => (semantic.successContainer, semantic.onSuccessContainer),
+      AppStatusKind.warning => (semantic.warningContainer, semantic.onWarningContainer),
       // A wash of `error` rather than `errorContainer`. Material's dark
       // error container is a deep, near-solid red — beside the other three,
       // which are all light tints, a failed badge stopped reading as one of

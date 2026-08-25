@@ -19,7 +19,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
-import '../../models/tag.dart';
 import '../../services/knowledge_base_service.dart';
 import '../../services/knowledge_base_starter.dart';
 import '../../services/prompt_optimizer_agent.dart';
@@ -90,9 +89,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   
   // Prompt Optimizer State
   final TextEditingController _optInputCtrl = TextEditingController();
-  List<SystemPrompt> _optAllSysPrompts = [];
-  List<SystemPrompt> _optFilteredSysPrompts = [];
-  List<PromptTag> _optTags = [];
+  /// Every refiner template in the library. `10g` picks from all of them —
+  /// the tag-filtered subset the old two-dropdown form needed went with it.
+  List<SystemPrompt> _optSysPrompts = [];
   bool _optIsLoadingData = true;
   KbStatus _kbStatus = KbStatus.notSet;
   String? _kbPath;
@@ -159,21 +158,19 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     await _refreshKbStatus();
     try {
       final refinerPrompts = await _appState!.getSystemPrompts(type: 'refiner');
-      final tags = await _appState!.getPromptTags();
 
       if (mounted) {
         final wuiState = Provider.of<WorkbenchUIState>(context, listen: false);
         setState(() {
-          _optAllSysPrompts = refinerPrompts;
-          _optTags = tags;
-          _applyOptimizerFilter(wuiState);
+          _optSysPrompts = refinerPrompts;
 
           // Only set defaults on first load; preserve user's previous selections.
           if (wuiState.optSelectedModelDbId == null && _appState!.multimodalModels.isNotEmpty) {
             wuiState.setOptimizerModel(_appState!.multimodalModels.first.id);
           }
-          if (wuiState.optSelectedSysPrompt == null && _optFilteredSysPrompts.isNotEmpty) {
-            wuiState.setOptimizerSysPrompt(_optFilteredSysPrompts.first.content);
+          if (wuiState.optSelectedSysPrompt == null && refinerPrompts.isNotEmpty) {
+            final first = refinerPrompts.first;
+            wuiState.setOptimizerSysPromptTemplate(first.id, first.content);
           }
           _optIsLoadingData = false;
         });
@@ -183,15 +180,55 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
   }
 
-  void _applyOptimizerFilter(WorkbenchUIState wuiState) {
-    if (wuiState.optSelectedTagId == null) {
-      _optFilteredSysPrompts = _optAllSysPrompts;
-    } else {
-      _optFilteredSysPrompts = _optAllSysPrompts.where((p) => p.tags.any((t) => t.id == wuiState.optSelectedTagId)).toList();
+  /// Writes `10g`'s edited system prompt back over the template it came from.
+  ///
+  /// The library is the only place a system prompt can be *kept*: the panel's
+  /// text lives on [WorkbenchUIState], which is cleared when the app closes,
+  /// so an edit the user wants to keep has nowhere else to go. Tags are passed
+  /// through unchanged — this saves the wording, not the filing.
+  Future<void> _handleSaveSysPromptTemplate(SystemPrompt template, String content) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await _appState!.updateSystemPrompt(
+        template.id!,
+        {
+          'title': template.title,
+          'content': content,
+          'type': template.type,
+          'is_markdown': template.isMarkdown ? 1 : 0,
+          'sort_order': template.sortOrder,
+        },
+        tagIds: [for (final t in template.tags) if (t.id != null) t.id!],
+      );
+      // Re-read rather than patch the local copy: the saved row is now what
+      // "unsaved" is measured against, and a stale in-memory template would
+      // leave the badge showing an edit that is already on disk.
+      final refreshed = await _appState!.getSystemPrompts(type: 'refiner');
+      if (!mounted) return;
+      setState(() => _optSysPrompts = refreshed);
+      AppSnackBar.success(context, l10n.optSysPromptSaved);
+    } catch (e) {
+      if (mounted) AppSnackBar.error(context, e.toString());
     }
-    if (wuiState.optSelectedSysPrompt != null && !_optFilteredSysPrompts.any((p) => p.content == wuiState.optSelectedSysPrompt)) {
-      wuiState.setOptimizerSysPrompt(_optFilteredSysPrompts.isNotEmpty ? _optFilteredSysPrompts.first.content : null);
-    }
+  }
+
+  /// Whether a turn of [session] is queued or running.
+  ///
+  /// Read straight off the queue rather than through the `Selector` the centre
+  /// column uses — the right panel is built from a different callback, outside
+  /// that builder's scope — and without subscribing to it, because the panel
+  /// is rebuilt by the session's own notifications and subscribing here would
+  /// hand it every unrelated task's 500ms progress tick. The cost is that the
+  /// brief queued-but-not-yet-started window is not repainted for: the panel
+  /// catches up when `isRunning` flips, which is when it has something new to
+  /// say anyway.
+  bool _optRunningForSession(PromptOptimizerSession session) {
+    if (session.isRunning) return true;
+    final queue = Provider.of<TaskQueueService>(context, listen: false).queue;
+    return queue.any((t) =>
+        t.type == TaskType.promptRefine &&
+        t.parameters['sessionId'] == session.id &&
+        (t.status == TaskStatus.pending || t.status == TaskStatus.processing));
   }
 
   /// Sends one user turn of the optimizer conversation: the message is added
@@ -287,6 +324,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     }
 
     await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  /// Stops the turn in flight, from `10i`'s 中断 button or the Esc key.
+  ///
+  /// Cancelling the *task* rather than reaching into the session: the queue
+  /// owns the run, and it is what threads the cancellation flag the agent's
+  /// tool loop already polls between batches. Nothing is rolled back — the
+  /// steps that did complete stay in the transcript, which is what makes a
+  /// stopped turn something the user can read rather than an erased one.
+  Future<void> _handleOptimizerAbort(String taskId) async {
+    final taskService = Provider.of<TaskQueueService>(context, listen: false);
+    await taskService.cancelTask(taskId);
   }
 
   Future<void> _enqueueAssistantTurn(
@@ -526,6 +575,29 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _handleKbEditReject(PromptOptimizerSession session, String editId) {
     PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: editId);
+  }
+
+  /// `10h`'s 全部写入 / 全部丢弃.
+  ///
+  /// The ids are collected before anything is answered, because resolving one
+  /// edit rebuilds the transcript and iterating the live list while it changes
+  /// underneath would skip half of them. Writes go one at a time and in order,
+  /// so a failure part-way leaves the edits before it on disk and the rest
+  /// still pending — which is what the cards will then show.
+  Future<void> _handleKbEditApplyAll(PromptOptimizerSession session) async {
+    final ids = [
+      for (final e in PromptOptimizerAgent.pendingKbEdits(session)) e.editId!,
+    ];
+    for (final id in ids) {
+      if (!mounted) return;
+      await _handleKbEditApply(session, id);
+    }
+  }
+
+  void _handleKbEditRejectAll(PromptOptimizerSession session) {
+    for (final e in PromptOptimizerAgent.pendingKbEdits(session).toList()) {
+      PromptOptimizerAgent.rejectStagedKbEdit(session: session, editId: e.editId!);
+    }
   }
 
   void _handleOptimizerApply(String prompt) {
@@ -774,13 +846,24 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                 // view and right panel — while this tab was open. The scan
                 // still runs per notification; only a flip of the flag now
                 // costs a rebuild, and only of this subtree.
-                return Selector<TaskQueueService, bool>(
-                  selector: (_, queue) => queue.queue.any((t) =>
-                      t.type == TaskType.promptRefine &&
-                      t.parameters['sessionId'] == session.id &&
-                      (t.status == TaskStatus.pending || t.status == TaskStatus.processing)),
-                  builder: (context, queuedForSession, _) {
-                    final isBusy = session.isRunning || queuedForSession;
+                return Selector<TaskQueueService, String?>(
+                  // The task's *id*, not merely whether one exists: `10i`'s
+                  // 中断 has to name the task it is stopping, and a bool would
+                  // have had the abort handler re-scan the queue at the moment
+                  // it fires — after the state it was deciding from is gone.
+                  selector: (_, queue) => queue.queue
+                      .cast<TaskItem?>()
+                      .firstWhere(
+                        (t) =>
+                            t!.type == TaskType.promptRefine &&
+                            t.parameters['sessionId'] == session.id &&
+                            (t.status == TaskStatus.pending ||
+                                t.status == TaskStatus.processing),
+                        orElse: () => null,
+                      )
+                      ?.id,
+                  builder: (context, runningTaskId, _) {
+                    final isBusy = session.isRunning || runningTaskId != null;
                     return Column(
                       children: [
                         PromptOptimizerToolbar(
@@ -788,7 +871,17 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                           onHistory: _showAssistantHistory,
                           onApply: () => _handleOptimizerApply(session.refinedPrompt ?? ''),
                           isRefining: isBusy,
+                          runningSteps:
+                              isBusy ? PromptOptimizerAgent.currentTurnSteps(session) : null,
                           canApply: session.refinedPrompt != null,
+                          pendingKbEdits:
+                              PromptOptimizerAgent.pendingKbEdits(session).length,
+                          onWriteAllKbEdits: isBusy
+                              ? null
+                              : () => _handleKbEditApplyAll(session),
+                          onDiscardAllKbEdits: isBusy
+                              ? null
+                              : () => _handleKbEditRejectAll(session),
                           modeLabel: switch (session.mode) {
                             AssistantMode.systemPrompt =>
                               AppLocalizations.of(context)!.optModeSystemPrompt,
@@ -815,6 +908,15 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                                   onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
                                   onAnswerAskUser: _handleAskUserAnswer,
                                   isBusy: isBusy,
+                                  // Only while there is a task to stop. A
+                                  // session whose `isRunning` outlived its
+                                  // task — the failure mode a crashed turn
+                                  // leaves behind — has nothing to cancel, and
+                                  // offering the button there would produce a
+                                  // control that does nothing when pressed.
+                                  onAbort: runningTaskId == null
+                                      ? null
+                                      : () => _handleOptimizerAbort(runningTaskId),
                                 ),
                         ),
                       ],
@@ -899,16 +1001,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                 builder: (context, _) => OptimizerConfigPanel(
                   scrollController: scrollController,
                   selectedModelDbId: wui.optSelectedModelDbId,
-                  selectedTagId: wui.optSelectedTagId,
                   selectedSysPrompt: wui.optSelectedSysPrompt,
-                  useCustomSysPrompt: wui.optUseCustomSysPrompt,
+                  sysPromptTemplateId: wui.optSysPromptTemplateId,
                   mode: wui.assistantMode,
                   kbStatus: _kbStatus,
                   kbPath: _kbPath,
+                  running: _optRunningForSession(wui.optimizerSession),
+                  pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wui.optimizerSession),
+                  onWriteAllKbEdits: () => _handleKbEditApplyAll(wui.optimizerSession),
+                  onDiscardAllKbEdits: () => _handleKbEditRejectAll(wui.optimizerSession),
                   onModeChanged: _handleAssistantModeChange,
                   onScaffoldKb: _handleScaffoldKb,
-                  tags: _optTags,
-                  filteredSysPrompts: _optFilteredSysPrompts,
+                  sysPrompts: _optSysPrompts,
                   citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
                     wui.optimizerSession,
                   ),
@@ -927,12 +1031,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                         ?.contextWindow,
                   ),
                   onModelChanged: (v) => wui.setOptimizerModel(v),
-                  onTagChanged: (v) {
-                    wui.setOptimizerTag(v);
-                    setState(() => _applyOptimizerFilter(wui));
-                  },
                   onSysPromptChanged: (v) => wui.setOptimizerSysPrompt(v),
-                  onUseCustomChanged: (v) => wui.setOptimizerSysPromptMode(v),
+                  onSysPromptTemplateChanged: (id, content) =>
+                      wui.setOptimizerSysPromptTemplate(id, content),
+                  onSaveTemplate: _handleSaveSysPromptTemplate,
                 ),
               ),
             );

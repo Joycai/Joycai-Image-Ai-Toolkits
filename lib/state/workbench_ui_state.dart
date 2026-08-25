@@ -64,9 +64,20 @@ class WorkbenchUIState extends ChangeNotifier {
 
   // Optimizer Config State (persisted across tab switches)
   int? optSelectedModelDbId;
-  int? optSelectedTagId;
+
+  /// The system prompt actually sent, which is the editor's text — not the
+  /// template's. `10g` lets the user edit a template in place without
+  /// committing the edit back to the library, so the two do diverge.
   String? optSelectedSysPrompt;
-  bool optUseCustomSysPrompt = false;
+
+  /// Which library template [optSelectedSysPrompt] was loaded from, or null
+  /// when the text belongs to no template.
+  ///
+  /// Tracked separately rather than recovered by matching the text against the
+  /// library: the moment the user types a character the text matches nothing,
+  /// and that is exactly the state — "edited, unsaved" — that has to be able
+  /// to name the template it came from.
+  int? optSysPromptTemplateId;
 
   // Video Generation State
   List<AppImage> videoReferenceImages = [];
@@ -189,9 +200,16 @@ class WorkbenchUIState extends ChangeNotifier {
   }
 
   void setOptimizerModel(int? id) { optSelectedModelDbId = id; notifyListeners(); }
-  void setOptimizerTag(int? id) { optSelectedTagId = id; notifyListeners(); }
   void setOptimizerSysPrompt(String? prompt) { optSelectedSysPrompt = prompt; notifyListeners(); }
-  void setOptimizerSysPromptMode(bool useCustom) { optUseCustomSysPrompt = useCustom; notifyListeners(); }
+
+  /// Loads a library template: both the identity and the text it starts from.
+  /// Set together, because a template id without its text would leave the
+  /// panel claiming an edit the user never made.
+  void setOptimizerSysPromptTemplate(int? id, String? content) {
+    optSysPromptTemplateId = id;
+    optSelectedSysPrompt = content;
+    notifyListeners();
+  }
 
   void sendToOptimizer(String prompt, List<AppImage> images) {
     optimizerRoughPrompt = prompt;
