@@ -206,8 +206,17 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     id: 'minimax',
     channelType: Vendors.minimax,
     group: ChannelProviderGroup.vendor,
+    defaultEndpoint: 'https://api.minimaxi.com/v1',
     variants: [
-      ChannelProviderVariant(id: 'openai', channelType: Vendors.minimax),
+      // Both faces prefill. The ① one used to supply no address at all, which
+      // left the field empty until you switched to ④ and full again when you
+      // switched back — a preset that fills the endpoint only half the time
+      // reads as a bug in the switch.
+      ChannelProviderVariant(
+        id: 'openai',
+        channelType: Vendors.minimax,
+        defaultEndpoint: 'https://api.minimaxi.com/v1',
+      ),
       ChannelProviderVariant(
         id: 'anthropic',
         channelType: Vendors.minimaxAnthropic,

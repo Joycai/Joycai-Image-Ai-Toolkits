@@ -237,11 +237,26 @@ void main() {
       expect(find.text('OpenAI interface'), findsOneWidget);
       expect(find.text('Anthropic interface'), findsOneWidget);
 
+      // Both faces prefill, and switching back restores the first one — the
+      // ① variant used to carry no address, so this round trip left the field
+      // empty.
+      expect(
+        _controllerOf(tester, _fieldWithLabel(endpointLabel))?.text,
+        'https://api.minimaxi.com/v1',
+      );
+
       await tester.tap(find.text('Anthropic interface'));
       await tester.pumpAndSettle();
       expect(
         _controllerOf(tester, _fieldWithLabel(endpointLabel))?.text,
         'https://api.minimaxi.com/anthropic/v1',
+      );
+
+      await tester.tap(find.text('OpenAI interface'));
+      await tester.pumpAndSettle();
+      expect(
+        _controllerOf(tester, _fieldWithLabel(endpointLabel))?.text,
+        'https://api.minimaxi.com/v1',
       );
     });
 
