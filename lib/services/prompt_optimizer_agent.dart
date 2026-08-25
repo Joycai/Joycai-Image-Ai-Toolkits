@@ -9,6 +9,7 @@ import 'database_service.dart';
 import 'knowledge_base_service.dart';
 import 'llm/context_budget.dart';
 import 'llm/image_compression.dart';
+import 'llm/llm_dispatcher.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 import 'repositories/assistant_note_repository.dart';
@@ -1270,9 +1271,16 @@ class PromptOptimizerAgent {
             ],
             tools: activeTools,
             contextId: contextId,
-            // Transient relay/proxy disconnects (e.g. errno 10054) should not
-            // kill the whole agent turn — retry a couple of times.
-            options: const {'retryCount': 2},
+            options: const {
+              // Transient relay/proxy disconnects (e.g. errno 10054) should
+              // not kill the whole agent turn — retry a couple of times.
+              'retryCount': 2,
+              // A submit_prompt is a 6-7 K-token document, measured. Only ④
+              // sends a cap, so without this the deadline for ① and ③ is
+              // sized against a 4096 guess that is roughly half the real
+              // answer. Changes no payload — see [expectedOutputTokensKey].
+              expectedOutputTokensKey: 8192,
+            },
             // Streamed where the route can carry tool calls over it (④
             // today), and silently downgraded everywhere else. Not for
             // incremental display — nothing here consumes a partial batch —

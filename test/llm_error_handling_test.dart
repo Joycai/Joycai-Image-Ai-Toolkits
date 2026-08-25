@@ -260,6 +260,32 @@ void main() {
       );
     });
 
+    test('a caller that knows its answer is long is believed over the guess',
+        () {
+      // ① and ③ send no cap, so without this the deadline is sized against a
+      // 4096 stand-in — roughly half a measured submit_prompt.
+      final dispatcher = LLMDispatcher();
+      final guessed =
+          dispatcher.generateTimeout(config('gpt-4o', Vendors.openAIRest));
+      final told = dispatcher.generateTimeout(
+          config('gpt-4o', Vendors.openAIRest),
+          options: const {expectedOutputTokensKey: 8192});
+
+      expect(told, greaterThan(guessed));
+      // Same figure ④ already gets from its own default, so the two families
+      // no longer disagree about how long the same work takes.
+      expect(told,
+          dispatcher.generateTimeout(config('claude-opus-4-8', Vendors.anthropicRest)));
+    });
+
+    test('an explicit maxTokens still wins — it is what the wire carries', () {
+      expect(
+        LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
+            options: const {'maxTokens': 1000, expectedOutputTokensKey: 100000}),
+        const Duration(seconds: 120),
+      );
+    });
+
     test('is capped, so a misconfigured cap cannot mean an hour', () {
       expect(
         LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
@@ -306,14 +332,23 @@ void main() {
           isTrue);
     });
 
-    test('① and ③ do not, so theirs still falls back to generate()', () {
+    test('③ carries them too — its parser is shared with the sync path', () {
+      // No accumulator was needed: a functionCall arrives whole inside a
+      // streamed candidate, thoughtSignature included.
+      expect(LLMDispatcher().streamSupportsTools(config(Vendors.googleRest)),
+          isTrue);
+      expect(
+          LLMDispatcher().streamSupportsTools(config(Vendors.officialGoogle)),
+          isTrue);
+    });
+
+    test('① does not, so its tool-bearing requests still downgrade', () {
       // Claiming the capability without the accumulator would answer a
       // tool-bearing request as though no tools existed — the one failure an
       // agent loop cannot detect.
       for (final vendor in [
         Vendors.openAIRest,
         Vendors.newApiOpenAI,
-        Vendors.googleRest,
         Vendors.midjourneyProxy,
       ]) {
         expect(LLMDispatcher().streamSupportsTools(config(vendor)), isFalse,
@@ -325,8 +360,8 @@ void main() {
       // The dispatcher answers per family by hand, so it can drift from what
       // the protocols actually implement. This is the pin against that.
       expect(AnthropicChatProtocol().streamingDeclaresTools, isTrue);
+      expect(GeminiChatProtocol().streamingDeclaresTools, isTrue);
       expect(OpenAIChatProtocol().streamingDeclaresTools, isFalse);
-      expect(GeminiChatProtocol().streamingDeclaresTools, isFalse);
     });
   });
 

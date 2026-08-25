@@ -28,6 +28,16 @@ import 'vendors/vendors.dart';
 /// Every routing rule that used to live as scattered `if`s inside the old
 /// provider classes is written out below, once. Protocols themselves contain
 /// no routing.
+/// Options key: how much output the caller expects, for sizing the
+/// non-streaming deadline **only**.
+///
+/// Deliberately not `maxTokens`. That one is sent on the wire, and raising it
+/// to inform the deadline would change what the request asks for — on ① and
+/// ③, which send no cap today, it would newly impose one and 400 against any
+/// model whose ceiling is lower. This key changes no payload; it only stops
+/// [LLMDispatcher.generateTimeout] guessing when the caller already knows.
+const String expectedOutputTokensKey = 'expectedOutputTokens';
+
 class LLMDispatcher {
   // Layer-1 protocol implementations (stateless).
   static final _openaiChat = OpenAIChatProtocol();
@@ -128,17 +138,26 @@ class LLMDispatcher {
     return deadline;
   }
 
-  /// The output cap that will actually apply to this request.
+  /// How much output to size the deadline against, best source first.
   ///
-  /// When the caller named one, that is the answer. Otherwise it depends on
-  /// the family: ④ has no server-side default and the adapter substitutes
-  /// [anthropicDefaultMaxTokens], so that number is a fact about the request
-  /// being sent. ① and ③ leave the field off and let the host decide, which
-  /// is not knowable here — 4096 stands in for it, low enough that the floor
-  /// usually wins and short calls keep the old behaviour.
+  /// 1. **`maxTokens`** — the cap the request will actually carry. A fact,
+  ///    so nothing beats it.
+  /// 2. **[expectedOutputTokensKey]** — what the caller expects to *receive*.
+  ///    Reaches no payload; it exists because ① and ③ send no cap at all, so
+  ///    the alternative is a guess, and an agent that knows it is asking for
+  ///    a 6-7 K-token document knows better than the guess does.
+  /// 3. **A family default.** ④ has no server-side default and the adapter
+  ///    substitutes [anthropicDefaultMaxTokens], so that number is a fact
+  ///    about the request being sent. ① and ③ leave the field off and let the
+  ///    host decide, which is not knowable here — 4096 stands in, low enough
+  ///    that the floor usually wins and short calls keep the old behaviour.
   int _outputCap(LLMTarget target, Map<String, dynamic>? options) {
     final requested = requestedMaxTokens(options);
     if (requested != null) return requested;
+
+    final expected = options?[expectedOutputTokensKey];
+    if (expected is num && expected >= 1) return expected.toInt();
+
     return target.vendor.family == ProtocolFamily.anthropic
         ? anthropicDefaultMaxTokens
         : 4096;
@@ -217,8 +236,13 @@ class LLMDispatcher {
     switch (target.vendor.family) {
       case ProtocolFamily.anthropic:
         return _anthropicChat.streamingDeclaresTools;
-      case ProtocolFamily.openai:
       case ProtocolFamily.gemini:
+        // Imagen and Veo have no tools and no streaming surface of their own;
+        // the chat route is the only one this question can be about.
+        return target.model.family == ModelFamily.geminiImagen
+            ? false
+            : _geminiChat.streamingDeclaresTools;
+      case ProtocolFamily.openai:
       case ProtocolFamily.midjourney:
         return false;
     }
@@ -250,7 +274,8 @@ class LLMDispatcher {
           yield* _asChunks(response);
           return;
         }
-        yield* _geminiChat.generateStream(target, history, options: options, logger: logger);
+        yield* _geminiChat.generateStream(target, history,
+            options: options, tools: tools, logger: logger);
         return;
 
       case ProtocolFamily.openai:

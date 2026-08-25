@@ -195,7 +195,7 @@ elide（#6 / #7 都带 3 张图，`attachment elided` 计数为 0）。所以这
 
 **流式 tool call —— 值得补，但两家成本差一个数量级。**
 
-### 5.3 ③ 几乎是免费的
+### 5.3 ③ 几乎是免费的 —— 已完成
 
 `geminiChunksFromSseLine` 走的是**和同步路径共用的 parser**，它已经在解析
 `functionCall` 并且带上了 `thoughtSignature`（`gemini_payload.dart` 的
@@ -203,11 +203,13 @@ elide（#6 / #7 都带 3 张图，`attachment elided` 计数为 0）。所以这
 以没有累积器要写。`prepareGooglePayload` 本来就有 `tools:` 参数，只是流式那个调
 用点没传。
 
-需要改的：流式 payload 传 `tools` · `streamingDeclaresTools => true` · dispatcher
-两处路由。约四行加测试。
+改动就是那几行：流式 payload 传 `tools` · `streamingDeclaresTools => true` ·
+dispatcher 两处路由（Imagen 排除在外——它既没有工具也没有自己的流式面）。
 
-要验的是 `thoughtSignature` 在流式路径上确实活着回到历史里——③ 对丢了签名的重放
-是 `INVALID_ARGUMENT`（会报错，不像 ④ 那样静默降级，所以至少是响的）。
+`thoughtSignature` 是 ③ 的全部重放义务（丢了就是 `INVALID_ARGUMENT`），它挂在
+`LLMToolCall` 上而不是像 ④ 的 thinking 那样单独成组，所以流式路径没有东西可丢。
+`google_payload_tool_call_test.dart` 钉了完整往返：流式解析 → 历史 → 下一个请求，
+签名逐字相同。
 
 ### 5.4 ① 是真活
 
@@ -226,12 +228,21 @@ App 不给 ①/③ 发 `max_tokens`，真实上限由服务端定（`_outputCap`
 在 ①/③ 上是 ~170s 生成 + TTFT + 上传——**223s 能过，但不宽裕**，模型再啰嗦一点就
 压线。
 
-三条路，按性价比：
+已经做掉两条，剩一条：
 
-1. **补 ③ 的流式**（四行，风险极低）。
-2. **给 agent 显式传 `maxTokens`**，deadline 就有真实数字可依而不是 4096 这个
-   猜测——这是最便宜的止血，不依赖任何流式工作。
-3. **补 ① 的累积器**，单独一个 PR。
+1. ✅ **③ 的流式**（§5.3）。
+2. ✅ **`expectedOutputTokensKey`** —— agent 声明它预期收到多少 output，deadline
+   据此计算。**刻意不复用 `maxTokens`**：那个键是要上到线上的，为了喂 deadline 而
+   抬高它就改变了请求本身——①/③ 今天根本不发 cap，凭空加一个会对任何上限更低的模
+   型 400。这个键不进任何 payload，只是在调用方已经知道答案时让
+   `generateTimeout` 别再猜。Prompt Assistant 和 sub-agent 都声明 8192，于是两个
+   家族对「同一件活要多久」不再各说各话。
+3. ⬜ **① 的累积器**，单独一个 PR。
+
+**留了一个没答的问题**：①/③ 至今不发 `max_tokens`，服务端默认是多少无从得知。如
+果某个中转站默认 1024，`submit_prompt` 会被**截断**而不是超时——agent 已经有
+`finish_reason == 'length'` 的日志分支，但没人见过它触发。真要发 cap 是另一个决
+定，风险在反方向（对上限更低的模型 400），所以这次没做。
 
 ---
 
