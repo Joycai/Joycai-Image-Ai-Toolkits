@@ -51,7 +51,7 @@ void main() {
         // Tall enough for the whole column. The golden captures the rendered
         // subtree, and a [SingleChildScrollView] clips — anything past the
         // viewport is simply not in the PNG, silently.
-        tester.view.physicalSize = const Size(720, 1860);
+        tester.view.physicalSize = const Size(720, 2100);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
@@ -254,6 +254,8 @@ class _Gallery extends StatelessWidget {
               const _Progress(),
               const _Label('工具提示 · 明暗共用同一个底'),
               const _TooltipSpecimen(),
+              const _Label('通知 · 四种状态一个底'),
+              const _ToastSpecimen(),
               const _Label('空状态'),
               AppEmptyState(
                 icon: Icons.inbox_outlined,
@@ -408,6 +410,64 @@ class _TooltipSpecimen extends StatelessWidget {
         padding: tooltip.padding,
         child: Text('在系统播放器中打开', style: tooltip.textStyle),
       ),
+    );
+  }
+}
+
+/// The four toasts, painted from the same tokens [AppSnackBar] uses.
+///
+/// A real [SnackBar] lives in the [ScaffoldMessenger]'s overlay, which this
+/// golden's subtree does not include — the same reason [_TooltipSpecimen]
+/// exists. What it is here to show is the thing `E1 12i` changed: one ground
+/// under four glyphs, and that neither the ground nor the glyphs move when the
+/// seed does. Only the action label should differ across the eight sheets.
+class _ToastSpecimen extends StatelessWidget {
+  const _ToastSpecimen();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget toast(IconData icon, Color glyph, String message, {String? action}) => Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.only(left: 14, right: action == null ? 14 : 8, top: 11, bottom: 11),
+          decoration: BoxDecoration(
+            color: AppOverlay.ink,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: glyph, size: AppSize.iconSm),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppOverlay.onInk,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (action != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    action,
+                    style: textTheme.labelLarge?.copyWith(color: colorScheme.accentOnOverlay),
+                  ),
+                ),
+            ],
+          ),
+        );
+
+    return Column(
+      children: [
+        toast(Icons.check_circle_outline, AppSemanticColors.dark.success, '设置已导出'),
+        toast(Icons.info_outline, AppSemanticColors.dark.info, '任务已提交'),
+        toast(Icons.warning_amber_rounded, AppSemanticColors.dark.warning, '请先选择规则模板'),
+        toast(Icons.error_outline, AppOverlay.danger, '备份导入失败：格式无效', action: '重试'),
+      ],
     );
   }
 }

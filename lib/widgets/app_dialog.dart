@@ -259,9 +259,24 @@ class AppDialog extends StatelessWidget {
             Flexible(child: body),
             if (footer != null) ...[
               if (ruleBelowBody) const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(_pad, _pad, _pad, _pad),
-                child: footer,
+              // A band, not bare surface. `E1 12i` tints the action row a step
+              // lighter than the dialog body and rules it off — the same move
+              // the assistant's result card makes with its header, and for the
+              // same reason: it separates what the dialog *says* from what it
+              // offers to do about it, so a body that scrolls under the rule
+              // still ends somewhere visible.
+              //
+              // Only where there is a rule to sit under. Without one the tint
+              // would be the sole separator, and a colour change with no edge
+              // reads as a rendering seam rather than as a footer.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: ruleBelowBody ? colorScheme.surfaceContainerLow : null,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(_pad, _pad, _pad, _pad),
+                  child: footer,
+                ),
               ),
             ],
           ],

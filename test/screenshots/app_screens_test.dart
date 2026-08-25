@@ -8,6 +8,7 @@
 // docs/ui-screenshot-harness.md.
 
 import 'package:flutter/material.dart';
+import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
@@ -125,6 +126,28 @@ void main() {
           seedImageSelection(AppState());
           for (int p = 0; p < 5; p++) {
             await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
+  // The floating task capsule, opened. It is only on screen while the queue
+  // has work and the workbench is not, and its interesting half — the per-task
+  // rows — is behind a tap, so no shot in the loop above has ever caught it.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('tasks · capsule @ desktop ${brightness.name}', (WidgetTester tester) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.tasks,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'capsule',
+        after: (WidgetTester tester) async {
+          await tester.tap(find.byType(TaskCapsuleMonitor));
+          for (int p = 0; p < 5; p++) {
+            await tester.pump(const Duration(milliseconds: 100));
           }
         },
       );

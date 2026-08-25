@@ -7,6 +7,7 @@ import 'package:gal/gal.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/app_theme.dart';
 import '../../../../core/constants.dart';
 import '../../../../core/design_tokens.dart';
 import '../../../../core/responsive.dart';
@@ -233,23 +234,33 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    activeFile.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    '${activeIndex + 1} / ${images.length}',
-                                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white70),
-                                  ),
-                                ],
+                            // `12h` sets both on one line: the name in mono,
+                            // like every other filename in the app, and the
+                            // position beside it rather than stacked under it.
+                            // Stacked, the counter read as a subtitle *of* the
+                            // file — a caption belonging to the picture rather
+                            // than a place in the run.
+                            Flexible(
+                              child: Text(
+                                activeFile.name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.mono
+                                    .copyWith(color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '${activeIndex + 1} / ${images.length}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.mono
+                                  .copyWith(color: Colors.white54),
+                            ),
+                            const Spacer(),
                             IconButton(
                               icon: const Icon(Icons.save_alt, color: Colors.white),
                               tooltip: l10n.save,
@@ -385,14 +396,25 @@ class _MediaPreviewDialogState extends State<MediaPreviewDialog> {
     return (gridHero as Hero).child;
   }
 
+  /// `12h`'s page chevrons: a 34px disc of white at 8%, not a 48px hole of
+  /// black at 40%.
+  ///
+  /// The old pair were the heaviest thing on a screen whose whole job is to
+  /// show one picture, and over a dark photograph a black plate is invisible
+  /// while its 32px glyph floats unattached. A light wash reads as something
+  /// laid *on* the image at either extreme of what is behind it.
   Widget _buildNavButton(IconData icon, VoidCallback onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(100),
-        shape: BoxShape.circle,
-      ),
+    return SizedBox(
+      width: 34,
+      height: 34,
       child: IconButton(
-        icon: Icon(icon, color: Colors.white, size: 32),
+        icon: Icon(icon, color: Colors.white70, size: AppSize.iconSm),
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white.withValues(alpha: 0.08),
+          shape: const CircleBorder(),
+          minimumSize: const Size.square(34),
+        ),
         onPressed: onPressed,
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_semantic_colors.dart';
+import '../core/design_tokens.dart';
 
 enum _AppSnackBarKind { success, error, warning, info }
 
@@ -51,38 +52,27 @@ class AppSnackBar {
     AppSnackBarAction? action,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final semantic = context.semantic;
-    final (background, foreground, icon) = switch (kind) {
-      // Green from AppSemanticColors, not `primaryContainer`. This was the
-      // seed's own colour, which makes "saved" orange for a user who picked
-      // orange and pink for one who picked rose — the exact failure the
-      // `warning` branch below spends three paragraphs avoiding, and the rule
-      // `design-tokens.md` §3 states outright. Success is a *verdict*, and a
-      // verdict has to mean the same thing at every seed.
-      _AppSnackBarKind.success => (
-          semantic.successContainer,
-          semantic.onSuccessContainer,
-          Icons.check_circle_outline,
-        ),
-      _AppSnackBarKind.error => (colorScheme.errorContainer, colorScheme.onErrorContainer, Icons.error_outline),
-      // Amber rather than a scheme role, and deliberately so. Material has no
-      // warning role; the nearest, tertiaryContainer, is derived from whatever
-      // seed the user picked, so "warning" would be teal for one user and pink
-      // for another — which is no signal at all.
-      //
-      // That reasoning was right and the literals were the problem: it was
-      // written out here, again in log_console.dart and a third time in
-      // task_log_dialog.dart, at three different ambers. AppSemanticColors is
-      // now the one place it lives.
-      _AppSnackBarKind.warning => (
-          semantic.warningContainer,
-          semantic.onWarningContainer,
-          Icons.warning_amber_rounded,
-        ),
-      // Not errorContainer/primaryContainer: info is neither good nor bad
-      // news, so it takes the neutral inverse-surface tone Material reserves
-      // for exactly this — a toast that stands out without implying a verdict.
-      _AppSnackBarKind.info => (colorScheme.inverseSurface, colorScheme.onInverseSurface, Icons.info_outline),
+    final textTheme = Theme.of(context).textTheme;
+
+    // One ground for all four, and the state carried by the glyph alone.
+    //
+    // Each kind used to paint the whole toast in its own semantic *container*
+    // — a pale green slab, then a pale amber one, then a pale red one. `12i`
+    // draws them as one dark card with a coloured icon, and it is right: four
+    // differently coloured blocks floating over the page read as four
+    // unrelated components, while one ground in four states reads as what it
+    // is. It also makes a toast unmistakably a *label over* the app rather
+    // than another surface in it — the same thing [AppOverlay] already says
+    // about tooltips, and the reason the two now share an ink.
+    //
+    // The hues come from [AppSemanticColors.dark] whatever the app's
+    // brightness, because the ground does not flip either. `12i` draws them at
+    // exactly those values.
+    final (Color glyph, IconData icon) = switch (kind) {
+      _AppSnackBarKind.success => (AppSemanticColors.dark.success, Icons.check_circle_outline),
+      _AppSnackBarKind.error => (AppOverlay.danger, Icons.error_outline),
+      _AppSnackBarKind.warning => (AppSemanticColors.dark.warning, Icons.warning_amber_rounded),
+      _AppSnackBarKind.info => (AppSemanticColors.dark.info, Icons.info_outline),
     };
 
     // Hidden first so a rapid string of calls (e.g. one failure per file in a
@@ -92,26 +82,43 @@ class AppSnackBar {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          backgroundColor: background,
+          backgroundColor: AppOverlay.ink,
           behavior: SnackBarBehavior.floating,
           // A toast the user is meant to act on has to outlast the four
           // seconds it takes to read one they only have to notice.
           duration: Duration(seconds: action == null ? 4 : 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+          // `12i`'s own insets. Material's default is 16 horizontal with the
+          // vertical left to the content, which put the glyph a step further
+          // from the edge than the card's corner radius wants.
+          padding: EdgeInsets.only(left: 14, right: action == null ? 14 : 6),
           action: action == null
               ? null
               : SnackBarAction(
                   label: action.label,
-                  textColor: foreground,
+                  // The user's own accent, at the one tone that is pinned
+                  // against the brightness — see [AppAccent.accentOnOverlay].
+                  textColor: colorScheme.accentOnOverlay,
                   onPressed: action.onPressed,
                 ),
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: foreground, size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(message, style: TextStyle(color: foreground))),
-            ],
+          content: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: glyph, size: AppSize.iconSm),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppOverlay.onInk,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

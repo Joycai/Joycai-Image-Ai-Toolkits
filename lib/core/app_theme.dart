@@ -374,7 +374,7 @@ ThemeData buildAppTheme({
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       verticalOffset: 18,
       textStyle: TextStyle(
-        color: Colors.white.withValues(alpha: 0.94),
+        color: AppOverlay.onInk,
         fontSize: 11.5,
         fontWeight: FontWeight.w500,
         fontFamily: fontFamily,
@@ -730,17 +730,16 @@ SliderThemeData neutralSliderTheme(ColorScheme colorScheme) {
 /// The ground a tooltip is drawn on, in both brightnesses.
 ///
 /// `10e` 「工具提示」 pins it at `rgba(23,28,59,.94)` and says light and dark
-/// share it. Named rather than inlined because it is one of the two colours in
-/// this file that is neither a neutral nor the user's seed, and a reader has
-/// to be able to tell it is not a stray hex.
-const Color _tooltipInk = Color(0xF0171C3B);
+/// share it. It moved to [AppOverlay] once `E1 12i` gave toasts the same
+/// ground: two components pinned to one colour is a token, not a local
+/// literal.
+const Color _tooltipInk = AppOverlay.ink;
 
 /// The source red every destructive *fill* is derived from.
 ///
-/// Material's own error source. Named rather than inlined because, with
-/// [_tooltipInk], it is one of the two hexes in this file that is neither a
-/// neutral nor the user's seed, and a reader has to be able to tell it isn't a
-/// hand-picked red.
+/// Material's own error source. Named rather than inlined because it is the
+/// one hex left in this file that is neither a neutral nor the user's seed,
+/// and a reader has to be able to tell it isn't a hand-picked red.
 const Color _errorSource = Color(0xFFB3261E);
 
 /// The scheme a destructive button takes its fill and label from.
