@@ -1500,5 +1500,31 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbDocCount": "{count} 件",
+  "@optKbDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbSearchDocs": "ドキュメントを検索…",
+  "optKbTreeEmpty": "このナレッジベースにはまだドキュメントがありません",
+  "optKbTreeNoMatch": "該当するドキュメントがありません",
+  "optKbTreeChanged": "変更",
+  "optKbTreeAdded": "新規",
+  "optKbTreePending": "未確認の変更 {count} 件",
+  "@optKbTreePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kbWritePolicyTitle": "書き込み権限",
+  "kbWriteAllow": "agent のナレッジベース書き込みを許可",
+  "kbWriteConfirmEach": "書き込み前に個別確認",
+  "kbWriteBackup": "上書き前に .bak を残す",
+  "kbWriteNoConfirmWarning": "個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。"
 }

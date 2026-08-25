@@ -21,7 +21,8 @@ class FixtureEnv {
         docsDir = Directory(p.join(root.path, 'docs')),
         sourceDir = Directory(p.join(root.path, 'source')),
         outputDir = Directory(p.join(root.path, 'output')),
-        browserDir = Directory(p.join(root.path, 'browser'));
+        browserDir = Directory(p.join(root.path, 'browser')),
+        knowledgeDir = Directory(p.join(root.path, 'knowledge'));
 
   final Directory root;
 
@@ -43,6 +44,10 @@ class FixtureEnv {
 
   /// File-browser root.
   final Directory browserDir;
+
+  /// The prompt assistant's knowledge base. A real folder of real markdown,
+  /// because `A2 10h` draws a tree of one.
+  final Directory knowledgeDir;
 
   /// `<temp>/result_cache`, the processed-image view's scan root.
   Directory get resultCacheDir => Directory(p.join(tempDir.path, 'result_cache'));
@@ -79,6 +84,7 @@ FixtureEnv installFixtureEnv(TestWidgetsFlutterBinding binding) {
     env.sourceDir,
     env.outputDir,
     env.browserDir,
+    env.knowledgeDir,
     env.resultCacheDir,
   ]) {
     dir.createSync(recursive: true);

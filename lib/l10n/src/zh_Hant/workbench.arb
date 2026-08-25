@@ -736,5 +736,31 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbDocCount": "{count} 篇",
+  "@optKbDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbSearchDocs": "搜尋文件…",
+  "optKbTreeEmpty": "這個知識庫裡還沒有文件",
+  "optKbTreeNoMatch": "沒有符合的文件",
+  "optKbTreeChanged": "已改",
+  "optKbTreeAdded": "新增",
+  "optKbTreePending": "{count} 處變更待確認",
+  "@optKbTreePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kbWritePolicyTitle": "寫入權限",
+  "kbWriteAllow": "允許 agent 寫入知識庫",
+  "kbWriteConfirmEach": "寫入前逐條確認",
+  "kbWriteBackup": "覆蓋前保留 .bak 副本",
+  "kbWriteNoConfirmWarning": "關閉逐條確認後，agent 起草的內容會不經你過目直接寫進檔案。"
 }

@@ -2985,4 +2985,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String kbEditConfirmAll(int count) {
     return 'Write $count changes';
   }
+
+  @override
+  String optKbDocCount(int count) {
+    return '$count docs';
+  }
+
+  @override
+  String get optKbSearchDocs => 'Search documents...';
+
+  @override
+  String get optKbTreeEmpty => 'This knowledge base has no documents yet';
+
+  @override
+  String get optKbTreeNoMatch => 'No document matches that';
+
+  @override
+  String get optKbTreeChanged => 'edited';
+
+  @override
+  String get optKbTreeAdded => 'new';
+
+  @override
+  String optKbTreePending(int count) {
+    return '$count changes awaiting confirmation';
+  }
+
+  @override
+  String get kbWritePolicyTitle => 'Write permissions';
+
+  @override
+  String get kbWriteAllow => 'Let the agent write to the knowledge base';
+
+  @override
+  String get kbWriteConfirmEach => 'Confirm each write';
+
+  @override
+  String get kbWriteBackup => 'Keep a .bak copy before overwriting';
+
+  @override
+  String get kbWriteNoConfirmWarning =>
+      'With confirmation off, what the agent drafts is written to your files without you reading it first.';
 }

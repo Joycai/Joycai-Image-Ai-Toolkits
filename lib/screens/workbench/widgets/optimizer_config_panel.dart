@@ -21,6 +21,7 @@ import '../../../widgets/app_status_badge.dart';
 import '../../../widgets/chat_model_selector.dart';
 import '../../../widgets/searchable_picker.dart';
 import '../../../widgets/app_section_label.dart';
+import '../../../widgets/app_setting_row.dart';
 import 'optimizer_context_card.dart';
 
 class OptimizerConfigPanel extends StatefulWidget {
@@ -50,6 +51,9 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// oldest first. Only ever non-empty in [AssistantMode.knowledgeEdit].
   final List<OptimizerChatEntry> pendingKbEdits;
 
+  /// What the agent is currently allowed to do to the knowledge base.
+  final KbWritePolicy writePolicy;
+
   /// Knowledge files the current answer rests on, newest turn first. Passed in
   /// rather than read from the session here, so this panel stays
   /// presentational and testable without the workbench's providers.
@@ -74,6 +78,10 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// Answers every staged edit at once, from `10h`'s 全部写入 / 全部丢弃.
   final VoidCallback? onWriteAllKbEdits;
   final VoidCallback? onDiscardAllKbEdits;
+
+  /// Persists a change to the three write switches. Owned by the parent for
+  /// the same reason [onSaveTemplate] is — this panel reaches for no store.
+  final ValueChanged<KbWritePolicy>? onWritePolicyChanged;
   final Function(AssistantMode) onModeChanged;
 
   /// Creates any missing starter knowledge-base file, picking a folder first
@@ -93,8 +101,10 @@ class OptimizerConfigPanel extends StatefulWidget {
     required this.sysPrompts,
     this.running = false,
     this.pendingKbEdits = const [],
+    this.writePolicy = KbWritePolicy.defaults,
     this.onWriteAllKbEdits,
     this.onDiscardAllKbEdits,
+    this.onWritePolicyChanged,
     this.citedKnowledgeFiles = const [],
     this.contextUsage = ContextUsageSnapshot.placeholder,
     required this.onModelChanged,
@@ -231,6 +241,14 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
         ] else ...[
           const SizedBox(height: _cardGap),
           _buildKnowledgeStatus(l10n, colorScheme),
+          // Directly under the base it governs, and above the usage report:
+          // `10h` puts the permissions where the folder is, because the two
+          // questions — which folder, and what may happen to it — are asked
+          // together or not at all.
+          if (widget.mode == AssistantMode.knowledgeEdit) ...[
+            const SizedBox(height: _cardGap),
+            _buildWritePolicy(l10n, colorScheme),
+          ],
           const SizedBox(height: _cardGap),
           OptimizerContextCard(usage: widget.contextUsage),
           const SizedBox(height: _cardGap),
@@ -549,6 +567,84 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
                   style: textTheme.labelMedium?.copyWith(color: colorScheme.onAccentTint),
                 ),
               ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// `10h`'s 写入权限 card: what the agent may do to the folder above.
+  ///
+  /// Three switches rather than one because they fail differently. The first
+  /// withdraws the write tool outright — the model is not offered it, so it
+  /// cannot be talked into calling it. The second is the approval gate these
+  /// cards exist for, and turning it off is the one setting here that lets
+  /// LLM-authored text reach the user's files unread; the note under the row
+  /// says so in those words. The third is the answer to having turned the
+  /// second off.
+  Widget _buildWritePolicy(AppLocalizations l10n, ColorScheme colorScheme) {
+    final policy = widget.writePolicy;
+    final textTheme = Theme.of(context).textTheme;
+
+    void update(KbWritePolicy next) => widget.onWritePolicyChanged?.call(next);
+
+    return AppCard(
+      outlined: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.lock_outline, size: AppSize.iconSm, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(child: Text(l10n.kbWritePolicyTitle, style: textTheme.titleSmall)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          AppToggleRow(
+            title: l10n.kbWriteAllow,
+            value: policy.allowWrites,
+            onChanged: (v) => update(policy.copyWith(allowWrites: v)),
+          ),
+          AppToggleRow(
+            title: l10n.kbWriteConfirmEach,
+            value: policy.confirmEachWrite,
+            // Off with writing itself off: nothing can be proposed, so there
+            // is nothing to confirm, and a live switch there would offer to
+            // change something that cannot happen.
+            onChanged: policy.allowWrites
+                ? (v) => update(policy.copyWith(confirmEachWrite: v))
+                : null,
+          ),
+          AppToggleRow(
+            title: l10n.kbWriteBackup,
+            value: policy.backupBeforeOverwrite,
+            onChanged: policy.allowWrites
+                ? (v) => update(policy.copyWith(backupBeforeOverwrite: v))
+                : null,
+          ),
+          if (policy.allowWrites && !policy.confirmEachWrite) ...[
+            const SizedBox(height: 6),
+            // Only while it is true. A standing warning about a state the user
+            // is not in is noise, and noise is what makes the real one
+            // invisible.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_outlined, size: 14, color: context.semantic.warning),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.kbWriteNoConfirmWarning,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: context.semantic.warning,
+                      height: AppType.looseHeight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),

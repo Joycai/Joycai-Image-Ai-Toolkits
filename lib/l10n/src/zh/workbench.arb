@@ -736,5 +736,31 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbDocCount": "{count} 篇",
+  "@optKbDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbSearchDocs": "搜索文档…",
+  "optKbTreeEmpty": "这个知识库里还没有文档",
+  "optKbTreeNoMatch": "没有匹配的文档",
+  "optKbTreeChanged": "已改",
+  "optKbTreeAdded": "新增",
+  "optKbTreePending": "{count} 处改动待确认",
+  "@optKbTreePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kbWritePolicyTitle": "写入权限",
+  "kbWriteAllow": "允许 agent 写入知识库",
+  "kbWriteConfirmEach": "写入前逐条确认",
+  "kbWriteBackup": "覆盖前保留 .bak 副本",
+  "kbWriteNoConfirmWarning": "关闭逐条确认后，agent 起草的内容会不经你过目直接写进文件。"
 }

@@ -2920,4 +2920,45 @@ class AppLocalizationsJa extends AppLocalizations {
   String kbEditConfirmAll(int count) {
     return '$count 件を書き込む';
   }
+
+  @override
+  String optKbDocCount(int count) {
+    return '$count 件';
+  }
+
+  @override
+  String get optKbSearchDocs => 'ドキュメントを検索…';
+
+  @override
+  String get optKbTreeEmpty => 'このナレッジベースにはまだドキュメントがありません';
+
+  @override
+  String get optKbTreeNoMatch => '該当するドキュメントがありません';
+
+  @override
+  String get optKbTreeChanged => '変更';
+
+  @override
+  String get optKbTreeAdded => '新規';
+
+  @override
+  String optKbTreePending(int count) {
+    return '未確認の変更 $count 件';
+  }
+
+  @override
+  String get kbWritePolicyTitle => '書き込み権限';
+
+  @override
+  String get kbWriteAllow => 'agent のナレッジベース書き込みを許可';
+
+  @override
+  String get kbWriteConfirmEach => '書き込み前に個別確認';
+
+  @override
+  String get kbWriteBackup => '上書き前に .bak を残す';
+
+  @override
+  String get kbWriteNoConfirmWarning =>
+      '個別確認をオフにすると、agent が作成した内容が確認なしでファイルに書き込まれます。';
 }

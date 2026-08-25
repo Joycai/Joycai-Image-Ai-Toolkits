@@ -2895,6 +2895,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String kbEditConfirmAll(int count) {
     return '确认写入 $count 处';
   }
+
+  @override
+  String optKbDocCount(int count) {
+    return '$count 篇';
+  }
+
+  @override
+  String get optKbSearchDocs => '搜索文档…';
+
+  @override
+  String get optKbTreeEmpty => '这个知识库里还没有文档';
+
+  @override
+  String get optKbTreeNoMatch => '没有匹配的文档';
+
+  @override
+  String get optKbTreeChanged => '已改';
+
+  @override
+  String get optKbTreeAdded => '新增';
+
+  @override
+  String optKbTreePending(int count) {
+    return '$count 处改动待确认';
+  }
+
+  @override
+  String get kbWritePolicyTitle => '写入权限';
+
+  @override
+  String get kbWriteAllow => '允许 agent 写入知识库';
+
+  @override
+  String get kbWriteConfirmEach => '写入前逐条确认';
+
+  @override
+  String get kbWriteBackup => '覆盖前保留 .bak 副本';
+
+  @override
+  String get kbWriteNoConfirmWarning => '关闭逐条确认后，agent 起草的内容会不经你过目直接写进文件。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -5786,4 +5826,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String kbEditConfirmAll(int count) {
     return '確認寫入 $count 處';
   }
+
+  @override
+  String optKbDocCount(int count) {
+    return '$count 篇';
+  }
+
+  @override
+  String get optKbSearchDocs => '搜尋文件…';
+
+  @override
+  String get optKbTreeEmpty => '這個知識庫裡還沒有文件';
+
+  @override
+  String get optKbTreeNoMatch => '沒有符合的文件';
+
+  @override
+  String get optKbTreeChanged => '已改';
+
+  @override
+  String get optKbTreeAdded => '新增';
+
+  @override
+  String optKbTreePending(int count) {
+    return '$count 處變更待確認';
+  }
+
+  @override
+  String get kbWritePolicyTitle => '寫入權限';
+
+  @override
+  String get kbWriteAllow => '允許 agent 寫入知識庫';
+
+  @override
+  String get kbWriteConfirmEach => '寫入前逐條確認';
+
+  @override
+  String get kbWriteBackup => '覆蓋前保留 .bak 副本';
+
+  @override
+  String get kbWriteNoConfirmWarning => '關閉逐條確認後，agent 起草的內容會不經你過目直接寫進檔案。';
 }

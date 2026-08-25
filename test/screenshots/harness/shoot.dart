@@ -139,6 +139,17 @@ Future<void> mountApp(
     await tester.pump();
     await _warmImageCache(tester, env);
     await tester.pump();
+    // A second settle, for the loads that only *start* once the first round's
+    // results are on screen. The assistant's knowledge tree is the case that
+    // needed it: the screen reads the configured folder, hands the path down,
+    // and only then does the panel walk it — a chain whose second half is
+    // scheduled inside this block and would otherwise be left pending when it
+    // ends, since the fake-async pumps below cannot complete a real-async
+    // future. Kept short — it is waiting for a couple of event-loop turns and
+    // a folder walk, not for the database — because it is paid once per shot
+    // across ~180 of them.
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await tester.pump();
   });
 
   // 800ms covers every AppMotion duration used across the screens (the

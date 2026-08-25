@@ -736,5 +736,31 @@
         "type": "int"
       }
     }
-  }
+  },
+  "optKbDocCount": "{count} docs",
+  "@optKbDocCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optKbSearchDocs": "Search documents...",
+  "optKbTreeEmpty": "This knowledge base has no documents yet",
+  "optKbTreeNoMatch": "No document matches that",
+  "optKbTreeChanged": "edited",
+  "optKbTreeAdded": "new",
+  "optKbTreePending": "{count} changes awaiting confirmation",
+  "@optKbTreePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kbWritePolicyTitle": "Write permissions",
+  "kbWriteAllow": "Let the agent write to the knowledge base",
+  "kbWriteConfirmEach": "Confirm each write",
+  "kbWriteBackup": "Keep a .bak copy before overwriting",
+  "kbWriteNoConfirmWarning": "With confirmation off, what the agent drafts is written to your files without you reading it first."
 }

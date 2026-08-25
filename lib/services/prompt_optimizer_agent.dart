@@ -257,8 +257,24 @@ class PromptOptimizerSession extends ChangeNotifier {
   bool get usesKnowledgeBase =>
       mode == AssistantMode.knowledgeBase || mode == AssistantMode.knowledgeEdit;
 
+  /// What the agent may do to the knowledge base this turn.
+  ///
+  /// Held on the session rather than threaded through [runTurn]: the tool
+  /// handler, the approval gate and the panel all consult it, and every one of
+  /// them already has the session. Assigned from the persisted setting just
+  /// before a turn is enqueued, so a toggle flipped mid-conversation takes
+  /// effect on the next question rather than on the one already in flight.
+  KbWritePolicy writePolicy = KbWritePolicy.defaults;
+
   /// True when the agent may propose knowledge-base edits.
-  bool get canWriteKnowledge => mode == AssistantMode.knowledgeEdit;
+  ///
+  /// Both halves matter. The mode is what makes editing the point of the
+  /// session; the policy is the user's standing answer to whether that is
+  /// currently allowed, and turning it off has to withdraw the tool rather
+  /// than merely hide its button — a model offered a tool will find a reason
+  /// to call it.
+  bool get canWriteKnowledge =>
+      mode == AssistantMode.knowledgeEdit && writePolicy.allowWrites;
 
   /// Chars-per-token measured from the last request the provider reported
   /// token usage for, or null while it has reported none.
@@ -1456,6 +1472,19 @@ class PromptOptimizerAgent {
                 'message': 'Tool delegate failed: $e',
               };
             }
+          } else if (call.name == 'write_knowledge_file') {
+            // Async once per-edit confirmation can be off, so it sits here
+            // beside delegate and read_note rather than in the synchronous
+            // _executeTool switch.
+            try {
+              result = await _executeWriteKnowledge(call, session, knowledgeRoot, onLog);
+            } catch (e) {
+              onLog?.call('Tool write_knowledge_file failed: $e');
+              result = {
+                'status': 'error',
+                'message': 'Tool write_knowledge_file failed: $e',
+              };
+            }
           } else if (call.name == 'read_note') {
             // Async (note store lives in SQLite), so alongside delegate
             // rather than in the synchronous _executeTool switch.
@@ -2539,6 +2568,100 @@ class PromptOptimizerAgent {
     }
   }
 
+  /// The `write_knowledge_file` tool.
+  ///
+  /// Out here rather than in [_executeTool]'s switch because it can now
+  /// await: with per-edit confirmation off it writes the staged edit
+  /// straight through. Same placement as `delegate` and `read_note`, and
+  /// the same pairing contract — every path returns a result.
+  static Future<Map<String, dynamic>> _executeWriteKnowledge(
+    LLMToolCall call,
+    PromptOptimizerSession session,
+    String? knowledgeRoot,
+    void Function(String message)? onLog,
+  ) async {
+    if (knowledgeRoot == null) return _kbUnavailable();
+    // The tool is only registered when both halves of `canWriteKnowledge`
+    // hold, but a model can hallucinate a tool name it was never offered —
+    // the session, not the tool list, is what decides whether edits may be
+    // proposed at all. The two halves are refused separately because they are
+    // different situations: one is the wrong mode, the other is the user
+    // having said no, and telling the model "wrong mode" when it is in the
+    // right one invites it to keep trying.
+    if (!session.writePolicy.allowWrites) {
+      return {
+        'status': 'error',
+        'message': 'The user has turned off knowledge-base writing for this '
+            'session. Do not retry — say what you would have changed instead.',
+      };
+    }
+    if (!session.canWriteKnowledge) {
+      return {
+        'status': 'error',
+        'message': 'This session is read-only. Knowledge files can only be '
+            'edited in the knowledge-base maintenance mode.',
+      };
+    }
+    final writePath = call.arguments['path']?.toString() ?? '';
+    final writeContent = call.arguments['content']?.toString() ?? '';
+    onLog?.call('Tool call: write_knowledge_file $writePath (${writeContent.length} chars)');
+    if (writePath.trim().isEmpty) {
+      return {'status': 'error', 'message': 'The path argument must not be empty.'};
+    }
+    if (writeContent.isEmpty) {
+      return {
+        'status': 'error',
+        'message': 'The content argument must not be empty. Pass the complete file content.',
+      };
+    }
+    try {
+      final kb = KnowledgeBaseService();
+      final existing = kb.readFullFile(knowledgeRoot, writePath);
+      // Read-before-write rail, enforced here rather than left to the
+      // system prompt: overwriting a file the model has not read is the
+      // cheapest way for it to silently destroy the user's rules. Keyed on
+      // a *live* read, so a read that has since been elided or compacted
+      // away no longer licenses a write — the model must fetch the file
+      // again and diff against what it can actually see.
+      if (existing != null && _liveReadPages(session, writePath).isEmpty) {
+        return {
+          'status': 'error',
+          'message': 'Read $writePath with read_knowledge_file first — you '
+              'must not overwrite a file you have not read.',
+        };
+      }
+      final editId = session._stageKbEdit(
+        relPath: writePath,
+        newContent: writeContent,
+        oldContent: existing,
+        note: call.arguments['note']?.toString(),
+      );
+      // Staged either way, then applied here when the user has turned per-edit
+      // confirmation off. Going through the same card rather than writing
+      // behind its back is what keeps the transcript a truthful record: the
+      // edit is still reviewable after the fact, still shows its diff, and
+      // still says what happened to it.
+      if (!session.writePolicy.confirmEachWrite) {
+        await applyStagedKbEdit(session: session, editId: editId);
+        return {
+          'status': 'ok',
+          'message': 'Wrote $writePath. Per-edit confirmation is off for this '
+              'session, so the change is already on disk.',
+        };
+      }
+      return {
+        'status': 'ok',
+        'message': 'Edit to $writePath staged for user approval. It is NOT '
+            'written yet — do not assume it was applied, and do not re-read '
+            'the file expecting your new content.',
+      };
+    } on KbPathException catch (e) {
+      return {'status': 'error', 'message': e.message};
+    } catch (e) {
+      return {'status': 'error', 'message': 'Failed to stage edit for $writePath: $e'};
+    }
+  }
+
   static Map<String, dynamic> _executeTool(
     LLMToolCall call,
     List<Map<String, String>> referenceImages,
@@ -2630,64 +2753,6 @@ class PromptOptimizerAgent {
         } catch (e) {
           return {'status': 'error', 'message': 'Failed to read $relPath: $e'};
         }
-      case 'write_knowledge_file':
-        if (knowledgeRoot == null) return _kbUnavailable();
-        // The tool is only registered in edit mode, but a model can hallucinate
-        // a tool name it was never offered — the mode, not the tool list, is
-        // what decides whether this session may propose edits at all.
-        if (!session.canWriteKnowledge) {
-          return {
-            'status': 'error',
-            'message': 'This session is read-only. Knowledge files can only be '
-                'edited in the knowledge-base maintenance mode.',
-          };
-        }
-        final writePath = call.arguments['path']?.toString() ?? '';
-        final writeContent = call.arguments['content']?.toString() ?? '';
-        onLog?.call('Tool call: write_knowledge_file $writePath (${writeContent.length} chars)');
-        if (writePath.trim().isEmpty) {
-          return {'status': 'error', 'message': 'The path argument must not be empty.'};
-        }
-        if (writeContent.isEmpty) {
-          return {
-            'status': 'error',
-            'message': 'The content argument must not be empty. Pass the complete file content.',
-          };
-        }
-        try {
-          final kb = KnowledgeBaseService();
-          final existing = kb.readFullFile(knowledgeRoot, writePath);
-          // Read-before-write rail, enforced here rather than left to the
-          // system prompt: overwriting a file the model has not read is the
-          // cheapest way for it to silently destroy the user's rules. Keyed on
-          // a *live* read, so a read that has since been elided or compacted
-          // away no longer licenses a write — the model must fetch the file
-          // again and diff against what it can actually see.
-          if (existing != null && _liveReadPages(session, writePath).isEmpty) {
-            return {
-              'status': 'error',
-              'message': 'Read $writePath with read_knowledge_file first — you '
-                  'must not overwrite a file you have not read.',
-            };
-          }
-          session._stageKbEdit(
-            relPath: writePath,
-            newContent: writeContent,
-            oldContent: existing,
-            note: call.arguments['note']?.toString(),
-          );
-          return {
-            'status': 'ok',
-            'message': 'Edit to $writePath staged for user approval. It is NOT '
-                'written yet — do not assume it was applied, and do not re-read '
-                'the file expecting your new content.',
-          };
-        } on KbPathException catch (e) {
-          return {'status': 'error', 'message': e.message};
-        } catch (e) {
-          return {'status': 'error', 'message': 'Failed to stage edit for $writePath: $e'};
-        }
-
       case 'list_reference_images':
         onLog?.call('Tool call: list_reference_images (${referenceImages.length} images)');
         session._addEntry(OptimizerChatEntry(
@@ -2805,9 +2870,16 @@ class PromptOptimizerAgent {
     if (entry == null || entry.editState != KbEditState.pending) return;
     final relPath = entry.targetPath!;
     try {
-      final root = await KnowledgeBaseService().getRoot();
+      final kb = KnowledgeBaseService();
+      final root = await kb.getRoot();
       if (root == null) throw KbPathException('The knowledge base folder is not configured.');
-      await KnowledgeBaseService().writeFile(root, relPath, entry.newContent!);
+      // Before the write, not after: the point of the copy is the content that
+      // is about to stop existing. A create has nothing to copy, and
+      // [KnowledgeBaseService.backupFile] says so by doing nothing.
+      if (session.writePolicy.backupBeforeOverwrite) {
+        await kb.backupFile(root, relPath);
+      }
+      await kb.writeFile(root, relPath, entry.newContent!);
       // The file changed, so every read of it recorded so far describes content
       // that no longer exists — and page boundaries move on a rewrite, so
       // invalidating single pages would be meaningless. Marking the point in

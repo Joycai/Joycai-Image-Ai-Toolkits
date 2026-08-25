@@ -5439,6 +5439,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write {count} changes'**
   String kbEditConfirmAll(int count);
+
+  /// No description provided for @optKbDocCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} docs'**
+  String optKbDocCount(int count);
+
+  /// No description provided for @optKbSearchDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Search documents...'**
+  String get optKbSearchDocs;
+
+  /// No description provided for @optKbTreeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This knowledge base has no documents yet'**
+  String get optKbTreeEmpty;
+
+  /// No description provided for @optKbTreeNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No document matches that'**
+  String get optKbTreeNoMatch;
+
+  /// No description provided for @optKbTreeChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'edited'**
+  String get optKbTreeChanged;
+
+  /// No description provided for @optKbTreeAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'new'**
+  String get optKbTreeAdded;
+
+  /// No description provided for @optKbTreePending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changes awaiting confirmation'**
+  String optKbTreePending(int count);
+
+  /// No description provided for @kbWritePolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Write permissions'**
+  String get kbWritePolicyTitle;
+
+  /// No description provided for @kbWriteAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the agent write to the knowledge base'**
+  String get kbWriteAllow;
+
+  /// No description provided for @kbWriteConfirmEach.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm each write'**
+  String get kbWriteConfirmEach;
+
+  /// No description provided for @kbWriteBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a .bak copy before overwriting'**
+  String get kbWriteBackup;
+
+  /// No description provided for @kbWriteNoConfirmWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'With confirmation off, what the agent drafts is written to your files without you reading it first.'**
+  String get kbWriteNoConfirmWarning;
 }
 
 class _AppLocalizationsDelegate

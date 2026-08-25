@@ -22,6 +22,7 @@ import 'package:joycai_image_ai_toolkits/models/prompt_history_entry.dart';
 import 'package:joycai_image_ai_toolkits/models/tag.dart';
 import 'package:joycai_image_ai_toolkits/models/task_item.dart';
 import 'package:joycai_image_ai_toolkits/services/database_service.dart';
+import 'package:joycai_image_ai_toolkits/services/knowledge_base_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/prompt_optimizer_agent.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
@@ -44,6 +45,7 @@ Future<void> seedFixtures(FixtureEnv env) async {
   final _Images images = await _writeImages(env);
 
   await _seedSettings(db, env);
+  await _seedKnowledgeBase(db, env);
   await db.addSourceDirectory(env.sourceDir.path);
   final _Catalog catalog = await _seedCatalog(db);
   await _seedPrompts(db);
@@ -301,6 +303,36 @@ Future<void> _seedPrompts(DatabaseService db) async {
     await db.addPromptHistory(PromptHistoryType.image, entry);
   }
   await db.addPromptHistory(PromptHistoryType.video, '镜头缓慢推近，背景虚化');
+}
+
+// ---------------------------------------------------------------------------
+// Knowledge base
+// ---------------------------------------------------------------------------
+
+/// A real folder of markdown for the assistant to read and `10h`'s tree to
+/// draw. Nested two levels deep on purpose — a flat folder would photograph a
+/// tree with nothing to expand, which is most of what the column does.
+Future<void> _seedKnowledgeBase(DatabaseService db, FixtureEnv env) async {
+  const Map<String, String> docs = <String, String>{
+    'README.md': '# 知识库\n\n这是提示词助手读取的规则库。每个目录一类约束，README 是目录地图。\n',
+    '01_基础规则/01a_光照与材质.md': '# 光照与材质\n\n主光方向、色温、材质反射率的写法约定。\n',
+    '01_基础规则/01b_镜头语言.md': '# 镜头语言\n\n机位、焦段、景深的固定表述。\n',
+    '04_模板/04_cosplay照片模版.md': '# Cosplay 照片模版\n\n四段结构：任务 / 模特设定 / 服装 / 画面要求。\n',
+    '05_服装分层与材质.md': '# 服装分层与材质\n\n由外到内描述服装层次，材质写在层次之后。\n',
+    '06_场景动作镜头组合库.md': '# 场景动作镜头组合库\n\n常用的场景与动作搭配，按主题分组。\n',
+    '07_footwear/07a_鞋型与材质.md': '# 鞋型与材质\n\n鞋型、鞋跟高度与材质的写法。\n',
+    '07_footwear/07b_叠穿袜子与高跟鞋.md': '# 叠穿袜子与高跟鞋\n\n## 二、叠穿组合\n  - 白色过膝袜 + 玛丽珍鞋：适合校园与制服主题。\n  - 黑色短袜 + 高跟鞋：注意脚踝处袜口不要压出褶皱。\n',
+    '08_易错结构与修正方案.md': '# 易错结构与修正方案\n\n模型常见的误解与对应的改写方式。\n',
+    '09_负面词表.md': '# 负面词表\n\n按题材分组的负面提示词。\n',
+  };
+
+  for (final MapEntry<String, String> doc in docs.entries) {
+    final File file = File(p.join(env.knowledgeDir.path, doc.key));
+    await file.parent.create(recursive: true);
+    await file.writeAsString(doc.value);
+  }
+
+  await db.saveSetting(KnowledgeBaseService.settingKey, env.knowledgeDir.path);
 }
 
 // ---------------------------------------------------------------------------

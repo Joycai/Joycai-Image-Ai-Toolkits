@@ -39,6 +39,71 @@ class KbTreeStats {
   });
 }
 
+/// One row of the knowledge tree as the assistant's left column draws it.
+///
+/// Flat, in display order, with [depth] carrying the indent — rather than a
+/// nested structure. The panel renders a lazy list, and a list is what a lazy
+/// list wants; nesting would have to be flattened at every build anyway.
+class KbTreeEntry {
+  final String relPath;
+  final String name;
+  final bool isDir;
+  final int depth;
+
+  const KbTreeEntry({
+    required this.relPath,
+    required this.name,
+    required this.isDir,
+    required this.depth,
+  });
+}
+
+/// What the agent is allowed to do to the knowledge base, from `A2 10h`'s
+/// 写入权限 card.
+///
+/// Three separate switches rather than one, because they fail differently:
+/// [allowWrites] decides whether the write tool is offered at all,
+/// [confirmEachWrite] decides whether what it proposes reaches disk without a
+/// human seeing it, and [backupBeforeOverwrite] decides whether the previous
+/// version survives either way.
+class KbWritePolicy {
+  final bool allowWrites;
+  final bool confirmEachWrite;
+  final bool backupBeforeOverwrite;
+
+  const KbWritePolicy({
+    this.allowWrites = true,
+    this.confirmEachWrite = true,
+    this.backupBeforeOverwrite = false,
+  });
+
+  /// The defaults, spelled out: the agent may propose, nothing lands without
+  /// approval, and no backups are kept — because with approval on there is
+  /// nothing to recover from that the user did not read first.
+  static const KbWritePolicy defaults = KbWritePolicy();
+
+  KbWritePolicy copyWith({
+    bool? allowWrites,
+    bool? confirmEachWrite,
+    bool? backupBeforeOverwrite,
+  }) =>
+      KbWritePolicy(
+        allowWrites: allowWrites ?? this.allowWrites,
+        confirmEachWrite: confirmEachWrite ?? this.confirmEachWrite,
+        backupBeforeOverwrite: backupBeforeOverwrite ?? this.backupBeforeOverwrite,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is KbWritePolicy &&
+      other.allowWrites == allowWrites &&
+      other.confirmEachWrite == confirmEachWrite &&
+      other.backupBeforeOverwrite == backupBeforeOverwrite;
+
+  @override
+  int get hashCode => Object.hash(allowWrites, confirmEachWrite, backupBeforeOverwrite);
+}
+
 class KbReadResult {
   final String content;
   final int page;
@@ -69,6 +134,39 @@ class KnowledgeBaseService {
 
   static const String settingKey = 'knowledge_base_path';
   static const String entryFileName = 'README.md';
+
+  static const String _allowWritesKey = 'kb_allow_writes';
+  static const String _confirmWritesKey = 'kb_confirm_writes';
+  static const String _backupWritesKey = 'kb_backup_writes';
+
+  /// Suffix for the copy [backupFile] leaves behind. Deliberately appended to
+  /// the whole name rather than replacing `.md`: `listFiles` only surfaces
+  /// `.md`, so `07b.md.bak` is invisible to the agent while `07b.bak.md`
+  /// would come back as a second document saying nearly the same thing.
+  static const String backupSuffix = '.bak';
+
+  Future<KbWritePolicy> getWritePolicy() async {
+    final db = DatabaseService();
+    Future<bool> read(String key, bool fallback) async {
+      final raw = await db.getSetting(key);
+      if (raw == null || raw.isEmpty) return fallback;
+      return raw == '1' || raw.toLowerCase() == 'true';
+    }
+
+    return KbWritePolicy(
+      allowWrites: await read(_allowWritesKey, KbWritePolicy.defaults.allowWrites),
+      confirmEachWrite: await read(_confirmWritesKey, KbWritePolicy.defaults.confirmEachWrite),
+      backupBeforeOverwrite:
+          await read(_backupWritesKey, KbWritePolicy.defaults.backupBeforeOverwrite),
+    );
+  }
+
+  Future<void> setWritePolicy(KbWritePolicy policy) async {
+    final db = DatabaseService();
+    await db.saveSetting(_allowWritesKey, policy.allowWrites ? '1' : '0');
+    await db.saveSetting(_confirmWritesKey, policy.confirmEachWrite ? '1' : '0');
+    await db.saveSetting(_backupWritesKey, policy.backupBeforeOverwrite ? '1' : '0');
+  }
 
   /// Max characters returned per read_knowledge_file page.
   static const int pageSize = 8000;
@@ -221,6 +319,58 @@ class KnowledgeBaseService {
     }
 
     return KbTreeStats(files: files, directories: directories, newestModified: newest);
+  }
+
+  /// Every folder and markdown file under [root], in display order.
+  ///
+  /// Built on [listFiles] for the same reason [scanTree] is: the panel must
+  /// show exactly what the agent can reach, and a tree that listed files the
+  /// model cannot read would invite the user to ask about documents that are
+  /// not there.
+  ///
+  /// [limit] is a backstop, not a feature. A folder someone pointed at their
+  /// home directory would otherwise walk it synchronously; the count on the
+  /// header comes from [scanTree] and stays truthful either way.
+  List<KbTreeEntry> walkTree(String root, {String? dir, int depth = 0, int limit = 2000}) {
+    if (depth > 12) return const [];
+
+    final entries = <KbTreeEntry>[];
+    for (final entry in listFiles(root, dir: dir)) {
+      if (entries.length >= limit) break;
+      final name = p.basename(entry.relPath);
+      entries.add(KbTreeEntry(
+        relPath: entry.relPath,
+        name: name,
+        isDir: entry.isDir,
+        depth: depth,
+      ));
+      if (entry.isDir) {
+        entries.addAll(walkTree(
+          root,
+          dir: entry.relPath,
+          depth: depth + 1,
+          limit: limit - entries.length,
+        ));
+      }
+    }
+    // Alphabetical within each level, folders and files together — whatever
+    // [listFiles] sorted, with each folder's contents spliced in behind it.
+    return entries;
+  }
+
+  /// Copies [relPath] beside itself as `<name>.bak` before it is overwritten.
+  ///
+  /// A no-op when the file does not exist yet: a create has no previous
+  /// version, and writing an empty `.bak` would invent one. Any existing
+  /// backup is replaced — the point is to be able to undo *this* write, and a
+  /// chain of numbered copies inside a folder the agent reads from is litter
+  /// the user did not ask for.
+  Future<void> backupFile(String root, String relPath) async {
+    final resolved = resolvePath(root, relPath);
+    final file = File(resolved);
+    if (!file.existsSync()) return;
+    _requireInsideRootResolvingLinks(root, resolved, relPath);
+    await file.copy('$resolved$backupSuffix');
   }
 
   static DateTime? _laterOf(DateTime? a, DateTime? b) {

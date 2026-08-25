@@ -42,7 +42,7 @@ import 'widgets/mask_editor_toolbar.dart';
 import 'widgets/mask_editor_view.dart';
 import 'widgets/metadata_inspector.dart';
 import 'widgets/optimizer_config_panel.dart';
-import 'widgets/optimizer_reference_panel.dart';
+import 'widgets/optimizer_left_panel.dart';
 import 'widgets/prompt_optimizer_toolbar.dart';
 import 'widgets/prompt_optimizer_view.dart';
 import 'widgets/video_config_panel.dart';
@@ -95,6 +95,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   bool _optIsLoadingData = true;
   KbStatus _kbStatus = KbStatus.notSet;
   String? _kbPath;
+  KbWritePolicy _kbWritePolicy = KbWritePolicy.defaults;
 
   @override
   void didChangeDependencies() {
@@ -145,12 +146,21 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final kb = KnowledgeBaseService();
     final path = await kb.getRoot();
     final status = await kb.validate(path);
+    final policy = await kb.getWritePolicy();
     if (mounted) {
       setState(() {
         _kbPath = path;
         _kbStatus = status;
+        _kbWritePolicy = policy;
       });
     }
+  }
+
+  /// Persists a change to `10h`'s write switches, then re-reads so the panel
+  /// shows what is actually stored rather than what was asked for.
+  Future<void> _handleWritePolicyChanged(KbWritePolicy policy) async {
+    setState(() => _kbWritePolicy = policy);
+    await KnowledgeBaseService().setWritePolicy(policy);
   }
 
   Future<void> _loadOptimizerData() async {
@@ -342,6 +352,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     WorkbenchUIState workbenchUIState,
     PromptOptimizerSession session,
   ) async {
+    // Read here rather than when the session was created: the switches live in
+    // settings, the session can outlive several changes to them, and the
+    // question the policy answers is about the turn now going out.
+    session.writePolicy = _kbWritePolicy;
     try {
       final taskService = Provider.of<TaskQueueService>(context, listen: false);
       await taskService.addTask(
@@ -927,7 +941,10 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
             );
           },
         );
-        leftPanel = const OptimizerReferencePanel();
+        // `10h` swaps this column for the knowledge tree in library-edit
+        // mode; [OptimizerLeftPanel] owns that choice so the screen still
+        // hands the layout one widget rather than rebuilding the decision.
+        leftPanel = OptimizerLeftPanel(kbPath: _kbPath);
         showRightPanel = !isNarrow;
         showLeftPanel = !isNarrow; // Show reference images on left
         break;
@@ -1010,6 +1027,8 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                   pendingKbEdits: PromptOptimizerAgent.pendingKbEdits(wui.optimizerSession),
                   onWriteAllKbEdits: () => _handleKbEditApplyAll(wui.optimizerSession),
                   onDiscardAllKbEdits: () => _handleKbEditRejectAll(wui.optimizerSession),
+                  writePolicy: _kbWritePolicy,
+                  onWritePolicyChanged: _handleWritePolicyChanged,
                   onModeChanged: _handleAssistantModeChange,
                   onScaffoldKb: _handleScaffoldKb,
                   sysPrompts: _optSysPrompts,
