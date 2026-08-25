@@ -30,9 +30,15 @@ class CropResizeView extends StatefulWidget {
 }
 
 class _CropResizeViewState extends State<CropResizeView> {
-  /// Crop rect in the editor's own local (Stack) coordinate space — used to
-  /// position the floating badge over the live selection.
-  Rect? _screenCropRect;
+  /// The crop selection in the editor's own local (Stack) coordinate space,
+  /// for anchoring the size badge over it.
+  ///
+  /// [EditActionDetails.cropRect], not its `screenCropRect`. The two differ by
+  /// `layoutTopLeft`, which in this arrangement is 117px of chrome the badge's
+  /// Stack does not share — so the badge sat that far below the selection it
+  /// was labelling. It went unnoticed because the badge only ever appeared
+  /// while dragging, when the eye is on the handle rather than the readout.
+  Rect? _layerCropRect;
 
   /// The same crop rect in source-image pixel space — used for the numbers
   /// the badge and output strip actually print, so they always agree with
@@ -79,6 +85,12 @@ class _CropResizeViewState extends State<CropResizeView> {
   /// empty and the output strip reading `768×512 → –` about a picture whose
   /// output size was fully determined. The initial rect is a fact the editor
   /// already has; it just never announces it.
+  ///
+  /// Both rects, not only the pixel one. `A3 10e` draws the `1200 × 900 · 4:3`
+  /// badge on the resting selection, and the badge is drawn from the *screen*
+  /// rect — so publishing only the pixel rect fixed the toolbar and the output
+  /// strip while leaving the badge invisible until the first drag. The one
+  /// number the canvas is there to show was the last one it would tell you.
   void _publishInitialCropRect() {
     if (_pixelCropRect != null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -87,7 +99,10 @@ class _CropResizeViewState extends State<CropResizeView> {
       final state = uiState.cropKey.currentState as ExtendedImageEditorState?;
       final rect = state?.getCropRect();
       if (rect == null) return;
-      setState(() => _pixelCropRect = rect);
+      setState(() {
+        _pixelCropRect = rect;
+        _layerCropRect = state?.editAction?.cropRect ?? _layerCropRect;
+      });
       uiState.setCropPixelSize(Size(rect.width, rect.height));
     });
   }
@@ -105,7 +120,7 @@ class _CropResizeViewState extends State<CropResizeView> {
     }
 
     setState(() {
-      _screenCropRect = details.screenCropRect;
+      _layerCropRect = details.cropRect;
       _pixelCropRect = pixelRect;
       if (zoomPercent != null) _zoomPercent = zoomPercent;
     });
@@ -210,8 +225,8 @@ class _CropResizeViewState extends State<CropResizeView> {
                   top: 14,
                   child: CanvasBadge(label: l10n.cropResizeCanvasLabel(sourceImage.name)),
                 ),
-                if (_screenCropRect != null && _pixelCropRect != null)
-                  _CropBadge(screenRect: _screenCropRect!, pixelRect: _pixelCropRect!),
+                if (_layerCropRect != null && _pixelCropRect != null)
+                  _CropBadge(cropRect: _layerCropRect!, pixelRect: _pixelCropRect!),
                 Positioned(
                   right: 16,
                   bottom: 14,
@@ -343,14 +358,20 @@ class _EightHandleCropLayerPainter extends EditorCropLayerPainter {
   }
 }
 
-/// Floating "{w}×{h} · {ratio}" readout anchored to the live crop rect's
-/// top-left, so the numbers a save will actually use are visible while
-/// dragging rather than only after releasing.
+/// Floating "{w}×{h} · {ratio}" readout anchored inside the crop rect's
+/// top-left corner, as `A3 10e` draws it — so the numbers a save will actually
+/// use are on screen from the moment the tool opens, not only while dragging.
 class _CropBadge extends StatelessWidget {
-  final Rect screenRect;
+  final Rect cropRect;
   final Rect pixelRect;
 
-  const _CropBadge({required this.screenRect, required this.pixelRect});
+  const _CropBadge({required this.cropRect, required this.pixelRect});
+
+  /// Inset from the selection's corner. `10e` draws the badge *inside* the
+  /// rect: above it, a selection near the top of the canvas pushes the badge
+  /// off the edge, and clamping it back lands it somewhere that no longer
+  /// points at anything.
+  static const double _inset = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -359,8 +380,8 @@ class _CropBadge extends StatelessWidget {
     final ratio = _simplifiedRatio(w, h);
 
     return Positioned(
-      left: screenRect.left.clamp(0, double.infinity),
-      top: (screenRect.top - 30).clamp(0, double.infinity),
+      left: cropRect.left + _inset,
+      top: cropRect.top + _inset,
       child: IgnorePointer(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
