@@ -176,6 +176,11 @@ class _AppRunConsoleState extends State<AppRunConsole> {
           PanelResizer(
             axis: Axis.vertical,
             shape: PanelShape.column,
+            // The strip belongs to the console below it — the spec's
+            // `border-top` on that strip — so the rule goes at the top and the
+            // console's own ground fills the rest. Anything above meets the
+            // rule directly, whatever colour that column happens to be.
+            ruleSide: PanelRuleSide.leading,
             // The accumulator, not the height, absorbs the drag: clamping the
             // accumulator itself meant that after dragging 200px past a limit
             // the panel started moving the instant the pointer reversed, with

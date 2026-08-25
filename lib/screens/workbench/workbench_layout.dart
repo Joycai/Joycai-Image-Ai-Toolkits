@@ -139,6 +139,17 @@ class WorkbenchLayout extends StatefulWidget {
   final bool showRightPanel;
   final IconData? fabIcon;
 
+  /// Ground the centre column paints, or null for a bare column over the
+  /// window backdrop.
+  ///
+  /// Bare is the default because that is what most of the spec draws: `A1`'s
+  /// gallery column and `A4`'s comparator column both open
+  /// `<div style="flex:1;min-width:0;...">` with no background, and the cards
+  /// inside them sit straight on the mesh. `10g` is the exception — the prompt
+  /// assistant's chat column is `background:#F5F7FD`, a recess between the two
+  /// `#FAFBFF` panels — so that tab passes a colour.
+  final Color? centerGround;
+
   const WorkbenchLayout({
     super.key,
     required this.centerContent,
@@ -149,6 +160,7 @@ class WorkbenchLayout extends StatefulWidget {
     this.showLeftPanel = true,
     this.showRightPanel = true,
     this.fabIcon,
+    this.centerGround,
   });
 
   @override
@@ -259,6 +271,9 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                       ),
                       PanelResizer(
                         shape: PanelShape.column,
+                        // Defaults: the strip is the left panel's own ground
+                        // with the rule against the centre column, which is the
+                        // spec's `border-right` on that column.
                         // Clamped to the layout's own ceiling plus [_kDragSlack],
                         // not to the ceiling itself — see that constant for why
                         // the exact clamp matters more than it looks.
@@ -283,13 +298,14 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
 
                     // Center Content
                     Expanded(
-                      // Transparent, unlike the two side columns. `A1` gives
-                      // the gallery area no ground of its own — the image cards
-                      // sit straight on the window's backdrop — while the
-                      // panels either side stay opaque.
+                      // Transparent unless the tab asked for a ground. `A1`
+                      // gives the gallery area none of its own — the image
+                      // cards sit straight on the window's backdrop — while
+                      // the panels either side stay opaque; `10g`'s chat
+                      // column is the one that opts in. See [centerGround].
                       child: PanelCard(
                         shape: PanelShape.column,
-                        transparent: true,
+                        ground: widget.centerGround ?? Colors.transparent,
                         child: widget.centerContent,
                       ),
                     ),
@@ -298,6 +314,10 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
                     if (panels.rightInline) ...[
                       PanelResizer(
                         shape: PanelShape.column,
+                        // Mirrored: this strip belongs to the right panel, so
+                        // its rule faces the centre column — the spec's
+                        // `border-left` on the settings column.
+                        ruleSide: PanelRuleSide.leading,
                         onDrag: (delta) {
                           setState(() {
                             _rightWidth = (_rightWidth - delta).clamp(
@@ -430,7 +450,13 @@ class _WorkbenchLayoutState extends State<WorkbenchLayout> {
         ) : null,
         body: Column(
           children: [
-            Expanded(child: widget.centerContent),
+            // Same ground as the desktop centre column, so a tab the spec
+            // gives a recess to keeps it when the panels become drawers.
+            Expanded(
+              child: widget.centerGround == null
+                  ? widget.centerContent
+                  : Material(color: widget.centerGround, child: widget.centerContent),
+            ),
             if (widget.bottomPanel != null) widget.bottomPanel!,
           ],
         ),

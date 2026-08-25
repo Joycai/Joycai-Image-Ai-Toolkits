@@ -38,8 +38,20 @@ class WorkbenchToolHeader extends StatelessWidget {
       height: kToolHeaderHeight,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(80))),
+        // #FAFBFF, the same ground as the two side columns and as
+        // [GalleryToolbar] on tab 0 — every centre-column header in the spec
+        // is `background:#fafbff;border-bottom:1px solid #e8ecf7`, so the row
+        // reads as one continuous band of chrome across the window.
+        //
+        // Not `surface`. That is #F5F7FD, which the spec spends on the prompt
+        // assistant's chat *body* (`10g`) — wearing it here made the header a
+        // step darker than the panels beside it and left nothing for the body
+        // to be, so the header read as a white slab floating on the backdrop.
+        color: colorScheme.surfaceContainerLow,
+        // The panel edge tone (#E8ECF7), a full pixel, matching the rule the
+        // [PanelResizer] draws between columns. `outlineVariant` at alpha 80
+        // composited to roughly #ECEFF8 — a step too faint to close the header.
+        border: Border(bottom: BorderSide(color: colorScheme.surfaceContainerHigh)),
       ),
       child: Row(
         children: [

@@ -28,6 +28,11 @@ enum PanelShape {
   card,
 }
 
+/// Which side of a [PanelResizer] strip its rule sits on: [leading] is left of
+/// the ground when the resizer's axis is horizontal and above it when vertical,
+/// [trailing] is right of it or below it.
+enum PanelRuleSide { leading, trailing }
+
 /// Draggable boundary between two panels. What it paints depends on [shape]:
 /// a [PanelShape.column] boundary is a hairline the columns butt against, a
 /// [PanelShape.card] one is an empty gutter with a pill grip floating in it.
@@ -49,22 +54,48 @@ class PanelResizer extends StatefulWidget {
 
   final PanelShape shape;
 
+  /// What the strip paints either side of the rule — [PanelShape.column] only,
+  /// since a card gutter is bare canvas by definition.
+  ///
+  /// Defaults to the ground every column [PanelCard] paints, which is the
+  /// colour of the panel the rule belongs to on every boundary in the app.
+  final Color? ground;
+
+  /// Which edge of the strip the rule sits against.
+  ///
+  /// The rule belongs to a panel, not to the gap between two: the spec draws
+  /// it as that column's `border-right` / `border-left` / `border-top`, with
+  /// the next column starting on the very next pixel. Pushing it to the edge
+  /// is what lets the rest of the strip take one flat [ground] and still meet
+  /// the far neighbour cleanly *at every height* — which a strip split down
+  /// the middle cannot do when that neighbour changes colour partway down, as
+  /// the assistant's chat column does under its header.
+  final PanelRuleSide ruleSide;
+
   const PanelResizer({
     super.key,
     required this.onDrag,
     this.onDragEnd,
     this.axis = Axis.horizontal,
     this.shape = PanelShape.card,
+    this.ground,
+    this.ruleSide = PanelRuleSide.trailing,
   });
 
   /// A card gutter is empty canvas, so it has to be wide enough to read as a
   /// deliberate separation rather than a misalignment.
   static const double kCardGutter = 14;
 
-  /// A column boundary is a hairline, so this is a hit target, not a gap. The
-  /// 4px either side of the line is painted by the panels themselves — which
-  /// is why [PanelShape.column] panels draw no border of their own: the line
-  /// here is the only one, and two would show as a double rule.
+  /// A column boundary is a hairline, so this is a hit target, not a gap: the
+  /// spec runs two columns flush and puts a single 1px rule between them, and
+  /// [PanelShape.column] panels draw no border of their own because this rule
+  /// is the only one — two would show as a double.
+  ///
+  /// The 8px beside the rule is painted *here*, by [ground]. It cannot be
+  /// painted by the panels: this strip is their sibling in the row and
+  /// [thicknessOf] takes its width out of the row, so while it was bare the
+  /// window backdrop came through as an 8px band down every column boundary
+  /// in the app.
   static const double kColumnGutter = 9;
 
   /// How much room the strip takes out of the row, by shape.
@@ -105,6 +136,19 @@ class _PanelResizerState extends State<PanelResizer> {
     final gripLength = isColumn ? double.infinity : 40.0;
     final thickness = PanelResizer.thicknessOf(widget.shape);
 
+    final grip = AnimatedContainer(
+      duration: AppMotion.durationOf(context, AppMotion.hover),
+      curve: AppMotion.enter,
+      width: _isHorizontalDrag ? gripThickness : gripLength,
+      height: _isHorizontalDrag ? gripLength : gripThickness,
+      decoration: BoxDecoration(
+        color: gripColor,
+        // Square at one pixel. A radius on a hairline rounds nothing
+        // and only smears its ends.
+        borderRadius: isColumn ? null : BorderRadius.circular(3),
+      ),
+    );
+
     return MouseRegion(
       cursor: _isHorizontalDrag ? SystemMouseCursors.resizeColumn : SystemMouseCursors.resizeRow,
       onEnter: (_) => setState(() => _hovering = true),
@@ -122,20 +166,27 @@ class _PanelResizerState extends State<PanelResizer> {
         child: SizedBox(
           width: _isHorizontalDrag ? thickness : null,
           height: _isHorizontalDrag ? null : thickness,
-          child: Center(
-            child: AnimatedContainer(
-              duration: AppMotion.durationOf(context, AppMotion.hover),
-              curve: AppMotion.enter,
-              width: _isHorizontalDrag ? gripThickness : gripLength,
-              height: _isHorizontalDrag ? gripLength : gripThickness,
-              decoration: BoxDecoration(
-                color: gripColor,
-                // Square at one pixel. A radius on a hairline rounds nothing
-                // and only smears its ends.
-                borderRadius: isColumn ? null : BorderRadius.circular(3),
-              ),
-            ),
-          ),
+          // A card gutter is canvas the grip floats in; a column boundary is
+          // two panel grounds meeting at a rule, so it has to carry them.
+          child: isColumn
+              ? Flex(
+                  direction: widget.axis,
+                  // Stretch, not the default centre: a [ColoredBox] with no
+                  // child takes `constraints.smallest`, so under the loose
+                  // cross-axis constraint a centred row hands out the ground
+                  // would size to zero and paint nothing at all.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.ruleSide == PanelRuleSide.leading) grip,
+                    Expanded(
+                      child: ColoredBox(
+                        color: widget.ground ?? colorScheme.surfaceContainerLow,
+                      ),
+                    ),
+                    if (widget.ruleSide == PanelRuleSide.trailing) grip,
+                  ],
+                )
+              : Center(child: grip),
         ),
       ),
     );
@@ -159,20 +210,25 @@ class PanelCard extends StatelessWidget {
   final double? width;
   final PanelShape shape;
 
-  /// Paint no background at all, letting whatever the screen puts behind the
-  /// row show through.
+  /// The ground this panel paints, overriding the default for its [shape].
   ///
-  /// For the workbench's centre column, which the spec draws as bare gallery
-  /// cards over the window's own backdrop while the two side columns stay
-  /// opaque. Only meaningful with [PanelShape.column].
-  final bool transparent;
+  /// [Colors.transparent] paints nothing at all and lets whatever the screen
+  /// puts behind the row show through — what the workbench's gallery column
+  /// wants, which the spec draws as bare image cards over the window's own
+  /// backdrop while the two side columns stay opaque.
+  ///
+  /// A colour is for a centre column the spec gives a ground of its own: `10g`
+  /// draws the prompt assistant's chat column `#F5F7FD`, one step below the
+  /// `#FAFBFF` panels either side of it, so the conversation reads as a recess
+  /// between them rather than as more backdrop.
+  final Color? ground;
 
   const PanelCard({
     super.key,
     required this.child,
     this.width,
     this.shape = PanelShape.card,
-    this.transparent = false,
+    this.ground,
   });
 
   @override
@@ -188,9 +244,8 @@ class PanelCard extends StatelessWidget {
         // A column is the spec's #FAFBFF, a step brighter than a card's
         // surface: with no radius and no gutter separating it from the canvas,
         // lightness is the only thing left to lift it.
-        color: transparent
-            ? Colors.transparent
-            : (isColumn ? colorScheme.surfaceContainerLow : colorScheme.surface),
+        color: ground ??
+            (isColumn ? colorScheme.surfaceContainerLow : colorScheme.surface),
         borderRadius: isColumn ? null : BorderRadius.circular(AppRadius.lg),
         clipBehavior: isColumn ? Clip.none : Clip.antiAlias,
         child: child,
