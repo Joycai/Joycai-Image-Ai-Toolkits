@@ -48,34 +48,90 @@ void main() {
       expect(live(session), {'/tmp/a.png'});
     });
 
-    test('a view that fell out of the recent window is no longer live', () {
+    test('a view one turn back is still live', () {
+      // _keepAttachmentTurns = 2: the turn that viewed it, plus the follow-up
+      // that usually refines the result.
       final session = newSession();
       session.addUserTurn('第一轮');
       recordView(session, 1, '/tmp/a.png');
-      // Push the view past the protected window (_keepRecentTurns = 6 real
-      // user turns). Synthetic view messages do not count as user turns, so
-      // six more real turns move the boundary beyond the view.
-      for (int i = 0; i < 6; i++) {
-        session.addUserTurn('后续调整 $i');
-      }
+      session.addUserTurn('后续调整');
+
+      expect(live(session), {'/tmp/a.png'});
+    });
+
+    test('a view that fell out of the attachment window is no longer live', () {
+      final session = newSession();
+      session.addUserTurn('第一轮');
+      recordView(session, 1, '/tmp/a.png');
+      // Synthetic view messages do not count as user turns, so two more real
+      // turns move the attachment boundary past the view.
+      session.addUserTurn('后续调整 1');
+      session.addUserTurn('后续调整 2');
 
       expect(live(session), isEmpty,
           reason: '_trimForSend elides the attachment before the boundary, so '
               'the model can no longer see it and must be allowed to re-view');
     });
 
+    test('images leave sooner than knowledge reads do', () {
+      // The two windows are deliberately different sizes: a knowledge read
+      // costs its characters once, an attachment costs a re-upload and a
+      // fresh image-token bill on every request of every turn it survives.
+      final session = newSession();
+      session.addUserTurn('第一轮');
+      recordView(session, 1, '/tmp/a.png');
+      session.history.add(LLMMessage(
+        role: LLMRole.tool,
+        toolName: 'read_knowledge_file',
+        toolCallId: 'c1',
+        content: '{"path": "07a.md", "content": "${'x' * 500}"}',
+      ));
+      session.addUserTurn('后续调整 1');
+      session.addUserTurn('后续调整 2');
+
+      final sent = PromptOptimizerAgent.trimForSendForTest(session.history);
+      expect(sent.any((m) => m.attachments.isNotEmpty), isFalse,
+          reason: 'the image is past _keepAttachmentTurns');
+      expect(
+          sent.any((m) =>
+              m.toolName == 'read_knowledge_file' && m.content.contains('xxx')),
+          isTrue,
+          reason: 'the knowledge read is still inside _keepRecentTurns');
+    });
+
     test('re-viewing after elision makes the image live again', () {
       final session = newSession();
       session.addUserTurn('第一轮');
       recordView(session, 1, '/tmp/a.png');
-      for (int i = 0; i < 6; i++) {
-        session.addUserTurn('后续调整 $i');
-      }
+      session.addUserTurn('后续调整 1');
+      session.addUserTurn('后续调整 2');
       expect(live(session), isEmpty);
 
       // The agent re-attaches on the fresh view_image call.
       recordView(session, 1, '/tmp/a.png');
       expect(live(session), {'/tmp/a.png'});
+    });
+
+    test('liveness agrees with what is actually sent, at every distance', () {
+      // The invariant that matters, stated directly. _elide decides whether
+      // the attachment is still in the request; _liveViewedPaths decides
+      // whether the model is allowed to ask for it again. If those two ever
+      // disagree, the model is refused a re-view of a picture it can no
+      // longer see — a deadlock with no way out but restarting the app.
+      final session = newSession();
+      session.addUserTurn('第一轮');
+      recordView(session, 1, '/tmp/a.png');
+
+      for (var turn = 0; turn < 8; turn++) {
+        final sent = PromptOptimizerAgent.trimForSendForTest(session.history);
+        final stillSent = sent.any((m) => m.attachments
+            .any((a) => a.path == '/tmp/a.png'));
+
+        expect(live(session).contains('/tmp/a.png'), stillSent,
+            reason: 'disagreement $turn turn(s) after the view');
+
+        session.addUserTurn('后续调整 $turn');
+      }
     });
 
     test('compaction folding the view message drops it from liveness', () {

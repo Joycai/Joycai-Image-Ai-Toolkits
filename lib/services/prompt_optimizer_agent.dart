@@ -8,6 +8,7 @@ import 'assistant_context_usage.dart';
 import 'database_service.dart';
 import 'knowledge_base_service.dart';
 import 'llm/context_budget.dart';
+import 'llm/image_compression.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 import 'repositories/assistant_note_repository.dart';
@@ -711,9 +712,25 @@ class PromptOptimizerAgent {
   /// it, so nothing downstream can rescue it.
   static const double _systemPromptWarnShare = 0.5;
 
-  /// Memory management: the most recent user turns whose tool results and
-  /// image attachments are never elided or compacted away.
+  /// Memory management: the most recent user turns whose tool results are
+  /// never elided or compacted away.
   static const int _keepRecentTurns = 6;
+
+  /// The same window, for **image attachments only**, which are far heavier
+  /// than anything else it protects.
+  ///
+  /// A knowledge read costs its characters once. An attachment costs a
+  /// re-upload and a fresh image-token bill on *every request of every turn*
+  /// it survives into — a dozen or more times per turn in an agent loop.
+  /// Six turns of that is what made one session upload 55 MB
+  /// (docs/plans/2026-08-assistant-timeout.md).
+  ///
+  /// Eliding early is cheap precisely because it is reversible: liveness is
+  /// derived, not tracked, so the model may simply call `view_image` again
+  /// and pay for the picture in the one turn that actually needs it. Two
+  /// turns keeps it through the turn that viewed it and the follow-up that
+  /// usually refines it.
+  static const int _keepAttachmentTurns = 2;
 
   /// Layer-2 compaction's secondary trigger: raw message count, independent of
   /// size. A long conversation of short turns costs little context but still
@@ -1552,12 +1569,28 @@ class PromptOptimizerAgent {
 
   /// Index of the user message that opens the protected "recent" window
   /// (the last [_keepRecentTurns] real user turns). 0 = protect everything.
-  static int _recentBoundary(List<LLMMessage> history) {
+  static int _recentBoundary(List<LLMMessage> history) =>
+      _boundaryOf(history, _keepRecentTurns);
+
+  /// The same, for image attachments — a shorter window, so always at or
+  /// after [_recentBoundary].
+  ///
+  /// **[_elide] and [_liveViewedPaths] must both use this one.** They are two
+  /// halves of a single rule: one decides whether the attachment is still in
+  /// the request, the other tells the model whether it needs to ask for it
+  /// again. Split them onto different boundaries and the model is refused a
+  /// re-view of a picture that is no longer being sent — the exact deadlock
+  /// assistant-context.md's "Rejected" section describes, with no way out but
+  /// restarting the app.
+  static int _attachmentBoundary(List<LLMMessage> history) =>
+      _boundaryOf(history, _keepAttachmentTurns);
+
+  static int _boundaryOf(List<LLMMessage> history, int keepTurns) {
     int userSeen = 0;
     for (int i = history.length - 1; i >= 0; i--) {
       if (_isRealUserTurn(history[i])) {
         userSeen++;
-        if (userSeen >= _keepRecentTurns) return i;
+        if (userSeen >= keepTurns) return i;
       }
     }
     return 0;
@@ -1606,11 +1639,22 @@ class PromptOptimizerAgent {
 
   /// Rough per-attachment char cost, standing in for an image's token price.
   ///
-  /// An image carries no characters but is far from free — roughly 1–1.5K
-  /// tokens for a 1024² image on Gemini. Counting it as zero (as the old
-  /// threshold did) makes a session with reference images look emptier than it
-  /// is, and over-grants the knowledge read budget by exactly that much.
-  static const int _attachmentChars = 2000;
+  /// An image carries no characters but is far from free, so this stand-in
+  /// *is* the measurement — counting it as zero (as the pre-3.5 threshold
+  /// did) makes a session with reference images look emptier than it is and
+  /// over-grants the knowledge read budget by exactly that much.
+  ///
+  /// 2200 tokens × [ContextBudget.charsPerToken]. The old 2000 chars was
+  /// worth about 1300 tokens at that ratio, roughly half the real article:
+  /// three cosplay references in one measured session billed ~6850 image
+  /// tokens, ~2280 each.
+  ///
+  /// A single number is defensible only because
+  /// [ImageCompressor.viewOnlyMaxLongEdge] now bounds the input — every
+  /// view-only attachment arrives at or under 1568px, which caps it near 3300
+  /// tokens and clusters the common case around 2200. Before that cap an
+  /// attachment could be any size at all and no constant meant anything.
+  static const int _attachmentChars = 3300;
 
   /// Chars in what a request actually carries: the system prompt (which is
   /// rebuilt and re-sent every turn, knowledge-base file map and all), message
@@ -1787,7 +1831,7 @@ class PromptOptimizerAgent {
   static Set<String> _liveViewedPaths(PromptOptimizerSession session) {
     final history = session.history;
     final paths = <String>{};
-    for (int i = _recentBoundary(history); i < history.length; i++) {
+    for (int i = _attachmentBoundary(history); i < history.length; i++) {
       final m = history[i];
       if (m.role != LLMRole.user) continue;
       if (!m.content.startsWith(viewResultMarker)) continue;
@@ -1810,21 +1854,46 @@ class PromptOptimizerAgent {
   /// shortened), which Gemini requires.
   static List<LLMMessage> _trimForSend(List<LLMMessage> history) {
     final boundary = _recentBoundary(history);
-    if (boundary == 0) return history;
+    final attachmentBoundary = _attachmentBoundary(history);
+    if (boundary == 0 && attachmentBoundary == 0) return history;
     return [
       for (int i = 0; i < history.length; i++)
-        i >= boundary ? history[i] : _elide(history[i]),
+        _elide(
+          history[i],
+          bulk: i < boundary,
+          attachments: i < attachmentBoundary,
+        ),
     ];
   }
 
+  /// The outgoing copy of a whole history, windows applied.
+  ///
+  /// Exposed because the property worth pinning is not either window on its
+  /// own but the agreement between them: what [_trimForSend] still carries
+  /// must be exactly what [_liveViewedPaths] reports as live.
   @visibleForTesting
-  static LLMMessage elideForTest(LLMMessage m) => _elide(m);
+  static List<LLMMessage> trimForSendForTest(List<LLMMessage> history) =>
+      _trimForSend(history);
 
-  static LLMMessage _elide(LLMMessage m) {
+  @visibleForTesting
+  static LLMMessage elideForTest(LLMMessage m,
+          {bool bulk = true, bool attachments = true}) =>
+      _elide(m, bulk: bulk, attachments: attachments);
+
+  /// The outgoing copy of [m], with whichever windows it has fallen out of
+  /// applied. [bulk] governs knowledge/note reads and staged file bodies;
+  /// [attachments] governs viewed images, which leave the request sooner —
+  /// see [_keepAttachmentTurns].
+  static LLMMessage _elide(
+    LLMMessage m, {
+    required bool bulk,
+    required bool attachments,
+  }) {
     // read_note results elide exactly like knowledge reads: both are bulk
     // text the model pulled in on demand and can pull in again — notes even
     // more safely, since nothing ever rewrites a stored note.
-    if (m.role == LLMRole.tool &&
+    if (bulk &&
+        m.role == LLMRole.tool &&
         (m.toolName == 'read_knowledge_file' || m.toolName == 'read_note') &&
         m.content.length > 300) {
       return LLMMessage(
@@ -1837,7 +1906,8 @@ class PromptOptimizerAgent {
         toolName: m.toolName,
       );
     }
-    if (m.role == LLMRole.user &&
+    if (attachments &&
+        m.role == LLMRole.user &&
         m.content.startsWith(viewResultMarker) &&
         m.attachments.isNotEmpty) {
       return LLMMessage(
@@ -1850,7 +1920,8 @@ class PromptOptimizerAgent {
     // would otherwise be re-sent on every later request for the rest of the
     // session. The staged content was already shown to the user, so the model
     // does not need it back.
-    if (m.role == LLMRole.assistant &&
+    if (bulk &&
+        m.role == LLMRole.assistant &&
         m.toolCalls.any((c) =>
             c.name == 'write_knowledge_file' &&
             (c.arguments['content']?.toString().length ?? 0) > 300)) {

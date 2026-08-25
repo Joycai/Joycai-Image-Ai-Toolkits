@@ -117,4 +117,49 @@ void main() {
       await LLMDebugLogger.finish(null);
     });
   });
+
+  group('streamed lines', () {
+    test('are buffered and land in order once finished', () async {
+      final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
+      for (var i = 0; i < 200; i++) {
+        await LLMDebugLogger.appendStreamLine(log, 'data: {"i":$i}');
+      }
+      await LLMDebugLogger.finish(log);
+
+      final text = log!.file.readAsStringSync();
+      final lines = text
+          .split('\n')
+          .where((l) => l.startsWith('data:'))
+          .toList();
+      expect(lines, hasLength(200));
+      expect(lines.first, 'data: {"i":0}');
+      expect(lines.last, 'data: {"i":199}');
+    });
+
+    test('a stream that never finishes still wrote what overflowed', () async {
+      // The trade the buffer makes: a crash mid-stream costs the readable
+      // tail, not the whole response.
+      final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
+      final fat = 'data: ${'x' * 4096}';
+      for (var i = 0; i < 40; i++) {
+        await LLMDebugLogger.appendStreamLine(log, fat);
+      }
+      // No finish().
+
+      expect(log!.file.readAsStringSync(), contains('xxxx'));
+    });
+
+    test('an unbuffered line does not overtake buffered ones', () async {
+      // appendLine flushes first, so `Elapsed:` cannot land in front of the
+      // body it is supposed to follow.
+      final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
+      await LLMDebugLogger.appendStreamLine(log, 'first');
+      await LLMDebugLogger.appendLine(log, 'second');
+      await LLMDebugLogger.finish(log);
+
+      final text = log!.file.readAsStringSync();
+      expect(text.indexOf('first'), lessThan(text.indexOf('second')));
+      expect(text.indexOf('second'), lessThan(text.indexOf('Elapsed:')));
+    });
+  });
 }
