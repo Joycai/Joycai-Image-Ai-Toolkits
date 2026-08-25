@@ -74,7 +74,7 @@ class LLMService {
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
           );
 
-          await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
+          await for (final chunk in _idleGuarded(stream)) {
             if (chunk.reasoningPart != null) {
               // Surfaced to the console and kept for replay, but never glued
               // into the deliverable — that must not contain the chain of
@@ -193,6 +193,56 @@ class LLMService {
     }
   }
 
+  /// How long the *first* chunk may take.
+  ///
+  /// Longer than [_idleGap] because a silent stream means different things
+  /// before and after the first byte. Afterwards, two minutes of nothing is a
+  /// dead connection. Beforehand it is ambiguous — a large prompt still
+  /// prefilling behind a queue at a busy relay looks exactly the same — and
+  /// treating that as a dead connection re-sends the entire request, which is
+  /// the waste this whole change set exists to remove
+  /// (docs/plans/2026-08-assistant-timeout.md).
+  static const Duration _firstChunkGap = Duration(seconds: 180);
+
+  /// How long any subsequent chunk may take.
+  static const Duration _idleGap = Duration(seconds: 120);
+
+  /// [stream] with an idle guard that is generous about the first chunk.
+  ///
+  /// Written over a [StreamIterator] rather than with `Stream.timeout`, which
+  /// takes one fixed duration for every element. The rewrite pays for itself
+  /// twice: cancelling the iterator in the `finally` actually tears down the
+  /// subscription, where the non-streaming `Future.timeout` leaves its request
+  /// running upstream and billing.
+  static Stream<LLMResponseChunk> _idleGuarded(
+          Stream<LLMResponseChunk> stream) =>
+      _guard(stream, first: _firstChunkGap, subsequent: _idleGap);
+
+  @visibleForTesting
+  static Stream<T> idleGuardedForTest<T>(
+    Stream<T> stream, {
+    required Duration first,
+    required Duration subsequent,
+  }) =>
+      _guard(stream, first: first, subsequent: subsequent);
+
+  static Stream<T> _guard<T>(
+    Stream<T> stream, {
+    required Duration first,
+    required Duration subsequent,
+  }) async* {
+    final iterator = StreamIterator(stream);
+    var gap = first;
+    try {
+      while (await iterator.moveNext().timeout(gap)) {
+        gap = subsequent;
+        yield iterator.current;
+      }
+    } finally {
+      await iterator.cancel();
+    }
+  }
+
   /// Whether a failed attempt is worth retrying: network-level failures and
   /// transient HTTP codes (5xx / 429), nothing else.
   ///
@@ -274,7 +324,7 @@ class LLMService {
           logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
         );
 
-        await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
+        await for (final chunk in _idleGuarded(stream)) {
           if (chunk.reasoningPart != null) {
             onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
           }

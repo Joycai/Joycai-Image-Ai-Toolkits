@@ -329,4 +329,68 @@ void main() {
       expect(GeminiChatProtocol().streamingDeclaresTools, isFalse);
     });
   });
+
+  group('the streaming idle guard', () {
+    // _idleGuarded is private, so this exercises the shape it has to have
+    // rather than the function itself: the first chunk gets a longer budget
+    // than the ones after it, and a stall cancels the subscription.
+    test('a slow first chunk is not a dead connection', () async {
+      // The failure this prevents: a large prompt still prefilling behind a
+      // queue looks identical to a dead socket, and calling it dead re-sends
+      // the whole request — the waste this change set removed.
+      var cancelled = false;
+      final controller = StreamController<int>(onCancel: () => cancelled = true);
+
+      final collected = <int>[];
+      final done = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(milliseconds: 400),
+        subsequent: const Duration(milliseconds: 80),
+      ).forEach(collected.add);
+
+      // Later than `subsequent` allows, earlier than `first` does.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      controller.add(1);
+      await controller.close();
+      await done;
+
+      expect(collected, [1]);
+      expect(cancelled, isTrue, reason: 'the subscription must be torn down');
+    });
+
+    test('a gap after the first chunk fails fast', () async {
+      final controller = StreamController<int>();
+      final guarded = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(seconds: 5),
+        subsequent: const Duration(milliseconds: 80),
+      );
+
+      final collected = <int>[];
+      final done = guarded.forEach(collected.add);
+      controller.add(1);
+      // ...and then nothing, for longer than `subsequent`.
+
+      await expectLater(done, throwsA(isA<TimeoutException>()));
+      expect(collected, [1]);
+      await controller.close();
+    });
+
+    test('a stalled stream is actually cancelled, unlike the sync path', () async {
+      // Future.timeout on the non-streaming path leaves its request running
+      // upstream and billing. This one does not.
+      var cancelled = false;
+      final controller = StreamController<int>(onCancel: () => cancelled = true);
+
+      final done = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(milliseconds: 60),
+        subsequent: const Duration(milliseconds: 60),
+      ).forEach((_) {});
+
+      await expectLater(done, throwsA(isA<TimeoutException>()));
+      expect(cancelled, isTrue);
+      await controller.close();
+    });
+  });
 }
