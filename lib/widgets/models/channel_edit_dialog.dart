@@ -12,6 +12,7 @@ import '../../services/llm/llm_types.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
+import '../app_labelled_field.dart';
 import '../app_button.dart';
 import '../app_setting_row.dart';
 import '../app_dialog.dart';
@@ -246,8 +247,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ChannelLabelledField(
-          l10n.channelType,
+        AppLabelledField(
+          label: l10n.channelType,
           child: DropdownButtonFormField<String>(
           initialValue: type,
           isExpanded: true,
@@ -300,8 +301,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ),
         ),
         const SizedBox(height: 12),
-        ChannelLabelledField(
-          l10n.endpointUrl,
+        AppLabelledField(
+          label: l10n.endpointUrl,
           child: TextField(
             controller: epCtrl,
             // Mono: an endpoint is a URL the wire sees verbatim, and `15a`
@@ -316,8 +317,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ),
         ),
         const SizedBox(height: 12),
-        ChannelLabelledField(
-          l10n.apiKey,
+        AppLabelledField(
+          label: l10n.apiKey,
           child: ApiKeyField(
             controller: keyCtrl,
             onChanged: (v) {},

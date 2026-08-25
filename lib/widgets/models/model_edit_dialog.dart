@@ -13,6 +13,7 @@ import '../../state/app_state.dart';
 import '../app_button.dart';
 import '../app_card.dart';
 import '../app_dialog.dart';
+import '../app_labelled_field.dart';
 import '../app_segmented_control.dart';
 import '../app_setting_row.dart';
 import '../app_text_field.dart';
@@ -453,37 +454,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   // --- Sections -----------------------------------------------------------
 
-  /// A caption on its own line above [child], as the spec draws every field
-  /// label in this dialog — not Material's floating label notched into the
-  /// border. Same shape and type as the workbench's `_LabelledField`;
-  /// MergeSemantics for the same reason it has it, so a screen reader
-  /// announces the caption and the control as one stop.
-  Widget _labelled(String label, Widget child) {
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-
-
   Widget _basicInfoSection(ColorScheme colorScheme, {required bool pairNameAndId}) {
     final l10n = widget.l10n;
     final appState = widget.appState;
     final textTheme = Theme.of(context).textTheme;
     final channel = _selectedChannel(appState);
 
-    final nameField = _labelled(
-      l10n.displayName,
-      TextField(
+    final nameField = AppLabelledField(
+      label: l10n.displayName,
+      child: TextField(
         controller: nameCtrl,
         onChanged: (_) => setState(() {}),
         decoration: const InputDecoration(
@@ -492,9 +471,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         ),
       ),
     );
-    final idField = _labelled(
-      l10n.modelIdLabel,
-      TextField(
+    final idField = AppLabelledField(
+      label: l10n.modelIdLabel,
+      child: TextField(
         controller: idCtrl,
         onChanged: (_) => setState(() {}),
         // Mono: this is an identifier the wire will see verbatim, and the
@@ -517,9 +496,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         // channel's own identity disc — the round form the design gives this
         // field — and is the control every other channel choice in the app
         // uses.
-        _labelled(
-          l10n.channel,
-          SearchablePickerField<int>(
+        AppLabelledField(
+          label: l10n.channel,
+          child: SearchablePickerField<int>(
             selected: channel == null ? null : channelPickerOption(channel),
             optionsBuilder: () => appState.allChannels.map(channelPickerOption).toList(),
             onChanged: (v) => setState(() => channelId = v),
@@ -714,9 +693,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: _labelled(
-              l10n.reasoningEffort,
-              DropdownButtonFormField<String>(
+            child: AppLabelledField(
+              label: l10n.reasoningEffort,
+              child: DropdownButtonFormField<String>(
                 // '' stands in for null: a nullable-valued form field cannot
                 // distinguish "user picked default" from "no selection".
                 initialValue: reasoningEffort ?? '',
@@ -758,9 +737,9 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.billing),
         const SizedBox(height: 12),
-        _labelled(
-          l10n.feeGroup,
-          DropdownButtonFormField<int>(
+        AppLabelledField(
+          label: l10n.feeGroup,
+          child: DropdownButtonFormField<int>(
           initialValue: feeGroupId,
           isExpanded: true,
           items: [
