@@ -388,7 +388,9 @@ ThemeData buildAppTheme({
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.surfaceContainerLowest,
       selectedColor: colorScheme.accentTint,
-      disabledColor: colorScheme.surface,
+      // `#eef0f6` in the spec, which is this rung. `surface` was invisible —
+      // a disabled chip on a white card has to differ from the card.
+      disabledColor: colorScheme.surfaceContainer,
       side: WidgetStateBorderSide.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
           return BorderSide(color: colorScheme.outlineVariant.withValues(alpha: AppAlpha.edge));
@@ -695,6 +697,33 @@ ColorScheme buttonFillScheme(Color seedColor) {
     seedColor: seedColor,
     brightness: Brightness.light,
     dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+  );
+}
+
+/// The skin a slider wears when it is not editing a value.
+///
+/// `10e` 「滑杆」 splits the family in two, and the split is about meaning
+/// rather than taste. A *parameter* slider changes the work — it takes the
+/// accent, a 4px track and a 14px thumb, and that one is the app-wide
+/// [SliderThemeData] in [buildAppTheme]. A *neutral* slider changes how you
+/// are looking at the work — a thumbnail size, a viewport zoom — and stays
+/// greyscale at 3 and 12, because spending the accent there puts the
+/// brightest thing on screen on the one control that alters nothing.
+///
+/// Wrap the second kind in a [SliderTheme] carrying this. Named here rather
+/// than written out at the call site so the component gallery can photograph
+/// both variants from one source, and so a second neutral slider does not
+/// become a third set of numbers.
+SliderThemeData neutralSliderTheme(ColorScheme colorScheme) {
+  return SliderThemeData(
+    trackHeight: 3,
+    activeTrackColor: colorScheme.onSurfaceVariant,
+    inactiveTrackColor: colorScheme.outlineVariant,
+    thumbColor: colorScheme.onSurfaceVariant,
+    overlayColor: colorScheme.onSurface.withValues(alpha: 0.08),
+    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+    tickMarkShape: SliderTickMarkShape.noTickMark,
   );
 }
 

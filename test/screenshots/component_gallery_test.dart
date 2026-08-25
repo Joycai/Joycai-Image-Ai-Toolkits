@@ -13,6 +13,18 @@
 //   · success/warning/info are identical across all seven columns
 //   · the focused input's glow ring is visible at every seed, in both themes
 //   · the selected segment's label reads at every seed, especially in dark
+//   · the list row's selected label is the *darker* accent on its own wash,
+//     not one tone against itself
+//   · the neutral slider stays grey while the parameter one takes the accent
+//
+// Two families here are drawn as specimens rather than mounted for real, and
+// the reason is the same for both: a [Tooltip]'s bubble and a [PopupMenu]'s
+// sheet live in the [Overlay], which is outside the subtree this golden
+// captures. The tooltip specimen reads its own [TooltipThemeData] and paints
+// it, so it still photographs the theme rather than a copy of it. The menu is
+// absent altogether — its item geometry is not themed (see the note on
+// `popupMenuTheme`), so a specimen would be inventing the very thing that is
+// missing.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +36,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_empty_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
@@ -35,7 +48,10 @@ void main() {
   for (final MapEntry<String, Color> seed in AppConstants.presetThemes.entries) {
     for (final Brightness brightness in Brightness.values) {
       testWidgets('gallery · ${seed.key} · ${brightness.name}', (tester) async {
-        tester.view.physicalSize = const Size(720, 1080);
+        // Tall enough for the whole column. The golden captures the rendered
+        // subtree, and a [SingleChildScrollView] clips — anything past the
+        // viewport is simply not in the PNG, silently.
+        tester.view.physicalSize = const Size(720, 1860);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
@@ -61,7 +77,15 @@ void main() {
         // The focus ring is a state, not a static style — it only appears in
         // the shot if something actually holds focus.
         await tester.tap(find.byKey(const ValueKey('focused-field')));
-        await tester.pumpAndSettle();
+
+        // Pumped to a fixed point rather than settled. The page carries two
+        // indeterminate progress indicators, which never stop animating, so
+        // `pumpAndSettle` waits for a frame that will not come. A fixed
+        // duration also puts their sweep in the same place in all sixteen
+        // shots, which is what makes them comparable at a glance.
+        for (int i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
 
         await expectLater(
           find.byType(_Gallery),
@@ -200,6 +224,49 @@ class _Gallery extends StatelessWidget {
               ]),
               const _Label('语义色 · 七个种子色下应完全一致'),
               const _SemanticRow(),
+              const _Label('列表行 · 40 单行 / 48 双行'),
+              const _ListRows(),
+              const _Label('滑杆 · 参数（主色）与中性（灰阶）'),
+              const _Sliders(),
+              const _Label('筛选 chip'),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                FilterChip(
+                  label: const Text('全部'),
+                  selected: true,
+                  onSelected: (_) {},
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                FilterChip(
+                  label: const Text('对话'),
+                  selected: false,
+                  onSelected: (_) {},
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                const FilterChip(
+                  label: Text('禁用'),
+                  selected: false,
+                  onSelected: null,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ]),
+              const _Label('进度条'),
+              const _Progress(),
+              const _Label('工具提示 · 明暗共用同一个底'),
+              const _TooltipSpecimen(),
+              const _Label('空状态'),
+              AppEmptyState(
+                icon: Icons.inbox_outlined,
+                label: '还没有模型',
+                description: '先添加一个渠道，再从它拉取可用的模型。',
+                action: AppButton(
+                  label: '添加渠道',
+                  icon: Icons.add,
+                  variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.compact,
+                  accentLabel: true,
+                  onPressed: () {},
+                ),
+              ),
               const _Label('对话框外壳 · 危险动作'),
               // The chrome only, not any one dialog's body: the icon plate
               // takes its tint from `iconColor`, so this is also the check
@@ -221,6 +288,124 @@ class _Gallery extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The states `10e` 「列表行」 draws, minus hover — which is a pointer state and
+/// so cannot be photographed by a golden that never moves a mouse.
+class _ListRows extends StatelessWidget {
+  const _ListRows();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AppCard(
+      outlined: true,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.folder, size: 20, color: Color(0xFFE0A64B)),
+            title: const Text('ai_res'),
+            trailing: Text('39', style: Theme.of(context).textTheme.labelMedium?.mono),
+            onTap: () {},
+          ),
+          ListTile(
+            selected: true,
+            leading: const Icon(Icons.photo_library_outlined, size: 20),
+            title: const Text('全部来源'),
+            trailing: Text('39', style: Theme.of(context).textTheme.labelMedium?.mono),
+            onTap: () {},
+          ),
+          ListTile(
+            enabled: false,
+            leading: Icon(Icons.folder, size: 20, color: colorScheme.outline),
+            title: const Text('离线卷 (D:)'),
+            trailing: Text('—', style: Theme.of(context).textTheme.labelMedium?.mono),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.memory_outlined, size: 20),
+            title: const Text('gemini-2.5-flash-image'),
+            subtitle: const Text('图生图 · 1568×2712 上限'),
+            trailing: const Icon(Icons.chevron_right, size: 17),
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Both halves of `10e`'s two-slider split, side by side — which is the only
+/// way to see that the neutral one has stayed neutral.
+class _Sliders extends StatelessWidget {
+  const _Sliders();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Expanded(child: Slider(value: 0.62, onChanged: (_) {})),
+      const SizedBox(width: 16),
+      Expanded(
+        child: SliderTheme(
+          data: neutralSliderTheme(Theme.of(context).colorScheme),
+          child: Slider(value: 0.52, onChanged: (_) {}),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _Progress extends StatelessWidget {
+  const _Progress();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      const Expanded(child: LinearProgressIndicator(value: 0.34)),
+      const SizedBox(width: 16),
+      // Indeterminate. Pumped to a fixed point by the harness, so the sweep
+      // lands in the same place in every shot.
+      const Expanded(child: LinearProgressIndicator()),
+      const SizedBox(width: 16),
+      const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(value: 0.68, strokeWidth: 2.5),
+      ),
+      const SizedBox(width: 12),
+      const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ]);
+  }
+}
+
+/// The tooltip bubble, painted from its own theme.
+///
+/// A real [Tooltip] renders into the [Overlay], which this golden's subtree
+/// does not include — so mounting one would photograph nothing. Reading
+/// [TooltipTheme] and drawing it keeps the specimen honest: change the theme
+/// and this changes with it, exactly as the real bubble does.
+class _TooltipSpecimen extends StatelessWidget {
+  const _TooltipSpecimen();
+
+  @override
+  Widget build(BuildContext context) {
+    final tooltip = TooltipTheme.of(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        decoration: tooltip.decoration,
+        padding: tooltip.padding,
+        child: Text('在系统播放器中打开', style: tooltip.textStyle),
       ),
     );
   }
