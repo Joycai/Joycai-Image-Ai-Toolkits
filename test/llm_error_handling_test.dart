@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_chat_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
@@ -199,6 +204,193 @@ void main() {
           LLMService.isRetryable(
               Exception('xAI Images API failed: 422 - bad prompt')),
           isFalse);
+    });
+  });
+
+  group('the non-streaming deadline', () {
+    LLMModelConfig config(String modelId, String channelType) => LLMModelConfig(
+          modelId: modelId,
+          channelType: channelType,
+          endpoint: 'https://example.invalid/v1',
+          apiKey: 'k',
+        );
+
+    test('a generation that ran long is never retried', () {
+      // The whole failure this replaced: three identical Opus requests, 122 s
+      // apart, each producing a complete 6 K-token answer that arrived after
+      // the client had already given up on it.
+      expect(
+          LLMService.isRetryable(
+              const LLMDeadlineExceeded(Duration(seconds: 120))),
+          isFalse);
+    });
+
+    test('a stalled stream still is — it means the connection died', () {
+      // Same word, opposite meaning: on the streaming path the guard is per
+      // chunk, so it expiring is "no bytes for two minutes", not "still
+      // writing".
+      expect(LLMService.isRetryable(TimeoutException('no chunks')), isTrue);
+    });
+
+    test('says what happened and that nothing was retried', () {
+      final message =
+          const LLMDeadlineExceeded(Duration(seconds: 388)).toString();
+      expect(message, contains('388'));
+      expect(message, contains('billed'));
+      expect(message, contains('retried'));
+    });
+
+    test('scales with the output cap the caller asked for', () {
+      final dispatcher = LLMDispatcher();
+      final small = dispatcher.generateTimeout(
+          config('gpt-4o', Vendors.openAIRest),
+          options: const {'maxTokens': 1000});
+      final large = dispatcher.generateTimeout(
+          config('gpt-4o', Vendors.openAIRest),
+          options: const {'maxTokens': 32000});
+      expect(large, greaterThan(small));
+    });
+
+    test('never drops below the historical 120 s floor', () {
+      // Short calls must be unaffected: this change is about long answers.
+      expect(
+        LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
+            options: const {'maxTokens': 1}),
+        const Duration(seconds: 120),
+      );
+    });
+
+    test('is capped, so a misconfigured cap cannot mean an hour', () {
+      expect(
+        LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
+            options: const {'maxTokens': 10000000}),
+        const Duration(minutes: 10),
+      );
+    });
+
+    test('a 6 K-token answer gets a deadline it can actually meet', () {
+      // The Prompt Assistant's submit_prompt runs 6-7 K tokens; under the old
+      // flat guard every single delivery timed out mid-write.
+      final deadline = LLMDispatcher().generateTimeout(
+          config('claude-opus-4-8', Vendors.anthropicRest));
+      expect(deadline, greaterThan(const Duration(minutes: 4)));
+    });
+
+    test('Midjourney keeps precedence over the scaling rule', () {
+      // Its generate() contains a poll loop, so the output cap says nothing
+      // about how long it runs.
+      expect(
+        LLMDispatcher().generateTimeout(
+            config('anything', Vendors.midjourneyProxy),
+            options: const {'maxTokens': 1}),
+        const Duration(minutes: 11),
+      );
+    });
+  });
+
+  group('tool calls over the streaming surface', () {
+    LLMModelConfig config(String channelType) => LLMModelConfig(
+          modelId: 'some-model',
+          channelType: channelType,
+          endpoint: 'https://example.invalid/v1',
+          apiKey: 'k',
+        );
+
+    test('④ carries them, so a tool-bearing request may stream', () {
+      // Which is the point: the streaming guard resets on every chunk, while
+      // the non-streaming one has to cover a whole 6-7 K-token generation.
+      expect(LLMDispatcher().streamSupportsTools(config(Vendors.anthropicRest)),
+          isTrue);
+      expect(
+          LLMDispatcher().streamSupportsTools(config(Vendors.newApiAnthropic)),
+          isTrue);
+    });
+
+    test('① and ③ do not, so theirs still falls back to generate()', () {
+      // Claiming the capability without the accumulator would answer a
+      // tool-bearing request as though no tools existed — the one failure an
+      // agent loop cannot detect.
+      for (final vendor in [
+        Vendors.openAIRest,
+        Vendors.newApiOpenAI,
+        Vendors.googleRest,
+        Vendors.midjourneyProxy,
+      ]) {
+        expect(LLMDispatcher().streamSupportsTools(config(vendor)), isFalse,
+            reason: '$vendor must keep the downgrade');
+      }
+    });
+
+    test('the protocols agree with the routing table', () {
+      // The dispatcher answers per family by hand, so it can drift from what
+      // the protocols actually implement. This is the pin against that.
+      expect(AnthropicChatProtocol().streamingDeclaresTools, isTrue);
+      expect(OpenAIChatProtocol().streamingDeclaresTools, isFalse);
+      expect(GeminiChatProtocol().streamingDeclaresTools, isFalse);
+    });
+  });
+
+  group('the streaming idle guard', () {
+    // _idleGuarded is private, so this exercises the shape it has to have
+    // rather than the function itself: the first chunk gets a longer budget
+    // than the ones after it, and a stall cancels the subscription.
+    test('a slow first chunk is not a dead connection', () async {
+      // The failure this prevents: a large prompt still prefilling behind a
+      // queue looks identical to a dead socket, and calling it dead re-sends
+      // the whole request — the waste this change set removed.
+      var cancelled = false;
+      final controller = StreamController<int>(onCancel: () => cancelled = true);
+
+      final collected = <int>[];
+      final done = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(milliseconds: 400),
+        subsequent: const Duration(milliseconds: 80),
+      ).forEach(collected.add);
+
+      // Later than `subsequent` allows, earlier than `first` does.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      controller.add(1);
+      await controller.close();
+      await done;
+
+      expect(collected, [1]);
+      expect(cancelled, isTrue, reason: 'the subscription must be torn down');
+    });
+
+    test('a gap after the first chunk fails fast', () async {
+      final controller = StreamController<int>();
+      final guarded = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(seconds: 5),
+        subsequent: const Duration(milliseconds: 80),
+      );
+
+      final collected = <int>[];
+      final done = guarded.forEach(collected.add);
+      controller.add(1);
+      // ...and then nothing, for longer than `subsequent`.
+
+      await expectLater(done, throwsA(isA<TimeoutException>()));
+      expect(collected, [1]);
+      await controller.close();
+    });
+
+    test('a stalled stream is actually cancelled, unlike the sync path', () async {
+      // Future.timeout on the non-streaming path leaves its request running
+      // upstream and billing. This one does not.
+      var cancelled = false;
+      final controller = StreamController<int>(onCancel: () => cancelled = true);
+
+      final done = LLMService.idleGuardedForTest(
+        controller.stream,
+        first: const Duration(milliseconds: 60),
+        subsequent: const Duration(milliseconds: 60),
+      ).forEach((_) {});
+
+      await expectLater(done, throwsA(isA<TimeoutException>()));
+      expect(cancelled, isTrue);
+      await controller.close();
     });
   });
 }

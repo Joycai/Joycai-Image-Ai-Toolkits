@@ -117,6 +117,18 @@ class VendorProfile {
   /// [ThinkingDialect.none] on every other family.
   final ThinkingDialect thinking;
 
+  /// Whether this vendor understands ④'s `cache_control` breakpoints.
+  ///
+  /// Opt-in rather than on by default, because declaring it costs nothing to
+  /// get right and a whole request to get wrong: marking the prefix requires
+  /// sending `system` as a **block array** instead of a plain string, and a
+  /// relay that reconstructs the payload rather than forwarding it may not
+  /// accept that shape. A host that turns out not to support it fails the
+  /// entire request, not just the caching.
+  ///
+  /// Meaningless outside ④ — ① and ③ have no equivalent and ignore the flag.
+  final bool promptCaching;
+
   const VendorProfile({
     required this.id,
     required this.family,
@@ -124,6 +136,7 @@ class VendorProfile {
     this.usesXaiNativeSurfaces = false,
     this.usesDashScopeNativeImages = false,
     this.thinking = ThinkingDialect.none,
+    this.promptCaching = false,
   });
 
   /// Request headers for this vendor. [endpoint] is needed because

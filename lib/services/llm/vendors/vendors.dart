@@ -130,6 +130,8 @@ class Vendors {
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
       thinking: ThinkingDialect.anthropicBudget,
+      // Anthropic's own endpoint, and the gateways that forward to it.
+      promptCaching: true,
     ),
     VendorProfile(
       id: newApiAnthropic,
@@ -139,12 +141,18 @@ class Vendors {
       // *other* ④ backend is the case this gets wrong — which is exactly why
       // [minimaxAnthropic] is its own profile rather than a note in a README.
       thinking: ThinkingDialect.anthropicBudget,
+      promptCaching: true,
     ),
     VendorProfile(
       id: minimaxAnthropic,
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
       thinking: ThinkingDialect.adaptive,
+      // Left off deliberately: MiniMax's ④ layer is the one that has already
+      // been found missing pieces this app sends (no forcing tool_choice),
+      // and an unsupported cache_control fails the whole request rather than
+      // just the caching. Flip it once someone has run it against the live
+      // endpoint.
     ),
     VendorProfile(
       id: dashscope,

@@ -175,7 +175,11 @@ class AiRenameAgent {
         messages: messages,
         tools: _tools,
         contextId: contextId,
-        useStream: false,
+        // A rename batch is many small calls rather than one long answer, so
+        // this is not the deadline fix it is for the Prompt Assistant — but
+        // the same routing decision applies, and a chunked request is the
+        // one that survives a slow relay.
+        useStream: true,
       );
 
       if (response.toolCalls.isEmpty) {

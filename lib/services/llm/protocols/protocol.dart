@@ -60,23 +60,38 @@ abstract class ChatProtocol {
     LLMLogger? logger,
   });
 
-  /// Deliberately takes no `tools`: the streaming surface does not declare
-  /// them, so no implementation has to assemble a tool call out of deltas.
-  /// [LLMService.request] downgrades a tool-bearing request to [generate]
-  /// instead.
+  /// Whether [generateStream] declares client tools and can return complete
+  /// calls through [LLMResponseChunk.toolCallPart].
   ///
-  /// Adding tools here is a bigger change than the signature suggests. On the
-  /// ① family `function.arguments` arrives fragmented across chunks and
-  /// `delta.tool_calls[].index` — not `id`, which is fragmented too — is the
-  /// only reliable grouping key (docs/api/tools.md §4); the accumulator has to
-  /// live in the protocol and emit whole calls at stream end. And the one
-  /// consumer that would use it, the assistant's agent loop, cannot act on a
-  /// partial batch anyway: it needs every call in the message before it can
-  /// pair a single result. Hence the downgrade rather than the machinery.
+  /// False by default, because assembling a call out of deltas is real
+  /// machinery and each family needs its own: ④ buffers `input_json_delta`
+  /// per content-block index, while on ① `function.arguments` arrives
+  /// fragmented across chunks and `delta.tool_calls[].index` — not `id`,
+  /// which is fragmented too — is the only reliable grouping key
+  /// (docs/api/tools.md §4).
+  ///
+  /// `LLMService.request` reads this (via `LLMDispatcher.streamSupportsTools`)
+  /// and falls back to [generate] where it is false. Overriding it without
+  /// implementing the accumulator means a tool-bearing request silently
+  /// answers as though no tools existed — the one failure mode an agent loop
+  /// cannot detect.
+  bool get streamingDeclaresTools => false;
+
+  /// [tools] is ignored unless [streamingDeclaresTools] is true.
+  ///
+  /// Streaming matters for a tool-bearing request even though an agent loop
+  /// cannot act on a partial batch — it needs every call in the message
+  /// before it can pair a single result. The reason is not incremental
+  /// consumption but **keeping the request alive**: `LLMService`'s streaming
+  /// guard is per chunk and resets on every one, where the non-streaming
+  /// guard has to cover the whole generation. A 6-7 K-token answer has no
+  /// realistic flat deadline, which is what made every Prompt Assistant
+  /// delivery time out mid-write (docs/plans/2026-08-assistant-timeout.md).
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     LLMLogger? logger,
   });
 }

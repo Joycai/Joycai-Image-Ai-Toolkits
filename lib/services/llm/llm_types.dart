@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
@@ -67,6 +67,52 @@ class LLMApiException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// The whole-request deadline on the **non-streaming** path expired.
+///
+/// Its own type, and deliberately not a [TimeoutException], because
+/// `LLMService.isRetryable` answers the two cases oppositely and they mean
+/// opposite things:
+///
+///  * On the streaming path the deadline is per *chunk*. It expiring means
+///    no bytes at all arrived for two minutes — a dead connection, where
+///    reconnecting is exactly the right move. That stays retryable.
+///  * Here it means the generation did not finish in time. The input is
+///    unchanged and so is the amount of output being asked for, so a retry
+///    re-runs the identical request and misses the identical deadline. It is
+///    worse than useless: `Future.timeout` cancels nothing, so the abandoned
+///    request keeps running upstream, keeps holding the connection, and is
+///    billed in full — while its replacement competes with it. The Prompt
+///    Assistant used to spend three Opus generations and six minutes this
+///    way and deliver nothing (docs/plans/2026-08-assistant-timeout.md).
+class LLMDeadlineExceeded implements Exception {
+  final Duration deadline;
+
+  const LLMDeadlineExceeded(this.deadline);
+
+  @override
+  String toString() =>
+      'No response within ${deadline.inSeconds}s. The request was not '
+      'cancelled upstream — it may still complete, and it is billed either '
+      'way. Nothing was retried, because an identical request would miss the '
+      'same deadline.';
+}
+
+/// The output cap the caller asked for, or null when it did not ask.
+///
+/// Shared so the deadline and the payload agree on what "the caller asked
+/// for" means — they read the same key out of the same options map, and a
+/// deadline sized against a different number than the request carries is a
+/// deadline sized against nothing.
+int? requestedMaxTokens(Map<String, dynamic>? options) {
+  final raw = options?['maxTokens'];
+  if (raw is num && raw >= 1) return raw.toInt();
+  if (raw is String) {
+    final parsed = int.tryParse(raw);
+    if (parsed != null && parsed >= 1) return parsed;
+  }
+  return null;
 }
 
 enum LLMReferenceType {
@@ -377,7 +423,36 @@ class LLMModelConfig {
   /// Rate actually charged per cached input token.
   double get effectiveCacheInputFee => cacheInputFee ?? inputFee;
 
-  http.Client createClient() {
+  /// A client for this channel, shared with every other request that would
+  /// open the same connection.
+  ///
+  /// A client per request is a TCP connection per request, which means a TLS
+  /// handshake and a fresh slow-start ramp for every upload — paid a dozen or
+  /// more times in a single agent turn, against a host that is usually far
+  /// away.
+  ///
+  /// The returned handle's `close()` does nothing: ownership stays with
+  /// [LLMClientPool]. Every protocol closes its client in a `finally`, which
+  /// is right for a private client and fatal for a shared one, and swallowing
+  /// the call is safer than teaching twenty-seven call sites the difference.
+  http.Client createClient() => LLMClientPool.take(this);
+
+  /// Everything that determines which connection a request opens.
+  ///
+  /// The API key is deliberately absent: it travels as a header, so two
+  /// channels with different keys against the same endpoint can share a
+  /// connection. Endpoint and proxy are what cannot be shared.
+  ///
+  /// Being derived rather than stored is what removes the invalidation
+  /// problem: edit a channel's endpoint and the next request simply computes
+  /// a different key and takes a different client.
+  String get connectionKey => proxyEnabled && (proxyUrl?.isNotEmpty ?? false)
+      ? '$endpoint|$proxyUrl|$proxyUsername|$proxyPassword'
+      : endpoint;
+
+  /// Builds the underlying client this config needs. Called by
+  /// [LLMClientPool] on a miss, never directly.
+  http.Client buildClient() {
     if (!proxyEnabled || proxyUrl == null || proxyUrl!.isEmpty) {
       return http.Client();
     }
@@ -403,6 +478,68 @@ class LLMModelConfig {
 
     return IOClient(httpClient);
   }
+}
+
+/// Keeps one live [http.Client] per distinct connection, so requests to the
+/// same endpoint reuse the same sockets.
+///
+/// Deliberately keyed and capped rather than lifecycle-managed. There is no
+/// "channel was edited" hook to forget to call: a changed endpoint or proxy
+/// is a changed [LLMModelConfig.connectionKey], and the stale entry ages out
+/// of the cap on its own.
+class LLMClientPool {
+  /// Small on purpose — a user has a handful of channels, and an entry holds
+  /// open sockets. Past this the least-recently-taken client is closed.
+  static const int _maxClients = 8;
+
+  /// Insertion-ordered, and re-inserted on every hit, so `keys.first` is the
+  /// least recently used.
+  static final Map<String, http.Client> _clients = {};
+
+  static http.Client take(LLMModelConfig config) {
+    final key = config.connectionKey;
+    final cached = _clients.remove(key);
+    if (cached != null) {
+      _clients[key] = cached; // Re-inserted: now the most recently used.
+      return _SharedClient(cached);
+    }
+
+    while (_clients.length >= _maxClients) {
+      final oldest = _clients.keys.first;
+      _clients.remove(oldest)?.close();
+    }
+
+    final client = config.buildClient();
+    _clients[key] = client;
+    return _SharedClient(client);
+  }
+
+  /// Closes every pooled client. For tests and shutdown; nothing in a normal
+  /// session needs to call it.
+  static void disposeAll() {
+    for (final client in _clients.values) {
+      client.close();
+    }
+    _clients.clear();
+  }
+
+  @visibleForTesting
+  static int get liveClients => _clients.length;
+}
+
+/// A pooled client handle whose [close] is a no-op — see
+/// [LLMModelConfig.createClient].
+class _SharedClient extends http.BaseClient {
+  final http.Client _inner;
+
+  _SharedClient(this._inner);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _inner.send(request);
+
+  @override
+  void close() {}
 }
 
 class LLMResponse {
@@ -461,14 +598,40 @@ class LLMResponseChunk {
 
   /// One whole tool call. Emitted by the Google chunk parser, which is shared
   /// between that family's streaming and synchronous paths — the synchronous
-  /// one reassembles [LLMResponse.toolCalls] from these.
+  /// one reassembles [LLMResponse.toolCalls] from these — and by ④'s stream,
+  /// which declares tools and assembles the calls itself.
   ///
-  /// Always a complete call, never a fragment: no protocol declares tools on
-  /// the streaming surface (see [ChatProtocol.generateStream]), so nothing
-  /// here has to survive being split across chunks.
+  /// **Always a complete call, never a fragment.** ④ delivers tool arguments
+  /// as `input_json_delta` fragments that are not valid JSON until the last
+  /// one, so the accumulator lives inside the protocol and a call is emitted
+  /// only at `content_block_stop`. Consumers may assume they can act on
+  /// whatever arrives here.
   final LLMToolCall? toolCallPart;
+
+  /// ④'s thinking blocks, verbatim and in order, emitted once at stream end.
+  ///
+  /// Not derivable from [reasoningPart]: that is display text, and the replay
+  /// obligation is over the whole sealed block (including
+  /// `redacted_thinking`, which has no text at all). A tool-calling turn
+  /// replayed without them is an incomplete thinking history, which ④
+  /// silently strips — thinking stops, billing continues — rather than
+  /// rejecting. Only reachable now that the streaming surface can carry a
+  /// tool call, which is the only turn whose replay needs them.
+  final List<Map<String, dynamic>>? rawThinkingBlocks;
+
+  /// The seal over the last thinking block, for [LLMMessage.reasoningSignature].
+  final String? reasoningSignature;
 
   final bool isDone;
 
-  LLMResponseChunk({this.textPart, this.reasoningPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
+  LLMResponseChunk({
+    this.textPart,
+    this.reasoningPart,
+    this.imagePart,
+    this.metadata,
+    this.toolCallPart,
+    this.rawThinkingBlocks,
+    this.reasoningSignature,
+    this.isDone = false,
+  });
 }

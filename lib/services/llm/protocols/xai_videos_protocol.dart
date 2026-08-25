@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
@@ -100,7 +99,7 @@ class XaiVideosProtocol implements VideoJobProtocol {
     logger?.call('Submitting xAI video task to: ${url.host}', level: 'DEBUG');
 
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'xAI (Video Submit)', {
         'url': redactUrl(url),

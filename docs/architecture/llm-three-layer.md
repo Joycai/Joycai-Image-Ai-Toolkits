@@ -187,8 +187,28 @@ thinking / server tool 一起加。
    段、搜索后一段），所以 block 之间按空行拼接，不是裸接 —— 裸接会把两段话连成
    一句。
 
-流式那条路上 thinking 仍是只读的：`generateStream` 不声明工具，没有工具调用就
-没有需要签名去封的重放，与 ① / ③ 对各自 reasoning 的处理一致。
+**④ 的流式那条路现在也声明工具**（`streamingDeclaresTools`，目前只有 ④ 为
+true）。理由不是增量消费 —— agent 循环拿不到完整一批就配不出结果 —— 而是**保
+活**：`LLMService` 流式分支的超时是**按 chunk** 计的、每个 chunk 重置，而非流式
+那条得覆盖整轮生成。一次 `submit_prompt` 6–7K token，没有任何固定 deadline 能覆
+盖，这正是助手每次交付都在写到一半时超时的原因（见
+`docs/plans/2026-08-assistant-timeout.md`）。
+
+拼装逻辑在 `AnthropicStreamAssembler` 里，从传输循环里拆出来是为了能不开 socket
+就钉住 —— 和 ③ 的 `geminiChunksFromSseLine` 同一个套路。三条不变量：
+
+- **`content_block_stop` 之前什么都不出去。** `input_json_delta` 的每一片单独看
+  都不是合法 JSON。空 buffer 是 `{}`（无参工具根本不发 delta），不是解析失败。
+- **分组键是 block index**，因为 ④ 可以在上一个 block 关闭前就打开下一个。
+- **thinking 块必须在流式路径上原样留存**（`rawThinkingBlocks` +
+  `signature_delta`）。带工具调用的一轮正是需要重放它们的那一轮，而 ④ 对不完整的
+  thinking 历史不是报 400，是**静默关掉 thinking 继续计费** —— 漏了不会有任何
+  报错。签名规则与同步路径一致：只留封好的块，`redacted_thinking` 永远留。
+
+① 的 `function.arguments` 按 `delta.tool_calls[].index` 分片（streaming.md
+§1），要另写一套累积器，所以 ① / ③ 目前仍然降级到 `generate()`。降级判断写在
+`LLMDispatcher.streamSupportsTools` 里 —— 和其它路由分支放在一起，逐 family 手
+写而不是查表，这样以后给 ① 补上是这里可见的一行改动。
 
 两个开关都是**按模型**存的（v33 迁移的 `llm_models.enable_thinking` /
 `enable_web_search`，默认关），由 `LLMConfigResolver` 解析进 `LLMModelConfig`

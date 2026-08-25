@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -37,7 +36,7 @@ class GeminiChatProtocol implements ChatProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Standard)', {
           'url': redactUrl(url),
@@ -51,6 +50,7 @@ class GeminiChatProtocol implements ChatProtocol {
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+        await LLMDebugLogger.finish(debugFile);
       }
 
       final data = decodeJsonBody(response, apiName: 'Google GenAI');
@@ -94,11 +94,21 @@ class GeminiChatProtocol implements ChatProtocol {
     }
   }
 
+  /// ③ delivers a `functionCall` part whole inside a streamed candidate, so
+  /// this is a smaller job than ①'s — but nothing needs it yet, and claiming
+  /// the capability without the accumulator would answer tool-bearing
+  /// requests as though no tools existed.
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final config = target.config;
@@ -116,7 +126,7 @@ class GeminiChatProtocol implements ChatProtocol {
 
     final client = config.createClient();
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleGenAI (Stream)', {
         'url': redactUrl(url),
@@ -132,6 +142,7 @@ class GeminiChatProtocol implements ChatProtocol {
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+        await LLMDebugLogger.finish(debugFile);
       }
       client.close();
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
@@ -161,6 +172,9 @@ class GeminiChatProtocol implements ChatProtocol {
       }
     } finally {
       client.close();
+      // In the finally so a stream that failed mid-flight still records how
+      // long it ran before it did.
+      await LLMDebugLogger.finish(debugFile);
     }
 
     yield LLMResponseChunk(isDone: true);

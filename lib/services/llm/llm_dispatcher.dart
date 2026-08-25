@@ -61,17 +61,47 @@ class LLMDispatcher {
   bool discoveryUsesNetwork(LLMModelConfig config) =>
       resolveTarget(config).vendor.family != ProtocolFamily.midjourney;
 
+  /// Assumed floor on how fast a model emits output tokens, for sizing the
+  /// non-streaming deadline.
+  ///
+  /// Deliberately pessimistic. Waiting out a slow endpoint costs patience;
+  /// giving up early throws away a generation that has already been billed
+  /// and cannot be un-run.
+  static const int _assumedOutputTokensPerSecond = 25;
+
+  /// Allowance for everything in a non-streaming request that is not
+  /// generation: upload, queueing at a relay, and prefill of a full context
+  /// window.
+  static const Duration _nonGenerationAllowance = Duration(seconds: 60);
+
+  /// Ceiling, so a misconfigured output cap cannot produce an hour-long wait.
+  static const Duration _maxChatDeadline = Duration(minutes: 10);
+
   /// How long a synchronous [generate] may run before the caller times it
   /// out.
   ///
-  /// Midjourney is the outlier: its generate() *contains* the whole
-  /// submit → poll → download cycle (up to 10 minutes, see
-  /// [MidjourneyProtocol]), so the 120 s guard that fits a single chat
-  /// completion would fail every non-streaming Midjourney call at exactly
-  /// 120 s. The streaming path is unaffected — progress chunks reset the
-  /// caller's timeout — which is why this only ever mattered for
-  /// `useStream: false`.
-  Duration generateTimeout(LLMModelConfig config) {
+  /// **Scales with the output cap**, because on this path nothing arrives
+  /// until the last token: the deadline has to outlive the entire
+  /// generation, and "how long is the entire generation" is a function of
+  /// how much output was asked for. The flat 120 s this used to return was
+  /// unreachable for any answer worth having — a Prompt Assistant
+  /// `submit_prompt` runs 6–7 K tokens, which no endpoint finishes in two
+  /// minutes, so *every* delivery timed out while the model was still
+  /// writing it (docs/plans/2026-08-assistant-timeout.md).
+  ///
+  /// The floor stays at the historical 120 s so short calls are unaffected.
+  ///
+  /// The streaming path does not use this at all — its guard is per chunk,
+  /// and progress resets it — which is why this only ever mattered for
+  /// `useStream: false`, and why teaching a protocol to stream tool calls
+  /// is the real fix rather than a bigger number here.
+  ///
+  /// Midjourney is the outlier that predates all of it: its generate()
+  /// *contains* the whole submit → poll → download cycle (up to 10 minutes,
+  /// see [MidjourneyProtocol]), so any guard sized for a chat completion
+  /// would fail every non-streaming Midjourney call.
+  Duration generateTimeout(LLMModelConfig config,
+      {Map<String, dynamic>? options}) {
     final target = resolveTarget(config);
     if (target.vendor.family == ProtocolFamily.midjourney) {
       return const Duration(minutes: 11);
@@ -89,7 +119,29 @@ class LLMDispatcher {
     if (target.model.capabilities.longRunning) {
       return const Duration(minutes: 5);
     }
-    return const Duration(seconds: 120);
+
+    final deadline = _nonGenerationAllowance +
+        Duration(
+            seconds: _outputCap(target, options) ~/ _assumedOutputTokensPerSecond);
+    if (deadline < const Duration(seconds: 120)) return const Duration(seconds: 120);
+    if (deadline > _maxChatDeadline) return _maxChatDeadline;
+    return deadline;
+  }
+
+  /// The output cap that will actually apply to this request.
+  ///
+  /// When the caller named one, that is the answer. Otherwise it depends on
+  /// the family: ④ has no server-side default and the adapter substitutes
+  /// [anthropicDefaultMaxTokens], so that number is a fact about the request
+  /// being sent. ① and ③ leave the field off and let the host decide, which
+  /// is not knowable here — 4096 stands in for it, low enough that the floor
+  /// usually wins and short calls keep the old behaviour.
+  int _outputCap(LLMTarget target, Map<String, dynamic>? options) {
+    final requested = requestedMaxTokens(options);
+    if (requested != null) return requested;
+    return target.vendor.family == ProtocolFamily.anthropic
+        ? anthropicDefaultMaxTokens
+        : 4096;
   }
 
   // ---------------------------------------------------------------------------
@@ -151,10 +203,32 @@ class LLMDispatcher {
   // Streaming generation
   // ---------------------------------------------------------------------------
 
+  /// Whether this route's streaming surface declares client tools, i.e.
+  /// whether a tool-bearing request may stream instead of falling back to
+  /// [generate].
+  ///
+  /// The routing question `LLMService` asks before choosing a path, kept here
+  /// with every other routing branch rather than derived from the protocol
+  /// object at the call site. Written per family rather than as a lookup so
+  /// that teaching ① or ③ to stream tool calls is a visible one-line change
+  /// here, not a silent behaviour flip somewhere else.
+  bool streamSupportsTools(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    switch (target.vendor.family) {
+      case ProtocolFamily.anthropic:
+        return _anthropicChat.streamingDeclaresTools;
+      case ProtocolFamily.openai:
+      case ProtocolFamily.gemini:
+      case ProtocolFamily.midjourney:
+        return false;
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final target = resolveTarget(config);
@@ -164,7 +238,8 @@ class LLMDispatcher {
         return;
 
       case ProtocolFamily.anthropic:
-        yield* _anthropicChat.generateStream(target, history, options: options, logger: logger);
+        yield* _anthropicChat.generateStream(target, history,
+            options: options, tools: tools, logger: logger);
         return;
 
       case ProtocolFamily.gemini:

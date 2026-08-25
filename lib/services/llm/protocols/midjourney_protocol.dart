@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -64,11 +63,18 @@ class MidjourneyProtocol implements ChatProtocol {
     );
   }
 
+  /// Midjourney has no tool calling at all.
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final controller = StreamController<LLMResponseChunk>();
@@ -144,7 +150,7 @@ class MidjourneyProtocol implements ChatProtocol {
 
     final client = config.createClient();
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     try {
       final endpoint = isBlend
           ? Uri.parse('$baseUrl/mj/submit/blend')

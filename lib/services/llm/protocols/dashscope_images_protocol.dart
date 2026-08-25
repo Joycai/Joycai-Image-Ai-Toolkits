@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -81,7 +80,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(
           config.modelId,

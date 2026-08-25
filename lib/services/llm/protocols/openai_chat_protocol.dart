@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -338,7 +337,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Standard)', {
           'url': redactUrl(url),
@@ -352,6 +351,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       if (debugFile != null) {
         await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Body: ${response.body}');
+        await LLMDebugLogger.finish(debugFile);
       }
 
       logger?.call('Response received, parsing data...', level: 'DEBUG');
@@ -472,11 +472,21 @@ class OpenAIChatProtocol implements ChatProtocol {
     }
   }
 
+  /// ① fragments `function.arguments` across chunks and groups them by
+  /// `delta.tool_calls[].index` rather than `id` (docs/api/tools.md §4), so
+  /// this needs a real accumulator before it can be true. Until then a
+  /// tool-bearing request falls back to [generate].
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final config = target.config;
@@ -494,7 +504,7 @@ class OpenAIChatProtocol implements ChatProtocol {
 
     final client = config.createClient();
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'OpenAI (Stream)', {
         'url': redactUrl(url),
@@ -510,6 +520,7 @@ class OpenAIChatProtocol implements ChatProtocol {
         final body = await response.stream.bytesToString();
         await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
+        await LLMDebugLogger.finish(debugFile);
       }
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
@@ -650,6 +661,9 @@ class OpenAIChatProtocol implements ChatProtocol {
       }
     } finally {
       client.close();
+      // In the finally so a stream that failed mid-flight still records how
+      // long it ran before it did.
+      await LLMDebugLogger.finish(debugFile);
     }
 
     // Last, so it wins over any metadata attached to an earlier chunk. Without

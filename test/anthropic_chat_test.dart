@@ -48,9 +48,36 @@ void main() {
         isStreaming: isStreaming,
       );
 
+  /// [payload] with the target chosen, for the rules that differ per vendor.
+  Map<String, dynamic> payloadFor(
+    LLMTarget on,
+    List<LLMMessage> history, {
+    List<LLMTool>? tools,
+  }) =>
+      prepareAnthropicPayload(on, history, tools: tools, isStreaming: false);
+
+  /// [payload] with cache breakpoints off.
+  ///
+  /// History conversion is vendor-independent, and these tests compare block
+  /// structures exactly — marking the reusable prefix adds a `cache_control`
+  /// field to the blocks it lands on, which is noise here and has its own
+  /// group below.
+  Map<String, dynamic> uncachedPayload(
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    List<LLMTool>? tools,
+  }) =>
+      prepareAnthropicPayload(
+        target('claude-opus-5', channelType: Vendors.minimaxAnthropic),
+        history,
+        options: options,
+        tools: tools,
+        isStreaming: false,
+      );
+
   group('history conversion', () {
     test('system leaves the message array for the top-level field', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.system, content: 'be brief'),
         LLMMessage(role: LLMRole.user, content: 'hi'),
       ]);
@@ -66,7 +93,7 @@ void main() {
     });
 
     test('several system turns are joined, not dropped', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.system, content: 'first'),
         LLMMessage(role: LLMRole.system, content: 'second'),
         LLMMessage(role: LLMRole.user, content: 'hi'),
@@ -75,7 +102,7 @@ void main() {
     });
 
     test('no system prompt means no system field at all', () {
-      final p = payload([LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final p = uncachedPayload([LLMMessage(role: LLMRole.user, content: 'hi')]);
       expect(p.containsKey('system'), isFalse);
     });
 
@@ -83,7 +110,7 @@ void main() {
       // The API requires alternating roles, so N results for N parallel calls
       // cannot be N messages — they have to be N blocks of one. An agent loop
       // that calls two tools in a turn hits this on its very first reply.
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'do both'),
         LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
           LLMToolCall(id: 'toolu_1', name: 'a', arguments: {'x': 1}),
@@ -112,7 +139,7 @@ void main() {
     });
 
     test('a tool that returned nothing still sends a non-empty block', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'go'),
         LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
           LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
@@ -126,7 +153,7 @@ void main() {
     test('an assistant turn with nothing in it is not sent', () {
       // Neither text nor a tool call means no content blocks, and an empty
       // content array is itself a 400.
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'hi'),
         LLMMessage(role: LLMRole.assistant, content: ''),
         LLMMessage(role: LLMRole.user, content: 'still there?'),
@@ -137,7 +164,7 @@ void main() {
     });
 
     test('an assistant turn keeps its text alongside its tool calls', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'hi'),
         LLMMessage(
           role: LLMRole.assistant,
@@ -151,7 +178,7 @@ void main() {
     });
 
     test('an image rides as a base64 source block', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(
           role: LLMRole.user,
           content: 'what is this',
@@ -722,6 +749,345 @@ void main() {
       final revived = LLMMessage.fromJson(msg.toJson());
       expect(revived.rawThinkingBlocks, [sealed, redacted]);
       expect(revived.rawThinkingModelId, 'claude-opus-5');
+    });
+  });
+
+  group('streamed tool calls', () {
+    /// Runs [events] through a fresh assembler and returns everything it
+    /// emitted, closing chunk included.
+    List<LLMResponseChunk> run(List<Map<String, dynamic>> events,
+        {List<String>? log}) {
+      final assembler = AnthropicStreamAssembler(
+        logger: log == null ? null : (m, {level = 'INFO'}) => log.add(m),
+      );
+      final out = <LLMResponseChunk>[];
+      for (final e in events) {
+        out.addAll(assembler.accept(e));
+      }
+      final closing = assembler.finish();
+      if (closing != null) out.add(closing);
+      return out;
+    }
+
+    Map<String, dynamic> start(int index, Map<String, dynamic> block) =>
+        {'type': 'content_block_start', 'index': index, 'content_block': block};
+    Map<String, dynamic> delta(int index, Map<String, dynamic> d) =>
+        {'type': 'content_block_delta', 'index': index, 'delta': d};
+    Map<String, dynamic> stop(int index) =>
+        {'type': 'content_block_stop', 'index': index};
+
+    test('arguments fragmented across deltas reassemble into one call', () {
+      // The whole reason this needs an accumulator: no single delta is valid
+      // JSON, and a call emitted before content_block_stop would carry a
+      // fragment.
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'read_knowledge_file'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"pa'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': 'th": "07_fo'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': 'otwear/07a1.md", "page": 2}'}),
+        stop(0),
+      ]);
+
+      final calls = chunks.map((c) => c.toolCallPart).nonNulls.toList();
+      expect(calls, hasLength(1));
+      expect(calls.single.id, 'toolu_1');
+      expect(calls.single.name, 'read_knowledge_file');
+      expect(calls.single.arguments,
+          {'path': '07_footwear/07a1.md', 'page': 2});
+    });
+
+    test('nothing escapes before content_block_stop', () {
+      // Half the deltas seen, no stop: the call is still under construction
+      // and must not reach a consumer that is promised whole values.
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'toolu_1', 'name': 'x'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"a": 1'}),
+      ]);
+
+      expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
+    });
+
+    test('a tool taking no arguments sends no deltas and still arrives', () {
+      // list_reference_images has an empty schema, so ④ emits start → stop
+      // with nothing in between. An empty buffer is {}, not a parse failure.
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'toolu_9', 'name': 'list_reference_images'}),
+        stop(0),
+      ]);
+
+      final call = chunks.map((c) => c.toolCallPart).nonNulls.single;
+      expect(call.name, 'list_reference_images');
+      expect(call.arguments, isEmpty);
+    });
+
+    test('two parallel calls stay separate and keep their order', () {
+      // Indices are the only grouping key, and one assistant message
+      // routinely carries several reads.
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'a', 'name': 'first'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"n": 1}'}),
+        stop(0),
+        start(1, {'type': 'tool_use', 'id': 'b', 'name': 'second'}),
+        delta(1, {'type': 'input_json_delta', 'partial_json': '{"n": 2}'}),
+        stop(1),
+      ]);
+
+      final calls = chunks.map((c) => c.toolCallPart).nonNulls.toList();
+      expect(calls.map((c) => c.name), ['first', 'second']);
+      expect(calls.map((c) => c.arguments['n']), [1, 2]);
+    });
+
+    test('interleaved deltas from two open blocks do not cross-contaminate', () {
+      // ④ may open the next block before the previous one closes; grouping
+      // by index is what keeps the arguments apart.
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'a', 'name': 'first'}),
+        start(1, {'type': 'tool_use', 'id': 'b', 'name': 'second'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"who":'}),
+        delta(1, {'type': 'input_json_delta', 'partial_json': '{"who":'}),
+        delta(1, {'type': 'input_json_delta', 'partial_json': ' "b"}'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': ' "a"}'}),
+        stop(1),
+        stop(0),
+      ]);
+
+      final byName = {
+        for (final c in chunks.map((c) => c.toolCallPart).nonNulls)
+          c.name: c.arguments['who']
+      };
+      expect(byName, {'second': 'b', 'first': 'a'});
+    });
+
+    test('a call cut mid-JSON still reaches the loop, with empty arguments',
+        () {
+      // Dropping it would read as "the model chose to answer directly",
+      // which is the one failure an agent loop cannot detect. The tool
+      // reports the missing argument itself.
+      final log = <String>[];
+      final chunks = run([
+        start(0, {'type': 'tool_use', 'id': 'a', 'name': 'submit_prompt'}),
+        delta(0, {'type': 'input_json_delta', 'partial_json': '{"prompt": "half a str'}),
+        stop(0),
+      ], log: log);
+
+      final call = chunks.map((c) => c.toolCallPart).nonNulls.single;
+      expect(call.name, 'submit_prompt');
+      expect(call.arguments, isEmpty);
+      expect(log.join(), contains('unparseable'));
+    });
+
+    test('a host-run search is still never surfaced as a call to make', () {
+      // Same rule the synchronous parser has: server_tool_use is already
+      // executed and already answered.
+      final log = <String>[];
+      final chunks = run([
+        start(0, {
+          'type': 'server_tool_use',
+          'id': 's1',
+          'name': 'web_search',
+          'input': {'query': 'cosplay lighting'}
+        }),
+        stop(0),
+      ], log: log);
+
+      expect(chunks.map((c) => c.toolCallPart).nonNulls, isEmpty);
+      expect(log.join(), contains('cosplay lighting'));
+    });
+
+    test('text still streams, with the paragraph seam between blocks', () {
+      final chunks = run([
+        start(0, {'type': 'text'}),
+        delta(0, {'type': 'text_delta', 'text': 'before'}),
+        stop(0),
+        start(1, {'type': 'text'}),
+        delta(1, {'type': 'text_delta', 'text': 'after'}),
+        stop(1),
+      ]);
+
+      expect(chunks.map((c) => c.textPart).nonNulls.join(), 'before\n\nafter');
+    });
+
+    test('usage and stop reason arrive once, at the end', () {
+      final chunks = run([
+        {
+          'type': 'message_start',
+          'message': {
+            'usage': {'input_tokens': 161, 'cache_read_input_tokens': 68796}
+          }
+        },
+        {
+          'type': 'message_delta',
+          'delta': {'stop_reason': 'tool_use'},
+          'usage': {'output_tokens': 7131}
+        },
+      ]);
+
+      final metadata = chunks.map((c) => c.metadata).nonNulls.single;
+      expect(metadata['output_tokens'], 7131);
+      expect(metadata['prompt_tokens'], 161 + 68796);
+      // Published in ①'s vocabulary too, which is what the agent loop reads.
+      expect(metadata['finish_reason'], 'tool_calls');
+    });
+
+    test('a stream that carried nothing closes without a chunk', () {
+      expect(run([{'type': 'ping'}]), isEmpty);
+    });
+  });
+
+  group('streamed thinking (replay carriers)', () {
+    List<LLMResponseChunk> run(List<Map<String, dynamic>> events) {
+      final assembler = AnthropicStreamAssembler();
+      final out = <LLMResponseChunk>[];
+      for (final e in events) {
+        out.addAll(assembler.accept(e));
+      }
+      final closing = assembler.finish();
+      if (closing != null) out.add(closing);
+      return out;
+    }
+
+    test('a sealed block survives whole, text and seal reassembled', () {
+      // Without this the streamed tool-calling turn cannot be replayed: ④
+      // does not reject an incomplete thinking history, it silently strips
+      // thinking and keeps billing.
+      final chunks = run([
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'first '}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'second'}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-abc'}},
+        {'type': 'content_block_stop', 'index': 0},
+      ]);
+
+      final closing = chunks.last;
+      expect(closing.rawThinkingBlocks, hasLength(1));
+      expect(closing.rawThinkingBlocks!.single['thinking'], 'first second');
+      expect(closing.rawThinkingBlocks!.single['signature'], 'sig-abc');
+      expect(closing.reasoningSignature, 'sig-abc');
+      // Display text travels separately and is never glued into the answer.
+      expect(chunks.map((c) => c.reasoningPart).nonNulls.join(), 'first second');
+      expect(chunks.map((c) => c.textPart).nonNulls, isEmpty);
+    });
+
+    test('an unsigned block is not kept for replay', () {
+      // Same rule as the synchronous parser: ④ refuses an unsigned block, and
+      // refusing the whole request is worse than re-deriving a thought.
+      final chunks = run([
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'thinking_delta', 'thinking': 'unsealed'}},
+        {'type': 'content_block_stop', 'index': 0},
+      ]);
+
+      expect(chunks.map((c) => c.rawThinkingBlocks).nonNulls, isEmpty);
+    });
+
+    test('redacted_thinking is kept verbatim and keeps its place', () {
+      // It has no text to reconstruct from, so losing it loses the block.
+      final chunks = run([
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': ''}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-1'}},
+        {'type': 'content_block_stop', 'index': 0},
+        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'redacted_thinking', 'data': 'OPAQUE'}},
+        {'type': 'content_block_stop', 'index': 1},
+      ]);
+
+      final blocks = chunks.last.rawThinkingBlocks!;
+      expect(blocks.map((b) => b['type']), ['thinking', 'redacted_thinking']);
+      expect(blocks.last['data'], 'OPAQUE');
+    });
+
+    test('a thinking turn that also calls a tool keeps both', () {
+      // The combination that matters: this is the turn whose replay needs
+      // the blocks in the first place.
+      final chunks = run([
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'thinking', 'thinking': 'plan'}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'signature_delta', 'signature': 'sig-z'}},
+        {'type': 'content_block_stop', 'index': 0},
+        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'tool_use', 'id': 't', 'name': 'submit_prompt'}},
+        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': '{"prompt": "ok"}'}},
+        {'type': 'content_block_stop', 'index': 1},
+      ]);
+
+      expect(chunks.map((c) => c.toolCallPart).nonNulls.single.name,
+          'submit_prompt');
+      expect(chunks.last.rawThinkingBlocks, hasLength(1));
+      expect(chunks.last.reasoningSignature, 'sig-z');
+    });
+  });
+
+  group('prompt caching', () {
+    List<LLMMessage> conversation(int userTurns) => [
+          LLMMessage(role: LLMRole.system, content: 'the file map'),
+          for (var i = 0; i < userTurns; i++) ...[
+            LLMMessage(role: LLMRole.user, content: 'ask $i'),
+            LLMMessage(role: LLMRole.assistant, content: 'answer $i'),
+          ],
+        ];
+
+    Map<String, dynamic>? cacheOf(Object? block) =>
+        block is Map ? block['cache_control'] as Map<String, dynamic>? : null;
+
+    test('system becomes a marked block array, which also covers tools', () {
+      // The prefix is ordered tools -> system -> messages and a breakpoint
+      // caches everything before it, so one mark here buys both.
+      final body = payload(conversation(1), tools: [
+        LLMTool(name: 't', description: 'd', parameters: const {'type': 'object'})
+      ]);
+
+      final system = body['system'] as List;
+      expect(system.single['text'], 'the file map');
+      expect(cacheOf(system.single), {'type': 'ephemeral'});
+      expect(body['tools'], hasLength(1));
+    });
+
+    test('the last two messages carry the rolling window', () {
+      // One alone would either never cover the newest turn or never survive
+      // to the next request.
+      final messages = payload(conversation(3))['messages'] as List;
+
+      final marked = [
+        for (var i = 0; i < messages.length; i++)
+          if (cacheOf((messages[i]['content'] as List).last) != null) i
+      ];
+      expect(marked, [messages.length - 2, messages.length - 1]);
+    });
+
+    test('a single-message conversation still gets one', () {
+      final messages =
+          payload([LLMMessage(role: LLMRole.user, content: 'hi')])['messages']
+              as List;
+
+      expect(messages, hasLength(1));
+      expect(cacheOf((messages.single['content'] as List).last),
+          {'type': 'ephemeral'});
+    });
+
+    test('a vendor that has not been verified sends none of it', () {
+      // MiniMax's ④ layer has already been found missing pieces this app
+      // sends, and an unsupported cache_control fails the whole request
+      // rather than just the caching.
+      final body = payloadFor(
+          target('claude-opus-4-8', channelType: Vendors.minimaxAnthropic),
+          conversation(2));
+
+      expect(body['system'], isA<String>());
+      for (final message in body['messages'] as List) {
+        for (final block in message['content'] as List) {
+          expect(cacheOf(block), isNull);
+        }
+      }
+    });
+
+    test('every ④ vendor makes a deliberate choice', () {
+      // The point of the flag is that it is answered per supplier, not
+      // inherited — so this pins the current answers rather than a default.
+      expect(Vendors.byId(Vendors.anthropicRest).promptCaching, isTrue);
+      expect(Vendors.byId(Vendors.newApiAnthropic).promptCaching, isTrue);
+      expect(Vendors.byId(Vendors.minimaxAnthropic).promptCaching, isFalse);
+    });
+
+    test('① and ③ are untouched by it', () {
+      expect(Vendors.byId(Vendors.openAIRest).promptCaching, isFalse);
+      expect(Vendors.byId(Vendors.googleRest).promptCaching, isFalse);
     });
   });
 }
