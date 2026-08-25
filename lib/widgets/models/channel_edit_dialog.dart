@@ -19,6 +19,7 @@ import '../app_dialog.dart';
 import '../app_text_field.dart';
 import 'channel_avatar.dart';
 import 'channel_form_sections.dart';
+import 'channel_provider_presets.dart';
 import 'model_tag_chip.dart';
 
 /// Edit-channel dialog. Desktop: a fixed-width two-column layout —
@@ -252,42 +253,17 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           child: DropdownButtonFormField<String>(
           initialValue: type,
           isExpanded: true,
+          // Built from the vendor registry, not a hand-written list: the
+          // dropdown asserts that its current value is among its items, so a
+          // vendor missing here is a channel that cannot be opened for
+          // editing at all — which is how DashScope disappeared from this
+          // field while the add-channel wizard still offered it.
           items: [
-            DropdownMenuItem(
-                value: Vendors.openAIRest, child: Text(l10n.protocolOpenAI)),
-            DropdownMenuItem(
-                value: Vendors.googleRest, child: Text(l10n.protocolGoogle)),
-            const DropdownMenuItem(
-                value: Vendors.officialGoogle,
-                child: Text('Official Google GenAI API (Deprecated)')),
-            DropdownMenuItem(
-                value: Vendors.anthropicRest,
-                child: Text(l10n.protocolAnthropic)),
-            DropdownMenuItem(
-                value: Vendors.newApiOpenAI,
-                child: Text(l10n.providerNewApiOpenAI)),
-            DropdownMenuItem(
-                value: Vendors.newApiGemini,
-                child: Text(l10n.providerNewApiGemini)),
-            DropdownMenuItem(
-                value: Vendors.newApiAnthropic,
-                child: Text(l10n.providerNewApiAnthropic)),
-            DropdownMenuItem(
-                value: Vendors.minimaxAnthropic,
-                child: Text(l10n.providerMiniMaxAnthropic)),
-            DropdownMenuItem(
-                value: Vendors.xaiApi, child: Text(l10n.protocolXai)),
-            // The list has to name *every* vendor, not just the ones worth
-            // switching to: the dropdown asserts that its current value is
-            // among the items, so a channel of an unlisted type could not be
-            // opened for editing at all.
-            const DropdownMenuItem(
-                value: Vendors.deepseek, child: Text('DeepSeek')),
-            const DropdownMenuItem(
-                value: Vendors.minimax, child: Text('MiniMax')),
-            DropdownMenuItem(
-                value: Vendors.midjourneyProxy,
-                child: Text(l10n.protocolMidjourney)),
+            for (final vendorType in channelTypesInDisplayOrder())
+              DropdownMenuItem(
+                value: vendorType,
+                child: Text(channelTypeLabel(l10n, vendorType)),
+              ),
           ],
           onChanged: (v) => setState(() => type = v!),
           decoration: const InputDecoration(

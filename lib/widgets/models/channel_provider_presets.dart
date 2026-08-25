@@ -255,3 +255,62 @@ String channelProviderSubtitle(
       return l10n.providerCustomDesc;
   }
 }
+
+/// Every channel type the app can store, in the order the type dropdowns
+/// offer them: grouped by protocol family, registry order within a family.
+///
+/// Derived from [Vendors.all] rather than hand-listed. A hand-listed dropdown
+/// does not merely hide the vendor it forgets — Material asserts that a
+/// dropdown's current value is among its items, so a channel of an omitted
+/// type could not be opened for editing at all. DashScope shipped missing
+/// from exactly that list; deriving it means the next vendor added to the
+/// registry cannot repeat it.
+List<String> channelTypesInDisplayOrder() => <String>[
+      for (final family in const [
+        ProtocolFamily.openai,
+        ProtocolFamily.gemini,
+        ProtocolFamily.anthropic,
+        ProtocolFamily.midjourney,
+      ])
+        for (final vendor in Vendors.all)
+          if (vendor.family == family) vendor.id,
+    ];
+
+/// How a channel type is named in the type dropdowns.
+///
+/// Presentation only — nothing branches on the answer — which is why a switch
+/// over vendor ids is allowed to live here and not in `vendors/`. Every id in
+/// [Vendors.all] must have a case: the `default` exists for channels carrying
+/// a type this build no longer knows, not as a place for new vendors to land.
+String channelTypeLabel(AppLocalizations l10n, String type) {
+  switch (type) {
+    case Vendors.openAIRest:
+      return l10n.protocolOpenAI;
+    case Vendors.newApiOpenAI:
+      return l10n.providerNewApiOpenAI;
+    case Vendors.xaiApi:
+      return l10n.protocolXai;
+    case Vendors.deepseek:
+      return 'DeepSeek';
+    case Vendors.minimax:
+      return 'MiniMax';
+    case Vendors.dashscope:
+      return l10n.providerDashScope;
+    case Vendors.googleRest:
+      return l10n.protocolGoogle;
+    case Vendors.officialGoogle:
+      return 'Official Google GenAI API (Deprecated)';
+    case Vendors.newApiGemini:
+      return l10n.providerNewApiGemini;
+    case Vendors.anthropicRest:
+      return l10n.protocolAnthropic;
+    case Vendors.newApiAnthropic:
+      return l10n.providerNewApiAnthropic;
+    case Vendors.minimaxAnthropic:
+      return l10n.providerMiniMaxAnthropic;
+    case Vendors.midjourneyProxy:
+      return l10n.protocolMidjourney;
+    default:
+      return type;
+  }
+}

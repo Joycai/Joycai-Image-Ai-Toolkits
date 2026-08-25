@@ -20,6 +20,7 @@ import '../../widgets/app_setting_row.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/models/channel_provider_presets.dart';
 import '../../widgets/settings_widgets.dart';
 import 'wizard_import.dart';
 
@@ -100,6 +101,17 @@ class _SetupWizardState extends State<SetupWizard> {
       case Vendors.minimaxAnthropic:
         // Not `/v1`: MiniMax puts its ④-format endpoint beside the ① one.
         _endpointController.text = 'https://api.minimaxi.com/anthropic/v1';
+        break;
+      case Vendors.dashscope:
+        // Mainland host. The international one (dashscope-intl.aliyuncs.com)
+        // is reached by typing over this, exactly as in the add-channel
+        // wizard's preset.
+        _endpointController.text =
+            'https://dashscope.aliyuncs.com/compatible-mode/v1';
+        break;
+      case Vendors.midjourneyProxy:
+        // A self-hosted proxy; only the shape of the host is knowable.
+        _endpointController.text = 'https://your-midjourney-proxy.com';
         break;
       default:
         _endpointController.text = 'https://generativelanguage.googleapis.com/v1beta';
@@ -427,18 +439,15 @@ class _SetupWizardState extends State<SetupWizard> {
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             initialValue: _channelType,
-            items: const [
-              DropdownMenuItem(value: Vendors.googleRest, child: Text('Google GenAI REST')),
-              DropdownMenuItem(value: Vendors.openAIRest, child: Text('OpenAI API REST')),
-              DropdownMenuItem(value: Vendors.officialGoogle, child: Text('Official Google GenAI API')),
-              DropdownMenuItem(value: Vendors.newApiOpenAI, child: Text('New API (OpenAI format)')),
-              DropdownMenuItem(value: Vendors.newApiGemini, child: Text('New API (Gemini format)')),
-              DropdownMenuItem(value: Vendors.xaiApi, child: Text('xAI (Grok) API')),
-              DropdownMenuItem(value: Vendors.deepseek, child: Text('DeepSeek')),
-              DropdownMenuItem(value: Vendors.minimax, child: Text('MiniMax')),
-              DropdownMenuItem(value: Vendors.anthropicRest, child: Text('Anthropic API')),
-              DropdownMenuItem(value: Vendors.newApiAnthropic, child: Text('New API (Anthropic format)')),
-              DropdownMenuItem(value: Vendors.minimaxAnthropic, child: Text('MiniMax (Anthropic format)')),
+            // The same registry-derived catalogue the channel editor uses:
+            // a hand-written list here went stale every time a vendor was
+            // added, and first-run had no way to pick DashScope at all.
+            items: [
+              for (final vendorType in channelTypesInDisplayOrder())
+                DropdownMenuItem(
+                  value: vendorType,
+                  child: Text(channelTypeLabel(l10n, vendorType)),
+                ),
             ],
             onChanged: (v) {
               setState(() {
