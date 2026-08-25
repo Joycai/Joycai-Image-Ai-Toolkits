@@ -4,6 +4,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/api_key_field.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/app_setting_row.dart';
+import '../../../widgets/app_switch.dart';
 
 class ConnectivitySection extends StatefulWidget {
   final bool isMobile;
@@ -46,18 +48,21 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
       children: [
         AppSection(
           title: l10n.proxySettings,
+          gap: 10,
           children: [
-            SwitchListTile(
-              title: Text(l10n.enableProxy),
-              value: _proxyEnabled,
-              onChanged: (v) {
-                setState(() => _proxyEnabled = v);
-                _db.saveSetting('proxy_enabled', v.toString());
-              },
+            AppSettingRow(
+              title: l10n.enableProxy,
+              trailing: AppSwitch(
+                value: _proxyEnabled,
+                onChanged: (v) {
+                  setState(() => _proxyEnabled = v);
+                  _db.saveSetting('proxy_enabled', v.toString());
+                },
+              ),
             ),
             if (_proxyEnabled)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                 child: Column(
                   children: [
                     TextField(
@@ -114,15 +119,14 @@ class _ConnectivitySectionState extends State<ConnectivitySection> {
         AppSection(
           title: l10n.mcpServerSettings,
           children: [
-            SwitchListTile(
-              title: Text(l10n.enableMcpServer),
-              subtitle: Text(
-                l10n.localeName == 'zh' 
-                    ? "即将推出（当前版本未实现）" 
-                    : (l10n.localeName == 'ja' ? "近日公開（このバージョンでは未実装）" : "Coming Soon (Not implemented in this version)")
-              ),
-              value: false,
-              onChanged: null,
+            AppSettingRow(
+              title: l10n.enableMcpServer,
+              description: l10n.localeName == 'zh'
+                  ? "即将推出（当前版本未实现）"
+                  : (l10n.localeName == 'ja'
+                      ? "近日公開（このバージョンでは未実装）"
+                      : "Coming Soon (Not implemented in this version)"),
+              trailing: const AppSwitch(value: false, onChanged: null),
             ),
           ],
         ),

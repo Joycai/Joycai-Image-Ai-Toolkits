@@ -16,6 +16,8 @@ import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_setting_row.dart';
+import '../../widgets/app_switch.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/settings_widgets.dart';
@@ -185,20 +187,37 @@ class _SetupWizardState extends State<SetupWizard> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.setupWizardTitle),
-        automaticallyImplyLeading: false,
-        actions: [
-          AppButton(
-            label: l10n.skip,
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            // `D3 12c` draws the wizard's chrome as a 52px strip with the
+            // title at one end and 「跳过」 at the other, then the progress bar
+            // flush under it. An [AppBar] is 56, carries its own elevation and
+            // surface-tint rules, and puts the skip action in a slot sized for
+            // icon buttons — three decisions this screen does not need made
+            // for it.
+            Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(l10n.setupWizardTitle, style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  AppButton(
+                    label: l10n.skip,
+                    variant: AppButtonVariant.text,
+                    size: AppButtonSize.compact,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
             LinearProgressIndicator(value: (_currentStep + 1) / _totalSteps),
             Expanded(
               child: PageView(
@@ -206,15 +225,19 @@ class _SetupWizardState extends State<SetupWizard> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _buildWelcomeStep(context, l10n),
-                  _buildStorageStep(context, l10n),
-                  _buildChannelStep(context, l10n),
-                  _buildModelStep(context, l10n),
+                  // 560, per `D3 12d`. A form of single-line fields stretched
+                  // to a desktop window puts an API key on a line a thousand
+                  // pixels wide. Welcome and finish centre their own, narrower
+                  // column and are left alone.
+                  _stepColumn(_buildStorageStep(context, l10n)),
+                  _stepColumn(_buildChannelStep(context, l10n)),
+                  _stepColumn(_buildModelStep(context, l10n)),
                   _buildFinishStep(context, l10n),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -231,7 +254,7 @@ class _SetupWizardState extends State<SetupWizard> {
                         setState(() => _currentStep = prev);
                       },
                     ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   AppButton(
                     label: _currentStep == _totalSteps - 1 ? l10n.getStarted : (_currentStep == 2 && _apiKeyController.text.isEmpty ? l10n.skip : l10n.next),
                     onPressed: _currentStep == 1 && _outputDirController.text.isEmpty
@@ -248,28 +271,68 @@ class _SetupWizardState extends State<SetupWizard> {
     );
   }
 
+  /// Holds a form step to the width `D3` draws it at.
+  static Widget _stepColumn(Widget child) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: child,
+        ),
+      );
+
   Widget _buildWelcomeStep(BuildContext context, AppLocalizations l10n) {
     final appState = Provider.of<AppState>(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(32.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.auto_awesome, size: 64, color: Colors.blue),
-          const SizedBox(height: 24),
-          Text(l10n.welcomeMessage, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-          const SizedBox(height: 48),
-          ThemeSelector(appState: appState, l10n: l10n),
-          const SizedBox(height: 24),
-          LanguageSelector(appState: appState, l10n: l10n),
-          const SizedBox(height: 48),
-          OutlinedButton.icon(
-            onPressed: () => importBackupSettings(context, l10n),
-            icon: const Icon(Icons.upload_file_outlined),
-            label: Text(l10n.importSettings),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(200, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          // A plate, not a bare glyph. `12c` gives the first thing a new user
+          // sees the app's own mark — the same gradient square the title bar
+          // and the mobile drawer already wear — where this drew a sparkle in
+          // `Colors.blue`, a hue from no palette this app uses.
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [colorScheme.primary, colorScheme.onAccentTint],
+              ),
+              boxShadow: colorScheme.shadowRaised,
+            ),
+            child: Icon(Icons.auto_awesome, size: 30, color: colorScheme.onPrimary),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            l10n.welcomeMessage,
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 34),
+          // 420, per `12c`. Unbounded, the theme and language selectors
+          // stretched to whatever the window was, which on a desktop put a
+          // three-option segmented control a thousand pixels wide under a
+          // centred paragraph.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              children: [
+                ThemeSelector(appState: appState, l10n: l10n),
+                const SizedBox(height: 18),
+                LanguageSelector(appState: appState, l10n: l10n),
+                const SizedBox(height: 28),
+                AppButton(
+                  label: l10n.importSettings,
+                  icon: Icons.upload_file_outlined,
+                  variant: AppButtonVariant.secondary,
+                  fullWidth: true,
+                  onPressed: () => importBackupSettings(context, l10n),
+                ),
+              ],
             ),
           ),
         ],
@@ -290,18 +353,19 @@ class _SetupWizardState extends State<SetupWizard> {
           Text(l10n.storageLocationDesc),
           const SizedBox(height: 24),
           if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-            SwitchListTile(
-              title: Text(l10n.portableMode),
-              subtitle: Text(l10n.portableModeDesc),
-              value: _isPortable,
-              onChanged: (v) async {
-                await AppPaths.setPortableMode(v);
-                setState(() => _isPortable = v);
-                if (mounted) {
-                  _showRestartDialog(l10n);
-                }
-              },
-              contentPadding: EdgeInsets.zero,
+            AppSettingRow(
+              title: l10n.portableMode,
+              description: l10n.portableModeDesc,
+              trailing: AppSwitch(
+                value: _isPortable,
+                onChanged: (v) async {
+                  await AppPaths.setPortableMode(v);
+                  setState(() => _isPortable = v);
+                  if (mounted) {
+                    _showRestartDialog(l10n);
+                  }
+                },
+              ),
             ),
           if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
             const SizedBox(height: 16),

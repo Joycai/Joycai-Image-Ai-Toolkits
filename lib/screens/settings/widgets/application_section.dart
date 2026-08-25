@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/app_theme.dart';
 import '../../../core/app_paths.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/file_utils.dart';
@@ -19,6 +18,8 @@ import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
+import '../../../widgets/app_setting_row.dart';
+import '../../../widgets/app_switch.dart';
 import '../../../widgets/searchable_picker.dart';
 
 class ApplicationSection extends StatefulWidget {
@@ -98,73 +99,68 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     final l10n = AppLocalizations.of(context)!;
     final appState = Provider.of<AppState>(context);
 
+    // No title — the pane header already says 「应用」. `gap: 10` is `D1`'s
+    // spacing between rows, and replaces the SizedBoxes each row used to carry
+    // (which had to be repeated inside every platform conditional, and were
+    // duly forgotten in two of them).
     return AppSection(
-      title: l10n.application,
+      gap: 10,
       children: [
-        SwitchListTile(
-          title: Text(l10n.enableNotifications),
-          value: appState.notificationsEnabled,
-          onChanged: (v) => appState.setNotificationsEnabled(v),
-        ),
-        if (_gpuPreference.isSupported) ...[
-          const SizedBox(height: 8),
-          SwitchListTile(
-            title: Text(l10n.preferHighPerformanceGpu),
-            subtitle: Text(l10n.preferHighPerformanceGpuDesc),
-            value: _gpuHighPerformance,
-            onChanged: (v) => _setGpuHighPerformance(v),
+        AppSettingRow(
+          title: l10n.enableNotifications,
+          trailing: AppSwitch(
+            value: appState.notificationsEnabled,
+            onChanged: (v) => appState.setNotificationsEnabled(v),
           ),
-        ],
-        const SizedBox(height: 8),
-        Column(
-          children: [
-            SwitchListTile(
-              title: Text(l10n.enableApiDebug),
-              subtitle: Text(l10n.apiDebugDesc),
-              value: appState.enableApiDebug,
-              onChanged: (v) => appState.setEnableApiDebug(v),
+        ),
+        if (_gpuPreference.isSupported)
+          AppSettingRow(
+            title: l10n.preferHighPerformanceGpu,
+            description: l10n.preferHighPerformanceGpuDesc,
+            trailing: AppSwitch(
+              value: _gpuHighPerformance,
+              onChanged: (v) => _setGpuHighPerformance(v),
             ),
-            if (appState.enableApiDebug)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppButton(
-                    label: l10n.openLogFolder,
-                    icon: Icons.folder_zip_outlined,
-                    variant: AppButtonVariant.text,
-                    onPressed: () => LLMDebugLogger.openLogFolder(),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-          SwitchListTile(
-            title: Text(l10n.portableMode),
-            subtitle: Text(l10n.portableModeDesc),
-            value: _isPortable,
-            onChanged: (v) async {
-              await AppPaths.setPortableMode(v);
-              setState(() => _isPortable = v);
-              if (mounted) {
-                _showRestartDialog(l10n);
-              }
-            },
           ),
+        AppSettingRow(
+          title: l10n.enableApiDebug,
+          description: l10n.apiDebugDesc,
+          trailing: AppSwitch(
+            value: appState.enableApiDebug,
+            onChanged: (v) => appState.setEnableApiDebug(v),
+          ),
+          // Inside the row's own box, per `D1`: it opens what this toggle
+          // writes, and exists only while it is on.
+          footer: appState.enableApiDebug
+              ? AppButton(
+                  label: l10n.openLogFolder,
+                  icon: Icons.folder_zip_outlined,
+                  variant: AppButtonVariant.text,
+                  size: AppButtonSize.compact,
+                  onPressed: () => LLMDebugLogger.openLogFolder(),
+                )
+              : null,
+        ),
         if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-          const SizedBox(height: 8),
-        if (!Platform.isIOS)
-          _buildOutputDirectoryTile(appState, l10n),
-        if (!Platform.isIOS) const SizedBox(height: 8),
-        if (!Platform.isIOS)
-          _buildKnowledgeBaseTile(l10n),
-        const SizedBox(height: 8),
-        ListTile(
-          title: Text(l10n.assistantRetention),
-          subtitle: Text(l10n.assistantRetentionDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
+          AppSettingRow(
+            title: l10n.portableMode,
+            description: l10n.portableModeDesc,
+            trailing: AppSwitch(
+              value: _isPortable,
+              onChanged: (v) async {
+                await AppPaths.setPortableMode(v);
+                setState(() => _isPortable = v);
+                if (mounted) {
+                  _showRestartDialog(l10n);
+                }
+              },
+            ),
+          ),
+        if (!Platform.isIOS) _buildOutputDirectoryTile(appState, l10n),
+        if (!Platform.isIOS) _buildKnowledgeBaseTile(l10n),
+        AppSettingRow(
+          title: l10n.assistantRetention,
+          description: l10n.assistantRetentionDesc,
           trailing: DropdownButton<int>(
             value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
             underline: const SizedBox.shrink(),
@@ -178,11 +174,9 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             },
           ),
         ),
-        const SizedBox(height: 8),
-        ListTile(
-          title: Text(l10n.assistantContextRatio),
-          subtitle: Text(l10n.assistantContextRatioDesc),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
+        AppSettingRow(
+          title: l10n.assistantContextRatio,
+          description: l10n.assistantContextRatioDesc,
           trailing: DropdownButton<double>(
             value: _contextRatios.contains(_assistantContextRatio)
                 ? _assistantContextRatio
@@ -201,16 +195,17 @@ class _ApplicationSectionState extends State<ApplicationSection> {
             },
           ),
         ),
-        const SizedBox(height: 8),
-        SwitchListTile(
-          title: Text(l10n.kbSubAgent),
-          subtitle: Text(l10n.kbSubAgentDesc),
-          value: _kbSubAgentEnabled,
-          onChanged: (v) async {
-            await _db.saveSetting(
-                PromptOptimizerAgent.kbSubAgentSettingKey, v.toString());
-            setState(() => _kbSubAgentEnabled = v);
-          },
+        AppSettingRow(
+          title: l10n.kbSubAgent,
+          description: l10n.kbSubAgentDesc,
+          trailing: AppSwitch(
+            value: _kbSubAgentEnabled,
+            onChanged: (v) async {
+              await _db.saveSetting(
+                  PromptOptimizerAgent.kbSubAgentSettingKey, v.toString());
+              setState(() => _kbSubAgentEnabled = v);
+            },
+          ),
         ),
         if (_kbSubAgentEnabled) _buildKbSubAgentModelTile(l10n),
       ],
@@ -224,14 +219,10 @@ class _ApplicationSectionState extends State<ApplicationSection> {
     final bound = _kbSubAgentModelId;
     final boundExists =
         bound == null || _kbSubAgentModels.any((m) => m.id == bound);
-    return ListTile(
-      title: Text(l10n.kbSubAgentModel),
-      subtitle: boundExists
-          ? null
-          : Text(
-              l10n.kbSubAgentModelMissing,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+    return AppSettingRow(
+      title: l10n.kbSubAgentModel,
+      description: boundExists ? null : l10n.kbSubAgentModelMissing,
+      descriptionColor: Theme.of(context).colorScheme.error,
       trailing: SizedBox(
         width: 220,
         child: SearchablePickerField<int?>(
@@ -285,21 +276,15 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         subtitle = l10n.kbMissingEntry;
         warn = true;
     }
-    return ListTile(
-      title: Text(l10n.knowledgeBaseFolder),
+    return AppSettingRow(
+      title: l10n.knowledgeBaseFolder,
       // Mono, as `D1` sets both of this screen's paths. A path is the one
       // string here the user reads character by character to check, and the
       // two rows sit one above the other — different glyph widths make two
       // paths that share a prefix look like they do not.
-      subtitle: Text(
-        subtitle,
-        style: Theme.of(context).textTheme.bodyMedium?.mono.copyWith(
-              color: warn ? colorScheme.error : colorScheme.onSurfaceVariant,
-            ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
+      description: subtitle,
+      monoDescription: true,
+      descriptionColor: warn ? colorScheme.error : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -329,30 +314,20 @@ class _ApplicationSectionState extends State<ApplicationSection> {
   }
 
   Widget _buildOutputDirectoryTile(AppState appState, AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          title: Text(l10n.outputDirectory),
-          subtitle: Text(
-            _outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text,
-            style: Theme.of(context).textTheme.bodyMedium?.mono.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: const Icon(Icons.folder_open),
-          shape: RoundedRectangleBorder(side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHigh), borderRadius: BorderRadius.circular(AppRadius.md)),
-          onTap: () async {
-            String? path = await FilePicker.getDirectoryPath();
-            if (path != null) {
-              setState(() => _outputDirController.text = path);
-              await appState.updateOutputDirectory(path);
-            }
-          },
-        ),
-      ],
+    return AppSettingRow(
+      title: l10n.outputDirectory,
+      description:
+          _outputDirController.text.isEmpty ? l10n.notSet : _outputDirController.text,
+      monoDescription: true,
+      trailing: Icon(Icons.folder_open,
+          size: AppSize.iconSm, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      onTap: () async {
+        String? path = await FilePicker.getDirectoryPath();
+        if (path != null) {
+          setState(() => _outputDirController.text = path);
+          await appState.updateOutputDirectory(path);
+        }
+      },
     );
   }
 
