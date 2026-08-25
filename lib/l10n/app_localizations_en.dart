@@ -1125,7 +1125,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addChannelSubtitle =>
-      'Pick a provider and finish the connection on one page';
+      'Pick who this is, then fill in the connection';
 
   @override
   String get searchProviders => 'Search providers…';
@@ -1199,6 +1199,159 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewInList => 'List preview';
+
+  @override
+  String get providerGroupVendor => 'Vendors';
+
+  @override
+  String get providerGroupVendorHint => 'Official · endpoint prefilled';
+
+  @override
+  String get providerGroupRelay => 'Relays';
+
+  @override
+  String get providerGroupRelayHint => 'Known protocol · your own host';
+
+  @override
+  String get providerGroupCustom => 'Custom';
+
+  @override
+  String get providerGroupCustomHint => 'Your host + an explicit protocol';
+
+  @override
+  String get providerGroupLocal => 'Local';
+
+  @override
+  String get providerGroupLocalHint => 'Defaults to localhost';
+
+  @override
+  String get providerNeedKeyOnly => 'Key only';
+
+  @override
+  String get providerNeedEndpoint => 'Needs address';
+
+  @override
+  String get providerNeedKeyless => 'No key';
+
+  @override
+  String get providerCustomOpenAIDesc =>
+      'Any host serving the OpenAI chat surface';
+
+  @override
+  String get providerCustomGoogleDesc =>
+      'Any host serving the Google GenAI surface';
+
+  @override
+  String get providerCustomAnthropicDesc =>
+      'Any host serving the Anthropic Messages surface';
+
+  @override
+  String get variantTitleGoogle => 'Access method';
+
+  @override
+  String get variantTitleMiniMax => 'Interface';
+
+  @override
+  String get variantTitleNewApi => 'Endpoint format';
+
+  @override
+  String get variantTitleGeneric => 'Access method';
+
+  @override
+  String get variantHintGoogle =>
+      'Google serves the same models two ways. Switching rewrites the address below.';
+
+  @override
+  String get variantHintMiniMax =>
+      'MiniMax offers two interfaces; pick one — you can still change it later.';
+
+  @override
+  String get variantHintNewApi =>
+      'You supply the host; the version path follows the format you pick.';
+
+  @override
+  String get variantHintGeneric => 'Switching rewrites the address below.';
+
+  @override
+  String get variantGoogleNative => 'GenAI native';
+
+  @override
+  String get variantGoogleOpenAI => 'OpenAI compatible';
+
+  @override
+  String get variantMiniMaxOpenAI => 'OpenAI interface';
+
+  @override
+  String get variantMiniMaxAnthropic => 'Anthropic interface';
+
+  @override
+  String get variantNewApiOpenAI => 'OpenAI format';
+
+  @override
+  String get variantNewApiGemini => 'Gemini format';
+
+  @override
+  String get variantNewApiAnthropic => 'Anthropic format';
+
+  @override
+  String get channelPresetLabel => 'Provider preset';
+
+  @override
+  String get channelPresetHint =>
+      'The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.';
+
+  @override
+  String get changePreset => 'Change preset';
+
+  @override
+  String get presetUnmatched => 'No matching preset';
+
+  @override
+  String get presetUnmatchedHint =>
+      'This channel uses a type from an older build that is no longer offered. Leaving it alone keeps it working; Change preset overwrites the fields below.';
+
+  @override
+  String get presetEndpointModified => 'Address edited';
+
+  @override
+  String get restorePresetEndpoint => 'Restore preset value';
+
+  @override
+  String get changePresetOverlayHint =>
+      'Picking one overwrites the protocol and address with the preset\'s values. Key, name and tag are left alone.';
+
+  @override
+  String get protocolField => 'API protocol';
+
+  @override
+  String get protocolFieldHint =>
+      'Four protocol families; any stored type can be represented here.';
+
+  @override
+  String get deprecatedLabel => 'Deprecated';
+
+  @override
+  String get apiKeyOptional => 'Optional';
+
+  @override
+  String get apiKeyLocalPlaceholder => 'Local services usually need none';
+
+  @override
+  String get apiKeyLocalNote =>
+      'Leave it empty. If you put reverse-proxy auth in front of your local service, enter its key here.';
+
+  @override
+  String get searchProvidersAlias => 'Search providers, or try “Qwen”';
+
+  @override
+  String providerCountSummary(int count, int groups) {
+    return '$count providers · $groups groups';
+  }
+
+  @override
+  String providerVariantCount(int count) {
+    return '$count ways in';
+  }
 
   @override
   String get prompts => 'Prompts';

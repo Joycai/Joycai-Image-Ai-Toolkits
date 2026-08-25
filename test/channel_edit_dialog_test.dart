@@ -78,7 +78,7 @@ void main() {
   // existing DashScope channel could not be opened for editing at all. The
   // list is now derived from the vendor registry; these pin that it stays so.
 
-  testWidgets('the type dropdown names every vendor', (tester) async {
+  testWidgets('the protocol field offers all four families', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -91,13 +91,122 @@ void main() {
         .map((item) => item.value)
         .toSet();
 
-    for (final vendor in Vendors.all) {
+    // The field names wire formats now, not suppliers — the supplier lives in
+    // the preset bar above it. All four families have to be reachable.
+    for (final family in ProtocolFamily.values) {
       expect(
         offered,
-        contains(vendor.id),
-        reason: '${vendor.id} is a storable channel type the editor cannot show',
+        contains(genericVendorForFamily(family)),
+        reason: '${family.name} cannot be chosen as a protocol',
       );
     }
+  });
+
+  testWidgets('a supplier-specific type is representable alongside them',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    // DashScope is not one of the four generic families, so it only opens if
+    // the field lists the stored type itself. This is the exact shape of the
+    // bug that made a DashScope channel impossible to edit.
+    await _pumpDialog(tester, type: Vendors.dashscope);
+
+    final offered = tester
+        .widgetList<DropdownButton<String>>(find.byType(DropdownButton<String>))
+        .expand((d) => d.items ?? const <DropdownMenuItem<String>>[])
+        .map((item) => item.value)
+        .toSet();
+    expect(offered, contains(Vendors.dashscope));
+    expect(tester.takeException(), isNull);
+  });
+
+  // The shortcut bar: which preset this channel sits on, or an honest "none"
+  // for a type created by an older build.
+  group('provider preset bar', () {
+    testWidgets('names the preset a stored type came from', (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _pumpDialog(tester, type: Vendors.dashscope);
+
+      expect(find.text('Provider preset'), findsOneWidget);
+      // The chip names the supplier; the protocol field below names the wire
+      // format it speaks, so the supplier's name appears there too.
+      expect(find.text('Alibaba DashScope'), findsOneWidget);
+      expect(
+        find.text('OpenAI · chat/completions · Alibaba DashScope'),
+        findsOneWidget,
+      );
+      expect(find.text('Change preset'), findsWidgets);
+    });
+
+    testWidgets('names the variant when the preset has more than one',
+        (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _pumpDialog(tester, type: Vendors.newApiGemini);
+
+      expect(find.text('NewAPI · Gemini format'), findsOneWidget);
+    });
+
+    testWidgets('says so when no preset matches, and still opens',
+        (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      // The deprecated type: no preset offers it, and it must neither be
+      // rewritten nor block the dialog.
+      await _pumpDialog(tester, type: Vendors.officialGoogle);
+
+      expect(find.text('No matching preset'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // The shortcut itself: it fills the fields and leaves the user's own
+  // values alone. The list it opens is the add-channel catalogue, which is
+  // the structural half of the fix — one list, so neither dialog can drift.
+  testWidgets('changing preset rewrites protocol and address, keeps the key',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await _pumpDialog(tester, type: Vendors.dashscope);
+
+    await tester.tap(find.text('Change preset').first);
+    await tester.pumpAndSettle();
+    expect(find.text('DeepSeek'), findsWidgets);
+
+    await tester.tap(find.text('DeepSeek').last);
+    await tester.pumpAndSettle();
+
+    // The preset supplied the protocol and the address...
+    expect(find.text('DeepSeek'), findsOneWidget);
+    expect(
+      find.textContaining('api.deepseek.com'),
+      findsWidgets,
+      reason: "the preset's endpoint should have been applied",
+    );
+    // ...and left the key, name and tag as the user had them.
+    expect(find.text('YYDS-Google'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a local runtime marks its key optional', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await _pumpDialog(tester, type: Vendors.ollama);
+
+    expect(find.textContaining('Optional'), findsWidgets);
   });
 
   testWidgets('every vendor is also named, not left as a raw id',

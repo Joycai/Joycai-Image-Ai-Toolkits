@@ -380,7 +380,7 @@
   "enableThinkingDesc": "回答前にモデルに推論させます。出力トークンを消費し、Anthropic 形式のチャンネルのみ対応。",
   "enableWebSearch": "サーバー側ウェブ検索",
   "enableWebSearchDesc": "回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。",
-  "addChannelSubtitle": "プロバイダーを選んで接続まで1画面で完了",
+  "addChannelSubtitle": "まず「どこか」を選び、次に接続情報を入力",
   "searchProviders": "プロバイダーを検索…",
   "noProviderMatch": "一致するプロバイダーがありません",
   "resetToDefault": "既定値に戻す",
@@ -424,6 +424,69 @@
     }
   },
   "previewInList": "リストでの見え方",
+  "providerGroupVendor": "ベンダー",
+  "providerGroupVendorHint": "公式接続 · アドレス入力済み",
+  "providerGroupRelay": "中継",
+  "providerGroupRelayHint": "プロトコル既知 · アドレスは自分で",
+  "providerGroupCustom": "カスタム",
+  "providerGroupCustomHint": "アドレス自入力 + プロトコル明示",
+  "providerGroupLocal": "ローカル",
+  "providerGroupLocalHint": "既定は localhost",
+  "providerNeedKeyOnly": "キーのみ",
+  "providerNeedEndpoint": "アドレス必須",
+  "providerNeedKeyless": "キー不要",
+  "providerCustomOpenAIDesc": "OpenAI チャット面を提供する任意のホスト",
+  "providerCustomGoogleDesc": "Google GenAI 面を提供する任意のホスト",
+  "providerCustomAnthropicDesc": "Anthropic Messages 面を提供する任意のホスト",
+  "variantTitleGoogle": "接続方式",
+  "variantTitleMiniMax": "インターフェース",
+  "variantTitleNewApi": "APIフォーマット",
+  "variantTitleGeneric": "接続方式",
+  "variantHintGoogle": "Google は同じモデルを 2 通りで提供します。切り替えると下のアドレスが書き換わります。",
+  "variantHintMiniMax": "MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。",
+  "variantHintNewApi": "ホストはご自身で入力。バージョンパスは選んだフォーマットに追従します。",
+  "variantHintGeneric": "切り替えると下のアドレスが書き換わります。",
+  "variantGoogleNative": "GenAI ネイティブ",
+  "variantGoogleOpenAI": "OpenAI 互換面",
+  "variantMiniMaxOpenAI": "OpenAI 面",
+  "variantMiniMaxAnthropic": "Anthropic 面",
+  "variantNewApiOpenAI": "OpenAI 形式",
+  "variantNewApiGemini": "Gemini 形式",
+  "variantNewApiAnthropic": "Anthropic 形式",
+  "channelPresetLabel": "プロバイダプリセット",
+  "channelPresetHint": "プリセットは下の項目をまとめて入力するだけです。入力後も個別に編集でき、編集内容が上書きされることはありません。",
+  "changePreset": "プリセットを変更",
+  "presetUnmatched": "該当プリセットなし",
+  "presetUnmatchedHint": "このチャンネルは旧バージョンで作成された、現在は提供されていない種別です。そのままでも動作します。「プリセットを変更」すると下の項目が上書きされます。",
+  "presetEndpointModified": "アドレス変更済み",
+  "restorePresetEndpoint": "プリセット値に戻す",
+  "changePresetOverlayHint": "選択するとプロトコルとアドレスがプリセット値で上書きされます（キー・名前・タグはそのまま）。",
+  "protocolField": "APIプロトコル",
+  "protocolFieldHint": "プロトコルファミリーは 4 つ。保存済みのどの種別もここで表現できます。",
+  "deprecatedLabel": "非推奨",
+  "apiKeyOptional": "任意",
+  "apiKeyLocalPlaceholder": "ローカルサービスは通常不要",
+  "apiKeyLocalNote": "空欄で構いません。ローカルサービスにリバースプロキシ認証を付けている場合は、そのキーを入力してください。",
+  "searchProvidersAlias": "プロバイダを検索、「Qwen」でも可",
+  "providerCountSummary": "{count} プロバイダ · {groups} グループ",
+  "@providerCountSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "providerVariantCount": "{count} 通り",
+  "@providerVariantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

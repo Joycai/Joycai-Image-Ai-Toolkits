@@ -18,6 +18,7 @@ import '../app_setting_row.dart';
 import '../app_dialog.dart';
 import '../app_text_field.dart';
 import 'channel_avatar.dart';
+import 'channel_preset_picker.dart';
 import 'channel_form_sections.dart';
 import 'channel_provider_presets.dart';
 import 'model_tag_chip.dart';
@@ -56,6 +57,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
   String? _probeMessage;
   bool? _probeOk;
 
+  /// Which catalogue preset this channel matches, or null for a type no
+  /// preset covers. Presentation only — [type] remains the stored truth.
+  String? _presetId;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +71,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     tagCtrl = TextEditingController(text: channel?.tag ?? '');
 
     type = channel?.type ?? Vendors.googleRest;
+    // The preset a stored type came from, so the shortcut bar can say what
+    // this channel is sitting on. Null is a real answer, not a failure: a
+    // channel created by an older build can carry a type no preset offers.
+    _presetId = presetForChannelType(type)?.id;
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
   }
@@ -77,6 +86,46 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     keyCtrl.dispose();
     tagCtrl.dispose();
     super.dispose();
+  }
+
+  ChannelProviderPreset? get _preset => _presetId == null
+      ? null
+      : kChannelProviderPresets.firstWhere((p) => p.id == _presetId);
+
+  /// The endpoint the current preset would supply, or null when it has none
+  /// (a relay, whose host is the user's own).
+  String? get _presetEndpoint {
+    final preset = _preset;
+    if (preset == null) return null;
+    return variantForChannelType(preset, type)?.defaultEndpoint ??
+        preset.defaultEndpoint;
+  }
+
+  /// True when this channel points somewhere other than its preset's default
+  /// — an international host, a corporate gateway, a relay fronting the same
+  /// API. Worth saying out loud, because changing preset would overwrite it.
+  bool get _endpointDivergesFromPreset {
+    final presetEndpoint = _presetEndpoint;
+    return presetEndpoint != null && epCtrl.text.trim() != presetEndpoint;
+  }
+
+  /// Opens the same catalogue the add-channel dialog uses and applies what
+  /// the user picks. One list, two dialogs: the editor used to keep its own
+  /// hand-written list of types, which is how DashScope came to be offered
+  /// in one and missing from the other (spec D2 `16d` note A).
+  Future<void> _changePreset(AppLocalizations l10n) async {
+    final picked = await showChannelPresetPicker(context, l10n: l10n);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _presetId = picked.preset.id;
+      type = picked.variant?.channelType ?? picked.preset.channelType;
+      final endpoint =
+          picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
+      // Key, name and tag are the user's, not the preset's, and survive.
+      if (endpoint != null) epCtrl.text = endpoint;
+      _probeMessage = null;
+      _probeOk = null;
+    });
   }
 
   Future<void> _save() async {
@@ -124,23 +173,27 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
         ),
         body: FilledFieldScope(
           child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ChannelSectionLabel(l10n.stepConnection),
-              _buildConnectionFields(l10n),
-              const Divider(height: 32),
-              ChannelSectionLabel(l10n.sectionAppearance),
-              ChannelAppearanceSection(
-                l10n: l10n,
-                nameCtrl: nameCtrl,
-                tagCtrl: tagCtrl,
-                tagColor: tagColor,
-                onColorChanged: (c) => setState(() => tagColor = c),
-              ),
-            ],
-          ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Above the sections on the phone too (spec D2 `16e`): the
+                // preset describes the whole channel, not its connection half.
+                _buildPresetBar(l10n),
+                const SizedBox(height: 16),
+                ChannelSectionLabel(l10n.stepConnection),
+                _buildConnectionFields(l10n),
+                const Divider(height: 32),
+                ChannelSectionLabel(l10n.sectionAppearance),
+                ChannelAppearanceSection(
+                  l10n: l10n,
+                  nameCtrl: nameCtrl,
+                  tagCtrl: tagCtrl,
+                  tagColor: tagColor,
+                  onColorChanged: (c) => setState(() => tagColor = c),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -168,51 +221,59 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           // labels share the heading's left edge — it was 24, and the 4px
           // stagger read as sloppiness, same as the model editor's had.
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-          // No IntrinsicHeight here: the appearance column contains a Wrap,
-          // whose intrinsic height is computed as a single run — under a
-          // tight intrinsic-derived height it overflows once it actually
-          // wraps. The divider is drawn as the left column's right border
-          // instead of a VerticalDivider (which needs a bounded height).
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.only(right: 20),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(
-                        color: colorScheme.outlineVariant.withAlpha(120),
+              _buildPresetBar(l10n),
+              const SizedBox(height: 16),
+              // No IntrinsicHeight here: the appearance column contains a
+              // Wrap, whose intrinsic height is computed as a single run —
+              // under a tight intrinsic-derived height it overflows once it
+              // actually wraps. The divider is drawn as the left column's
+              // right border instead of a VerticalDivider (which needs a
+              // bounded height).
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(
+                            color: colorScheme.outlineVariant.withAlpha(120),
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ChannelSectionLabel(l10n.stepConnection),
+                          _buildConnectionFields(l10n),
+                        ],
                       ),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ChannelSectionLabel(l10n.stepConnection),
-                      _buildConnectionFields(l10n),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ChannelSectionLabel(l10n.sectionAppearance),
-                    ChannelAppearanceSection(
-                      l10n: l10n,
-                      nameCtrl: nameCtrl,
-                      tagCtrl: tagCtrl,
-                      tagColor: tagColor,
-                      onColorChanged: (c) => setState(() => tagColor = c),
-                      onChanged: () => setState(() {}),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ChannelSectionLabel(l10n.sectionAppearance),
+                        ChannelAppearanceSection(
+                          l10n: l10n,
+                          nameCtrl: nameCtrl,
+                          tagCtrl: tagCtrl,
+                          tagColor: tagColor,
+                          onColorChanged: (c) => setState(() => tagColor = c),
+                          onChanged: () => setState(() {}),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildListPreview(l10n),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildListPreview(l10n),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -224,12 +285,133 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           variant: AppButtonVariant.text,
           onPressed: () => Navigator.pop(context),
         ),
-        AppButton(
-          label: l10n.save,
-          icon: Icons.save,
-          onPressed: _save,
-        ),
+        AppButton(label: l10n.save, icon: Icons.save, onPressed: _save),
       ],
+    );
+  }
+
+  /// True when the stored type *is* one of the four generic family profiles,
+  /// so the protocol dropdown already lists it and needs no extra entry.
+  bool get _typeIsGenericFamily =>
+      ProtocolFamily.values.any((f) => genericVendorForFamily(f) == type);
+
+  /// Whether this channel's vendor can be saved without a key — the local
+  /// runtimes, which have no auth to give.
+  bool get _keyOptional => Vendors.byId(type).keyOptional;
+
+  /// The shortcut bar above the connection fields: which preset this channel
+  /// matches, whether it has drifted from that preset's address, and a way to
+  /// swap presets.
+  ///
+  /// A shortcut, deliberately not the way in. The fields below stay visible
+  /// and editable at all times, so a channel pointed at an international
+  /// host or a corporate gateway is edited by changing the address — not by
+  /// hunting for a preset that happens to be "right" (spec D2 `16d`).
+  Widget _buildPresetBar(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final preset = _preset;
+    final variant = preset == null ? null : variantForChannelType(preset, type);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      l10n.channelPresetLabel,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (preset == null)
+                      _buildPresetChip(l10n.presetUnmatched, muted: true)
+                    else
+                      _buildPresetChip(
+                        variant == null
+                            ? channelProviderTitle(l10n, preset.id)
+                            : '${channelProviderTitle(l10n, preset.id)}'
+                                  ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}',
+                      ),
+                    if (_endpointDivergesFromPreset)
+                      _buildPresetChip(
+                        l10n.presetEndpointModified,
+                        warning: true,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  preset == null
+                      ? l10n.presetUnmatchedHint
+                      : l10n.channelPresetHint,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          AppButton(
+            label: l10n.changePreset,
+            icon: Icons.swap_horiz,
+            variant: AppButtonVariant.secondary,
+            size: AppButtonSize.compact,
+            onPressed: () => _changePreset(l10n),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetChip(
+    String label, {
+    bool muted = false,
+    bool warning = false,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final Color background;
+    final Color foreground;
+    if (warning) {
+      background = context.semantic.warningContainer;
+      foreground = context.semantic.onWarningContainer;
+    } else if (muted) {
+      background = colorScheme.surfaceContainerHighest;
+      foreground = colorScheme.onSurfaceVariant;
+    } else {
+      background = colorScheme.accentTint;
+      foreground = colorScheme.onAccentTint;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: foreground,
+        ),
+      ),
     );
   }
 
@@ -249,31 +431,57 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppLabelledField(
-          label: l10n.channelType,
+          label: l10n.protocolField,
           child: DropdownButtonFormField<String>(
-          initialValue: type,
-          isExpanded: true,
-          // Built from the vendor registry, not a hand-written list: the
-          // dropdown asserts that its current value is among its items, so a
-          // vendor missing here is a channel that cannot be opened for
-          // editing at all — which is how DashScope disappeared from this
-          // field while the add-channel wizard still offered it.
-          items: [
-            for (final vendorType in channelTypesInDisplayOrder())
-              DropdownMenuItem(
-                value: vendorType,
-                child: Text(channelTypeLabel(l10n, vendorType)),
-              ),
-          ],
-          onChanged: (v) => setState(() => type = v!),
-          decoration: const InputDecoration(
-            // The spec's glyph is a hexagon — a wire format as a package
-            // shape — not Material's circle-square-triangle "category".
-            prefixIcon: Icon(Icons.hexagon_outlined, size: 20),
-          ),
-          // The style applies to the popup menu items too — it must carry an
-          // explicit color or the items render with the wrong default.
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+            initialValue: type,
+            isExpanded: true,
+            // The four protocol families, plus this channel's own stored type
+            // when it is not one of them. The old field mixed protocol and
+            // supplier into one list and went stale every time a vendor was
+            // added; the supplier now lives in the preset bar above, and this
+            // half names only the wire format (spec D2 `16d` note B).
+            items: [
+              for (final family in ProtocolFamily.values)
+                DropdownMenuItem(
+                  value: genericVendorForFamily(family),
+                  child: Text(protocolFamilyLabel(l10n, family)),
+                ),
+              // A stored type that is a *specific* supplier — dashscope-api,
+              // newapi-gemini, the deprecated official-google-genai-api — has
+              // to be representable or the dropdown asserts and the channel
+              // cannot be opened at all. It is listed as itself, last.
+              if (!_typeIsGenericFamily)
+                DropdownMenuItem(
+                  value: type,
+                  // Named by family *and* supplier: the family alone would read
+                  // identically to the generic item above it, and the supplier
+                  // alone would hide which wire format this channel speaks.
+                  child: Text(
+                    [
+                      protocolFamilyLabel(l10n, Vendors.byId(type).family),
+                      channelTypeLabel(l10n, type),
+                      if (isDeprecatedChannelType(type)) l10n.deprecatedLabel,
+                    ].join(' · '),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: (v) => setState(() {
+              type = v!;
+              // Choosing a wire format by hand means this channel is no longer
+              // the supplier the preset named, so the bar stops claiming it is.
+              _presetId = presetForChannelType(type)?.id;
+            }),
+            decoration: const InputDecoration(
+              // The spec's glyph is a hexagon — a wire format as a package
+              // shape — not Material's circle-square-triangle "category".
+              prefixIcon: Icon(Icons.hexagon_outlined, size: 20),
+            ),
+            // The style applies to the popup menu items too — it must carry an
+            // explicit color or the items render with the wrong default.
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
           ),
         ),
         const SizedBox(height: 12),
@@ -284,19 +492,39 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             // Mono: an endpoint is a URL the wire sees verbatim, and `15a`
             // sets it apart from prose the same way the model id is.
             style: Theme.of(context).textTheme.bodyMedium?.mono,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.link, size: 20),
               helperText: endpointHint,
               helperMaxLines: 3,
-              helperStyle: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+              helperStyle: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+              // Only offered once the address actually differs from the
+              // preset's — an always-present "restore" on a field already
+              // holding the value it would restore is noise.
+              suffixIcon: _endpointDivergesFromPreset
+                  ? IconButton(
+                      icon: const Icon(Icons.restart_alt, size: 20),
+                      tooltip: l10n.restorePresetEndpoint,
+                      onPressed: () => setState(() {
+                        epCtrl.text = _presetEndpoint!;
+                        _probeMessage = null;
+                        _probeOk = null;
+                      }),
+                    )
+                  : null,
             ),
           ),
         ),
         const SizedBox(height: 12),
         AppLabelledField(
-          label: l10n.apiKey,
+          label: _keyOptional
+              ? '${l10n.apiKey} · ${l10n.apiKeyOptional}'
+              : l10n.apiKey,
           child: ApiKeyField(
             controller: keyCtrl,
+            hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
             onChanged: (v) {},
           ),
         ),
@@ -321,8 +549,10 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             if (_probing) ...[
               const SizedBox(width: 8),
               const SizedBox(
-                  width: 14, height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ],
           ],
         ),
@@ -356,7 +586,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           Expanded(
             child: Text(
               _probeMessage!,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: color),
             ),
           ),
         ],
@@ -404,7 +636,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           const Spacer(),
           Text(
             l10n.previewInList,
-            style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+            style: textTheme.labelSmall?.mono.copyWith(
+              color: colorScheme.outline,
+            ),
           ),
         ],
       ),
@@ -455,5 +689,6 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     });
   }
 
-  static String _clip(String s) => s.length > 160 ? '${s.substring(0, 160)}…' : s;
+  static String _clip(String s) =>
+      s.length > 160 ? '${s.substring(0, 160)}…' : s;
 }

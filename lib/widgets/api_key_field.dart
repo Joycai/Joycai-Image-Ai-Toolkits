@@ -20,6 +20,11 @@ class ApiKeyField extends StatefulWidget {
   /// and label red — the "this provider needs a key" state.
   final String? errorText;
 
+  /// Placeholder shown while the field is empty. Used by the local-runtime
+  /// providers, whose key is optional and whose field would otherwise look
+  /// like something the user forgot to fill in.
+  final String? hint;
+
   const ApiKeyField({
     super.key,
     required this.controller,
@@ -27,6 +32,7 @@ class ApiKeyField extends StatefulWidget {
     this.maxLines = 1,
     required this.onChanged,
     this.errorText,
+    this.hint,
   });
 
   @override
@@ -49,6 +55,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
     return AppTextField(
       controller: widget.controller,
       label: widget.label,
+      hint: widget.hint,
       maxLines: widget.maxLines,
       obscureText: canObscure && _obscureText,
       errorText: widget.errorText,

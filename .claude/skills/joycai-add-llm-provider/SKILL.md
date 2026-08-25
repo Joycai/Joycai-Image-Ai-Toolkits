@@ -45,10 +45,20 @@ a new vendor.
 - [ ] 2. Vendor-specific surface? Set a declarative flag on `VendorProfile`
       (see `usesXaiNativeSurfaces`) and add the protocol selection to the
       dispatcher. Never branch on `vendor.id` inside a protocol.
-- [ ] 3. UI preset: `widgets/models/channel_provider_presets.dart` `kChannelProviderPresets`
-      list (+ provider title l10n via the `joycai-l10n` skill) and, if it
-      should appear in first-run setup, `screens/wizard/setup_wizard.dart`'s
-      dropdown.
+- [ ] 3. UI preset: `widgets/models/channel_provider_presets.dart`
+      `kChannelProviderPresets` (+ provider title l10n via the `joycai-l10n`
+      skill). Pick the `group` — `vendor` (official, endpoint prefilled) /
+      `relay` (protocol known, host is the user's) / `custom` / `local` — and
+      the `need` the row promises (`keyOnly` / `endpoint` / `keyless`). Add
+      `searchAliases` for any other name the provider is known by.
+      **Nothing else to wire**: the add-channel rail, the channel editor's
+      "change preset" overlay and first-run setup all read this one list, so
+      a preset added here reaches every screen. If the vendor serves more than
+      one wire format (see MiniMax, NewAPI, Google), give it `variants`
+      instead of one row per face.
+- [ ] 3b. Local runtime with no auth? Set `keyOptional: true` on the
+      `VendorProfile` — that alone relaxes the required-key check in both the
+      wizard and the editor.
 - [ ] 4. Models with new parameters? Extend layer 3:
       `model_capabilities.dart` (ParamSpec tables) and, if a new family is
       needed, `model_family.dart` + the dispatcher routing.

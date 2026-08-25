@@ -521,7 +521,7 @@
   "enableThinkingDesc": "Let the model reason before answering. Costs output tokens; Anthropic-format channels only.",
   "enableWebSearch": "Host web search",
   "enableWebSearchDesc": "Let the provider run its own web searches mid-answer. Billed as extra tokens and fetches pages on your behalf.",
-  "addChannelSubtitle": "Pick a provider and finish the connection on one page",
+  "addChannelSubtitle": "Pick who this is, then fill in the connection",
   "searchProviders": "Search providers…",
   "noProviderMatch": "No provider matches this search",
   "resetToDefault": "Reset to default",
@@ -565,6 +565,69 @@
     }
   },
   "previewInList": "List preview",
+  "providerGroupVendor": "Vendors",
+  "providerGroupVendorHint": "Official · endpoint prefilled",
+  "providerGroupRelay": "Relays",
+  "providerGroupRelayHint": "Known protocol · your own host",
+  "providerGroupCustom": "Custom",
+  "providerGroupCustomHint": "Your host + an explicit protocol",
+  "providerGroupLocal": "Local",
+  "providerGroupLocalHint": "Defaults to localhost",
+  "providerNeedKeyOnly": "Key only",
+  "providerNeedEndpoint": "Needs address",
+  "providerNeedKeyless": "No key",
+  "providerCustomOpenAIDesc": "Any host serving the OpenAI chat surface",
+  "providerCustomGoogleDesc": "Any host serving the Google GenAI surface",
+  "providerCustomAnthropicDesc": "Any host serving the Anthropic Messages surface",
+  "variantTitleGoogle": "Access method",
+  "variantTitleMiniMax": "Interface",
+  "variantTitleNewApi": "Endpoint format",
+  "variantTitleGeneric": "Access method",
+  "variantHintGoogle": "Google serves the same models two ways. Switching rewrites the address below.",
+  "variantHintMiniMax": "MiniMax offers two interfaces; pick one — you can still change it later.",
+  "variantHintNewApi": "You supply the host; the version path follows the format you pick.",
+  "variantHintGeneric": "Switching rewrites the address below.",
+  "variantGoogleNative": "GenAI native",
+  "variantGoogleOpenAI": "OpenAI compatible",
+  "variantMiniMaxOpenAI": "OpenAI interface",
+  "variantMiniMaxAnthropic": "Anthropic interface",
+  "variantNewApiOpenAI": "OpenAI format",
+  "variantNewApiGemini": "Gemini format",
+  "variantNewApiAnthropic": "Anthropic format",
+  "channelPresetLabel": "Provider preset",
+  "channelPresetHint": "The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.",
+  "changePreset": "Change preset",
+  "presetUnmatched": "No matching preset",
+  "presetUnmatchedHint": "This channel uses a type from an older build that is no longer offered. Leaving it alone keeps it working; Change preset overwrites the fields below.",
+  "presetEndpointModified": "Address edited",
+  "restorePresetEndpoint": "Restore preset value",
+  "changePresetOverlayHint": "Picking one overwrites the protocol and address with the preset's values. Key, name and tag are left alone.",
+  "protocolField": "API protocol",
+  "protocolFieldHint": "Four protocol families; any stored type can be represented here.",
+  "deprecatedLabel": "Deprecated",
+  "apiKeyOptional": "Optional",
+  "apiKeyLocalPlaceholder": "Local services usually need none",
+  "apiKeyLocalNote": "Leave it empty. If you put reverse-proxy auth in front of your local service, enter its key here.",
+  "searchProvidersAlias": "Search providers, or try “Qwen”",
+  "providerCountSummary": "{count} providers · {groups} groups",
+  "@providerCountSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "providerVariantCount": "{count} ways in",
+  "@providerVariantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

@@ -2150,7 +2150,7 @@ abstract class AppLocalizations {
   /// No description provided for @addChannelSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Pick a provider and finish the connection on one page'**
+  /// **'Pick who this is, then fill in the connection'**
   String get addChannelSubtitle;
 
   /// No description provided for @searchProviders.
@@ -2284,6 +2284,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'List preview'**
   String get previewInList;
+
+  /// No description provided for @providerGroupVendor.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendors'**
+  String get providerGroupVendor;
+
+  /// No description provided for @providerGroupVendorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Official · endpoint prefilled'**
+  String get providerGroupVendorHint;
+
+  /// No description provided for @providerGroupRelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Relays'**
+  String get providerGroupRelay;
+
+  /// No description provided for @providerGroupRelayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Known protocol · your own host'**
+  String get providerGroupRelayHint;
+
+  /// No description provided for @providerGroupCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get providerGroupCustom;
+
+  /// No description provided for @providerGroupCustomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your host + an explicit protocol'**
+  String get providerGroupCustomHint;
+
+  /// No description provided for @providerGroupLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get providerGroupLocal;
+
+  /// No description provided for @providerGroupLocalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Defaults to localhost'**
+  String get providerGroupLocalHint;
+
+  /// No description provided for @providerNeedKeyOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Key only'**
+  String get providerNeedKeyOnly;
+
+  /// No description provided for @providerNeedEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs address'**
+  String get providerNeedEndpoint;
+
+  /// No description provided for @providerNeedKeyless.
+  ///
+  /// In en, this message translates to:
+  /// **'No key'**
+  String get providerNeedKeyless;
+
+  /// No description provided for @providerCustomOpenAIDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Any host serving the OpenAI chat surface'**
+  String get providerCustomOpenAIDesc;
+
+  /// No description provided for @providerCustomGoogleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Any host serving the Google GenAI surface'**
+  String get providerCustomGoogleDesc;
+
+  /// No description provided for @providerCustomAnthropicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Any host serving the Anthropic Messages surface'**
+  String get providerCustomAnthropicDesc;
+
+  /// No description provided for @variantTitleGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access method'**
+  String get variantTitleGoogle;
+
+  /// No description provided for @variantTitleMiniMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Interface'**
+  String get variantTitleMiniMax;
+
+  /// No description provided for @variantTitleNewApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Endpoint format'**
+  String get variantTitleNewApi;
+
+  /// No description provided for @variantTitleGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Access method'**
+  String get variantTitleGeneric;
+
+  /// No description provided for @variantHintGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google serves the same models two ways. Switching rewrites the address below.'**
+  String get variantHintGoogle;
+
+  /// No description provided for @variantHintMiniMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MiniMax offers two interfaces; pick one — you can still change it later.'**
+  String get variantHintMiniMax;
+
+  /// No description provided for @variantHintNewApi.
+  ///
+  /// In en, this message translates to:
+  /// **'You supply the host; the version path follows the format you pick.'**
+  String get variantHintNewApi;
+
+  /// No description provided for @variantHintGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching rewrites the address below.'**
+  String get variantHintGeneric;
+
+  /// No description provided for @variantGoogleNative.
+  ///
+  /// In en, this message translates to:
+  /// **'GenAI native'**
+  String get variantGoogleNative;
+
+  /// No description provided for @variantGoogleOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI compatible'**
+  String get variantGoogleOpenAI;
+
+  /// No description provided for @variantMiniMaxOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI interface'**
+  String get variantMiniMaxOpenAI;
+
+  /// No description provided for @variantMiniMaxAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic interface'**
+  String get variantMiniMaxAnthropic;
+
+  /// No description provided for @variantNewApiOpenAI.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI format'**
+  String get variantNewApiOpenAI;
+
+  /// No description provided for @variantNewApiGemini.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini format'**
+  String get variantNewApiGemini;
+
+  /// No description provided for @variantNewApiAnthropic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anthropic format'**
+  String get variantNewApiAnthropic;
+
+  /// No description provided for @channelPresetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider preset'**
+  String get channelPresetLabel;
+
+  /// No description provided for @channelPresetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The preset only fills the fields below in one tap. You can still edit each one, and your edits are not overwritten.'**
+  String get channelPresetHint;
+
+  /// No description provided for @changePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Change preset'**
+  String get changePreset;
+
+  /// No description provided for @presetUnmatched.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching preset'**
+  String get presetUnmatched;
+
+  /// No description provided for @presetUnmatchedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel uses a type from an older build that is no longer offered. Leaving it alone keeps it working; Change preset overwrites the fields below.'**
+  String get presetUnmatchedHint;
+
+  /// No description provided for @presetEndpointModified.
+  ///
+  /// In en, this message translates to:
+  /// **'Address edited'**
+  String get presetEndpointModified;
+
+  /// No description provided for @restorePresetEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore preset value'**
+  String get restorePresetEndpoint;
+
+  /// No description provided for @changePresetOverlayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Picking one overwrites the protocol and address with the preset\'s values. Key, name and tag are left alone.'**
+  String get changePresetOverlayHint;
+
+  /// No description provided for @protocolField.
+  ///
+  /// In en, this message translates to:
+  /// **'API protocol'**
+  String get protocolField;
+
+  /// No description provided for @protocolFieldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Four protocol families; any stored type can be represented here.'**
+  String get protocolFieldHint;
+
+  /// No description provided for @deprecatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deprecated'**
+  String get deprecatedLabel;
+
+  /// No description provided for @apiKeyOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get apiKeyOptional;
+
+  /// No description provided for @apiKeyLocalPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Local services usually need none'**
+  String get apiKeyLocalPlaceholder;
+
+  /// No description provided for @apiKeyLocalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave it empty. If you put reverse-proxy auth in front of your local service, enter its key here.'**
+  String get apiKeyLocalNote;
+
+  /// No description provided for @searchProvidersAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Search providers, or try “Qwen”'**
+  String get searchProvidersAlias;
+
+  /// No description provided for @providerCountSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} providers · {groups} groups'**
+  String providerCountSummary(int count, int groups);
+
+  /// No description provided for @providerVariantCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ways in'**
+  String providerVariantCount(int count);
 
   /// No description provided for @prompts.
   ///

@@ -83,6 +83,18 @@ class Vendors {
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
 
+  /// Ollama's OpenAI-compatible surface (`http://localhost:11434/v1`).
+  ///
+  /// Body-compatible with [openAIRest]; its own id exists so a channel
+  /// records that it points at a local runtime rather than at a hosted
+  /// supplier, and so [VendorProfile.keyOptional] can be true here without
+  /// loosening the requirement for every generic OpenAI-compatible channel.
+  static const String ollama = 'ollama';
+
+  /// LM Studio's OpenAI-compatible server (`http://localhost:1234/v1`).
+  /// Same reasoning as [ollama].
+  static const String lmStudio = 'lm-studio';
+
   static const List<VendorProfile> all = [
     VendorProfile(
       id: openAIRest,
@@ -164,6 +176,21 @@ class Vendors {
       id: midjourneyProxy,
       family: ProtocolFamily.midjourney,
       auth: AuthScheme.bearer,
+    ),
+    VendorProfile(
+      id: ollama,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      // No auth by default; the bearer scheme only matters when someone has
+      // put a reverse proxy in front, and [VendorProfile.headers] omits the
+      // header entirely while the key is empty.
+      keyOptional: true,
+    ),
+    VendorProfile(
+      id: lmStudio,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      keyOptional: true,
     ),
   ];
 
