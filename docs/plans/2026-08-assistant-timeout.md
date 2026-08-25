@@ -115,8 +115,126 @@ agent 的 tool loop **每一轮**都完整重传这 7.97 MB。7 轮 = 55.8 MB。
 4. 同步更新 `docs/architecture/assistant-context.md`：两个窗口写进 *The shape*，
    同边界要求写进不变量 4，「一个窗口管所有」进 *Rejected*。
 
+
 ---
 
-## 4. 顺带记一笔（不在这两个 PR 范围内）
+## 4. 实测验证（2026-08-25 11:27–11:33，两个 PR 合并后同一条通道）
+
+同一个中转站、同一个知识库、同样三张参考图。
+
+| 起始 | body | 耗时 | in | cRead | cWrite | out | stop |
+|---|---|---|---|---|---|---|---|
+| 11:27:14 | 12 KB | 5.1s | 201 | 72 | 3677 | 8 | tool_use |
+| 11:27:19 | 13 KB | 4.2s | 103 | 34 | 3922 | 16 | tool_use |
+| 11:27:25 | 927 KB | 14.5s | 4772 | 4054 | 28 | 82 | tool_use |
+| 11:27:41 | 1009 KB | 12.7s | 34916 | 8627 | 102 | 25 | tool_use |
+| 11:27:55 | 1049 KB | 11.7s | 17572 | 41982 | 32 | 23 | tool_use |
+| 11:28:08 | 1074 KB | 26.2s | 10087 | 58749 | 30 | 802 | tool_use |
+| 11:28:35 | 1076 KB | 15.7s | 49 | 44 | **69106** | 419 | tool_use |
+| 11:31:00 | 1078 KB | **143.4s** | 132 | 68386 | 1217 | **5861** | tool_use |
+| 11:33:25 | 1092 KB | 29.9s | 23 | 69729 | 5587 | 664 | **end_turn** |
+
+九个请求 `Type` 全部是 `Anthropic (Stream)`。
+
+| | 修复前 | 修复后 |
+|---|---|---|
+| 上传总量 | ~56.3 MB | **7.2 MB** |
+| Opus output（计费） | 26,125 | **7,900** |
+| 逐字节重复的请求 | 3 | **0** |
+| 图片 media type | `image/png` | `image/jpeg` |
+| 跨度 | 16.4 分钟 | **6.2 分钟** |
+| 结果 | 无 | `end_turn`，交付完成 |
+
+**决定性的一条是 11:31:00**：143.4 秒、5861 个 output token、成功。这正是原来的
+`submit_prompt`。旧代码下它是「120s 丢弃 → 重试 → 丢弃 → 重试 → 六分钟后报超时、
+零产出」。output token 从 26,125 掉到 7,900 不是模型变简洁了，是**没有东西被扔掉
+再重算**。
+
+`cache_control` 被这家中转站接受了（无 4xx、无错误信封），而且确实按我们的断点缓
+存：后两个请求 cRead 68,386 / 69,729。§2.1 里「谁在真实端点上验过再打开」这条对
+`newApiAnthropic` 已经兑现。
+
+### 4.1 一个未解释的异常
+
+11:28:35 那条在会话中途整段重建了缓存（`cWrite 69106 / cRead 44`）。
+
+我们这边的断点布局是对的：**每个请求的 system 断点都落在字节 2332**，位置完全稳
+定，另外两个滚动断点按设计前移；system 前缀逐字节相同，本该命中。也排除了附件
+elide（#6 / #7 都带 3 张图，`attachment elided` 计数为 0）。所以这是中转站侧的缓
+存实现，从这里改不了。
+
+代价是每个会话一次 69k 的 cache write（约 1.25× 输入价），一次性，之后恢复正常。
+**判据**：如果在别的 ④ 通道上也看到同样的模式，那才说明是断点策略的问题；只在这
+一家出现就是它自己的实现。
+
+
+---
+
+## 5. ① / ③ 呢？
+
+这套改动大部分落在**共享层**，所以对 OpenAI 系和 Gemini 系自动生效；只有两项是
+④ 专有的。
+
+### 5.1 已经生效，与家族无关
+
+| 改动 | 为什么自动覆盖 |
+|---|---|
+| 图片降采样 | `ImageCompressor.readForApi` 被三条 chat 协议共同调用（`anthropic_chat_protocol` / `gemini_payload` / `openai_chat_protocol`）——**这是最大的一项，8× 的上传削减三家都拿到** |
+| 连接复用 | `LLMModelConfig.createClient` 是所有协议唯一的入口 |
+| 超时随 output cap 伸缩 | `generateTimeout` 对 midjourney / longRunning 之外的全部路径生效 |
+| 超时不重试 | `LLMDeadlineExceeded` 在 `LLMService` 层，与协议无关 |
+| 日志掩码 + `Body bytes:` | `LLMDebugLogger` 全局；`Elapsed:` 在三条 chat 协议上都加了 |
+| PR2 全部 | 附件窗口、`_attachmentChars`、流式日志缓冲都在 agent / logger 层 |
+
+### 5.2 没有生效的两项
+
+**`cache_control` —— 不需要补。** 这是 ④ 的概念。① 官方 API 是**自动**前缀缓存
+（≥1024 token，无 opt-in、无断点）；③ 的 2.5 系列有隐式缓存，同样自动。③ 的显式
+缓存是另一套 API（`cachedContents` 服务端资源 + TTL），对一个每轮都在增长的 agent
+对话不划算——前缀每轮都变，建了就废。**结论：这一项对 ①/③ 无事可做。**
+
+**流式 tool call —— 值得补，但两家成本差一个数量级。**
+
+### 5.3 ③ 几乎是免费的
+
+`geminiChunksFromSseLine` 走的是**和同步路径共用的 parser**，它已经在解析
+`functionCall` 并且带上了 `thoughtSignature`（`gemini_payload.dart` 的
+`functionCall` 分支）——③ 的 `functionCall` 是**整个 part 一次给全**，不分片，所
+以没有累积器要写。`prepareGooglePayload` 本来就有 `tools:` 参数，只是流式那个调
+用点没传。
+
+需要改的：流式 payload 传 `tools` · `streamingDeclaresTools => true` · dispatcher
+两处路由。约四行加测试。
+
+要验的是 `thoughtSignature` 在流式路径上确实活着回到历史里——③ 对丢了签名的重放
+是 `INVALID_ARGUMENT`（会报错，不像 ④ 那样静默降级，所以至少是响的）。
+
+### 5.4 ① 是真活
+
+`tool_calls` 在 `openai_chat_protocol.dart` 里只出现在**同步**响应解析和历史回放
+中；流式解析器完全没有这条分支。要写的累积器：按 `delta.tool_calls[].index` 分组
+（`id` / `name` 本身也会分片），而且 ① 没有 ④ 的 `content_block_stop`，只能靠
+`finish_reason: tool_calls` 收尾。参考 `docs/api/streaming.md` §1。
+
+### 5.5 现在的风险有多大
+
+①/③ 目前唯一的保护是 `60 + 4096/25 = 223s` 的 deadline，而**那个 4096 是猜的**：
+App 不给 ①/③ 发 `max_tokens`，真实上限由服务端定（`_outputCap` 的注释写明了这是
+一个 stand-in）。
+
+对照 §4 的实测：④ 的 `submit_prompt` 是 5861 token / 143.4s ≈ 41 tok/s。同样的活
+在 ①/③ 上是 ~170s 生成 + TTFT + 上传——**223s 能过，但不宽裕**，模型再啰嗦一点就
+压线。
+
+三条路，按性价比：
+
+1. **补 ③ 的流式**（四行，风险极低）。
+2. **给 agent 显式传 `maxTokens`**，deadline 就有真实数字可依而不是 4096 这个
+   猜测——这是最便宜的止血，不依赖任何流式工作。
+3. **补 ① 的累积器**，单独一个 PR。
+
+---
+
+## 6. 顺带记一笔（不在这两个 PR 范围内）
 
 出问题的 endpoint 是 `http://42.240.165.241:3000`，**明文 HTTP**。`x-api-key` 和整个知识库内容都是裸传的。这是渠道配置问题，不是代码问题，但值得在这里留一行。
