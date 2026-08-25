@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/workbench_ui_state.dart';
-import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
 import '../../../widgets/app_tool_button.dart';
 import '../workbench_layout.dart';
@@ -89,13 +88,19 @@ class ComparatorToolbar extends StatelessWidget {
         ),
 
         const SizedBox(width: 12),
-        AppIconButton(
+        // Labelled like the two switches to its left, and like all three in
+        // `A4 10n`. As a bare glyph it was the only control on this bar whose
+        // job you had to hover to learn — and it is the one that changes the
+        // *shape* of the screen, which is a bigger promise than a tooltip
+        // should have to carry.
+        AppToolButton(
           icon: Icons.info_outline,
-          tooltip: l10n.metadata,
+          label: l10n.metadata,
+          showLabel: !isNarrow,
           // On desktop the panel is part of the layout and this switches it;
           // on narrow it is a drawer, which is opened rather than toggled —
           // so "on" is only ever claimed where it is true.
-          selected: !isNarrow && uiState.comparatorShowMetadata,
+          active: !isNarrow && uiState.comparatorShowMetadata,
           onPressed: () {
             if (isNarrow) {
               context.read<WorkbenchLayoutState>().openRightPanel();
