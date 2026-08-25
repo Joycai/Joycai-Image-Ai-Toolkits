@@ -69,6 +69,52 @@ class LLMApiException implements Exception {
   String toString() => message;
 }
 
+/// The whole-request deadline on the **non-streaming** path expired.
+///
+/// Its own type, and deliberately not a [TimeoutException], because
+/// `LLMService.isRetryable` answers the two cases oppositely and they mean
+/// opposite things:
+///
+///  * On the streaming path the deadline is per *chunk*. It expiring means
+///    no bytes at all arrived for two minutes — a dead connection, where
+///    reconnecting is exactly the right move. That stays retryable.
+///  * Here it means the generation did not finish in time. The input is
+///    unchanged and so is the amount of output being asked for, so a retry
+///    re-runs the identical request and misses the identical deadline. It is
+///    worse than useless: `Future.timeout` cancels nothing, so the abandoned
+///    request keeps running upstream, keeps holding the connection, and is
+///    billed in full — while its replacement competes with it. The Prompt
+///    Assistant used to spend three Opus generations and six minutes this
+///    way and deliver nothing (docs/plans/2026-08-assistant-timeout.md).
+class LLMDeadlineExceeded implements Exception {
+  final Duration deadline;
+
+  const LLMDeadlineExceeded(this.deadline);
+
+  @override
+  String toString() =>
+      'No response within ${deadline.inSeconds}s. The request was not '
+      'cancelled upstream — it may still complete, and it is billed either '
+      'way. Nothing was retried, because an identical request would miss the '
+      'same deadline.';
+}
+
+/// The output cap the caller asked for, or null when it did not ask.
+///
+/// Shared so the deadline and the payload agree on what "the caller asked
+/// for" means — they read the same key out of the same options map, and a
+/// deadline sized against a different number than the request carries is a
+/// deadline sized against nothing.
+int? requestedMaxTokens(Map<String, dynamic>? options) {
+  final raw = options?['maxTokens'];
+  if (raw is num && raw >= 1) return raw.toInt();
+  if (raw is String) {
+    final parsed = int.tryParse(raw);
+    if (parsed != null && parsed >= 1) return parsed;
+  }
+  return null;
+}
+
 enum LLMReferenceType {
   media,
   asset,

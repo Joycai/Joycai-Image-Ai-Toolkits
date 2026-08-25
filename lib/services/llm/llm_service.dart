@@ -111,13 +111,18 @@ class LLMService {
           return response;
         } else {
           onLogAdded?.call('Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          final deadline = _dispatcher.generateTimeout(config, options: options);
           final response = await _dispatcher.generate(
             config,
             fullHistory,
             options: options,
             tools: tools,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          ).timeout(_dispatcher.generateTimeout(config));
+            // Its own type rather than the bare TimeoutException Future
+            // supplies, so the retry decision can tell "the generation ran
+            // long" apart from "the connection died" — see
+            // [LLMDeadlineExceeded].
+          ).timeout(deadline, onTimeout: () => throw LLMDeadlineExceeded(deadline));
           if (response.text.isNotEmpty) {
             onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
           }
@@ -159,6 +164,11 @@ class LLMService {
   /// error and re-sent a request that was going to fail (and bill) again.
   @visibleForTesting
   static bool isRetryable(Object e) {
+    // Explicit, even though it is not a TimeoutException and so would not
+    // reach the branch below: distinguishing these two is the entire reason
+    // the type exists. A generation that ran past its deadline will run past
+    // it again; a stalled stream will not necessarily stall again.
+    if (e is LLMDeadlineExceeded) return false;
     if (e is TimeoutException) return true;
     if (e is LLMApiException) return e.isTransient;
 

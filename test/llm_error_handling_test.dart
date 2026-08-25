@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
@@ -199,6 +202,87 @@ void main() {
           LLMService.isRetryable(
               Exception('xAI Images API failed: 422 - bad prompt')),
           isFalse);
+    });
+  });
+
+  group('the non-streaming deadline', () {
+    LLMModelConfig config(String modelId, String channelType) => LLMModelConfig(
+          modelId: modelId,
+          channelType: channelType,
+          endpoint: 'https://example.invalid/v1',
+          apiKey: 'k',
+        );
+
+    test('a generation that ran long is never retried', () {
+      // The whole failure this replaced: three identical Opus requests, 122 s
+      // apart, each producing a complete 6 K-token answer that arrived after
+      // the client had already given up on it.
+      expect(
+          LLMService.isRetryable(
+              const LLMDeadlineExceeded(Duration(seconds: 120))),
+          isFalse);
+    });
+
+    test('a stalled stream still is — it means the connection died', () {
+      // Same word, opposite meaning: on the streaming path the guard is per
+      // chunk, so it expiring is "no bytes for two minutes", not "still
+      // writing".
+      expect(LLMService.isRetryable(TimeoutException('no chunks')), isTrue);
+    });
+
+    test('says what happened and that nothing was retried', () {
+      final message =
+          const LLMDeadlineExceeded(Duration(seconds: 388)).toString();
+      expect(message, contains('388'));
+      expect(message, contains('billed'));
+      expect(message, contains('retried'));
+    });
+
+    test('scales with the output cap the caller asked for', () {
+      final dispatcher = LLMDispatcher();
+      final small = dispatcher.generateTimeout(
+          config('gpt-4o', Vendors.openAIRest),
+          options: const {'maxTokens': 1000});
+      final large = dispatcher.generateTimeout(
+          config('gpt-4o', Vendors.openAIRest),
+          options: const {'maxTokens': 32000});
+      expect(large, greaterThan(small));
+    });
+
+    test('never drops below the historical 120 s floor', () {
+      // Short calls must be unaffected: this change is about long answers.
+      expect(
+        LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
+            options: const {'maxTokens': 1}),
+        const Duration(seconds: 120),
+      );
+    });
+
+    test('is capped, so a misconfigured cap cannot mean an hour', () {
+      expect(
+        LLMDispatcher().generateTimeout(config('gpt-4o', Vendors.openAIRest),
+            options: const {'maxTokens': 10000000}),
+        const Duration(minutes: 10),
+      );
+    });
+
+    test('a 6 K-token answer gets a deadline it can actually meet', () {
+      // The Prompt Assistant's submit_prompt runs 6-7 K tokens; under the old
+      // flat guard every single delivery timed out mid-write.
+      final deadline = LLMDispatcher().generateTimeout(
+          config('claude-opus-4-8', Vendors.anthropicRest));
+      expect(deadline, greaterThan(const Duration(minutes: 4)));
+    });
+
+    test('Midjourney keeps precedence over the scaling rule', () {
+      // Its generate() contains a poll loop, so the output cap says nothing
+      // about how long it runs.
+      expect(
+        LLMDispatcher().generateTimeout(
+            config('anything', Vendors.midjourneyProxy),
+            options: const {'maxTokens': 1}),
+        const Duration(minutes: 11),
+      );
     });
   });
 }

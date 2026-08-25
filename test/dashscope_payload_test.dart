@@ -288,18 +288,24 @@ void main() {
       expect(Vendors.byId(Vendors.newApiOpenAI).usesDashScopeNativeImages, isFalse);
     });
 
-    test('a synchronous image request outlives the 120 s chat guard', () {
+    test('a synchronous image request outlives a chat completion', () {
       // The generation is billed before the client gives up, so the default
       // guard would turn a paid result into a timeout message.
-      final timeout = LLMDispatcher().generateTimeout(config('qwen-image-3.0', Vendors.dashscope));
-      expect(timeout, greaterThan(const Duration(seconds: 120)));
+      expect(
+        LLMDispatcher().generateTimeout(config('qwen-image-3.0', Vendors.dashscope)),
+        greaterThan(
+            LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope))),
+      );
     });
 
-    test('chat models on the same channel keep the short guard', () {
-      expect(
-        LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope)),
-        const Duration(seconds: 120),
-      );
+    test('a chat model on the same channel stays well inside it', () {
+      // Not the flat 120 s it used to be — the deadline now scales with the
+      // output cap — but the longRunning exemption still has to mean
+      // something, so a chat model must land under it.
+      final chat =
+          LLMDispatcher().generateTimeout(config('qwen-max', Vendors.dashscope));
+      expect(chat, greaterThanOrEqualTo(const Duration(seconds: 120)));
+      expect(chat, lessThan(const Duration(minutes: 5)));
     });
 
     test('Midjourney keeps its own exemption, independent of the model id', () {

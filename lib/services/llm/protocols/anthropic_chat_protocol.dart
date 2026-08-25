@@ -176,15 +176,8 @@ List<Map<String, dynamic>> anthropicUserBlocks(LLMMessage msg) {
 
 /// The output cap for a request: the caller's `maxTokens` when it set one,
 /// [anthropicDefaultMaxTokens] otherwise.
-int anthropicMaxTokens(Map<String, dynamic>? options) {
-  final raw = options?['maxTokens'];
-  if (raw is num && raw >= 1) return raw.toInt();
-  if (raw is String) {
-    final parsed = int.tryParse(raw);
-    if (parsed != null && parsed >= 1) return parsed;
-  }
-  return anthropicDefaultMaxTokens;
-}
+int anthropicMaxTokens(Map<String, dynamic>? options) =>
+    requestedMaxTokens(options) ?? anthropicDefaultMaxTokens;
 
 /// The `thinking` payload for [dialect], or null when there is nothing to
 /// send — either the model has it switched off, or the vendor has no such
