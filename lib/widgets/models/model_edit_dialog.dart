@@ -14,6 +14,7 @@ import '../app_button.dart';
 import '../app_card.dart';
 import '../app_dialog.dart';
 import '../app_segmented_control.dart';
+import '../app_setting_row.dart';
 import '../app_text_field.dart';
 import '../searchable_picker.dart';
 import 'channel_avatar.dart';
@@ -663,7 +664,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   Widget _capabilitiesSection(ColorScheme colorScheme) {
     final l10n = widget.l10n;
-    final textTheme = Theme.of(context).textTheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -671,33 +671,19 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.capabilities),
         const SizedBox(height: 4),
-        SwitchListTile(
-          title: Text(l10n.supportsStreaming, style: textTheme.bodyMedium),
-          // The muted tone is spelled out because it used to be inherited from
-          // ListTile's own subtitle style, which a scale slot overrides.
-          subtitle: Text(l10n.supportsStreamingDesc,
-              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+        AppToggleRow(
+          icon: Icons.waves,
+          title: l10n.supportsStreaming,
+          description: l10n.supportsStreamingDesc,
           value: supportsStream,
           onChanged: (v) => setState(() => supportsStream = v),
-          secondary: const Icon(Icons.waves),
-          contentPadding: EdgeInsets.zero,
-          // Compact: the spec's rows sit at 9px of vertical padding, and
-          // ListTile's comfortable default made the right pane visibly
-          // looser than the form beside it.
-          visualDensity: VisualDensity.compact,
         ),
-        SwitchListTile(
-          title: Text(l10n.supportsStandardRequest, style: textTheme.bodyMedium),
-          subtitle: Text(l10n.supportsStandardRequestDesc,
-              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+        AppToggleRow(
+          icon: Icons.http,
+          title: l10n.supportsStandardRequest,
+          description: l10n.supportsStandardRequestDesc,
           value: supportsStandard,
           onChanged: (v) => setState(() => supportsStandard = v),
-          secondary: const Icon(Icons.http),
-          contentPadding: EdgeInsets.zero,
-          // Compact: the spec's rows sit at 9px of vertical padding, and
-          // ListTile's comfortable default made the right pane visibly
-          // looser than the form beside it.
-          visualDensity: VisualDensity.compact,
         ),
       ],
     );
@@ -706,7 +692,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   Widget _agentSection(ColorScheme colorScheme) {
     final l10n = widget.l10n;
     final appState = widget.appState;
-    final textTheme = Theme.of(context).textTheme;
     final family = _channelFamily(appState);
 
     return Column(
@@ -715,18 +700,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
       children: [
         _sectionHeader(l10n.agentBehavior),
         const SizedBox(height: 4),
-        SwitchListTile(
-          title: Text(l10n.forceViewAllImages, style: textTheme.bodyMedium),
-          subtitle: Text(l10n.forceViewAllImagesDesc,
-              style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+        AppToggleRow(
+          icon: Icons.visibility_outlined,
+          title: l10n.forceViewAllImages,
+          description: l10n.forceViewAllImagesDesc,
           value: forceViewAllImages,
           onChanged: (v) => setState(() => forceViewAllImages = v),
-          secondary: const Icon(Icons.visibility_outlined),
-          contentPadding: EdgeInsets.zero,
-          // Compact: the spec's rows sit at 9px of vertical padding, and
-          // ListTile's comfortable default made the right pane visibly
-          // looser than the form beside it.
-          visualDensity: VisualDensity.compact,
         ),
         // Reasoning intensity exists on the ① and ④ families (wire spellings
         // differ; the vocabulary is the app's own). ③/midjourney channels
@@ -758,15 +737,12 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           ),
         // Host-run web search only exists on ④.
         if (family == ProtocolFamily.anthropic)
-          SwitchListTile(
-            title: Text(l10n.enableWebSearch, style: textTheme.bodyMedium),
-            subtitle: Text(l10n.enableWebSearchDesc,
-                style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+          AppToggleRow(
+            icon: Icons.public,
+            title: l10n.enableWebSearch,
+            description: l10n.enableWebSearchDesc,
             value: enableWebSearch,
             onChanged: (v) => setState(() => enableWebSearch = v),
-            secondary: const Icon(Icons.public),
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
           ),
       ],
     );

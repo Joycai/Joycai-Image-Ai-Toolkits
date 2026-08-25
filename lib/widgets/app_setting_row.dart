@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../core/design_tokens.dart';
+import 'app_switch.dart';
 
 /// One setting: what it is, what it does, and the control that changes it.
 ///
@@ -116,6 +117,79 @@ class AppSettingRow extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: onTap == null ? body : InkWell(onTap: onTap, child: body),
+    );
+  }
+}
+
+/// A setting inside a form: an optional glyph, what it is, what it does, and
+/// the switch that turns it on.
+///
+/// [AppSettingRow]'s borderless sibling. The box that one draws is what tells
+/// a *settings page* its rows are unrelated decisions; inside a card or a
+/// dialog the card is already saying that, and a second outline around each
+/// row reads as a box in a box. `A1 16a`'s two request toggles, `17a`'s
+/// compress toggle and `D2 13c`'s capability rows are all this shape.
+///
+/// Six copies of it existed — two in the image panel, one in the video panel,
+/// four in the model editor, one in the channel editor — as [SwitchListTile]s
+/// with `contentPadding: zero`, `visualDensity: compact` and a hand-restated
+/// subtitle colour, because that widget's own subtitle style is overridden by
+/// any scale slot the caller names. Each also carried Material's 52×32 switch,
+/// which is the one thing none of those frames draw.
+class AppToggleRow extends StatelessWidget {
+  const AppToggleRow({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.description,
+    this.icon,
+  });
+
+  final String title;
+  final String? description;
+  final IconData? icon;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: AppSize.iconMd, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 500, as `16a` sets it and as [AppSettingRow] above sets
+                // its own title. The six copies this replaces used three
+                // weights between them: `titleSmall`'s 600 in the image panel,
+                // `bodyMedium`'s 400 in the model editor, and Material's own
+                // bold 13 wherever a caller named nothing.
+                Text(title, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                if (description != null) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    description!,
+                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          AppSwitch(value: value, onChanged: onChanged),
+        ],
+      ),
     );
   }
 }

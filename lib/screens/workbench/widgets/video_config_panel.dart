@@ -15,7 +15,6 @@ import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../core/design_tokens.dart';
 import '../../../widgets/app_labelled_field.dart';
-import '../../../widgets/app_switch.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_segmented_control.dart';
@@ -27,6 +26,7 @@ import '../../../widgets/models/model_picker_options.dart';
 import '../../../widgets/searchable_picker.dart';
 import 'config_action_bar.dart';
 import '../../../widgets/app_section_label.dart';
+import '../../../widgets/app_setting_row.dart';
 import 'queue_settings_dialog.dart';
 
 class VideoConfigPanel extends StatefulWidget {
@@ -182,35 +182,12 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         AppCard(
           outlined: true,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Icon(Icons.compress, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(l10n.compressReferenceImages,
-                          style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 1),
-                      Text(
-                        l10n.compressReferenceImagesDesc,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                AppSwitch(
-                  value: appState.compressReferenceImages,
-                  onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
-                ),
-              ],
-            ),
+          child: AppToggleRow(
+            icon: Icons.compress,
+            title: l10n.compressReferenceImages,
+            description: l10n.compressReferenceImagesDesc,
+            value: appState.compressReferenceImages,
+            onChanged: (v) => appState.updateWorkbenchConfig(compressReferenceImages: v),
           ),
         ),
         const SizedBox(height: 12),
