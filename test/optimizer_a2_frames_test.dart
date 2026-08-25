@@ -114,6 +114,30 @@ void main() {
     });
   });
 
+  group('the write policy', () {
+    test('turning writes off withdraws the tool, not just its button', () {
+      // `editMode` in runTurn is exactly this getter, and it is what decides
+      // whether `_knowledgeWriteTools` is offered at all. A model that is
+      // offered a tool will find a reason to call it, so the switch has to
+      // reach the tool list rather than only the UI.
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeEdit);
+      expect(session.canWriteKnowledge, isTrue);
+
+      session.writePolicy = const KbWritePolicy(allowWrites: false);
+      expect(session.canWriteKnowledge, isFalse);
+    });
+
+    test('the policy cannot licence writes in a mode that has none', () {
+      final session = PromptOptimizerSession(mode: AssistantMode.knowledgeBase);
+      session.writePolicy = const KbWritePolicy(allowWrites: true);
+      expect(session.canWriteKnowledge, isFalse);
+    });
+
+    test('a fresh session starts on the defaults', () {
+      expect(PromptOptimizerSession().writePolicy, KbWritePolicy.defaults);
+    });
+  });
+
   group('the composer while a turn runs', () {
     Future<void> pumpChat(
       WidgetTester tester, {
