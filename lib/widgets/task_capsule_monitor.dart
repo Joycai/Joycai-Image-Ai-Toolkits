@@ -82,9 +82,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
     // and out of existence was the one overlay in the app that neither slid
     // nor faded. Both visibility triggers — the queue emptying and being on
     // the workbench (which has its own console) — now fade the same way.
-    final onWorkbench =
-        context.select<AppState, int>((s) => s.activeScreenIndex) == 0;
-    final visible = (pendingCount > 0 || runningCount > 0) && !onWorkbench;
+    // Off wherever the queue is already on screen. `C1` settles the overlap
+    // outright — "底部执行日志控制台与右下角浮层胶囊二选一，这一屏取控制台" — and
+    // the workbench had the same argument first: a floating summary of the
+    // queue parked on top of the queue itself is one report too many, and on
+    // the tasks screen it landed squarely over the run console.
+    final int screen = context.select<AppState, int>((s) => s.activeScreenIndex);
+    final bool queueIsOnScreen = screen == 0 || screen == 2;
+    final visible = (pendingCount > 0 || runningCount > 0) && !queueIsOnScreen;
 
     double avgProgress = 0;
     if (activeTasks.isNotEmpty) {

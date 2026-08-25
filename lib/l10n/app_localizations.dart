@@ -3389,6 +3389,84 @@ abstract class AppLocalizations {
   /// **'{count} lines'**
   String taskLogLineCount(int count);
 
+  /// No description provided for @goToWorkbench.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to the workbench'**
+  String get goToWorkbench;
+
+  /// No description provided for @copyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy all'**
+  String get copyAll;
+
+  /// No description provided for @copiedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedAll;
+
+  /// No description provided for @noLogsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'This task has logged nothing yet'**
+  String get noLogsYet;
+
+  /// No description provided for @sourceFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Source files'**
+  String get sourceFiles;
+
+  /// No description provided for @requestParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Request parameters'**
+  String get requestParameters;
+
+  /// No description provided for @outputPaths.
+  ///
+  /// In en, this message translates to:
+  /// **'Output files'**
+  String get outputPaths;
+
+  /// No description provided for @copyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the error'**
+  String get copyError;
+
+  /// No description provided for @taskTotalShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total'**
+  String taskTotalShort(int count);
+
+  /// No description provided for @statusShortRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'run'**
+  String get statusShortRunning;
+
+  /// No description provided for @statusShortPending.
+  ///
+  /// In en, this message translates to:
+  /// **'wait'**
+  String get statusShortPending;
+
+  /// No description provided for @statusShortDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get statusShortDone;
+
+  /// No description provided for @statusShortFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'fail'**
+  String get statusShortFailed;
+
   /// No description provided for @setupWizardTitle.
   ///
   /// In en, this message translates to:

@@ -8,6 +8,7 @@ import '../../../core/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/dashed_border.dart';
 
 /// Radius of a pane inside the canvas. Deliberately the smallest step on the
 /// ladder: the panes sit 2px apart on a flat ground and read as one surface
@@ -629,11 +630,12 @@ class _PickCard extends StatelessWidget {
     return InkWell(
       onTap: () => Provider.of<AppState>(context, listen: false).setWorkbenchTab(0),
       borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: CustomPaint(
-        painter: _DashedBorderPainter(
-          color: colorScheme.outlineVariant,
-          radius: AppRadius.lg,
-        ),
+      child: DashedBorder(
+        color: colorScheme.outlineVariant,
+        radius: AppRadius.lg,
+        // 1.5, as this pair has always drawn: the edge *is* the drop target,
+        // and it has to hold up while something is dragged over it.
+        strokeWidth: 1.5,
         child: Container(
           width: 200,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
@@ -664,43 +666,6 @@ class _PickCard extends StatelessWidget {
   }
 }
 
-/// Draws a rounded rectangle in dashes. Flutter's [Border] can't dash, and the
-/// two drop targets are the only place in the app that needs it.
-class _DashedBorderPainter extends CustomPainter {
-  static const double _dash = 5;
-  static const double _gap = 4;
-
-  final Color color;
-  final double radius;
-
-  const _DashedBorderPainter({required this.color, required this.radius});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)));
-
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, (distance + _dash).clamp(0.0, metric.length)),
-          paint,
-        );
-        distance += _dash + _gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.radius != radius;
-}
 
 class _CurtainClipper extends CustomClipper<Rect> {
   final double ratio;

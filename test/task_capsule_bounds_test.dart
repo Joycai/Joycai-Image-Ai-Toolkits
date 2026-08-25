@@ -9,6 +9,10 @@ import 'screenshots/harness/shoot.dart';
 
 /// The floating task monitor parks near the bottom edge and opens *downward*.
 ///
+/// Shot on the prompts screen, not the queue: `C1` settles the overlap between
+/// this and the run console — the queue's own screen takes the console, and
+/// the capsule stays off it.
+///
 /// Which means that for as long as it has existed, opening it there ran its
 /// task rows and its 查看全部 straight off the bottom of the window — the half
 /// of the component that is actually worth opening. It is invisible in the
@@ -43,7 +47,7 @@ void main() {
     await mountApp(
       tester,
       env: env,
-      screen: AppScreen.tasks,
+      screen: AppScreen.prompts,
       size: window,
       label: 'capsule-bounds',
     );
@@ -77,7 +81,7 @@ void main() {
     await mountApp(
       tester,
       env: env,
-      screen: AppScreen.tasks,
+      screen: AppScreen.prompts,
       size: window,
       label: 'capsule-restore',
     );

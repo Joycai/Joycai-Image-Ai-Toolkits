@@ -17,6 +17,10 @@ import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/dashed_border.dart';
+import '../../widgets/scroll_edge_fade.dart';
+import '../../widgets/app_section_label.dart';
+import '../../core/file_utils.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_run_console.dart';
@@ -37,6 +41,18 @@ Color _statusColor(TaskStatus status, ColorScheme colorScheme, AppSemanticColors
       TaskStatus.failed => colorScheme.error,
       TaskStatus.cancelled => colorScheme.outline,
     };
+
+/// The same five states, as *text* rather than as a fill.
+///
+/// Only the running one differs, and `10h` draws it that way: `primary` is the
+/// colour tuned for filling a stripe or a plate, and at 13px semibold on a
+/// plain surface it reads thin. `onAccentTint` is the app's answer to exactly
+/// that pairing — see [AppAccent.onAccentTint] and `design-tokens.md` §4's row
+/// on 分组小标题, which is the same trade in a different place.
+Color _statusInk(TaskStatus status, ColorScheme colorScheme, AppSemanticColors semantic) =>
+    status == TaskStatus.processing
+        ? colorScheme.onAccentTint
+        : _statusColor(status, colorScheme, semantic);
 
 class TaskQueueScreen extends StatefulWidget {
   const TaskQueueScreen({super.key});
@@ -121,7 +137,19 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
       backgroundColor: colorScheme.surfaceContainer,
       bottomNavigationBar: inBottomSheet ? null : const AppRunConsole(),
       appBar: AppBar(
-        title: Text(l10n.taskQueueManager),
+        // `10k` keeps the five counts on a narrow screen — set smaller and
+        // abbreviated, but kept. They are the reason to open this screen, and
+        // dropping them left the phone layout showing a title over a filter
+        // strip that answered the same question one tap at a time.
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.taskQueueManager),
+            const SizedBox(height: 2),
+            _buildHeaderSummary(queue, l10n, colorScheme, compact: true),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: () => appState.taskQueue.refreshQueue(),
@@ -275,21 +303,28 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
   /// The queue in one line: the total, then each status that has anything in
   /// it, in that status's colour. Statuses at zero are left out — an empty
   /// count is not news, and the filter pills below already list them all.
+  /// The five counts. [compact] abbreviates every label and tightens the
+  /// separators, which is what `10k` does to fit them on a phone — the counts
+  /// are the reason to open this screen, so the narrow layout shortens them
+  /// rather than dropping them.
   Widget _buildHeaderSummary(
     List<TaskItem> queue,
     AppLocalizations l10n,
-    ColorScheme colorScheme,
-  ) {
+    ColorScheme colorScheme, {
+    bool compact = false,
+  }) {
     final counts = <(String, TaskStatus)>[
-      (l10n.processingTasks, TaskStatus.processing),
-      (l10n.pendingTasks, TaskStatus.pending),
-      (l10n.completedTasks, TaskStatus.completed),
-      (l10n.failedTasks, TaskStatus.failed),
+      (compact ? l10n.statusShortRunning : l10n.processingTasks, TaskStatus.processing),
+      (compact ? l10n.statusShortPending : l10n.pendingTasks, TaskStatus.pending),
+      (compact ? l10n.statusShortDone : l10n.completedTasks, TaskStatus.completed),
+      (compact ? l10n.statusShortFailed : l10n.failedTasks, TaskStatus.failed),
     ];
 
     final spans = <InlineSpan>[
       TextSpan(
-        text: l10n.taskTotalCount(queue.length),
+        text: compact
+            ? l10n.taskTotalShort(queue.length)
+            : l10n.taskTotalCount(queue.length),
         style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
       ),
     ];
@@ -297,10 +332,13 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     for (final (label, status) in counts) {
       final count = queue.where((t) => t.status == status).length;
       if (count == 0) continue;
-      spans.add(TextSpan(text: '  ·  ', style: TextStyle(color: colorScheme.outline)));
+      spans.add(TextSpan(
+        text: compact ? ' · ' : '  ·  ',
+        style: TextStyle(color: colorScheme.outline),
+      ));
       spans.add(TextSpan(
         text: '$label $count',
-        style: TextStyle(color: _statusColor(status, colorScheme, context.semantic), fontWeight: FontWeight.w600),
+        style: TextStyle(color: _statusInk(status, colorScheme, context.semantic), fontWeight: FontWeight.w600),
       ));
     }
 
@@ -418,23 +456,75 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     }
   }
 
+  /// `10j`. A bare grey glyph over two lines of grey text was the one screen
+  /// in the app whose empty state offered nothing to do about being empty —
+  /// and this is the screen a user lands on precisely when they are waiting
+  /// for something, so the way out belongs here.
   Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.assignment_outlined, size: 64, color: colorScheme.outlineVariant),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noTasksInQueue,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.submitTaskFromWorkbench, style: TextStyle(color: colorScheme.onSurfaceVariant)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // A tinted plate rather than a floating glyph, which is how every
+            // other framed icon in the app is drawn.
+            Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colorScheme.accentTint,
+                borderRadius: BorderRadius.circular(AppRadius.dialog),
+                border: Border.all(color: colorScheme.accentRing),
+              ),
+              child: Icon(Icons.assignment_outlined,
+                  size: AppSize.iconLg, color: colorScheme.onAccentTint),
+            ),
+            const SizedBox(height: 18),
+            Text(l10n.noTasksInQueue, style: textTheme.titleMedium),
+            const SizedBox(height: 7),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 340),
+              child: Text(
+                l10n.submitTaskFromWorkbench,
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.looseHeight,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            AppButton(
+              label: l10n.goToWorkbench,
+              icon: Icons.dashboard_outlined,
+              onPressed: () =>
+                  Provider.of<AppState>(context, listen: false).navigateToScreen(0),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// The 44px dashed square standing in for an output a task has not produced.
+class _EmptyOutputSlot extends StatelessWidget {
+  const _EmptyOutputSlot();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 44,
+        height: 44,
+        child: DashedBorder(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          radius: AppRadius.md,
+        ),
+      );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -461,55 +551,99 @@ class _FilterPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final accent = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    // An outline on the surface when unselected, not a grey slab. `10h` draws
+    // these the way the app draws every other secondary control — the rule
+    // [AppButtonVariant.secondary] states outright — and it matters more here
+    // than usual: five filled grey pills in a row above a list of white cards
+    // read as a second toolbar rather than as a filter that is currently off.
+    //
+    // Selected takes the accent ladder, label included. `primary` at 13px on a
+    // 12% wash of itself is the exact case [AppAccent.onAccentTint] exists for.
+    // The label dims with the count, which `10j` spells out by drawing every
+    // pill of an empty queue in the quieter tone: four of the five are usually
+    // zero, and at one weight the strip reads as five equal buckets rather
+    // than as "everything is in 已完成".
+    final Color label = selected
+        ? colorScheme.onAccentTint
+        : count == 0
+            ? colorScheme.outline
+            : colorScheme.onSurfaceVariant;
 
     return Material(
-      color: selected
-          ? colorScheme.primary.withValues(alpha: 0.15)
-          : colorScheme.surfaceContainerHighest,
+      color: selected ? colorScheme.accentTint : Colors.transparent,
       borderRadius: BorderRadius.circular(appButtonRadius),
       child: InkWell(
         onTap: selected ? null : onTap,
         borderRadius: BorderRadius.circular(appButtonRadius),
         child: Container(
           height: appButtonMinHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(appButtonRadius),
             border: Border.all(
-              color: selected ? colorScheme.primary.withValues(alpha: 0.6) : Colors.transparent,
+              color: selected ? colorScheme.accentRing : colorScheme.outlineVariant,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                label,
+                this.label,
                 style: textTheme.bodySmall?.copyWith(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: accent,
+                  color: label,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? colorScheme.primary.withValues(alpha: 0.22)
-                      : colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$count',
-                  style: textTheme.labelMedium?.mono.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: accent,
-                  ),
-                ),
-              ),
+              const SizedBox(width: 9),
+              _CountChip(count: count, selected: selected),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The number on a filter pill.
+///
+/// A zero is drawn quieter than a figure, which `10h` spells out with its own
+/// pair of colours: four of the five pills are usually zero, and at one weight
+/// the strip reads as five equal buckets rather than as "everything is in
+/// 已完成". Nothing here is a state the user has to act on, so the distinction
+/// is tone, not hue.
+class _CountChip extends StatelessWidget {
+  final int count;
+  final bool selected;
+
+  const _CountChip({required this.count, required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool empty = count == 0;
+
+    final (Color fill, Color ink) = selected
+        ? (colorScheme.primary.withValues(alpha: AppAlpha.ring), colorScheme.onAccentTint)
+        : empty
+            ? (colorScheme.surfaceContainerHigh, colorScheme.outline)
+            : (colorScheme.surfaceContainerHighest, colorScheme.onSurface);
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 22),
+      height: 20,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+      child: Text(
+        '$count',
+        style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
+              fontWeight: FontWeight.w600,
+              color: ink,
+            ),
       ),
     );
   }
@@ -588,6 +722,9 @@ class _TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<_TaskCard> {
+  /// The status stripe down the row's leading edge.
+  static const double _stripeWidth = 4;
+
   bool _isExpanded = false;
 
   @override
@@ -609,7 +746,17 @@ class _TaskCardState extends State<_TaskCard> {
     // only thing on this screen, so they are what has to lift off the ground
     // rather than sit level with it.
     final base = colorScheme.surfaceContainerLowest;
-    final surface = isFailed
+    // The status wash sits on the *header row*, not on the whole card. `10i`
+    // draws it that way and the reason shows the moment a row is opened: run
+    // it through the card and the detail panel — a log box, a column of
+    // parameters — reads as part of the failure rather than as an explanation
+    // of it.
+    //
+    // `10h` goes further and draws even the collapsed rows plain white, the
+    // stripe carrying the status alone. Kept here, because that frame's list
+    // has its failed row second from the top: in a queue of forty, the wash is
+    // what makes one findable without reading every stripe.
+    final headerWash = isFailed
         ? Color.alphaBlend(colorScheme.error.withValues(alpha: 0.06), base)
         : isProcessing
             ? Color.alphaBlend(colorScheme.primary.withValues(alpha: 0.05), base)
@@ -618,7 +765,7 @@ class _TaskCardState extends State<_TaskCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: surface,
+        color: base,
         // An edge as well as a fill: at white on a near-white ground the fill
         // alone stops separating them, which is the same reason every other
         // card in the app gained one.
@@ -629,34 +776,64 @@ class _TaskCardState extends State<_TaskCard> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 4, color: accent),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(widget.isMobile ? 10 : 14, 14, 8, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            _buildLeadingTile(task, colorScheme, accent),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildTitleAndMeta(task, colorScheme, l10n)),
-                            const SizedBox(width: 10),
-                            ..._buildTrailing(context, task, appState, colorScheme, l10n),
-                          ],
-                        ),
-                        if (isProcessing) _buildProgressBar(task, colorScheme),
-                        if (_isExpanded) _buildExpandedDetails(context, task, colorScheme, l10n),
-                      ],
+          child: Stack(
+            children: [
+              // The detail panel is a sibling of the header rather than a
+              // child of its padding: `10i` runs its divider and its action
+              // bar to the card's edges, which a panel inset by the header's
+              // own gutters cannot do.
+              Padding(
+                padding: const EdgeInsets.only(left: _stripeWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      color: headerWash,
+                      // One extra pixel at the bottom, for the progress sliver
+                      // to sit on without touching the last line.
+                      padding: EdgeInsets.fromLTRB(widget.isMobile ? 10 : 14, 14, 8, 15),
+                      child: Row(
+                        children: [
+                          _buildLeadingTile(task, colorScheme, accent),
+                          const SizedBox(width: 12),
+                          Expanded(child: _buildTitleAndMeta(task, colorScheme, l10n)),
+                          const SizedBox(width: 10),
+                          ..._buildTrailing(context, task, appState, colorScheme, l10n),
+                        ],
+                      ),
                     ),
-                  ),
+                    if (_isExpanded)
+                      _buildExpandedDetails(context, task, colorScheme, l10n),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              // Positioned, not a Row child under an [IntrinsicHeight]. That
+              // arrangement cannot measure through the [LayoutBuilder] the
+              // expanded panel now uses — the same "intrinsic dimensions
+              // through a layout callback" wall the workbench's config panel
+              // hit. Positioned stretches to whatever the content turns out to
+              // be and asks nothing of it.
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: _stripeWidth,
+                child: ColoredBox(color: accent),
+              ),
+              // `10h` runs the progress along the row's bottom edge rather than
+              // giving it a line of its own, and says why: a task that starts
+              // running must not make its row taller. It did — every row in the
+              // list below it jumped down 16px the moment one began, and back
+              // up when it finished, which on a working queue is a list that
+              // will not hold still.
+              if (isProcessing)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildProgressBar(task, colorScheme),
+                ),
+            ],
           ),
         ),
       ),
@@ -666,6 +843,15 @@ class _TaskCardState extends State<_TaskCard> {
   // ── Leading tile: icon + tint follow status ────────────────────────────────
 
   Widget _buildLeadingTile(TaskItem task, ColorScheme colorScheme, Color accent) {
+    // A waiting task's plate carries its place in the queue rather than a
+    // glyph, per `10h`. The icon on a pending row said only "this is an image
+    // task", which the row's own name already says; the number is the one
+    // thing about waiting that the user actually wants to know, and it moves.
+    // Zero means "not found", which a plate cannot draw — fall back to the
+    // glyph rather than printing a place in the queue that is not one.
+    final int position =
+        task.status == TaskStatus.pending ? _queuePosition(task) : 0;
+
     final icon = switch (task.status) {
       TaskStatus.completed => Icons.check,
       TaskStatus.failed => Icons.warning_amber_rounded,
@@ -676,11 +862,20 @@ class _TaskCardState extends State<_TaskCard> {
     return Container(
       width: 44,
       height: 44,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, size: 20, color: accent),
+      child: position == 0
+          ? Icon(icon, size: 20, color: accent)
+          : Text(
+              '$position',
+              style: Theme.of(context).textTheme.bodyMedium?.mono.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+            ),
     );
   }
 
@@ -832,8 +1027,8 @@ class _TaskCardState extends State<_TaskCard> {
         widgets.add(Text(
           _progressLabel(task),
           style: textTheme.bodySmall?.mono.copyWith(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onAccentTint,
           ),
         ));
         widgets.add(const SizedBox(width: 10));
@@ -861,7 +1056,44 @@ class _TaskCardState extends State<_TaskCard> {
         break;
     }
 
-    if (!widget.isMobile) {
+    // `10k` keeps both on a narrow screen: the outputs collapse from a strip
+    // of thumbnails to a count, and the clock stays. A phone row that showed
+    // neither could not tell a finished task from a cancelled one without
+    // reading its status glyph.
+    if (widget.isMobile) {
+      if (task.resultPaths.isNotEmpty) {
+        widgets.add(Container(
+          height: 26,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.image_outlined, size: 13, color: colorScheme.outline),
+              const SizedBox(width: 5),
+              Text(
+                '${task.resultPaths.length}',
+                style: textTheme.labelSmall?.mono.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ));
+        widgets.add(const SizedBox(width: 8));
+      }
+      widgets.add(Text(
+        _formatClock(task.endTime ?? task.startTime),
+        style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
+      ));
+      widgets.add(const SizedBox(width: 4));
+    } else {
       widgets.add(Text(
         _formatClock(task.endTime ?? task.startTime),
         style: textTheme.bodySmall?.mono.copyWith(
@@ -870,27 +1102,66 @@ class _TaskCardState extends State<_TaskCard> {
       ));
       widgets.add(const SizedBox(width: 12));
 
-      if (task.status == TaskStatus.completed && task.resultPaths.isNotEmpty) {
-        widgets.add(_buildThumbnailStrip(task, colorScheme));
-        widgets.add(const SizedBox(width: 6));
-      }
+      // Always, and always the same width. `10h` gives the outputs a fixed
+      // 176px column so the rows line up down the list instead of each ending
+      // wherever its own contents happen to stop — and so a row with nothing
+      // to show still reserves the space rather than sliding its kebab left.
+      widgets.add(_buildOutputs(task, colorScheme));
+      widgets.add(const SizedBox(width: 6));
     }
 
     widgets.add(_buildMoreButton(context, task, appState, l10n, colorScheme));
     return widgets;
   }
 
+  /// What the task produced, in a column of its own.
+  ///
+  /// Deliberately *only* outputs. Showing the source image here instead when
+  /// there is no result would put an input where every other row shows a
+  /// result — the one place a picture must not be ambiguous about which it is.
+  /// A row with nothing to show says so with an empty outline.
+  Widget _buildOutputs(TaskItem task, ColorScheme colorScheme) {
+    final Widget content;
+    if (task.resultPaths.isNotEmpty) {
+      content = _buildThumbnailStrip(task, colorScheme);
+    } else if (task.status == TaskStatus.failed) {
+      // A filled plate with a mark, not a dashed one: this task *should* have
+      // produced something, and the difference from "not yet" is worth a
+      // pixel of weight.
+      content = Container(
+        width: _outputTileSize,
+        height: _outputTileSize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Icon(Icons.image_not_supported_outlined,
+            size: AppSize.iconSm, color: colorScheme.outline),
+      );
+    } else {
+      // Dashed, per `10h`. A solid hairline here is the same edge a real tile
+      // draws, so an empty slot read as a picture that had failed to load;
+      // dashes are what say "nothing yet" rather than "something is missing".
+      content = const _EmptyOutputSlot();
+    }
+
+    return SizedBox(
+      width: _outputColumnWidth,
+      child: Align(alignment: Alignment.centerRight, child: content),
+    );
+  }
+
+  /// One output tile, and the column they are right-aligned in.
+  static const double _outputTileSize = 44;
+  static const double _outputColumnWidth = 176;
+
   Widget _buildThumbnailStrip(TaskItem task, ColorScheme colorScheme) {
     const maxThumbs = 3;
     const size = 44.0;
     final paths = task.resultPaths.take(maxThumbs).toList();
     final overflow = task.resultPaths.length - paths.length;
-    // `width` constrains the layout, not the decode: without this a 44px chip
-    // held a full 2K generation in the image cache — a handful of finished
-    // tasks was enough to blow past the cache ceiling and put every visible
-    // thumbnail back on the decoder, over and over, while scrolling the queue.
-    final decodeWidth = (size * MediaQuery.devicePixelRatioOf(context)).round();
-
     Widget frame({required Widget child}) => Padding(
           padding: const EdgeInsets.only(left: 5),
           child: ClipRRect(borderRadius: BorderRadius.circular(10), child: child),
@@ -899,38 +1170,55 @@ class _TaskCardState extends State<_TaskCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final path in paths)
-          frame(
-            child: Image.file(
-              File(path),
-              width: size,
-              height: size,
-              cacheWidth: decodeWidth,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                width: size,
-                height: size,
-                color: colorScheme.surfaceContainerHighest,
-                child: Icon(Icons.broken_image, size: 16, color: colorScheme.onSurfaceVariant),
-              ),
-            ),
-          ),
+        for (final path in paths) frame(child: _thumbnailImage(path, colorScheme)),
         if (overflow > 0)
-          frame(
+          // Sized to its text rather than to a tile: `10h` draws this as a
+          // pill, and a square is a promise of a picture.
+          Padding(
+            padding: const EdgeInsets.only(left: 5),
             child: Container(
-              width: size,
               height: size,
               alignment: Alignment.center,
-              color: colorScheme.surfaceContainerHighest,
+              padding: const EdgeInsets.symmetric(horizontal: 9),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
               child: Text(
                 '+$overflow',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
           ),
       ],
+    );
+  }
+
+  /// One 44px square of [path], decoded at the size it is drawn.
+  ///
+  /// `width` constrains the layout, not the decode: without `cacheWidth` a
+  /// 44px chip held a full 2K generation in the image cache — a handful of
+  /// finished tasks was enough to blow past the cache ceiling and put every
+  /// visible thumbnail back on the decoder, over and over, while scrolling the
+  /// queue.
+  Widget _thumbnailImage(String path, ColorScheme colorScheme) {
+    const double size = 44;
+    return Image.file(
+      File(path),
+      width: size,
+      height: size,
+      cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => Container(
+        width: size,
+        height: size,
+        color: colorScheme.surfaceContainerHighest,
+        child: Icon(Icons.broken_image, size: 16, color: colorScheme.onSurfaceVariant),
+      ),
     );
   }
 
@@ -951,20 +1239,17 @@ class _TaskCardState extends State<_TaskCard> {
     );
   }
 
-  // ── 4px progress bar (processing cards only) ───────────────────────────────
+  // ── 3px progress sliver along the row's bottom edge ────────────────────────
 
+  /// Square, not rounded: it is an edge of the card rather than a bar laid on
+  /// it, and the card's own corner radius is what shapes its ends.
   Widget _buildProgressBar(TaskItem task, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, left: 56),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(2),
-        child: LinearProgressIndicator(
-          value: task.progress,
-          minHeight: 4,
-          backgroundColor: colorScheme.surfaceContainerHighest,
-          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-        ),
-      ),
+    return LinearProgressIndicator(
+      value: task.progress,
+      minHeight: 3,
+      borderRadius: BorderRadius.zero,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
     );
   }
 
@@ -1064,8 +1349,20 @@ class _TaskCardState extends State<_TaskCard> {
     );
   }
 
-  // ── Expanded details (unchanged behavior) ──────────────────────────────────
+  // ── Expanded details — `C1 10i` ────────────────────────────────────────────
 
+  /// What a row opens onto: the log on the left, what was asked for and what
+  /// came of it on the right, and the things you would want to do about it
+  /// along the bottom.
+  ///
+  /// It used to be a stack of labelled lines with the log reduced to its
+  /// *last* one behind a "open the dialog" affordance — which on a failure is
+  /// almost never the interesting line, and which meant the one screen whose
+  /// job is explaining what happened sent you to a dialog to find out. The log
+  /// is the reason to open a row, so it gets the wider half and shows itself.
+  ///
+  /// Full-bleed: it sits outside the header's padding so its divider and its
+  /// action bar reach the card's edges, the way `10i` draws them.
   Widget _buildExpandedDetails(
     BuildContext context,
     TaskItem task,
@@ -1073,92 +1370,308 @@ class _TaskCardState extends State<_TaskCard> {
     AppLocalizations l10n,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Divider(height: 24, color: colorScheme.outlineVariant.withAlpha(80)),
-        TaskInfoRow(
-          icon: Icons.timer_outlined,
-          label: l10n.started,
-          value: _formatClock(task.startTime),
+        Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+        LayoutBuilder(
+          builder: (context, box) {
+            final log = _buildLogPane(context, task, colorScheme, l10n);
+            final facts = _buildFactsPane(context, task, colorScheme, l10n);
+
+            // Side by side where there is room for two readable columns, and
+            // stacked below that. The log is the wider of the two because its
+            // lines are the long ones — a parameter is a word and a path, a
+            // log line is a sentence with a stack trace in it.
+            if (box.maxWidth < _twoColumnFloor) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  log,
+                  Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+                  facts,
+                ],
+              );
+            }
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(flex: 7, child: log),
+                  VerticalDivider(width: 1, thickness: 1, color: colorScheme.outlineVariant),
+                  Expanded(flex: 5, child: facts),
+                ],
+              ),
+            );
+          },
         ),
-        TaskInfoRow(
-          icon: Icons.check_circle_outline,
-          label: l10n.finished,
-          value: _formatClock(task.endTime),
-        ),
-        if (task.type == TaskType.imageProcess)
-          TaskInfoRow(
-            icon: Icons.aspect_ratio,
-            label: l10n.config,
-            value: '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim(),
+        Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+        _buildExpandedActions(context, task, colorScheme, l10n),
+      ],
+    );
+  }
+
+  /// Below this the two panes stop being two readable columns.
+  static const double _twoColumnFloor = 620;
+
+  Widget _buildLogPane(
+    BuildContext context,
+    TaskItem task,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppSectionLabel(
+            l10n.executionLogs,
+            padding: EdgeInsets.zero,
+            trailing: task.logs.isEmpty
+                ? null
+                : AppButton(
+                    label: l10n.copyAll,
+                    variant: AppButtonVariant.text,
+                    size: AppButtonSize.compact,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: task.logs.join('\n')));
+                      AppSnackBar.success(context, l10n.copiedAll);
+                    },
+                  ),
           ),
-        if (task.parameters.containsKey('prompt'))
-          TaskInfoRow(
-            icon: Icons.description_outlined,
-            label: l10n.prompt,
-            value: task.parameters['prompt'] ?? '',
-          ),
-        if (task.resultPaths.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 72,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: task.resultPaths.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) => ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(task.resultPaths[i]),
-                  width: 72,
-                  height: 72,
-                  // Decode to the size actually shown — see _buildThumbnailStrip.
-                  cacheWidth: (72 * MediaQuery.devicePixelRatioOf(context)).round(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    width: 72,
-                    height: 72,
-                    color: colorScheme.surfaceContainerHighest,
-                    child: Icon(Icons.broken_image, size: 20, color: colorScheme.onSurfaceVariant),
+          const SizedBox(height: 8),
+          if (task.logs.isEmpty)
+            Text(
+              l10n.noLogsYet,
+              style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+            )
+          else
+            Container(
+              constraints: const BoxConstraints(maxHeight: _logMaxHeight),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: ScrollEdgeFade(
+                child: SingleChildScrollView(
+                  child: SelectionArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final line in task.logs) _buildLogLine(line, colorScheme, textTheme),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
-        if (task.logs.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          // The peek is the last line only, which for a failure is rarely the
-          // interesting one — so it doubles as the way in to the full log.
-          Material(
-            color: colorScheme.surfaceContainerHighest.withAlpha(60),
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: () => TaskLogDialog.show(context, task),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.logs.last,
-                        style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.unfold_more, size: 14, color: colorScheme.onSurfaceVariant.withAlpha(150)),
-                  ],
-                ),
+      ),
+    );
+  }
+
+  /// The log box's ceiling. A failed generation can log a hundred lines, and
+  /// an expanded row that runs past the window takes the rest of the queue
+  /// with it.
+  static const double _logMaxHeight = 168;
+
+  /// One line, with its leading `[HH:MM:SS]` set apart.
+  ///
+  /// The timestamp is the same width on every line and carries no information
+  /// once you have found the line you want, so it recedes; what remains is the
+  /// message, coloured only when it is an error.
+  Widget _buildLogLine(String line, ColorScheme colorScheme, TextTheme textTheme) {
+    final match = RegExp(r'^\s*(\[[^\]]{1,12}\])\s*').firstMatch(line);
+    final stamp = match?.group(1);
+    final message = match == null ? line : line.substring(match.end);
+    final bool isError = message.toUpperCase().contains('ERROR') ||
+        message.toUpperCase().contains('FAILED');
+
+    final base = textTheme.labelSmall?.mono.copyWith(height: AppType.proseHeight);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (stamp != null) ...[
+            Text(stamp, style: base?.copyWith(color: colorScheme.outline)),
+            const SizedBox(width: 9),
+          ],
+          Expanded(
+            child: Text(
+              message,
+              style: base?.copyWith(
+                color: isError ? colorScheme.error : colorScheme.onSurfaceVariant,
               ),
             ),
           ),
         ],
-      ],
+      ),
+    );
+  }
+
+  Widget _buildFactsPane(
+    BuildContext context,
+    TaskItem task,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    final params = <(String, String)>[
+      (l10n.model, task.modelId),
+      (l10n.started, _formatClock(task.startTime)),
+      (l10n.finished, _formatClock(task.endTime)),
+      if (task.type == TaskType.imageProcess)
+        (
+          l10n.config,
+          '${task.parameters['aspectRatio'] ?? ''} ${task.parameters['imageSize'] ?? ''}'.trim(),
+        ),
+      if (task.imagePaths.isNotEmpty) (l10n.sourceFiles, '${task.imagePaths.length}'),
+      if ((task.parameters['prompt'] ?? '').isNotEmpty)
+        (l10n.prompt, task.parameters['prompt']!),
+    ].where((e) => e.$2.isNotEmpty).toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppSectionLabel(l10n.requestParameters, padding: EdgeInsets.zero),
+          const SizedBox(height: 8),
+          for (final (key, value) in params)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 82,
+                    child: Text(
+                      key,
+                      style: textTheme.labelMedium?.copyWith(color: colorScheme.outline),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      value,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.onSurface),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (task.resultPaths.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            AppSectionLabel(l10n.outputPaths, padding: EdgeInsets.zero),
+            const SizedBox(height: 8),
+            for (final path in task.resultPaths)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  onTap: () => FileUtils.openPath(path),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.image_outlined, size: 14, color: colorScheme.outline),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            p.basename(path),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.mono
+                                .copyWith(color: colorScheme.onSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// `10i`'s action bar. Every one of these was already reachable from the
+  /// kebab; the point of repeating them here is that a row is opened *because*
+  /// something went wrong, and hunting through a menu for the retry is the
+  /// wrong last step of reading why.
+  ///
+  /// 换渠道重试 is not among them: the queue can re-run a task but not re-point
+  /// it at a different channel, and a button that silently retried on the same
+  /// one would be worse than its absence.
+  Widget _buildExpandedActions(
+    BuildContext context,
+    TaskItem task,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final bool canRetry =
+        task.status == TaskStatus.failed || task.status == TaskStatus.cancelled;
+    final String? error = task.logs.isEmpty ? null : task.logs.last;
+
+    return Container(
+      color: colorScheme.surfaceContainerLow,
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (canRetry)
+            AppButton(
+              label: l10n.retryTask,
+              icon: Icons.refresh,
+              size: AppButtonSize.compact,
+              onPressed: () => appState.taskQueue.retryTask(task.id),
+            ),
+          if (task.status == TaskStatus.failed && error != null)
+            AppButton(
+              label: l10n.copyError,
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.compact,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: task.logs.join('\n')));
+                AppSnackBar.success(context, l10n.copiedAll);
+              },
+            ),
+          if (task.resultPaths.isNotEmpty)
+            AppButton(
+              label: l10n.openInFolder,
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.compact,
+              onPressed: () => FileUtils.openPath(task.resultPaths.first),
+            ),
+          AppButton(
+            label: l10n.removeFromList,
+            variant: AppButtonVariant.destructiveOutline,
+            size: AppButtonSize.compact,
+            onPressed: () => appState.taskQueue.removeTask(task.id),
+          ),
+        ],
+      ),
     );
   }
 

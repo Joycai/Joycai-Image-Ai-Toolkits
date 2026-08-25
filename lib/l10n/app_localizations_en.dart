@@ -1819,6 +1819,47 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get goToWorkbench => 'Go to the workbench';
+
+  @override
+  String get copyAll => 'Copy all';
+
+  @override
+  String get copiedAll => 'Copied to clipboard';
+
+  @override
+  String get noLogsYet => 'This task has logged nothing yet';
+
+  @override
+  String get sourceFiles => 'Source files';
+
+  @override
+  String get requestParameters => 'Request parameters';
+
+  @override
+  String get outputPaths => 'Output files';
+
+  @override
+  String get copyError => 'Copy the error';
+
+  @override
+  String taskTotalShort(int count) {
+    return '$count total';
+  }
+
+  @override
+  String get statusShortRunning => 'run';
+
+  @override
+  String get statusShortPending => 'wait';
+
+  @override
+  String get statusShortDone => 'done';
+
+  @override
+  String get statusShortFailed => 'fail';
+
+  @override
   String get setupWizardTitle => 'Welcome Setup';
 
   @override
