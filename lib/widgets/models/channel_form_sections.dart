@@ -4,6 +4,7 @@ import '../../core/constants.dart';
 import '../../core/design_tokens.dart';
 import '../../l10n/app_localizations.dart';
 import '../../screens/prompts/widgets/color_hue_picker.dart';
+import '../app_labelled_field.dart';
 import '../app_button.dart';
 import '../app_dialog.dart';
 
@@ -28,37 +29,6 @@ class ChannelSectionLabel extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
               letterSpacing: AppType.trackedLabelSpacing,
             ),
-      ),
-    );
-  }
-}
-
-/// A caption on its own line above [child], the label form every field in
-/// `15a`/`15c` uses — not Material's floating label notched into the border.
-/// Same shape as the model editor's `_labelled` and the workbench's
-/// `_LabelledField`.
-class ChannelLabelledField extends StatelessWidget {
-  const ChannelLabelledField(this.label, {super.key, required this.child});
-
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
       ),
     );
   }
@@ -93,8 +63,8 @@ class ChannelAppearanceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ChannelLabelledField(
-          l10n.displayName,
+        AppLabelledField(
+          label: l10n.displayName,
           child: TextField(
             controller: nameCtrl,
             onChanged: (_) => onChanged?.call(),
@@ -105,8 +75,8 @@ class ChannelAppearanceSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ChannelLabelledField(
-          l10n.tag,
+        AppLabelledField(
+          label: l10n.tag,
           child: TextField(
             controller: tagCtrl,
             onChanged: (_) => onChanged?.call(),
