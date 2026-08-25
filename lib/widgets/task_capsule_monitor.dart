@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/design_tokens.dart';
 import '../core/app_theme.dart';
 import '../core/responsive.dart';
+import '../core/task_type_glyph.dart';
 import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
@@ -29,19 +30,32 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
   bool _dragging = false;
   bool _pressed = false;
 
+  /// Clearance kept between the capsule and the window edge.
+  static const double _kEdgeInset = 16;
+
   /// Where a flick would come to rest under scroll-style deceleration —
   /// the momentum-projection form (v/1000)·d/(1−d), d = 0.998.
   static double _project(double velocity) => velocity / 1000 * 0.998 / (1 - 0.998);
 
+  /// Where the capsule parks, as (distance from the left, distance from the
+  /// **bottom**).
+  ///
+  /// Anchored by its bottom edge rather than its top, which is what makes
+  /// opening it safe. It opens by growing, it parks near the bottom, and a
+  /// top-anchored capsule therefore grew its task rows and its 查看全部
+  /// straight off the window — the half of the component that is worth opening
+  /// at all. Grown from the bottom edge it moves *up* into the space that is
+  /// actually there, and nothing has to measure how tall it became.
+  ///
+  /// It also sidesteps a coordinate trap: this widget's Stack sits under the
+  /// custom title bar, so `MediaQuery.sizeOf` is taller than the box the
+  /// capsule is actually positioned in, and any arithmetic against the bottom
+  /// edge computed from it is wrong by the height of the chrome.
   void _initPosition(Size screenSize, bool isMobile) {
     if (_offset != null) return;
-    if (isMobile) {
-      // Bottom Center for Mobile
-      _offset = Offset(16, screenSize.height - 160);
-    } else {
-      // Bottom Right for Desktop
-      _offset = Offset(screenSize.width - 320, screenSize.height - 100);
-    }
+    // Bottom centre on mobile (clear of the navigation bar), bottom right on
+    // desktop.
+    _offset = isMobile ? const Offset(16, 160) : Offset(screenSize.width - 320, 100);
   }
 
   @override
@@ -54,10 +68,15 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
 
     _initPosition(screenSize, isMobile);
 
-    // Calculate task stats
+    // Both counts off the same list. The header used to read
+    // `queue.runningCount` — a counter the service moves as it starts and
+    // finishes work — while the rows below it were filtered from the task
+    // statuses. The two agree in normal operation and there is no reason for
+    // the capsule to depend on that: a header saying "0 running" over a list
+    // of two running tasks is the one thing a monitor must never do.
     final pendingCount = queue.queue.where((t) => t.status == TaskStatus.pending).length;
-    final runningCount = queue.runningCount;
     final activeTasks = queue.queue.where((t) => t.status == TaskStatus.processing).toList();
+    final runningCount = activeTasks.length;
 
     // Resident, never unmounted: a floating, shadowed surface blinking into
     // and out of existence was the one overlay in the app that neither slid
@@ -80,9 +99,12 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
       if (count > 0) avgProgress = total / count;
     }
 
-    final capsuleWidth = isMobile ? (screenSize.width - 32) : (_isExpanded ? 300.0 : 180.0);
+    final capsuleWidth = isMobile ? (screenSize.width - 32) : (_isExpanded ? 300.0 : 196.0);
 
     final maxX = screenSize.width - capsuleWidth;
+    // How far up from the bottom it may be dragged. Generous rather than
+    // exact: the capsule's own box is what has to stay on screen, and the
+    // bottom anchor already guarantees that for everything below this point.
     final maxY = screenSize.height - 80;
 
     // AnimatedPositioned with a zero duration while the pointer is down: the
@@ -94,7 +116,7 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
           : AppMotion.durationOf(context, AppMotion.panel),
       curve: AppMotion.enter,
       left: _offset!.dx,
-      top: _offset!.dy,
+      bottom: _offset!.dy,
       child: IgnorePointer(
         ignoring: !visible,
         child: Listener(
@@ -111,7 +133,12 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
         }),
         onPanUpdate: (details) {
           setState(() {
-            final raw = _dragOffset! + details.delta;
+            // dy is a distance from the *bottom*, so a pointer moving down
+            // makes it smaller.
+            final raw = Offset(
+              _dragOffset!.dx + details.delta.dx,
+              _dragOffset!.dy - details.delta.dy,
+            );
             _dragOffset = Offset(
               raw.dx.clamp(0.0 - _kDragSlack, maxX + _kDragSlack),
               raw.dy.clamp(0.0 - _kDragSlack, maxY + _kDragSlack),
@@ -130,17 +157,19 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
           final v = details.velocity.pixelsPerSecond;
           final projected = Offset(
             _offset!.dx + _project(v.dx),
-            _offset!.dy + _project(v.dy),
+            // Same sign flip as the drag: a downward throw lands *closer* to
+            // the bottom edge.
+            _offset!.dy - _project(v.dy),
           );
           setState(() {
             _dragging = false;
             _dragOffset = null;
             final snapX = (projected.dx + capsuleWidth / 2) < screenSize.width / 2
-                ? 16.0
-                : maxX - 16.0;
+                ? _kEdgeInset
+                : maxX - _kEdgeInset;
             _offset = Offset(
               v.distance < 100 ? _offset!.dx : snapX,
-              projected.dy.clamp(16.0, maxY),
+              projected.dy.clamp(_kEdgeInset, maxY),
             );
           });
         },
@@ -258,20 +287,37 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: Row(
                           children: [
-                            Icon(Icons.image_outlined, size: 14, color: colorScheme.outline),
+                            // The task's own kind, not a picture for
+                            // everything: a video generation and a batch
+                            // rename both used to appear here as images, which
+                            // is the one thing a monitor of a mixed queue must
+                            // not do.
+                            Icon(t.type.glyph, size: 14, color: colorScheme.outline),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 t.modelId,
-                                style: Theme.of(context).textTheme.labelMedium,
+                                // Mono, as `12g` sets it and as every other
+                                // model identifier in the app is set. It is a
+                                // name to recognise, not prose.
+                                style: Theme.of(context).textTheme.labelMedium?.mono,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (t.status == TaskStatus.processing)
-                              const SizedBox(
-                                width: 10,
-                                height: 10,
-                                child: CircularProgressIndicator(strokeWidth: 1.5),
+                              SizedBox(
+                                width: 12,
+                                height: 12,
+                                // This task's own progress, where it has any.
+                                // `12g` draws a filled arc per row; an
+                                // indeterminate spinner beside a percentage
+                                // that *is* known says less than the ring the
+                                // header already shows.
+                                child: CircularProgressIndicator(
+                                  value: t.progress,
+                                  strokeWidth: 2,
+                                  backgroundColor: colorScheme.surfaceContainer,
+                                ),
                               ),
                           ],
                         ),

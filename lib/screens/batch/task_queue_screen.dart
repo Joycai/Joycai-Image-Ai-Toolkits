@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../../core/task_type_glyph.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
@@ -1162,13 +1164,7 @@ class _TaskCardState extends State<_TaskCard> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  IconData _typeIcon(TaskType type) => switch (type) {
-        TaskType.imageProcess => Icons.image_outlined,
-        TaskType.imageDownload => Icons.cloud_download_outlined,
-        TaskType.promptRefine => Icons.auto_fix_high,
-        TaskType.aiRename => Icons.drive_file_rename_outline,
-        TaskType.videoGenerate => Icons.movie_outlined,
-      };
+  IconData _typeIcon(TaskType type) => type.glyph;
 
   String _taskDisplayName(TaskItem task) {
     if (task.imagePaths.isNotEmpty) {

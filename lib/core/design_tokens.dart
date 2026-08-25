@@ -122,6 +122,40 @@ class AppAlpha {
   static const double disabled = 0.38;
 }
 
+/// The one dark ground the app pins *over* its content, and what reads on it.
+///
+/// Tooltips (`10e`) and toasts (`E1 12i`) are the two things in this app that
+/// are not surfaces within the page but labels laid on top of it, and both
+/// specs say the same thing about them: light and dark take the **same**
+/// ground. No scheme role can do that — `inverseSurface` is the idiomatic
+/// choice and it flips with the brightness — so the ink is a literal, and the
+/// hues that sit on it have to be pinned alongside it or they would flip while
+/// it did not.
+///
+/// A toast painted in the semantic *containers* instead — a pale green slab,
+/// then a pale amber one — is what this replaced. Four differently coloured
+/// blocks floating over the page read as four unrelated components; one ground
+/// with a coloured glyph reads as one component in four states, which is what
+/// it is.
+class AppOverlay {
+  /// The ground. `10e` pins it at `rgba(23,28,59,.94)`.
+  static const Color ink = Color(0xF0171C3B);
+
+  /// Labels on [ink]. Not pure white: at 94% it stops vibrating against a
+  /// near-black at small sizes, which is the size these labels are.
+  static const Color onInk = Color(0xF0FFFFFF);
+
+  /// Red on [ink].
+  ///
+  /// The one state hue [AppSemanticColors] has no field for — everywhere else
+  /// the app takes red from [ColorScheme.error], which is tone 40 in light
+  /// mode and would all but vanish here. Success, info and warning need no
+  /// equivalent: [AppSemanticColors.dark] already holds them at exactly the
+  /// tones `12i` draws, and they are correct on this ground whatever the app's
+  /// brightness.
+  static const Color danger = Color(0xFFE26355);
+}
+
 /// Type measurements the scale in [buildAppTheme] does not carry.
 class AppType {
   /// Letter spacing for the small tracked caption that names a group of
@@ -272,6 +306,16 @@ extension AppAccent on ColorScheme {
   /// seed in both brightnesses rather than trusting that.
   Color get onAccentTint =>
       brightness == Brightness.light ? onPrimaryFixedVariant : onPrimaryContainer;
+
+  /// The seed's own colour, at a tone that reads on [AppOverlay.ink] — a
+  /// toast's action label.
+  ///
+  /// `primaryFixedDim` for the reason the table above already establishes: the
+  /// `Fixed` roles are pinned by definition and do not move with the
+  /// brightness, and this one is tone 80. That is exactly what a fixed dark
+  /// ground needs, and it is the *only* accent role that stays put while the
+  /// ground it sits on does.
+  Color get accentOnOverlay => primaryFixedDim;
 }
 
 /// The shadows a floating surface is allowed to cast.
