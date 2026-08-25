@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -151,7 +150,7 @@ class MidjourneyProtocol implements ChatProtocol {
 
     final client = config.createClient();
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     try {
       final endpoint = isBlend
           ? Uri.parse('$baseUrl/mj/submit/blend')

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../state/app_state.dart';
@@ -85,7 +84,7 @@ class XaiImagesProtocol implements ImageGenProtocol {
     }
 
     final appState = AppState();
-    File? debugFile;
+    LLMDebugLog? debugFile;
     if (appState.enableApiDebug) {
       debugFile = await LLMDebugLogger.startLog(config.modelId, 'xAI (Image ${isEdit ? 'Edit' : 'Generate'})', {
         'url': redactUrl(url),

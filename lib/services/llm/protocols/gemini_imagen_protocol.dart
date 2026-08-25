@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -45,7 +44,7 @@ class GeminiImagenProtocol implements ImageGenProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleImagen (Predict)', {
           'url': redactUrl(url),

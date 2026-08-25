@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -53,7 +52,7 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       http.Response response;
 
       if (isEdit) {

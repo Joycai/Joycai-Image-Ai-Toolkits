@@ -1,8 +1,25 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
 import '../../core/app_paths.dart';
+
+/// One open debug log: the file, plus when the request that owns it started.
+///
+/// A handle rather than a bare [File] so [LLMDebugLogger.finish] can report
+/// how long the request actually took. That number is not a nicety — the
+/// timeout investigation this logger exists for could only be run by
+/// subtracting the file's `Timestamp:` header from its mtime by hand, and
+/// three of the seven requests in that session turned out to have completed
+/// *after* the client had already given up on them
+/// (docs/plans/2026-08-assistant-timeout.md).
+class LLMDebugLog {
+  final File file;
+  final DateTime startedAt;
+
+  const LLMDebugLog(this.file, this.startedAt);
+}
 
 class LLMDebugLogger {
   static Future<String> _getLogDir() async {
@@ -14,41 +31,73 @@ class LLMDebugLogger {
     return logDir.path;
   }
 
-  static Future<File?> startLog(String modelId, String type, Map<String, dynamic> request) async {
+  static Future<LLMDebugLog?> startLog(
+      String modelId, String type, Map<String, dynamic> request) async {
     try {
       final dirPath = await _getLogDir();
       
       // Auto-cleanup: remove logs older than 7 days or keep only latest 50
       _cleanupOldLogs(dirPath);
 
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'log_${timestamp}_${modelId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.txt';
+      final startedAt = DateTime.now();
+      final fileName = 'log_${startedAt.millisecondsSinceEpoch}_'
+          '${modelId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.txt';
       final file = File(p.join(dirPath, fileName));
 
       final buffer = StringBuffer();
       buffer.writeln('=== API DEBUG LOG ===');
-      buffer.writeln('Timestamp: ${DateTime.now().toIso8601String()}');
+      buffer.writeln('Timestamp: ${startedAt.toIso8601String()}');
       buffer.writeln('Model: $modelId');
       buffer.writeln('Type: $type');
+      // What actually goes on the wire, before any of it is truncated for
+      // readability below. Base64 attachments are invisible in a truncated
+      // log, and "this request is 8 MB" is the single most useful line in it
+      // — an 8 MB upload to a distant relay is tens of seconds of latency
+      // that looks, from the outside, exactly like a slow model.
+      buffer.writeln('Body bytes: ${_bodyBytes(request['body'])}');
       buffer.writeln('--- REQUEST ---');
-      
+
       // Mask API Key if present in headers or body
       final sanitizedRequest = _sanitize(request);
       buffer.writeln(sanitizedRequest);
       buffer.writeln('--- RESPONSE ---');
-      
+
       await file.writeAsString(buffer.toString());
-      return file;
+      return LLMDebugLog(file, startedAt);
     } catch (_) {
       return null;
     }
   }
 
-  static Future<void> appendLine(File? file, String line) async {
-    if (file == null) return;
+  /// Serialized size of [body], or `unknown` when it cannot be encoded.
+  ///
+  /// Runs only behind the API-debug toggle, so the extra encode is paid for
+  /// by someone who asked to see exactly this.
+  static String _bodyBytes(Object? body) {
+    if (body == null) return '0';
     try {
-      await file.writeAsString('$line\n', mode: FileMode.append);
+      return utf8.encode(jsonEncode(body)).length.toString();
+    } catch (_) {
+      return 'unknown';
+    }
+  }
+
+  static Future<void> appendLine(LLMDebugLog? log, String line) async {
+    if (log == null) return;
+    try {
+      await log.file.writeAsString('$line\n', mode: FileMode.append);
     } catch (_) {}
+  }
+
+  /// Closes [log] with how long the whole request took.
+  ///
+  /// Worth a line of its own because the interesting case is when it exceeds
+  /// the caller's deadline: the response still arrives, is still billed, and
+  /// is still written here — long after whoever was waiting for it gave up.
+  static Future<void> finish(LLMDebugLog? log) async {
+    if (log == null) return;
+    final elapsed = DateTime.now().difference(log.startedAt);
+    await appendLine(log, 'Elapsed: ${elapsed.inMilliseconds} ms');
   }
 
   static void _cleanupOldLogs(String dirPath) {
@@ -87,15 +136,35 @@ class LLMDebugLogger {
   /// helpers only exist where someone remembered to write one.
   static const int _maxStringChars = 2048;
 
+  /// Header and payload keys whose value is a credential.
+  ///
+  /// Matched **exactly** (lower-cased), never by substring. The old
+  /// `contains('token')` rule masked `max_tokens`, `budget_tokens` and every
+  /// usage counter in the file — which are the numbers someone opens this log
+  /// to read. `contains('key')` had the same problem waiting for any payload
+  /// field named `keywords`.
+  static const Set<String> _secretKeys = {
+    'key',
+    'apikey',
+    'api_key',
+    'api-key',
+    'x-api-key',
+    'x-goog-api-key',
+    'authorization',
+    'proxy-authorization',
+    'token',
+    'access_token',
+    'refresh_token',
+    'secret',
+    'client_secret',
+    'password',
+    'passwd',
+  };
+
   static dynamic _sanitize(dynamic obj) {
     if (obj is Map) {
       return obj.map((k, v) {
-        final keyStr = k.toString().toLowerCase();
-        // Mask common sensitive header and payload keys
-        if (keyStr.contains('key') ||
-            keyStr.contains('api-key') ||
-            keyStr.contains('authorization') ||
-            keyStr.contains('token')) {
+        if (_secretKeys.contains(k.toString().toLowerCase())) {
           return MapEntry(k, '***MASKED***');
         }
         return MapEntry(k, _sanitize(v));

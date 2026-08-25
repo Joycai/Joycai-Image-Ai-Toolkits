@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import '../../../core/safety_settings.dart';
 import '../../../state/app_state.dart';
@@ -47,7 +46,7 @@ class GeminiVeoProtocol implements VideoJobProtocol {
     final client = config.createClient();
     try {
       final appState = AppState();
-      File? debugFile;
+      LLMDebugLog? debugFile;
       if (appState.enableApiDebug) {
         debugFile = await LLMDebugLogger.startLog(config.modelId, 'GoogleVeo (LRO Start)', {
           'url': redactUrl(url),
