@@ -131,6 +131,49 @@ extension AppStateData on AppState {
     await refreshDataCache();
   }
 
+  /// Moves one channel within the rail. [newIndex] is the destination *after*
+  /// the row is lifted out — the convention of `onReorderItem`, which does
+  /// that adjustment for the caller (the older `onReorder` did not, and every
+  /// call site had to remember to subtract one when moving down).
+  ///
+  /// Optimistic: the in-memory list is reordered and published first, because
+  /// the row is already under the user's finger and waiting for a database
+  /// round-trip would drop it back to its old slot for a frame. A failed
+  /// write reloads from storage, undoing the optimistic move, and returns
+  /// false so the caller can say so.
+  ///
+  /// Returns true when the arrangement is stored — including the no-op case
+  /// where the row was dropped back where it started, which writes nothing.
+  Future<bool> reorderChannels(int oldIndex, int newIndex) async {
+    final reordered = [...allChannels];
+    if (oldIndex == newIndex ||
+        oldIndex < 0 ||
+        oldIndex >= reordered.length ||
+        newIndex < 0 ||
+        newIndex >= reordered.length) {
+      return true;
+    }
+
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+    _cacheData(
+      models: allModels,
+      channels: reordered,
+      pricingGroups: allPricingGroups,
+    );
+    notify();
+
+    try {
+      await _db.updateChannelOrder([
+        for (final c in reordered)
+          if (c.id != null) c.id!,
+      ]);
+      return true;
+    } catch (_) {
+      await refreshDataCache();
+      return false;
+    }
+  }
+
   Future<int> addModel(Map<String, dynamic> model) async {
     final id = await _db.addModel(model);
     await refreshDataCache();

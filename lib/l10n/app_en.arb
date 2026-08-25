@@ -666,6 +666,8 @@
       }
     }
   },
+  "channelReorderHandleTooltip": "Drag to reorder",
+  "channelOrderSaveFailed": "Could not save the order; the previous one is back.",
   "prompts": "Prompts",
   "promptLibrary": "Prompt Library",
   "newPrompt": "New Prompt",

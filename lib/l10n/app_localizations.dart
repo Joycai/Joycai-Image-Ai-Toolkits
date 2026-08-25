@@ -2663,6 +2663,18 @@ abstract class AppLocalizations {
   /// **'“{name}” is unavailable; running on Auto.'**
   String protocolStaleTooltip(String name);
 
+  /// No description provided for @channelReorderHandleTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get channelReorderHandleTooltip;
+
+  /// No description provided for @channelOrderSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the order; the previous one is back.'**
+  String get channelOrderSaveFailed;
+
   /// No description provided for @prompts.
   ///
   /// In en, this message translates to:

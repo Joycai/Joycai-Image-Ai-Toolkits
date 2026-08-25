@@ -504,6 +504,8 @@
   "protocolAsyncQueueNote": "送信後はタスクキューでポーリングされ、生成中はキャンセルできます。",
   "protocolPinStale": "選択は無効",
   "protocolStaleTooltip": "以前の選択「{name}」は利用できないため、自動で実行しています。",
+  "channelReorderHandleTooltip": "ドラッグして並べ替え",
+  "channelOrderSaveFailed": "並び順を保存できませんでした。元の順序に戻しました",
   "prompts": "プロンプト",
   "promptLibrary": "プロンプトライブラリ",
   "newPrompt": "新しいプロンプト",

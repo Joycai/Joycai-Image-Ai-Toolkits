@@ -325,5 +325,7 @@
   "protocolStreamIgnoredAsync": "非同步任務不使用串流傳輸，此項已忽略",
   "protocolAsyncQueueNote": "提交後進入任務佇列輪詢，生成中可取消。",
   "protocolPinStale": "點單已失效",
-  "protocolStaleTooltip": "原選擇「{name}」不可用，正在按自動運行。"
+  "protocolStaleTooltip": "原選擇「{name}」不可用，正在按自動運行。",
+  "channelReorderHandleTooltip": "拖動調整順序",
+  "channelOrderSaveFailed": "順序未能儲存，已恢復原順序"
 }

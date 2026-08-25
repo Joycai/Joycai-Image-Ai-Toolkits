@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
@@ -25,10 +27,29 @@ import '../../widgets/models/channel_edit_dialog.dart';
 import '../../widgets/models/channel_wizard_dialog.dart';
 import '../../widgets/models/discovery_dialog.dart';
 import '../../widgets/models/model_edit_dialog.dart';
+import '../../widgets/app_snackbar.dart';
 import '../../widgets/models/wire_protocol_labels.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/pricing_group_manager.dart';
 import '../../widgets/scroll_edge_fade.dart';
+
+/// [ReorderableDelayedDragStartListener] at the spec's 300 ms instead of the
+/// framework's 500 ms long-press timeout: half a second of holding still
+/// before a row lifts reads as the app not having noticed the touch.
+class _ChannelLongPressDragListener extends ReorderableDelayedDragStartListener {
+  const _ChannelLongPressDragListener({
+    super.key,
+    required super.index,
+    required super.child,
+  });
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() =>
+      DelayedMultiDragGestureRecognizer(
+        delay: const Duration(milliseconds: 300),
+        debugOwner: this,
+      );
+}
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
@@ -48,6 +69,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// their own search, and the grid a kind filter besides. Plain lowercase
   /// substring match — the lists are at most a few hundred rows.
   String _channelQuery = '';
+
+  /// Which channel row the pointer is over, or null. Drives the reveal of the
+  /// drag handle (spec 19a, 方案乙): the rail is a navigation surface first, so
+  /// the affordance for a low-frequency action only exists under the cursor.
+  int? _hoveredChannelId;
   String _modelQuery = '';
 
   /// The selected kind chip, a [ModelTag] string value; null is "all".
@@ -281,11 +307,29 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     style: TextStyle(color: colorScheme.outline),
                   ),
                 )
-              : ListView.builder(
+              : ReorderableListView.builder(
                   padding: const EdgeInsets.all(8),
                   itemCount: visible.length,
-                  itemBuilder: (context, index) =>
-                      _buildChannelRow(l10n, appState, visible[index]),
+                  // Handles are ours (hover-revealed, whole row draggable),
+                  // not the framework's trailing grips.
+                  buildDefaultDragHandles: false,
+                  onReorderItem: (oldIndex, newIndex) =>
+                      _reorderChannels(l10n, appState, oldIndex, newIndex),
+                  onReorderStart: (_) {
+                    if (_touchReorder) HapticFeedback.selectionClick();
+                  },
+                  proxyDecorator: _channelDragProxy,
+                  itemBuilder: (context, index) => _buildChannelRow(
+                    l10n,
+                    appState,
+                    visible[index],
+                    index: index,
+                    // Dragging inside a filtered list has no meaning — the
+                    // position the user sees is not the position in the
+                    // stored order — and a single channel has nothing to be
+                    // reordered against.
+                    draggable: query.isEmpty && visible.length > 1,
+                  ),
                 ),
         ),
         // The fee-group entry `14a` pins under the list: pricing lives a
@@ -327,13 +371,20 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// and a mono second line pairing the model count with the vendor id — the
   /// two facts `14a` surfaces so a row answers "which endpoint, how big"
   /// without being opened.
-  Widget _buildChannelRow(AppLocalizations l10n, AppState appState, LLMChannel channel) {
+  Widget _buildChannelRow(
+    AppLocalizations l10n,
+    AppState appState,
+    LLMChannel channel, {
+    required int index,
+    required bool draggable,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isSelected = channel.id == _selectedChannelId;
     final models = appState.getModelsForChannel(channel.id);
+    final showHandle = draggable && _hoveredChannelId == channel.id;
 
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
         color: isSelected ? colorScheme.primary.withValues(alpha: AppAlpha.tint) : Colors.transparent,
@@ -346,7 +397,42 @@ class _ModelsScreenState extends State<ModelsScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => setState(() => _selectedChannelId = channel.id),
-          child: Padding(
+          // Hover both reveals the handle and says the row can be picked up.
+          onHover: draggable
+              ? (hovering) => setState(
+                  () => _hoveredChannelId = hovering ? channel.id : null)
+              : null,
+          mouseCursor: draggable ? SystemMouseCursors.grab : null,
+          child: Stack(
+            children: [
+              // The handle is painted *over* the row's existing left padding
+              // rather than taking a column of its own: revealing it must not
+              // move the avatar, the name or the subline by a pixel, which is
+              // the whole argument for 方案乙 over the always-on grip.
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 12,
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    opacity: showHandle ? 1 : 0,
+                    duration: const Duration(milliseconds: 120),
+                    curve: Curves.linear,
+                    child: Center(
+                      child: Tooltip(
+                        message: l10n.channelReorderHandleTooltip,
+                        child: Icon(
+                          Icons.drag_indicator,
+                          size: 12,
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
               children: [
@@ -399,9 +485,80 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ],
             ),
           ),
+            ],
+          ),
         ),
       ),
     );
+
+    if (!draggable) return KeyedSubtree(key: ValueKey(channel.id), child: row);
+    // Whole-row drag, so the pointer never has to find a 12px target. On a
+    // touch device there is no hover to reveal the handle and no cursor to
+    // change, so the gesture becomes an explicit long press instead.
+    return _touchReorder
+        ? _ChannelLongPressDragListener(
+            key: ValueKey(channel.id), index: index, child: row)
+        : ReorderableDragStartListener(
+            key: ValueKey(channel.id), index: index, child: row);
+  }
+
+  /// Whether reordering is driven by long press rather than by press-and-move.
+  ///
+  /// Keyed off the platform rather than the last input event: a tablet running
+  /// the two-pane layout is still a touch device, and an immediate drag there
+  /// would fight every scroll of the rail.
+  bool get _touchReorder {
+    switch (Theme.of(context).platform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /// The lifted row: the app's own elevation and a primary ring, ramped in
+  /// over the pick-up so the card rises rather than appearing.
+  Widget _channelDragProxy(Widget child, int index, Animation<double> animation) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final t = Curves.easeOutCubic.transform(animation.value);
+        return Transform.scale(
+          scale: 1 + 0.02 * t,
+          child: Material(
+            // Opaque, unlike the resting row: an unselected row paints no
+            // background of its own, and a transparent card in flight would
+            // show the rows sliding underneath it.
+            color: colorScheme.surface,
+            elevation: 6 * t,
+            shadowColor: colorScheme.shadow,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              side: BorderSide(
+                color: colorScheme.primary.withValues(alpha: 0.35 + 0.65 * t),
+              ),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  /// Persist a drag, and say so only when it fails — a successful reorder is
+  /// already reported by the row being where the user dropped it.
+  Future<void> _reorderChannels(
+    AppLocalizations l10n,
+    AppState appState,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final ok = await appState.reorderChannels(oldIndex, newIndex);
+    if (!ok && mounted) {
+      AppSnackBar.error(context, l10n.channelOrderSaveFailed);
+    }
   }
 
   void _showFeeGroupManager(AppLocalizations l10n) {
@@ -1072,13 +1229,21 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   Widget _buildChannelsMobileTab(AppLocalizations l10n, AppState appState) {
+    // Same arrangement, same storage — only the gesture differs: no hover to
+    // reveal a handle on a phone, so a row is picked up by holding it.
+    final draggable = appState.allChannels.length > 1;
     return Scaffold(
-      body: ListView.builder(
+      body: ReorderableListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: appState.allChannels.length,
+        buildDefaultDragHandles: false,
+        onReorderItem: (oldIndex, newIndex) =>
+            _reorderChannels(l10n, appState, oldIndex, newIndex),
+        onReorderStart: (_) => HapticFeedback.selectionClick(),
+        proxyDecorator: _channelDragProxy,
         itemBuilder: (context, index) {
           final channel = appState.allChannels[index];
-          return Card(
+          final card = Card(
             child: ListTile(
               leading: ChannelAvatar(channel, size: 32),
               title: Text(channel.displayName),
@@ -1094,6 +1259,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showChannelDialog(l10n, appState, channel: channel),
             ),
+          );
+          if (!draggable) {
+            return KeyedSubtree(key: ValueKey(channel.id), child: card);
+          }
+          return _ChannelLongPressDragListener(
+            key: ValueKey(channel.id),
+            index: index,
+            child: card,
           );
         },
       ),
