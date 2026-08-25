@@ -551,7 +551,7 @@ class OpenAIChatProtocol implements ChatProtocol {
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
-          await LLMDebugLogger.appendLine(debugFile, line);
+          await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
         final dataLine = sseDataPayload(line);
         if (dataLine == null) continue;

@@ -917,7 +917,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       await for (final line
           in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
         if (debugFile != null && line.isNotEmpty) {
-          await LLMDebugLogger.appendLine(debugFile, line);
+          await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
         // ④ is a *named*-event stream: every payload line is preceded by an
         // `event:` line naming the same type the JSON repeats in its `type`

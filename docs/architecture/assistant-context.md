@@ -25,6 +25,19 @@ knowledge reads before them. Layer 2 folds everything before that boundary into
 a summary. The gate is what keeps a single turn from overflowing on its own,
 because neither layer can help mid-loop (see *Accepted limits*).
 
+**Layer 1 runs two windows, not one.** Image attachments leave after
+`_keepAttachmentTurns` (2) where everything else gets `_keepRecentTurns` (6),
+because they are not the same kind of cost. A knowledge read costs its
+characters once; an attachment costs a re-upload and a fresh image-token bill
+on *every request of every turn* it survives into — a dozen or more times per
+turn in an agent loop, which is how one session came to upload 55 MB
+(`docs/plans/2026-08-assistant-timeout.md`). Eliding early is cheap precisely
+because it is reversible: liveness is derived (invariant 4), so the model can
+call `view_image` again and pay for the picture only in the turn that needs it.
+
+Both boundaries come from `_boundaryOf`, and **`_elide` and `_liveViewedPaths`
+must read the same one** — see invariant 4.
+
 Per turn, in order: build the system prompt once → warn if it is oversized →
 persist → maybe compact → loop { trim, request, calibrate, execute tools }.
 
@@ -140,6 +153,14 @@ nothing throws, the numbers just quietly stop meaning what they claim.
    inside the recent window — once layer 1 elides it (or compaction folds it),
    the model may view the image again. `viewedImagePaths` survives only as the
    UI's "has been looked at" badge and gates nothing the model asks for.
+   **`_elide` and `_liveViewedPaths` must use the same boundary**
+   (`_attachmentBoundary`, not `_recentBoundary`) — they are two halves of one
+   rule: one decides whether the attachment is still in the request, the other
+   whether the model may ask for it again. Point them at different windows and
+   the model is refused a re-view of a picture it can no longer see, which is
+   this deadlock rebuilt out of two correct-looking halves. Pinned directly by
+   *liveness agrees with what is actually sent, at every distance* in
+   `optimizer_image_liveness_test.dart`.
 5. **Compaction measures the trimmed history**, not the raw one, or layer 1 is
    pointless.
 6. **The unlimited budget is a constant, not derived.** `0 × ratio == 0`, so a
@@ -193,6 +214,11 @@ nothing throws, the numbers just quietly stop meaning what they claim.
 - **Offset-based cache keys / range-containment checks.** Only needed if page
   size were dynamic; invariant 3 removes the dynamism instead, at the cost of a
   20K file paging as 3 pages rather than 2. No new correctness surface.
+- **One window for everything layer 1 protects.** Attachments and knowledge
+  reads were on the same six-turn boundary until 2026-08. It reads as
+  symmetry, but the two costs are not comparable — see *The shape* — and the
+  symmetric version meant every request of a six-turn conversation re-uploaded
+  every picture the session had ever looked at.
 - **A `Set` of read pages.** This was the pre-3.5 implementation and it
   deadlocked: nothing invalidated the key when `_elide` or `_maybeCompact`
   removed the content it pointed at, so the model was told "already in the
@@ -217,7 +243,7 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/optimizer_kb_liveness_test.dart` | the three deadlock scenarios (elided / compacted / in-flight) |
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
-| `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted |
+| `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
 | `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
 
 **Not covered end-to-end:** the model dialog's tri-state control and the

@@ -165,7 +165,7 @@ class GeminiChatProtocol implements ChatProtocol {
         if (line.isEmpty) continue;
 
         if (debugFile != null) {
-          await LLMDebugLogger.appendLine(debugFile, line);
+          await LLMDebugLogger.appendStreamLine(debugFile, line);
         }
 
         yield* Stream.fromIterable(geminiChunksFromSseLine(line, logger: logger));

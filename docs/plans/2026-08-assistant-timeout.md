@@ -89,12 +89,31 @@ agent 的 tool loop **每一轮**都完整重传这 7.97 MB。7 轮 = 55.8 MB。
 
 ## 3. PR2：会话管理调优
 
-不是超时的成因，是同一次取证里顺带看到的账：
+不是超时的成因，是同一次取证里顺带看到的账。
 
-1. **附件独立的、更短的保留窗口。** `_keepRecentTurns = 6` 对文本合适，对图片太长——模型基于图片写出过 `submit_prompt` 之后就不该再重传。`_elide` 和 `_liveViewedPaths` **必须用同一个边界**，否则 `assistant-context.md` 里那个「指向已不存在的附件」的死锁会原样复活。
-2. **`_attachmentChars = 2000` 低估了真实成本**（三张图实际约 6850 token）。影响是 calibrate 的 ratio 偏保守，方向安全，所以不急。
-3. **流式 debug log 缓冲落盘。** 现在每行一次 `writeAsString(append)`，即每 chunk 一次 open/write/close。PR1 把 agent 切到流式之后这条才真正开始疼。
-4. 同步更新 `docs/architecture/assistant-context.md`。
+1. **附件独立的、更短的保留窗口**：`_keepAttachmentTurns = 2`，其它仍是
+   `_keepRecentTurns = 6`。两种成本不可比——知识库读取的字符只付一次，附件是
+   **每一轮的每一个请求**都重新上传、重新计图片 token。提前 elide 是廉价的，
+   因为它可逆：liveness 是推导出来的，模型可以再 `view_image`，只在真正需要的
+   那一轮付这张图的钱。
+
+   `_elide` 和 `_liveViewedPaths` **必须读同一个边界**。它们是一条规则的两半：
+   一半决定附件还在不在请求里，另一半决定模型能不能再要一次。指向不同的窗口，
+   就是用两个各自看起来正确的一半重建出那个死锁。这条由
+   `optimizer_image_liveness_test.dart` 里的「liveness agrees with what is
+   actually sent, at every distance」直接钉住。
+
+2. **`_attachmentChars` 2000 → 3300**（2200 token × `charsPerToken` 1.5）。旧值
+   约等于 1300 token，只有真实值的一半。**单个常数之所以站得住，是因为 PR1 的
+   `viewOnlyMaxLongEdge` 给输入封了顶**——在那之前附件可以是任意大小，任何常数
+   都没有意义。
+
+3. **流式 debug log 缓冲落盘**：新增 `appendStreamLine`（64 KB 阈值），`finish`
+   负责冲刷。`appendLine` **保持直写**——有几条协议记完响应就不调 `finish`，缓
+   冲了不冲刷的输出等于凭空消失。
+
+4. 同步更新 `docs/architecture/assistant-context.md`：两个窗口写进 *The shape*，
+   同边界要求写进不变量 4，「一个窗口管所有」进 *Rejected*。
 
 ---
 

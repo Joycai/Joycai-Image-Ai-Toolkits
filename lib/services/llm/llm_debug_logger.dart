@@ -18,7 +18,18 @@ class LLMDebugLog {
   final File file;
   final DateTime startedAt;
 
-  const LLMDebugLog(this.file, this.startedAt);
+  LLMDebugLog(this.file, this.startedAt);
+
+  /// Unwritten [LLMDebugLogger.appendStreamLine] output.
+  ///
+  /// A streamed answer arrives as hundreds of SSE lines, and writing each one
+  /// was an open/write/close of its own — cheap enough when almost nothing
+  /// streamed, and squarely on the hot path now that the agent loops do
+  /// (docs/plans/2026-08-assistant-timeout.md). Only the stream path buffers:
+  /// [LLMDebugLogger.appendLine] still writes through, because several
+  /// protocols log a response and never call [LLMDebugLogger.finish], and
+  /// buffered output they never flush is output that silently vanishes.
+  final StringBuffer pending = StringBuffer();
 }
 
 class LLMDebugLogger {
@@ -85,7 +96,36 @@ class LLMDebugLogger {
   static Future<void> appendLine(LLMDebugLog? log, String line) async {
     if (log == null) return;
     try {
+      await _flush(log);
       await log.file.writeAsString('$line\n', mode: FileMode.append);
+    } catch (_) {}
+  }
+
+  /// Buffer size above which [appendStreamLine] writes through.
+  ///
+  /// Large enough that a whole streamed answer is a handful of writes rather
+  /// than hundreds, small enough that a crash mid-stream loses a readable
+  /// tail rather than the whole response.
+  static const int _flushThresholdChars = 64 * 1024;
+
+  /// [appendLine] for lines arriving one SSE event at a time.
+  ///
+  /// Buffered, so the caller **must** end with [finish] — every SSE loop does,
+  /// in a `finally`.
+  static Future<void> appendStreamLine(LLMDebugLog? log, String line) async {
+    if (log == null) return;
+    log.pending.writeln(line);
+    if (log.pending.length >= _flushThresholdChars) {
+      await _flush(log);
+    }
+  }
+
+  static Future<void> _flush(LLMDebugLog log) async {
+    if (log.pending.isEmpty) return;
+    final text = log.pending.toString();
+    log.pending.clear();
+    try {
+      await log.file.writeAsString(text, mode: FileMode.append);
     } catch (_) {}
   }
 
@@ -94,9 +134,13 @@ class LLMDebugLogger {
   /// Worth a line of its own because the interesting case is when it exceeds
   /// the caller's deadline: the response still arrives, is still billed, and
   /// is still written here — long after whoever was waiting for it gave up.
+  /// Also flushes whatever [appendStreamLine] has buffered, which is why
+  /// every streaming path calls it in a `finally`.
   static Future<void> finish(LLMDebugLog? log) async {
     if (log == null) return;
     final elapsed = DateTime.now().difference(log.startedAt);
+    // appendLine flushes first, so the Elapsed line lands after the body
+    // rather than in front of it.
     await appendLine(log, 'Elapsed: ${elapsed.inMilliseconds} ms');
   }
 
