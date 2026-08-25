@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'llm/llm_dispatcher.dart';
 import 'llm/llm_service.dart';
 import 'llm/llm_types.dart';
 
@@ -103,6 +104,10 @@ class SubAgentRunner {
               options: {
                 'retryCount': 2,
                 'usageTag': ?usageTag,
+                // A delegate returns a research note, which is long for the
+                // same reason the parent's prompt is. See
+                // [expectedOutputTokensKey].
+                expectedOutputTokensKey: 8192,
               },
               tools: tools,
               contextId: contextId,

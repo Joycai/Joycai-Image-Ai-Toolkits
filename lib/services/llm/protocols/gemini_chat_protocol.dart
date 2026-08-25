@@ -94,20 +94,24 @@ class GeminiChatProtocol implements ChatProtocol {
     }
   }
 
-  /// ③ delivers a `functionCall` part whole inside a streamed candidate, so
-  /// this is a smaller job than ①'s — but nothing needs it yet, and claiming
-  /// the capability without the accumulator would answer tool-bearing
-  /// requests as though no tools existed.
+  /// ③ needs no accumulator at all: a `functionCall` arrives whole inside a
+  /// streamed candidate part, and [geminiChunksFromSseLine] — the *same*
+  /// parser the synchronous path uses — already reads it, `thoughtSignature`
+  /// included. Declaring tools on the stream was the only missing piece.
+  ///
+  /// `thoughtSignature` is ③'s entire replay obligation (③ answers a
+  /// tool-calling turn replayed without it with `INVALID_ARGUMENT`), and it
+  /// rides on the [LLMToolCall] itself rather than in a separate block group
+  /// the way ④'s thinking does — so there is nothing here for the streaming
+  /// path to drop.
   @override
-  bool get streamingDeclaresTools => false;
+  bool get streamingDeclaresTools => true;
 
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
-    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
-    // routes a tool-bearing request to this surface.
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
@@ -117,7 +121,7 @@ class GeminiChatProtocol implements ChatProtocol {
     logger?.call('Starting Google GenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareGooglePayload(history, options, config.endpoint,
-        emitsImages: target.model.capabilities.isImageGenerator);
+        tools: tools, emitsImages: target.model.capabilities.isImageGenerator);
     logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
 
     final request = http.Request('POST', url);
