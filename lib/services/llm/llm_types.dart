@@ -507,14 +507,40 @@ class LLMResponseChunk {
 
   /// One whole tool call. Emitted by the Google chunk parser, which is shared
   /// between that family's streaming and synchronous paths — the synchronous
-  /// one reassembles [LLMResponse.toolCalls] from these.
+  /// one reassembles [LLMResponse.toolCalls] from these — and by ④'s stream,
+  /// which declares tools and assembles the calls itself.
   ///
-  /// Always a complete call, never a fragment: no protocol declares tools on
-  /// the streaming surface (see [ChatProtocol.generateStream]), so nothing
-  /// here has to survive being split across chunks.
+  /// **Always a complete call, never a fragment.** ④ delivers tool arguments
+  /// as `input_json_delta` fragments that are not valid JSON until the last
+  /// one, so the accumulator lives inside the protocol and a call is emitted
+  /// only at `content_block_stop`. Consumers may assume they can act on
+  /// whatever arrives here.
   final LLMToolCall? toolCallPart;
+
+  /// ④'s thinking blocks, verbatim and in order, emitted once at stream end.
+  ///
+  /// Not derivable from [reasoningPart]: that is display text, and the replay
+  /// obligation is over the whole sealed block (including
+  /// `redacted_thinking`, which has no text at all). A tool-calling turn
+  /// replayed without them is an incomplete thinking history, which ④
+  /// silently strips — thinking stops, billing continues — rather than
+  /// rejecting. Only reachable now that the streaming surface can carry a
+  /// tool call, which is the only turn whose replay needs them.
+  final List<Map<String, dynamic>>? rawThinkingBlocks;
+
+  /// The seal over the last thinking block, for [LLMMessage.reasoningSignature].
+  final String? reasoningSignature;
 
   final bool isDone;
 
-  LLMResponseChunk({this.textPart, this.reasoningPart, this.imagePart, this.metadata, this.toolCallPart, this.isDone = false});
+  LLMResponseChunk({
+    this.textPart,
+    this.reasoningPart,
+    this.imagePart,
+    this.metadata,
+    this.toolCallPart,
+    this.rawThinkingBlocks,
+    this.reasoningSignature,
+    this.isDone = false,
+  });
 }

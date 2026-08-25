@@ -203,10 +203,32 @@ class LLMDispatcher {
   // Streaming generation
   // ---------------------------------------------------------------------------
 
+  /// Whether this route's streaming surface declares client tools, i.e.
+  /// whether a tool-bearing request may stream instead of falling back to
+  /// [generate].
+  ///
+  /// The routing question `LLMService` asks before choosing a path, kept here
+  /// with every other routing branch rather than derived from the protocol
+  /// object at the call site. Written per family rather than as a lookup so
+  /// that teaching ① or ③ to stream tool calls is a visible one-line change
+  /// here, not a silent behaviour flip somewhere else.
+  bool streamSupportsTools(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    switch (target.vendor.family) {
+      case ProtocolFamily.anthropic:
+        return _anthropicChat.streamingDeclaresTools;
+      case ProtocolFamily.openai:
+      case ProtocolFamily.gemini:
+      case ProtocolFamily.midjourney:
+        return false;
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final target = resolveTarget(config);
@@ -216,7 +238,8 @@ class LLMDispatcher {
         return;
 
       case ProtocolFamily.anthropic:
-        yield* _anthropicChat.generateStream(target, history, options: options, logger: logger);
+        yield* _anthropicChat.generateStream(target, history,
+            options: options, tools: tools, logger: logger);
         return;
 
       case ProtocolFamily.gemini:

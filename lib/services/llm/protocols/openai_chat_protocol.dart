@@ -472,11 +472,21 @@ class OpenAIChatProtocol implements ChatProtocol {
     }
   }
 
+  /// ① fragments `function.arguments` across chunks and groups them by
+  /// `delta.tool_calls[].index` rather than `id` (docs/api/tools.md §4), so
+  /// this needs a real accumulator before it can be true. Until then a
+  /// tool-bearing request falls back to [generate].
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final config = target.config;

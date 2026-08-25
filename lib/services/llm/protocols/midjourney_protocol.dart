@@ -64,11 +64,18 @@ class MidjourneyProtocol implements ChatProtocol {
     );
   }
 
+  /// Midjourney has no tool calling at all.
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final controller = StreamController<LLMResponseChunk>();

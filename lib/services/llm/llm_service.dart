@@ -27,17 +27,23 @@ class LLMService {
     List<LLMTool>? tools,
     bool useStream = true,
   }) async {
-    // Tool calling is only wired through the standard (non-streaming) path —
-    // see [ChatProtocol.generateStream]. Silently downgrading beats honouring
-    // useStream: a caller that passed tools needs them, and a stream that
-    // never declares them just answers as if there were none.
-    if (tools != null && tools.isNotEmpty) {
-      useStream = false;
-    }
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
+    // Tool calling reaches the streaming surface only where the protocol
+    // assembles calls out of deltas — ④ today, see
+    // [ChatProtocol.streamingDeclaresTools]. Everywhere else, downgrading
+    // silently beats honouring useStream: a caller that passed tools needs
+    // them, and a stream that never declares them just answers as if there
+    // were none, which is the one failure an agent loop cannot detect.
+    //
+    // This has to come *after* resolveConfig — the answer is a property of
+    // the resolved route, not of the caller.
+    final bool toolBearing = tools != null && tools.isNotEmpty;
+    if (toolBearing && !_dispatcher.streamSupportsTools(config)) {
+      useStream = false;
+    }
     List<LLMMessage> fullHistory = messages;
     if (sessionId != null) {
       _sessions[sessionId] ??= [];
@@ -53,39 +59,63 @@ class LLMService {
         if (useStream) {
           onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
           String accumulatedText = "";
+          String accumulatedReasoning = "";
           List<Uint8List> accumulatedImages = [];
           List<LLMToolCall> accumulatedToolCalls = [];
           Map<String, dynamic>? finalMetadata;
+          List<Map<String, dynamic>>? rawThinkingBlocks;
+          String? reasoningSignature;
 
           final stream = _dispatcher.generateStream(
-            config, 
-            fullHistory, 
-            options: options, 
+            config,
+            fullHistory,
+            options: options,
+            tools: tools,
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
           );
 
           await for (final chunk in stream.timeout(const Duration(seconds: 120))) {
             if (chunk.reasoningPart != null) {
-              // Thinking is surfaced to the console but never accumulated —
-              // the deliverable must not contain the chain of thought.
+              // Surfaced to the console and kept for replay, but never glued
+              // into the deliverable — that must not contain the chain of
+              // thought.
+              accumulatedReasoning += chunk.reasoningPart!;
               onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
             }
             if (chunk.textPart != null) {
               accumulatedText += chunk.textPart!;
-              onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+              // A tool-bearing caller is an agent loop: it consumes whole
+              // responses, and its console is a transcript rather than a live
+              // feed. Logging every fragment would bury that transcript under
+              // hundreds of lines, so the text goes out once at the end
+              // exactly as the standard path does it.
+              if (!toolBearing) {
+                onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
+              }
             }
             if (chunk.imagePart != null) {
               accumulatedImages.add(chunk.imagePart!);
             }
             // Collected rather than ignored: a dropped tool call reads to the
             // caller as "the model chose to answer directly", which is the one
-            // failure mode an agent loop cannot detect. Not reachable while
-            // the guard above forces tools onto the standard path, but the
-            // guard is the reason, not an excuse for losing them here.
+            // failure mode an agent loop cannot detect.
             if (chunk.toolCallPart != null) {
               accumulatedToolCalls.add(chunk.toolCallPart!);
             }
+            // The replay carriers arrive once, whole, at stream end — a
+            // tool-calling turn replayed without them is an incomplete
+            // thinking history, which ④ silently strips rather than rejects.
+            if (chunk.rawThinkingBlocks != null) {
+              rawThinkingBlocks = chunk.rawThinkingBlocks;
+            }
+            if (chunk.reasoningSignature != null) {
+              reasoningSignature = chunk.reasoningSignature;
+            }
             if (chunk.metadata != null) finalMetadata = chunk.metadata;
+          }
+
+          if (toolBearing && accumulatedText.isNotEmpty) {
+            onLogAdded?.call('[AI]: $accumulatedText', level: 'INFO', contextId: contextId);
           }
 
           final response = LLMResponse(
@@ -93,6 +123,16 @@ class LLMService {
             generatedImages: accumulatedImages,
             metadata: finalMetadata ?? {},
             toolCalls: accumulatedToolCalls,
+            reasoningContent:
+                accumulatedReasoning.isEmpty ? null : accumulatedReasoning,
+            // No field *name*: ④'s echo-back obligation is the whole signed
+            // block, not a field on the message. Leaving it null is what
+            // stops the ① payload builder inventing a key for it if this
+            // history is ever replayed against an ① endpoint.
+            reasoningSignature: reasoningSignature,
+            rawThinkingBlocks: rawThinkingBlocks,
+            rawThinkingModelId:
+                rawThinkingBlocks == null ? null : config.modelId,
           );
 
           // Record usage

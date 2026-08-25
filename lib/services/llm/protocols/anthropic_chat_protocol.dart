@@ -485,6 +485,220 @@ String? anthropicFinishReason(String? stopReason) {
   }
 }
 
+/// The state machine behind [AnthropicChatProtocol.generateStream].
+///
+/// Extracted from the transport loop so it can be pinned without a socket,
+/// the way `geminiChunksFromSseLine` is on ③. Everything here is about one
+/// problem: ④ sends a turn as *content blocks* that arrive interleaved and
+/// incomplete, while [LLMResponseChunk] promises whole values.
+///
+/// Feed it decoded `data:` events in arrival order with [accept], then call
+/// [finish] once. It is single-use and not reentrant.
+class AnthropicStreamAssembler {
+  final LLMLogger? logger;
+
+  AnthropicStreamAssembler({this.logger});
+
+  /// Usage arrives in two instalments: the input side on `message_start`,
+  /// the output side on `message_delta` — the latter cumulative, so a later
+  /// value replaces an earlier one rather than adding to it. Both are held
+  /// and reported once at stream end, so no consumer sees half the picture.
+  final Map<String, dynamic> _usage = {};
+  String? _stopReason;
+
+  /// A turn can hold several text blocks with a server tool's work between
+  /// them; the paragraph break belongs at the seam, and only there.
+  bool _emittedText = false;
+
+  /// Tool calls and thinking blocks under construction, keyed by the
+  /// content-block index every event carries. Both are finalized on
+  /// `content_block_stop` rather than at stream end: indices are reused
+  /// across blocks, and a call whose arguments are still a JSON fragment
+  /// must never escape (see [LLMResponseChunk.toolCallPart]).
+  final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls = {};
+  final Map<int, Map<String, dynamic>> _pendingThinking = {};
+
+  /// Verbatim, in arrival order — the only history ④ accepts as complete.
+  final List<Map<String, dynamic>> _rawThinkingBlocks = [];
+  String? _thinkingSignature;
+
+  static int _indexOf(Map<String, dynamic> event) {
+    final raw = event['index'];
+    return raw is num ? raw.toInt() : -1;
+  }
+
+  /// Consume one event, emitting whatever became complete because of it.
+  ///
+  /// Unknown event types yield nothing by design: ④ adds them without a
+  /// version bump, and an unrecognized one must not cost the blocks around
+  /// it.
+  Iterable<LLMResponseChunk> accept(Map<String, dynamic> event) sync* {
+    switch (event['type']) {
+      case 'message_start':
+        final message = event['message'];
+        if (message is Map) {
+          final started = message['usage'];
+          if (started is Map) _usage.addAll(started.cast<String, dynamic>());
+        }
+
+      case 'content_block_start':
+        final block = event['content_block'];
+        if (block is! Map) return;
+        switch (block['type']) {
+          case 'tool_use':
+            // id and name arrive whole here; only `input` is fragmented.
+            _pendingCalls[_indexOf(event)] = (
+              id: block['id']?.toString() ?? 'toolu_${_pendingCalls.length}',
+              name: block['name']?.toString() ?? '',
+              json: StringBuffer(),
+            );
+          case 'thinking':
+            _pendingThinking[_indexOf(event)] = {
+              'type': 'thinking',
+              'thinking': block['thinking']?.toString() ?? '',
+              'signature': block['signature']?.toString() ?? '',
+            };
+          case 'redacted_thinking':
+            // Opaque and delta-free: complete the moment it starts, but
+            // still finalized at stop so it keeps its place in the order.
+            _pendingThinking[_indexOf(event)] = block.cast<String, dynamic>();
+          case 'text':
+            if (_emittedText) yield LLMResponseChunk(textPart: '\n\n');
+          case 'server_tool_use':
+            final input = block['input'];
+            final query = input is Map ? (input['query']?.toString() ?? '') : '';
+            // The host is about to run this itself. Announced rather than
+            // silent: the user is paying for it, and with web search the
+            // answer will rest on pages nobody here chose.
+            logger?.call(
+              'Host running ${block['name']}${query.isEmpty ? '' : '("$query")'}…',
+              level: 'INFO',
+            );
+        }
+
+      case 'content_block_delta':
+        final delta = event['delta'];
+        if (delta is! Map) return;
+        switch (delta['type']) {
+          case 'text_delta':
+            final text = delta['text'];
+            if (text is String && text.isNotEmpty) {
+              _emittedText = true;
+              yield LLMResponseChunk(textPart: text);
+            }
+          case 'thinking_delta':
+            final thinking = delta['thinking'];
+            if (thinking is String && thinking.isNotEmpty) {
+              // Its own channel, never glued into the deliverable — and also
+              // accumulated into the block, because the replay carrier has
+              // to be the whole thing, not the display text.
+              yield LLMResponseChunk(reasoningPart: thinking);
+              final block = _pendingThinking[_indexOf(event)];
+              if (block != null) {
+                block['thinking'] = '${block['thinking'] ?? ''}$thinking';
+              }
+            }
+          case 'input_json_delta':
+            // Tool arguments, as a string fragment that is not valid JSON
+            // until the last one lands.
+            final partial = delta['partial_json'];
+            if (partial is String) {
+              _pendingCalls[_indexOf(event)]?.json.write(partial);
+            }
+          case 'signature_delta':
+            final seal = delta['signature'];
+            if (seal is String && seal.isNotEmpty) {
+              final block = _pendingThinking[_indexOf(event)];
+              if (block != null) block['signature'] = seal;
+            }
+        }
+
+      case 'content_block_stop':
+        final index = _indexOf(event);
+        final call = _pendingCalls.remove(index);
+        if (call != null) {
+          yield LLMResponseChunk(toolCallPart: _completeCall(call));
+        }
+        final thought = _pendingThinking.remove(index);
+        if (thought != null) _keepForReplay(thought);
+
+      case 'message_delta':
+        final delta = event['delta'];
+        if (delta is Map && delta['stop_reason'] != null) {
+          _stopReason = delta['stop_reason'].toString();
+        }
+        final finalUsage = event['usage'];
+        if (finalUsage is Map) _usage.addAll(finalUsage.cast<String, dynamic>());
+
+      // message_stop / ping carry nothing this consumer needs.
+    }
+  }
+
+  LLMToolCall _completeCall(({String id, String name, StringBuffer json}) call) {
+    // A tool taking no arguments sends no input_json_delta at all, so an
+    // empty buffer is `{}` and not a parse failure. A buffer that is present
+    // but unparseable means the stream was cut mid-arguments: dropping the
+    // call would read to an agent loop as "the model chose to answer
+    // directly" — the one failure mode it cannot detect — so it goes out
+    // with empty arguments and the tool reports the mismatch itself.
+    final raw = call.json.toString();
+    var arguments = const <String, dynamic>{};
+    if (raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) arguments = decoded;
+      } catch (_) {
+        logger?.call(
+            'Tool call ${call.name} arrived with unparseable arguments — the '
+            'stream was cut mid-JSON.',
+            level: 'WARN');
+      }
+    }
+    return LLMToolCall(id: call.id, name: call.name, arguments: arguments);
+  }
+
+  /// The same rule [parseAnthropicContent] follows: only *sealed* thinking
+  /// blocks are kept (④ refuses an unsigned one, and refusing the whole
+  /// request is worse than the model re-deriving a thought), while
+  /// `redacted_thinking` is always kept — it has no text to reconstruct
+  /// from, and a replay missing it is an incomplete thinking history, which
+  /// ④ silently strips rather than rejects.
+  void _keepForReplay(Map<String, dynamic> thought) {
+    if (thought['type'] == 'redacted_thinking') {
+      _rawThinkingBlocks.add(thought);
+      return;
+    }
+    final seal = thought['signature'];
+    if (seal is String && seal.isNotEmpty) {
+      _rawThinkingBlocks.add(thought);
+      _thinkingSignature = seal;
+    }
+  }
+
+  /// The closing chunk: usage, stop reason, and the replay carriers.
+  ///
+  /// One chunk rather than three, and only at the end, because the thinking
+  /// blocks only become replayable once their last `signature_delta` has
+  /// landed and the consumer needs the whole ordered group or none of it.
+  /// Null when the stream carried none of the three.
+  LLMResponseChunk? finish() {
+    if (_usage.isEmpty && _stopReason == null && _rawThinkingBlocks.isEmpty) {
+      return null;
+    }
+    return LLMResponseChunk(
+      metadata: (_usage.isEmpty && _stopReason == null)
+          ? null
+          : anthropicUsageMetadata(
+              _usage.isEmpty ? null : _usage,
+              stopReason: _stopReason,
+            ),
+      rawThinkingBlocks:
+          _rawThinkingBlocks.isEmpty ? null : List.of(_rawThinkingBlocks),
+      reasoningSignature: _thinkingSignature,
+    );
+  }
+}
+
 /// Anthropic `POST /messages` — JSON request, JSON or typed-SSE response.
 ///
 /// Served by Anthropic's own host and by the relays that expose the format
@@ -588,11 +802,19 @@ class AnthropicChatProtocol implements ChatProtocol {
     }
   }
 
+  /// ④ is the family whose streamed tool calls are cheapest to assemble: the
+  /// id and name arrive whole on `content_block_start`, and only the
+  /// arguments are fragmented, keyed by a content-block index that is
+  /// explicit in every event.
+  @override
+  bool get streamingDeclaresTools => true;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final config = target.config;
@@ -600,7 +822,7 @@ class AnthropicChatProtocol implements ChatProtocol {
     logger?.call('Starting Anthropic stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareAnthropicPayload(target, history,
-        options: options, isStreaming: true);
+        options: options, tools: tools, isStreaming: true);
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
@@ -637,15 +859,7 @@ class AnthropicChatProtocol implements ChatProtocol {
       await LLMDebugLogger.appendLine(debugFile, 'Status: ${response.statusCode}');
     }
 
-    // Usage arrives in two instalments: the input side on `message_start`,
-    // the output side on `message_delta` — the latter cumulative, so a later
-    // value replaces an earlier one rather than adding to it. Both are held
-    // and reported once at stream end, so no consumer sees half the picture.
-    final usage = <String, dynamic>{};
-    String? stopReason;
-    // A turn can hold several text blocks with a server tool's work between
-    // them; the paragraph break belongs at the seam, and only there.
-    var emittedText = false;
+    final assembler = AnthropicStreamAssembler(logger: logger);
 
     try {
       await for (final line
@@ -678,77 +892,18 @@ class AnthropicChatProtocol implements ChatProtocol {
         // fail the request rather than end it early with a partial answer.
         throwIfEnvelopeError(event);
 
-        switch (event['type']) {
-          case 'message_start':
-            final message = event['message'];
-            if (message is Map) {
-              final started = message['usage'];
-              if (started is Map) usage.addAll(started.cast<String, dynamic>());
-            }
-          case 'content_block_start':
-            final block = event['content_block'];
-            if (block is! Map) break;
-            if (block['type'] == 'text' && emittedText) {
-              yield LLMResponseChunk(textPart: '\n\n');
-            } else if (block['type'] == 'server_tool_use') {
-              final input = block['input'];
-              final query = input is Map ? (input['query']?.toString() ?? '') : '';
-              // The host is about to run this itself. Announced rather than
-              // silent: the user is paying for it, and with web search the
-              // answer will rest on pages nobody here chose.
-              logger?.call(
-                'Host running ${block['name']}${query.isEmpty ? '' : '("$query")'}…',
-                level: 'INFO',
-              );
-            }
-          case 'content_block_delta':
-            final delta = event['delta'];
-            if (delta is! Map) break;
-            final deltaType = delta['type'];
-            if (deltaType == 'text_delta') {
-              final text = delta['text'];
-              if (text is String && text.isNotEmpty) {
-                emittedText = true;
-                yield LLMResponseChunk(textPart: text);
-              }
-            } else if (deltaType == 'thinking_delta') {
-              final thinking = delta['thinking'];
-              if (thinking is String && thinking.isNotEmpty) {
-                // Its own channel, never glued into the deliverable.
-                yield LLMResponseChunk(reasoningPart: thinking);
-              }
-            }
-            // `input_json_delta` (tool arguments) and `signature_delta` have
-            // no consumer here. The streaming surface declares no client
-            // tools, so no partial call can arrive
-            // (see [ChatProtocol.generateStream]) — and with no tool call in
-            // the turn there is nothing whose replay the signature would have
-            // to seal. Thinking is display-only on this path, which is what
-            // ① and ③ already do with theirs.
-          case 'message_delta':
-            final delta = event['delta'];
-            if (delta is Map && delta['stop_reason'] != null) {
-              stopReason = delta['stop_reason'].toString();
-            }
-            final finalUsage = event['usage'];
-            if (finalUsage is Map) usage.addAll(finalUsage.cast<String, dynamic>());
-          // message_stop / content_block_start / content_block_stop / ping
-          // carry nothing this consumer needs; unknown event types are
-          // ignored by design (④ adds them without a version bump).
+        // Iterable, not Stream: the assembler is synchronous, so its
+        // output is re-yielded one at a time rather than with yield*.
+        for (final chunk in assembler.accept(event)) {
+          yield chunk;
         }
       }
     } finally {
       client.close();
     }
 
-    if (usage.isNotEmpty || stopReason != null) {
-      yield LLMResponseChunk(
-        metadata: anthropicUsageMetadata(
-          usage.isEmpty ? null : usage,
-          stopReason: stopReason,
-        ),
-      );
-    }
+    final closing = assembler.finish();
+    if (closing != null) yield closing;
 
     yield LLMResponseChunk(isDone: true);
   }

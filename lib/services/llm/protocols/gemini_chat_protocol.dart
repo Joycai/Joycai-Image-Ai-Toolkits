@@ -94,11 +94,21 @@ class GeminiChatProtocol implements ChatProtocol {
     }
   }
 
+  /// ③ delivers a `functionCall` part whole inside a streamed candidate, so
+  /// this is a smaller job than ①'s — but nothing needs it yet, and claiming
+  /// the capability without the accumulator would answer tool-bearing
+  /// requests as though no tools existed.
+  @override
+  bool get streamingDeclaresTools => false;
+
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
+    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
+    // routes a tool-bearing request to this surface.
+    List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
     final config = target.config;

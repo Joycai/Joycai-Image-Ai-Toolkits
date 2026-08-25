@@ -1256,7 +1256,15 @@ class PromptOptimizerAgent {
             // Transient relay/proxy disconnects (e.g. errno 10054) should not
             // kill the whole agent turn — retry a couple of times.
             options: const {'retryCount': 2},
-            useStream: false,
+            // Streamed where the route can carry tool calls over it (④
+            // today), and silently downgraded everywhere else. Not for
+            // incremental display — nothing here consumes a partial batch —
+            // but because the streaming guard resets on every chunk while
+            // the non-streaming one has to cover the whole generation. A
+            // submit_prompt runs 6–7 K tokens, which is what used to time
+            // out mid-write every single time
+            // (docs/plans/2026-08-assistant-timeout.md).
+            useStream: true,
           );
         } catch (e) {
           session._addEntry(OptimizerChatEntry(

@@ -106,7 +106,10 @@ class SubAgentRunner {
               },
               tools: tools,
               contextId: contextId,
-              useStream: false,
+              // Keeps a long delegate answer alive on routes that stream
+              // tool calls; downgraded automatically on the ones that do
+              // not. See [ChatProtocol.streamingDeclaresTools].
+              useStream: true,
             );
 
     final messages = <LLMMessage>[

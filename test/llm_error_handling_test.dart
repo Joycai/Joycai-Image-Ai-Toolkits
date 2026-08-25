@@ -6,7 +6,9 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_chat_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
@@ -283,6 +285,48 @@ void main() {
             options: const {'maxTokens': 1}),
         const Duration(minutes: 11),
       );
+    });
+  });
+
+  group('tool calls over the streaming surface', () {
+    LLMModelConfig config(String channelType) => LLMModelConfig(
+          modelId: 'some-model',
+          channelType: channelType,
+          endpoint: 'https://example.invalid/v1',
+          apiKey: 'k',
+        );
+
+    test('④ carries them, so a tool-bearing request may stream', () {
+      // Which is the point: the streaming guard resets on every chunk, while
+      // the non-streaming one has to cover a whole 6-7 K-token generation.
+      expect(LLMDispatcher().streamSupportsTools(config(Vendors.anthropicRest)),
+          isTrue);
+      expect(
+          LLMDispatcher().streamSupportsTools(config(Vendors.newApiAnthropic)),
+          isTrue);
+    });
+
+    test('① and ③ do not, so theirs still falls back to generate()', () {
+      // Claiming the capability without the accumulator would answer a
+      // tool-bearing request as though no tools existed — the one failure an
+      // agent loop cannot detect.
+      for (final vendor in [
+        Vendors.openAIRest,
+        Vendors.newApiOpenAI,
+        Vendors.googleRest,
+        Vendors.midjourneyProxy,
+      ]) {
+        expect(LLMDispatcher().streamSupportsTools(config(vendor)), isFalse,
+            reason: '$vendor must keep the downgrade');
+      }
+    });
+
+    test('the protocols agree with the routing table', () {
+      // The dispatcher answers per family by hand, so it can drift from what
+      // the protocols actually implement. This is the pin against that.
+      expect(AnthropicChatProtocol().streamingDeclaresTools, isTrue);
+      expect(OpenAIChatProtocol().streamingDeclaresTools, isFalse);
+      expect(GeminiChatProtocol().streamingDeclaresTools, isFalse);
     });
   });
 }
