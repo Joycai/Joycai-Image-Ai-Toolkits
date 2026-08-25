@@ -23,9 +23,9 @@ import '../../widgets/markdown_editor.dart';
 import 'model_selection_section.dart';
 import 'widgets/config_action_bar.dart';
 import '../../widgets/app_section_label.dart';
+import '../../widgets/app_setting_row.dart';
 import 'widgets/queue_settings_dialog.dart';
 import '../../widgets/scroll_edge_fade.dart';
-import '../../widgets/app_switch.dart';
 
 /// Ink laid over a thumbnail. Neutral by construction rather than taken from
 /// the [ColorScheme] — these sit on the user's own photographs, where a chip
@@ -308,7 +308,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildToggleRow(
+                  AppToggleRow(
                     // `waves`, not `stream`: `stream` is a scatter of dots,
                     // and `16a` draws the sine the model editor already uses.
                     icon: Icons.waves,
@@ -317,7 +317,7 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
                     value: useStream,
                     onChanged: (v) => _updateConfig(useStream: v),
                   ),
-                  _buildToggleRow(
+                  AppToggleRow(
                     icon: Icons.compress,
                     title: l10n.compressReferenceImages,
                     description: l10n.compressReferenceImagesDesc,
@@ -578,52 +578,6 @@ class _WorkbenchConfigPanelState extends State<WorkbenchConfigPanel> {
   /// difference is one wrapper rather than two copies of the panel.
   static Widget _fillable({required bool fill, required Widget child}) =>
       fill ? Expanded(child: child) : child;
-
-  /// One setting: name, one line of explanation, switch.
-  ///
-  /// Replaces [SwitchListTile], whose title defaulted to bold 13 while the
-  /// section headers above it sat at 11 -- the switches were shouting over
-  /// the headings that grouped them. Here the name takes the type scale's
-  /// small title and the explanation drops to `bodySmall` in
-  /// `onSurfaceVariant`, so the row reads name-first and the description
-  /// stays available without competing.
-  Widget _buildToggleRow({
-    required IconData icon,
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: textTheme.titleSmall),
-                const SizedBox(height: 1),
-                Text(
-                  description,
-                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          AppSwitch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPromptActions(List<PromptHistoryEntry> history, AppLocalizations l10n) {
     return Row(

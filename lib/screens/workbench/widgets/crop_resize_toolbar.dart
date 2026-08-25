@@ -13,6 +13,7 @@ import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_setting_row.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
 import '../../../widgets/app_segmented_control.dart';
@@ -1062,15 +1063,13 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
               ],
             ),
             const SizedBox(height: 12),
-            SwitchListTile(
-              title: Text(l10n.maintainAspectRatio, style: Theme.of(context).textTheme.bodyMedium),
+            AppToggleRow(
+              title: l10n.maintainAspectRatio,
               value: uiState.maintainAspectRatio,
               onChanged: (v) {
                 uiState.setMaintainAspectRatio(v);
                 setDialogState(() {});
               },
-              contentPadding: EdgeInsets.zero,
-              dense: true,
             ),
           ],
         ),

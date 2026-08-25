@@ -13,6 +13,7 @@ import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../app_button.dart';
+import '../app_setting_row.dart';
 import '../app_dialog.dart';
 import '../app_text_field.dart';
 import 'channel_avatar.dart';
@@ -323,20 +324,11 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
           ),
         ),
         const SizedBox(height: 4),
-        SwitchListTile(
-          title: Text(l10n.enableDiscovery, style: Theme.of(context).textTheme.bodyMedium),
-          subtitle: Text(
-            l10n.enableDiscoveryDesc,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
+        AppToggleRow(
+          title: l10n.enableDiscovery,
+          description: l10n.enableDiscoveryDesc,
           value: discovery,
           onChanged: (v) => setState(() => discovery = v),
-          contentPadding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          dense: true,
         ),
         const SizedBox(height: 4),
         Row(
