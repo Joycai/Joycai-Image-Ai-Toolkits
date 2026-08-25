@@ -267,7 +267,58 @@ Map<String, dynamic> prepareAnthropicPayload(
     payload['tool_choice'] = {'type': 'auto'};
   }
 
+  if (target.vendor.promptCaching) {
+    applyAnthropicCacheBreakpoints(payload);
+  }
+
   return payload;
+}
+
+/// One `cache_control` breakpoint, ④'s only flavour.
+const Map<String, dynamic> _ephemeral = {'type': 'ephemeral'};
+
+/// Marks the reusable prefix of [payload] so ④ can cache it, in place.
+///
+/// Three of the four breakpoints ④ allows:
+///
+///  * **End of `system`.** A breakpoint caches everything before it and the
+///    prefix is ordered tools → system → messages, so this one covers the
+///    tool schemas too. It requires rewriting `system` from a plain string
+///    into a block array, which is the reason this is opt-in per vendor
+///    ([VendorProfile.promptCaching]).
+///  * **End of each of the last two messages.** The rolling window that makes
+///    a multi-turn conversation cache incrementally: the older breakpoint
+///    keeps the previous prefix alive while the newer one extends it over the
+///    turn just added. One alone would either never cover the newest turn or
+///    never survive to the next request.
+///
+/// Without any of this every request re-reads the whole conversation at full
+/// price. The relay this was diagnosed against caches implicitly, which is
+/// why the omission was invisible in the logs — against Anthropic's own
+/// endpoint the Prompt Assistant was re-billing ~69 K input tokens per turn.
+void applyAnthropicCacheBreakpoints(Map<String, dynamic> payload) {
+  final system = payload['system'];
+  if (system is String && system.isNotEmpty) {
+    payload['system'] = [
+      {'type': 'text', 'text': system, 'cache_control': _ephemeral},
+    ];
+  }
+
+  final messages = payload['messages'];
+  if (messages is! List || messages.isEmpty) return;
+  // The last two, or the only one when that is all there is.
+  final from = messages.length >= 2 ? messages.length - 2 : 0;
+  for (var i = from; i < messages.length; i++) {
+    final message = messages[i];
+    if (message is! Map) continue;
+    final blocks = message['content'];
+    // Only the block array shape is marked. A message whose content is a bare
+    // string has nowhere to hang the field, and inventing a block for it
+    // would change what is sent for the sake of a cache hint.
+    if (blocks is! List || blocks.isEmpty) continue;
+    final last = blocks.last;
+    if (last is Map<String, dynamic>) last['cache_control'] = _ephemeral;
+  }
 }
 
 /// One search the host ran on its own, with what it found.

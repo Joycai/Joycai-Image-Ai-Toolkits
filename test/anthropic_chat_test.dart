@@ -48,9 +48,36 @@ void main() {
         isStreaming: isStreaming,
       );
 
+  /// [payload] with the target chosen, for the rules that differ per vendor.
+  Map<String, dynamic> payloadFor(
+    LLMTarget on,
+    List<LLMMessage> history, {
+    List<LLMTool>? tools,
+  }) =>
+      prepareAnthropicPayload(on, history, tools: tools, isStreaming: false);
+
+  /// [payload] with cache breakpoints off.
+  ///
+  /// History conversion is vendor-independent, and these tests compare block
+  /// structures exactly — marking the reusable prefix adds a `cache_control`
+  /// field to the blocks it lands on, which is noise here and has its own
+  /// group below.
+  Map<String, dynamic> uncachedPayload(
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    List<LLMTool>? tools,
+  }) =>
+      prepareAnthropicPayload(
+        target('claude-opus-5', channelType: Vendors.minimaxAnthropic),
+        history,
+        options: options,
+        tools: tools,
+        isStreaming: false,
+      );
+
   group('history conversion', () {
     test('system leaves the message array for the top-level field', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.system, content: 'be brief'),
         LLMMessage(role: LLMRole.user, content: 'hi'),
       ]);
@@ -66,7 +93,7 @@ void main() {
     });
 
     test('several system turns are joined, not dropped', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.system, content: 'first'),
         LLMMessage(role: LLMRole.system, content: 'second'),
         LLMMessage(role: LLMRole.user, content: 'hi'),
@@ -75,7 +102,7 @@ void main() {
     });
 
     test('no system prompt means no system field at all', () {
-      final p = payload([LLMMessage(role: LLMRole.user, content: 'hi')]);
+      final p = uncachedPayload([LLMMessage(role: LLMRole.user, content: 'hi')]);
       expect(p.containsKey('system'), isFalse);
     });
 
@@ -83,7 +110,7 @@ void main() {
       // The API requires alternating roles, so N results for N parallel calls
       // cannot be N messages — they have to be N blocks of one. An agent loop
       // that calls two tools in a turn hits this on its very first reply.
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'do both'),
         LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
           LLMToolCall(id: 'toolu_1', name: 'a', arguments: {'x': 1}),
@@ -112,7 +139,7 @@ void main() {
     });
 
     test('a tool that returned nothing still sends a non-empty block', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'go'),
         LLMMessage(role: LLMRole.assistant, content: '', toolCalls: [
           LLMToolCall(id: 'toolu_1', name: 'a', arguments: const {}),
@@ -126,7 +153,7 @@ void main() {
     test('an assistant turn with nothing in it is not sent', () {
       // Neither text nor a tool call means no content blocks, and an empty
       // content array is itself a 400.
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'hi'),
         LLMMessage(role: LLMRole.assistant, content: ''),
         LLMMessage(role: LLMRole.user, content: 'still there?'),
@@ -137,7 +164,7 @@ void main() {
     });
 
     test('an assistant turn keeps its text alongside its tool calls', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(role: LLMRole.user, content: 'hi'),
         LLMMessage(
           role: LLMRole.assistant,
@@ -151,7 +178,7 @@ void main() {
     });
 
     test('an image rides as a base64 source block', () {
-      final p = payload([
+      final p = uncachedPayload([
         LLMMessage(
           role: LLMRole.user,
           content: 'what is this',
@@ -984,6 +1011,83 @@ void main() {
           'submit_prompt');
       expect(chunks.last.rawThinkingBlocks, hasLength(1));
       expect(chunks.last.reasoningSignature, 'sig-z');
+    });
+  });
+
+  group('prompt caching', () {
+    List<LLMMessage> conversation(int userTurns) => [
+          LLMMessage(role: LLMRole.system, content: 'the file map'),
+          for (var i = 0; i < userTurns; i++) ...[
+            LLMMessage(role: LLMRole.user, content: 'ask $i'),
+            LLMMessage(role: LLMRole.assistant, content: 'answer $i'),
+          ],
+        ];
+
+    Map<String, dynamic>? cacheOf(Object? block) =>
+        block is Map ? block['cache_control'] as Map<String, dynamic>? : null;
+
+    test('system becomes a marked block array, which also covers tools', () {
+      // The prefix is ordered tools -> system -> messages and a breakpoint
+      // caches everything before it, so one mark here buys both.
+      final body = payload(conversation(1), tools: [
+        LLMTool(name: 't', description: 'd', parameters: const {'type': 'object'})
+      ]);
+
+      final system = body['system'] as List;
+      expect(system.single['text'], 'the file map');
+      expect(cacheOf(system.single), {'type': 'ephemeral'});
+      expect(body['tools'], hasLength(1));
+    });
+
+    test('the last two messages carry the rolling window', () {
+      // One alone would either never cover the newest turn or never survive
+      // to the next request.
+      final messages = payload(conversation(3))['messages'] as List;
+
+      final marked = [
+        for (var i = 0; i < messages.length; i++)
+          if (cacheOf((messages[i]['content'] as List).last) != null) i
+      ];
+      expect(marked, [messages.length - 2, messages.length - 1]);
+    });
+
+    test('a single-message conversation still gets one', () {
+      final messages =
+          payload([LLMMessage(role: LLMRole.user, content: 'hi')])['messages']
+              as List;
+
+      expect(messages, hasLength(1));
+      expect(cacheOf((messages.single['content'] as List).last),
+          {'type': 'ephemeral'});
+    });
+
+    test('a vendor that has not been verified sends none of it', () {
+      // MiniMax's ④ layer has already been found missing pieces this app
+      // sends, and an unsupported cache_control fails the whole request
+      // rather than just the caching.
+      final body = payloadFor(
+          target('claude-opus-4-8', channelType: Vendors.minimaxAnthropic),
+          conversation(2));
+
+      expect(body['system'], isA<String>());
+      for (final message in body['messages'] as List) {
+        for (final block in message['content'] as List) {
+          expect(cacheOf(block), isNull);
+        }
+      }
+    });
+
+    test('every ④ vendor makes a deliberate choice', () {
+      // The point of the flag is that it is answered per supplier, not
+      // inherited — so this pins the current answers rather than a default.
+      expect(Vendors.byId(Vendors.anthropicRest).promptCaching, isTrue);
+      expect(Vendors.byId(Vendors.newApiAnthropic).promptCaching, isTrue);
+      expect(Vendors.byId(Vendors.minimaxAnthropic).promptCaching, isFalse);
+    });
+
+    test('① and ③ are untouched by it', () {
+      expect(Vendors.byId(Vendors.openAIRest).promptCaching, isFalse);
+      expect(Vendors.byId(Vendors.googleRest).promptCaching, isFalse);
     });
   });
 }
