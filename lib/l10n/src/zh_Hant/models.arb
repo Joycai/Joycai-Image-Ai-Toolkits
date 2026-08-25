@@ -202,7 +202,7 @@
   "enableThinkingDesc": "讓模型先推理再作答。會消耗輸出 token，僅 Anthropic 格式通道支援。",
   "enableWebSearch": "伺服器端聯網搜尋",
   "enableWebSearchDesc": "允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。",
-  "addChannelSubtitle": "選擇提供商並完成連線，一步搞定",
+  "addChannelSubtitle": "先選這是誰，再填連線方式",
   "searchProviders": "搜尋提供商…",
   "noProviderMatch": "沒有符合的提供商",
   "resetToDefault": "重設為預設值",
@@ -245,5 +245,68 @@
       }
     }
   },
-  "previewInList": "列表中的樣子"
+  "previewInList": "列表中的樣子",
+  "providerGroupVendor": "廠商",
+  "providerGroupVendorHint": "官方直連 · 位址已預填",
+  "providerGroupRelay": "中轉站",
+  "providerGroupRelayHint": "協定已知 · 位址自填",
+  "providerGroupCustom": "自訂",
+  "providerGroupCustomHint": "位址自填 + 明確選協定",
+  "providerGroupLocal": "本機",
+  "providerGroupLocalHint": "預設 localhost",
+  "providerNeedKeyOnly": "僅填密鑰",
+  "providerNeedEndpoint": "需填位址",
+  "providerNeedKeyless": "免密鑰",
+  "providerCustomOpenAIDesc": "任何提供 OpenAI 對話介面的服務",
+  "providerCustomGoogleDesc": "任何提供 Google GenAI 介面的服務",
+  "providerCustomAnthropicDesc": "任何提供 Anthropic Messages 介面的服務",
+  "variantTitleGoogle": "接入方式",
+  "variantTitleMiniMax": "接入面",
+  "variantTitleNewApi": "介面格式",
+  "variantTitleGeneric": "接入方式",
+  "variantHintGoogle": "Google 同一批模型提供兩種接入方式，切換會改寫下面的介面位址。",
+  "variantHintMiniMax": "MiniMax 同時提供兩套介面，選一套即可，之後仍可改。",
+  "variantHintNewApi": "host 由你填，尾段跟著你選的格式走。",
+  "variantHintGeneric": "切換會改寫下面的介面位址。",
+  "variantGoogleNative": "GenAI 原生協定",
+  "variantGoogleOpenAI": "OpenAI 相容面",
+  "variantMiniMaxOpenAI": "OpenAI 面",
+  "variantMiniMaxAnthropic": "Anthropic 面",
+  "variantNewApiOpenAI": "OpenAI 格式",
+  "variantNewApiGemini": "Gemini 格式",
+  "variantNewApiAnthropic": "Anthropic 格式",
+  "channelPresetLabel": "供應商預設",
+  "channelPresetHint": "預設只負責一鍵填好下面的欄位。填完仍可逐項修改，改過也不會被覆蓋。",
+  "changePreset": "更換預設",
+  "presetUnmatched": "未匹配預設",
+  "presetUnmatchedHint": "這條頻道用的是舊版本建立的類型，已不在預設清單裡。保持不動即可繼續使用；點「更換預設」會覆蓋下面的欄位。",
+  "presetEndpointModified": "位址已改過",
+  "restorePresetEndpoint": "恢復預設值",
+  "changePresetOverlayHint": "選中會用預設值覆蓋介面協定與位址（密鑰、名稱、標籤不動）。",
+  "protocolField": "介面協定",
+  "protocolFieldHint": "共 4 個協定族，任何已儲存的類型都能在這裡表示。",
+  "deprecatedLabel": "已廢棄",
+  "apiKeyOptional": "可選",
+  "apiKeyLocalPlaceholder": "本機服務通常不需要",
+  "apiKeyLocalNote": "留空即可。如果你給本機服務加了反向代理鑑權，在這裡填對應的密鑰。",
+  "searchProvidersAlias": "搜尋供應商，或試試「千問」",
+  "providerCountSummary": "{count} 個供應商 · {groups} 組",
+  "@providerCountSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "providerVariantCount": "{count} 種接入",
+  "@providerVariantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

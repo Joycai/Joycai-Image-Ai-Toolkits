@@ -129,6 +129,16 @@ class VendorProfile {
   /// Meaningless outside ④ — ① and ③ have no equivalent and ignore the flag.
   final bool promptCaching;
 
+  /// Whether a channel of this vendor can be saved with an empty API key.
+  ///
+  /// True only for the locally-hosted runtimes (Ollama, LM Studio), which
+  /// serve an OpenAI-compatible surface on localhost with no auth at all.
+  /// The key field stays on screen for them — someone may have put a
+  /// reverse proxy in front — but it stops being required, because a user
+  /// with no key to give was otherwise forced to type a junk character to
+  /// get past the check.
+  final bool keyOptional;
+
   const VendorProfile({
     required this.id,
     required this.family,
@@ -137,40 +147,48 @@ class VendorProfile {
     this.usesDashScopeNativeImages = false,
     this.thinking = ThinkingDialect.none,
     this.promptCaching = false,
+    this.keyOptional = false,
   });
 
   /// Request headers for this vendor. [endpoint] is needed because
   /// [AuthScheme.googleApiKeyWithBearerFallback] keys off the endpoint host.
   Map<String, String> headers(String apiKey, String endpoint) {
+    // An empty key is a real state now that [keyOptional] vendors exist, and
+    // `Authorization: Bearer ` (empty value) is not the same request as no
+    // Authorization header at all — some local runtimes and proxies reject
+    // the former. Only the key-bearing headers drop out: `anthropic-version`
+    // is a protocol requirement, not authentication, and must survive.
+    // [downloadHeaders] and [decorateUrl] already guard on empty the same way.
+    final bool keyed = apiKey.isNotEmpty;
     switch (auth) {
       case AuthScheme.bearer:
         return {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          if (keyed) 'Authorization': 'Bearer $apiKey',
         };
       case AuthScheme.googleApiKey:
         return {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
+          if (keyed) 'x-goog-api-key': apiKey,
         };
       case AuthScheme.googleApiKeyWithBearerFallback:
         final headers = {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
+          if (keyed) 'x-goog-api-key': apiKey,
         };
         final host = Uri.tryParse(endpoint)?.host ?? '';
-        if (!host.endsWith('googleapis.com')) {
+        if (keyed && !host.endsWith('googleapis.com')) {
           headers['Authorization'] = 'Bearer $apiKey';
         }
         return headers;
       case AuthScheme.anthropicApiKeyWithBearerFallback:
         final headers = {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          if (keyed) 'x-api-key': apiKey,
           'anthropic-version': anthropicApiVersion,
         };
         final host = Uri.tryParse(endpoint)?.host ?? '';
-        if (host != _anthropicOfficialHost) {
+        if (keyed && host != _anthropicOfficialHost) {
           headers['Authorization'] = 'Bearer $apiKey';
         }
         return headers;

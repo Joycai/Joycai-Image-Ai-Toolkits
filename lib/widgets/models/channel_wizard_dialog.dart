@@ -57,8 +57,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   String _selectedProviderId = 'openai-official';
 
-  /// Dialect for the `custom` preset (OpenAI-, Gemini- or Claude-shaped REST).
-  String _customProtocol = Vendors.openAIRest;
+  /// Which of a multi-face preset's [ChannelProviderVariant]s is selected;
+  /// null for the eleven presets that have exactly one way in. Reset on every
+  /// provider change — a variant id is scoped to its preset.
+  String? _variantId;
 
   final TextEditingController _endpointCtrl = TextEditingController();
   final TextEditingController _apiKeyCtrl = TextEditingController();
@@ -80,6 +82,18 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   ChannelProviderPreset get _preset =>
       kChannelProviderPresets.firstWhere((p) => p.id == _selectedProviderId);
+
+  /// The selected variant, or the preset's first when it has any. A preset
+  /// with variants always has one active: there is no "no face chosen" state
+  /// to represent, and the endpoint has to come from somewhere.
+  ChannelProviderVariant? get _variant {
+    final preset = _preset;
+    if (!preset.hasVariants) return null;
+    return preset.variants.firstWhere(
+      (v) => v.id == _variantId,
+      orElse: () => preset.variants.first,
+    );
+  }
 
   @override
   void initState() {
@@ -106,15 +120,53 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   /// replaces it rather than leaving the previous provider's host behind,
   /// which would otherwise ship a channel pointed at the wrong company.
   void _applyPresetEndpoint() {
-    _endpointCtrl.text = _preset.defaultEndpoint ?? '';
+    _endpointCtrl.text = _variant?.defaultEndpoint ?? _preset.defaultEndpoint ?? '';
   }
 
   void _selectProvider(String id) {
     setState(() {
       _selectedProviderId = id;
+      // A variant id means nothing outside its own preset, so switching
+      // provider drops it and the new preset falls back to its first face.
+      _variantId = null;
       _applyPresetEndpoint();
       _clearProbe();
     });
+  }
+
+  /// Switching face rewrites the endpoint, which is the entire reason the
+  /// control sits directly above that field (spec D2 `16b`): a relay host the
+  /// user typed is kept — only its version suffix follows the format — while
+  /// a preset-supplied host is replaced outright.
+  void _selectVariant(String variantId) {
+    setState(() {
+      _variantId = variantId;
+      final variant = _variant;
+      if (variant != null && variant.defaultEndpoint != null) {
+        _endpointCtrl.text = variant.defaultEndpoint!;
+      } else if (variant != null && variant.endpointSuffix.isNotEmpty) {
+        _endpointCtrl.text = _stripKnownVersionSuffix(_endpointCtrl.text);
+      } else {
+        _applyPresetEndpoint();
+      }
+      _clearProbe();
+    });
+  }
+
+  /// Drops a trailing `/v1` or `/v1beta` so the newly-picked format can put
+  /// its own back on. Without this, switching NewAPI from OpenAI to Gemini
+  /// left `/v1` in place and the suffix logic respected it.
+  String _stripKnownVersionSuffix(String input) {
+    var base = input.trim();
+    while (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    for (final suffix in const ['/v1beta', '/v1']) {
+      if (base.endsWith(suffix)) {
+        return base.substring(0, base.length - suffix.length);
+      }
+    }
+    return base;
   }
 
   /// A probe result describes one endpoint/key pair. Any edit to either makes
@@ -126,7 +178,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
   }
 
   bool get _endpointMissing => _endpointCtrl.text.trim().isEmpty;
-  bool get _apiKeyMissing => _apiKeyCtrl.text.trim().isEmpty;
+
+  /// Whether this provider can be saved without a key. True for the local
+  /// runtimes, which have no auth to give: requiring one there left the user
+  /// typing a junk character to get past the check (spec D2 `16f`).
+  bool get _keyOptional => Vendors.byId(_resolvedChannelType()).keyOptional;
+
+  bool get _apiKeyMissing =>
+      !_keyOptional && _apiKeyCtrl.text.trim().isEmpty;
 
   String? _endpointError(AppLocalizations l10n) =>
       _submitAttempted && _endpointMissing ? l10n.endpointRequired : null;
@@ -148,8 +207,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
 
   String _resolvedEndpoint() {
     final preset = _preset;
-    if (preset.isRelayBase) {
-      return _resolveNewApiEndpoint(_endpointCtrl.text, preset.endpointSuffix);
+    final suffix = _variant?.endpointSuffix ?? preset.endpointSuffix;
+    if (suffix.isNotEmpty) {
+      return _resolveNewApiEndpoint(_endpointCtrl.text, suffix);
     }
     var raw = _endpointCtrl.text.trim();
     while (raw.endsWith('/')) {
@@ -158,8 +218,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     return raw;
   }
 
-  String _resolvedChannelType() =>
-      _selectedProviderId == 'custom' ? _customProtocol : _preset.channelType;
+  String _resolvedChannelType() => _variant?.channelType ?? _preset.channelType;
 
   String _resolvedName() => _nameCtrl.text.trim().isEmpty
       ? _selectedProviderId
@@ -233,8 +292,14 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     // the rail scrollable and a ceiling that stops the dialog from stretching
     // edge to edge on a tall display. Heading, footer and the dialog's own
     // vertical inset account for the subtracted band.
+    //
+    // The ceiling is sized for the catalogue rather than picked round: all
+    // fourteen rows in four groups have to be visible at once for the
+    // grouping to do its job (spec D2 `16a` note ⑧), and a rail that scrolls
+    // by two rows is the version of this screen that sent people to the
+    // search box for providers that were right there.
     final bodyHeight =
-        (MediaQuery.sizeOf(context).height - 250).clamp(340.0, 540.0);
+        (MediaQuery.sizeOf(context).height - 210).clamp(340.0, 700.0);
 
     return AppDialog(
       title: l10n.addChannel,
@@ -315,10 +380,10 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: AppTextField(
               controller: _searchCtrl,
-              hint: l10n.searchProviders,
+              hint: l10n.searchProvidersAlias,
               prefixIcon: const Icon(Icons.search, size: AppSize.iconMd),
               onChanged: (_) => setState(() {}),
             ),
@@ -338,20 +403,27 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                     ),
                   )
                 : ListView(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                     children: [
-                      for (final group in ChannelProviderGroup.values)
-                        ...() {
+                      ...() {
+                        final widgets = <Widget>[];
+                        for (final group in ChannelProviderGroup.values) {
                           final inGroup =
                               matches.where((p) => p.group == group).toList();
-                          if (inGroup.isEmpty) return <Widget>[];
-                          return <Widget>[
-                            _buildRailHeading(
-                                channelProviderGroupLabel(l10n, group)),
-                            for (final preset in inGroup)
-                              _buildRailRow(l10n, preset),
-                          ];
-                        }(),
+                          if (inGroup.isEmpty) continue;
+                          // "First" is the first group *rendered*, not the
+                          // first declared: filtering the list must not leave
+                          // the heaviest heading attached to whatever group
+                          // happens to have survived the search.
+                          widgets.add(_buildRailHeading(l10n, group,
+                              isFirst: widgets.isEmpty));
+                          for (final preset in inGroup) {
+                            widgets.add(_buildRailRow(l10n, preset));
+                          }
+                        }
+                        return widgets;
+                      }(),
+                      _buildRailFooter(l10n, matches),
                     ],
                   ),
           ),
@@ -374,24 +446,131 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         channelProviderTitle(l10n, p.id),
         channelProviderSubtitle(l10n, p),
         p.defaultEndpoint ?? '',
+        // The names a provider is also known by. Folding the separate
+        // "Qianwen Platform" row into DashScope only works because 千问 /
+        // Qwen / 通义 still land on it.
+        ...p.searchAliases,
       ].join(' ').toLowerCase();
       return haystack.contains(query);
     }).toList();
   }
 
-  Widget _buildRailHeading(String text) {
+  /// A group heading and the one line saying what the whole group will ask
+  /// for. The first group — 厂商, the path most people are on — carries more
+  /// weight than the other three, which sit under a hairline rule instead of
+  /// competing with it (spec D2 `16a` notes ② and ③).
+  Widget _buildRailHeading(
+    AppLocalizations l10n,
+    ChannelProviderGroup group, {
+    required bool isFirst,
+  }) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      margin: EdgeInsets.only(top: isFirst ? 0 : 4),
+      padding: EdgeInsets.fromLTRB(10, 7, 10, 4),
+      decoration: isFirst
+          ? null
+          : BoxDecoration(
+              border: Border(
+                top: BorderSide(color: colorScheme.outlineVariant),
+              ),
+            ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Flexible(
+            child: Text(
+              channelProviderGroupLabel(l10n, group),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: (isFirst ? theme.textTheme.labelLarge : theme.textTheme.labelMedium)
+                  ?.copyWith(
+                fontWeight: isFirst ? FontWeight.w700 : FontWeight.w600,
+                color: isFirst ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              channelProviderGroupHint(l10n, group),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The count at the foot of the rail. Fourteen rows in four groups fit
+  /// without scrolling, which is the point of folding the duplicates in — the
+  /// search box went back to being an accelerator rather than a necessity.
+  Widget _buildRailFooter(
+    AppLocalizations l10n,
+    List<ChannelProviderPreset> matches,
+  ) {
+    final theme = Theme.of(context);
+    final groups =
+        matches.map((p) => p.group).toSet().length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 6),
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 0),
       child: Text(
-        text.toUpperCase(),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          letterSpacing: AppType.trackedLabelSpacing,
-          color: theme.colorScheme.onSurfaceVariant,
+        l10n.providerCountSummary(matches.length, groups),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),
+      ),
+    );
+  }
+
+  /// The trailing note on a row: a badge counting the faces a provider has,
+  /// or the one-word promise of what it will ask for next.
+  Widget _buildRowTrailing(
+    AppLocalizations l10n,
+    ChannelProviderPreset preset, {
+    required bool isSelected,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (preset.hasVariants) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          color: isSelected
+              ? colorScheme.onAccentTint.withValues(alpha: 0.14)
+              : colorScheme.surfaceContainerHighest,
+        ),
+        child: Text(
+          l10n.providerVariantCount(preset.variants.length),
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isSelected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    final isKeyless = preset.need == ChannelProviderNeed.keyless;
+    return Text(
+      channelProviderNeedLabel(l10n, preset.need),
+      style: theme.textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w500,
+        color: isSelected
+            ? colorScheme.onAccentTint
+            : isKeyless
+                // The one row-trailing note that is good news rather than a
+                // requirement, so it is the one that gets a colour.
+                ? context.semantic.onSuccessContainer
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
       ),
     );
   }
@@ -402,12 +581,16 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     final isSelected = _selectedProviderId == preset.id;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: () => _selectProvider(preset.id),
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          // Fixed heights, per spec D2 `16a` note ②: 厂商 rows are a step
+          // taller than the rest, and all fourteen have to fit the rail
+          // without scrolling for the grouping to be scannable at a glance.
+          height: preset.group == ChannelProviderGroup.vendor ? 34 : 30,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.md),
             color: isSelected ? colorScheme.accentTint : null,
@@ -419,7 +602,9 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
             children: [
               Icon(
                 preset.icon,
-                size: AppSize.iconMd,
+                size: preset.group == ChannelProviderGroup.vendor
+                    ? AppSize.iconMd
+                    : AppSize.iconSm,
                 color: isSelected
                     ? colorScheme.onAccentTint
                     : colorScheme.onSurfaceVariant,
@@ -440,11 +625,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                   ),
                 ),
               ),
-              if (isSelected) ...[
-                const SizedBox(width: 6),
-                Icon(Icons.check,
-                    size: AppSize.iconSm, color: colorScheme.onAccentTint),
-              ],
+              const SizedBox(width: 8),
+              _buildRowTrailing(l10n, preset, isSelected: isSelected),
             ],
           ),
         ),
@@ -476,20 +658,28 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
           _buildProviderHeader(l10n),
           const SizedBox(height: 16),
         ],
-        if (_selectedProviderId == 'custom') ...[
-          _buildDialectPicker(l10n),
+        if (_preset.hasVariants) ...[
+          _buildVariantPicker(l10n),
           const SizedBox(height: 16),
         ],
         _buildEndpointField(l10n),
         const SizedBox(height: 16),
         ApiKeyField(
           controller: _apiKeyCtrl,
-          label: l10n.enterApiKey,
+          // The field stays for the local runtimes rather than disappearing:
+          // vanishing would leave someone who *has* put reverse-proxy auth in
+          // front with nowhere to put the key, and everyone else wondering
+          // where the key box went (spec D2 `16f`, note ②).
+          label: _keyOptional
+              ? '${l10n.enterApiKey} · ${l10n.apiKeyOptional}'
+              : l10n.enterApiKey,
+          hint: _keyOptional ? l10n.apiKeyLocalPlaceholder : null,
           errorText: _apiKeyError(l10n),
           onChanged: (_) => setState(_clearProbe),
         ),
         const SizedBox(height: 6),
-        _buildHelperText(l10n.apiKeyStorageNotice),
+        _buildHelperText(
+            _keyOptional ? l10n.apiKeyLocalNote : l10n.apiKeyStorageNotice),
         const SizedBox(height: 16),
         _buildAppearanceRow(l10n),
         const SizedBox(height: 14),
@@ -531,7 +721,11 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                 style: textTheme.titleMedium,
               ),
               Text(
-                channelProviderSubtitle(l10n, preset),
+                // What this provider is and what it will ask for, rather
+                // than its hostname — the host is already in the field two
+                // rows below, and repeating it says nothing new.
+                '${channelProviderGroupHint(l10n, preset.group)}'
+                ' · ${channelProviderNeedLabel(l10n, preset.need)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodySmall
@@ -627,55 +821,80 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
     );
   }
 
-  Widget _buildDialectPicker(AppLocalizations l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.channelType,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-        const SizedBox(height: 8),
-        // Bare brand names rather than the localized protocol titles used as
-        // rail headings: three of those in one track ellipsize to
-        // "OpenAI Compa…" on a phone, and these three words are the same in
-        // every language the app ships.
-        AppSegmentedControl<String>(
-          segments: const [
-            AppSegment(value: Vendors.openAIRest, label: 'OpenAI'),
-            AppSegment(value: Vendors.googleRest, label: 'Google'),
-            AppSegment(value: Vendors.anthropicRest, label: 'Anthropic'),
-          ],
-          value: _customProtocol,
-          onChanged: (v) => setState(() {
-            _customProtocol = v;
-            _clearProbe();
-          }),
-          expand: true,
-        ),
-      ],
+  /// The face/format switch, for the three presets that have one.
+  ///
+  /// It sits here — one gap above the endpoint field — rather than as sub-rows
+  /// in the rail, because the choice *rewrites that field*. Expanded in the
+  /// rail, the switch would be on the left and its consequence on the right,
+  /// and the user would be picking blind (spec D2 `16b`).
+  Widget _buildVariantPicker(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final preset = _preset;
+    final selected = _variant!;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            channelProviderVariantTitle(l10n, preset.id),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            channelProviderVariantHint(l10n, preset.id),
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          AppSegmentedControl<String>(
+            segments: [
+              for (final variant in preset.variants)
+                AppSegment(
+                  value: variant.id,
+                  label: channelProviderVariantLabel(
+                      l10n, preset.id, variant.id),
+                ),
+            ],
+            value: selected.id,
+            onChanged: _selectVariant,
+            expand: true,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildEndpointField(AppLocalizations l10n) {
     final preset = _preset;
-    final isRelay = preset.isRelayBase;
+    final variant = _variant;
+    // A relay is one whose *resolved* face appends a version path — which for
+    // NewAPI is decided by the format, not by the preset.
+    final isRelay = (variant?.endpointSuffix ?? preset.endpointSuffix).isNotEmpty;
     final isMidjourney = preset.id == 'midjourney-proxy';
-    final canReset = preset.defaultEndpoint != null &&
-        _endpointCtrl.text.trim() != preset.defaultEndpoint;
+    final presetEndpoint = variant?.defaultEndpoint ?? preset.defaultEndpoint;
+    final canReset = presetEndpoint != null &&
+        _endpointCtrl.text.trim() != presetEndpoint;
 
     final helper = isRelay
         ? l10n.newApiBaseHint
         : isMidjourney
             ? l10n.midjourneyEndpointHint
-            : preset.defaultEndpoint != null
+            : presetEndpoint != null
                 ? l10n.endpointOverrideHint
-                : switch (_customProtocol) {
-                    Vendors.googleRest => l10n.googleV1BetaHint,
-                    Vendors.anthropicRest => l10n.anthropicV1Hint,
+                : switch (Vendors.byId(_resolvedChannelType()).family) {
+                    ProtocolFamily.gemini => l10n.googleV1BetaHint,
+                    ProtocolFamily.anthropic => l10n.anthropicV1Hint,
                     _ => l10n.openaiV1Hint,
                   };
 
@@ -1040,7 +1259,8 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
         for (final group in ChannelProviderGroup.values) ...[
           if (group != ChannelProviderGroup.values.first)
             const SizedBox(height: 14),
-          _buildRailHeading(channelProviderGroupLabel(l10n, group)),
+          _buildRailHeading(l10n, group,
+              isFirst: group == ChannelProviderGroup.values.first),
           _buildProviderGrid(
             l10n,
             kChannelProviderPresets.where((p) => p.group == group).toList(),

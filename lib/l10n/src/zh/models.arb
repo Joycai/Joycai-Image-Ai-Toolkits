@@ -251,7 +251,7 @@
   "enableThinkingDesc": "让模型先推理再作答。会消耗输出 token，仅 Anthropic 格式渠道支持。",
   "enableWebSearch": "服务端联网搜索",
   "enableWebSearchDesc": "允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。",
-  "addChannelSubtitle": "选择提供商并完成连接，一步搞定",
+  "addChannelSubtitle": "先选这是谁，再填连接方式",
   "searchProviders": "搜索提供商…",
   "noProviderMatch": "没有匹配的提供商",
   "resetToDefault": "重置为默认",
@@ -294,5 +294,68 @@
       }
     }
   },
-  "previewInList": "列表中的样子"
+  "previewInList": "列表中的样子",
+  "providerGroupVendor": "厂商",
+  "providerGroupVendorHint": "官方直连 · 地址已预填",
+  "providerGroupRelay": "中转站",
+  "providerGroupRelayHint": "协议已知 · 地址自填",
+  "providerGroupCustom": "自定义",
+  "providerGroupCustomHint": "地址自填 + 显式选协议",
+  "providerGroupLocal": "本地",
+  "providerGroupLocalHint": "默认 localhost",
+  "providerNeedKeyOnly": "仅填密钥",
+  "providerNeedEndpoint": "需填地址",
+  "providerNeedKeyless": "免密钥",
+  "providerCustomOpenAIDesc": "任何提供 OpenAI 对话接口的服务",
+  "providerCustomGoogleDesc": "任何提供 Google GenAI 接口的服务",
+  "providerCustomAnthropicDesc": "任何提供 Anthropic Messages 接口的服务",
+  "variantTitleGoogle": "接入方式",
+  "variantTitleMiniMax": "接入面",
+  "variantTitleNewApi": "接口格式",
+  "variantTitleGeneric": "接入方式",
+  "variantHintGoogle": "Google 同一批模型提供两种接入方式，切换会改写下面的接口地址。",
+  "variantHintMiniMax": "MiniMax 同时提供两套接口，选一套即可，之后仍可改。",
+  "variantHintNewApi": "host 由你填，尾段跟着你选的格式走。",
+  "variantHintGeneric": "切换会改写下面的接口地址。",
+  "variantGoogleNative": "GenAI 原生协议",
+  "variantGoogleOpenAI": "OpenAI 兼容面",
+  "variantMiniMaxOpenAI": "OpenAI 面",
+  "variantMiniMaxAnthropic": "Anthropic 面",
+  "variantNewApiOpenAI": "OpenAI 格式",
+  "variantNewApiGemini": "Gemini 格式",
+  "variantNewApiAnthropic": "Anthropic 格式",
+  "channelPresetLabel": "供应商预设",
+  "channelPresetHint": "预设只负责一键填好下面的字段。填完仍可逐项修改，改过也不会被覆盖。",
+  "changePreset": "更换预设",
+  "presetUnmatched": "未匹配预设",
+  "presetUnmatchedHint": "这条渠道用的是旧版本创建的类型，已不在预设列表里。保持不动即可继续使用；点「更换预设」会覆盖下面的字段。",
+  "presetEndpointModified": "地址已改过",
+  "restorePresetEndpoint": "恢复预设值",
+  "changePresetOverlayHint": "选中会用预设值覆盖接口协议与地址（密钥、名称、标签不动）。",
+  "protocolField": "接口协议",
+  "protocolFieldHint": "共 4 个协议族，任何已存储的类型都能在这里表示。",
+  "deprecatedLabel": "已废弃",
+  "apiKeyOptional": "可选",
+  "apiKeyLocalPlaceholder": "本地服务通常不需要",
+  "apiKeyLocalNote": "留空即可。如果你给本地服务加了反向代理鉴权，在这里填对应的密钥。",
+  "searchProvidersAlias": "搜索供应商，或试试「千问」",
+  "providerCountSummary": "{count} 个供应商 · {groups} 组",
+  "@providerCountSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "providerVariantCount": "{count} 种接入",
+  "@providerVariantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

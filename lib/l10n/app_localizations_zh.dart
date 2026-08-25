@@ -1087,7 +1087,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enableWebSearchDesc => '允许服务商在作答过程中自行搜索网页。按额外 token 计费，并会代你抓取网页。';
 
   @override
-  String get addChannelSubtitle => '选择提供商并完成连接，一步搞定';
+  String get addChannelSubtitle => '先选这是谁，再填连接方式';
 
   @override
   String get searchProviders => '搜索提供商…';
@@ -1160,6 +1160,149 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get previewInList => '列表中的样子';
+
+  @override
+  String get providerGroupVendor => '厂商';
+
+  @override
+  String get providerGroupVendorHint => '官方直连 · 地址已预填';
+
+  @override
+  String get providerGroupRelay => '中转站';
+
+  @override
+  String get providerGroupRelayHint => '协议已知 · 地址自填';
+
+  @override
+  String get providerGroupCustom => '自定义';
+
+  @override
+  String get providerGroupCustomHint => '地址自填 + 显式选协议';
+
+  @override
+  String get providerGroupLocal => '本地';
+
+  @override
+  String get providerGroupLocalHint => '默认 localhost';
+
+  @override
+  String get providerNeedKeyOnly => '仅填密钥';
+
+  @override
+  String get providerNeedEndpoint => '需填地址';
+
+  @override
+  String get providerNeedKeyless => '免密钥';
+
+  @override
+  String get providerCustomOpenAIDesc => '任何提供 OpenAI 对话接口的服务';
+
+  @override
+  String get providerCustomGoogleDesc => '任何提供 Google GenAI 接口的服务';
+
+  @override
+  String get providerCustomAnthropicDesc => '任何提供 Anthropic Messages 接口的服务';
+
+  @override
+  String get variantTitleGoogle => '接入方式';
+
+  @override
+  String get variantTitleMiniMax => '接入面';
+
+  @override
+  String get variantTitleNewApi => '接口格式';
+
+  @override
+  String get variantTitleGeneric => '接入方式';
+
+  @override
+  String get variantHintGoogle => 'Google 同一批模型提供两种接入方式，切换会改写下面的接口地址。';
+
+  @override
+  String get variantHintMiniMax => 'MiniMax 同时提供两套接口，选一套即可，之后仍可改。';
+
+  @override
+  String get variantHintNewApi => 'host 由你填，尾段跟着你选的格式走。';
+
+  @override
+  String get variantHintGeneric => '切换会改写下面的接口地址。';
+
+  @override
+  String get variantGoogleNative => 'GenAI 原生协议';
+
+  @override
+  String get variantGoogleOpenAI => 'OpenAI 兼容面';
+
+  @override
+  String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantMiniMaxAnthropic => 'Anthropic 面';
+
+  @override
+  String get variantNewApiOpenAI => 'OpenAI 格式';
+
+  @override
+  String get variantNewApiGemini => 'Gemini 格式';
+
+  @override
+  String get variantNewApiAnthropic => 'Anthropic 格式';
+
+  @override
+  String get channelPresetLabel => '供应商预设';
+
+  @override
+  String get channelPresetHint => '预设只负责一键填好下面的字段。填完仍可逐项修改，改过也不会被覆盖。';
+
+  @override
+  String get changePreset => '更换预设';
+
+  @override
+  String get presetUnmatched => '未匹配预设';
+
+  @override
+  String get presetUnmatchedHint =>
+      '这条渠道用的是旧版本创建的类型，已不在预设列表里。保持不动即可继续使用；点「更换预设」会覆盖下面的字段。';
+
+  @override
+  String get presetEndpointModified => '地址已改过';
+
+  @override
+  String get restorePresetEndpoint => '恢复预设值';
+
+  @override
+  String get changePresetOverlayHint => '选中会用预设值覆盖接口协议与地址（密钥、名称、标签不动）。';
+
+  @override
+  String get protocolField => '接口协议';
+
+  @override
+  String get protocolFieldHint => '共 4 个协议族，任何已存储的类型都能在这里表示。';
+
+  @override
+  String get deprecatedLabel => '已废弃';
+
+  @override
+  String get apiKeyOptional => '可选';
+
+  @override
+  String get apiKeyLocalPlaceholder => '本地服务通常不需要';
+
+  @override
+  String get apiKeyLocalNote => '留空即可。如果你给本地服务加了反向代理鉴权，在这里填对应的密钥。';
+
+  @override
+  String get searchProvidersAlias => '搜索供应商，或试试「千问」';
+
+  @override
+  String providerCountSummary(int count, int groups) {
+    return '$count 个供应商 · $groups 组';
+  }
+
+  @override
+  String providerVariantCount(int count) {
+    return '$count 种接入';
+  }
 
   @override
   String get prompts => '提示词';
@@ -4058,7 +4201,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get enableWebSearchDesc => '允許服務商在作答過程中自行搜尋網頁。按額外 token 計費，並會代你抓取網頁。';
 
   @override
-  String get addChannelSubtitle => '選擇提供商並完成連線，一步搞定';
+  String get addChannelSubtitle => '先選這是誰，再填連線方式';
 
   @override
   String get searchProviders => '搜尋提供商…';
@@ -4131,6 +4274,149 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get previewInList => '列表中的樣子';
+
+  @override
+  String get providerGroupVendor => '廠商';
+
+  @override
+  String get providerGroupVendorHint => '官方直連 · 位址已預填';
+
+  @override
+  String get providerGroupRelay => '中轉站';
+
+  @override
+  String get providerGroupRelayHint => '協定已知 · 位址自填';
+
+  @override
+  String get providerGroupCustom => '自訂';
+
+  @override
+  String get providerGroupCustomHint => '位址自填 + 明確選協定';
+
+  @override
+  String get providerGroupLocal => '本機';
+
+  @override
+  String get providerGroupLocalHint => '預設 localhost';
+
+  @override
+  String get providerNeedKeyOnly => '僅填密鑰';
+
+  @override
+  String get providerNeedEndpoint => '需填位址';
+
+  @override
+  String get providerNeedKeyless => '免密鑰';
+
+  @override
+  String get providerCustomOpenAIDesc => '任何提供 OpenAI 對話介面的服務';
+
+  @override
+  String get providerCustomGoogleDesc => '任何提供 Google GenAI 介面的服務';
+
+  @override
+  String get providerCustomAnthropicDesc => '任何提供 Anthropic Messages 介面的服務';
+
+  @override
+  String get variantTitleGoogle => '接入方式';
+
+  @override
+  String get variantTitleMiniMax => '接入面';
+
+  @override
+  String get variantTitleNewApi => '介面格式';
+
+  @override
+  String get variantTitleGeneric => '接入方式';
+
+  @override
+  String get variantHintGoogle => 'Google 同一批模型提供兩種接入方式，切換會改寫下面的介面位址。';
+
+  @override
+  String get variantHintMiniMax => 'MiniMax 同時提供兩套介面，選一套即可，之後仍可改。';
+
+  @override
+  String get variantHintNewApi => 'host 由你填，尾段跟著你選的格式走。';
+
+  @override
+  String get variantHintGeneric => '切換會改寫下面的介面位址。';
+
+  @override
+  String get variantGoogleNative => 'GenAI 原生協定';
+
+  @override
+  String get variantGoogleOpenAI => 'OpenAI 相容面';
+
+  @override
+  String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantMiniMaxAnthropic => 'Anthropic 面';
+
+  @override
+  String get variantNewApiOpenAI => 'OpenAI 格式';
+
+  @override
+  String get variantNewApiGemini => 'Gemini 格式';
+
+  @override
+  String get variantNewApiAnthropic => 'Anthropic 格式';
+
+  @override
+  String get channelPresetLabel => '供應商預設';
+
+  @override
+  String get channelPresetHint => '預設只負責一鍵填好下面的欄位。填完仍可逐項修改，改過也不會被覆蓋。';
+
+  @override
+  String get changePreset => '更換預設';
+
+  @override
+  String get presetUnmatched => '未匹配預設';
+
+  @override
+  String get presetUnmatchedHint =>
+      '這條頻道用的是舊版本建立的類型，已不在預設清單裡。保持不動即可繼續使用；點「更換預設」會覆蓋下面的欄位。';
+
+  @override
+  String get presetEndpointModified => '位址已改過';
+
+  @override
+  String get restorePresetEndpoint => '恢復預設值';
+
+  @override
+  String get changePresetOverlayHint => '選中會用預設值覆蓋介面協定與位址（密鑰、名稱、標籤不動）。';
+
+  @override
+  String get protocolField => '介面協定';
+
+  @override
+  String get protocolFieldHint => '共 4 個協定族，任何已儲存的類型都能在這裡表示。';
+
+  @override
+  String get deprecatedLabel => '已廢棄';
+
+  @override
+  String get apiKeyOptional => '可選';
+
+  @override
+  String get apiKeyLocalPlaceholder => '本機服務通常不需要';
+
+  @override
+  String get apiKeyLocalNote => '留空即可。如果你給本機服務加了反向代理鑑權，在這裡填對應的密鑰。';
+
+  @override
+  String get searchProvidersAlias => '搜尋供應商，或試試「千問」';
+
+  @override
+  String providerCountSummary(int count, int groups) {
+    return '$count 個供應商 · $groups 組';
+  }
+
+  @override
+  String providerVariantCount(int count) {
+    return '$count 種接入';
+  }
 
   @override
   String get prompts => '提示';

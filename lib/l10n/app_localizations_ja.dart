@@ -1098,7 +1098,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '回答中にプロバイダー自身がウェブ検索を実行します。追加トークンとして課金され、代理でページを取得します。';
 
   @override
-  String get addChannelSubtitle => 'プロバイダーを選んで接続まで1画面で完了';
+  String get addChannelSubtitle => 'まず「どこか」を選び、次に接続情報を入力';
 
   @override
   String get searchProviders => 'プロバイダーを検索…';
@@ -1171,6 +1171,154 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get previewInList => 'リストでの見え方';
+
+  @override
+  String get providerGroupVendor => 'ベンダー';
+
+  @override
+  String get providerGroupVendorHint => '公式接続 · アドレス入力済み';
+
+  @override
+  String get providerGroupRelay => '中継';
+
+  @override
+  String get providerGroupRelayHint => 'プロトコル既知 · アドレスは自分で';
+
+  @override
+  String get providerGroupCustom => 'カスタム';
+
+  @override
+  String get providerGroupCustomHint => 'アドレス自入力 + プロトコル明示';
+
+  @override
+  String get providerGroupLocal => 'ローカル';
+
+  @override
+  String get providerGroupLocalHint => '既定は localhost';
+
+  @override
+  String get providerNeedKeyOnly => 'キーのみ';
+
+  @override
+  String get providerNeedEndpoint => 'アドレス必須';
+
+  @override
+  String get providerNeedKeyless => 'キー不要';
+
+  @override
+  String get providerCustomOpenAIDesc => 'OpenAI チャット面を提供する任意のホスト';
+
+  @override
+  String get providerCustomGoogleDesc => 'Google GenAI 面を提供する任意のホスト';
+
+  @override
+  String get providerCustomAnthropicDesc => 'Anthropic Messages 面を提供する任意のホスト';
+
+  @override
+  String get variantTitleGoogle => '接続方式';
+
+  @override
+  String get variantTitleMiniMax => 'インターフェース';
+
+  @override
+  String get variantTitleNewApi => 'APIフォーマット';
+
+  @override
+  String get variantTitleGeneric => '接続方式';
+
+  @override
+  String get variantHintGoogle =>
+      'Google は同じモデルを 2 通りで提供します。切り替えると下のアドレスが書き換わります。';
+
+  @override
+  String get variantHintMiniMax =>
+      'MiniMax は 2 つのインターフェースを提供しています。どちらかを選択（後から変更可）。';
+
+  @override
+  String get variantHintNewApi => 'ホストはご自身で入力。バージョンパスは選んだフォーマットに追従します。';
+
+  @override
+  String get variantHintGeneric => '切り替えると下のアドレスが書き換わります。';
+
+  @override
+  String get variantGoogleNative => 'GenAI ネイティブ';
+
+  @override
+  String get variantGoogleOpenAI => 'OpenAI 互換面';
+
+  @override
+  String get variantMiniMaxOpenAI => 'OpenAI 面';
+
+  @override
+  String get variantMiniMaxAnthropic => 'Anthropic 面';
+
+  @override
+  String get variantNewApiOpenAI => 'OpenAI 形式';
+
+  @override
+  String get variantNewApiGemini => 'Gemini 形式';
+
+  @override
+  String get variantNewApiAnthropic => 'Anthropic 形式';
+
+  @override
+  String get channelPresetLabel => 'プロバイダプリセット';
+
+  @override
+  String get channelPresetHint =>
+      'プリセットは下の項目をまとめて入力するだけです。入力後も個別に編集でき、編集内容が上書きされることはありません。';
+
+  @override
+  String get changePreset => 'プリセットを変更';
+
+  @override
+  String get presetUnmatched => '該当プリセットなし';
+
+  @override
+  String get presetUnmatchedHint =>
+      'このチャンネルは旧バージョンで作成された、現在は提供されていない種別です。そのままでも動作します。「プリセットを変更」すると下の項目が上書きされます。';
+
+  @override
+  String get presetEndpointModified => 'アドレス変更済み';
+
+  @override
+  String get restorePresetEndpoint => 'プリセット値に戻す';
+
+  @override
+  String get changePresetOverlayHint =>
+      '選択するとプロトコルとアドレスがプリセット値で上書きされます（キー・名前・タグはそのまま）。';
+
+  @override
+  String get protocolField => 'APIプロトコル';
+
+  @override
+  String get protocolFieldHint => 'プロトコルファミリーは 4 つ。保存済みのどの種別もここで表現できます。';
+
+  @override
+  String get deprecatedLabel => '非推奨';
+
+  @override
+  String get apiKeyOptional => '任意';
+
+  @override
+  String get apiKeyLocalPlaceholder => 'ローカルサービスは通常不要';
+
+  @override
+  String get apiKeyLocalNote =>
+      '空欄で構いません。ローカルサービスにリバースプロキシ認証を付けている場合は、そのキーを入力してください。';
+
+  @override
+  String get searchProvidersAlias => 'プロバイダを検索、「Qwen」でも可';
+
+  @override
+  String providerCountSummary(int count, int groups) {
+    return '$count プロバイダ · $groups グループ';
+  }
+
+  @override
+  String providerVariantCount(int count) {
+    return '$count 通り';
+  }
 
   @override
   String get prompts => 'プロンプト';

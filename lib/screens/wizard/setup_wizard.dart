@@ -20,6 +20,7 @@ import '../../widgets/app_setting_row.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/models/channel_preset_picker.dart';
 import '../../widgets/models/channel_provider_presets.dart';
 import '../../widgets/settings_widgets.dart';
 import 'wizard_import.dart';
@@ -46,6 +47,9 @@ class _SetupWizardState extends State<SetupWizard> {
   final TextEditingController _endpointController = TextEditingController();
   final TextEditingController _apiKeyController = TextEditingController();
   String _channelType = Vendors.googleRest;
+
+  /// Which catalogue preset the picker last applied, for naming the field.
+  String? _presetId = 'google';
   int? _createdChannelId;
 
   // Model Step Controllers
@@ -118,6 +122,54 @@ class _SetupWizardState extends State<SetupWizard> {
     }
   }
 
+  Widget _buildProviderField(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final preset = _presetId == null
+        ? null
+        : kChannelProviderPresets.firstWhere((p) => p.id == _presetId);
+    final variant =
+        preset == null ? null : variantForChannelType(preset, _channelType);
+
+    return InkWell(
+      onTap: () => _pickProvider(l10n),
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: l10n.channelPresetLabel,
+          prefixIcon: Icon(preset?.icon ?? Icons.hexagon_outlined, size: 20),
+          suffixIcon: const Icon(Icons.expand_more, size: 20),
+        ),
+        child: Text(
+          preset == null
+              ? channelTypeLabel(l10n, _channelType)
+              : variant == null
+                  ? channelProviderTitle(l10n, preset.id)
+                  : '${channelProviderTitle(l10n, preset.id)}'
+                      ' · ${channelProviderVariantLabel(l10n, preset.id, variant.id)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickProvider(AppLocalizations l10n) async {
+    final picked = await showChannelPresetPicker(context, l10n: l10n);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _presetId = picked.preset.id;
+      _channelType = picked.variant?.channelType ?? picked.preset.channelType;
+      final endpoint =
+          picked.variant?.defaultEndpoint ?? picked.preset.defaultEndpoint;
+      if (endpoint != null) {
+        _endpointController.text = endpoint;
+      } else {
+        _updateDefaultEndpoint();
+      }
+    });
+  }
+
   void _nextStep() {
     if (_currentStep == 2) {
       _saveChannelAndContinue();
@@ -143,7 +195,9 @@ class _SetupWizardState extends State<SetupWizard> {
     // it does.
     final pageTurn = AppMotion.durationOf(context, AppMotion.panel);
     final apiKey = _apiKeyController.text.trim();
-    if (apiKey.isNotEmpty) {
+    // A local runtime has no key to give; skipping the channel because the
+    // key box is empty would silently drop the one the user just configured.
+    if (apiKey.isNotEmpty || Vendors.byId(_channelType).keyOptional) {
       final id = await _db.addChannel({
         'display_name': _channelNameController.text.trim(),
         'endpoint': _endpointController.text.trim(),
@@ -437,28 +491,11 @@ class _SetupWizardState extends State<SetupWizard> {
             ),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _channelType,
-            // The same registry-derived catalogue the channel editor uses:
-            // a hand-written list here went stale every time a vendor was
-            // added, and first-run had no way to pick DashScope at all.
-            items: [
-              for (final vendorType in channelTypesInDisplayOrder())
-                DropdownMenuItem(
-                  value: vendorType,
-                  child: Text(channelTypeLabel(l10n, vendorType)),
-                ),
-            ],
-            onChanged: (v) {
-              setState(() {
-                _channelType = v!;
-                _updateDefaultEndpoint();
-              });
-            },
-            decoration: InputDecoration(
-              labelText: l10n.channelType,
-            ),
-          ),
+          // The same catalogue the add-channel dialog and the channel editor
+          // read, opened as an overlay. First-run used to carry its own
+          // hand-written list of channel types, which is why it never offered
+          // DashScope at all (spec D2 `16f`).
+          _buildProviderField(l10n),
           const SizedBox(height: 16),
           TextField(
             controller: _endpointController,
