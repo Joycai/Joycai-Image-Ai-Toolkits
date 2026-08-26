@@ -3278,6 +3278,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optKbTreeEmpty => 'This knowledge base has no documents yet';
 
   @override
+  String get optKbTreeScanFailed => 'Could not read the knowledge-base folder';
+
+  @override
   String get optKbTreeNoMatch => 'No document matches that';
 
   @override

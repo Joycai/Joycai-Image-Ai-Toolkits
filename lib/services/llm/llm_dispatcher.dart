@@ -226,10 +226,13 @@ class LLMDispatcher {
   ///
   /// The floor stays at the historical 120 s so short calls are unaffected.
   ///
-  /// The streaming path does not use this at all — its guard is per chunk,
-  /// and progress resets it — which is why this only ever mattered for
-  /// `useStream: false`, and why teaching a protocol to stream tool calls
-  /// is the real fix rather than a bigger number here.
+  /// The streaming path normally does not use this at all — its guard is per
+  /// chunk, and progress resets it — which is why this mostly mattered for
+  /// `useStream: false`, and why teaching a protocol to stream tool calls is
+  /// the real fix rather than a bigger number here. The exception is a route
+  /// [streamIsSingleShot] answers `true` for, where "streaming" is this very
+  /// call re-emitted afterwards: there the first-chunk guard borrows this
+  /// deadline, because there is nothing else for it to measure.
   ///
   /// Midjourney is the outlier that predates all of it: its generate()
   /// *contains* the whole submit → poll → download cycle (up to 10 minutes,
@@ -448,7 +451,7 @@ class LLMDispatcher {
       case ProtocolFamily.gemini:
         // Imagen has no streaming surface — run the single-shot predict call
         // and emit its result as chunks.
-        if (target.model.family == ModelFamily.geminiImagen) {
+        if (_streamIsSingleShot(target)) {
           final response = await _imagen.generateImage(target, history, options: options, logger: logger);
           yield* _asChunks(response);
           return;
@@ -460,10 +463,7 @@ class LLMDispatcher {
       case ProtocolFamily.openai:
         // The Images APIs do not stream — fall back to a single-shot call
         // and surface the result as chunks.
-        if (target.model.family == ModelFamily.openaiImage ||
-            target.model.family == ModelFamily.xaiImage ||
-            (target.model.family == ModelFamily.dashscopeImage &&
-                target.vendor.imageMenu.isNotEmpty)) {
+        if (_streamIsSingleShot(target)) {
           logger?.call('Image model does not support streaming; using Images API.', level: 'DEBUG');
           final response = await generate(config, history, options: options, logger: logger);
           yield* _asChunks(response);
@@ -479,8 +479,7 @@ class LLMDispatcher {
         // Same two rules as the ① branch: the native image surface has no
         // streaming form, so its single-shot result is surfaced as chunks;
         // everything else streams on the resolved chat face.
-        if (target.model.family == ModelFamily.dashscopeImage &&
-            target.vendor.imageMenu.isNotEmpty) {
+        if (_streamIsSingleShot(target)) {
           logger?.call('Image model does not support streaming; using the DashScope image surface.', level: 'DEBUG');
           final response = await generate(config, history, options: options, logger: logger);
           yield* _asChunks(response);
@@ -491,6 +490,38 @@ class LLMDispatcher {
             _faceTarget(target, dashscopeFace), history,
             options: options, tools: tools, logger: logger);
         return;
+    }
+  }
+
+  /// Whether [generateStream] on this route is really a single-shot call
+  /// re-emitted as chunks, rather than a live stream.
+  ///
+  /// The image surfaces have no streaming form, so their whole generation
+  /// runs inside one awaited `generate()` and the first chunk appears only
+  /// once it is finished. Public because the guard wrapped around the stream
+  /// has to know: an idle gap sized for "is this connection still alive"
+  /// measures nothing here but the generation itself, and firing it abandons
+  /// a task that is already billed and still running — see
+  /// [LLMService], and [generateTimeout] for the non-streaming twin of the
+  /// same rule.
+  bool streamIsSingleShot(LLMModelConfig config) =>
+      _streamIsSingleShot(resolveTarget(config));
+
+  bool _streamIsSingleShot(LLMTarget target) {
+    switch (target.vendor.family) {
+      case ProtocolFamily.midjourney:
+      case ProtocolFamily.anthropic:
+        return false;
+      case ProtocolFamily.gemini:
+        return target.model.family == ModelFamily.geminiImagen;
+      case ProtocolFamily.openai:
+        return target.model.family == ModelFamily.openaiImage ||
+            target.model.family == ModelFamily.xaiImage ||
+            (target.model.family == ModelFamily.dashscopeImage &&
+                target.vendor.imageMenu.isNotEmpty);
+      case ProtocolFamily.dashscope:
+        return target.model.family == ModelFamily.dashscopeImage &&
+            target.vendor.imageMenu.isNotEmpty;
     }
   }
 
@@ -652,6 +683,20 @@ class LLMDispatcher {
           };
         }
 
+        // Sora-style ids start with `video_` (NewAPI / OpenAI Sora format),
+        // which only the ① `/v1/videos` surface emits — so the id itself,
+        // not the channel's current wiring, decides where it is polled.
+        //
+        // Ahead of the vendor switch below on purpose. Tasks outlive the
+        // config that started them: a vendor that gains a `videoProtocol`
+        // (DashScope did) would otherwise re-route the operations already
+        // sitting in the `tasks` table to its native `GET /tasks/{id}`,
+        // where a `video_…` id means nothing — every in-flight video from
+        // before the upgrade fails permanently.
+        if (operationName.startsWith('video_')) {
+          return _openaiVideos.poll(target, operationName, logger: logger);
+        }
+
         // Vendors with a native video surface poll it with their own status
         // vocabulary: xAI's `GET /videos/{request_id}`
         // (pending/done/expired/failed), DashScope's `GET /tasks/{task_id}`
@@ -667,10 +712,9 @@ class LLMDispatcher {
             break;
         }
 
-        // Sora-style video task ids start with `video_` (NewAPI / OpenAI Sora
-        // format). Also dispatch by model family for non-prefixed ids that
-        // some upstreams emit (e.g. Wanxiang).
-        if (target.model.family == ModelFamily.openaiVideo || operationName.startsWith('video_')) {
+        // Non-prefixed ids some upstreams emit (e.g. Wanxiang) dispatch by
+        // model family instead.
+        if (target.model.family == ModelFamily.openaiVideo) {
           return _openaiVideos.poll(target, operationName, logger: logger);
         }
 

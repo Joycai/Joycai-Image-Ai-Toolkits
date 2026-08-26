@@ -74,7 +74,8 @@ class LLMService {
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
           );
 
-          await for (final chunk in _idleGuarded(stream)) {
+          await for (final chunk
+              in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
             if (chunk.reasoningPart != null) {
               // Surfaced to the console and kept for replay, but never glued
               // into the deliverable — that must not contain the chain of
@@ -215,8 +216,32 @@ class LLMService {
   /// subscription, where the non-streaming `Future.timeout` leaves its request
   /// running upstream and billing.
   static Stream<LLMResponseChunk> _idleGuarded(
-          Stream<LLMResponseChunk> stream) =>
-      _guard(stream, first: _firstChunkGap, subsequent: _idleGap);
+          Stream<LLMResponseChunk> stream, {Duration? first}) =>
+      _guard(stream, first: first ?? _firstChunkGap, subsequent: _idleGap);
+
+  /// How long the first chunk may take on this particular route.
+  ///
+  /// [_firstChunkGap] asks "is this connection alive", which is the right
+  /// question only while something upstream is actually streaming. On a
+  /// route [LLMDispatcher.streamIsSingleShot] calls out, nothing is: the
+  /// dispatcher awaits the whole single-shot `generate()` and only then
+  /// re-emits it as chunks, so the first chunk cannot arrive before the
+  /// generation is *finished*. DashScope's async image task is the case that
+  /// forced this — its poll loop runs up to nine minutes inside one call, and
+  /// a 180 s guard turned it into a [TimeoutException], which
+  /// [isRetryable] answers `true` to: the task is abandoned, already billed,
+  /// still running upstream, and submitted a second time.
+  ///
+  /// So such a route borrows the non-streaming deadline, which is sized for
+  /// exactly that. Never *shorter* than [_firstChunkGap] — the chat formula's
+  /// 120 s floor would otherwise tighten the guard on the image routes it
+  /// does not describe.
+  Duration _firstChunkGapFor(
+      LLMModelConfig config, Map<String, dynamic>? options) {
+    if (!_dispatcher.streamIsSingleShot(config)) return _firstChunkGap;
+    final deadline = _dispatcher.generateTimeout(config, options: options);
+    return deadline > _firstChunkGap ? deadline : _firstChunkGap;
+  }
 
   @visibleForTesting
   static Stream<T> idleGuardedForTest<T>(
@@ -324,7 +349,8 @@ class LLMService {
           logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
         );
 
-        await for (final chunk in _idleGuarded(stream)) {
+        await for (final chunk
+            in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
           if (chunk.reasoningPart != null) {
             onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
           }

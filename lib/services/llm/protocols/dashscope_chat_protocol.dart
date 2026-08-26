@@ -414,6 +414,19 @@ bool? dashscopeThinkingRequest(ReasoningEffort? effort) => switch (effort) {
       _ => true,
     };
 
+/// Text content in whichever shape the endpoint being addressed accepts.
+///
+/// The multimodal endpoint rejects a bare string even for a turn that carries
+/// no image at all, and [dashscopeChatIsMultimodal] is a property of the
+/// *history*: one attachment anywhere puts every message of the conversation
+/// on that endpoint. Which is why this is not something only the branches
+/// that build image parts have to think about — a tool result and a
+/// tool-calling assistant turn carry no image and still have to be lists,
+/// and getting that wrong rejects the first round-trip of any agent turn
+/// that happened to include a reference image.
+Object _dashscopeContent(String text, {required bool multimodal}) =>
+    multimodal ? [<String, dynamic>{'text': text}] : text;
+
 Map<String, dynamic> _dashscopeMessage(LLMMessage msg,
     {required bool multimodal}) {
   // Tool result. `tool_call_id` is the current pairing key and `name` the
@@ -422,7 +435,7 @@ Map<String, dynamic> _dashscopeMessage(LLMMessage msg,
   if (msg.role == LLMRole.tool) {
     return {
       'role': 'tool',
-      'content': msg.content,
+      'content': _dashscopeContent(msg.content, multimodal: multimodal),
       if (msg.toolCallId != null) 'tool_call_id': msg.toolCallId,
       if (msg.toolName != null) 'name': msg.toolName,
     };
@@ -433,7 +446,7 @@ Map<String, dynamic> _dashscopeMessage(LLMMessage msg,
       'role': 'assistant',
       // Empty string rather than null: the native surface validates the
       // field's type where the compatible face tolerates a null.
-      'content': msg.content,
+      'content': _dashscopeContent(msg.content, multimodal: multimodal),
       if (msg.reasoningContent != null && msg.reasoningFieldName != null)
         msg.reasoningFieldName!: msg.reasoningContent,
       'tool_calls': [

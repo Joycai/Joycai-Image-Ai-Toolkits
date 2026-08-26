@@ -161,4 +161,14 @@ void main() {
     final l10n = await en();
     expect(find.text(l10n.optKbNotConfigured), findsOneWidget);
   });
+
+  testWidgets('a walk that fails says that, not "not configured"', (tester) async {
+    // A base that is set but unreadable — gone, renamed, permission changed —
+    // is a different problem from having none, and saying the wrong one sends
+    // the user off to re-pick a folder that is already picked.
+    await pumpTree(tester, path: p.join(root.path, 'gone'));
+    final l10n = await en();
+    expect(find.text(l10n.optKbTreeScanFailed), findsOneWidget);
+    expect(find.text(l10n.optKbNotConfigured), findsNothing);
+  });
 }

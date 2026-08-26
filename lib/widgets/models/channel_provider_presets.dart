@@ -354,24 +354,63 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
   ),
 ];
 
-/// The preset a stored channel type came from, or null when none matches.
+/// The preset a stored channel came from, or null when none matches.
 ///
 /// Used by the editor's shortcut bar to say which preset a channel is sitting
 /// on. Null is a first-class answer, not a failure: a channel created by an
 /// older build can carry a type no current preset offers (the deprecated
 /// `official-google-genai-api`), and the editor shows it as "no matching
 /// preset" and leaves it alone rather than rewriting it (spec D2 `16e`).
-ChannelProviderPreset? presetForChannelType(String channelType) {
-  for (final preset in kChannelProviderPresets) {
-    if (preset.hasVariants) {
-      for (final variant in preset.variants) {
-        if (variant.channelType == channelType) return preset;
-      }
-    } else if (preset.channelType == channelType) {
-      return preset;
+///
+/// [endpoint] is what disambiguates, and passing it matters. Several presets
+/// legitimately store the *same* type — `openai-official` and `custom-openai`
+/// both resolve to ①'s unspecified-supplier profile, `google` and
+/// `custom-google` to ③'s — because "OpenAI compatible" is a wire format, not
+/// a company. Type alone therefore cannot tell a channel pointed at
+/// api.openai.com from one pointed at the user's own relay, and answering
+/// `openai-official` for the relay is not merely a wrong label: the editor
+/// then reads the address as *diverging from its preset*, flags it, and
+/// offers a one-tap restore that overwrites a working endpoint with
+/// `https://api.openai.com/v1`.
+///
+/// So: the preset whose default endpoint this channel actually sits on wins;
+/// failing that, an address only the user knows *is* the custom preset, whose
+/// silence about endpoints is the honest answer.
+ChannelProviderPreset? presetForChannelType(String channelType,
+    {String? endpoint}) {
+  final matches = <ChannelProviderPreset>[
+    for (final preset in kChannelProviderPresets)
+      if (preset.hasVariants
+          ? preset.variants.any((v) => v.channelType == channelType)
+          : preset.channelType == channelType)
+        preset,
+  ];
+  if (matches.length <= 1) return matches.isEmpty ? null : matches.first;
+
+  final address = _normalizedEndpoint(endpoint);
+  if (address != null) {
+    for (final preset in matches) {
+      final defaults = preset.hasVariants
+          ? preset.variants.map((v) => v.defaultEndpoint)
+          : [preset.defaultEndpoint];
+      if (defaults.any((d) => _normalizedEndpoint(d) == address)) return preset;
     }
   }
-  return null;
+  return matches.firstWhere(
+    (p) => p.group == ChannelProviderGroup.custom,
+    orElse: () => matches.first,
+  );
+}
+
+/// An endpoint reduced to what makes two of them the same address: case and a
+/// trailing slash are the two ways the identical host gets typed differently.
+/// Null for "nothing to compare".
+String? _normalizedEndpoint(String? endpoint) {
+  var value = endpoint?.trim() ?? '';
+  while (value.endsWith('/')) {
+    value = value.substring(0, value.length - 1);
+  }
+  return value.isEmpty ? null : value.toLowerCase();
 }
 
 /// The variant of [preset] a stored channel type corresponds to, or null.
@@ -566,26 +605,6 @@ String channelProviderVariantLabel(
       return variantId;
   }
 }
-
-/// Every channel type the app can store, in the order the type dropdowns
-/// offer them: grouped by protocol family, registry order within a family.
-///
-/// Derived from [Vendors.all] rather than hand-listed. A hand-listed dropdown
-/// does not merely hide the vendor it forgets — Material asserts that a
-/// dropdown's current value is among its items, so a channel of an omitted
-/// type could not be opened for editing at all. DashScope shipped missing
-/// from exactly that list; deriving it means the next vendor added to the
-/// registry cannot repeat it.
-List<String> channelTypesInDisplayOrder() => <String>[
-      for (final family in const [
-        ProtocolFamily.openai,
-        ProtocolFamily.gemini,
-        ProtocolFamily.anthropic,
-        ProtocolFamily.midjourney,
-      ])
-        for (final vendor in Vendors.all)
-          if (vendor.family == family) vendor.id,
-    ];
 
 /// The generic vendor that represents a protocol family on its own — what a
 /// channel becomes when the user picks a family in the editor's protocol

@@ -1779,6 +1779,7 @@
   },
   "optKbSearchDocs": "Search documents...",
   "optKbTreeEmpty": "This knowledge base has no documents yet",
+  "optKbTreeScanFailed": "Could not read the knowledge-base folder",
   "optKbTreeNoMatch": "No document matches that",
   "optKbTreeChanged": "edited",
   "optKbTreeAdded": "new",

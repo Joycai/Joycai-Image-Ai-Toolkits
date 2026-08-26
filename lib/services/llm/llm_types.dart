@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -536,12 +537,12 @@ class LLMModelConfig {
 /// of the cap on its own.
 class LLMClientPool {
   /// Small on purpose — a user has a handful of channels, and an entry holds
-  /// open sockets. Past this the least-recently-taken client is closed.
+  /// open sockets. Past this the least-recently-taken client is evicted.
   static const int _maxClients = 8;
 
   /// Insertion-ordered, and re-inserted on every hit, so `keys.first` is the
   /// least recently used.
-  static final Map<String, http.Client> _clients = {};
+  static final Map<String, _PooledClient> _clients = {};
 
   static http.Client take(LLMModelConfig config) {
     final key = config.connectionKey;
@@ -553,10 +554,10 @@ class LLMClientPool {
 
     while (_clients.length >= _maxClients) {
       final oldest = _clients.keys.first;
-      _clients.remove(oldest)?.close();
+      _clients.remove(oldest)?.evict();
     }
 
-    final client = config.buildClient();
+    final client = _PooledClient(config.buildClient());
     _clients[key] = client;
     return _SharedClient(client);
   }
@@ -565,7 +566,7 @@ class LLMClientPool {
   /// session needs to call it.
   static void disposeAll() {
     for (final client in _clients.values) {
-      client.close();
+      client.evict();
     }
     _clients.clear();
   }
@@ -574,16 +575,111 @@ class LLMClientPool {
   static int get liveClients => _clients.length;
 }
 
+/// One pooled connection, plus a count of the requests still riding on it.
+///
+/// The count is what makes eviction safe. Eviction and use are unrelated
+/// events — a video poll loop or an SSE stream can be mid-transfer when a
+/// ninth endpoint pushes its client past the cap — and closing an
+/// [IOClient] is `close(force: true)`: it does not drain, it tears the
+/// sockets down, and the in-flight request dies with a `ClientException`.
+/// One multi-face channel occupies up to three [LLMModelConfig.connectionKey]s
+/// on its own, so the cap is reachable with a handful of channels and this is
+/// an ordinary session, not a corner.
+///
+/// So eviction drops the *pool's* reference and nothing more; whoever leaves
+/// last closes the client.
+class _PooledClient {
+  final http.Client inner;
+
+  int _inFlight = 0;
+  bool _evicted = false;
+
+  _PooledClient(this.inner);
+
+  void retain() => _inFlight++;
+
+  void release() {
+    if (--_inFlight <= 0 && _evicted) inner.close();
+  }
+
+  /// Drops the pool's reference. Closes now only if nothing is using it.
+  void evict() {
+    _evicted = true;
+    if (_inFlight <= 0) inner.close();
+  }
+
+  @visibleForTesting
+  int get inFlight => _inFlight;
+}
+
 /// A pooled client handle whose [close] is a no-op — see
 /// [LLMModelConfig.createClient].
 class _SharedClient extends http.BaseClient {
-  final http.Client _inner;
+  final _PooledClient _pooled;
 
-  _SharedClient(this._inner);
+  _SharedClient(this._pooled);
 
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) =>
-      _inner.send(request);
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    _pooled.retain();
+    final http.StreamedResponse response;
+    try {
+      response = await _pooled.inner.send(request);
+    } catch (_) {
+      _pooled.release();
+      rethrow;
+    }
+
+    // Held until the *body* is finished, not until the headers arrive: on a
+    // streamed response `send` returns at the first byte, and a stream whose
+    // client was closed underneath it is exactly what the count exists to
+    // prevent.
+    var released = false;
+    void release() {
+      if (released) return;
+      released = true;
+      _pooled.release();
+    }
+
+    return http.StreamedResponse(
+      _releaseWhenDone(response.stream, release),
+      response.statusCode,
+      contentLength: response.contentLength,
+      request: response.request,
+      headers: response.headers,
+      isRedirect: response.isRedirect,
+      persistentConnection: response.persistentConnection,
+      reasonPhrase: response.reasonPhrase,
+    );
+  }
+
+  /// [source] with [done] called once it can carry nothing more: drained, or
+  /// cancelled by a caller that gave up — an idle guard tearing down its
+  /// subscription is the common one, and `onDone` never fires for it.
+  static Stream<List<int>> _releaseWhenDone(
+      Stream<List<int>> source, void Function() done) {
+    late final StreamController<List<int>> controller;
+    StreamSubscription<List<int>>? sub;
+    controller = StreamController<List<int>>(
+      onListen: () {
+        sub = source.listen(
+          controller.add,
+          onError: controller.addError,
+          onDone: () {
+            done();
+            controller.close();
+          },
+        );
+      },
+      onPause: () => sub?.pause(),
+      onResume: () => sub?.resume(),
+      onCancel: () async {
+        done();
+        await sub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
 
   @override
   void close() {}

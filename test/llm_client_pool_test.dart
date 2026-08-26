@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 
 /// Pins connection reuse.
@@ -83,6 +87,42 @@ void main() {
     }
 
     expect(LLMClientPool.liveClients, lessThanOrEqualTo(8));
+  });
+
+  test('eviction does not tear down a request still in flight', () async {
+    // The failure this pins is not slowness, it is a dead request. Closing an
+    // IOClient is `close(force: true)`: it does not drain, it drops the
+    // sockets. A video poll loop or an SSE stream mid-transfer when a ninth
+    // endpoint pushes its client past the cap would die with a
+    // ClientException — and one multi-face channel occupies three connection
+    // keys on its own, so the cap is an ordinary session, not a corner.
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final endpoint = 'http://127.0.0.1:${server.port}';
+
+    final secondHalf = Completer<void>();
+    server.listen((request) async {
+      request.response.bufferOutput = false;
+      request.response.write('first');
+      await request.response.flush();
+      await secondHalf.future;
+      request.response.write('second');
+      await request.response.close();
+    });
+
+    final client = config(endpoint: endpoint).createClient();
+    final response =
+        await client.send(http.Request('GET', Uri.parse(endpoint)));
+    final body = response.stream.bytesToString();
+
+    // Eight more endpoints: enough to push the in-flight one out of the cap.
+    for (var i = 0; i < 8; i++) {
+      config(endpoint: 'https://evictor$i.example.com/v1').createClient();
+    }
+    expect(LLMClientPool.liveClients, lessThanOrEqualTo(8));
+
+    secondHalf.complete();
+    expect(await body, 'firstsecond');
   });
 
   test('a hit refreshes recency, so a busy channel is not evicted', () {
