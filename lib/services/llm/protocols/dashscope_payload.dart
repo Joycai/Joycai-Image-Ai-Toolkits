@@ -2,7 +2,7 @@ import '../llm_types.dart';
 import '../model_capabilities.dart';
 import 'protocol.dart';
 
-/// Pure request/response helpers for DashScope's native image surface.
+/// Pure request/response helpers for DashScope's native surfaces.
 ///
 /// Everything here is IO-free on purpose: the repo has no HTTP mock setup, so
 /// the only way these rules get pinned by tests is to keep them out of the
@@ -38,6 +38,22 @@ String dashscopeAnthropicBase(String endpoint) {
   if (base.endsWith('/apps/anthropic/v1')) return base;
   if (base.endsWith('/apps/anthropic')) return '$base/v1';
   return '$base/apps/anthropic/v1';
+}
+
+/// The OpenAI-compatible base a channel's endpoint implies
+/// (`…/compatible-mode/v1`).
+///
+/// The mirror image of [dashscopeNativeBase]: a channel configured natively
+/// (`…/api/v1`) still needs the compatible face for the two things the native
+/// one does not serve — the ① chat alternate, and model discovery, which
+/// DashScope publishes only as `GET /compatible-mode/v1/models`. Same
+/// contract: idempotent, path-only, so the international host works
+/// unchanged.
+String dashscopeCompatibleBase(String endpoint) {
+  final base = _dashscopeHostBase(endpoint);
+  return base.endsWith('/compatible-mode/v1')
+      ? base
+      : '$base/compatible-mode/v1';
 }
 
 /// The bare host base with any known DashScope face suffix stripped.
@@ -226,4 +242,23 @@ List<String> dashscopeImageRefs(Map<String, dynamic> data) {
   }
 
   return refs;
+}
+
+/// The payload with inline images replaced by a count, safe for logs.
+///
+/// A base64 image is megabytes of noise in a log that exists to be read, and
+/// the conversation is the only place one can appear — under `input` on the
+/// three-section shapes, at the top level on wan's. Shared by every native
+/// surface (chat, image sync, image async) so one of them cannot start
+/// spilling image bytes into the debug log while the others do not.
+Map<String, dynamic> dashscopePayloadForLog(
+    Map<String, dynamic> payload, int refs) {
+  if (refs == 0) return payload;
+  final note = '[messages with $refs inline reference image(s)]';
+  return {
+    for (final entry in payload.entries)
+      entry.key: (entry.key == 'input' || entry.key == 'messages')
+          ? note
+          : entry.value,
+  };
 }

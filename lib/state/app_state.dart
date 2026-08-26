@@ -268,8 +268,9 @@ class AppState extends ChangeNotifier {
 
   /// Video LRO is currently implemented by:
   ///   * Gemini-family vendors — Veo via `:predictLongRunning`
-  ///   * OpenAI-family vendors — Sora / grok-imagine / Wanxiang etc. via
-  ///     `/v1/videos`, gated on the model classifying as
+  ///   * OpenAI- and DashScope-family vendors — Sora / grok-imagine /
+  ///     Wanxiang etc. via `/v1/videos`, wan3.x via DashScope's
+  ///     `video-synthesis`, gated on the model classifying as
   ///     [ModelFamily.openaiVideo] so that chat-only ids on the same channel
   ///     don't slip into the picker.
   bool _supportsVideoForType(LLMModel m) {
@@ -281,6 +282,11 @@ class AppState extends ChangeNotifier {
       case ProtocolFamily.gemini:
         return true;
       case ProtocolFamily.openai:
+      case ProtocolFamily.dashscope:
+        // Same gate for both: the vendor can carry a video job, and the model
+        // has to classify as one. DashScope's `wan3.0-video` ids classify
+        // into [ModelFamily.openaiVideo] — "an async video-task model" —
+        // whichever face the channel leads with.
         return ModelDescriptor.of(m.modelId).family == ModelFamily.openaiVideo;
       case ProtocolFamily.midjourney:
       case ProtocolFamily.anthropic:

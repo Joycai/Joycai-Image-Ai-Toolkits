@@ -1,14 +1,17 @@
 # Vendor–Protocol–Model 路由重构：从「vendor 固定 family」到「按 surface 解析协议」
 
 **性质**：高层架构设计 + 分期实施计划。不含逐行实现。
-**状态（2026-08-25）**：A 期 + B 期 + 点单 UI（spec D2 18a–18f）已实现并合入
-本分支 —— `WireProtocol`/surface 菜单、v36 `wire_protocol` 列、
-`dashscope_images_async` / `dashscope_video` 协议、④ 面复用、模型编辑器四态、
-列表 chip 与通道副行；`test/wire_protocol_routing_test.dart` 钉住同构。
-**未实现**：C 期（MiniMax 视频）、D 期（`dashscope_chat` 私有面 ——
-百炼 chat 菜单目前是 ①/④ 两项，DashScope 私有作为第三项待 D 期；
-`VideoJobProtocol.cancel`）。B 期的真机退出标准（wan 视频/异步图/④ 面实测）
-尚未跑，属发布前验证项。
+**状态（2026-08-26）**：A 期 + B 期 + 点单 UI（spec D2 18a–18f）+ D 期的
+`dashscope_chat` 私有面已实现并合入本分支 —— `WireProtocol`/surface 菜单、
+v36 `wire_protocol` 列、`dashscope_images_async` / `dashscope_video` /
+`dashscope_chat` 协议、④ 面复用、模型编辑器四态、列表 chip 与通道副行；
+`test/wire_protocol_routing_test.dart` + `test/dashscope_chat_payload_test.dart`
+钉住同构与线上规则。私有 chat 面同时带来第五个 `ProtocolFamily.dashscope`
+与第二个百炼 vendor（`Vendors.dashscopeNative`，原生打头；原 `dashscope`
+仍是兼容面打头），两者 chatMenu 都是原生/①/④ 三项，只是顺序不同。
+**未实现**：C 期（MiniMax 视频）、`VideoJobProtocol.cancel`。B 期的真机退出
+标准（wan 视频/异步图/④ 面实测）尚未跑，私有 chat 面（文本面 + 多模态面 +
+SSE 增量）同样待实测，属发布前验证项。
 **输入**：`docs/architecture/llm-three-layer.md`（现行分层）、
 `docs/plans/2026-08-dashscope-native-image.md`（百炼出图期一的既有决策，本方案部分推翻它）、
 `docs/api/qianwen-bailian.md` + `docs/api/minimax.md`（两家的协议标准文档，与本方案同批产出）、

@@ -109,6 +109,11 @@ class ChannelProviderPreset {
   /// "Qianwen Platform" row — same API, same key, same host — be folded back
   /// into it rather than making users pick between two spellings of one
   /// service (spec D2 `16a`, the 千问 recommendation).
+  ///
+  /// Note the difference from DashScope's two rows: those are two *faces*
+  /// that differ in what they can do, so the choice is real and both rows
+  /// carry the same aliases. Qianwen Platform was the same face under a
+  /// second name, which is a choice nobody could make correctly.
   final List<String> searchAliases;
 
   /// What this row promises the user will have to supply next.
@@ -187,15 +192,48 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
   // The former separate "Qianwen Platform" row folded in as aliases: the
   // rebranded console points at the same host with the same key, so two rows
   // only ever made people wonder which of them was the right one.
+  // Two rows rather than one row with a switch, unlike Google's pair: the two
+  // faces here are not the same service in two dialects, they differ in what
+  // they can do (qwen-audio only natively, Qwen-Omni's audio output only on
+  // the compatible face), so which one a channel is on is worth reading off
+  // the list rather than off a control inside it. Both rows name the same
+  // company; the parenthetical is the whole distinction, so it is in the
+  // title and not only in the subtitle.
   ChannelProviderPreset(
     id: 'dashscope',
     channelType: Vendors.dashscope,
     group: ChannelProviderGroup.vendor,
     // Mainland host only. The international one (dashscope-intl.aliyuncs.com)
-    // needs no preset of its own: the image protocol derives its native base
-    // from the *path*, so a hand-typed intl endpoint works the same way.
+    // needs no preset of its own: every native base is derived from the
+    // *path*, so a hand-typed intl endpoint works the same way.
     defaultEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    searchAliases: ['qianwen', 'qwen', '千问', '通义', '百炼', 'bailian'],
+    searchAliases: [
+      'qianwen',
+      'qwen',
+      '千问',
+      '通义',
+      '百炼',
+      'bailian',
+      'dashscope',
+    ],
+    icon: Icons.water_drop_outlined,
+  ),
+  ChannelProviderPreset(
+    id: 'dashscope-native',
+    channelType: Vendors.dashscopeNative,
+    group: ChannelProviderGroup.vendor,
+    defaultEndpoint: 'https://dashscope.aliyuncs.com/api/v1',
+    // Same aliases as the row above: someone searching 千问 has to see both,
+    // or the search silently picks the face for them.
+    searchAliases: [
+      'qianwen',
+      'qwen',
+      '千问',
+      '通义',
+      '百炼',
+      'bailian',
+      'dashscope',
+    ],
     icon: Icons.water_drop_outlined,
   ),
   // One company, two protocol families: MiniMax serves its Anthropic-format
@@ -408,7 +446,9 @@ String channelProviderTitle(AppLocalizations l10n, String id) {
     case 'xai-official':
       return 'xAI (Grok)';
     case 'dashscope':
-      return l10n.providerDashScope;
+      return l10n.providerDashScopeCompat;
+    case 'dashscope-native':
+      return l10n.providerDashScopeNative;
     case 'minimax':
       return 'MiniMax';
     case 'deepseek':
@@ -447,6 +487,8 @@ String channelProviderSubtitle(
       return l10n.providerXaiOfficialDesc;
     case 'dashscope':
       return l10n.providerDashScopeDesc;
+    case 'dashscope-native':
+      return l10n.providerDashScopeNativeDesc;
     case 'minimax':
       return l10n.providerMiniMaxDesc;
     case 'deepseek':
@@ -562,6 +604,11 @@ String genericVendorForFamily(ProtocolFamily family) {
       return Vendors.anthropicRest;
     case ProtocolFamily.midjourney:
       return Vendors.midjourneyProxy;
+    case ProtocolFamily.dashscope:
+      // The one family with no "unspecified supplier": DashScope's native
+      // wire is served by Alibaba's host and nowhere else, so the vendor
+      // that represents the family is the company's own profile.
+      return Vendors.dashscopeNative;
   }
 }
 
@@ -579,6 +626,8 @@ String protocolFamilyLabel(AppLocalizations l10n, ProtocolFamily family) {
       return 'Anthropic · messages';
     case ProtocolFamily.midjourney:
       return 'Midjourney · /mj';
+    case ProtocolFamily.dashscope:
+      return 'DashScope · aigc/generation';
   }
 }
 
@@ -616,7 +665,9 @@ String channelTypeLabel(AppLocalizations l10n, String type) {
     case Vendors.minimaxAnthropic:
       return l10n.providerMiniMaxAnthropic;
     case Vendors.dashscope:
-      return l10n.providerDashScope;
+      return l10n.providerDashScopeCompat;
+    case Vendors.dashscopeNative:
+      return l10n.providerDashScopeNative;
     case Vendors.ollama:
       return 'Ollama';
     case Vendors.lmStudio:

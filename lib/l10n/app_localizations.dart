@@ -1667,17 +1667,29 @@ abstract class AppLocalizations {
   /// **'Google Gemini via OpenAI endpoint'**
   String get providerGoogleCompatibleDesc;
 
-  /// No description provided for @providerDashScope.
-  ///
-  /// In en, this message translates to:
-  /// **'Alibaba DashScope'**
-  String get providerDashScope;
-
   /// No description provided for @providerDashScopeDesc.
   ///
   /// In en, this message translates to:
-  /// **'dashscope.aliyuncs.com · one channel for chat, image and video — Qwen chat (OpenAI/Anthropic-compatible) + native qwen-image / wan images + wan video'**
+  /// **'dashscope.aliyuncs.com/compatible-mode · OpenAI-shaped requests · Qwen chat + native qwen-image / wan images + wan video'**
   String get providerDashScopeDesc;
+
+  /// No description provided for @providerDashScopeCompat.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba DashScope (OpenAI compatible)'**
+  String get providerDashScopeCompat;
+
+  /// No description provided for @providerDashScopeNative.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba DashScope (native)'**
+  String get providerDashScopeNative;
+
+  /// No description provided for @providerDashScopeNativeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'dashscope.aliyuncs.com/api/v1 · Alibaba\'s own request format · the only route for qwen-audio'**
+  String get providerDashScopeNativeDesc;
 
   /// No description provided for @endpointOverrideHint.
   ///
@@ -1834,6 +1846,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hint: Anthropic endpoints usually end with \'/v1\''**
   String get anthropicV1Hint;
+
+  /// No description provided for @dashscopeApiV1Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: DashScope native endpoints end with \'/api/v1\''**
+  String get dashscopeApiV1Hint;
 
   /// No description provided for @enterApiKey.
   ///
@@ -2516,7 +2534,7 @@ abstract class AppLocalizations {
   /// No description provided for @protocolFieldHint.
   ///
   /// In en, this message translates to:
-  /// **'Four protocol families; any stored type can be represented here.'**
+  /// **'Five protocol families; any stored type can be represented here.'**
   String get protocolFieldHint;
 
   /// No description provided for @deprecatedLabel.
@@ -2608,6 +2626,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Anthropic-compatible'**
   String get protocolAnthropicCompat;
+
+  /// No description provided for @protocolDashScopeNative.
+  ///
+  /// In en, this message translates to:
+  /// **'DashScope native'**
+  String get protocolDashScopeNative;
+
+  /// No description provided for @protocolDashScopeNativeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Alibaba\'s own request format; the only route for qwen-audio'**
+  String get protocolDashScopeNativeDesc;
 
   /// No description provided for @protocolImageSync.
   ///

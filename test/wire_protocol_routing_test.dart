@@ -33,10 +33,36 @@ void main() {
   });
 
   group('protocolMenuFor', () {
-    test('DashScope chat models offer the ①/④ pair, ① first', () {
+    test('DashScope chat models offer all three faces, compatible first', () {
       expect(
         LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'qwen-max'),
-        [WireProtocol.openaiChat, WireProtocol.anthropicChat],
+        [
+          WireProtocol.openaiChat,
+          WireProtocol.anthropicChat,
+          WireProtocol.dashscopeChat,
+        ],
+      );
+    });
+
+    test('the native vendor offers the same three, native first', () {
+      expect(
+        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'qwen-max'),
+        [
+          WireProtocol.dashscopeChat,
+          WireProtocol.openaiChat,
+          WireProtocol.anthropicChat,
+        ],
+      );
+    });
+
+    test('the native vendor keeps the same image and video menus', () {
+      expect(
+        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'wan2.7-image'),
+        [WireProtocol.dashscopeImagesSync, WireProtocol.dashscopeImagesAsync],
+      );
+      expect(
+        LLMDispatcher.protocolMenuFor(Vendors.dashscopeNative, 'wan3.0-video'),
+        [WireProtocol.dashscopeVideo],
       );
     });
 
@@ -173,6 +199,22 @@ void main() {
               wireProtocol: 'anthropic-chat')),
           isTrue);
     });
+
+    test('and on the native vendor, whose default is DashScope\'s own wire',
+        () {
+      final dispatcher = LLMDispatcher();
+      // Auto here is `dashscope-chat`, which has no tool-call accumulator
+      // yet — same answer as ①, reached through a different default.
+      expect(
+          dispatcher
+              .streamSupportsTools(config('qwen-max', Vendors.dashscopeNative)),
+          isFalse);
+      expect(
+          dispatcher.streamSupportsTools(config(
+              'qwen-max', Vendors.dashscopeNative,
+              wireProtocol: 'anthropic-chat')),
+          isTrue);
+    });
   });
 
   group('vendor surface declarations', () {
@@ -187,6 +229,18 @@ void main() {
       expect(ds.chatMenu.first, WireProtocol.openaiChat);
       expect(ds.videoProtocol, WireProtocol.dashscopeVideo);
       expect(ds.protocolBases.keys, contains(WireProtocol.anthropicChat));
+    });
+
+    test('the native vendor is the same supplier led by the native wire', () {
+      final native = Vendors.byId(Vendors.dashscopeNative);
+      expect(native.family, ProtocolFamily.dashscope);
+      expect(native.chatMenu.first, WireProtocol.dashscopeChat);
+      expect(native.videoProtocol, WireProtocol.dashscopeVideo);
+      // Both generic alternates are served on another base of the same host,
+      // so both are derived — a channel storing `…/api/v1` still reaches the
+      // ① and ④ faces, and discovery (which only exists on ①) still works.
+      expect(native.protocolBases.keys,
+          containsAll([WireProtocol.openaiChat, WireProtocol.anthropicChat]));
     });
 
     test('everyone else keeps empty menus (family defaults)', () {
@@ -275,6 +329,27 @@ void main() {
       ]) {
         expect(dashscopeNativeBase(input), want, reason: input);
       }
+    });
+
+    test('the compatible base derives back the other way', () {
+      // A natively-configured channel still needs this one: the ① chat
+      // alternate lives there, and so does the only `GET /models` DashScope
+      // publishes — without it the native vendor's "fetch models" could
+      // only ever fail.
+      const want = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      for (final input in [
+        'https://dashscope.aliyuncs.com/api/v1',
+        'https://dashscope.aliyuncs.com/api/v1/',
+        'https://dashscope.aliyuncs.com/apps/anthropic/v1',
+        'https://dashscope.aliyuncs.com',
+        want,
+      ]) {
+        expect(dashscopeCompatibleBase(input), want, reason: input);
+      }
+      expect(
+        dashscopeCompatibleBase('https://dashscope-intl.aliyuncs.com/api/v1'),
+        'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+      );
     });
   });
 

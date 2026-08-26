@@ -184,16 +184,3 @@ Future<Uint8List?> resolveDashScopeImageRef(
   }
   return null;
 }
-
-/// The payload with reference images replaced by a count, safe for logs.
-Map<String, dynamic> dashscopePayloadForLog(
-    Map<String, dynamic> payload, int refs) {
-  if (refs == 0) return payload;
-  final note = '[messages with $refs inline reference image(s)]';
-  return {
-    for (final entry in payload.entries)
-      entry.key: (entry.key == 'input' || entry.key == 'messages')
-          ? note
-          : entry.value,
-  };
-}

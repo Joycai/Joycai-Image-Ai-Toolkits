@@ -154,6 +154,26 @@ class ModelFamilyClassifier {
   static bool isNijiVariant(String modelId) =>
       modelId.toLowerCase().contains('niji');
 
+  /// Ids DashScope serves only on its **multimodal** native chat endpoint
+  /// (`multimodal-generation/generation`) rather than the text one.
+  ///
+  /// Sending one of these to `text-generation/generation` is rejected, and
+  /// the reverse — an image part on the text endpoint — is worse: the part
+  /// is dropped and the model answers as though it had never seen it. Both
+  /// halves of the rule therefore live here, in the one file allowed to
+  /// recognize a model id.
+  ///
+  /// Named after the shapes DashScope publishes rather than a vendor prefix:
+  /// `qwen-vl-*` / `qwen3-vl-*` (vision), `qwen-omni-*` (any-to-any) and
+  /// `qwen-audio-*` (the one family with no compatible-mode route at all).
+  static bool isDashScopeMultimodalChat(String modelId) {
+    final id = modelId.toLowerCase();
+    return id.contains('-vl-') ||
+        id.endsWith('-vl') ||
+        id.contains('-omni') ||
+        id.contains('-audio');
+  }
+
   /// Ids whose chat surface takes text only — image parts either 400 or,
   /// worse, get silently dropped. DeepSeek's chat/completions endpoint does
   /// not serve its multimodal models (as of 2026-08).

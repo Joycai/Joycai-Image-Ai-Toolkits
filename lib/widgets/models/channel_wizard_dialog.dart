@@ -895,6 +895,7 @@ class _ChannelWizardDialogState extends State<ChannelWizardDialog> {
                 : switch (Vendors.byId(_resolvedChannelType()).family) {
                     ProtocolFamily.gemini => l10n.googleV1BetaHint,
                     ProtocolFamily.anthropic => l10n.anthropicV1Hint,
+                    ProtocolFamily.dashscope => l10n.dashscopeApiV1Hint,
                     _ => l10n.openaiV1Hint,
                   };
 
