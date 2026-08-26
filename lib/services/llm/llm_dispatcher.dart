@@ -2,6 +2,7 @@ import 'llm_types.dart';
 import 'model_descriptor.dart';
 import 'model_family.dart';
 import 'protocols/anthropic_chat_protocol.dart';
+import 'protocols/dashscope_chat_protocol.dart';
 import 'protocols/dashscope_images_async_protocol.dart';
 import 'protocols/dashscope_images_protocol.dart';
 import 'protocols/dashscope_video_protocol.dart';
@@ -46,6 +47,7 @@ class LLMDispatcher {
   static final _openaiImages = OpenAIImagesProtocol();
   static final _openaiVideos = OpenAIVideosProtocol();
   static final _xaiImages = XaiImagesProtocol();
+  static final _dashscopeChat = DashScopeChatProtocol();
   static final _dashscopeImages = DashScopeImagesProtocol();
   static final _dashscopeImagesAsync = DashScopeImagesAsyncProtocol();
   static final _dashscopeVideo = DashScopeVideoProtocol();
@@ -160,17 +162,24 @@ class LLMDispatcher {
     );
   }
 
-  /// The chat protocol serving this ①-family target: the model's pinned
-  /// choice, else the vendor's chat default. Only values meaningful on an
-  /// OpenAI-family vendor come back — anything else degrades to [WireProtocol
-  /// .openaiChat].
-  WireProtocol _openaiFamilyChatProtocol(LLMTarget target) {
-    final chosen = _pinnedProtocol(target, Surface.chat) ??
-        target.vendor.menuFor(Surface.chat).first;
-    return chosen == WireProtocol.anthropicChat
-        ? WireProtocol.anthropicChat
-        : WireProtocol.openaiChat;
-  }
+  /// The chat wire serving this target: the model's pinned choice, else the
+  /// vendor's chat default (its menu's first entry).
+  ///
+  /// Only the multi-face families ask — ③ and ④ vendors have a single-entry
+  /// menu, so the answer is their family default and the branch never runs.
+  WireProtocol _chatFace(LLMTarget target) =>
+      _pinnedProtocol(target, Surface.chat) ??
+      target.vendor.menuFor(Surface.chat).first;
+
+  /// The implementation behind a chat wire. Every value that can reach here
+  /// is one a multi-face vendor declared; anything else degrades to ①, which
+  /// is what an unrecognized face on an OpenAI-shaped host would have been
+  /// before menus existed.
+  ChatProtocol _chatProtocolFor(WireProtocol face) => switch (face) {
+        WireProtocol.anthropicChat => _anthropicChat,
+        WireProtocol.dashscopeChat => _dashscopeChat,
+        _ => _openaiChat,
+      };
 
   /// The image protocol for a DashScope-native image model on a vendor that
   /// declares the surface: the model's pinned choice, else sync.
@@ -345,17 +354,40 @@ class LLMDispatcher {
           return protocol.generateImage(target, history, options: options, logger: logger);
         }
 
-        // The chat surface itself can be multi-face (DashScope's ④-compatible
-        // `/apps/anthropic/v1/messages` beside its ①). The pinned selection
-        // decides; the vendor's protocolBases rewrite the endpoint so the ④
-        // protocol stays vendor-blind.
-        if (_openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat) {
-          return _anthropicChat.generate(
-              _faceTarget(target, WireProtocol.anthropicChat), history,
-              options: options, tools: tools, logger: logger);
+        // The chat surface itself can be multi-face (DashScope's
+        // ④-compatible `/apps/anthropic/v1/messages` and its own
+        // `/api/v1/services/aigc/*` beside its ①). The pinned selection
+        // decides; the vendor's protocolBases rewrite the endpoint so a
+        // generic protocol serving an alternate face stays vendor-blind.
+        return _chatGenerate(target, history,
+            options: options, tools: tools, logger: logger);
+
+      case ProtocolFamily.dashscope:
+        // Native-first DashScope. The image menu is the same one its
+        // compatible sibling declares, so an image model takes the same
+        // native route by the same pinned selection; everything else is
+        // chat, on whichever of the three faces the model pinned.
+        if (target.model.family == ModelFamily.dashscopeImage &&
+            target.vendor.imageMenu.isNotEmpty) {
+          return _dashscopeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
         }
-        return _openaiChat.generate(target, history, options: options, tools: tools, logger: logger);
+        return _chatGenerate(target, history,
+            options: options, tools: tools, logger: logger);
     }
+  }
+
+  /// Run one chat request on the face this target resolves to.
+  Future<LLMResponse> _chatGenerate(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    List<LLMTool>? tools,
+    LLMLogger? logger,
+  }) {
+    final face = _chatFace(target);
+    return _chatProtocolFor(face).generate(_faceTarget(target, face), history,
+        options: options, tools: tools, logger: logger);
   }
 
   // ---------------------------------------------------------------------------
@@ -383,11 +415,13 @@ class LLMDispatcher {
             ? false
             : _geminiChat.streamingDeclaresTools;
       case ProtocolFamily.openai:
-        // The ④ face on a multi-face ① vendor streams with tools exactly
-        // like a native ④ channel; the ① chat surface itself does not (yet).
-        return _openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat
-            ? _anthropicChat.streamingDeclaresTools
-            : false;
+      case ProtocolFamily.dashscope:
+        // The ④ face on a multi-face vendor streams with tools exactly like
+        // a native ④ channel; neither the ① surface nor DashScope's own does
+        // (yet) — both still need a tool-call accumulator. Asked of the
+        // resolved face rather than of the family, so teaching one of them
+        // to stream tool calls needs no change here.
+        return _chatProtocolFor(_chatFace(target)).streamingDeclaresTools;
       case ProtocolFamily.midjourney:
         return false;
     }
@@ -435,13 +469,27 @@ class LLMDispatcher {
           yield* _asChunks(response);
           return;
         }
-        if (_openaiFamilyChatProtocol(target) == WireProtocol.anthropicChat) {
-          yield* _anthropicChat.generateStream(
-              _faceTarget(target, WireProtocol.anthropicChat), history,
-              options: options, tools: tools, logger: logger);
+        final face = _chatFace(target);
+        yield* _chatProtocolFor(face).generateStream(
+            _faceTarget(target, face), history,
+            options: options, tools: tools, logger: logger);
+        return;
+
+      case ProtocolFamily.dashscope:
+        // Same two rules as the ① branch: the native image surface has no
+        // streaming form, so its single-shot result is surfaced as chunks;
+        // everything else streams on the resolved chat face.
+        if (target.model.family == ModelFamily.dashscopeImage &&
+            target.vendor.imageMenu.isNotEmpty) {
+          logger?.call('Image model does not support streaming; using the DashScope image surface.', level: 'DEBUG');
+          final response = await generate(config, history, options: options, logger: logger);
+          yield* _asChunks(response);
           return;
         }
-        yield* _openaiChat.generateStream(target, history, options: options, logger: logger);
+        final dashscopeFace = _chatFace(target);
+        yield* _chatProtocolFor(dashscopeFace).generateStream(
+            _faceTarget(target, dashscopeFace), history,
+            options: options, tools: tools, logger: logger);
         return;
     }
   }
@@ -484,6 +532,21 @@ class LLMDispatcher {
       case ProtocolFamily.gemini:
         // Veo via :predictLongRunning.
         return _veo.submit(target, history, options: options, logger: logger);
+
+      case ProtocolFamily.dashscope:
+        // `video-synthesis` + the shared task poller. The vendor declares the
+        // protocol exactly as its compatible sibling does, so the check is
+        // the declaration rather than the family — a DashScope channel with
+        // no video surface declared should say so, not submit blindly.
+        if (target.model.family == ModelFamily.openaiVideo &&
+            target.vendor.videoProtocol == WireProtocol.dashscopeVideo) {
+          return _dashscopeVideo.submit(target, history,
+              options: options, logger: logger);
+        }
+        throw UnsupportedError(
+          'The model "${config.modelId}" is not a DashScope video model; '
+          'use wan3.0-video / wan3.0-video-prime for video generation.',
+        );
 
       case ProtocolFamily.openai:
         if (target.model.family == ModelFamily.openaiVideo) {
@@ -562,6 +625,13 @@ class LLMDispatcher {
       case ProtocolFamily.gemini:
         return _veo.poll(target, operationName, logger: logger);
 
+      case ProtocolFamily.dashscope:
+        // Symmetric with the submit above: an operation on this channel can
+        // only have come from `video-synthesis`, and its poll already
+        // translates DashScope's task states into the Veo-shaped envelope
+        // the task executor speaks.
+        return _dashscopeVideo.poll(target, operationName, logger: logger);
+
       case ProtocolFamily.openai:
         if (operationName.startsWith('openai_lro_sim_')) {
           // Simulate a completion. The TaskQueueService handles polling.
@@ -623,6 +693,14 @@ class LLMDispatcher {
         return _geminiDiscovery.fetchModels(target);
       case ProtocolFamily.openai:
         return _openaiDiscovery.fetchModels(target);
+      case ProtocolFamily.dashscope:
+        // DashScope publishes no listing on its native surface; the only
+        // `GET /models` it serves is on the compatible face of the same host,
+        // under the same key. Rewriting the base is what lets a native
+        // channel still populate its model list — the alternative was a
+        // vendor whose "fetch models" button could only ever fail.
+        return _openaiDiscovery
+            .fetchModels(_faceTarget(target, WireProtocol.openaiChat));
     }
   }
 }

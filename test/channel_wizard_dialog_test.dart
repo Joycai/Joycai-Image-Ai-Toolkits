@@ -124,7 +124,7 @@ void main() {
               '${preset.id} is defined as a preset but not rendered in the rail',
         );
       }
-      expect(kChannelProviderPresets.length, 14);
+      expect(kChannelProviderPresets.length, 15);
 
       expect(tester.takeException(), isNull);
     });
@@ -144,7 +144,7 @@ void main() {
     testWidgets('preset endpoint is prefilled and still editable',
         (tester) async {
       await _pumpWizard(tester);
-      await _selectProvider(tester, 'Alibaba DashScope');
+      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
 
       final field = _fieldWithLabel(endpointLabel);
       expect(
@@ -166,7 +166,7 @@ void main() {
         (tester) async {
       await _pumpWizard(tester);
 
-      await _selectProvider(tester, 'Alibaba DashScope');
+      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
       await _selectProvider(tester, 'DeepSeek');
 
       expect(
@@ -184,28 +184,37 @@ void main() {
 
       await _typeInto(tester, search, 'deepseek');
       expect(find.text('DeepSeek'), findsWidgets);
-      expect(find.text('Alibaba DashScope'), findsNothing);
+      expect(find.text('Alibaba DashScope (OpenAI compatible)'), findsNothing);
 
       // Clearing restores everything — a filter that cannot be undone is how
       // a preset goes unreachable without anyone noticing.
       await _typeInto(tester, search, '');
-      expect(find.text('Alibaba DashScope'), findsWidgets);
+      expect(find.text('Alibaba DashScope (OpenAI compatible)'), findsWidgets);
     });
 
     // The separate "Qianwen Platform" row was folded into DashScope — same
     // host, same key, same vendor — which is only safe because the names it
     // used to be found under still reach the row that replaced it.
+    //
+    // DashScope's own two rows are the opposite case: two faces that differ
+    // in what they can do, so every alias has to reach *both* — a search
+    // that surfaced only one would be choosing the face for the user.
     testWidgets('folded-in names still find DashScope', (tester) async {
       await _pumpWizard(tester);
       final search = _searchField(tester);
 
       for (final alias in const ['qianwen', 'Qwen', '千问', '通义']) {
         await _typeInto(tester, search, alias);
-        expect(
-          find.text('Alibaba DashScope'),
-          findsWidgets,
-          reason: '"$alias" no longer reaches the provider it used to name',
-        );
+        for (final row in const [
+          'Alibaba DashScope (OpenAI compatible)',
+          'Alibaba DashScope (native)',
+        ]) {
+          expect(
+            find.text(row),
+            findsWidgets,
+            reason: '"$alias" no longer reaches "$row"',
+          );
+        }
       }
     });
 
@@ -371,7 +380,7 @@ void main() {
         (tester) async {
       await _pumpWizard(tester, width: narrow);
 
-      await _selectProvider(tester, 'Alibaba DashScope');
+      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
 
@@ -398,7 +407,7 @@ void main() {
         (tester) async {
       await _pumpWizard(tester, width: narrow);
 
-      await _selectProvider(tester, 'Alibaba DashScope');
+      await _selectProvider(tester, 'Alibaba DashScope (OpenAI compatible)');
       await _selectProvider(tester, 'DeepSeek');
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();

@@ -857,11 +857,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google Gemini via OpenAI endpoint';
 
   @override
-  String get providerDashScope => 'Alibaba DashScope';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com/compatible-mode · OpenAI-shaped requests · Qwen chat + native qwen-image / wan images + wan video';
 
   @override
-  String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · one channel for chat, image and video — Qwen chat (OpenAI/Anthropic-compatible) + native qwen-image / wan images + wan video';
+  String get providerDashScopeCompat => 'Alibaba DashScope (OpenAI compatible)';
+
+  @override
+  String get providerDashScopeNative => 'Alibaba DashScope (native)';
+
+  @override
+  String get providerDashScopeNativeDesc =>
+      'dashscope.aliyuncs.com/api/v1 · Alibaba\'s own request format · the only route for qwen-audio';
 
   @override
   String get endpointOverrideHint =>
@@ -947,6 +954,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get anthropicV1Hint =>
       'Hint: Anthropic endpoints usually end with \'/v1\'';
+
+  @override
+  String get dashscopeApiV1Hint =>
+      'Hint: DashScope native endpoints end with \'/api/v1\'';
 
   @override
   String get enterApiKey => 'Enter your API Key';
@@ -1325,7 +1336,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolFieldHint =>
-      'Four protocol families; any stored type can be represented here.';
+      'Five protocol families; any stored type can be represented here.';
 
   @override
   String get deprecatedLabel => 'Deprecated';
@@ -1381,6 +1392,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protocolAnthropicCompat => 'Anthropic-compatible';
+
+  @override
+  String get protocolDashScopeNative => 'DashScope native';
+
+  @override
+  String get protocolDashScopeNativeDesc =>
+      'Alibaba\'s own request format; the only route for qwen-audio';
 
   @override
   String get protocolImageSync => 'Synchronous';

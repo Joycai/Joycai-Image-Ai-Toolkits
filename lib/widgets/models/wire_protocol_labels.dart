@@ -15,6 +15,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
       return l10n.protocolOpenAICompat;
     case WireProtocol.anthropicChat:
       return l10n.protocolAnthropicCompat;
+    case WireProtocol.dashscopeChat:
+      return l10n.protocolDashScopeNative;
     case WireProtocol.dashscopeImagesSync:
       return l10n.protocolImageSync;
     case WireProtocol.dashscopeImagesAsync:
@@ -43,6 +45,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
 /// One-line description for a menu entry, or null where the name says it all.
 String? wireProtocolDescription(AppLocalizations l10n, WireProtocol protocol) {
   switch (protocol) {
+    case WireProtocol.dashscopeChat:
+      return l10n.protocolDashScopeNativeDesc;
     case WireProtocol.dashscopeImagesSync:
       return l10n.protocolImageSyncDesc;
     case WireProtocol.dashscopeImagesAsync:

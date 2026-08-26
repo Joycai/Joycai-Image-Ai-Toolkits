@@ -842,11 +842,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get providerGoogleCompatibleDesc => 'OpenAIエンドポイント経由のGoogle Gemini';
 
   @override
-  String get providerDashScope => 'Alibaba DashScope';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com/compatible-mode · OpenAI 形式のリクエスト · Qwen チャット + qwen-image / Wan ネイティブ画像 + Wan 動画';
 
   @override
-  String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · チャット・画像・動画を 1 つのチャネルで — Qwen チャット（OpenAI/Anthropic 互換）+ qwen-image / Wan ネイティブ画像 + Wan 動画';
+  String get providerDashScopeCompat => 'Alibaba DashScope（OpenAI 互換）';
+
+  @override
+  String get providerDashScopeNative => 'Alibaba DashScope（ネイティブ）';
+
+  @override
+  String get providerDashScopeNativeDesc =>
+      'dashscope.aliyuncs.com/api/v1 · Alibaba 独自のリクエスト形式 · qwen-audio はこの経路のみ';
 
   @override
   String get endpointOverrideHint =>
@@ -928,6 +935,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get anthropicV1Hint => 'ヒント：Anthropic のエンドポイントは通常「/v1」で終わります';
+
+  @override
+  String get dashscopeApiV1Hint =>
+      'ヒント：DashScope ネイティブのエンドポイントは「/api/v1」で終わります';
 
   @override
   String get enterApiKey => 'APIキーを入力してください';
@@ -1292,7 +1303,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get protocolField => 'APIプロトコル';
 
   @override
-  String get protocolFieldHint => 'プロトコルファミリーは 4 つ。保存済みのどの種別もここで表現できます。';
+  String get protocolFieldHint => 'プロトコルファミリーは 5 つ。保存済みのどの種別もここで表現できます。';
 
   @override
   String get deprecatedLabel => '非推奨';
@@ -1347,6 +1358,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get protocolAnthropicCompat => 'Anthropic 互換';
+
+  @override
+  String get protocolDashScopeNative => 'DashScope ネイティブ';
+
+  @override
+  String get protocolDashScopeNativeDesc =>
+      'Alibaba 独自のリクエスト形式。qwen-audio はこの経路のみ';
 
   @override
   String get protocolImageSync => '同期生成';

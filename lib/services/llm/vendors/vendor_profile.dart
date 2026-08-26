@@ -23,7 +23,14 @@ library;
 /// * [midjourney] — the open-source midjourney-proxy REST surface (`/mj/*`).
 /// * [anthropic] — Anthropic Messages: `POST /messages`, content-block
 ///   messages, typed SSE events.
-enum ProtocolFamily { openai, gemini, midjourney, anthropic }
+/// * [dashscope] — Alibaba DashScope's own REST: three-section
+///   `{model, input, parameters}` bodies under `/api/v1/services/aigc/*`,
+///   replies nested under `output`, and a `{code, message, request_id}`
+///   error envelope none of the other three use. Distinct from an ①-family
+///   vendor that merely *hosts* DashScope models behind a compatible face
+///   ([Vendors.dashscope]) — that one speaks OpenAI on the wire and only
+///   borrows the native image/video surfaces.
+enum ProtocolFamily { openai, gemini, midjourney, anthropic, dashscope }
 
 /// The call surface a request belongs to. A protocol serves exactly one
 /// surface; a vendor may offer more than one protocol per surface (the menus
@@ -44,6 +51,7 @@ enum WireProtocol {
   anthropicChat('anthropic-chat', Surface.chat),
   geminiChat('gemini-chat', Surface.chat),
   midjourney('midjourney', Surface.chat),
+  dashscopeChat('dashscope-chat', Surface.chat),
   openaiImages('openai-images', Surface.imageGen),
   xaiImages('xai-images', Surface.imageGen),
   geminiImagen('gemini-imagen', Surface.imageGen),
@@ -237,6 +245,8 @@ class VendorProfile {
             return const [WireProtocol.anthropicChat];
           case ProtocolFamily.midjourney:
             return const [WireProtocol.midjourney];
+          case ProtocolFamily.dashscope:
+            return const [WireProtocol.dashscopeChat];
         }
       case Surface.imageGen:
         return imageMenu;

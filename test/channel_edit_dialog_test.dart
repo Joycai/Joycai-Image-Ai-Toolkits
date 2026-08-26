@@ -78,7 +78,7 @@ void main() {
   // existing DashScope channel could not be opened for editing at all. The
   // list is now derived from the vendor registry; these pin that it stays so.
 
-  testWidgets('the protocol field offers all four families', (tester) async {
+  testWidgets('the protocol field offers every family', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -92,7 +92,7 @@ void main() {
         .toSet();
 
     // The field names wire formats now, not suppliers — the supplier lives in
-    // the preset bar above it. All four families have to be reachable.
+    // the preset bar above it. Every family has to be reachable.
     for (final family in ProtocolFamily.values) {
       expect(
         offered,
@@ -108,7 +108,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
-    // DashScope is not one of the four generic families, so it only opens if
+    // dashscope-api is not a generic family profile, so it only opens if
     // the field lists the stored type itself. This is the exact shape of the
     // bug that made a DashScope channel impossible to edit.
     await _pumpDialog(tester, type: Vendors.dashscope);
@@ -133,11 +133,14 @@ void main() {
       await _pumpDialog(tester, type: Vendors.dashscope);
 
       expect(find.text('Provider preset'), findsOneWidget);
-      // The chip names the supplier; the protocol field below names the wire
-      // format it speaks, so the supplier's name appears there too.
-      expect(find.text('Alibaba DashScope'), findsOneWidget);
+      // The chip names the supplier — and, since DashScope's two faces are
+      // two presets, which face this channel is on comes with the name. The
+      // protocol field below names the wire format that face speaks.
+      expect(find.text('Alibaba DashScope (OpenAI compatible)'),
+          findsOneWidget);
       expect(
-        find.text('OpenAI · chat/completions · Alibaba DashScope'),
+        find.text('OpenAI · chat/completions · '
+            'Alibaba DashScope (OpenAI compatible)'),
         findsOneWidget,
       );
       expect(find.text('Change preset'), findsWidgets);

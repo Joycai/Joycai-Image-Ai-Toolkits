@@ -21,22 +21,38 @@
 
 | 层 | 回答的问题 | 代码 |
 |----|-----------|------|
-| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_images · dashscope_images_async · dashscope_video |
+| **1 Protocol** | 线上格式长什么样：endpoint 形状、请求体、响应/流解析 | `protocols/` — openai_chat · openai_images · openai_videos · xai_images · xai_videos · gemini_chat · gemini_imagen · gemini_veo · anthropic_chat · midjourney · dashscope_chat · dashscope_images · dashscope_images_async · dashscope_video |
 | **2 Vendor** | 谁在提供这个格式：认证方式、每个 surface 的协议菜单 | `vendors/vendor_profile.dart` + `vendors/vendors.dart`（id 即 `llm_channels.type`） |
 | **3 Model** | 这个模型是什么：family 分类、能力、参数表 | `model_descriptor.dart`（包装 `model_family.dart` + `model_capabilities.dart`） |
 
-协议家族（`ProtocolFamily`）有四个：`openai`（chat/completions 及其姊妹
+协议家族（`ProtocolFamily`）有五个：`openai`（chat/completions 及其姊妹
 images/videos surface）、`gemini`（`:generateContent` 及 `:predict` /
 `:predictLongRunning`）、`anthropic`（`/messages`，2026-08 加入）、
-`midjourney`（midjourney-proxy 的 `/mj/*`）。
+`midjourney`（midjourney-proxy 的 `/mj/*`）、`dashscope`（阿里云百炼私有
+REST：`/api/v1/services/aigc/*` 下的三段式 `{model, input, parameters}`，
+回包套在 `output` 里，2026-08 加入）。
 xAI 的 JSON images/videos surface 是 openai 家族下由 vendor 选择的替代协议。
 
+**`dashscope` 家族 ≠ 「百炼」这家供应商**：`Vendors.dashscope`（兼容面通道）
+family 仍是 `openai` —— 它线上说的就是 OpenAI，只是借用了原生的图片/视频
+surface；`Vendors.dashscopeNative` 才是 family `dashscope`。同一家公司、同一
+把 key、同一个 host，两个 vendor id 的区别只有**通道以哪条 chat wire 打头**，
+因为两条面是两个 base URL，属于通道而非模型。两个 vendor 的 `chatMenu` 都是
+同样三项（原生 / ① / ④），顺序不同而已。
+
 `anthropic` 是唯一一个只有单一 surface 的家族 —— 没有生图/视频姊妹端点，
-所以 dispatcher 的四个 switch 里它都只有一条分支（两条是
+所以 dispatcher 的六个 switch 里它都只有一条分支（两条是
 `UnsupportedError`）。接入它时**没有**动 Layer 3：Claude 的 modelId 落在
 `ModelFamily.other`，而 family 在这条路径上只用来在 ①/③ 内部选姊妹 surface，
 ④ 没有可选的。**"新增协议家族要不要动 Layer 3"的判断标准是"这个家族内部要不要
 按模型分流"，不是"这个家族新不新"。**
+
+`dashscope` 是这条判断标准的反例：它三个 surface 全有，而且 chat 面内部还要
+按模型分流（纯文本走 `text-generation/generation`、VL/omni/audio 走
+`multimodal-generation/generation`），所以接它时动了 Layer 3 ——
+`ModelDescriptor.needsMultimodalChatSurface`（规则在
+`ModelFamilyClassifier.isDashScopeMultimodalChat`）。协议自己**不许**认模型
+id：走错端点不报错，图片被静默丢弃、模型当作没看见图来回答。
 
 ## Surface × 协议菜单与模型级点单（2026-08 多面供应商重构）
 
@@ -65,8 +81,15 @@ surface 开关"表达不了它。绑定关系升级为：
 - **单点查询**：菜单/失效判定只经 `LLMDispatcher.protocolMenuFor` /
   `isStaleProtocolSelection` / `surfaceForModel`（UI 与路由共用，static）。
   `wire_protocol` 列只由 `LLMConfigResolver` 读取。
+- **`protocolBases` 是双向的**：百炼原生通道存 `…/api/v1`，兼容面
+  （① chat 与**唯一那个 `GET /models`**）由 `dashscopeCompatibleBase` 反推；
+  兼容面通道存 `…/compatible-mode/v1`，原生的图片/视频/chat 由
+  `dashscopeNativeBase` 正推。两个推导都只看 path，所以国际站 host
+  原样可用。少了反推那一半，原生通道的"拉取模型列表"只会失败。
 - **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
-  (vendor, model) 组合仍解析到同一条路"。
+  (vendor, model) 组合仍解析到同一条路"；
+  `test/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则
+  （三段式分区、`result_format`、增量、多模态 content 形状）。
 
 ## 分层纪律（违反会静默腐化）
 
@@ -109,9 +132,13 @@ LLMService.request(modelIdentifier, messages, ...)
   `ProtocolFamily` 加值，dispatcher 的 switch 补分支，再加 vendor profile。
   ④ Anthropic 就是照这条路加的，可以直接当模板读
   （`anthropic_chat_protocol.dart` + `Vendors.anthropicRest` /
-  `newApiAnthropic`）。加完记得 grep 一遍 `ProtocolFamily` ——
-  `app_state.dart` 里还有一个穷尽 switch 在 dispatcher 之外
-  （合法：它问的是"这个渠道能不能出视频"，属于 UI 对 Layer 2 的只读消费）。
+  `newApiAnthropic`）；DashScope 私有面（`dashscope_chat_protocol.dart` +
+  `Vendors.dashscopeNative`）是"多 surface + 面内还要按模型分流"的模板。
+  加完记得 grep 一遍 `ProtocolFamily` —— `analyze` 会把 dispatcher 的六个
+  穷尽 switch 全部报出来，dispatcher 之外还有四处合法消费点：
+  `app_state.dart`（"这个渠道能不能出视频"）、`channel_provider_presets.dart`
+  的 `genericVendorForFamily` / `protocolFamilyLabel`、以及编辑器与向导的
+  endpoint 提示。全是 UI/state 对 Layer 2 的只读消费。
 - **新增模型能力**：只动 Layer 3（`model_capabilities.dart` 的参数表、
   必要时 `model_family.dart` 的分类规则）。
 - **新增任务类型**：与本层无关，见 CLAUDE.md 的 task type 扩展流程。

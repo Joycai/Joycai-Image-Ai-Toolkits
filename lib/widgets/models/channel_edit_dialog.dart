@@ -290,7 +290,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     );
   }
 
-  /// True when the stored type *is* one of the four generic family profiles,
+  /// True when the stored type *is* one of the generic family profiles,
   /// so the protocol dropdown already lists it and needs no extra entry.
   bool get _typeIsGenericFamily =>
       ProtocolFamily.values.any((f) => genericVendorForFamily(f) == type);
@@ -424,6 +424,7 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     final String endpointHint = switch (Vendors.byId(type).family) {
       ProtocolFamily.gemini => l10n.googleV1BetaHint,
       ProtocolFamily.anthropic => l10n.anthropicV1Hint,
+      ProtocolFamily.dashscope => l10n.dashscopeApiV1Hint,
       ProtocolFamily.openai || ProtocolFamily.midjourney => l10n.openaiV1Hint,
     };
 

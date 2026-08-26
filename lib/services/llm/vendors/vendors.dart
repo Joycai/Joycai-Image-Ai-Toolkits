@@ -1,4 +1,5 @@
-import '../protocols/dashscope_payload.dart' show dashscopeAnthropicBase;
+import '../protocols/dashscope_payload.dart'
+    show dashscopeAnthropicBase, dashscopeCompatibleBase;
 import 'vendor_profile.dart';
 
 export 'vendor_profile.dart';
@@ -81,6 +82,18 @@ class Vendors {
   /// menus on the profile and all derived from this one channel's endpoint.
   /// One channel, one key, every face (docs/api/qianwen-bailian.md).
   static const String dashscope = 'dashscope-api';
+
+  /// Alibaba DashScope reached through its **native** REST
+  /// (`/api/v1/services/aigc/*`) rather than its compatible face.
+  ///
+  /// The same company, host and key as [dashscope] — what differs is which
+  /// chat wire the channel leads with, and that is a property of the channel
+  /// because the two faces are two base URLs, not two models. Native is the
+  /// face DashScope ships parameters on first, and the only one that serves
+  /// `qwen-audio`; the compatible face is the one every OpenAI-shaped client
+  /// already speaks. Both channels can still reach all three chat wires per
+  /// model — the vendor only decides the default.
+  static const String dashscopeNative = 'dashscope-native';
 
   /// Midjourney via midjourney-proxy / NewAPI's `/mj/*` surface.
   static const String midjourneyProxy = 'midjourney-proxy';
@@ -177,13 +190,19 @@ class Vendors {
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
       // One channel, one key, every face (docs/api/qianwen-bailian.md).
-      // Chat defaults to the compatible-mode surface; the Anthropic face is a
-      // per-model alternate served under `/apps/anthropic/v1`, derived from
-      // the same stored endpoint. Images default to the native synchronous
-      // surface with the async task flow as a per-model alternate (only
-      // offered where layer 3 says the model supports it); video is the
-      // native async task surface — wan3.x has no other route.
-      chatMenu: [WireProtocol.openaiChat, WireProtocol.anthropicChat],
+      // Chat defaults to the compatible-mode surface; the Anthropic face
+      // (`/apps/anthropic/v1`) and the native one (`/api/v1/services/aigc/*`)
+      // are per-model alternates, both derived from the same stored endpoint
+      // — which is what makes `qwen-audio`, served on the native wire alone,
+      // reachable from a compatible-mode channel. Images default to the
+      // native synchronous surface with the async task flow as a per-model
+      // alternate (only offered where layer 3 says the model supports it);
+      // video is the native async task surface — wan3.x has no other route.
+      chatMenu: [
+        WireProtocol.openaiChat,
+        WireProtocol.anthropicChat,
+        WireProtocol.dashscopeChat,
+      ],
       imageMenu: [
         WireProtocol.dashscopeImagesSync,
         WireProtocol.dashscopeImagesAsync,
@@ -194,6 +213,31 @@ class Vendors {
       },
       // For the ④ face: Bailian documents the official
       // `{type: enabled, budget_tokens}` spelling. Ignored on the ① face.
+      thinking: ThinkingDialect.anthropicBudget,
+    ),
+    VendorProfile(
+      id: dashscopeNative,
+      family: ProtocolFamily.dashscope,
+      auth: AuthScheme.bearer,
+      // The mirror of [dashscope]: the same three chat faces and the same
+      // native image/video surfaces, led by the native wire instead of the
+      // compatible one. Both alternates are generic protocols served on
+      // another base of the same host, so both are derived rather than
+      // stored — a channel configured with `…/api/v1` still reaches them.
+      chatMenu: [
+        WireProtocol.dashscopeChat,
+        WireProtocol.openaiChat,
+        WireProtocol.anthropicChat,
+      ],
+      imageMenu: [
+        WireProtocol.dashscopeImagesSync,
+        WireProtocol.dashscopeImagesAsync,
+      ],
+      videoProtocol: WireProtocol.dashscopeVideo,
+      protocolBases: {
+        WireProtocol.openaiChat: dashscopeCompatibleBase,
+        WireProtocol.anthropicChat: dashscopeAnthropicBase,
+      },
       thinking: ThinkingDialect.anthropicBudget,
     ),
     VendorProfile(

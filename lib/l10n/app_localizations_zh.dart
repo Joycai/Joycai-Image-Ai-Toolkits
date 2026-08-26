@@ -838,11 +838,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get providerGoogleCompatibleDesc => '通过 OpenAI 适配端点访问 Gemini';
 
   @override
-  String get providerDashScope => '阿里云百炼（DashScope）';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com/compatible-mode · OpenAI 形状请求 · 千问对话 + qwen-image / 万相原生出图 + 万相视频';
 
   @override
-  String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · 对话 / 生图 / 视频同一通道 —— 通义千问对话（OpenAI/Anthropic 兼容）+ qwen-image / 万相原生出图 + 万相视频';
+  String get providerDashScopeCompat => '阿里云百炼（OpenAI 兼容）';
+
+  @override
+  String get providerDashScopeNative => '阿里云百炼（DashScope 原生）';
+
+  @override
+  String get providerDashScopeNativeDesc =>
+      'dashscope.aliyuncs.com/api/v1 · 阿里云自有请求格式 · qwen-audio 只能走这条';
 
   @override
   String get endpointOverrideHint => '已按所选提供商预填，可改为中转、网关或国际站地址。';
@@ -922,6 +929,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get anthropicV1Hint => '提示：Anthropic 接口通常以 \'/v1\' 结尾';
+
+  @override
+  String get dashscopeApiV1Hint => '提示：DashScope 原生接口以 \'/api/v1\' 结尾';
 
   @override
   String get enterApiKey => '请输入 API 密钥';
@@ -1277,7 +1287,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get protocolField => '接口协议';
 
   @override
-  String get protocolFieldHint => '共 4 个协议族，任何已存储的类型都能在这里表示。';
+  String get protocolFieldHint => '共 5 个协议族，任何已存储的类型都能在这里表示。';
 
   @override
   String get deprecatedLabel => '已废弃';
@@ -1331,6 +1341,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get protocolAnthropicCompat => 'Anthropic 兼容';
+
+  @override
+  String get protocolDashScopeNative => 'DashScope 原生';
+
+  @override
+  String get protocolDashScopeNativeDesc => '阿里云自有请求格式，qwen-audio 只能走这条';
 
   @override
   String get protocolImageSync => '同步生成';
@@ -4015,11 +4031,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get providerGoogleCompatibleDesc => '透過 OpenAI 端點的 Google Gemini';
 
   @override
-  String get providerDashScope => '阿里雲百煉（DashScope）';
+  String get providerDashScopeDesc =>
+      'dashscope.aliyuncs.com/compatible-mode · OpenAI 形狀請求 · 千問對話 + qwen-image / 萬相原生出圖 + 萬相影片';
 
   @override
-  String get providerDashScopeDesc =>
-      'dashscope.aliyuncs.com · 對話 / 生圖 / 影片同一通道 —— 通義千問對話（OpenAI/Anthropic 相容）+ qwen-image / 萬相原生出圖 + 萬相影片';
+  String get providerDashScopeCompat => '阿里雲百煉（OpenAI 相容）';
+
+  @override
+  String get providerDashScopeNative => '阿里雲百煉（DashScope 原生）';
+
+  @override
+  String get providerDashScopeNativeDesc =>
+      'dashscope.aliyuncs.com/api/v1 · 阿里雲自有請求格式 · qwen-audio 只能走這條';
 
   @override
   String get endpointOverrideHint => '已依所選提供商預填，可改為中轉、閘道或國際站位址。';
@@ -4099,6 +4122,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get anthropicV1Hint => '提示：Anthropic 端點通常以「/v1」結尾';
+
+  @override
+  String get dashscopeApiV1Hint => '提示：DashScope 原生端點以「/api/v1」結尾';
 
   @override
   String get enterApiKey => '輸入您的 API 金鑰';
@@ -4454,7 +4480,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get protocolField => '介面協定';
 
   @override
-  String get protocolFieldHint => '共 4 個協定族，任何已儲存的類型都能在這裡表示。';
+  String get protocolFieldHint => '共 5 個協定族，任何已儲存的類型都能在這裡表示。';
 
   @override
   String get deprecatedLabel => '已廢棄';
@@ -4508,6 +4534,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get protocolAnthropicCompat => 'Anthropic 相容';
+
+  @override
+  String get protocolDashScopeNative => 'DashScope 原生';
+
+  @override
+  String get protocolDashScopeNativeDesc => '阿里雲自有請求格式，qwen-audio 只能走這條';
 
   @override
   String get protocolImageSync => '同步生成';

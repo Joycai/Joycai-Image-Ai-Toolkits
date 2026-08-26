@@ -113,6 +113,12 @@ class _SetupWizardState extends State<SetupWizard> {
         _endpointController.text =
             'https://dashscope.aliyuncs.com/compatible-mode/v1';
         break;
+      case Vendors.dashscopeNative:
+        // Same host, the other face — `/api/v1` is where DashScope's own
+        // request format lives. Every other face is derived from whichever
+        // of the two is stored, so this choice only sets the default wire.
+        _endpointController.text = 'https://dashscope.aliyuncs.com/api/v1';
+        break;
       case Vendors.midjourneyProxy:
         // A self-hosted proxy; only the shape of the host is knowable.
         _endpointController.text = 'https://your-midjourney-proxy.com';
@@ -470,6 +476,8 @@ class _SetupWizardState extends State<SetupWizard> {
         "Hint: Google GenAI endpoints usually end with '/v1beta' (internal handling)",
       ProtocolFamily.anthropic =>
         "Hint: Anthropic endpoints usually end with '/v1'",
+      ProtocolFamily.dashscope =>
+        "Hint: DashScope native endpoints end with '/api/v1'",
       ProtocolFamily.openai || ProtocolFamily.midjourney =>
         "Hint: OpenAI compatible endpoints usually end with '/v1'",
     };

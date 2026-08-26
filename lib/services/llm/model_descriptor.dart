@@ -52,6 +52,15 @@ class ModelDescriptor {
   /// text-only opt out — the rule itself lives in the classifier's table.
   bool get acceptsImageInput => !ModelFamilyClassifier.isTextOnlyChat(modelId);
 
+  /// Whether DashScope's *native* chat surface serves this model on its
+  /// multimodal endpoint rather than its text one.
+  ///
+  /// Read by the native chat protocol to pick between the two paths. A fact
+  /// about the model, not about the vendor — which is why it is answered
+  /// here rather than by a branch inside the protocol.
+  bool get needsMultimodalChatSurface =>
+      ModelFamilyClassifier.isDashScopeMultimodalChat(modelId);
+
   /// True for the `mock-*` ids the simulated long-running-operation path
   /// accepts. Here rather than in the dispatcher because model-id sniffing is
   /// this layer's monopoly.

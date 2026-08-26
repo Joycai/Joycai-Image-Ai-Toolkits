@@ -203,3 +203,20 @@
    input/output_tokens、图片视频按张/按秒）—— 统一计量的客户端要自己翻译。
 8. 与计费相关的默认值偏贵：wan2.7 图片 `n` 默认 **4**、V1 `audio` 默认
    true、`prompt_extend` 默认 true —— 不想吃服务端默认就得显式下发。
+9. C2 的 `result_format` 默认是 `"text"`：不显式发 `"message"` 就只回一个
+   裸字符串、没有 `choices`、没有 tool_calls、没有 finish_reason ——
+   读 choices 的解析器会把它当"模型什么都没说"，不会报错。
+10. C2 的两个端点靠**模型**分（纯文本 `text-generation` / VL·omni·audio
+    `multimodal-generation`），不靠请求内容。把图片发给文本端点不报错，
+    图片被丢掉，模型当作没看见图来回答。
+
+## 9. 本仓实现状态（2026-08-26）
+
+六条 wire 全部实现：C1 `openai_chat_protocol` · C2 `dashscope_chat_protocol`
+· C3 `anthropic_chat_protocol`（base 由 vendor 推导）· I1
+`dashscope_images_protocol` · I2 `dashscope_images_async_protocol` · V1
+`dashscope_video_protocol`。两个 vendor id 分别以兼容面（`dashscope-api`）
+和原生面（`dashscope-native`）打头，chat 三面在两个通道上都能按模型点单。
+路由与分层见
+[`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
+**未实测**：本文全部 ⚠ 条目，以及 C2 的多模态面与 SSE 增量。
