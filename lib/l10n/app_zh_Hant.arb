@@ -1618,6 +1618,7 @@
   },
   "optKbSearchDocs": "搜尋文件…",
   "optKbTreeEmpty": "這個知識庫裡還沒有文件",
+  "optKbTreeScanFailed": "無法讀取知識庫資料夾",
   "optKbTreeNoMatch": "沒有符合的文件",
   "optKbTreeChanged": "已改",
   "optKbTreeAdded": "新增",

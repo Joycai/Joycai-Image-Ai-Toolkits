@@ -1618,6 +1618,7 @@
   },
   "optKbSearchDocs": "ドキュメントを検索…",
   "optKbTreeEmpty": "このナレッジベースにはまだドキュメントがありません",
+  "optKbTreeScanFailed": "ナレッジベースのフォルダーを読み取れませんでした",
   "optKbTreeNoMatch": "該当するドキュメントがありません",
   "optKbTreeChanged": "変更",
   "optKbTreeAdded": "新規",

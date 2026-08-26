@@ -3203,6 +3203,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optKbTreeEmpty => 'このナレッジベースにはまだドキュメントがありません';
 
   @override
+  String get optKbTreeScanFailed => 'ナレッジベースのフォルダーを読み取れませんでした';
+
+  @override
   String get optKbTreeNoMatch => '該当するドキュメントがありません';
 
   @override

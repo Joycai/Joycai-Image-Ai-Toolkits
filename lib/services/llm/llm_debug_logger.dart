@@ -126,7 +126,22 @@ class LLMDebugLogger {
     log.pending.clear();
     try {
       await log.file.writeAsString(text, mode: FileMode.append);
-    } catch (_) {}
+    } catch (_) {
+      // A failed write wrote nothing, so the buffer goes back rather than
+      // being dropped — up to [_flushThresholdChars] of stream log is
+      // exactly the data the buffering exists to preserve, and a transient
+      // IO error is the case it was bought for. It goes out with the next
+      // flush, or with [finish].
+      //
+      // Ahead of whatever arrived while the write was in flight: the buffer
+      // is cleared *before* the await (lines appended during it must not be
+      // lost either), so restoring means re-joining the two halves in order.
+      final arrived = log.pending.toString();
+      log.pending
+        ..clear()
+        ..write(text)
+        ..write(arrived);
+    }
   }
 
   /// Closes [log] with how long the whole request took.

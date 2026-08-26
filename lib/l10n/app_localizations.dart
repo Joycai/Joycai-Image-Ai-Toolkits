@@ -5956,6 +5956,12 @@ abstract class AppLocalizations {
   /// **'This knowledge base has no documents yet'**
   String get optKbTreeEmpty;
 
+  /// No description provided for @optKbTreeScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the knowledge-base folder'**
+  String get optKbTreeScanFailed;
+
   /// No description provided for @optKbTreeNoMatch.
   ///
   /// In en, this message translates to:

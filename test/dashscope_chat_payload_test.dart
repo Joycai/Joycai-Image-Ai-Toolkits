@@ -234,6 +234,59 @@ void main() {
         {'text': 'and again'}
       ]);
     });
+
+    test('a tool result on the multimodal endpoint is a list too', () {
+      // The flag is a property of the *history*, so one reference image
+      // anywhere puts the whole agent turn on the multimodal endpoint —
+      // including the tool round-trip, which carries no image and would
+      // otherwise go out with a bare string and be rejected.
+      final payload = buildDashScopeChatPayload(
+        target('qwen3-vl-plus'),
+        [
+          LLMMessage(
+            role: LLMRole.tool,
+            content: '42',
+            toolCallId: 'call_1',
+            toolName: 'read_file',
+          )
+        ],
+        multimodal: true,
+        isStreaming: false,
+      );
+      expect((payload['input'] as Map)['messages'], [
+        {
+          'role': 'tool',
+          'content': [
+            {'text': '42'}
+          ],
+          'tool_call_id': 'call_1',
+          'name': 'read_file',
+        }
+      ]);
+    });
+
+    test('so is the assistant turn that asked for the tool', () {
+      final payload = buildDashScopeChatPayload(
+        target('qwen3-vl-plus'),
+        [
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: [
+              LLMToolCall(
+                  id: 'call_1', name: 'read_file', arguments: {'path': 'a'})
+            ],
+          )
+        ],
+        multimodal: true,
+        isStreaming: false,
+      );
+      final message = ((payload['input'] as Map)['messages'] as List).first
+          as Map<String, dynamic>;
+      expect(message['content'], [
+        {'text': ''}
+      ]);
+    });
   });
 
   group('thinking', () {

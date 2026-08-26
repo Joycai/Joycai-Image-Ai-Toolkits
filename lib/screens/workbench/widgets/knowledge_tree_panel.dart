@@ -45,6 +45,11 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
   List<KbTreeEntry>? _entries;
   bool _scanning = false;
 
+  /// Set when the walk itself failed, so the empty view can say *that*
+  /// instead of "no knowledge base is configured" — which is a different
+  /// problem, and sends the user off to re-pick a folder that is already set.
+  bool _scanFailed = false;
+
   /// Folders the user has opened. Seeded once, on the first successful scan,
   /// with the folders on the way to a staged edit — the rest start closed. A
   /// fully expanded 33-document base is a scroll view of forty rows in a 236px
@@ -85,11 +90,23 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
   /// synchronous file IO, and a large base walked during build drops frames.
   Future<void> _load() async {
     final root = widget.kbPath;
-    if (root == null) {
-      if (mounted) setState(() => _entries = null);
+    // Blank counts as unset, not as a folder to go looking for: an empty
+    // setting string is how "no knowledge base" is stored, and walking it
+    // would resolve to the working directory and then fail — which now
+    // reports a *read failure*, a different and wrong thing to say.
+    if (root == null || root.trim().isEmpty) {
+      if (mounted) {
+        setState(() {
+          _entries = null;
+          _scanFailed = false;
+        });
+      }
       return;
     }
-    setState(() => _scanning = true);
+    setState(() {
+      _scanning = true;
+      _scanFailed = false;
+    });
     try {
       final entries = await Future(() => KnowledgeBaseService().walkTree(root));
       if (!mounted) return;
@@ -103,9 +120,15 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
         }
       });
     } catch (_) {
-      // A folder that vanished mid-walk is already reported by the right
-      // panel's knowledge card; this one simply shows nothing.
-      if (mounted) setState(() => _entries = null);
+      // A folder that vanished mid-walk, or one the app may no longer read.
+      // The right panel's knowledge card reports the cause; this column only
+      // has room to say that the tree is not what failed to be configured.
+      if (mounted) {
+        setState(() {
+          _entries = null;
+          _scanFailed = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => _scanning = false);
     }
@@ -283,8 +306,12 @@ class _KnowledgeTreePanelState extends State<KnowledgeTreePanel> {
             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
             : AppEmptyState(
                 compact: true,
-                icon: Icons.menu_book_outlined,
-                label: l10n.optKbNotConfigured,
+                icon: _scanFailed
+                    ? Icons.folder_off_outlined
+                    : Icons.menu_book_outlined,
+                label: _scanFailed
+                    ? l10n.optKbTreeScanFailed
+                    : l10n.optKbNotConfigured,
               ),
       );
     }

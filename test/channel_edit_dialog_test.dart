@@ -124,6 +124,69 @@ void main() {
 
   // The shortcut bar: which preset this channel sits on, or an honest "none"
   // for a type created by an older build.
+  // Which preset a stored channel came from, when several presets legitimately
+  // store the same type. "OpenAI compatible" is a wire format, not a company:
+  // the official supplier and "a host of your own speaking that format" both
+  // resolve to the unspecified-supplier profile, so the type alone cannot
+  // separate them and the endpoint has to.
+  group('presetForChannelType', () {
+    test('the official host resolves to the official preset', () {
+      expect(
+        presetForChannelType(Vendors.openAIRest,
+                endpoint: 'https://api.openai.com/v1')
+            ?.id,
+        'openai-official',
+      );
+    });
+
+    test('a trailing slash and casing are not a different address', () {
+      expect(
+        presetForChannelType(Vendors.openAIRest,
+                endpoint: 'https://API.OpenAI.com/v1/')
+            ?.id,
+        'openai-official',
+      );
+    });
+
+    test("a host only the user knows is the custom preset, not OpenAI's", () {
+      // Getting this wrong is not just a wrong label: the editor would read
+      // the address as diverging from its preset, flag it, and offer a
+      // one-tap restore that overwrites a working relay with api.openai.com.
+      expect(
+        presetForChannelType(Vendors.openAIRest,
+                endpoint: 'https://relay.internal.example/v1')
+            ?.id,
+        'custom-openai',
+      );
+    });
+
+    test('the same rule holds for the Gemini pair', () {
+      expect(
+        presetForChannelType(Vendors.googleRest,
+                endpoint: 'https://gateway.corp.example/v1beta')
+            ?.id,
+        'custom-google',
+      );
+    });
+
+    test("Google's OpenAI-compatible face wins on its own address", () {
+      // It stores ①'s type through a *variant*, so it competes with both
+      // OpenAI presets — and its endpoint is what says it is Google's.
+      expect(
+        presetForChannelType(Vendors.openAIRest,
+                endpoint:
+                    'https://generativelanguage.googleapis.com/v1beta/openai')
+            ?.id,
+        'google',
+      );
+    });
+
+    test('an unambiguous type needs no endpoint at all', () {
+      expect(presetForChannelType(Vendors.dashscope)?.id, 'dashscope');
+      expect(presetForChannelType(Vendors.officialGoogle), isNull);
+    });
+  });
+
   group('provider preset bar', () {
     testWidgets('names the preset a stored type came from', (tester) async {
       tester.view.physicalSize = const Size(1400, 1000);

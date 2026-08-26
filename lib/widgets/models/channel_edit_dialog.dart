@@ -71,10 +71,14 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
     tagCtrl = TextEditingController(text: channel?.tag ?? '');
 
     type = channel?.type ?? Vendors.googleRest;
-    // The preset a stored type came from, so the shortcut bar can say what
-    // this channel is sitting on. Null is a real answer, not a failure: a
-    // channel created by an older build can carry a type no preset offers.
-    _presetId = presetForChannelType(type)?.id;
+    // The preset a stored channel came from, so the shortcut bar can say what
+    // it is sitting on. Null is a real answer, not a failure: a channel
+    // created by an older build can carry a type no preset offers.
+    //
+    // The endpoint goes along because the type alone is ambiguous — the
+    // official supplier and the "compatible host of your own" preset store
+    // the same one, and only the address separates them.
+    _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
     discovery = channel?.enableDiscovery ?? true;
     tagColor = channel?.tagColor ?? AppConstants.tagColors.first.toARGB32();
   }
@@ -470,8 +474,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             onChanged: (v) => setState(() {
               type = v!;
               // Choosing a wire format by hand means this channel is no longer
-              // the supplier the preset named, so the bar stops claiming it is.
-              _presetId = presetForChannelType(type)?.id;
+              // the supplier the preset named, so the bar stops claiming it is
+              // unless the address still says otherwise.
+              _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
             }),
             decoration: const InputDecoration(
               // The spec's glyph is a hexagon — a wire format as a package

@@ -3171,6 +3171,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optKbTreeEmpty => '这个知识库里还没有文档';
 
   @override
+  String get optKbTreeScanFailed => '无法读取知识库文件夹';
+
+  @override
   String get optKbTreeNoMatch => '没有匹配的文档';
 
   @override
@@ -6363,6 +6366,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optKbTreeEmpty => '這個知識庫裡還沒有文件';
+
+  @override
+  String get optKbTreeScanFailed => '無法讀取知識庫資料夾';
 
   @override
   String get optKbTreeNoMatch => '沒有符合的文件';

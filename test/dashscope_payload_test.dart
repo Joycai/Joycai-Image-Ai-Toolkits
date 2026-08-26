@@ -315,5 +315,32 @@ void main() {
         const Duration(minutes: 11),
       );
     });
+
+    test('and the image surfaces admit that their "stream" is one call', () {
+      // The exemption above is worth nothing if the request goes out on the
+      // streaming path instead: there the dispatcher awaits the whole
+      // single-shot generate() and only then re-emits it as chunks, so the
+      // first chunk cannot arrive before the task is finished. A model keeps
+      // supports_stream set even when its async protocol is pinned, so this
+      // is the path the app actually takes — and a first-chunk guard sized
+      // for a live connection abandons a task that is billed and still
+      // running.
+      final dispatcher = LLMDispatcher();
+      expect(
+        dispatcher.streamIsSingleShot(config('qwen-image', Vendors.dashscope)),
+        isTrue,
+      );
+      expect(
+        dispatcher
+            .streamIsSingleShot(config('qwen-image', Vendors.dashscopeNative)),
+        isTrue,
+      );
+      // Chat on the same channel really does stream, and keeps the short
+      // guard that says whether the connection is alive.
+      expect(
+        dispatcher.streamIsSingleShot(config('qwen-max', Vendors.dashscope)),
+        isFalse,
+      );
+    });
   });
 }

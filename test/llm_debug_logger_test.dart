@@ -149,6 +149,22 @@ void main() {
       expect(log!.file.readAsStringSync(), contains('xxxx'));
     });
 
+    test('a failed write keeps the buffer instead of dropping it', () async {
+      // The buffer exists so a stream is a handful of writes rather than
+      // hundreds. Clearing it on a write that failed would spend that
+      // trade-off on losing up to 64 KB of the very log it was bought for.
+      final log = await LLMDebugLogger.startLog('m', 'Test', {'body': {}});
+      final dir = log!.file.parent;
+      final marker = 'data: ${'x' * 70000}';
+
+      dir.deleteSync(recursive: true); // nothing can land while this is gone
+      await LLMDebugLogger.appendStreamLine(log, marker);
+      dir.createSync(recursive: true); // ...and now it can again
+
+      await LLMDebugLogger.finish(log);
+      expect(log.file.readAsStringSync(), contains(marker));
+    });
+
     test('an unbuffered line does not overtake buffered ones', () async {
       // appendLine flushes first, so `Elapsed:` cannot land in front of the
       // body it is supposed to follow.

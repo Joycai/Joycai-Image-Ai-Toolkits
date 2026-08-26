@@ -1744,6 +1744,7 @@
   },
   "optKbSearchDocs": "搜索文档…",
   "optKbTreeEmpty": "这个知识库里还没有文档",
+  "optKbTreeScanFailed": "无法读取知识库文件夹",
   "optKbTreeNoMatch": "没有匹配的文档",
   "optKbTreeChanged": "已改",
   "optKbTreeAdded": "新增",
