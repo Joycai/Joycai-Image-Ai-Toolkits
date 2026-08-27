@@ -75,11 +75,14 @@ class AppSnackBar {
       _AppSnackBarKind.info => (AppSemanticColors.dark.info, Icons.info_outline),
     };
 
-    // Hidden first so a rapid string of calls (e.g. one failure per file in a
-    // batch) doesn't queue up a stack of toasts the user has to dismiss one
-    // at a time — only the latest state is worth showing.
+    // Removed, not hidden: a rapid string of calls (e.g. one failure per file
+    // in a batch) must not queue up a stack of toasts the user has to dismiss
+    // one at a time, and `hide` gets there by playing the outgoing toast's
+    // full exit before the next one enters — eight failures read as eight
+    // slide-out/slide-in flickers of the same box. `remove` swaps the contents
+    // in place, so what changes is the message rather than the whole control.
     ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
+      ..removeCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           backgroundColor: AppOverlay.ink,

@@ -51,6 +51,83 @@ class _ChannelLongPressDragListener extends ReorderableDelayedDragStartListener 
       );
 }
 
+/// The 12px drag grip that fades in over a channel row's left padding.
+///
+/// A widget of its own for one reason: the hover flag stays in the row. On
+/// [_ModelsScreenState] it rebuilt both panels on every pointer crossing —
+/// including the right-hand column, whose model cards are built eagerly and
+/// measured two at a time by an [IntrinsicHeight]. Hover belongs to the row,
+/// the way it already does in `image_card.dart` and `file_card.dart`.
+class _ChannelHoverHandle extends StatefulWidget {
+  const _ChannelHoverHandle({
+    required this.enabled,
+    required this.tooltip,
+    required this.child,
+  });
+
+  /// Whether the row can be dragged. When false there is no [MouseRegion] and
+  /// the handle stays hidden — a rail filtered by a query has no order to
+  /// rearrange, so nothing should suggest it has.
+  final bool enabled;
+
+  final String tooltip;
+
+  /// The row's own content.
+  final Widget child;
+
+  @override
+  State<_ChannelHoverHandle> createState() => _ChannelHoverHandleState();
+}
+
+class _ChannelHoverHandleState extends State<_ChannelHoverHandle> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final content = Stack(
+      children: [
+        // The handle is painted *over* the row's existing left padding
+        // rather than taking a column of its own: revealing it must not
+        // move the avatar, the name or the subline by a pixel, which is
+        // the whole argument for 方案乙 over the always-on grip.
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 12,
+          child: IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: widget.enabled && _hovering ? 1 : 0,
+              duration: AppMotion.durationOf(context, AppMotion.hover),
+              curve: AppMotion.enter,
+              child: Center(
+                child: Tooltip(
+                  message: widget.tooltip,
+                  child: Icon(
+                    Icons.drag_indicator,
+                    size: 12,
+                    color: colorScheme.outline,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        widget.child,
+      ],
+    );
+
+    if (!widget.enabled) return content;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: content,
+    );
+  }
+}
+
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({super.key});
 
@@ -70,10 +147,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
   /// substring match — the lists are at most a few hundred rows.
   String _channelQuery = '';
 
-  /// Which channel row the pointer is over, or null. Drives the reveal of the
-  /// drag handle (spec 19a, 方案乙): the rail is a navigation surface first, so
-  /// the affordance for a low-frequency action only exists under the cursor.
-  int? _hoveredChannelId;
   String _modelQuery = '';
 
   /// The selected kind chip, a [ModelTag] string value; null is "all".
@@ -382,7 +455,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final textTheme = Theme.of(context).textTheme;
     final isSelected = channel.id == _selectedChannelId;
     final models = appState.getModelsForChannel(channel.id);
-    final showHandle = draggable && _hoveredChannelId == channel.id;
 
     final row = Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -397,42 +469,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => setState(() => _selectedChannelId = channel.id),
-          // Hover both reveals the handle and says the row can be picked up.
-          onHover: draggable
-              ? (hovering) => setState(
-                  () => _hoveredChannelId = hovering ? channel.id : null)
-              : null,
+          // The cursor says the row can be picked up; the handle, revealed on
+          // hover inside [_ChannelHoverHandle], says where.
           mouseCursor: draggable ? SystemMouseCursors.grab : null,
-          child: Stack(
-            children: [
-              // The handle is painted *over* the row's existing left padding
-              // rather than taking a column of its own: revealing it must not
-              // move the avatar, the name or the subline by a pixel, which is
-              // the whole argument for 方案乙 over the always-on grip.
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 12,
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: showHandle ? 1 : 0,
-                    duration: const Duration(milliseconds: 120),
-                    curve: Curves.linear,
-                    child: Center(
-                      child: Tooltip(
-                        message: l10n.channelReorderHandleTooltip,
-                        child: Icon(
-                          Icons.drag_indicator,
-                          size: 12,
-                          color: colorScheme.outline,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
+          child: _ChannelHoverHandle(
+            enabled: draggable,
+            tooltip: l10n.channelReorderHandleTooltip,
+            child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
               children: [
@@ -485,7 +528,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ],
             ),
           ),
-            ],
           ),
         ),
       ),

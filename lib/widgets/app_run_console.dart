@@ -10,6 +10,7 @@ import '../state/app_state.dart';
 import '../state/log_state.dart';
 import 'log_console.dart';
 import 'panel_resizer.dart';
+import 'smooth_progress.dart';
 import '../screens/batch/task_queue_screen.dart';
 
 /// Shared run-status console: pulsing status dot, running/pending task
@@ -147,11 +148,14 @@ class _AppRunConsoleState extends State<AppRunConsole> {
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: LinearProgressIndicator(
+                  child: SmoothProgress(
                     value: avgProgress > 0 ? avgProgress : null,
-                    minHeight: 2,
-                    backgroundColor: Colors.transparent,
-                    color: colorScheme.primary,
+                    builder: (context, v) => LinearProgressIndicator(
+                      value: v,
+                      minHeight: 2,
+                      backgroundColor: Colors.transparent,
+                      color: colorScheme.primary,
+                    ),
                   ),
                 ),
             ],
@@ -296,11 +300,14 @@ class _AppRunConsoleState extends State<AppRunConsole> {
               width: 44,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
+                child: SmoothProgress(
                   value: avgProgress > 0 ? avgProgress : null,
-                  minHeight: 4,
-                  backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
-                  color: colorScheme.primary,
+                  builder: (context, v) => LinearProgressIndicator(
+                    value: v,
+                    minHeight: 4,
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.18),
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
             ),
