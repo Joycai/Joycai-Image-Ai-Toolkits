@@ -19,6 +19,7 @@ import '../../state/app_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/dashed_border.dart';
 import '../../widgets/scroll_edge_fade.dart';
+import '../../widgets/smooth_progress.dart';
 import '../../widgets/app_section_label.dart';
 import '../../core/file_utils.dart';
 import '../../widgets/app_dialog.dart';
@@ -1244,12 +1245,15 @@ class _TaskCardState extends State<_TaskCard> {
   /// Square, not rounded: it is an edge of the card rather than a bar laid on
   /// it, and the card's own corner radius is what shapes its ends.
   Widget _buildProgressBar(TaskItem task, ColorScheme colorScheme) {
-    return LinearProgressIndicator(
+    return SmoothProgress(
       value: task.progress,
-      minHeight: 3,
-      borderRadius: BorderRadius.zero,
-      backgroundColor: colorScheme.surfaceContainerHighest,
-      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+      builder: (context, v) => LinearProgressIndicator(
+        value: v,
+        minHeight: 3,
+        borderRadius: BorderRadius.zero,
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+      ),
     );
   }
 

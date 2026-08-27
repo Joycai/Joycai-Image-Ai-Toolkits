@@ -9,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../services/task_queue_service.dart';
 import '../state/app_state.dart';
 import 'app_button.dart';
+import 'smooth_progress.dart';
 
 class TaskCapsuleMonitor extends StatefulWidget {
   const TaskCapsuleMonitor({super.key});
@@ -277,11 +278,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                       const SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
+                        child: SmoothProgress(
                           value: avgProgress,
-                          minHeight: 3,
-                          backgroundColor: colorScheme.surfaceContainer,
-                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          builder: (context, v) => LinearProgressIndicator(
+                            value: v,
+                            minHeight: 3,
+                            backgroundColor: colorScheme.surfaceContainer,
+                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          ),
                         ),
                       ),
                     ],
@@ -318,10 +322,14 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
                                 // indeterminate spinner beside a percentage
                                 // that *is* known says less than the ring the
                                 // header already shows.
-                                child: CircularProgressIndicator(
+                                child: SmoothProgress(
                                   value: t.progress,
-                                  strokeWidth: 2,
-                                  backgroundColor: colorScheme.surfaceContainer,
+                                  builder: (context, v) =>
+                                      CircularProgressIndicator(
+                                    value: v,
+                                    strokeWidth: 2,
+                                    backgroundColor: colorScheme.surfaceContainer,
+                                  ),
                                 ),
                               ),
                           ],
@@ -359,10 +367,13 @@ class _TaskCapsuleMonitorState extends State<TaskCapsuleMonitor> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            CircularProgressIndicator(
+            SmoothProgress(
               value: progress,
-              strokeWidth: 2.5,
-              backgroundColor: colorScheme.surfaceContainer,
+              builder: (context, v) => CircularProgressIndicator(
+                value: v,
+                strokeWidth: 2.5,
+                backgroundColor: colorScheme.surfaceContainer,
+              ),
             ),
             Icon(Icons.auto_awesome, size: 12, color: colorScheme.primary),
           ],

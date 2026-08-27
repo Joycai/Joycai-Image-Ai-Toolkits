@@ -124,7 +124,7 @@ void main() {
   });
 
   testWidgets('a second call replaces the first instead of queuing behind it', (tester) async {
-    // The whole reason AppSnackBar always hides the current one first: a
+    // The whole reason AppSnackBar always clears the current one first: a
     // batch operation reporting one failure per file must show only the
     // latest state, not a backlog the user has to dismiss one at a time.
     await tester.pumpWidget(host((context) {
@@ -133,6 +133,40 @@ void main() {
     }));
     await tester.tap(find.text('Trigger'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Second'), findsOneWidget);
+    expect(find.text('First'), findsNothing);
+  });
+
+  testWidgets('replacing a toast already on screen swaps it, it does not play an exit',
+      (tester) async {
+    // The test above fires both calls before a single frame, so the first
+    // toast is still at the start of its entrance and *any* dismissal looks
+    // instant. This one lets the first settle first, which is the case a
+    // batch of failures actually produces.
+    //
+    // Fixed pumps rather than pumpAndSettle, because settling would pass
+    // either way. `hideCurrentSnackBar` reverses the outgoing toast over its
+    // full exit and only then admits the next one, so a frame later the box
+    // still says 'First'. Only `removeCurrentSnackBar` has swapped the
+    // contents by now.
+    int calls = 0;
+    await tester.pumpWidget(host((context) {
+      calls++;
+      if (calls == 1) {
+        AppSnackBar.info(context, 'First');
+      } else {
+        AppSnackBar.error(context, 'Second');
+      }
+    }));
+
+    await tester.tap(find.text('Trigger'));
+    await tester.pumpAndSettle();
+    expect(find.text('First'), findsOneWidget, reason: 'the first toast should be fully in');
+
+    await tester.tap(find.text('Trigger'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
 
     expect(find.text('Second'), findsOneWidget);
     expect(find.text('First'), findsNothing);

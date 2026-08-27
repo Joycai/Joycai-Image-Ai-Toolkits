@@ -702,8 +702,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         ),
         // The queue note (18a linkage: appears with the async selection).
         AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
+          duration: AppMotion.durationOf(context, AppMotion.reveal),
+          curve: AppMotion.enter,
           alignment: Alignment.topCenter,
           child: !asyncPinned
               ? const SizedBox(width: double.infinity)

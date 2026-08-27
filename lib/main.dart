@@ -374,25 +374,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     isSettingsActive: filteredDefinitions[displayIndex].screen is SettingsScreen,
                     l10n: l10n,
                   ),
-                // The same crossfade the channel wizard gives its steps: the
-                // app already had an opinion about moving between sibling
-                // views, it just never applied it at the top level. Keyed by
-                // index, not by widget — the screens are canonicalised consts,
-                // so without a key the switcher would treat every destination
-                // as the same child and never animate.
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: AppMotion.durationOf(context, AppMotion.reveal),
-                    switchInCurve: AppMotion.enter,
-                    switchOutCurve: AppMotion.enter,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: KeyedSubtree(
-                      key: ValueKey(displayIndex),
-                      child: screens[displayIndex],
-                    ),
-                  ),
-                ),
+                // No transition between destinations, deliberately. This is
+                // the most frequent action in the app and it carries a
+                // keyboard shortcut (Ctrl/Cmd+1..8, above), which puts it in
+                // the band where the correct animation is none: a shortcut
+                // means "be there now". A crossfade would also double-expose
+                // two opaque screens that share no structure, and pay for two
+                // full subtrees at the one moment the new one is most
+                // expensive to build.
+                Expanded(child: screens[displayIndex]),
               ],
             ),
           ),
