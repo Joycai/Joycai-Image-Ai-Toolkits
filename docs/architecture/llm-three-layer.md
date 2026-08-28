@@ -246,12 +246,13 @@ thinking / server tool 一起加。
    段、搜索后一段），所以 block 之间按空行拼接，不是裸接 —— 裸接会把两段话连成
    一句。
 
-**④ 的流式那条路现在也声明工具**（`streamingDeclaresTools`，目前只有 ④ 为
-true）。理由不是增量消费 —— agent 循环拿不到完整一批就配不出结果 —— 而是**保
-活**：`LLMService` 流式分支的超时是**按 chunk** 计的、每个 chunk 重置，而非流式
-那条得覆盖整轮生成。一次 `submit_prompt` 6–7K token，没有任何固定 deadline 能覆
-盖，这正是助手每次交付都在写到一半时超时的原因（见
-`docs/plans/2026-08-assistant-timeout.md`）。
+**四条 chat wire 现在全都声明工具**（`streamingDeclaresTools`：④ ③ ① C2）。理由
+不是增量消费 —— agent 循环拿不到完整一批就配不出结果 —— 而是**保活**：
+`LLMService` 流式分支的超时是**按 chunk** 计的、每个 chunk 重置，而非流式那条得
+覆盖整轮生成。一次 `submit_prompt` 6–7K token，没有任何固定 deadline 能覆盖，这
+正是助手每次交付都在写到一半时超时的原因（见
+`docs/plans/2026-08-assistant-timeout.md`）。① 是最后补上的一条，而它覆盖面最大
+—— 绝大多数中转渠道走的都是 ① 面，在此之前它们的助手每一轮都被静默降级成非流式。
 
 拼装逻辑在 `AnthropicStreamAssembler` 里，从传输循环里拆出来是为了能不开 socket
 就钉住 —— 和 ③ 的 `geminiChunksFromSseLine` 同一个套路。三条不变量：
@@ -265,9 +266,25 @@ true）。理由不是增量消费 —— agent 循环拿不到完整一批就�
   报错。签名规则与同步路径一致：只留封好的块，`redacted_thinking` 永远留。
 
 ① 的 `function.arguments` 按 `delta.tool_calls[].index` 分片（streaming.md
-§1），要另写一套累积器，所以 ① / ③ 目前仍然降级到 `generate()`。降级判断写在
-`LLMDispatcher.streamSupportsTools` 里 —— 和其它路由分支放在一起，逐 family 手
-写而不是查表，这样以后给 ① 补上是这里可见的一行改动。
+§1），另有一套累积器 `StreamingToolCallAccumulator`（在
+`openai_chat_protocol.dart`，和 `contentToText` / `resolveToolCallId` 一样属于
+①-shaped 的公共件）。**C2 复用同一个类** —— DashScope 私有面的 `tool_calls` 就
+是 ① 的拼法。三条不变量：
+
+- **流结束前什么都不出去。** ① 没有 ④ 的 `content_block_stop` 那种逐调用终止
+  符，所以只能在传输循环跑完之后 `flush()`。这也是它必须放在 `finally` **之外**
+  的原因：断在参数中间的流要报错，不能交出一个半成品调用。
+- **分组键是 `index`，不是 `id`** —— `id` 自己也会分片。相对地，中转不发
+  `index` 时退回该调用在本帧数组里的下标，那本来就是这个字段的含义。
+- **分片是"合并"不是"追加"。** 同一套 JSON 分片走两种方言：① 发增量，而 C2 只在
+  `incremental_output` 被兑现时发增量，被拒或被中间层重组时**每帧重复整个调用**。
+  盲目追加会拼出 `{"a":1}{"a":1}`（解析为空）和 `view_imageview_image`。判据是
+  "本帧是否以已收内容为前缀" —— 和 `DashScopeStreamChannel` 对文本的判据同一套，
+  连同一份代价：增量片段若以整段已收内容开头会被误判，而分片 JSON 不会那样写。
+
+降级判断写在 `LLMDispatcher.streamSupportsTools` 里 —— 和其它路由分支放在一起，
+逐 family 手写而不是查表，所以新增一族默认是 `false`，补上累积器是这里可见的一行
+改动。
 
 两个开关都是**按模型**存的（v33 迁移的 `llm_models.enable_thinking` /
 `enable_web_search`，默认关），由 `LLMConfigResolver` 解析进 `LLMModelConfig`

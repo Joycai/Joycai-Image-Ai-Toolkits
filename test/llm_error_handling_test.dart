@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_service.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/anthropic_chat_protocol.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/gemini_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
@@ -342,18 +343,24 @@ void main() {
           isTrue);
     });
 
-    test('① does not, so its tool-bearing requests still downgrade', () {
-      // Claiming the capability without the accumulator would answer a
-      // tool-bearing request as though no tools existed — the one failure an
-      // agent loop cannot detect.
-      for (final vendor in [
-        Vendors.openAIRest,
-        Vendors.newApiOpenAI,
-        Vendors.midjourneyProxy,
-      ]) {
-        expect(LLMDispatcher().streamSupportsTools(config(vendor)), isFalse,
-            reason: '$vendor must keep the downgrade');
+    test('① carries them since it grew an accumulator', () {
+      // The one that mattered most in practice: nearly every relay channel
+      // resolves to ①, so until `StreamingToolCallAccumulator` existed every
+      // assistant turn on a relay was silently downgraded to the synchronous
+      // path and had to fit a 6-7 K-token answer inside one deadline.
+      for (final vendor in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
+        expect(LLMDispatcher().streamSupportsTools(config(vendor)), isTrue,
+            reason: '$vendor should stream its tool calls');
       }
+    });
+
+    test('Midjourney keeps the downgrade — it has no accumulator', () {
+      // Claiming the capability without one answers a tool-bearing request as
+      // though no tools existed, which is the failure an agent loop cannot
+      // detect. The guard has to keep failing for something.
+      expect(
+          LLMDispatcher().streamSupportsTools(config(Vendors.midjourneyProxy)),
+          isFalse);
     });
 
     test('the protocols agree with the routing table', () {
@@ -361,7 +368,8 @@ void main() {
       // the protocols actually implement. This is the pin against that.
       expect(AnthropicChatProtocol().streamingDeclaresTools, isTrue);
       expect(GeminiChatProtocol().streamingDeclaresTools, isTrue);
-      expect(OpenAIChatProtocol().streamingDeclaresTools, isFalse);
+      expect(OpenAIChatProtocol().streamingDeclaresTools, isTrue);
+      expect(DashScopeChatProtocol().streamingDeclaresTools, isTrue);
     });
   });
 

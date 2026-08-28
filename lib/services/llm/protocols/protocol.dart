@@ -70,6 +70,11 @@ abstract class ChatProtocol {
   /// which is fragmented too — is the only reliable grouping key
   /// (docs/api/tools.md §4).
   ///
+  /// ① and DashScope's native face share one accumulator
+  /// (`StreamingToolCallAccumulator`) because they share the wire spelling;
+  /// ④ and ③ each have their own. A new family arrives without one, hence the
+  /// default.
+  ///
   /// `LLMService.request` reads this (via `LLMDispatcher.streamSupportsTools`)
   /// and falls back to [generate] where it is false. Overriding it without
   /// implementing the accumulator means a tool-bearing request silently

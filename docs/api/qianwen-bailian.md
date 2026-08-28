@@ -219,4 +219,11 @@
 和原生面（`dashscope-native`）打头，chat 三面在两个通道上都能按模型点单。
 路由与分层见
 [`../architecture/llm-three-layer.md`](../architecture/llm-three-layer.md)。
-**未实测**：本文全部 ⚠ 条目，以及 C2 的多模态面与 SSE 增量。
+
+C1 与 C2 的流式面现在都声明工具（`streamingDeclaresTools`），共用
+`StreamingToolCallAccumulator`：带工具的请求不再静默降级成非流式，超时守卫因此
+按 chunk 重置而不必覆盖整轮生成。C2 那条尤其要注意 §8.2 的增量/累积二义 ——
+累积帧盲目追加会拼出 `view_imageview_image`，累积器按前缀判据合并。
+
+**未实测**：本文全部 ⚠ 条目，以及 C2 的多模态面与 SSE 增量（含其 `tool_calls`
+究竟按哪种方言到达）。

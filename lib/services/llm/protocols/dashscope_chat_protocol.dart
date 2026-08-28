@@ -7,7 +7,12 @@ import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'dashscope_payload.dart';
-import 'openai_chat_protocol.dart' show contentToText, resolveToolCallId;
+import 'openai_chat_protocol.dart'
+    show
+        StreamingToolCallAccumulator,
+        contentToText,
+        decodeToolArguments,
+        resolveToolCallId;
 import 'protocol.dart';
 
 /// The header that turns a DashScope-native request into an SSE stream.
@@ -133,11 +138,17 @@ class DashScopeChatProtocol implements ChatProtocol {
     }
   }
 
-  /// Same accumulator problem as the ① face: `function.arguments` arrives
-  /// fragmented and grouped by index, so a tool-bearing request falls back to
-  /// [generate] until that is written.
+  /// True on the same [StreamingToolCallAccumulator] that taught the ① face
+  /// to reassemble a call out of fragments — C2 carries `tool_calls` in the
+  /// ①-shaped spelling, so one accumulator serves both.
+  ///
+  /// The wrinkle this face adds is that its frames are deltas only where
+  /// `incremental_output` was honoured; refused, or re-assembled by an
+  /// intermediary, they repeat the whole call every time. The accumulator
+  /// merges rather than appends for exactly that reason — the same trade
+  /// [DashScopeStreamChannel] already makes for text.
   @override
-  bool get streamingDeclaresTools => false;
+  bool get streamingDeclaresTools => true;
 
   @override
   Stream<LLMResponseChunk> generateStream(
@@ -211,6 +222,9 @@ class DashScopeChatProtocol implements ChatProtocol {
     // answer on every frame. [_emit] tells the two apart against these.
     final text = DashScopeStreamChannel();
     final reasoning = DashScopeStreamChannel();
+    // The third channel, and the one that cannot emit as it goes: a call is
+    // whole only once its last fragment has arrived.
+    final streamedToolCalls = StreamingToolCallAccumulator();
     Map<String, dynamic>? usageMetadata;
     String? finishReason;
 
@@ -250,6 +264,8 @@ class DashScopeChatProtocol implements ChatProtocol {
         final message = dashscopeChatMessage(frame);
         if (message == null) continue;
 
+        streamedToolCalls.feed(message['tool_calls']);
+
         final rawReasoning = message['reasoning_content'];
         if (rawReasoning is String && rawReasoning.isNotEmpty) {
           // Its own channel: a consumer that accumulates textPart into a
@@ -269,6 +285,17 @@ class DashScopeChatProtocol implements ChatProtocol {
     } finally {
       client.close();
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    // Outside the `finally`: a stream that died mid-arguments must fail
+    // rather than hand over a half-built call.
+    final assembled = streamedToolCalls.flush(logger: logger);
+    if (assembled.isNotEmpty) {
+      logger?.call('Model requested ${assembled.length} tool call(s).',
+          level: 'DEBUG');
+    }
+    for (final call in assembled) {
+      yield LLMResponseChunk(toolCallPart: call);
     }
 
     if (usageMetadata != null || finishReason != null) {
@@ -549,18 +576,9 @@ List<LLMToolCall> dashscopeToolCalls(
     final tc = raw[i];
     final fn = tc is Map ? tc['function'] : null;
     if (fn is! Map) continue;
-    var args = <String, dynamic>{};
-    final rawArgs = fn['arguments'];
-    if (rawArgs is String && rawArgs.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(rawArgs);
-        if (decoded is Map<String, dynamic>) args = decoded;
-      } catch (e) {
-        logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
-      }
-    } else if (rawArgs is Map<String, dynamic>) {
-      args = rawArgs;
-    }
+    // Shared with the ① face and with the streaming accumulator, so the three
+    // cannot come to disagree about what a payload means.
+    final args = decodeToolArguments(fn['arguments'], logger: logger);
     calls.add(LLMToolCall(
       id: resolveToolCallId(tc is Map ? tc['id'] : null, i),
       name: fn['name']?.toString() ?? '',

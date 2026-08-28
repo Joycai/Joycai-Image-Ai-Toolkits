@@ -32,7 +32,8 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
     // Tool calling reaches the streaming surface only where the protocol
-    // assembles calls out of deltas — ④ today, see
+    // assembles calls out of deltas — every chat family does now, but
+    // Midjourney's stream still cannot, see
     // [ChatProtocol.streamingDeclaresTools]. Everywhere else, downgrading
     // silently beats honouring useStream: a caller that passed tools needs
     // them, and a stream that never declares them just answers as if there

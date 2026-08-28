@@ -189,31 +189,26 @@ void main() {
       );
     });
 
-    test('the ④ face pin flips streamSupportsTools on an ① vendor', () {
+    test('every chat face streams tool calls, whichever one is pinned', () {
       final dispatcher = LLMDispatcher();
-      expect(
-          dispatcher.streamSupportsTools(config('qwen-max', Vendors.dashscope)),
-          isFalse);
-      expect(
-          dispatcher.streamSupportsTools(config('qwen-max', Vendors.dashscope,
-              wireProtocol: 'anthropic-chat')),
-          isTrue);
-    });
-
-    test('and on the native vendor, whose default is DashScope\'s own wire',
-        () {
-      final dispatcher = LLMDispatcher();
-      // Auto here is `dashscope-chat`, which has no tool-call accumulator
-      // yet — same answer as ①, reached through a different default.
-      expect(
-          dispatcher
-              .streamSupportsTools(config('qwen-max', Vendors.dashscopeNative)),
-          isFalse);
-      expect(
-          dispatcher.streamSupportsTools(config(
-              'qwen-max', Vendors.dashscopeNative,
-              wireProtocol: 'anthropic-chat')),
-          isTrue);
+      // Was ④-only until ① and C2 grew accumulators of their own
+      // (`StreamingToolCallAccumulator`), which is why the pin used to flip
+      // this answer and no longer does. A `false` here is not a cosmetic
+      // regression: `LLMService.request` silently downgrades a tool-bearing
+      // request to the synchronous path, where the entire generation has to
+      // land inside one deadline instead of resetting a guard per chunk.
+      for (final vendor in [Vendors.dashscope, Vendors.dashscopeNative]) {
+        expect(dispatcher.streamSupportsTools(config('qwen-max', vendor)),
+            isTrue,
+            reason: 'auto face on $vendor');
+        for (final pin in ['openai-chat', 'anthropic-chat', 'dashscope-chat']) {
+          expect(
+              dispatcher.streamSupportsTools(
+                  config('qwen-max', vendor, wireProtocol: pin)),
+              isTrue,
+              reason: '$pin pinned on $vendor');
+        }
+      }
     });
   });
 

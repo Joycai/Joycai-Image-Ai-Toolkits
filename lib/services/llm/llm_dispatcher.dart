@@ -404,8 +404,10 @@ class LLMDispatcher {
   /// The routing question `LLMService` asks before choosing a path, kept here
   /// with every other routing branch rather than derived from the protocol
   /// object at the call site. Written per family rather than as a lookup so
-  /// that teaching ① or ③ to stream tool calls is a visible one-line change
-  /// here, not a silent behaviour flip somewhere else.
+  /// that a family losing or gaining the ability is a visible one-line change
+  /// here, not a silent behaviour flip somewhere else. Every chat family
+  /// answers `true` today; the branch stays because the answer is a property
+  /// of the resolved route, and a new family arrives at `false`.
   bool streamSupportsTools(LLMModelConfig config) {
     final target = resolveTarget(config);
     switch (target.vendor.family) {
