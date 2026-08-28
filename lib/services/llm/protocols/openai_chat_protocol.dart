@@ -104,6 +104,137 @@ String resolveToolCallId(Object? rawId, int index) {
   return (id == null || id.isEmpty) ? 'call_$index' : id;
 }
 
+/// One tool call's `arguments`, decoded.
+///
+/// Shared by the synchronous and streaming paths so the two cannot come to
+/// disagree about what a payload means. The value is a JSON *string* on every
+/// ①-shaped wire, but relays have been seen answering with the object itself,
+/// and both spellings reach here.
+///
+/// An unparseable string yields empty arguments rather than dropping the
+/// call: a missing call reads to an agent loop as "the model chose to answer
+/// directly", which is the one failure mode it cannot detect, so the call
+/// goes out and the tool reports the mismatch itself.
+Map<String, dynamic> decodeToolArguments(Object? rawArgs, {LLMLogger? logger}) {
+  if (rawArgs is Map<String, dynamic>) return rawArgs;
+  if (rawArgs is! String || rawArgs.trim().isEmpty) return const {};
+  try {
+    final decoded = jsonDecode(rawArgs);
+    if (decoded is Map<String, dynamic>) return decoded;
+  } catch (e) {
+    final recovered = _recoverConcatenatedJsonObjects(rawArgs);
+    if (recovered != null) {
+      logger?.call(
+        'Tool call arguments were concatenated JSON objects '
+        '("$rawArgs") — recovered by merging them.',
+        level: 'WARN',
+      );
+      return recovered;
+    }
+    logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
+  }
+  return const {};
+}
+
+/// Assembles the `tool_calls` fragments of a stream into whole calls.
+///
+/// ① splits one call across chunks and groups the pieces by
+/// `delta.tool_calls[].index` — not by `id`, which is fragmented too
+/// (docs/api/tools.md §4) — and gives no per-call terminator the way ④'s
+/// `content_block_stop` does. Nothing can therefore be emitted before the
+/// stream ends, which is why [LLMResponseChunk.toolCallPart] promises whole
+/// calls and this class hands them over only from [flush].
+///
+/// Fragments are *merged* rather than appended blindly, because one wire
+/// shape serves two dialects: ① streams deltas, while DashScope's native face
+/// streams deltas only where `incremental_output` was honoured and otherwise
+/// repeats the whole call on every frame. Appending a cumulative frame builds
+/// `{"a":1}{"a":1}` — which parses as nothing and reaches the model as a
+/// malformed argument set.
+class StreamingToolCallAccumulator {
+  final Map<int, _PendingToolCall> _calls = {};
+
+  /// Whether any fragment has arrived. False on a stream that answered with
+  /// text alone, which is the common case.
+  bool get isEmpty => _calls.isEmpty;
+
+  /// Consume one chunk's `tool_calls` array. Anything else is ignored — the
+  /// field is absent from most chunks of a tool-bearing stream.
+  void feed(Object? rawToolCalls) {
+    if (rawToolCalls is! List) return;
+    for (var position = 0; position < rawToolCalls.length; position++) {
+      final tc = rawToolCalls[position];
+      if (tc is! Map) continue;
+      // `index` is the grouping key the spec guarantees. Its position in this
+      // frame's array is the fallback for relays that omit the field, which
+      // is what the field would have said anyway.
+      final rawIndex = tc['index'];
+      final index = rawIndex is num ? rawIndex.toInt() : position;
+      final pending = _calls.putIfAbsent(index, _PendingToolCall.new);
+      pending.id = _merge(pending.id, tc['id']);
+      final fn = tc['function'];
+      if (fn is! Map) continue;
+      pending.name = _merge(pending.name, fn['name']);
+      final rawArgs = fn['arguments'];
+      if (rawArgs is Map<String, dynamic>) {
+        // Already whole — no wire sends an object in pieces — so it replaces
+        // rather than merges.
+        pending.decodedArguments = rawArgs;
+      } else {
+        pending.arguments = _merge(pending.arguments, rawArgs);
+      }
+    }
+  }
+
+  /// Everything assembled so far, in `index` order, and the accumulator
+  /// emptied so a reused instance cannot replay a previous turn's calls.
+  List<LLMToolCall> flush({LLMLogger? logger}) {
+    if (_calls.isEmpty) return const [];
+    final calls = <LLMToolCall>[];
+    for (final index in _calls.keys.toList()..sort()) {
+      final pending = _calls[index]!;
+      calls.add(LLMToolCall(
+        id: resolveToolCallId(pending.id, index),
+        name: pending.name,
+        arguments: pending.decodedArguments ??
+            decodeToolArguments(pending.arguments, logger: logger),
+      ));
+    }
+    _calls.clear();
+    return calls;
+  }
+
+  /// [raw] folded into what has already arrived on the same field.
+  ///
+  /// A frame that has the accumulation as its own prefix is a cumulative
+  /// repeat and replaces it — which also covers the identical repeat a name
+  /// makes on every cumulative frame, and the very first fragment, where the
+  /// accumulation is empty. Anything else is a delta and is appended.
+  ///
+  /// The one shape this cannot tell apart is a delta that opens by repeating
+  /// the entire accumulation. Fragmented JSON does not do that: a delta
+  /// resumes where the last one stopped, so it matches from position 0 only
+  /// when it is restating the whole document. Same trade
+  /// `DashScopeStreamChannel` makes for text.
+  static String _merge(String seen, Object? raw) {
+    if (raw is! String || raw.isEmpty) return seen;
+    if (raw.startsWith(seen)) return raw;
+    return seen + raw;
+  }
+}
+
+/// One call under construction. Mutable and private: only
+/// [StreamingToolCallAccumulator] may hold a half-built call.
+class _PendingToolCall {
+  String id = '';
+  String name = '';
+  String arguments = '';
+
+  /// Set only where a relay answered with the arguments object itself, in
+  /// which case [arguments] stays empty and this wins.
+  Map<String, dynamic>? decodedArguments;
+}
+
 /// The first `choices` entry of a response or stream chunk, or null when there
 /// is none.
 ///
@@ -405,28 +536,7 @@ class OpenAIChatProtocol implements ChatProtocol {
             final tc = rawToolCalls[i];
             final fn = tc is Map ? tc['function'] : null;
             if (fn is! Map) continue;
-            Map<String, dynamic> args = {};
-            final rawArgs = fn['arguments'];
-            if (rawArgs is String && rawArgs.isNotEmpty) {
-              try {
-                final decoded = jsonDecode(rawArgs);
-                if (decoded is Map<String, dynamic>) args = decoded;
-              } catch (e) {
-                final recovered = _recoverConcatenatedJsonObjects(rawArgs);
-                if (recovered != null) {
-                  args = recovered;
-                  logger?.call(
-                    'Tool call arguments were concatenated JSON objects '
-                    '("$rawArgs") — recovered by merging them.',
-                    level: 'WARN',
-                  );
-                } else {
-                  logger?.call('Failed to decode tool call arguments: $e', level: 'WARN');
-                }
-              }
-            } else if (rawArgs is Map<String, dynamic>) {
-              args = rawArgs;
-            }
+            final args = decodeToolArguments(fn['arguments'], logger: logger);
             toolCalls.add(LLMToolCall(
               id: resolveToolCallId(tc['id'], i),
               name: fn['name']?.toString() ?? '',
@@ -472,20 +582,23 @@ class OpenAIChatProtocol implements ChatProtocol {
     }
   }
 
-  /// ① fragments `function.arguments` across chunks and groups them by
-  /// `delta.tool_calls[].index` rather than `id` (docs/api/tools.md §4), so
-  /// this needs a real accumulator before it can be true. Until then a
-  /// tool-bearing request falls back to [generate].
+  /// True since [StreamingToolCallAccumulator] taught this surface to
+  /// reassemble a call out of `delta.tool_calls[]` fragments, grouped by
+  /// `index` rather than `id` (docs/api/tools.md §4).
+  ///
+  /// What it buys is not incremental display — an agent loop cannot act on
+  /// half a batch — but the per-chunk idle guard: on the synchronous path
+  /// nothing arrives until the last token, so the whole generation has to fit
+  /// inside one deadline, and a 6–7 K-token answer did not
+  /// (docs/plans/2026-08-assistant-timeout.md).
   @override
-  bool get streamingDeclaresTools => false;
+  bool get streamingDeclaresTools => true;
 
   @override
   Stream<LLMResponseChunk> generateStream(
     LLMTarget target,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
-    // Ignored: streamingDeclaresTools is false here, so the dispatcher never
-    // routes a tool-bearing request to this surface.
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
@@ -493,7 +606,8 @@ class OpenAIChatProtocol implements ChatProtocol {
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/chat/completions');
     logger?.call('Starting OpenAI stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
-    final payload = _prepareChatPayload(target, history, options, isStreaming: true);
+    final payload =
+        _prepareChatPayload(target, history, options, isStreaming: true, tools: tools);
     if (payload.containsKey('safety_settings')) {
       logger?.call('Safety settings: ${SafetySettings.describe(options?[SafetySettings.paramKey])}', level: 'DEBUG');
     }
@@ -547,6 +661,9 @@ class OpenAIChatProtocol implements ChatProtocol {
     // a later one carrying only half the picture.
     Map<String, dynamic>? usageMetadata;
     String? finishReason;
+    // Fragments only become calls at stream end — ① has no per-call
+    // terminator — so this holds them until the loop is over.
+    final streamedToolCalls = StreamingToolCallAccumulator();
 
     try {
       await for (final line in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
@@ -588,6 +705,12 @@ class OpenAIChatProtocol implements ChatProtocol {
         final rawDelta = choice['delta'];
         final delta = rawDelta is Map ? rawDelta.cast<String, dynamic>() : null;
         if (delta != null) {
+          // Outside the tolerant try below for the same reason as usage: on a
+          // tool-bearing request these fragments *are* the reply, and losing
+          // one to a shape surprise elsewhere in the chunk would produce a
+          // call with truncated arguments rather than a visible failure.
+          streamedToolCalls.feed(delta['tool_calls']);
+
           final structured = extractStructuredImages(delta);
           for (final img in structured.bytes) {
             yield LLMResponseChunk(imagePart: img);
@@ -664,6 +787,20 @@ class OpenAIChatProtocol implements ChatProtocol {
       // In the finally so a stream that failed mid-flight still records how
       // long it ran before it did.
       await LLMDebugLogger.finish(debugFile);
+    }
+
+    // After the loop, never inside it: a call is whole only once the last
+    // fragment has arrived, and [LLMResponseChunk.toolCallPart] promises
+    // consumers they can act on whatever reaches them. Deliberately outside
+    // the `finally` too — a stream that died mid-arguments must fail, not
+    // deliver a half-built call.
+    final assembled = streamedToolCalls.flush(logger: logger);
+    if (assembled.isNotEmpty) {
+      logger?.call('Model requested ${assembled.length} tool call(s).',
+          level: 'DEBUG');
+    }
+    for (final call in assembled) {
+      yield LLMResponseChunk(toolCallPart: call);
     }
 
     // Last, so it wins over any metadata attached to an earlier chunk. Without
