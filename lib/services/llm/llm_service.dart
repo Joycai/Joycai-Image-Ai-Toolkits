@@ -18,6 +18,16 @@ class LLMService {
 
   Function(String, {String level, String? contextId})? onLogAdded;
 
+  /// [isCancelled] is polled at the points where this method would
+  /// otherwise keep working for a caller that has already withdrawn: before
+  /// each attempt, between stream chunks, and once the reply is complete.
+  ///
+  /// It cannot abort a *non-streaming* request in flight. The HTTP client is
+  /// pooled and shared per endpoint ([LLMModelConfig.createClient]), so its
+  /// `close()` is a deliberate no-op and closing the inner one would tear
+  /// down every other request sharing that connection. On the streaming path
+  /// there is a real abort: abandoning the subscription cancels the response
+  /// stream, which drops the connection for this request alone.
   Future<LLMResponse> request({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
@@ -26,6 +36,7 @@ class LLMService {
     Map<String, dynamic>? options,
     List<LLMTool>? tools,
     bool useStream = true,
+    bool Function()? isCancelled,
   }) async {
     final config = await _configResolver.resolveConfig(
       modelIdentifier,
@@ -56,6 +67,11 @@ class LLMService {
     int attempt = 0;
 
     while (true) {
+      // Checked before opening a connection rather than only after: the
+      // window between the user pressing stop and this loop starting its
+      // next attempt is exactly where a cancelled turn used to spend another
+      // full request.
+      if (isCancelled?.call() ?? false) throw const LLMCancelled();
       try {
         if (useStream) {
           onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
@@ -75,8 +91,17 @@ class LLMService {
             logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
           );
 
+          var cancelledMidStream = false;
           await for (final chunk
               in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
+            if (isCancelled?.call() ?? false) {
+              // Leaving the loop is the abort. `await for` cancels its
+              // subscription on break, which propagates to the response
+              // stream and drops this request's connection — the only
+              // interruption available while the client itself is pooled.
+              cancelledMidStream = true;
+              break;
+            }
             if (chunk.reasoningPart != null) {
               // Surfaced to the console and kept for replay, but never glued
               // into the deliverable — that must not contain the chain of
@@ -142,6 +167,15 @@ class LLMService {
             _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
           }
 
+          // Deliberately after [_recordUsage] and before the session is
+          // touched: whatever the provider streamed before the abort was
+          // generated and billed, so it belongs in the usage table — but a
+          // half-received reply must never enter a conversation, and a
+          // caller that already stopped must not be handed one to display.
+          if (cancelledMidStream || (isCancelled?.call() ?? false)) {
+            throw const LLMCancelled();
+          }
+
           // Update session
           if (sessionId != null) {
             _sessions[sessionId]!.add(LLMMessage(
@@ -174,6 +208,10 @@ class LLMService {
             _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
           }
 
+          // The request could not be interrupted (see the doc comment),
+          // but its answer still must not reach a caller that withdrew.
+          if (isCancelled?.call() ?? false) throw const LLMCancelled();
+
           // Update session
           if (sessionId != null) {
             _sessions[sessionId]!.add(LLMMessage(
@@ -189,6 +227,11 @@ class LLMService {
         if (attempt > maxRetries || !isRetryable(e)) {
           rethrow;
         }
+        // Asked again here, not just at the top: the failure may well *be*
+        // the cancellation tearing the connection down, and the two-second
+        // sleep below is time a stopped turn should not spend waiting to
+        // re-send a request nobody is waiting for.
+        if (isCancelled?.call() ?? false) throw const LLMCancelled();
         onLogAdded?.call('Request failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
         await Future.delayed(const Duration(seconds: 2));
       }
@@ -280,6 +323,17 @@ class LLMService {
   /// error and re-sent a request that was going to fail (and bill) again.
   @visibleForTesting
   static bool isRetryable(Object e) {
+    // Belt and braces: nothing below matches [LLMCancelled] today, so the
+    // fall-through would answer false anyway. Stated explicitly because
+    // "false by accident" is one broadly-worded rule away from becoming true
+    // — the socket-error check below matches on message text, and abandoning
+    // a stream is a torn-down connection. Retrying a request the user
+    // cancelled is the single behaviour this whole hook exists to remove, so
+    // it should not rest on the absence of a matching rule.
+    //
+    // Not covered by a test: no input distinguishes this line from the
+    // fall-through, which is exactly why it is written down here instead.
+    if (e is LLMCancelled) return false;
     // Explicit, even though it is not a TimeoutException and so would not
     // reach the branch below: distinguishing these two is the entire reason
     // the type exists. A generation that ran past its deadline will run past

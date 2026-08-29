@@ -1258,7 +1258,14 @@ class PromptOptimizerAgent {
           systemPrompt: systemPromptText,
           contextWindow: contextWindow,
           contextRatio: contextRatio,
+          isCancelled: isCancelled,
         );
+      } on LLMCancelled {
+        // Ahead of the catch-all so a stop pressed during compaction is not
+        // logged as "Session persistence failed". The turn loop below would
+        // return on its first check anyway; this only keeps the console
+        // honest about what happened.
+        return;
       } catch (e) {
         onLog?.call('Session persistence failed (continuing without it): $e');
       }
@@ -1324,7 +1331,20 @@ class PromptOptimizerAgent {
             // out mid-write every single time
             // (docs/plans/2026-08-assistant-timeout.md).
             useStream: true,
+            // Without this the turn kept going after the user pressed stop:
+            // the retry loop re-sent the request (retryCount is 2 above), and
+            // the stream ran to completion because nothing was watching. The
+            // only cancellation checkpoints were between turns and between
+            // tool calls, which is the wrong grain — a single turn is one long
+            // request and almost all of the waiting happens inside it.
+            isCancelled: isCancelled,
           );
+        } on LLMCancelled {
+          // The user pressed stop. Not a failure, so no error card: being
+          // told "Request cancelled by the caller" after pressing cancel is
+          // noise. Nothing from this turn reaches history — the assistant
+          // message is written below this block, never above it.
+          return;
         } catch (e) {
           session._addEntry(OptimizerChatEntry(
             kind: OptimizerEntryKind.error,
@@ -1332,6 +1352,13 @@ class PromptOptimizerAgent {
           ));
           rethrow;
         }
+
+        // The race the hook alone cannot close: the reply may have arrived
+        // complete a moment before stop was pressed, and everything below
+        // writes it into the conversation and shows it. "I pressed stop and
+        // it answered anyway" is the same bug whether the answer was
+        // generated after the press or merely delivered after it.
+        if (isCancelled?.call() ?? false) return;
 
         // Calibrate against what this request actually cost. Providers may
         // report no usage at all, in which case observedCharsPerToken stays as
@@ -2063,6 +2090,7 @@ class PromptOptimizerAgent {
     required String systemPrompt,
     required int? contextWindow,
     required double contextRatio,
+    bool Function()? isCancelled,
   }) async {
     final trimmed = _trimForSend(session.history);
     final occupied = occupiedChars(systemPrompt, trimmed);
@@ -2116,9 +2144,16 @@ class PromptOptimizerAgent {
         contextId: contextId,
         options: const {'retryCount': 2},
         useStream: false,
+        isCancelled: isCancelled,
       );
       summaryText = response.text.trim();
       if (summaryText.isEmpty) throw Exception('empty summary');
+    } on LLMCancelled {
+      // Compaction is a side quest inside a turn the user just stopped.
+      // Rethrown rather than folded into the fallback below: falling back
+      // would rewrite the session's history to a truncation summary as a
+      // parting gift from a cancelled turn.
+      rethrow;
     } catch (e) {
       onLog?.call('Summary generation failed ($e) — falling back to hard truncation.');
       summaryText = 'Earlier conversation was truncated to save context. '

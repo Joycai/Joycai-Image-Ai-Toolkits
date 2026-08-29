@@ -230,6 +230,61 @@ nothing throws, the numbers just quietly stop meaning what they claim.
   anything invalidating it — and exhibited exactly this deadlock before moving
   to the same derivation (`_liveViewedPaths`).
 
+## Cancellation (what the stop button actually stops)
+
+Stopping is cooperative — nothing is forcibly killed — but the thing that made
+it ineffective was the *granularity* of the checkpoints, not their nature. The
+agent loops checked a flag between turns and between tool calls, and **a turn
+is one long request**, so essentially all of the waiting happened at a point
+nothing was watching. Pressing stop left the in-flight request running to
+completion, let the retry loop re-send it up to `retryCount` more times, and
+then wrote the answer into the conversation as if nothing had happened.
+
+`LLMService.request` takes an `isCancelled` hook and polls it at three points:
+
+| Point | What it buys |
+|---|---|
+| before each attempt | a stopped turn opens no new connection — the retry loop stops extending it |
+| between stream chunks | leaving the `await for` cancels the subscription: **the only real interruption available** |
+| after the reply is complete | a withdrawn caller is never handed the answer (throws `LLMCancelled`) |
+
+**The streaming abort is real; the non-streaming one is not.** The HTTP client
+is pooled per endpoint (`LLMModelConfig.createClient`) and its `close()` is a
+deliberate no-op — closing the inner one would tear down every other request
+sharing that connection. So a non-streaming request cannot be interrupted
+mid-flight; all that is guaranteed is that its answer is not delivered. This
+is acceptable because the assistant always streams in practice (all four chat
+wires declare tools now), so the real path is the one with the real abort.
+
+`LLMCancelled` is its own type because three places must tell it apart from a
+failure: `isRetryable` has to answer false (otherwise a cancel buys two more
+requests), a caller must not raise an error card for it (nobody needs to be
+told the button they pressed worked), and it must be distinguishable from "the
+model returned nothing" — only one of those may be written into a
+conversation.
+
+**The delivery-time check is not redundant with the hook.** A reply can arrive
+complete a moment before stop is pressed; the hook cannot catch that. Whether
+the answer was *generated* after the press or merely *delivered* after it, "I
+pressed stop and it answered anyway" is the same bug — so `runTurn` asks again
+after the `await` returns and before anything reaches history.
+
+Usage accounting happens **before** the cancellation check: whatever streamed
+was really generated and really billed, so it belongs in the usage table even
+though the half-received reply must not enter the conversation.
+
+The same hook is threaded through `SubAgentRunner` (a delegate turn is part of
+the parent turn from the user's side of the button) and `AiRenameAgent` (the
+same bug, the same one line). The sub-agent converts `LLMCancelled` into
+`SubAgentResult(cancelled: true)` — letting it escape would surface a stop as
+a failed delegation.
+
+**Consequence for the UI.** The chat view hides the stop button once the task
+leaves `pending`/`processing`, so a session whose `isRunning` outlived its
+task used to show a spinner with no way to stop it. That state was the
+symptom, not the disease: the turn now returns at the next chunk boundary, so
+it resolves on its own rather than needing a "stopping…" affordance.
+
 ## Tests
 
 Pure functions are pinned directly; prefer adding to these over end-to-end runs.
@@ -244,6 +299,7 @@ Pure functions are pinned directly; prefer adding to these over end-to-end runs.
 | `test/knowledge_base_paging_test.dart` | boundary snapping, determinism, degenerate input |
 | `test/knowledge_base_read_cap_test.dart` | whole-file vs paged, undersized windows |
 | `test/optimizer_image_liveness_test.dart` | image re-view liveness: fresh / elided / compacted; the two windows' different sizes; `_elide` and `_liveViewedPaths` agreeing at every distance |
+| `test/llm_cancellation_test.dart` | `LLMCancelled` classification, and the sub-agent turning it into a cancelled result rather than a failure |
 | `test/openai_chat_payload_test.dart` | reasoning echo-back, inline `<think>` split (sync + cross-chunk), in-body error envelopes |
 
 **Not covered end-to-end:** the model dialog's tri-state control and the

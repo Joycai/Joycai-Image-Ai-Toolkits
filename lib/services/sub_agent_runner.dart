@@ -115,6 +115,10 @@ class SubAgentRunner {
               // tool calls; downgraded automatically on the ones that do
               // not. See [ChatProtocol.streamingDeclaresTools].
               useStream: true,
+              // A delegate turn is the parent's turn from the user's side of
+              // the stop button: without this the request outlives the press
+              // by however long the generation takes, retries included.
+              isCancelled: isCancelled,
             );
 
     final messages = <LLMMessage>[
@@ -130,7 +134,18 @@ class SubAgentRunner {
       }
 
       final isLastTurn = turn == maxTurns - 1;
-      final response = await requestFn(messages, isLastTurn ? null : tools);
+      final LLMResponse response;
+      try {
+        response = await requestFn(messages, isLastTurn ? null : tools);
+      } on LLMCancelled {
+        // Cancellation reaches this loop as an exception now that the hook
+        // is passed down, and it has to become the same result the
+        // between-turns check produces — the caller reads `cancelled` to
+        // decide what to tell the parent agent, and an exception escaping
+        // here would instead surface as a failed delegation.
+        return SubAgentResult(
+            output: lastText, cancelled: true, turnsUsed: turn);
+      }
 
       final text = response.text.trim();
       if (text.isNotEmpty) lastText = text;
