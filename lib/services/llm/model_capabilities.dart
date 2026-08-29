@@ -63,6 +63,22 @@ class ParamSpec {
   bool isValid(String? value) {
     if (value == null) return false;
     if (options.any((o) => o.value == value)) return true;
+    // A slider has no discrete [options] — its valid set is the range it
+    // already declares. Without this branch every slider value failed both
+    // checks below, so [normalize] handed back [defaultValue] forever: the
+    // control snapped back on the next rebuild and the request carried the
+    // default no matter what the user chose. The one slider that worked did
+    // so only because it carried a hand-written validator restating its own
+    // min/max.
+    //
+    // The bounds fall back to the same 1/15 the panel clamps with, so a value
+    // this accepts is always one the control can actually render — the two
+    // must not be able to disagree about what is in range.
+    if (control == ParamControl.slider) {
+      final n = int.tryParse(value);
+      if (n == null) return false;
+      return n >= (min ?? 1) && n <= (max ?? 15);
+    }
     final validator = customValidator;
     return validator != null && validator(value);
   }
@@ -222,17 +238,6 @@ class SizeRuleResult {
   final String labelKey;
   final bool passes;
   const SizeRuleResult(this.labelKey, this.passes);
-}
-
-// ---------------------------------------------------------------------------
-// grok-imagine-video-1.5 duration slider (1–15s)
-// ---------------------------------------------------------------------------
-
-/// Validates the `seconds` slider value for grok-imagine-video-1.5 — an
-/// integer in xAI's supported 1–15s range.
-bool isValidGrokImagineVideoDuration(String value) {
-  final n = int.tryParse(value);
-  return n != null && n >= 1 && n <= 15;
 }
 
 List<SizeRuleResult> checkOpenAIImage2SizeRules(int w, int h) {
@@ -667,7 +672,6 @@ class ModelCapabilities {
         options: [],
         min: 1,
         max: 15,
-        customValidator: isValidGrokImagineVideoDuration,
       ),
     ],
   );
