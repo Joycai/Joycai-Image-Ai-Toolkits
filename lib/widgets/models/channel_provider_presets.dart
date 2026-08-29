@@ -365,6 +365,22 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
     need: ChannelProviderNeed.keyless,
     icon: Icons.dns_outlined,
   ),
+  // A self-hosted MiniMax H3 video service (SGLang H3-Base API). Sits in the
+  // local group beside the text runtimes because that is what it is to the
+  // user — a localhost process with no key — even though it serves exactly
+  // one surface (async video) and none of their chat endpoints. The aliases
+  // repeat the MiniMax row's names on purpose: someone searching the company
+  // has to see both the cloud channel and the local one, or the search
+  // silently picks the deployment for them.
+  ChannelProviderPreset(
+    id: 'minimax-h3-base',
+    channelType: Vendors.minimaxH3Base,
+    group: ChannelProviderGroup.local,
+    defaultEndpoint: 'http://127.0.0.1:30010/v1',
+    searchAliases: ['minimax', 'h3', 'sglang', 'hailuo', '海螺', 'video'],
+    need: ChannelProviderNeed.keyless,
+    icon: Icons.movie_outlined,
+  ),
 ];
 
 /// The preset a stored channel came from, or null when none matches.
@@ -519,6 +535,8 @@ String channelProviderTitle(AppLocalizations l10n, String id) {
       return 'Ollama';
     case 'lm-studio':
       return 'LM Studio';
+    case 'minimax-h3-base':
+      return 'MiniMax H3 (SGLang)';
     default:
       return l10n.providerCustom;
   }
@@ -559,6 +577,8 @@ String channelProviderSubtitle(
       return 'localhost:11434';
     case 'lm-studio':
       return 'localhost:1234';
+    case 'minimax-h3-base':
+      return 'localhost:30010';
     default:
       return l10n.providerCustomDesc;
   }
@@ -704,6 +724,8 @@ String channelTypeLabel(AppLocalizations l10n, String type) {
       return 'Ollama';
     case Vendors.lmStudio:
       return 'LM Studio';
+    case Vendors.minimaxH3Base:
+      return 'MiniMax H3 (SGLang)';
     case Vendors.officialGoogle:
       return 'Official Google GenAI API';
     default:

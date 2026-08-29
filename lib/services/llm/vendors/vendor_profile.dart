@@ -62,7 +62,8 @@ enum WireProtocol {
   xaiVideos('xai-videos', Surface.videoJob),
   geminiVeo('gemini-veo', Surface.videoJob),
   dashscopeVideo('dashscope-video', Surface.videoJob),
-  minimaxVideo('minimax-video', Surface.videoJob);
+  minimaxVideo('minimax-video', Surface.videoJob),
+  minimaxH3BaseVideo('minimax-h3-base-video', Surface.videoJob);
 
   final String id;
   final Surface surface;

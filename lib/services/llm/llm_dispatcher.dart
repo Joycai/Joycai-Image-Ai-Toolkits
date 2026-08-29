@@ -10,6 +10,7 @@ import 'protocols/gemini_chat_protocol.dart';
 import 'protocols/gemini_imagen_protocol.dart';
 import 'protocols/gemini_veo_protocol.dart';
 import 'protocols/midjourney_protocol.dart';
+import 'protocols/minimax_h3_base_video_protocol.dart';
 import 'protocols/minimax_images_protocol.dart';
 import 'protocols/minimax_video_protocol.dart';
 import 'protocols/openai_chat_protocol.dart';
@@ -55,6 +56,7 @@ class LLMDispatcher {
   static final _dashscopeVideo = DashScopeVideoProtocol();
   static final _minimaxImages = MiniMaxImagesProtocol();
   static final _minimaxVideo = MiniMaxVideoProtocol();
+  static final _minimaxH3BaseVideo = MiniMaxH3BaseVideoProtocol();
   static final _xaiVideos = XaiVideosProtocol();
   static final _geminiChat = GeminiChatProtocol();
   static final _imagen = GeminiImagenProtocol();
@@ -863,6 +865,7 @@ class LLMDispatcher {
         WireProtocol.xaiVideos => _xaiVideos,
         WireProtocol.dashscopeVideo => _dashscopeVideo,
         WireProtocol.minimaxVideo => _minimaxVideo,
+        WireProtocol.minimaxH3BaseVideo => _minimaxH3BaseVideo,
         _ => null,
       };
 

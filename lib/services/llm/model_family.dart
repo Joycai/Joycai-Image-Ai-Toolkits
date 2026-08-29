@@ -114,7 +114,15 @@ class ModelFamilyClassifier {
     // model") on the same reasoning as wan3.x below: *which* video protocol
     // serves it is the vendor's declaration, so on a relay the same id keeps
     // the `/v1/videos` route.
-    if (id.startsWith('minimax-h3')) {
+    //
+    // The second spelling is the HuggingFace repo path — what a self-hosted
+    // SGLang H3-Base service loads and expects on the wire
+    // (docs/api/minimax.md §8). It cannot be reached by the first prefix
+    // (`minimaxai/…` diverges at the eighth character), and the same M3/H3
+    // one-letter caution applies: `minimaxai/minimax-m3` (chat, also
+    // self-hostable) must stay out of the video family.
+    if (id.startsWith('minimax-h3') ||
+        id.startsWith('minimaxai/minimax-h3')) {
       return ModelFamily.openaiVideo;
     }
 

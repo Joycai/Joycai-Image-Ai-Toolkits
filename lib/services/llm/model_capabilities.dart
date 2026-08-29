@@ -378,6 +378,17 @@ class ModelCapabilities {
       return _minimaxVideo;
     }
 
+    // The same model behind the self-hosted SGLang H3-Base surface, which
+    // spells its id as the HuggingFace repo path (`MiniMaxAI/MiniMax-H3`,
+    // docs/api/minimax.md §8). The id difference is what lets the two
+    // deployments carry different tables: the open checkpoints generate 768p
+    // only, so the cloud table's 768P/2K resolution control would be a knob
+    // whose upper half silently does nothing.
+    if (family == ModelFamily.openaiVideo &&
+        id.startsWith('minimaxai/minimax-h3')) {
+      return _minimaxH3Base;
+    }
+
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
     // reference-image ceiling and size vocabulary, so they are two tables.
     if (family == ModelFamily.dashscopeImage) {
@@ -1079,6 +1090,52 @@ class ModelCapabilities {
         options: [
           ParamOption('768P'),
           ParamOption('2K'),
+        ],
+      ),
+      ParamSpec(
+        key: 'seconds',
+        labelKey: 'videoSeconds',
+        control: ParamControl.slider,
+        defaultValue: '5',
+        options: [],
+        min: 4,
+        max: 15,
+      ),
+    ],
+  );
+
+  /// `MiniMaxAI/MiniMax-H3` — the self-hosted SGLang H3-Base surface
+  /// (docs/api/minimax.md §8). Diverges from [_minimaxVideo] in exactly the
+  /// ways the local wire diverges from the cloud one:
+  ///
+  ///  * no `resolution` control — the released checkpoints have one verified
+  ///    recipe (`short_edge: 768`) and the payload builder always sends it;
+  ///    the 2K tier is a cloud-platform component the open weights lack.
+  ///  * `aspectRatio` keeps the shared `adaptive` spelling (one option key,
+  ///    one label across both MiniMax video wires); the payload builder
+  ///    translates it to H3-Base's `auto`.
+  ///  * `seconds` — the same 4–15 s window as the cloud surface.
+  ///
+  /// `maxReferenceImages: 3` mirrors the cloud table's client-side ceiling:
+  /// references travel as server-local file paths here, so size is no
+  /// constraint, but the ref2va task documents no count of its own either.
+  static const _minimaxH3Base = ModelCapabilities(
+    isVideoGenerator: true,
+    maxReferenceImages: 3,
+    videoParams: [
+      ParamSpec(
+        key: 'aspectRatio',
+        labelKey: 'aspectRatio',
+        control: ParamControl.dropdown,
+        defaultValue: 'adaptive',
+        options: [
+          ParamOption('adaptive'),
+          ParamOption('21:9'),
+          ParamOption('16:9'),
+          ParamOption('4:3'),
+          ParamOption('1:1'),
+          ParamOption('3:4'),
+          ParamOption('9:16'),
         ],
       ),
       ParamSpec(

@@ -160,7 +160,12 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
           apiName: 'OpenAI video fetch', checkEnvelope: false);
       final status = data['status']?.toString() ?? '';
 
-      if (status == 'succeeded') {
+      // Two spellings of the terminal state: NewAPI-style relays say
+      // `succeeded`, OpenAI's own Sora surface — and the self-hosted MiniMax
+      // H3-Base service, whose `video_…` job ids the checkOperation prefix
+      // rule can route here — say `completed`. A poller that only knows one
+      // word never errors on the other; it reports "processing" forever.
+      if (status == 'succeeded' || status == 'completed') {
         // Prefer the explicit URL when the upstream supplies one; otherwise
         // fall back to the dedicated /content endpoint (which streams the
         // mp4 with the bearer token).

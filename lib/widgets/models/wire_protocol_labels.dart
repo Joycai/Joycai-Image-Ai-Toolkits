@@ -39,6 +39,8 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
       return 'xAI Videos';
     case WireProtocol.minimaxVideo:
       return 'MiniMax Video';
+    case WireProtocol.minimaxH3BaseVideo:
+      return 'MiniMax H3 (Local)';
     case WireProtocol.geminiVeo:
       return 'Veo';
     case WireProtocol.dashscopeVideo:

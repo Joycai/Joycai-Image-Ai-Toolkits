@@ -327,3 +327,100 @@ thinking 默认值、错误信封和参数细节。
 - `mm_file://` 引用形式（本项目目前只发公网 URL 与 data URI）。
 - **I1 图像面整条**，包括 `subject_reference` 能否给多于 1 张（文档只说
   `type: character`，没给数量上限，本项目按 1 张接）。
+
+## 8. V2 — 本地自托管视频面（SGLang H3-Base API）
+
+> 来源：SGLang cookbook（`docs/cookbook/diffusion/MiniMax/MiniMax-H3.mdx`）
+> 与 MiniMax 官方 local-deploy-h3 指南（2026-08-29 摘录）。**未实测** ——
+> 本节全部是纸面接法，样例逐字来自 cookbook。
+
+MiniMax H3 的开源权重（H3-Base，只放出 FL2VA 与 Ref2VA 两个 checkpoint
+变体，768p；2K 与 Context-IR 是云端专有组件）经 SGLang 自托管后暴露的
+API。**与 §4 的云端 V1 面不是同一条 wire**：路径形状是 Sora 式的
+`/v1/videos`，但请求体和状态词表都是它自己的。LM Studio / Ollama 这类文本
+LLM 运行时跑不了它——官方本地路线只有 SGLang 和 ComfyUI（后者是 workflow
+不是 REST，本项目不接）。
+
+许可注意：开源权重的社区许可证**排除美国/欧盟/英国/韩国**的本地部署。
+
+### 8.1 端点
+
+quickstart 默认 `http://127.0.0.1:30010`，无鉴权（官方建议公网暴露前加
+认证反代）：
+
+```
+POST /v1/videos               → {id}（异步任务）
+GET  /v1/videos/{id}          → {status: pending|…|completed|failed}
+GET  /v1/videos/{id}/content  → 成品 MP4（多输出时 ?variant=N，0 起）
+GET  /health                  → 预热完成前 503
+```
+
+### 8.2 提交体（JSON，不是 ① 的 multipart）
+
+cookbook 的 t2va 样例（逐字）：
+
+```json
+{
+  "model": "MiniMaxAI/MiniMax-H3",
+  "prompt": "…",
+  "seconds": 5,
+  "task": "t2va",
+  "conditions": [],
+  "target": { "short_edge": 768, "aspect_ratio": "16:9", "duration_seconds": 5.0 },
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 50,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 1101
+}
+```
+
+- `model` 是 **HuggingFace 仓库路径**（`MiniMaxAI/MiniMax-H3`），不是云端的
+  `MiniMax-H3`——正好让 Layer 3 靠 id 区分两种部署。
+- `task`：`t2va` / `fl2va`（首尾帧）/ `ref2va`（参考素材，V2V 也走它，
+  没有独立的 v2v 值）。
+- `conditions[]` 项：`{type, uri, role, frame_index?}`。首尾帧
+  `role: "keyframe"` + `frame_index` 0 / -1（只允许 `[0]`、`[-1]`、
+  `[0,-1]` 三种组合）；参考素材 `role: "reference"`，无 frame_index。
+  `type` 可为 `image` / `video`（无声或不确定有声）/ `video_audio`
+  （必须有声）/ `audio`；视频参考另有 `start_time_seconds`。
+- **`uri` 只有 `file:///path` 一种形式**——服务器本地路径，没有 URL、没有
+  base64。这决定了客户端与服务同机（或共享文件系统）才能带参考素材。
+- `duration_seconds` 4–15；`short_edge` 只有 768 被验证（放出的质量配方）；
+  `aspect_ratio` `"auto"`（跟随输入）或显式比例。
+- `num_inference_steps: 50` / `flow_shift: 12.0` / `audio_flow_shift: 3.0`
+  是放出配方的常量，cookbook 每个样例都带。
+
+### 8.3 轮询与结果
+
+轮询体只有 `{id, status}` 级别的信息，**没有视频 URL**——成品固定在
+`/content` 子端点。终态是 **`completed` / `failed`**（进行中的拼写 cookbook
+没给全，poll 按"非终态即继续"处理）。注意 `completed` ≠ §4 的
+`succeeded`：认错词表的轮询器不报错，永远显示"处理中"。
+
+### 8.4 本项目的接法
+
+| 部件 | 实现 |
+| --- | --- |
+| 协议 | `MiniMaxH3BaseVideoProtocol` + `minimax_h3_base_payload.dart`（`WireProtocol.minimaxH3BaseVideo`） |
+| vendor | `Vendors.minimaxH3Base`（family ①、`keyOptional`、`videoProtocol` 声明、`unlistedModels` 自带目录） |
+| Layer 3 | `minimaxai/minimax-h3` 前缀 → `openaiVideo` family；能力表 `_minimaxH3Base`（无 resolution 档、4–15 s） |
+| 预设 | 本地组 `minimax-h3-base`，默认 `http://127.0.0.1:30010/v1` |
+
+三条实现注记：
+
+1. **帧/参考互斥裁剪与云端同规则**（帧胜出、丢弃参考并 WARN）：放出的
+   checkpoint 每进程只服务一个 task 变体，混合形态 cookbook 没有文档化的
+   请求形状。
+2. 附件转 `file://` 用 `Uri.file`（Windows 盘符路径 → `file:///D:/…`）；
+   只有 bytes 的附件（工作台压缩路径）先落到系统临时目录再引用。远端服务器
+   会以自己的 file-not-found 报错——这是诚实的失败，不发明未文档化的
+   base64 拼写。
+3. `checkOperation` 的 `video_` 前缀规则可能把 H3 任务 id 抢进 ① 的
+   `/v1/videos` 轮询器——两者打的是同一个 GET，所以 ① 轮询器的成功词表
+   加了 `completed`（OpenAI 官方 Sora 本来也说这个词）。
+
+**仍未实测（整条 wire）**，其中最值得第一时间核对的：任务 id 的真实形状
+（是否 `video_` 前缀）、进行中状态的拼写、`GET /v1/models` 在 H3-Base
+serve 变体上是否存在（不存在时"拉取模型"报错，自带目录只在列表成功时
+合并——用户仍可手输 id）、`seed` 缺省时是否被接受（本项目不发）。
