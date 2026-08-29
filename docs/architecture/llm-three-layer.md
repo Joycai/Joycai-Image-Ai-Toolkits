@@ -58,7 +58,8 @@ id：走错端点不报错，图片被静默丢弃、模型当作没看见图来
 
 > 完整设计与取舍见
 > [`docs/plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)；
-> 协议事实见 [`docs/api/qianwen-bailian.md`](../api/qianwen-bailian.md)。
+> 协议事实见 [`docs/api/qianwen-bailian.md`](../api/qianwen-bailian.md)
+> 与 [`docs/api/minimax.md`](../api/minimax.md)。
 
 百炼一家在同一 surface 上有多条 wire 且**与模型耦合**（qwen-image 仅同步、
 wan2.7 同步异步皆可、④ 兼容面只服务子集），"vendor 固定一个 family + 布尔
@@ -86,10 +87,32 @@ surface 开关"表达不了它。绑定关系升级为：
   兼容面通道存 `…/compatible-mode/v1`，原生的图片/视频/chat 由
   `dashscopeNativeBase` 正推。两个推导都只看 path，所以国际站 host
   原样可用。少了反推那一半，原生通道的"拉取模型列表"只会失败。
+- **菜单要与模型 family 求交，不能只判 `imageMenu.isNotEmpty`。**
+  两家原生图像面并存后（百炼 + MiniMax），"这个 vendor 声明了图像菜单"不再
+  等于"它服务这个模型"：往 MiniMax 通道里敲一个 `qwen-image`，旧写法会把它
+  路由到 MiniMax 的端点。交集项是
+  `LLMDispatcher._imageProtocolsFor(family)`，`_hasNativeImageRoute` 是所有
+  图像分支共用的那个判据。
+- **"这条渠道能不能跑视频任务"只有一个答案，住在 dispatcher。**
+  `LLMDispatcher.canRunVideoJob` 与 `startLongRunning` 的分支一一对应，
+  `AppState._supportsVideoForType`（工作台模型选择器的过滤条件）调它而不是
+  自己再推一遍。这条是踩出来的：选择器那份副本写着"④ 族没有视频面"，等到
+  一个 ④ vendor 声明了原生视频面，模型就从选择器里消失了 —— 而它背后的路由
+  是通的，界面上没有任何解释。**UI 侧的能力判断复制路由规则 = 一个不会报错
+  的静默失效**，同类判断（`streamSupportsTools` / `streamIsSingleShot` /
+  `protocolMenuFor`）都是 dispatcher 的 public 方法，原因相同。
+- **`videoProtocol` 声明 → 协议实现的映射只写一次**
+  （`_nativeVideoProtocol`）。① 族在它返回 null 时回落到家族默认
+  `/v1/videos`，④ 族没有默认，null 就是最终答案。`startLongRunning`、
+  `checkOperation`、`canRunVideoJob` 三处共用，避免"提交能跑、轮询不认"这类
+  半边路由。
 - **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
   (vendor, model) 组合仍解析到同一条路"；
   `test/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则
-  （三段式分区、`result_format`、增量、多模态 content 形状）。
+  （三段式分区、`result_format`、增量、多模态 content 形状）；
+  `test/minimax_payload_test.dart` 钉住 MiniMax 两条私有面的 body 规则与
+  base 推导 —— 其中媒体项的嵌套形状、`metadata` 计数的字符串类型两条，都是
+  "写错了上游不报错、照常出片并计费"的那种，所以按上游样例逐字断言。
 
 ## 分层纪律（违反会静默腐化）
 
@@ -293,11 +316,23 @@ thinking / server tool 一起加。
 ④ 渠道下显示这两个开关。
 
 三个 ④ vendor（`anthropicRest` / `newApiAnthropic` / `minimaxAnthropic`）
-除 thinking 方言外行为一致，分开还为记录供货方。**MiniMax 是唯一 base path 不是
-`/v1` 的 ④ 主机**（`/anthropic/v1`，与它的 ① 端点并列），所以协议里不能有任何
-地方假设版本后缀 —— 这也是它值得一个向导预设的原因：两个端点填反了只会得到一个
-404，而 404 不会说是 URL 的哪一半错了。同一家厂商同时供 ① 和 ④，正是"协议族属于
-渠道、不属于厂商"最直白的证据。
+除 thinking 方言外 chat 行为一致，分开还为记录供货方。**MiniMax 是唯一 base path
+不是 `/v1` 的 ④ 主机**（`/anthropic/v1`，与它的 ① 端点并列），所以协议里不能有
+任何地方假设版本后缀 —— 这也是它值得一个向导预设的原因：两个端点填反了只会得到
+一个 404，而 404 不会说是 URL 的哪一半错了。同一家厂商同时供 ① 和 ④，正是"协议族
+属于渠道、不属于厂商"最直白的证据。
+
+**`minimaxAnthropic` 还是第一个带图像/视频菜单的 ④ vendor。** ④ 这个*协议*没有
+图像面，但供这条 wire 的*厂商*可以有：MiniMax 的 `/v1/image_generation` 与
+`/v2/video_generation` 和它的 `/anthropic/v1` chat 同主机同 key。所以
+dispatcher 的 anthropic 分支从"整族抛 UnsupportedError"改成先看 vendor 的声明
+——判据是声明而不是家族，和 ① 分支上的写法一致。两个 MiniMax vendor id 声明**同
+一对**原生面：chat 走哪一面是渠道的选择，图像/视频端点是哪个则不是。
+
+四条 wire 没有公共前缀（`/v1`、`/anthropic/v1`、`/v2`），而渠道只存一个地址，
+所以 `minimax_payload.dart` 里三个 base 推导函数（幂等、只看 path）是这家能"一
+条渠道一把 key 跑通四条面"的全部机关。两条私有协议自己推导 base，不进
+`protocolBases` —— 那张表只服务*通用*协议在替代面上的复用。
 
 ## 遗留与已知取舍
 

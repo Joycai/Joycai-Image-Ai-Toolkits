@@ -130,6 +130,28 @@ abstract class VideoJobProtocol {
   });
 }
 
+/// An async job surface that can also be *stopped* upstream.
+///
+/// Optional, and deliberately not folded into [VideoJobProtocol]: most
+/// upstreams have no cancel at all, and the ones that do disagree about what
+/// it means. Implementing this is a claim that abandoning the local task can
+/// be made to mean something upstream — the dispatcher asks whether the
+/// resolved protocol implements it and skips the call otherwise, so a family
+/// without one keeps today's behaviour (give up locally, let the job run).
+///
+/// Best-effort by contract: a cancel that upstream refuses is a fact to log,
+/// not a task failure. The local task is already going away either way.
+abstract class CancellableJobProtocol {
+  /// Returns what upstream reports it did, or null when it declined (or when
+  /// the task was past the point where cancelling is safe). Implementations
+  /// must not throw for an ordinary refusal.
+  Future<String?> cancel(
+    LLMTarget target,
+    String operationName, {
+    LLMLogger? logger,
+  });
+}
+
 /// A model surfaced by a [DiscoveryProtocol] listing.
 class DiscoveredModel {
   final String modelId;
@@ -293,6 +315,55 @@ String trimBaseUrl(String endpoint) {
     base = base.substring(0, base.length - 1);
   }
   return base;
+}
+
+/// Turn one image reference from a response into bytes.
+///
+/// Three spellings, because the surfaces that hand back images disagree:
+///  * an `http(s)` URL — fetched here rather than passed onward as a link.
+///    These are signed object-storage URLs that expire (24 h on both
+///    DashScope and MiniMax), so a gallery holding them is empty a day later.
+///    The GET carries no auth header: the signature is in the URL and the API
+///    key has no meaning at that host.
+///  * a `data:<mime>;base64,…` URI.
+///  * a bare base64 payload, which is what `response_format: base64` returns.
+///
+/// Shared rather than per-protocol: three image surfaces need exactly this,
+/// and a fix to the fetch path (a retry, a timeout, a status log) has to
+/// land in one place to be worth making.
+Future<Uint8List?> resolveImageRef(
+  String ref,
+  http.Client client,
+  LLMLogger? logger,
+) async {
+  if (ref.startsWith('http://') || ref.startsWith('https://')) {
+    try {
+      final resp = await client.get(Uri.parse(ref));
+      if (resp.statusCode == 200) return resp.bodyBytes;
+      logger?.call('Image URL returned ${resp.statusCode}: $ref',
+          level: 'WARN');
+    } catch (e) {
+      logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+    }
+    return null;
+  }
+
+  var payload = ref;
+  if (ref.startsWith('data:')) {
+    final comma = ref.indexOf(',');
+    if (comma < 0) {
+      logger?.call('Malformed data URI (no comma): ${ref.substring(0, 32)}…',
+          level: 'WARN');
+      return null;
+    }
+    payload = ref.substring(comma + 1);
+  }
+  try {
+    return base64Decode(payload);
+  } catch (e) {
+    logger?.call('Failed to decode inline image: $e', level: 'WARN');
+    return null;
+  }
 }
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {

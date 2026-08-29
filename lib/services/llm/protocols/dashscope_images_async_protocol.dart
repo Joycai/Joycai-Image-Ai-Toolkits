@@ -232,7 +232,7 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
     final refs = dashscopeImageRefs(data);
     final images = <Uint8List>[];
     for (final ref in refs) {
-      final bytes = await resolveDashScopeImageRef(ref, client, logger);
+      final bytes = await resolveImageRef(ref, client, logger);
       if (bytes != null) images.add(bytes);
     }
 

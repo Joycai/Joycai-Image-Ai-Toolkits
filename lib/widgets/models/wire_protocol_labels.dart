@@ -29,12 +29,16 @@ String wireProtocolLabel(AppLocalizations l10n, WireProtocol protocol) {
       return 'Images API';
     case WireProtocol.xaiImages:
       return 'xAI Images';
+    case WireProtocol.minimaxImages:
+      return 'MiniMax Images';
     case WireProtocol.geminiImagen:
       return 'Imagen';
     case WireProtocol.openaiVideos:
       return 'Videos API';
     case WireProtocol.xaiVideos:
       return 'xAI Videos';
+    case WireProtocol.minimaxVideo:
+      return 'MiniMax Video';
     case WireProtocol.geminiVeo:
       return 'Veo';
     case WireProtocol.dashscopeVideo:
