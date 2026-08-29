@@ -74,6 +74,16 @@ surface 开关"表达不了它。绑定关系升级为：
   复用 `AnthropicChatProtocol`，路径由 vendor 声明推导，协议保持 vendor-blind；
   **vendor 专属**协议自己推导 base，不进这张表）。原来的
   `usesXaiNativeSurfaces` / `usesDashScopeNativeImages` 两个布尔已删除。
+- **`unlistedModels`**：这家在**原生面**上服务、而它的 `/models` 结构上
+  返回不了的模型。兼容层的列表端点枚举的是兼容层——MiniMax 的
+  `GET /v1/models` 只给 M 系 chat，`image-01` 与 `MiniMax-H3` 住在
+  `/v1/image_generation` 和 `/v2/video_generation` 上，那张表里没有它们的
+  词汇（`docs/api/minimax.md` §5.1）。不声明的话，"拉取模型"这个按钮会
+  成功、会返回、就是永远列不出这家被接进来的那两条 wire，且不报错。
+  `LLMDispatcher.mergeUnlistedModels` 把它追加在实测列表之后并去重，
+  **对每个 family 都跑**——"这个声明在这条家族分支上生效吗"不该是个问题。
+  与 Midjourney 的内置目录区别在于加法还是替换：MJ 没有列表端点，目录就是
+  全部答案。
 - **`llm_models.wire_protocol`**（v36，可空 = auto）：模型级点单。不是可推导
   副本（v32 教训不适用）——与 `enable_thinking` 同性质的用户配置。
 - **解析顺序**（全部在 dispatcher）：模型点单（合法时）→ vendor 该 surface

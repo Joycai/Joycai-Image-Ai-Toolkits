@@ -10,7 +10,8 @@
 > （§4）写全貌。
 >
 > **来源**：`platform.minimaxi.com` 官方 API reference，2026-08-25 抓取；
-> 图像面（§3）与视频面的复核为 2026-08-29 抓取。
+> 图像面（§3）与视频面的复核为 2026-08-29 抓取；模型列表端点（§5.1）
+> 为 2026-08-29 抓取。
 
 ## 0. 总览：四条 wire 一张表
 
@@ -217,6 +218,27 @@ task: {
 chat 两面模型 id **完全一致** —— 选面不改变可用模型，只改变路径、
 thinking 默认值、错误信封和参数细节。
 
+### 5.1 模型列表端点只覆盖 chat
+
+两个 chat 面各自带一个列表端点，**没有第三个**：
+
+| 端点 | 协议 | 返回 |
+| --- | --- | --- |
+| `GET /v1/models` | OpenAI 兼容 | M 系 chat 模型（官方示例：`MiniMax-M3`、`MiniMax-M2.7`、`MiniMax-M2.5`） |
+| `GET /anthropic/v1/models` | Anthropic 兼容（带 `limit` / `after_id` / `before_id` 分页） | 同上 |
+
+`image-01` / `image-01-live` / `MiniMax-H3` **不在里面，也不可能在里面**：
+兼容层枚举的是兼容层，而这三个模型只存在于私有的 `/v1/image_generation`
+与 `/v2/video_generation` 上，那两条 wire 在 OpenAI/Anthropic 的模型对象里
+没有对应词汇。
+
+结论：**任何"拉取模型列表"的流程都必须自带这三个 id**。不带的话，接了
+图像面和视频面的客户端在 UI 上仍然是一家纯 chat 供应商——按钮能按、请求
+成功、列表返回、就是没有那两条 wire 的模型，而且不会有任何报错说明原因。
+
+`/v2` 上没有 `models`：把渠道地址填成视频文档里的 `…/v2`，模型列表和 chat
+一起 404，图像和视频却正常——因为那两条自己推导 base。
+
 ## 6. 对接注意事项（实现 checklist）
 
 1. 错误解析按端点分三套（§0）：C1/I1 看 `base_resp.status_code`（成功也有，
@@ -240,7 +262,10 @@ thinking 默认值、错误信封和参数细节。
 10. V1 的 `resolution` / `duration` 必填、`ratio` 在纯文本时必须显式，
     三者都没有服务端默认——客户端必须各有一个缺省值。
 11. 四条 wire 没有公共前缀（§0）：`/v1`、`/anthropic/v1`、`/v2`。
-    渠道只存一个地址，另外三条得推导出来。
+    渠道只存一个地址，另外三条得推导出来。**chat 面自己也要推导**：用户照
+    视频文档填 `…/v2` 是常见操作，这时只有不推导 base 的通用协议会 404。
+12. 模型列表端点只枚举 chat（§5.1）——图像和视频的模型必须由客户端自带
+    目录补进去，否则用户只能背 id 手输。
 
 ## 7. 本项目的接法
 
@@ -250,10 +275,16 @@ thinking 默认值、错误信封和参数细节。
 | C2 | 通用 ④ 协议 + `Vendors.minimaxAnthropic` | `ThinkingDialect.adaptive` |
 | I1 | `MiniMaxImagesProtocol` | `WireProtocol.minimaxImages` |
 | V1 | `MiniMaxVideoProtocol` | `WireProtocol.minimaxVideo` |
+| 列表（§5.1） | 通用 ①/④ 发现协议 + `VendorProfile.unlistedModels` | 实测面 + 自带目录合并 |
 
 两个 vendor id **都**声明 I1 和 V1：chat 走哪一面是渠道的选择，图像和视频
 端点是哪个则不是。base 推导在 `minimax_payload.dart`（`minimaxOpenAIBase` /
-`minimaxAnthropicBase` / `minimaxV2Base`，幂等、只看路径）。
+`minimaxAnthropicBase` / `minimaxV2Base`，幂等、只看路径），四条 wire 全部
+经过它——包括 chat 面自己（`protocolBases`），所以渠道存哪一面都能打全。
+
+§5.1 那三个模型由 `VendorProfile.unlistedModels` 声明，`mergeUnlistedModels`
+追加在实测列表**之后**并按 id 去重（大小写不敏感——转发站可能给小写）。
+追加而非替换：Midjourney 那种"根本没有列表端点"的才用内置目录整体顶替。
 
 取消（§4.4）接在 `CancellableJobProtocol` 上，是全项目唯一实现：先查状态、
 **只对 `queued` 发 DELETE**。`succeeded`/`failed` 上的 DELETE 是「删记录」，

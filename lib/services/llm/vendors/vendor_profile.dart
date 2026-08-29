@@ -191,6 +191,23 @@ class VendorProfile {
   /// derive it internally.
   final Map<WireProtocol, String Function(String endpoint)> protocolBases;
 
+  /// Models this vendor serves on a **native** surface, which its `/models`
+  /// listing therefore cannot describe.
+  ///
+  /// A compatible-face listing enumerates the compatible face and nothing
+  /// else. MiniMax's `GET /v1/models` answers with the M-series chat models;
+  /// `image-01` and `MiniMax-H3` live behind `/v1/image_generation` and
+  /// `/v2/video_generation`, which that endpoint has no vocabulary for
+  /// (docs/api/minimax.md §5). So "fetch models" on such a channel is not
+  /// incomplete by accident — the models it cannot reach are exactly the ones
+  /// the vendor's native surfaces were added for, and without this the user
+  /// has to know the ids by heart and type them in.
+  ///
+  /// Merged into discovery rather than replacing it: Midjourney's built-in
+  /// catalog *is* the whole answer there, because that proxy serves no
+  /// listing at all. This is the additive case.
+  final List<UnlistedModel> unlistedModels;
+
   /// Which `thinking` spelling this vendor understands, for the ④ surface.
   /// [ThinkingDialect.none] on every other family.
   final ThinkingDialect thinking;
@@ -225,6 +242,7 @@ class VendorProfile {
     this.imageMenu = const [],
     this.videoProtocol,
     this.protocolBases = const {},
+    this.unlistedModels = const [],
     this.thinking = ThinkingDialect.none,
     this.promptCaching = false,
     this.keyOptional = false,
@@ -255,6 +273,19 @@ class VendorProfile {
       case Surface.videoJob:
         return videoProtocol == null ? const [] : [videoProtocol!];
     }
+  }
+
+  /// The [unlistedModels] entries [listedIds] has not already covered.
+  ///
+  /// Compared case-insensitively: a relay that happens to list `minimax-h3`
+  /// in lower case has covered `MiniMax-H3`, and two rows for one model is a
+  /// worse answer than the one we started with.
+  List<UnlistedModel> unlistedBeyond(Iterable<String> listedIds) {
+    if (unlistedModels.isEmpty) return const [];
+    final seen = listedIds.map((id) => id.toLowerCase()).toSet();
+    return unlistedModels
+        .where((m) => !seen.contains(m.id.toLowerCase()))
+        .toList();
   }
 
   /// Request headers for this vendor. [endpoint] is needed because
@@ -347,6 +378,23 @@ class VendorProfile {
         return url;
     }
   }
+}
+
+/// One model a vendor serves on a surface its listing endpoint does not
+/// describe. See [VendorProfile.unlistedModels].
+///
+/// Deliberately not a [DiscoveredModel]: that type belongs to layer 1 and
+/// carries the raw listing payload, which by definition does not exist here.
+class UnlistedModel {
+  /// The id exactly as the generation endpoint expects it. Case matters —
+  /// `MiniMax-H3` is what `/v2/video_generation` accepts.
+  final String id;
+
+  /// Shown beside the id in the model picker. Says which surface serves it,
+  /// because that is the thing the listing failed to convey.
+  final String description;
+
+  const UnlistedModel(this.id, {this.description = ''});
 }
 
 /// Returns [url] with the `key` query parameter masked, safe for logging.
