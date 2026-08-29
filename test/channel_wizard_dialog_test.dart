@@ -124,7 +124,7 @@ void main() {
               '${preset.id} is defined as a preset but not rendered in the rail',
         );
       }
-      expect(kChannelProviderPresets.length, 15);
+      expect(kChannelProviderPresets.length, 16);
 
       expect(tester.takeException(), isNull);
     });

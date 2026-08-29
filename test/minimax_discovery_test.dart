@@ -77,8 +77,13 @@ void main() {
     });
 
     test('no other vendor gained a catalog', () {
+      // The self-hosted H3-Base vendor is the third legitimate holder: its
+      // one served model lives behind the video surface a /models listing
+      // has no vocabulary for, same reasoning as the two cloud faces.
       for (final v in Vendors.all) {
-        if (v.id == Vendors.minimax || v.id == Vendors.minimaxAnthropic) {
+        if (v.id == Vendors.minimax ||
+            v.id == Vendors.minimaxAnthropic ||
+            v.id == Vendors.minimaxH3Base) {
           continue;
         }
         expect(v.unlistedModels, isEmpty, reason: v.id);

@@ -125,6 +125,20 @@ class Vendors {
   /// Same reasoning as [ollama].
   static const String lmStudio = 'lm-studio';
 
+  /// A self-hosted MiniMax H3 video service — the SGLang "H3-Base API"
+  /// (`sglang serve --model-path MiniMaxAI/MiniMax-H3`, quickstart at
+  /// `http://127.0.0.1:30010/v1`). The official local route for the model:
+  /// the open H3-Base weights run under SGLang/ComfyUI, *not* under the
+  /// text-LLM runtimes above — LM Studio has no video surface at all.
+  ///
+  /// Not folded into [minimax]: same model family, different wire. The cloud
+  /// `/v2/video_generation` task flow and the local Sora-shaped `/v1/videos`
+  /// share neither a body vocabulary nor a status word (docs/api/minimax.md
+  /// §4 vs §8), and this host serves exactly one surface — no chat, no
+  /// images, no `/v2`. Local-runtime conventions apply otherwise: no auth by
+  /// default ([VendorProfile.keyOptional]), bearer only for a fronting proxy.
+  static const String minimaxH3Base = 'minimax-h3-base';
+
   static const List<VendorProfile> all = [
     VendorProfile(
       id: openAIRest,
@@ -308,6 +322,26 @@ class Vendors {
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
       keyOptional: true,
+    ),
+    VendorProfile(
+      id: minimaxH3Base,
+      family: ProtocolFamily.openai,
+      auth: AuthScheme.bearer,
+      keyOptional: true,
+      // The one surface this host serves. Declared as the vendor-native
+      // video protocol (replacing the ① Sora-style default) because the
+      // shared path shape is where the resemblance ends: JSON task body,
+      // `completed` as the terminal status.
+      videoProtocol: WireProtocol.minimaxH3BaseVideo,
+      // SGLang's `GET /models` — when the serve variant exposes it at all —
+      // describes the loaded checkpoint, and an H3-Base process serves
+      // nothing else; the catalog entry keeps "fetch models" meaningful
+      // either way, spelled the way the generation endpoint expects it
+      // (the HuggingFace repo path, not the cloud id).
+      unlistedModels: [
+        UnlistedModel('MiniMaxAI/MiniMax-H3',
+            description: 'Video generation (self-hosted SGLang /v1/videos)'),
+      ],
     ),
   ];
 

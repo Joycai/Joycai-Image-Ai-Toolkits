@@ -4,6 +4,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_capabilities.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/dashscope_payload.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 
 /// Pins the vendor–protocol–model binding introduced by the wire-protocol
@@ -498,6 +499,91 @@ void main() {
           isFalse);
       expect(dispatcher.canRunVideoJob(mm('mj_imagine', Vendors.midjourneyProxy)),
           isFalse);
+    });
+  });
+
+  group('self-hosted MiniMax H3 (SGLang H3-Base)', () {
+    LLMModelConfig h3(String modelId, String channelType) => LLMModelConfig(
+          modelId: modelId,
+          channelType: channelType,
+          endpoint: 'http://127.0.0.1:30010/v1',
+          apiKey: '',
+        );
+
+    test('the HuggingFace repo path classifies as an async video model', () {
+      // The id a self-hosted SGLang service loads and expects on the wire.
+      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-H3'),
+          ModelFamily.openaiVideo);
+      // The M3/H3 one-letter caution, repeated for the repo-path spelling:
+      // the chat model is self-hostable too and must stay off the video
+      // route.
+      expect(ModelFamilyClassifier.classify('MiniMaxAI/MiniMax-M3'),
+          ModelFamily.other);
+    });
+
+    test('the vendor declares exactly one surface: its native video wire',
+        () {
+      final v = Vendors.byId(Vendors.minimaxH3Base);
+      expect(v.family, ProtocolFamily.openai);
+      expect(v.keyOptional, isTrue);
+      expect(v.videoProtocol, WireProtocol.minimaxH3BaseVideo);
+      expect(v.chatMenu, isEmpty);
+      expect(v.imageMenu, isEmpty);
+      expect(
+        LLMDispatcher.protocolMenuFor(
+            Vendors.minimaxH3Base, 'MiniMaxAI/MiniMax-H3'),
+        [WireProtocol.minimaxH3BaseVideo],
+      );
+    });
+
+    test('the model picker agrees with the router', () {
+      final dispatcher = LLMDispatcher();
+      expect(
+          dispatcher
+              .canRunVideoJob(h3('MiniMaxAI/MiniMax-H3', Vendors.minimaxH3Base)),
+          isTrue);
+      // A chat id on the same channel must not slip into the picker, and the
+      // cloud id on a text-runtime channel keeps the ① `/v1/videos` fallback
+      // (family default), exactly as before this vendor existed.
+      expect(
+          dispatcher
+              .canRunVideoJob(h3('MiniMaxAI/MiniMax-M3', Vendors.minimaxH3Base)),
+          isFalse);
+      expect(dispatcher.canRunVideoJob(h3('MiniMax-H3', Vendors.lmStudio)),
+          isTrue);
+    });
+
+    test('the local table drops the resolution knob the open weights lack',
+        () {
+      final local = ModelCapabilities.forModel('MiniMaxAI/MiniMax-H3');
+      expect(local.isVideoGenerator, isTrue);
+      expect(local.videoParams.map((p) => p.key),
+          isNot(contains('resolution')));
+      expect(local.videoParams.map((p) => p.key),
+          containsAll(['aspectRatio', 'seconds']));
+      // The cloud id keeps its two-tier control.
+      expect(ModelCapabilities.forModel('MiniMax-H3').videoParams
+          .map((p) => p.key), contains('resolution'));
+    });
+
+    test('discovery still lists the model when the listing cannot', () {
+      // An H3-Base process serves no chat models, so whatever its /models
+      // returns (often nothing usable), the vendor catalog appends the id
+      // the generation endpoint actually accepts.
+      final merged =
+          mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), []);
+      expect(merged.map((m) => m.modelId), contains('MiniMaxAI/MiniMax-H3'));
+      // A listing that already names it (case-insensitively) is not doubled.
+      final listed = [
+        DiscoveredModel(
+            modelId: 'minimaxai/minimax-h3',
+            displayName: 'minimaxai/minimax-h3',
+            rawData: const {}),
+      ];
+      expect(
+          mergeUnlistedModels(Vendors.byId(Vendors.minimaxH3Base), listed)
+              .length,
+          1);
     });
   });
 
