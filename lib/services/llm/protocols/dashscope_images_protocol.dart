@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
-
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -113,7 +111,7 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       final refs = dashscopeImageRefs(data);
       final images = <Uint8List>[];
       for (final ref in refs) {
-        final bytes = await resolveDashScopeImageRef(ref, client, logger);
+        final bytes = await resolveImageRef(ref, client, logger);
         if (bytes != null) images.add(bytes);
       }
 
@@ -149,38 +147,3 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       dashscopePayloadForLog(payload, refs);
 }
 
-/// Turn one response reference into bytes.
-///
-/// The endpoint answers with a signed object-storage URL that expires, so
-/// the bytes are fetched here rather than handed onward as a link — a
-/// gallery holding those links is empty a day later. The GET carries no
-/// auth header: the signature is in the URL, and the API key has no meaning
-/// at that host.
-///
-/// Top-level rather than a method so the async-task protocol shares the one
-/// implementation.
-Future<Uint8List?> resolveDashScopeImageRef(
-  String ref,
-  http.Client client,
-  LLMLogger? logger,
-) async {
-  if (ref.startsWith('data:')) {
-    final comma = ref.indexOf(',');
-    if (comma < 0) return null;
-    try {
-      return base64Decode(ref.substring(comma + 1));
-    } catch (e) {
-      logger?.call('Failed to decode inline image: $e', level: 'WARN');
-      return null;
-    }
-  }
-
-  try {
-    final resp = await client.get(Uri.parse(ref));
-    if (resp.statusCode == 200) return resp.bodyBytes;
-    logger?.call('Image URL returned ${resp.statusCode}: $ref', level: 'WARN');
-  } catch (e) {
-    logger?.call('Failed to fetch image URL: $e', level: 'WARN');
-  }
-  return null;
-}

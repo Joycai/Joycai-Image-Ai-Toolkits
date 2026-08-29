@@ -638,10 +638,14 @@ class LLMDispatcher {
         // Same reasoning as the image branch in generate(): the *protocol*
         // has no video surface, but the vendor serving it may. MiniMax's
         // `/v2/video_generation` is on the same host and key as its
-        // `/anthropic/v1` chat.
+        // `/anthropic/v1` chat. Resolved through the shared declaration
+        // lookup rather than naming one protocol, so a second ④ vendor with
+        // a video surface needs no change here — and so this branch cannot
+        // disagree with [canRunVideoJob].
+        final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
         if (target.model.family == ModelFamily.openaiVideo &&
-            target.vendor.videoProtocol == WireProtocol.minimaxVideo) {
-          return _minimaxVideo.submit(target, history,
+            nativeVideo != null) {
+          return nativeVideo.submit(target, history,
               options: options, logger: logger);
         }
         throw UnsupportedError(
@@ -674,12 +678,8 @@ class LLMDispatcher {
           // Vendors with a native async-video surface replace the Sora-style
           // multipart `/videos` default: xAI's `/videos/generations` JSON,
           // DashScope's `video-synthesis` task flow.
-          final protocol = switch (target.vendor.videoProtocol) {
-            WireProtocol.xaiVideos => _xaiVideos,
-            WireProtocol.dashscopeVideo => _dashscopeVideo,
-            WireProtocol.minimaxVideo => _minimaxVideo,
-            _ => _openaiVideos,
-          };
+          final protocol =
+              _nativeVideoProtocol(target.vendor.videoProtocol) ?? _openaiVideos;
           return protocol.submit(target, history, options: options, logger: logger);
         }
 
@@ -741,8 +741,9 @@ class LLMDispatcher {
       case ProtocolFamily.anthropic:
         // Symmetric with the submit above: an operation on this channel can
         // only have come from the vendor-native surface it declares.
-        if (target.vendor.videoProtocol == WireProtocol.minimaxVideo) {
-          return _minimaxVideo.poll(target, operationName, logger: logger);
+        final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
+        if (nativeVideo != null) {
+          return nativeVideo.poll(target, operationName, logger: logger);
         }
         throw UnsupportedError(
           'Operation "$operationName" cannot belong to this Anthropic channel '
@@ -800,15 +801,9 @@ class LLMDispatcher {
         // (PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN). Symmetric
         // with the submit routing above — an operation started on this
         // channel can only have come from its own surface.
-        switch (target.vendor.videoProtocol) {
-          case WireProtocol.xaiVideos:
-            return _xaiVideos.poll(target, operationName, logger: logger);
-          case WireProtocol.dashscopeVideo:
-            return _dashscopeVideo.poll(target, operationName, logger: logger);
-          case WireProtocol.minimaxVideo:
-            return _minimaxVideo.poll(target, operationName, logger: logger);
-          default:
-            break;
+        final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
+        if (nativeVideo != null) {
+          return nativeVideo.poll(target, operationName, logger: logger);
         }
 
         // Non-prefixed ids some upstreams emit (e.g. Wanxiang) dispatch by
@@ -843,6 +838,51 @@ class LLMDispatcher {
     final protocol = _cancellableJobProtocol(target);
     if (protocol == null) return null;
     return protocol.cancel(target, operationName, logger: logger);
+  }
+
+  /// The vendor-native async-video protocol a `videoProtocol` declaration
+  /// names, or null when the vendor declares none.
+  ///
+  /// The single place that maps the declaration onto an implementation.
+  /// Families that also have a default (①'s Sora-style `/v1/videos`) fall
+  /// back to it themselves; ④ has no default, so for it a null here is the
+  /// whole answer. Written once because [canRunVideoJob] has to give the
+  /// model picker the same answer this gives routing — two switches drifting
+  /// apart is how a model reaches a channel that then refuses it, or (worse)
+  /// vanishes from the picker for a channel that would have served it.
+  VideoJobProtocol? _nativeVideoProtocol(WireProtocol? declared) =>
+      switch (declared) {
+        WireProtocol.xaiVideos => _xaiVideos,
+        WireProtocol.dashscopeVideo => _dashscopeVideo,
+        WireProtocol.minimaxVideo => _minimaxVideo,
+        _ => null,
+      };
+
+  /// Whether this channel can start a video job for this model at all — the
+  /// question the workbench's model picker asks before listing it.
+  ///
+  /// Mirrors [startLongRunning]'s branches exactly, and lives here so it
+  /// cannot answer differently: the picker used to carry its own copy of the
+  /// rule, and when a ④ vendor gained a native video surface the copy still
+  /// said "the Anthropic family has no video", hiding the model from the UI
+  /// while the route behind it worked.
+  bool canRunVideoJob(LLMModelConfig config) {
+    final target = resolveTarget(config);
+    switch (target.vendor.family) {
+      case ProtocolFamily.gemini:
+        // Veo via `:predictLongRunning`.
+        return true;
+      case ProtocolFamily.midjourney:
+        // Generation runs inside generate(); there is no job to start.
+        return false;
+      case ProtocolFamily.anthropic:
+        // No family default — only a vendor-declared native surface.
+        return target.model.family == ModelFamily.openaiVideo &&
+            _nativeVideoProtocol(target.vendor.videoProtocol) != null;
+      case ProtocolFamily.openai:
+      case ProtocolFamily.dashscope:
+        return target.model.family == ModelFamily.openaiVideo;
+    }
   }
 
   /// The job protocol serving this target, if it can be cancelled upstream.

@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../core/safety_settings.dart';
 import '../l10n/app_localizations.dart';
+import '../services/llm/llm_dispatcher.dart';
+import '../services/llm/llm_types.dart';
 import '../services/llm/model_capabilities.dart';
-import '../services/llm/model_descriptor.dart';
 import '../services/llm/model_family.dart';
-import '../services/llm/vendors/vendors.dart';
 import '../models/app_image.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -266,32 +266,27 @@ class AppState extends ChangeNotifier {
     return channels.where((c) => served.contains(c.id)).toList(growable: false);
   }
 
-  /// Video LRO is currently implemented by:
-  ///   * Gemini-family vendors — Veo via `:predictLongRunning`
-  ///   * OpenAI- and DashScope-family vendors — Sora / grok-imagine /
-  ///     Wanxiang etc. via `/v1/videos`, wan3.x via DashScope's
-  ///     `video-synthesis`, gated on the model classifying as
-  ///     [ModelFamily.openaiVideo] so that chat-only ids on the same channel
-  ///     don't slip into the picker.
+  /// Whether this (channel, model) pair can start a video job.
+  ///
+  /// Asks the dispatcher rather than re-deriving the rule. The copy that used
+  /// to live here answered "the Anthropic family has no video surface", which
+  /// stopped being true when a ④ vendor declared a native one: the model
+  /// disappeared from the picker while the route behind it worked, and
+  /// nothing said why. [LLMDispatcher.canRunVideoJob] mirrors
+  /// `startLongRunning`'s branches, so the picker and the router cannot
+  /// disagree again.
   bool _supportsVideoForType(LLMModel m) {
     final channel = _channels.cast<LLMChannel?>().firstWhere(
         (c) => c?.id == m.channelId,
         orElse: () => null);
     if (channel == null) return false;
-    switch (Vendors.byId(channel.type).family) {
-      case ProtocolFamily.gemini:
-        return true;
-      case ProtocolFamily.openai:
-      case ProtocolFamily.dashscope:
-        // Same gate for both: the vendor can carry a video job, and the model
-        // has to classify as one. DashScope's `wan3.0-video` ids classify
-        // into [ModelFamily.openaiVideo] — "an async video-task model" —
-        // whichever face the channel leads with.
-        return ModelDescriptor.of(m.modelId).family == ModelFamily.openaiVideo;
-      case ProtocolFamily.midjourney:
-      case ProtocolFamily.anthropic:
-        return false;
-    }
+    return LLMDispatcher().canRunVideoJob(LLMModelConfig(
+      modelId: m.modelId,
+      channelType: channel.type,
+      endpoint: channel.endpoint,
+      apiKey: channel.apiKey,
+      wireProtocol: m.wireProtocol,
+    ));
   }
 
   bool isVideoCompatibleModel(int? modelDbId) {

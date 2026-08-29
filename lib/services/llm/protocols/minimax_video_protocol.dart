@@ -201,7 +201,23 @@ class MiniMaxVideoProtocol implements VideoJobProtocol, CancellableJobProtocol {
   }) async {
     final client = target.config.createClient();
     try {
-      final task = await _fetchTask(target, operationName, client);
+      final Map<String, dynamic> task;
+      try {
+        task = await _fetchTask(target, operationName, client);
+      } on LLMApiException catch (e) {
+        // A task that no longer exists is the ordinary case on this path, not
+        // a failure: records are dropped after 7 days and the console can
+        // delete one at any time. [CancellableJobProtocol] says an ordinary
+        // refusal returns null instead of throwing, and the alternative here
+        // is warning the user that cancelling failed when what actually
+        // happened is that there was nothing left to cancel.
+        logger?.call(
+            'MiniMax video task $operationName could not be read, so nothing '
+            'was cancelled upstream (records are kept 7 days): $e',
+            level: 'INFO');
+        return null;
+      }
+
       final status = task['status']?.toString().toLowerCase() ?? '';
       if (status != 'queued') {
         logger?.call(

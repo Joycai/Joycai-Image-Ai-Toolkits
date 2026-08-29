@@ -93,12 +93,26 @@ surface 开关"表达不了它。绑定关系升级为：
   路由到 MiniMax 的端点。交集项是
   `LLMDispatcher._imageProtocolsFor(family)`，`_hasNativeImageRoute` 是所有
   图像分支共用的那个判据。
+- **"这条渠道能不能跑视频任务"只有一个答案，住在 dispatcher。**
+  `LLMDispatcher.canRunVideoJob` 与 `startLongRunning` 的分支一一对应，
+  `AppState._supportsVideoForType`（工作台模型选择器的过滤条件）调它而不是
+  自己再推一遍。这条是踩出来的：选择器那份副本写着"④ 族没有视频面"，等到
+  一个 ④ vendor 声明了原生视频面，模型就从选择器里消失了 —— 而它背后的路由
+  是通的，界面上没有任何解释。**UI 侧的能力判断复制路由规则 = 一个不会报错
+  的静默失效**，同类判断（`streamSupportsTools` / `streamIsSingleShot` /
+  `protocolMenuFor`）都是 dispatcher 的 public 方法，原因相同。
+- **`videoProtocol` 声明 → 协议实现的映射只写一次**
+  （`_nativeVideoProtocol`）。① 族在它返回 null 时回落到家族默认
+  `/v1/videos`，④ 族没有默认，null 就是最终答案。`startLongRunning`、
+  `checkOperation`、`canRunVideoJob` 三处共用，避免"提交能跑、轮询不认"这类
+  半边路由。
 - **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
   (vendor, model) 组合仍解析到同一条路"；
   `test/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则
   （三段式分区、`result_format`、增量、多模态 content 形状）；
   `test/minimax_payload_test.dart` 钉住 MiniMax 两条私有面的 body 规则与
-  base 推导。
+  base 推导 —— 其中媒体项的嵌套形状、`metadata` 计数的字符串类型两条，都是
+  "写错了上游不报错、照常出片并计费"的那种，所以按上游样例逐字断言。
 
 ## 分层纪律（违反会静默腐化）
 

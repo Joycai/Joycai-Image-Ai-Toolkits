@@ -152,14 +152,32 @@ List<String> minimaxImageRefs(Map<String, dynamic> data) {
   final payload = data['data'];
   if (payload is! Map) return refs;
 
+  // First populated field wins rather than both being concatenated: a relay
+  // that mirrors the same images into *both* spellings would otherwise be
+  // read as twice as many results, and the image task would write duplicate
+  // files for one generation.
   for (final key in const ['image_urls', 'image_base64']) {
     final list = payload[key];
     if (list is! List) continue;
     for (final entry in list) {
       if (entry is String && entry.isNotEmpty) refs.add(entry);
     }
+    if (refs.isNotEmpty) return refs;
   }
   return refs;
+}
+
+/// One `metadata` counter, whichever way it was spelled.
+///
+/// MiniMax documents these as integers and **sends them as strings**
+/// (`"success_count": "3"`), so a plain `is num` test never matches anything
+/// the live endpoint returns. Both spellings are accepted rather than the
+/// documented one alone, because relays fronting this surface re-serialize
+/// the body and may hand back either.
+int? _minimaxCount(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
 }
 
 /// Throws when a `metadata` block reports that every requested image failed.
@@ -171,9 +189,9 @@ List<String> minimaxImageRefs(Map<String, dynamic> data) {
 void throwIfMiniMaxImagesFailed(Map<String, dynamic> data) {
   final metadata = data['metadata'];
   if (metadata is! Map) return;
-  final success = metadata['success_count'];
-  final failed = metadata['failed_count'];
-  if (success is num && success == 0 && failed is num && failed > 0) {
+  final success = _minimaxCount(metadata['success_count']);
+  final failed = _minimaxCount(metadata['failed_count']);
+  if (success == 0 && failed != null && failed > 0) {
     throw LLMApiException(
         'MiniMax Images API generated no image ($failed failed). This is '
         'usually content moderation — the request itself succeeded.',
@@ -203,7 +221,16 @@ enum MiniMaxVideoRole {
   /// Whether this role belongs to the *image-based* modality (first/last
   /// frame) rather than the *reference* one. Upstream rejects a request that
   /// mixes the two.
-  bool get isFrame => this != MiniMaxVideoRole.referenceImage;
+  ///
+  /// Spelled as a positive list rather than "not a reference image": MiniMax
+  /// documents five roles and this enum implements three, so an exclusion
+  /// test would silently classify a future `reference_video` /
+  /// `reference_audio` as a frame and invert the rule this predicate exists
+  /// to enforce. A new role now defaults to the reference side, which is the
+  /// safe one.
+  bool get isFrame =>
+      this == MiniMaxVideoRole.firstFrame ||
+      this == MiniMaxVideoRole.lastFrame;
 }
 
 /// One resolved media item for [buildMiniMaxVideoPayload].
@@ -261,7 +288,17 @@ Map<String, dynamic> buildMiniMaxVideoPayload({
       // pure image-to-video request — an empty prompt is still a text item.
       {'type': 'text', 'text': prompt},
       for (final item in media)
-        {'type': item.role.type, 'role': item.role.role, 'url': item.url},
+        {
+          'type': item.role.type,
+          // The URL is nested inside a per-type object, not a flat `url`
+          // sibling: `{"type": "image_url", "image_url": {"url": …}}`. A flat
+          // spelling is accepted by the parser and then carries no image —
+          // the request succeeds and generates as though nothing was
+          // attached, which is billed and leaves nothing in the log.
+          item.role.type: {'url': item.url},
+          // `role`, by contrast, really is a sibling of `type`.
+          'role': item.role.role,
+        },
     ],
     'resolution': minimaxVideoResolution(options),
     'duration': minimaxVideoDuration(options),
@@ -285,20 +322,34 @@ Map<String, dynamic> buildMiniMaxVideoPayload({
   );
 }
 
-/// The payload with base64 media replaced by a count — a base64 image is
-/// megabytes of noise in a debug log that exists to be read.
+/// The payload with base64 media replaced by a placeholder — a base64 image
+/// is megabytes of noise in a debug log that exists to be read.
 Map<String, dynamic> minimaxPayloadForLog(Map<String, dynamic> payload) {
   final content = payload['content'];
   if (content is! List) return payload;
   return {
     ...payload,
-    'content': [
-      for (final item in content)
-        if (item is Map && item['url'] is String &&
-            (item['url'] as String).startsWith('data:'))
-          {...item, 'url': '[base64 ${item['type']}]'}
-        else
-          item,
-    ],
+    'content': [for (final item in content) _mediaItemForLog(item)],
+  };
+}
+
+/// One `content[]` item with its inline base64 replaced.
+///
+/// Follows `type` to find the media object, because the URL lives inside it
+/// (`image_url: {url: …}`) rather than as a flat sibling. Matching on a flat
+/// `url` looked like it worked while the payload builder emitted one and
+/// would have gone silently inert the moment that was corrected — dumping a
+/// 30 MB first frame into the log this function exists to keep readable.
+Object? _mediaItemForLog(Object? item) {
+  if (item is! Map) return item;
+  final type = item['type'];
+  if (type is! String) return item;
+  final media = item[type];
+  if (media is! Map) return item;
+  final url = media['url'];
+  if (url is! String || !url.startsWith('data:')) return item;
+  return {
+    ...item,
+    type: {'url': '[base64 $type]'},
   };
 }

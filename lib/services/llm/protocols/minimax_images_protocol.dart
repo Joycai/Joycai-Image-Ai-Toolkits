@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
-
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -118,7 +116,10 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
 
       final images = <Uint8List>[];
       for (final ref in minimaxImageRefs(data)) {
-        final bytes = await _resolveImageRef(ref, client, logger);
+        // `response_format: url` is what the request pins, but the shared
+        // resolver also takes a data URI and a bare base64 payload — nothing
+        // guarantees which spelling a relay fronting this surface uses.
+        final bytes = await resolveImageRef(ref, client, logger);
         if (bytes != null) images.add(bytes);
       }
 
@@ -157,41 +158,4 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
     };
   }
 
-  /// Turn one response reference into bytes.
-  ///
-  /// The endpoint answers with a signed object-storage URL that expires in
-  /// [_urlLifetime], so the bytes are fetched here rather than handed onward
-  /// as a link — a gallery holding those links is empty a day later. The GET
-  /// carries no auth header: the signature is in the URL, and the API key has
-  /// no meaning at that host.
-  ///
-  /// A bare base64 string (what `response_format: base64` returns) is decoded
-  /// directly; `data:` URIs are handled too, since nothing guarantees which
-  /// spelling a relay fronting this surface uses.
-  Future<Uint8List?> _resolveImageRef(
-    String ref,
-    http.Client client,
-    LLMLogger? logger,
-  ) async {
-    if (ref.startsWith('http://') || ref.startsWith('https://')) {
-      try {
-        final resp = await client.get(Uri.parse(ref));
-        if (resp.statusCode == 200) return resp.bodyBytes;
-        logger?.call('Image URL returned ${resp.statusCode}: $ref',
-            level: 'WARN');
-      } catch (e) {
-        logger?.call('Failed to fetch image URL: $e', level: 'WARN');
-      }
-      return null;
-    }
-
-    final payload =
-        ref.startsWith('data:') ? ref.substring(ref.indexOf(',') + 1) : ref;
-    try {
-      return base64Decode(payload);
-    } catch (e) {
-      logger?.call('Failed to decode inline image: $e', level: 'WARN');
-      return null;
-    }
-  }
 }

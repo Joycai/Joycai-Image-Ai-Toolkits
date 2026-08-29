@@ -520,6 +520,10 @@ class LLMService {
     );
   }
 
+  /// How long an upstream cancel may take before the local task gives up on
+  /// it. Short on purpose: see [cancelOperation].
+  static const Duration _cancelTimeout = Duration(seconds: 20);
+
   /// Best-effort: ask upstream to stop an operation the user cancelled here.
   ///
   /// Swallows everything. This runs on a task that is already being abandoned
@@ -538,12 +542,19 @@ class LLMService {
         logger: (msg, {level = 'INFO'}) =>
             onLogAdded?.call(msg, level: level, contextId: contextId),
       );
-      return await _dispatcher.cancelOperation(
-        config,
-        operationName,
-        logger: (msg, {level = 'INFO'}) =>
-            onLogAdded?.call(msg, level: level, contextId: contextId),
-      );
+      // Bounded, unlike the poll it replaces. This runs on a user pressing
+      // cancel, and the caller cannot finalize the task until it returns —
+      // the queue slot stays held, so an unreachable host would make "cancel"
+      // hang for as long as the socket takes to give up. Whatever upstream
+      // would have said is worth less than releasing the slot.
+      return await _dispatcher
+          .cancelOperation(
+            config,
+            operationName,
+            logger: (msg, {level = 'INFO'}) =>
+                onLogAdded?.call(msg, level: level, contextId: contextId),
+          )
+          .timeout(_cancelTimeout);
     } catch (e) {
       onLogAdded?.call('Upstream cancel failed for $operationName: $e',
           level: 'WARN', contextId: contextId);

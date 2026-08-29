@@ -137,6 +137,21 @@ void main() {
       );
     });
 
+    test('a response carrying both spellings is not counted twice', () {
+      // A relay that mirrors the same images into both fields would otherwise
+      // yield two refs per image, and the image task would write duplicate
+      // files for one generation.
+      expect(
+        minimaxImageRefs(const {
+          'data': {
+            'image_urls': ['https://a'],
+            'image_base64': ['AAA'],
+          }
+        }),
+        ['https://a'],
+      );
+    });
+
     test('a missing or malformed data block yields nothing, never throws', () {
       expect(minimaxImageRefs(const {}), isEmpty);
       expect(minimaxImageRefs(const {'data': 'oops'}), isEmpty);
@@ -153,9 +168,21 @@ void main() {
     test('all-images-failed is an error even inside a 200 with status 0', () {
       // base_resp says the *request* succeeded; metadata says nothing was
       // generated. Without this the only symptom is an empty result list.
+      //
+      // The counts are **strings** here because that is what the endpoint
+      // actually sends (`"success_count": "3"`), despite the field being
+      // documented as an integer. An int-only guard type-checks, passes an
+      // int-fed test, and never fires in production.
       expect(
         () => throwIfMiniMaxImagesFailed(const {
           'base_resp': {'status_code': 0},
+          'metadata': {'success_count': '0', 'failed_count': '1'},
+        }),
+        throwsA(isA<LLMApiException>()),
+      );
+      // A relay that re-serializes the body may hand back real integers.
+      expect(
+        () => throwIfMiniMaxImagesFailed(const {
           'metadata': {'success_count': 0, 'failed_count': 1},
         }),
         throwsA(isA<LLMApiException>()),
@@ -163,12 +190,18 @@ void main() {
     });
 
     test('a partial success is not an error', () {
-      expect(
-        () => throwIfMiniMaxImagesFailed(const {
-          'metadata': {'success_count': 1, 'failed_count': 2},
-        }),
-        returnsNormally,
-      );
+      for (final metadata in const [
+        {'success_count': '1', 'failed_count': '2'},
+        {'success_count': 1, 'failed_count': 2},
+        // All succeeded, the ordinary case.
+        {'success_count': '3', 'failed_count': '0'},
+        // Unparseable counts must not be read as zero successes.
+        {'success_count': 'n/a', 'failed_count': '1'},
+      ]) {
+        expect(() => throwIfMiniMaxImagesFailed({'metadata': metadata}),
+            returnsNormally,
+            reason: '$metadata');
+      }
       expect(() => throwIfMiniMaxImagesFailed(const {}), returnsNormally);
     });
   });
@@ -191,7 +224,12 @@ void main() {
       expect(content(body).where((c) => c['type'] == 'text'), hasLength(1));
     });
 
-    test('roles are tags on content items, not separate fields', () {
+    test('the media URL is nested under its type, and role is a sibling', () {
+      // Verbatim against the documented request sample. The two halves are
+      // easy to conflate and only one of them is flat: `role` really does sit
+      // beside `type`, but the URL lives inside a per-type object. Sending a
+      // flat `url` is not rejected loudly — the request generates as though
+      // nothing was attached, and it is billed.
       final body = buildMiniMaxVideoPayload(
         modelId: 'MiniMax-H3',
         prompt: 'p',
@@ -201,9 +239,20 @@ void main() {
         ],
       );
       expect(content(body).sublist(1), [
-        {'type': 'image_url', 'role': 'first_frame', 'url': 'u1'},
-        {'type': 'image_url', 'role': 'last_frame', 'url': 'u2'},
+        {
+          'type': 'image_url',
+          'image_url': {'url': 'u1'},
+          'role': 'first_frame',
+        },
+        {
+          'type': 'image_url',
+          'image_url': {'url': 'u2'},
+          'role': 'last_frame',
+        },
       ]);
+      // The URL must not also appear flat — a body carrying both spellings
+      // would pass a nesting-only assertion while still being wrong.
+      expect(content(body)[1].containsKey('url'), isFalse);
     });
 
     test('resolution and duration are always sent, with real defaults', () {
@@ -299,6 +348,16 @@ void main() {
       expect(dropped.map((m) => m.url), ['r']);
     });
 
+    test('only the two frame roles count as frames', () {
+      // Spelled positively in the enum so a future reference_video /
+      // reference_audio defaults to the reference side. An exclusion test
+      // ("not a reference image") would call them frames and invert the rule.
+      expect(MiniMaxVideoRole.firstFrame.isFrame, isTrue);
+      expect(MiniMaxVideoRole.lastFrame.isFrame, isTrue);
+      expect(MiniMaxVideoRole.referenceImage.isFrame, isFalse);
+      expect(MiniMaxVideoRole.values.where((r) => r.isFrame), hasLength(2));
+    });
+
     test('nothing in, nothing out', () {
       final (kept, dropped) = partitionMiniMaxVideoMedia(const []);
       expect(kept, isEmpty);
@@ -320,11 +379,19 @@ void main() {
       );
       final logged = minimaxPayloadForLog(body);
       final items = (logged['content'] as List).cast<Map>();
-      expect(items[1]['url'], '[base64 image_url]');
-      expect(items[2]['url'], 'https://example/img.png');
+      // The redaction has to follow `type` to the nested media object; a
+      // predicate reading a flat `url` finds nothing and silently passes the
+      // whole base64 through into the log.
+      expect(items[1]['image_url'], {'url': '[base64 image_url]'});
+      expect(items[2]['image_url'], {'url': 'https://example/img.png'});
+      // Roles and types survive redaction — the log is for reading.
+      expect(items[1]['role'], 'first_frame');
+      expect(items[2]['role'], 'reference_image');
       // Redaction must not disturb anything else in the body.
       expect(logged['duration'], body['duration']);
       expect(logged['resolution'], body['resolution']);
+      // Nothing base64 anywhere in the rendered log.
+      expect(logged.toString(), isNot(contains('AAAA')));
     });
   });
 }

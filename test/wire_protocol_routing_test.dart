@@ -467,6 +467,38 @@ void main() {
             reason: id);
       }
     });
+
+    test('the model picker agrees with the router about ④ video', () {
+      // The regression: the picker carried its own copy of "which channels
+      // can run a video job" and answered "the Anthropic family cannot".
+      // When a ④ vendor declared a native video surface, H3 vanished from the
+      // workbench while the route behind it worked — no error, just an empty
+      // list. AppState now asks this method instead of re-deriving the rule.
+      final dispatcher = LLMDispatcher();
+      for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
+        expect(dispatcher.canRunVideoJob(mm('MiniMax-H3', id)), isTrue,
+            reason: id);
+        // A chat id on the same channel must not slip into the picker.
+        expect(dispatcher.canRunVideoJob(mm('MiniMax-M3', id)), isFalse,
+            reason: id);
+      }
+      // A ④ vendor with no video surface declared still cannot.
+      expect(
+          dispatcher.canRunVideoJob(mm('MiniMax-H3', Vendors.anthropicRest)),
+          isFalse);
+      // Every family that could before still can.
+      expect(dispatcher.canRunVideoJob(mm('veo-3.0', Vendors.officialGoogle)),
+          isTrue);
+      expect(dispatcher.canRunVideoJob(mm('sora-2', Vendors.openAIRest)),
+          isTrue);
+      expect(
+          dispatcher.canRunVideoJob(mm('wan3.0-video', Vendors.dashscopeNative)),
+          isTrue);
+      expect(dispatcher.canRunVideoJob(mm('gpt-4o', Vendors.openAIRest)),
+          isFalse);
+      expect(dispatcher.canRunVideoJob(mm('mj_imagine', Vendors.midjourneyProxy)),
+          isFalse);
+    });
   });
 
   group('WireProtocol ids', () {

@@ -317,6 +317,55 @@ String trimBaseUrl(String endpoint) {
   return base;
 }
 
+/// Turn one image reference from a response into bytes.
+///
+/// Three spellings, because the surfaces that hand back images disagree:
+///  * an `http(s)` URL — fetched here rather than passed onward as a link.
+///    These are signed object-storage URLs that expire (24 h on both
+///    DashScope and MiniMax), so a gallery holding them is empty a day later.
+///    The GET carries no auth header: the signature is in the URL and the API
+///    key has no meaning at that host.
+///  * a `data:<mime>;base64,…` URI.
+///  * a bare base64 payload, which is what `response_format: base64` returns.
+///
+/// Shared rather than per-protocol: three image surfaces need exactly this,
+/// and a fix to the fetch path (a retry, a timeout, a status log) has to
+/// land in one place to be worth making.
+Future<Uint8List?> resolveImageRef(
+  String ref,
+  http.Client client,
+  LLMLogger? logger,
+) async {
+  if (ref.startsWith('http://') || ref.startsWith('https://')) {
+    try {
+      final resp = await client.get(Uri.parse(ref));
+      if (resp.statusCode == 200) return resp.bodyBytes;
+      logger?.call('Image URL returned ${resp.statusCode}: $ref',
+          level: 'WARN');
+    } catch (e) {
+      logger?.call('Failed to fetch image URL: $e', level: 'WARN');
+    }
+    return null;
+  }
+
+  var payload = ref;
+  if (ref.startsWith('data:')) {
+    final comma = ref.indexOf(',');
+    if (comma < 0) {
+      logger?.call('Malformed data URI (no comma): ${ref.substring(0, 32)}…',
+          level: 'WARN');
+      return null;
+    }
+    payload = ref.substring(comma + 1);
+  }
+  try {
+    return base64Decode(payload);
+  } catch (e) {
+    logger?.call('Failed to decode inline image: $e', level: 'WARN');
+    return null;
+  }
+}
+
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
   if (att.path != null) return File(att.path!).readAsBytes();
   if (att.bytes != null) return att.bytes;

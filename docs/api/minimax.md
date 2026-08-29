@@ -6,7 +6,8 @@
 > 本文只写协议事实（本目录的规矩）；本项目怎么路由，见
 > [`../plans/2026-08-vendor-protocol-model-refactor.md`](../plans/2026-08-vendor-protocol-model-refactor.md)。
 > ①/④ 两面的兼容层砍削样本已收录于 [`landscape.md`](landscape.md) §7
-> （第二、四样本），本文不重复，只补两面的最新差异与视频面全貌。
+> （第二、四样本），本文不重复；两条 chat 面只补最新差异，图像面（§3）与视频面
+> （§4）写全貌。
 >
 > **来源**：`platform.minimaxi.com` 官方 API reference，2026-08-25 抓取；
 > 图像面（§3）与视频面的复核为 2026-08-29 抓取。
@@ -118,6 +119,9 @@
 `status_code == 0` 但 `success_count == 0` 是**逐图**失败（通常是审核）。
 只看前者，后者的症状就只是「结果为空」。
 
+**`success_count` / `failed_count` 实际是字符串**（样例里是 `"0"` / `"3"`），
+尽管字段描述写的是整数。按数字类型判会静默永不命中 —— 两种拼法都要认。
+
 ## 4. V1 — 视频任务面（v2，仅异步）
 
 ### 4.1 创建：`POST /v2/video_generation`
@@ -125,12 +129,30 @@
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
 | `model` | 是 | `MiniMax-H3` |
-| `content[]` | 是 | 多模态数组，**至少一个 `text` 项**（≤7000 字符）；媒体项 `type: image_url|video_url|audio_url`，`url` 三种形式：公网 URL / `mm_file://{file_id}` / `data:image/…;base64,…`；**首帧/尾帧/参考素材靠项上的 `role` 标注**：`first_frame` / `last_frame` / `reference_image` / `reference_video` / `reference_audio` |
+| `content[]` | 是 | 多模态数组，**至少一个 `text` 项**（≤7000 字符）；媒体项见下 |
 | `resolution` | **是** | `768P` / `2K` |
 | `duration` | **是** | 4–15 秒 |
 | `ratio` | 否 | `adaptive`（默认）/ `21:9` / `16:9` / `4:3` / `1:1` / `3:4` / `9:16`。**纯文本请求必须显式给值**——`adaptive` 的含义是「跟随输入素材」，没有素材就没有可跟随的对象 |
 | `callback_url` | 否 | HTTPS webhook；注册时 MiniMax 先发 `challenge`，需 **3 秒内原样回显** |
 | `aigc_watermark` | 否 | 默认 false |
+
+**`content[]` 项的形状**（这里最容易写错，且写错不报错）：
+
+```json
+{"type": "text",      "text": "..."}
+{"type": "image_url", "image_url": {"url": "..."}, "role": "first_frame"}
+{"type": "video_url", "video_url": {"url": "..."}, "role": "reference_video"}
+{"type": "audio_url", "audio_url": {"url": "..."}, "role": "reference_audio"}
+```
+
+一句话：**`role` 是 `type` 的兄弟键，但 URL 是嵌在同名对象里的**。两半只有一半是
+扁平的，很容易连带把 URL 也写成扁平的 `url` —— 那样上游不会报错，会当成没带素材
+正常出片并计费，日志里看不出是 body 的问题。
+
+`url` 三种形式：公网 URL / `mm_file://{file_id}` / `data:image/…;base64,…`。
+`role` 取值：`first_frame` / `last_frame` / `reference_image` /
+`reference_video` / `reference_audio` —— 首帧/尾帧/参考素材没有独立字段，全靠这个
+标注区分。
 
 体积限制：请求总量 ≤64 MB；单图 ≤30 MB（256–5760 px）；视频 ≤50 MB（2–15 s）；
 音频 ≤15 MB（2–15 s）。
