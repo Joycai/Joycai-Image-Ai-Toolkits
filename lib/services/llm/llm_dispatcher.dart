@@ -10,6 +10,8 @@ import 'protocols/gemini_chat_protocol.dart';
 import 'protocols/gemini_imagen_protocol.dart';
 import 'protocols/gemini_veo_protocol.dart';
 import 'protocols/midjourney_protocol.dart';
+import 'protocols/minimax_images_protocol.dart';
+import 'protocols/minimax_video_protocol.dart';
 import 'protocols/openai_chat_protocol.dart';
 import 'protocols/openai_images_protocol.dart';
 import 'protocols/openai_videos_protocol.dart';
@@ -51,6 +53,8 @@ class LLMDispatcher {
   static final _dashscopeImages = DashScopeImagesProtocol();
   static final _dashscopeImagesAsync = DashScopeImagesAsyncProtocol();
   static final _dashscopeVideo = DashScopeVideoProtocol();
+  static final _minimaxImages = MiniMaxImagesProtocol();
+  static final _minimaxVideo = MiniMaxVideoProtocol();
   static final _xaiVideos = XaiVideosProtocol();
   static final _geminiChat = GeminiChatProtocol();
   static final _imagen = GeminiImagenProtocol();
@@ -100,12 +104,21 @@ class LLMDispatcher {
       case Surface.chat:
         return vendor.menuFor(Surface.chat);
       case Surface.imageGen:
-        // Only the family the dispatcher actually routes to the vendor's
-        // native image surface gets its menu; every other image family rides
+        // Only the families the dispatcher actually routes to a vendor's
+        // native image surface get its menu; every other image family rides
         // a fixed route (its own protocol, or chat on a relay) and offers no
         // choice.
-        if (model.family != ModelFamily.dashscopeImage) return const [];
-        final menu = vendor.menuFor(Surface.imageGen);
+        //
+        // The menu is also intersected with what this vendor serves, not just
+        // with what the model is: an id classifies by its own name, so a
+        // `qwen-image` typed into a MiniMax channel would otherwise be handed
+        // that vendor's menu and routed at an endpoint that has never heard
+        // of it.
+        final menu = vendor
+            .menuFor(Surface.imageGen)
+            .where((p) => _imageProtocolsFor(model.family).contains(p))
+            .toList();
+        if (menu.isEmpty) return const [];
         if (!model.capabilities.supportsAsyncImageTask) {
           return menu
               .where((p) => p != WireProtocol.dashscopeImagesAsync)
@@ -117,6 +130,38 @@ class LLMDispatcher {
         return vendor.menuFor(Surface.videoJob);
     }
   }
+
+  /// The native image protocols that can serve [family] — the intersection
+  /// term that keeps a vendor's image menu from claiming another vendor's
+  /// model.
+  ///
+  /// Empty for every family with no native image surface of its own
+  /// (`gpt-image-*`, nanoBanana, Midjourney): those ride a fixed route the
+  /// menus never describe.
+  static List<WireProtocol> _imageProtocolsFor(ModelFamily family) {
+    switch (family) {
+      case ModelFamily.dashscopeImage:
+        return const [
+          WireProtocol.dashscopeImagesSync,
+          WireProtocol.dashscopeImagesAsync,
+        ];
+      case ModelFamily.minimaxImage:
+        return const [WireProtocol.minimaxImages];
+      default:
+        return const [];
+    }
+  }
+
+  /// Whether this target's model is an image family the *resolved vendor*
+  /// actually serves natively — the guard every image-routing branch below
+  /// shares.
+  ///
+  /// A relay listing `qwen-image` or `image-01` declares no such menu and so
+  /// keeps falling through to chat, which is where those relays really serve
+  /// them (they answer with images in the chat response). Routing on the
+  /// model family alone would break channels that work today.
+  bool _hasNativeImageRoute(LLMTarget target) => target.vendor.imageMenu
+      .any((p) => _imageProtocolsFor(target.model.family).contains(p));
 
   /// What "auto" resolves to for this pair — the menu's first entry. Null
   /// when the surface has no vendor menu at all (relay image models riding
@@ -181,13 +226,26 @@ class LLMDispatcher {
         _ => _openaiChat,
       };
 
-  /// The image protocol for a DashScope-native image model on a vendor that
-  /// declares the surface: the model's pinned choice, else sync.
-  ImageGenProtocol _dashscopeImageProtocol(LLMTarget target) =>
-      _pinnedProtocol(target, Surface.imageGen) ==
-              WireProtocol.dashscopeImagesAsync
-          ? _dashscopeImagesAsync
-          : _dashscopeImages;
+  /// The native image protocol serving this target — the model's pinned
+  /// choice, else the vendor's first entry for that model's family.
+  ///
+  /// Only ever called behind [_hasNativeImageRoute], so the fallback is
+  /// unreachable in practice; it stays because "no native route" and "the
+  /// wrong native route" must not be the same bug.
+  ImageGenProtocol _nativeImageProtocol(LLMTarget target) {
+    final pinned = _pinnedProtocol(target, Surface.imageGen);
+    final face = pinned ??
+        protocolMenuFor(target.config.channelType, target.config.modelId)
+            .firstOrNull;
+    switch (face) {
+      case WireProtocol.dashscopeImagesAsync:
+        return _dashscopeImagesAsync;
+      case WireProtocol.minimaxImages:
+        return _minimaxImages;
+      default:
+        return _dashscopeImages;
+    }
+  }
 
   /// Whether [discoverModels] actually reaches the network for this channel —
   /// i.e. whether its outcome says anything about connectivity. Midjourney's
@@ -317,8 +375,14 @@ class LLMDispatcher {
         return _midjourney.generate(target, history, options: options, tools: tools, logger: logger);
 
       case ProtocolFamily.anthropic:
-        // One surface for everything ④ does — no image or video sibling to
-        // route around, unlike ① and ③.
+        // ④ itself has no image surface — but a ④ *vendor* may. MiniMax
+        // serves `/v1/image_generation` on the same host and key as its
+        // `/anthropic/v1` chat, so the check is the vendor's declaration
+        // rather than the family, exactly as on ① below.
+        if (_hasNativeImageRoute(target)) {
+          return _nativeImageProtocol(target)
+              .generateImage(target, history, options: options, logger: logger);
+        }
         return _anthropicChat.generate(target, history, options: options, tools: tools, logger: logger);
 
       case ProtocolFamily.gemini:
@@ -333,17 +397,17 @@ class LLMDispatcher {
         if (target.model.family == ModelFamily.openaiImage) {
           return _openaiImages.generateImage(target, history, options: options, logger: logger);
         }
-        // DashScope's native image models, on a vendor that declares the
-        // surface only. Everywhere else — a relay that lists `qwen-image` —
-        // the model keeps falling through to chat below, which is where those
-        // relays actually serve it (they answer with images in the chat
-        // response, and most expose no /images/generations for it at all).
-        // Routing them to an Images API on the strength of the family alone
-        // would break channels that work today. Sync vs. async is the model's
-        // pinned selection, defaulting to sync.
-        if (target.model.family == ModelFamily.dashscopeImage &&
-            target.vendor.imageMenu.isNotEmpty) {
-          return _dashscopeImageProtocol(target)
+        // The vendor-native image surfaces — DashScope's and MiniMax's — on
+        // a vendor that declares the matching one. Everywhere else (a relay
+        // that lists `qwen-image` or `image-01`) the model keeps falling
+        // through to chat below, which is where those relays actually serve
+        // it: they answer with images in the chat response, and most expose
+        // no image endpoint for it at all. Routing on the strength of the
+        // model family alone would break channels that work today. Which
+        // protocol, when a vendor offers more than one, is the model's pinned
+        // selection — see [_nativeImageProtocol].
+        if (_hasNativeImageRoute(target)) {
+          return _nativeImageProtocol(target)
               .generateImage(target, history, options: options, logger: logger);
         }
 
@@ -370,9 +434,8 @@ class LLMDispatcher {
         // compatible sibling declares, so an image model takes the same
         // native route by the same pinned selection; everything else is
         // chat, on whichever of the three faces the model pinned.
-        if (target.model.family == ModelFamily.dashscopeImage &&
-            target.vendor.imageMenu.isNotEmpty) {
-          return _dashscopeImageProtocol(target)
+        if (_hasNativeImageRoute(target)) {
+          return _nativeImageProtocol(target)
               .generateImage(target, history, options: options, logger: logger);
         }
         return _chatGenerate(target, history,
@@ -412,7 +475,11 @@ class LLMDispatcher {
     final target = resolveTarget(config);
     switch (target.vendor.family) {
       case ProtocolFamily.anthropic:
-        return _anthropicChat.streamingDeclaresTools;
+        // An image model on a ④ vendor has no tools and no streaming surface
+        // of its own; the chat route is the only one this question is about.
+        return _hasNativeImageRoute(target)
+            ? false
+            : _anthropicChat.streamingDeclaresTools;
       case ProtocolFamily.gemini:
         // Imagen and Veo have no tools and no streaming surface of their own;
         // the chat route is the only one this question can be about.
@@ -421,11 +488,12 @@ class LLMDispatcher {
             : _geminiChat.streamingDeclaresTools;
       case ProtocolFamily.openai:
       case ProtocolFamily.dashscope:
-        // The ④ face on a multi-face vendor streams with tools exactly like
-        // a native ④ channel; neither the ① surface nor DashScope's own does
-        // (yet) — both still need a tool-call accumulator. Asked of the
-        // resolved face rather than of the family, so teaching one of them
-        // to stream tool calls needs no change here.
+        // Asked of the resolved face rather than of the family, so a face
+        // gaining or losing the ability needs no change here. All four chat
+        // wires answer true today — each has its own tool-call accumulator
+        // — while an image model routed off chat entirely has no tools to
+        // declare.
+        if (_hasNativeImageRoute(target)) return false;
         return _chatProtocolFor(_chatFace(target)).streamingDeclaresTools;
       case ProtocolFamily.midjourney:
         return false;
@@ -446,6 +514,17 @@ class LLMDispatcher {
         return;
 
       case ProtocolFamily.anthropic:
+        // A ④ vendor's native image surface has no streaming form — run the
+        // single-shot call and emit its result as chunks.
+        if (_streamIsSingleShot(target)) {
+          logger?.call(
+              'Image model does not support streaming; using the vendor image surface.',
+              level: 'DEBUG');
+          final response =
+              await generate(config, history, options: options, logger: logger);
+          yield* _asChunks(response);
+          return;
+        }
         yield* _anthropicChat.generateStream(target, history,
             options: options, tools: tools, logger: logger);
         return;
@@ -512,18 +591,17 @@ class LLMDispatcher {
   bool _streamIsSingleShot(LLMTarget target) {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
-      case ProtocolFamily.anthropic:
         return false;
+      case ProtocolFamily.anthropic:
+        return _hasNativeImageRoute(target);
       case ProtocolFamily.gemini:
         return target.model.family == ModelFamily.geminiImagen;
       case ProtocolFamily.openai:
         return target.model.family == ModelFamily.openaiImage ||
             target.model.family == ModelFamily.xaiImage ||
-            (target.model.family == ModelFamily.dashscopeImage &&
-                target.vendor.imageMenu.isNotEmpty);
+            _hasNativeImageRoute(target);
       case ProtocolFamily.dashscope:
-        return target.model.family == ModelFamily.dashscopeImage &&
-            target.vendor.imageMenu.isNotEmpty;
+        return _hasNativeImageRoute(target);
     }
   }
 
@@ -557,9 +635,19 @@ class LLMDispatcher {
         );
 
       case ProtocolFamily.anthropic:
+        // Same reasoning as the image branch in generate(): the *protocol*
+        // has no video surface, but the vendor serving it may. MiniMax's
+        // `/v2/video_generation` is on the same host and key as its
+        // `/anthropic/v1` chat.
+        if (target.model.family == ModelFamily.openaiVideo &&
+            target.vendor.videoProtocol == WireProtocol.minimaxVideo) {
+          return _minimaxVideo.submit(target, history,
+              options: options, logger: logger);
+        }
         throw UnsupportedError(
           'The Anthropic Messages API has no image or video generation '
-          'surface; "${config.modelId}" cannot run a long-running operation.',
+          'surface, and this channel declares no vendor-native one; '
+          '"${config.modelId}" cannot run a long-running operation.',
         );
 
       case ProtocolFamily.gemini:
@@ -589,6 +677,7 @@ class LLMDispatcher {
           final protocol = switch (target.vendor.videoProtocol) {
             WireProtocol.xaiVideos => _xaiVideos,
             WireProtocol.dashscopeVideo => _dashscopeVideo,
+            WireProtocol.minimaxVideo => _minimaxVideo,
             _ => _openaiVideos,
           };
           return protocol.submit(target, history, options: options, logger: logger);
@@ -650,9 +739,15 @@ class LLMDispatcher {
         };
 
       case ProtocolFamily.anthropic:
+        // Symmetric with the submit above: an operation on this channel can
+        // only have come from the vendor-native surface it declares.
+        if (target.vendor.videoProtocol == WireProtocol.minimaxVideo) {
+          return _minimaxVideo.poll(target, operationName, logger: logger);
+        }
         throw UnsupportedError(
-          'Operation "$operationName" cannot belong to an Anthropic channel — '
-          'the family has no long-running surface to have started it.',
+          'Operation "$operationName" cannot belong to this Anthropic channel '
+          '— neither the family nor this vendor has a long-running surface to '
+          'have started it.',
         );
 
       case ProtocolFamily.gemini:
@@ -710,6 +805,8 @@ class LLMDispatcher {
             return _xaiVideos.poll(target, operationName, logger: logger);
           case WireProtocol.dashscopeVideo:
             return _dashscopeVideo.poll(target, operationName, logger: logger);
+          case WireProtocol.minimaxVideo:
+            return _minimaxVideo.poll(target, operationName, logger: logger);
           default:
             break;
         }
@@ -722,6 +819,43 @@ class LLMDispatcher {
 
         throw UnsupportedError('Operation "$operationName" is not recognized by the OpenAI protocol family.');
     }
+  }
+
+  /// Best-effort: ask upstream to stop an operation the user abandoned.
+  ///
+  /// Returns what upstream reports it did, or null when there was nothing to
+  /// ask — which is the common case. Most video surfaces this app talks to
+  /// have no cancel at all: a job, once submitted, runs and bills whether or
+  /// not anyone is still waiting for it. Where a surface does have one, the
+  /// protocol implements [CancellableJobProtocol] and owns the judgement of
+  /// when calling it is safe (MiniMax's endpoint, for instance, *deletes* a
+  /// finished task rather than cancelling it).
+  ///
+  /// Never throws for a refusal, and callers must not treat a null as a
+  /// failure: the local task is going away either way, and this only decides
+  /// whether the upstream one goes with it.
+  Future<String?> cancelOperation(
+    LLMModelConfig config,
+    String operationName, {
+    LLMLogger? logger,
+  }) async {
+    final target = resolveTarget(config);
+    final protocol = _cancellableJobProtocol(target);
+    if (protocol == null) return null;
+    return protocol.cancel(target, operationName, logger: logger);
+  }
+
+  /// The job protocol serving this target, if it can be cancelled upstream.
+  ///
+  /// Resolved through the same `videoProtocol` declaration [startLongRunning]
+  /// and [checkOperation] route on, so a cancel can never reach a surface the
+  /// task did not come from.
+  CancellableJobProtocol? _cancellableJobProtocol(LLMTarget target) {
+    final protocol = switch (target.vendor.videoProtocol) {
+      WireProtocol.minimaxVideo => _minimaxVideo,
+      _ => null,
+    };
+    return protocol is CancellableJobProtocol ? protocol : null;
   }
 
   // ---------------------------------------------------------------------------

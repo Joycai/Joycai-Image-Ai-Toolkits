@@ -238,12 +238,27 @@ void main() {
           containsAll([WireProtocol.openaiChat, WireProtocol.anthropicChat]));
     });
 
+    test('both MiniMax faces declare the same two native surfaces', () {
+      // The chat wire is a property of the channel — the ① face and the ④
+      // face are two endpoints the user picks between. Which image and video
+      // endpoints MiniMax *has* is not a choice, so both ids declare both,
+      // and each protocol derives the base it needs from whichever face the
+      // channel stored.
+      for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
+        final v = Vendors.byId(id);
+        expect(v.imageMenu, [WireProtocol.minimaxImages], reason: id);
+        expect(v.videoProtocol, WireProtocol.minimaxVideo, reason: id);
+      }
+      expect(Vendors.byId(Vendors.minimax).family, ProtocolFamily.openai);
+      expect(Vendors.byId(Vendors.minimaxAnthropic).family,
+          ProtocolFamily.anthropic);
+    });
+
     test('everyone else keeps empty menus (family defaults)', () {
       for (final id in [
         Vendors.openAIRest,
         Vendors.newApiOpenAI,
         Vendors.deepseek,
-        Vendors.minimax,
         Vendors.anthropicRest,
         Vendors.ollama,
       ]) {
@@ -345,6 +360,112 @@ void main() {
         dashscopeCompatibleBase('https://dashscope-intl.aliyuncs.com/api/v1'),
         'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
       );
+    });
+  });
+
+  group('MiniMax surfaces', () {
+    LLMModelConfig mm(String modelId, String channelType,
+            {String endpoint = 'https://api.minimaxi.com/anthropic/v1'}) =>
+        LLMModelConfig(
+          modelId: modelId,
+          channelType: channelType,
+          endpoint: endpoint,
+          apiKey: 'k',
+        );
+
+    test('image-01 is its own family; MiniMax-M3 stays chat', () {
+      expect(ModelFamilyClassifier.classify('image-01'),
+          ModelFamily.minimaxImage);
+      expect(ModelFamilyClassifier.classify('image-01-live'),
+          ModelFamily.minimaxImage);
+      // One letter apart, two surfaces. H3 is the video model; M3 is chat and
+      // must not be dragged onto the video route by a loose prefix rule.
+      expect(ModelFamilyClassifier.classify('MiniMax-H3'),
+          ModelFamily.openaiVideo);
+      expect(ModelFamilyClassifier.classify('MiniMax-M3'), ModelFamily.other);
+      expect(ModelFamilyClassifier.classify('MiniMax-M2.7-highspeed'),
+          ModelFamily.other);
+    });
+
+    test('the image surface is reachable from the anthropic-led face', () {
+      // The regression this guards: ④'s own answer is "there is no image
+      // surface", and the dispatcher used to throw/route to chat on the
+      // family alone. A ④ *vendor* can still declare one.
+      expect(LLMDispatcher.surfaceForModel('image-01'), Surface.imageGen);
+      expect(
+        LLMDispatcher.protocolMenuFor(Vendors.minimaxAnthropic, 'image-01'),
+        [WireProtocol.minimaxImages],
+      );
+      expect(
+        LLMDispatcher.protocolMenuFor(Vendors.minimax, 'image-01'),
+        [WireProtocol.minimaxImages],
+      );
+      // Single entry means no selector renders, but the route still exists.
+      expect(LLMDispatcher.autoProtocolFor(Vendors.minimax, 'image-01'),
+          WireProtocol.minimaxImages);
+    });
+
+    test('a relay listing image-01 keeps routing it through chat', () {
+      // Same rule DashScope's images follow: the native surface is the
+      // vendor's declaration, not the model id. A relay serves image-01
+      // through its own compatibility layer and would 404 on
+      // /v1/image_generation.
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI]) {
+        expect(LLMDispatcher.protocolMenuFor(id, 'image-01'), isEmpty,
+            reason: id);
+      }
+    });
+
+    test("one vendor's image menu never claims another's model", () {
+      // image-01 and qwen-image both classify into a native image family, and
+      // both vendors declare a non-empty imageMenu. Before the menus were
+      // intersected per family, `imageMenu.isNotEmpty` was the whole test —
+      // so a qwen-image typed into a MiniMax channel resolved to MiniMax's
+      // endpoint, and vice versa.
+      expect(LLMDispatcher.protocolMenuFor(Vendors.minimax, 'qwen-image'),
+          isEmpty);
+      expect(LLMDispatcher.protocolMenuFor(Vendors.dashscope, 'image-01'),
+          isEmpty);
+    });
+
+    test('an image model declares no streaming tools on either face', () {
+      final dispatcher = LLMDispatcher();
+      for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
+        expect(dispatcher.streamSupportsTools(mm('image-01', id)), isFalse,
+            reason: id);
+        expect(dispatcher.streamIsSingleShot(mm('image-01', id)), isTrue,
+            reason: id);
+      }
+      // Chat on the same channels is untouched.
+      expect(dispatcher.streamSupportsTools(mm('MiniMax-M3', Vendors.minimax)),
+          isTrue);
+      expect(
+          dispatcher
+              .streamSupportsTools(mm('MiniMax-M3', Vendors.minimaxAnthropic)),
+          isTrue);
+      expect(
+          dispatcher.streamIsSingleShot(mm('MiniMax-M3', Vendors.minimax)),
+          isFalse);
+    });
+
+    test('the sync image surface gets a generation-sized deadline', () {
+      // longRunning: one request runs the whole generation upstream, and it
+      // is billed before a chat-sized guard would give up on it.
+      final dispatcher = LLMDispatcher();
+      expect(
+        dispatcher.generateTimeout(mm('image-01', Vendors.minimaxAnthropic)),
+        greaterThan(
+            dispatcher.generateTimeout(mm('MiniMax-M3', Vendors.minimax))),
+      );
+    });
+
+    test('the video route survives on the anthropic-led face', () {
+      expect(LLMDispatcher.surfaceForModel('MiniMax-H3'), Surface.videoJob);
+      for (final id in [Vendors.minimax, Vendors.minimaxAnthropic]) {
+        expect(LLMDispatcher.protocolMenuFor(id, 'MiniMax-H3'),
+            [WireProtocol.minimaxVideo],
+            reason: id);
+      }
     });
   });
 

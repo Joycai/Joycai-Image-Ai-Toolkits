@@ -52,6 +52,14 @@ enum ModelFamily {
   /// falls back to the OpenAI-style Images API.
   xaiImage,
 
+  /// MiniMax's native image surface — `image-01` and `image-01-live`. Served
+  /// only at `POST /v1/image_generation`, which despite the `/v1` prefix is
+  /// not the OpenAI Images API: its own body, its own `data.image_urls`
+  /// result and the `base_resp` envelope. Same arrangement as
+  /// [dashscopeImage] — on a channel that is not MiniMax (a relay), the
+  /// dispatcher keeps routing these through chat.
+  minimaxImage,
+
   /// Anything else routed through an OpenAI-compatible relay (Claude, etc.).
   /// Treated as a plain chat model with no provider-specific extensions.
   other,
@@ -88,6 +96,26 @@ class ModelFamilyClassifier {
         id.startsWith('wan2.6-image') ||
         id.startsWith('wan2.7-image')) {
       return ModelFamily.dashscopeImage;
+    }
+
+    // --- MiniMax native image models ---
+    // `image-01` / `image-01-live`. Matched by prefix rather than equality so
+    // the `-live` variant and any future suffix land here; nothing else in
+    // the catalog starts with `image-0`.
+    if (id.startsWith('image-01')) {
+      return ModelFamily.minimaxImage;
+    }
+
+    // --- MiniMax native video (H3, async-task only) ---
+    // Spelled out in full because `MiniMax-M3` (chat) and `MiniMax-H3`
+    // (video) differ by one letter, and a prefix rule loose enough to be
+    // convenient here would route the chat model at the video surface.
+    // Classifies into [ModelFamily.openaiVideo] ("this is an async video-task
+    // model") on the same reasoning as wan3.x below: *which* video protocol
+    // serves it is the vendor's declaration, so on a relay the same id keeps
+    // the `/v1/videos` route.
+    if (id.startsWith('minimax-h3')) {
+      return ModelFamily.openaiVideo;
     }
 
     // --- DashScope native video (wan3.x, async-task only) ---
@@ -206,6 +234,7 @@ class ModelFamilyClassifier {
         f == ModelFamily.openaiImage ||
         f == ModelFamily.xaiImage ||
         f == ModelFamily.dashscopeImage ||
+        f == ModelFamily.minimaxImage ||
         f == ModelFamily.midjourney;
   }
 
@@ -217,14 +246,7 @@ class ModelFamilyClassifier {
   static String inferTag(String modelId) {
     final family = classify(modelId);
     if (isVideo(family)) return 'video';
-    if (family == ModelFamily.geminiImage ||
-        family == ModelFamily.geminiImagen ||
-        family == ModelFamily.openaiImage ||
-        family == ModelFamily.xaiImage ||
-        family == ModelFamily.dashscopeImage ||
-        family == ModelFamily.midjourney) {
-      return 'image';
-    }
+    if (isImageGeneration(family)) return 'image';
     if (family == ModelFamily.geminiChat) return 'multimodal';
 
     // Heuristics that don't map to a provider family but still inform tagging.

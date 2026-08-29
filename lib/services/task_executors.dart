@@ -431,7 +431,20 @@ extension TaskExecutors on TaskQueueService {
     String? videoUri;
     final pollStartTime = DateTime.now();
     while (true) {
-      if (task.status == TaskStatus.cancelled) break;
+      if (task.status == TaskStatus.cancelled) {
+        // The local task is over either way; this only decides whether the
+        // upstream one goes with it. Most surfaces have no cancel and answer
+        // null without a request — see LLMDispatcher.cancelOperation.
+        final action = await LLMService().cancelOperation(
+          modelIdentifier: task.modelDbId ?? task.modelId,
+          operationName: operationName,
+          contextId: task.id,
+        );
+        task.addLog(action == null
+            ? 'Cancelled locally; the upstream job was left running.'
+            : 'Cancelled locally; upstream reports "$action".');
+        break;
+      }
 
       if (DateTime.now().difference(pollStartTime) > const Duration(minutes: 30)) {
         throw Exception('Video generation task timed out after 30 minutes.');

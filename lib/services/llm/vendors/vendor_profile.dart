@@ -57,10 +57,12 @@ enum WireProtocol {
   geminiImagen('gemini-imagen', Surface.imageGen),
   dashscopeImagesSync('dashscope-images-sync', Surface.imageGen),
   dashscopeImagesAsync('dashscope-images-async', Surface.imageGen),
+  minimaxImages('minimax-images', Surface.imageGen),
   openaiVideos('openai-videos', Surface.videoJob),
   xaiVideos('xai-videos', Surface.videoJob),
   geminiVeo('gemini-veo', Surface.videoJob),
-  dashscopeVideo('dashscope-video', Surface.videoJob);
+  dashscopeVideo('dashscope-video', Surface.videoJob),
+  minimaxVideo('minimax-video', Surface.videoJob);
 
   final String id;
   final Surface surface;

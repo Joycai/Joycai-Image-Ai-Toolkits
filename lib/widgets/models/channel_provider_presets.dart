@@ -240,6 +240,11 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
   // endpoint at `/anthropic/v1`, beside its OpenAI-format `/v1`. A channel
   // pointed at the wrong one fails with a 404 that says nothing about which
   // half of the URL is wrong, which is why the switch rewrites the path.
+  //
+  // The switch decides the *chat* wire only. Image generation (`/v1`) and
+  // video (`/v2`) are the same surfaces either way, derived from whichever
+  // face the channel stored — so neither variant is the one that "has
+  // images", and picking the wrong one costs nothing but a chat dialect.
   ChannelProviderPreset(
     id: 'minimax',
     channelType: Vendors.minimax,
@@ -260,6 +265,14 @@ const kChannelProviderPresets = <ChannelProviderPreset>[
         channelType: Vendors.minimaxAnthropic,
         defaultEndpoint: 'https://api.minimaxi.com/anthropic/v1',
       ),
+    ],
+    searchAliases: [
+      'minimaxi',
+      '海螺',
+      'hailuo',
+      'MiniMax-M3',
+      'MiniMax-H3',
+      'image-01',
     ],
     icon: Icons.grain_outlined,
   ),

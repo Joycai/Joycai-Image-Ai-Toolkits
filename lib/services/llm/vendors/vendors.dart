@@ -46,10 +46,16 @@ class Vendors {
   /// (`thinking: {type}`) will hang off this profile.
   static const String deepseek = 'deepseek-api';
 
-  /// MiniMax's OpenAI-compatible endpoint. Body-compatible with [openAIRest];
-  /// its specifics are response-side (inline `<think>` chains and the
+  /// MiniMax reached through its **OpenAI-compatible** chat face
+  /// (`/v1/chat/completions`). Chat is body-compatible with [openAIRest]; its
+  /// specifics are response-side (inline `<think>` chains and the
   /// `base_resp.status_code` error envelope, both handled vendor-agnostically
   /// by the chat protocol).
+  ///
+  /// Chat is not all it serves, though — image generation
+  /// (`/v1/image_generation`) and video (`/v2/video_generation`) are MiniMax's
+  /// own surfaces, declared as menus below and derived from this one channel's
+  /// endpoint. One channel, one key, every face (docs/api/minimax.md).
   static const String minimax = 'minimax-api';
 
   /// Anthropic Messages REST — Anthropic's own host, or any other supplier of
@@ -64,14 +70,21 @@ class Vendors {
   /// as [newApiOpenAI] does for ①.
   static const String newApiAnthropic = 'newapi-anthropic';
 
-  /// MiniMax's Anthropic-format endpoint (`/anthropic/v1`), the sibling of its
-  /// OpenAI-format one at [minimax] — the same vendor serving two protocol
-  /// families, which is why the family is a property of the channel and not of
-  /// the company. Its documented divergences from Anthropic all land inside
-  /// what this app already sends (`tool_choice: auto` only, `max_tokens`
-  /// optional rather than required, `anthropic-version` not demanded), so it
-  /// needs no behavior of its own — only its own id, so that the day one of
-  /// them does diverge there is somewhere to put it.
+  /// MiniMax reached through its **Anthropic-format** chat face
+  /// (`/anthropic/v1/messages`), the sibling of its OpenAI-format one at
+  /// [minimax] — the same vendor serving two protocol families, which is why
+  /// the family is a property of the channel and not of the company. Its
+  /// documented divergences from Anthropic all land inside what this app
+  /// already sends (`tool_choice: auto` only, `max_tokens` optional rather
+  /// than required, `anthropic-version` not demanded), so its chat needs no
+  /// behavior of its own — only its own id, so that the day one of them does
+  /// diverge there is somewhere to put it.
+  ///
+  /// The image and video surfaces below are the *same* ones [minimax]
+  /// declares: they live on `/v1` and `/v2` of this host regardless of which
+  /// chat face the channel leads with, and the endpoint each needs is derived
+  /// from the stored one. Which chat wire a channel speaks is a choice; which
+  /// image endpoint MiniMax has is not.
   static const String minimaxAnthropic = 'minimax-anthropic';
 
   /// Alibaba DashScope (Bailian). Its chat default is the OpenAI-compatible
@@ -155,6 +168,12 @@ class Vendors {
       id: minimax,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // Chat rides the ① family default; the other two surfaces are MiniMax's
+      // own and have no OpenAI-compatible equivalent to fall back to —
+      // `/v1/image_generation` is not the Images API, and `/v2` video is a
+      // task flow with its own status vocabulary.
+      imageMenu: [WireProtocol.minimaxImages],
+      videoProtocol: WireProtocol.minimaxVideo,
     ),
     VendorProfile(
       id: anthropicRest,
@@ -179,11 +198,22 @@ class Vendors {
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
       thinking: ThinkingDialect.adaptive,
-      // Left off deliberately: MiniMax's ④ layer is the one that has already
-      // been found missing pieces this app sends (no forcing tool_choice),
-      // and an unsupported cache_control fails the whole request rather than
-      // just the caching. Flip it once someone has run it against the live
-      // endpoint.
+      // The same two native surfaces its ① sibling declares. A ④ vendor with
+      // an image menu is a first — the family's own answer is "there is no
+      // image surface" — which is why the dispatcher's anthropic branches
+      // check the declaration rather than assuming the family.
+      imageMenu: [WireProtocol.minimaxImages],
+      videoProtocol: WireProtocol.minimaxVideo,
+      // No `protocolBases` entry: both are vendor-specific protocols, so each
+      // owns its path shape and derives its own base from the stored endpoint
+      // (`/v1` for images, `/v2` for video) — which is what lets this channel
+      // and its ① sibling reach them from either stored face.
+      //
+      // promptCaching left off deliberately: MiniMax's ④ layer is the one
+      // that has already been found missing pieces this app sends (no forcing
+      // tool_choice), and an unsupported cache_control fails the whole
+      // request rather than just the caching. Flip it once someone has run it
+      // against the live endpoint.
     ),
     VendorProfile(
       id: dashscope,

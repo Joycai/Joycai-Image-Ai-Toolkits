@@ -519,4 +519,35 @@ class LLMService {
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
   }
+
+  /// Best-effort: ask upstream to stop an operation the user cancelled here.
+  ///
+  /// Swallows everything. This runs on a task that is already being abandoned
+  /// — the user pressed cancel and the local work is over — so a failure to
+  /// reach upstream must not surface as a task error on top of that. Returns
+  /// what upstream reports it did, or null when it had no cancel to offer,
+  /// declined, or could not be reached.
+  Future<String?> cancelOperation({
+    required dynamic modelIdentifier,
+    required String operationName,
+    String? contextId,
+  }) async {
+    try {
+      final config = await _configResolver.resolveConfig(
+        modelIdentifier,
+        logger: (msg, {level = 'INFO'}) =>
+            onLogAdded?.call(msg, level: level, contextId: contextId),
+      );
+      return await _dispatcher.cancelOperation(
+        config,
+        operationName,
+        logger: (msg, {level = 'INFO'}) =>
+            onLogAdded?.call(msg, level: level, contextId: contextId),
+      );
+    } catch (e) {
+      onLogAdded?.call('Upstream cancel failed for $operationName: $e',
+          level: 'WARN', contextId: contextId);
+      return null;
+    }
+  }
 }

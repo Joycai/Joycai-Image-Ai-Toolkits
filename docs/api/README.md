@@ -65,7 +65,7 @@ Chat Completions 和 Responses 同属 OpenAI 却分成两族，是因为它们�
 | [`usage.md`](usage.md) | token 计数的两个口径陷阱、输出上限、上下文窗口为何只能靠探测 | ✅ |
 | [`structured.md`](structured.md) | JSON mode / schema / 强制 tool_choice 的四族做法，含 `json_object` 的隐藏前置条件 | ✅ |
 | [`qianwen-bailian.md`](qianwen-bailian.md) | 千问（阿里云百炼 / DashScope）一家六条 wire：3 种 chat + 图片同步/异步 + 视频异步，模型 × 协议矩阵 | ✅ |
-| [`minimax.md`](minimax.md) | MiniMax 一家三条 wire：①/④ 兼容双面 + 私有 v2 视频任务面（直链结果、取消/删除、7 天保留），错误信封三套并存 | ✅ |
+| [`minimax.md`](minimax.md) | MiniMax 一家四条 wire：①/④ 兼容双面 + 私有同步图像面（主体参考，非编辑）+ 私有 v2 视频任务面（直链结果、取消/删除、7 天保留），错误信封三套并存，四面无公共路径前缀 | ✅ |
 
 ## 接一个新协议族时，先看这三条
 

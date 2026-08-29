@@ -130,6 +130,28 @@ abstract class VideoJobProtocol {
   });
 }
 
+/// An async job surface that can also be *stopped* upstream.
+///
+/// Optional, and deliberately not folded into [VideoJobProtocol]: most
+/// upstreams have no cancel at all, and the ones that do disagree about what
+/// it means. Implementing this is a claim that abandoning the local task can
+/// be made to mean something upstream — the dispatcher asks whether the
+/// resolved protocol implements it and skips the call otherwise, so a family
+/// without one keeps today's behaviour (give up locally, let the job run).
+///
+/// Best-effort by contract: a cancel that upstream refuses is a fact to log,
+/// not a task failure. The local task is already going away either way.
+abstract class CancellableJobProtocol {
+  /// Returns what upstream reports it did, or null when it declined (or when
+  /// the task was past the point where cancelling is safe). Implementations
+  /// must not throw for an ordinary refusal.
+  Future<String?> cancel(
+    LLMTarget target,
+    String operationName, {
+    LLMLogger? logger,
+  });
+}
+
 /// A model surfaced by a [DiscoveryProtocol] listing.
 class DiscoveredModel {
   final String modelId;
