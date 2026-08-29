@@ -295,6 +295,11 @@ Map<String, dynamic> buildMiniMaxVideoPayload({
           // spelling is accepted by the parser and then carries no image —
           // the request succeeds and generates as though nothing was
           // attached, which is billed and leaves nothing in the log.
+          //
+          // Verified live 2026-08-29 with a first-frame + last-frame request
+          // that honored both frames. Worth restating because of that silent
+          // failure mode: a green run of this line is not an HTTP 200, it is
+          // output that obeyed the images.
           item.role.type: {'url': item.url},
           // `role`, by contrast, really is a sibling of `type`.
           'role': item.role.role,
