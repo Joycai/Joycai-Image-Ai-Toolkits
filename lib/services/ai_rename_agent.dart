@@ -170,17 +170,26 @@ class AiRenameAgent {
     for (int turn = 0; turn < _maxTurns; turn++) {
       if (isCancelled?.call() ?? false) return;
 
-      final response = await LLMService().request(
-        modelIdentifier: modelIdentifier,
-        messages: messages,
-        tools: _tools,
-        contextId: contextId,
-        // A rename batch is many small calls rather than one long answer, so
-        // this is not the deadline fix it is for the Prompt Assistant — but
-        // the same routing decision applies, and a chunked request is the
-        // one that survives a slow relay.
-        useStream: true,
-      );
+      final LLMResponse response;
+      try {
+        response = await LLMService().request(
+          modelIdentifier: modelIdentifier,
+          messages: messages,
+          tools: _tools,
+          contextId: contextId,
+          // A rename batch is many small calls rather than one long answer,
+          // so this is not the deadline fix it is for the Prompt Assistant —
+          // but the same routing decision applies, and a chunked request is
+          // the one that survives a slow relay.
+          useStream: true,
+          // Same reason as the Prompt Assistant: the check above only fires
+          // between turns, so without this a closed dialog left the current
+          // request (and its retries) running to completion.
+          isCancelled: isCancelled,
+        );
+      } on LLMCancelled {
+        return;
+      }
 
       if (response.toolCalls.isEmpty) {
         // Model is done (or answered in plain text).

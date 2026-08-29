@@ -100,6 +100,24 @@ class LLMApiException implements Exception {
 ///    billed in full — while its replacement competes with it. The Prompt
 ///    Assistant used to spend three Opus generations and six minutes this
 ///    way and deliver nothing (docs/plans/2026-08-assistant-timeout.md).
+/// The caller withdrew while the request was in flight.
+///
+/// Its own type so it can be told apart from a failure everywhere the two
+/// would otherwise look alike: [LLMService.isRetryable] must answer false (a
+/// cancelled request retried is the bug this exists to prevent), and a caller
+/// showing an error card must not show one for it — nobody needs to be told
+/// that the button they just pressed worked.
+///
+/// Thrown rather than returned as an empty response because "cancelled" and
+/// "the model answered with nothing" have to be distinguishable at every
+/// call site, and only one of them may be written into a conversation.
+class LLMCancelled implements Exception {
+  const LLMCancelled();
+
+  @override
+  String toString() => 'Request cancelled by the caller.';
+}
+
 class LLMDeadlineExceeded implements Exception {
   final Duration deadline;
 
