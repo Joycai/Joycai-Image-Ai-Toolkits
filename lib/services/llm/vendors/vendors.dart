@@ -1,5 +1,7 @@
 import '../protocols/dashscope_payload.dart'
     show dashscopeAnthropicBase, dashscopeCompatibleBase;
+import '../protocols/minimax_payload.dart'
+    show minimaxAnthropicBase, minimaxOpenAIBase;
 import 'vendor_profile.dart';
 
 export 'vendor_profile.dart';
@@ -174,6 +176,17 @@ class Vendors {
       // task flow with its own status vocabulary.
       imageMenu: [WireProtocol.minimaxImages],
       videoProtocol: WireProtocol.minimaxVideo,
+      // The chat face derives too, not just the native ones. MiniMax's four
+      // wires share no common prefix (docs/api/minimax.md §0), so a user who
+      // read the video doc and stored `…/v2` gets a channel whose images and
+      // video work — those derive — while chat and model discovery 404 on
+      // `/v2/chat/completions` and `/v2/models`. One channel reaching every
+      // face is the whole design; the generic protocols were the half of it
+      // still keyed off the raw string.
+      protocolBases: {
+        WireProtocol.openaiChat: minimaxOpenAIBase,
+      },
+      unlistedModels: _minimaxNativeModels,
     ),
     VendorProfile(
       id: anthropicRest,
@@ -204,10 +217,16 @@ class Vendors {
       // check the declaration rather than assuming the family.
       imageMenu: [WireProtocol.minimaxImages],
       videoProtocol: WireProtocol.minimaxVideo,
-      // No `protocolBases` entry: both are vendor-specific protocols, so each
-      // owns its path shape and derives its own base from the stored endpoint
+      // The two native protocols are not listed in `protocolBases`: each owns
+      // its path shape and derives its own base from the stored endpoint
       // (`/v1` for images, `/v2` for video) — which is what lets this channel
-      // and its ① sibling reach them from either stored face.
+      // and its ① sibling reach them from either stored face. The entry below
+      // is for the *chat* face, the one generic protocol here, so that it
+      // derives from the stored endpoint the same way.
+      protocolBases: {
+        WireProtocol.anthropicChat: minimaxAnthropicBase,
+      },
+      unlistedModels: _minimaxNativeModels,
       //
       // promptCaching left off deliberately: MiniMax's ④ layer is the one
       // that has already been found missing pieces this app sends (no forcing
@@ -290,6 +309,20 @@ class Vendors {
       auth: AuthScheme.bearer,
       keyOptional: true,
     ),
+  ];
+
+  /// The models behind MiniMax's two native surfaces, which neither chat
+  /// face's `/models` returns (docs/api/minimax.md §5).
+  ///
+  /// Shared by both MiniMax profiles on purpose: which chat face a channel
+  /// stores decides nothing about what the image and video endpoints serve.
+  static const List<UnlistedModel> _minimaxNativeModels = [
+    UnlistedModel('MiniMax-H3',
+        description: 'Video generation (MiniMax /v2 task surface)'),
+    UnlistedModel('image-01',
+        description: 'Image generation (MiniMax /v1 surface)'),
+    UnlistedModel('image-01-live',
+        description: 'Image generation (MiniMax /v1 surface)'),
   ];
 
   static final Map<String, VendorProfile> _byId = {

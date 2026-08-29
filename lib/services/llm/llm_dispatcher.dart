@@ -383,7 +383,13 @@ class LLMDispatcher {
           return _nativeImageProtocol(target)
               .generateImage(target, history, options: options, logger: logger);
         }
-        return _anthropicChat.generate(target, history, options: options, tools: tools, logger: logger);
+        // Through [_chatGenerate] rather than straight at the protocol, so a
+        // ④ vendor whose chat face sits at a derived path gets its endpoint
+        // rewritten like every other family's. Identical routing for every ④
+        // vendor that declares no `protocolBases` — the menu of a ④ vendor
+        // has one entry, so the resolved face is always [_anthropicChat].
+        return _chatGenerate(target, history,
+            options: options, tools: tools, logger: logger);
 
       case ProtocolFamily.gemini:
         // Imagen uses the dedicated `:predict` surface, not `:generateContent`.
@@ -525,7 +531,9 @@ class LLMDispatcher {
           yield* _asChunks(response);
           return;
         }
-        yield* _anthropicChat.generateStream(target, history,
+        final anthropicFace = _chatFace(target);
+        yield* _chatProtocolFor(anthropicFace).generateStream(
+            _faceTarget(target, anthropicFace), history,
             options: options, tools: tools, logger: logger);
         return;
 
@@ -902,25 +910,68 @@ class LLMDispatcher {
   // Model discovery
   // ---------------------------------------------------------------------------
 
-  Future<List<DiscoveredModel>> discoverModels(LLMModelConfig config) {
+  Future<List<DiscoveredModel>> discoverModels(LLMModelConfig config) async {
     final target = resolveTarget(config);
+    final listed = await _fetchListedModels(target);
+    // Applied on every family rather than in the branches that need it, so
+    // "does this vendor's catalog take effect here?" is never a per-family
+    // question. A vendor that declares none passes through untouched.
+    return mergeUnlistedModels(target.vendor, listed);
+  }
+
+  /// What this target's listing endpoint returns, on the face that serves it.
+  Future<List<DiscoveredModel>> _fetchListedModels(LLMTarget target) {
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         return _midjourneyDiscovery.fetchModels(target);
       case ProtocolFamily.anthropic:
-        return _anthropicDiscovery.fetchModels(target);
+        return _anthropicDiscovery
+            .fetchModels(_faceTarget(target, WireProtocol.anthropicChat));
       case ProtocolFamily.gemini:
         return _geminiDiscovery.fetchModels(target);
       case ProtocolFamily.openai:
-        return _openaiDiscovery.fetchModels(target);
       case ProtocolFamily.dashscope:
-        // DashScope publishes no listing on its native surface; the only
+        // Both rewrite the base, for the same reason from opposite ends.
+        // DashScope publishes no listing on its native surface — the only
         // `GET /models` it serves is on the compatible face of the same host,
-        // under the same key. Rewriting the base is what lets a native
-        // channel still populate its model list — the alternative was a
-        // vendor whose "fetch models" button could only ever fail.
+        // under the same key. MiniMax serves one on each chat face but none
+        // on `/v2`, where a user who followed the video doc may have pointed
+        // the channel. Either way the listing lives on the vendor's chat
+        // face, and that is what the derivation resolves to; the alternative
+        // was a "fetch models" button that could only ever fail.
         return _openaiDiscovery
             .fetchModels(_faceTarget(target, WireProtocol.openaiChat));
     }
   }
+
+}
+
+/// [listed] plus [vendor]'s native-surface models
+/// ([VendorProfile.unlistedModels]), minus any the listing already covered.
+///
+/// Appended rather than prepended: the live answer is the authoritative part
+/// of the list, and a hardcoded id that upstream has since renamed should
+/// read as a trailing extra, not as the headline.
+///
+/// Top-level rather than a method so it can be tested directly. The listing
+/// half of discovery needs the network, so the one line in [
+/// LLMDispatcher.discoverModels] that calls this is not itself covered —
+/// deleting the call would leave the suite green. What is covered is every
+/// rule the merge applies.
+List<DiscoveredModel> mergeUnlistedModels(
+    VendorProfile vendor, List<DiscoveredModel> listed) {
+  final extra = vendor.unlistedBeyond(listed.map((m) => m.modelId));
+  if (extra.isEmpty) return listed;
+  return [
+    ...listed,
+    for (final m in extra)
+      DiscoveredModel(
+        modelId: m.id,
+        displayName: m.id,
+        description: m.description,
+        // Marked so a reader of a saved model row can tell a catalog entry
+        // from one the endpoint actually returned.
+        rawData: {'id': m.id, 'source': 'vendor-catalog'},
+      ),
+  ];
 }
