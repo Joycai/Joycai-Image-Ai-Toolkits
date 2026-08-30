@@ -54,7 +54,8 @@ class DashScopeChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final multimodal = dashscopeChatIsMultimodal(target, history);
+    final multimodal = dashscopeChatIsMultimodal(target);
+    _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
     logger?.call('Preparing DashScope native chat request to: ${url.host}',
         level: 'DEBUG');
@@ -159,7 +160,8 @@ class DashScopeChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final multimodal = dashscopeChatIsMultimodal(target, history);
+    final multimodal = dashscopeChatIsMultimodal(target);
+    _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
     logger?.call('Starting DashScope native chat stream: ${url.host}',
         level: 'DEBUG');
@@ -379,6 +381,25 @@ class DashScopeStreamChannel {
   }
 }
 
+/// Says out loud what the text endpoint will do silently: drop every image.
+///
+/// Reaching here with attachments and a text model is a conversation that
+/// includes a reference image on a model that cannot see one — the request
+/// still answers (the multimodal endpoint would reject the model outright),
+/// but the user should learn why the model ignores the picture.
+void _warnIfAttachmentsDropped(LLMTarget target, List<LLMMessage> history,
+    bool multimodal, LLMLogger? logger) {
+  if (multimodal) return;
+  final count = dashscopeAttachmentCount(history);
+  if (count == 0) return;
+  logger?.call(
+    '${target.config.modelId} is served by the text endpoint, which cannot '
+    'carry images — $count attachment(s) will not reach the model. Use a '
+    'vision model (qwen-vl / qwen-omni) for image turns.',
+    level: 'WARN',
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Pure request/response helpers — no IO, so the wire rules can be pinned by
 // tests (the repo has no HTTP mock setup; `dashscope_payload.dart` and
@@ -387,14 +408,17 @@ class DashScopeStreamChannel {
 
 /// Which of the two native chat endpoints this request belongs to.
 ///
-/// The model's own declaration (layer 3) decides it — `qwen-vl`, `qwen-omni`
-/// and `qwen-audio` are served only by the multimodal path — and an
-/// attachment forces it regardless: sending one to the text endpoint is not
-/// an error there, the part is simply dropped and the model answers as though
-/// it had never seen the image.
-bool dashscopeChatIsMultimodal(LLMTarget target, List<LLMMessage> history) =>
-    target.model.needsMultimodalChatSurface ||
-    history.any((m) => m.attachments.isNotEmpty);
+/// The model's own declaration (layer 3) decides it, alone — `qwen-vl`,
+/// `qwen-omni` and `qwen-audio` are served only by the multimodal path, and
+/// text models only by the text path. The split is by *model*, not by request
+/// content (docs/api/qianwen-bailian.md §2, pitfall #10): an attachment used
+/// to force the multimodal endpoint regardless, which sent every image-bearing
+/// turn of a text model (`qwen-max`, `qwen3`) to an endpoint that does not
+/// list it — an upstream "model not supported" error on the whole request,
+/// where the text endpoint merely drops the image part. Neither direction is
+/// good; only one of them answers at all, so the callers log the drop instead.
+bool dashscopeChatIsMultimodal(LLMTarget target) =>
+    target.model.needsMultimodalChatSurface;
 
 /// The native chat URL implied by a channel's stored endpoint.
 String dashscopeChatUrl(String endpoint, bool multimodal) =>
@@ -477,7 +501,7 @@ bool? dashscopeThinkingRequest(ReasoningEffort? effort) => switch (effort) {
 ///
 /// The multimodal endpoint rejects a bare string even for a turn that carries
 /// no image at all, and [dashscopeChatIsMultimodal] is a property of the
-/// *history*: one attachment anywhere puts every message of the conversation
+/// *model*: a VL/omni/audio model puts every message of the conversation
 /// on that endpoint. Which is why this is not something only the branches
 /// that build image parts have to think about — a tool result and a
 /// tool-calling assistant turn carry no image and still have to be lists,

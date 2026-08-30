@@ -915,7 +915,20 @@ class LLMDispatcher {
 
   Future<List<DiscoveredModel>> discoverModels(LLMModelConfig config) async {
     final target = resolveTarget(config);
-    final listed = await _fetchListedModels(target);
+    List<DiscoveredModel> listed;
+    try {
+      listed = await _fetchListedModels(target);
+    } catch (_) {
+      // The catalog's whole reason to exist is hosts whose listing endpoint
+      // is missing — a stock SGLang H3-Base serve often has no
+      // `GET /v1/models` at all — so it must survive the listing failing, or
+      // "fetch models" errors out on exactly the deployment the catalog was
+      // declared for and the user hand-types a repo-path id the vendor
+      // already knows. A vendor that declares no catalog keeps the error:
+      // there, the listing is the only possible answer.
+      if (target.vendor.unlistedModels.isEmpty) rethrow;
+      return mergeUnlistedModels(target.vendor, const []);
+    }
     // Applied on every family rather than in the branches that need it, so
     // "does this vendor's catalog take effect here?" is never a per-family
     // question. A vendor that declares none passes through untouched.

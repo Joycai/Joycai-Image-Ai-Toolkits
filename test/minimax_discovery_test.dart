@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_dispatcher.dart';
+import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/model_family.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/minimax_payload.dart';
@@ -88,6 +91,56 @@ void main() {
         }
         expect(v.unlistedModels, isEmpty, reason: v.id);
       }
+    });
+  });
+
+  group('a listing that cannot be fetched', () {
+    test('still surfaces the vendor catalog', () async {
+      // The deployment the H3-Base catalog exists for: a stock SGLang serve
+      // often has no GET /v1/models at all. Propagating the 404 meant "fetch
+      // models" errored on exactly that host and the catalog entry never
+      // reached the picker — the user had to hand-type the repo-path id the
+      // vendor already knows.
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        request.response.statusCode = 404;
+        await request.response.close();
+      });
+
+      final models = await LLMDispatcher().discoverModels(LLMModelConfig(
+        modelId: 'MiniMaxAI/MiniMax-H3',
+        channelType: Vendors.minimaxH3Base,
+        endpoint: 'http://127.0.0.1:${server.port}/v1',
+        apiKey: 'k',
+      ));
+
+      expect(models, isNotEmpty);
+      expect(models.map((m) => m.rawData['source']),
+          everyElement('vendor-catalog'),
+          reason: 'nothing was listed, so every row must be a catalog entry');
+    });
+
+    test('still propagates the error for a vendor with no catalog', () async {
+      // With nothing declared, the listing is the only possible answer, and
+      // swallowing its failure would turn a bad key or a dead host into an
+      // empty-but-successful picker.
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        request.response.statusCode = 404;
+        await request.response.close();
+      });
+
+      expect(
+        () => LLMDispatcher().discoverModels(LLMModelConfig(
+          modelId: 'gpt-4o',
+          channelType: Vendors.openAIRest,
+          endpoint: 'http://127.0.0.1:${server.port}/v1',
+          apiKey: 'k',
+        )),
+        throwsA(isA<LLMApiException>()),
+      );
     });
   });
 

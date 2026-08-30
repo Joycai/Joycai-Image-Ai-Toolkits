@@ -63,25 +63,18 @@ void main() {
     test('VL / omni / audio ids declare themselves multimodal', () {
       for (final id in ['qwen3-vl-plus', 'qwen-vl', 'qwen-omni-turbo',
                         'qwen-audio-turbo']) {
-        expect(dashscopeChatIsMultimodal(target(id), [user('hi')]), isTrue,
-            reason: id);
+        expect(dashscopeChatIsMultimodal(target(id)), isTrue, reason: id);
       }
-      expect(dashscopeChatIsMultimodal(target('qwen-max'), [user('hi')]),
-          isFalse);
+      expect(dashscopeChatIsMultimodal(target('qwen-max')), isFalse);
     });
 
-    test('an attachment forces the multimodal path on any model', () {
-      // The text endpoint accepts the request and drops the image, so the
-      // model answers as though it never saw one — no error to notice.
-      final withImage = LLMMessage(
-        role: LLMRole.user,
-        content: 'what is this',
-        attachments: [
-          LLMAttachment.fromBytes(Uint8List.fromList([1, 2, 3]), 'image/png'),
-        ],
-      );
-      expect(dashscopeChatIsMultimodal(target('qwen-max'), [withImage]),
-          isTrue);
+    test('an attachment does not move a text model off its endpoint', () {
+      // The two endpoints split by *model*, not request content
+      // (docs/api/qianwen-bailian.md pitfall #10): qwen-max is not served by
+      // multimodal-generation at all, so routing an image-bearing turn there
+      // failed the whole request with "model not supported". On the text
+      // endpoint the image part is dropped (and logged) but the turn answers.
+      expect(dashscopeChatIsMultimodal(target('qwen-max')), isFalse);
     });
   });
 
