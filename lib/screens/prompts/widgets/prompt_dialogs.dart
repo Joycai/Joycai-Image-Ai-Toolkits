@@ -21,15 +21,22 @@ import '../../../widgets/markdown_editor.dart';
 /// and database writes.
 
 /// Create / edit a user prompt. Returns `true` if saved.
+///
+/// [initialTitle] / [initialContent] prefill a *new* prompt (ignored when
+/// editing an existing one) — the assistant's "save final prompt to library"
+/// entry point arrives here with the staged prompt already written.
 Future<bool> showPromptEditDialog(
   BuildContext context,
   AppLocalizations l10n, {
   Prompt? prompt,
   required List<Prompt> userPrompts,
   required List<PromptTag> tags,
+  String? initialTitle,
+  String? initialContent,
 }) async {
-  final titleCtrl = TextEditingController(text: prompt?.title ?? '');
-  final contentCtrl = MarkdownTextEditingController(text: prompt?.content ?? '');
+  final titleCtrl = TextEditingController(text: prompt?.title ?? initialTitle ?? '');
+  final contentCtrl =
+      MarkdownTextEditingController(text: prompt?.content ?? initialContent ?? '');
   bool isMarkdown = prompt?.isMarkdown ?? true;
 
   final Set<int> selectedTagIds = {};

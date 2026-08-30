@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/app_image.dart';
+import '../services/assistant_kb_distill.dart';
 import '../services/prompt_optimizer_agent.dart';
 import '../services/repositories/assistant_session_repository.dart';
 
@@ -231,6 +232,69 @@ class WorkbenchUIState extends ChangeNotifier {
     if (next.length == optimizerReferenceImages.length) return;
     optimizerReferenceImages = next;
     notifyListeners();
+  }
+
+  /// Feeds a generated result back to the assistant: the image joins the
+  /// reference list (surfaced to the model as kind "result") and the user's
+  /// critique is appended as a feedback turn bound to [promptVersion]
+  /// (defaulting to the latest staged version — the one the workbench
+  /// generated with, in the closed-loop flow).
+  ///
+  /// Returns false when there is no prompt version to give feedback on or
+  /// the critique is empty. The caller still enqueues the agent turn, exactly
+  /// as after a typed message.
+  bool sendResultFeedback(
+    AppImage image, {
+    required String feedback,
+    int? promptVersion,
+  }) {
+    final session = optimizerSession;
+    final version = promptVersion ?? session.promptVersions;
+    if (version < 1 || feedback.trim().isEmpty) return false;
+    // A feedback click while a question card is pending answers it the same
+    // way free text does (mirrors _handleOptimizerSend).
+    final pendingAsk = session.pendingAskUser;
+    if (pendingAsk != null) {
+      PromptOptimizerAgent.resolvePendingAskUserAsFreeText(
+        session: session,
+        callId: pendingAsk.callId,
+      );
+    }
+    _appendAssistantImages([image]);
+    session.addResultFeedback(
+      imageName: image.name,
+      promptVersion: version,
+      feedback: feedback.trim(),
+    );
+    _assistantTurnRequested = true;
+    notifyListeners();
+    return true;
+  }
+
+  /// Set when something outside the assistant screen (the gallery card's
+  /// feedback dialog) staged a turn that should run now. The workbench screen
+  /// listens and, on true, runs its usual enqueue path — the guards (model
+  /// picked, knowledge base valid) live there, next to their snackbars.
+  ///
+  /// A latch rather than a callback registration: the state must not hold a
+  /// closure over a screen's context, and a consumed latch cannot fire twice.
+  bool _assistantTurnRequested = false;
+
+  /// Returns whether a turn was requested, clearing the latch.
+  bool takeAssistantTurnRequest() {
+    if (!_assistantTurnRequested) return false;
+    _assistantTurnRequested = false;
+    return true;
+  }
+
+  /// Stages a "distill this session into the knowledge base" request on the
+  /// live session. The caller enqueues the agent turn on
+  /// [KbDistillStageResult.staged] and surfaces the other outcomes.
+  Future<KbDistillStageResult> requestKbDistill() async {
+    final result =
+        await AssistantKbDistill.stageKbDistillRequest(session: optimizerSession);
+    if (result == KbDistillStageResult.staged) notifyListeners();
+    return result;
   }
 
   bool _appendAssistantImages(List<AppImage> images) {

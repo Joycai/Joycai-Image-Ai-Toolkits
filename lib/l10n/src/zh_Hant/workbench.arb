@@ -486,6 +486,47 @@
   "optDeleteSessionConfirm": "確定永久刪除該對話？",
   "optKbEntryTooLarge": "知識庫的 README.md 佔用了該模型上下文視窗的很大一部分。它每次請求都會重送，且摘要無法壓縮它——請精簡它，或改用視窗更大的模型。",
   "optCompactedNotice": "較早的對話已壓縮為摘要，以節省上下文。",
+  "optKbDistillRequested": "已請求：將本次調優經驗總結進知識庫。",
+  "optResultFeedbackAction": "回饋給助手",
+  "optResultFeedbackChatLabel": "結果圖回饋",
+  "optResultFeedbackHint": "這張圖哪裡不符合預期？",
+  "optResultFeedbackHelper": "這張結果圖會連同回饋一起進入會話，助手在 v{version} 基礎上繼續調整。",
+  "@optResultFeedbackHelper": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAction": "總結本次經驗",
+  "optDistillDisabledTooltip": "本次會話還沒有 prompt 版本，先讓助手最佳化一次",
+  "optDistillCounts": "{versions} 個版本 · {feedbacks} 條回饋",
+  "@optDistillCounts": {
+    "placeholders": {
+      "versions": {
+        "type": "int"
+      },
+      "feedbacks": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAlreadyPending": "總結請求已在等待執行。",
+  "optResultImages": "結果圖",
+  "optResultNoFeedback": "未回饋",
+  "optDistillDoneTitle": "本次經驗已寫入知識庫",
+  "optSaveFinalPrompt": "將最終 prompt 存入提示詞庫",
+  "optTimelineTitle": "迭代時間線",
+  "optTimelineCount": "{count} 版",
+  "@optTimelineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optFeedbackShort": "回饋",
+  "optPromptVersionLabel": "提示詞",
   "optImageMissing": "該對話的部分參考圖已不存在，可重新加入後繼續使用。",
   "optRetry": "重試",
   "optModeKnowledgeEdit": "知識庫編輯",

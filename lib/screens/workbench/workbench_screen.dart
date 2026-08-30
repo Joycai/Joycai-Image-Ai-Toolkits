@@ -19,6 +19,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/app_image.dart';
 import '../../models/llm_model.dart';
 import '../../models/prompt.dart';
+import '../../services/assistant_kb_distill.dart';
 import '../../services/knowledge_base_service.dart';
 import '../../services/knowledge_base_starter.dart';
 import '../../services/prompt_optimizer_agent.dart';
@@ -32,6 +33,7 @@ import '../../widgets/app_run_console.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/drawing_canvas.dart';
 import '../../widgets/unified_sidebar.dart';
+import '../prompts/widgets/prompt_dialogs.dart';
 import 'gallery.dart';
 import 'widgets/comparator_toolbar.dart';
 import 'widgets/comparator_view.dart';
@@ -129,7 +131,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   void _onWorkbenchUIChanged() {
     if (!mounted) return;
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
-    
+
     // If we have a fresh manual data transfer
     if (workbenchUIState.optimizerRoughPrompt.isNotEmpty) {
       setState(() {
@@ -139,6 +141,91 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
       // Reset the trigger in UI State to prevent overwriting on subsequent refreshes
       workbenchUIState.clearOptimizerTransfer();
     }
+
+    // A turn staged outside this screen (the gallery card's feedback dialog).
+    // The guards live in the runner, next to their snackbars — consuming the
+    // latch here only decides *that* a turn was asked for.
+    if (workbenchUIState.takeAssistantTurnRequest()) {
+      _runRequestedAssistantTurn(workbenchUIState);
+    }
+  }
+
+  /// Runs a turn some other surface already staged into the session — same
+  /// guards as [_handleOptimizerSend], minus the composer text.
+  Future<void> _runRequestedAssistantTurn(WorkbenchUIState workbenchUIState) async {
+    final l10n = AppLocalizations.of(context)!;
+    final session = workbenchUIState.optimizerSession;
+
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
+      return;
+    }
+    if (session.usesKnowledgeBase) {
+      await _refreshKbStatus();
+      if (_kbStatus != KbStatus.ok) {
+        if (mounted) {
+          AppSnackBar.warning(context, AppLocalizations.of(context)!.optKbNotConfigured);
+        }
+        return;
+      }
+    }
+    await _enqueueAssistantTurn(workbenchUIState, session);
+  }
+
+  /// Stages the distill request (`20d`) and runs it as a normal agent turn.
+  Future<void> _handleKbDistill() async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+
+    if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
+      AppSnackBar.warning(context, l10n.noModelsConfigured);
+      return;
+    }
+    await _refreshKbStatus();
+    if (_kbStatus != KbStatus.ok) {
+      if (mounted) {
+        AppSnackBar.warning(context, AppLocalizations.of(context)!.optKbNotConfigured);
+      }
+      return;
+    }
+
+    final result = await workbenchUIState.requestKbDistill();
+    if (!mounted) return;
+    switch (result) {
+      case KbDistillStageResult.staged:
+        await _enqueueAssistantTurn(workbenchUIState, session);
+      case KbDistillStageResult.nothingToDistill:
+        AppSnackBar.warning(context, l10n.optDistillDisabledTooltip);
+      case KbDistillStageResult.alreadyPending:
+        AppSnackBar.warning(context, l10n.optDistillAlreadyPending);
+      case KbDistillStageResult.busy:
+      case KbDistillStageResult.notKnowledgeSession:
+        break; // The chip is hidden/disabled in these states; nothing to say.
+    }
+  }
+
+  /// Opens the prompt-library save dialog prefilled with the final staged
+  /// prompt (`20d`·d). The dialog owns persistence, like every prompt edit.
+  Future<void> _handleSaveFinalPrompt() async {
+    final l10n = AppLocalizations.of(context)!;
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final session = workbenchUIState.optimizerSession;
+    final refined = session.refinedPrompt;
+    final appState = _appState;
+    if (refined == null || appState == null) return;
+
+    final prompts = await appState.getPrompts();
+    final tags = await appState.getPromptTags();
+    if (!mounted) return;
+    await showPromptEditDialog(
+      context,
+      l10n,
+      userPrompts: prompts,
+      tags: tags,
+      initialTitle: session.title,
+      initialContent: refined,
+    );
   }
 
   // Optimizer Helpers
@@ -925,6 +1012,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                                   onApplyKbEdit: (editId) => _handleKbEditApply(session, editId),
                                   onRejectKbEdit: (editId) => _handleKbEditReject(session, editId),
                                   onAnswerAskUser: _handleAskUserAnswer,
+                                  onDistill:
+                                      session.usesKnowledgeBase ? _handleKbDistill : null,
+                                  onSaveFinalPrompt: _handleSaveFinalPrompt,
                                   isBusy: isBusy,
                                   // Only while there is a task to stop. A
                                   // session whose `isRunning` outlived its
@@ -1044,6 +1134,7 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
                   citedKnowledgeFiles: PromptOptimizerAgent.citedKnowledgeFiles(
                     wui.optimizerSession,
                   ),
+                  transcript: wui.optimizerSession.transcript,
                   contextUsage: PromptOptimizerAgent.measureContext(
                     wui.optimizerSession,
                     // Read from the picker rather than from the last turn: pick a

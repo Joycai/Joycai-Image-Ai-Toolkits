@@ -2871,6 +2871,63 @@ class AppLocalizationsZh extends AppLocalizations {
   String get optCompactedNotice => '较早的对话已压缩为摘要，以节省上下文。';
 
   @override
+  String get optKbDistillRequested => '已请求：将本次调优经验总结进知识库。';
+
+  @override
+  String get optResultFeedbackAction => '反馈给助手';
+
+  @override
+  String get optResultFeedbackChatLabel => '结果图反馈';
+
+  @override
+  String get optResultFeedbackHint => '这张图哪里不符合预期？';
+
+  @override
+  String optResultFeedbackHelper(int version) {
+    return '这张结果图会连同反馈一起进入会话，助手在 v$version 基础上继续调整。';
+  }
+
+  @override
+  String get optDistillAction => '总结本次经验';
+
+  @override
+  String get optDistillDisabledTooltip => '本次会话还没有 prompt 版本，先让助手优化一次';
+
+  @override
+  String optDistillCounts(int versions, int feedbacks) {
+    return '$versions 个版本 · $feedbacks 条反馈';
+  }
+
+  @override
+  String get optDistillAlreadyPending => '总结请求已在等待执行。';
+
+  @override
+  String get optResultImages => '结果图';
+
+  @override
+  String get optResultNoFeedback => '未反馈';
+
+  @override
+  String get optDistillDoneTitle => '本次经验已写入知识库';
+
+  @override
+  String get optSaveFinalPrompt => '将最终 prompt 存入提示词库';
+
+  @override
+  String get optTimelineTitle => '迭代时间线';
+
+  @override
+  String optTimelineCount(int count) {
+    return '$count 版';
+  }
+
+  @override
+  String get optFeedbackShort => '反馈';
+
+  @override
+  String get optPromptVersionLabel => '提示词';
+
+  @override
   String get optImageMissing => '该会话的部分参考图已不存在，可重新添加后继续使用。';
 
   @override
@@ -6066,6 +6123,63 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get optCompactedNotice => '較早的對話已壓縮為摘要，以節省上下文。';
+
+  @override
+  String get optKbDistillRequested => '已請求：將本次調優經驗總結進知識庫。';
+
+  @override
+  String get optResultFeedbackAction => '回饋給助手';
+
+  @override
+  String get optResultFeedbackChatLabel => '結果圖回饋';
+
+  @override
+  String get optResultFeedbackHint => '這張圖哪裡不符合預期？';
+
+  @override
+  String optResultFeedbackHelper(int version) {
+    return '這張結果圖會連同回饋一起進入會話，助手在 v$version 基礎上繼續調整。';
+  }
+
+  @override
+  String get optDistillAction => '總結本次經驗';
+
+  @override
+  String get optDistillDisabledTooltip => '本次會話還沒有 prompt 版本，先讓助手最佳化一次';
+
+  @override
+  String optDistillCounts(int versions, int feedbacks) {
+    return '$versions 個版本 · $feedbacks 條回饋';
+  }
+
+  @override
+  String get optDistillAlreadyPending => '總結請求已在等待執行。';
+
+  @override
+  String get optResultImages => '結果圖';
+
+  @override
+  String get optResultNoFeedback => '未回饋';
+
+  @override
+  String get optDistillDoneTitle => '本次經驗已寫入知識庫';
+
+  @override
+  String get optSaveFinalPrompt => '將最終 prompt 存入提示詞庫';
+
+  @override
+  String get optTimelineTitle => '迭代時間線';
+
+  @override
+  String optTimelineCount(int count) {
+    return '$count 版';
+  }
+
+  @override
+  String get optFeedbackShort => '回饋';
+
+  @override
+  String get optPromptVersionLabel => '提示詞';
 
   @override
   String get optImageMissing => '該對話的部分參考圖已不存在，可重新加入後繼續使用。';

@@ -2901,6 +2901,64 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optCompactedNotice => 'コンテキスト節約のため、以前のメッセージは要約に圧縮されました。';
 
   @override
+  String get optKbDistillRequested => 'リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。';
+
+  @override
+  String get optResultFeedbackAction => 'アシスタントに報告';
+
+  @override
+  String get optResultFeedbackChatLabel => '生成結果の報告';
+
+  @override
+  String get optResultFeedbackHint => 'この画像のどこが期待と違いますか？';
+
+  @override
+  String optResultFeedbackHelper(int version) {
+    return 'この結果画像は報告と一緒に会話へ送られ、アシスタントが v$version を基に調整を続けます。';
+  }
+
+  @override
+  String get optDistillAction => '今回の知見をまとめる';
+
+  @override
+  String get optDistillDisabledTooltip =>
+      'このセッションにはまだプロンプト版がありません。先に一度最適化してください';
+
+  @override
+  String optDistillCounts(int versions, int feedbacks) {
+    return '$versions 版 · フィードバック $feedbacks 件';
+  }
+
+  @override
+  String get optDistillAlreadyPending => 'まとめリクエストはすでに実行待ちです。';
+
+  @override
+  String get optResultImages => '結果画像';
+
+  @override
+  String get optResultNoFeedback => '未報告';
+
+  @override
+  String get optDistillDoneTitle => '今回の知見をナレッジベースに書き込みました';
+
+  @override
+  String get optSaveFinalPrompt => '最終プロンプトをライブラリへ保存';
+
+  @override
+  String get optTimelineTitle => 'イテレーション履歴';
+
+  @override
+  String optTimelineCount(int count) {
+    return '$count 版';
+  }
+
+  @override
+  String get optFeedbackShort => 'フィードバック';
+
+  @override
+  String get optPromptVersionLabel => 'プロンプト';
+
+  @override
   String get optImageMissing => 'この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。';
 
   @override

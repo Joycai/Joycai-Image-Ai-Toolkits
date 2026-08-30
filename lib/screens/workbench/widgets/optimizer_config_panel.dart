@@ -64,6 +64,12 @@ class OptimizerConfigPanel extends StatefulWidget {
   /// session and the selected model's configured window, neither of which this
   /// panel should reach for itself.
   final ContextUsageSnapshot contextUsage;
+
+  /// The session transcript, for the iteration timeline (`20e`). Passed in
+  /// whole rather than pre-digested: the timeline is a projection of prompt
+  /// and feedback entries, and the projection is this panel's presentation
+  /// concern, same as [citedKnowledgeFiles] staying raw paths.
+  final List<OptimizerChatEntry> transcript;
   final Function(int?) onModelChanged;
   final Function(String?) onSysPromptChanged;
 
@@ -107,6 +113,7 @@ class OptimizerConfigPanel extends StatefulWidget {
     this.onWritePolicyChanged,
     this.citedKnowledgeFiles = const [],
     this.contextUsage = ContextUsageSnapshot.placeholder,
+    this.transcript = const [],
     required this.onModelChanged,
     required this.onSysPromptChanged,
     required this.onSysPromptTemplateChanged,
@@ -257,6 +264,9 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           // every answer, and reading them as one block invites the two to be
           // confused for each other.
           _buildCitedThisRound(l10n, colorScheme, Theme.of(context).textTheme),
+          // The iteration timeline (`20e`): another read-only report, so it
+          // rides with the other two rather than among the action cards.
+          ..._buildIterationTimeline(l10n, colorScheme, Theme.of(context).textTheme),
           // Above the cited list would put a queue of actions between two
           // read-only reports; below it, it is the last thing in the column
           // and the one the user came to the panel to act on.
@@ -487,6 +497,158 @@ class _OptimizerConfigPanelState extends State<OptimizerConfigPanel> {
           onPressed: widget.kbPath == null ? null : () => FileUtils.openPath(widget.kbPath!),
         ),
       ],
+    );
+  }
+
+  /// The iteration timeline (`20e`): every prompt version with the feedback
+  /// rounds between them, projected from the transcript on each build.
+  ///
+  /// Returned as a spread-able list so a session with no versions yet
+  /// contributes nothing — an empty timeline card would be a heading with no
+  /// story under it. Two deliberate deviations from the design frame: no
+  /// chevrons and no tap-to-jump (the transcript is a lazy list, and a
+  /// control that promises navigation it cannot deliver is worse than none),
+  /// and no "已采用" state on the last node (the app does not track which
+  /// version the user actually generated with).
+  List<Widget> _buildIterationTimeline(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final nodes = <(OptimizerEntryKind, String, int?)>[
+      for (final e in widget.transcript)
+        if (e.kind == OptimizerEntryKind.prompt)
+          (e.kind, e.note ?? l10n.optPromptVersionLabel, e.version)
+        else if (e.kind == OptimizerEntryKind.resultFeedback)
+          (e.kind, e.text, e.version),
+    ];
+    final versionCount =
+        nodes.where((n) => n.$1 == OptimizerEntryKind.prompt).length;
+    if (versionCount == 0) return const [];
+    final lastVersionIndex =
+        nodes.lastIndexWhere((n) => n.$1 == OptimizerEntryKind.prompt);
+
+    return [
+      const SizedBox(height: _cardGap),
+      AppCard(
+        outlined: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppSectionLabel(
+              l10n.optTimelineTitle,
+              padding: EdgeInsets.zero,
+              trailing: Text(
+                l10n.optTimelineCount(versionCount),
+                style: textTheme.labelMedium?.mono.copyWith(color: colorScheme.outline),
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (var i = 0; i < nodes.length; i++)
+              _timelineRow(
+                nodes[i],
+                l10n,
+                colorScheme,
+                textTheme,
+                isLast: i == nodes.length - 1,
+                isCurrent: i == lastVersionIndex,
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  Widget _timelineRow(
+    (OptimizerEntryKind, String, int?) node,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required bool isLast,
+    required bool isCurrent,
+  }) {
+    final isVersion = node.$1 == OptimizerEntryKind.prompt;
+    final dot = Container(
+      width: isVersion ? 9 : 5,
+      height: isVersion ? 9 : 5,
+      margin: EdgeInsets.only(top: isVersion ? 5 : 7),
+      decoration: BoxDecoration(
+        color: isVersion
+            ? (isCurrent ? colorScheme.primary : colorScheme.outlineVariant)
+            : colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
+    );
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 14,
+            child: Column(
+              children: [
+                dot,
+                if (!isLast)
+                  Expanded(
+                    child: Container(width: 1.5, color: colorScheme.outlineVariant),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+              child: isVersion
+                  ? Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? colorScheme.accentTint
+                                : colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            'v${node.$3 ?? '?'}',
+                            style: textTheme.labelSmall?.mono.copyWith(
+                              color: isCurrent
+                                  ? colorScheme.onAccentTint
+                                  : colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: Text(
+                            node.$2,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelMedium?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Tooltip(
+                      message: node.$2,
+                      child: Text(
+                        '${l10n.optFeedbackShort} · ${node.$2}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

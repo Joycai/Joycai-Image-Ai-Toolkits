@@ -10,6 +10,7 @@ import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/text_diff.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/app_image.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
@@ -57,6 +58,15 @@ class PromptOptimizerChatView extends StatefulWidget {
   /// which is also what hides the composer's abort control.
   final VoidCallback? onAbort;
 
+  /// Stages and runs the "distill this session into the knowledge base"
+  /// request (`20d`). Null hides the composer chip entirely — the screen only
+  /// passes it for knowledge sessions.
+  final VoidCallback? onDistill;
+
+  /// Opens the prompt-library save dialog prefilled with the final staged
+  /// prompt, from the distill wrap-up card's footer (`20d`·d).
+  final VoidCallback? onSaveFinalPrompt;
+
   const PromptOptimizerChatView({
     super.key,
     required this.inputCtrl,
@@ -68,6 +78,8 @@ class PromptOptimizerChatView extends StatefulWidget {
     required this.onAnswerAskUser,
     required this.isBusy,
     this.onAbort,
+    this.onDistill,
+    this.onSaveFinalPrompt,
   });
 
   @override
@@ -201,7 +213,7 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                   ? _buildEmptyState(l10n, colorScheme)
                   : _buildTranscript(session, l10n, colorScheme),
             ),
-            _buildInputBar(l10n, colorScheme, composerLines),
+            _buildInputBar(session, l10n, colorScheme, composerLines),
           ],
         );
       },
@@ -284,6 +296,11 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     final bool liveTimeline =
         session.isRunning && rows.isNotEmpty && rows.last.isToolGroup;
     final int extra = widget.isBusy && !liveTimeline ? 1 : 0;
+    // The distill wrap-up (`20d`·d), only once the turn is over and every
+    // staged edit has been decided. Mutually exclusive with `extra` by
+    // construction: one needs the turn running, the other needs it finished.
+    final distillApplied = widget.isBusy ? null : _distillOutcome(session.transcript);
+    final int wrapUp = distillApplied == null ? 0 : 1;
 
     return ListView.builder(
       controller: _scrollCtrl,
@@ -291,11 +308,13 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       // `kMinCenterWidth` (400), where 48px of gutter is an eighth of the
       // conversation's width.
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-      itemCount: rows.length + extra,
+      itemCount: rows.length + extra + wrapUp,
       itemBuilder: (context, index) {
         final Widget child;
         if (index == rows.length) {
-          child = _buildRunningCard(session, l10n, colorScheme);
+          child = extra == 1
+              ? _buildRunningCard(session, l10n, colorScheme)
+              : _buildDistillDoneCard(session, distillApplied!, l10n, colorScheme);
         } else {
           final row = rows[index];
           final isLast = index == rows.length - 1;
@@ -671,6 +690,12 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
           enabled: !widget.isBusy,
           onSubmit: (answers) => widget.onAnswerAskUser(entry.askCallId!, answers),
         );
+
+      case OptimizerEntryKind.resultFeedback:
+        return _buildResultFeedbackCard(entry, l10n, colorScheme);
+
+      case OptimizerEntryKind.kbDistill:
+        return _buildKbDistillRequestCard(l10n, colorScheme);
 
       case OptimizerEntryKind.notice:
         final noticeText = switch (entry.text) {
@@ -1276,6 +1301,425 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
+  /// The "distill this session" chip (`20d`): accent-tinted while it can run,
+  /// neutral with an explanatory tooltip while the session has nothing to
+  /// distill yet. A chip rather than a button — it sits beside the attachment
+  /// capsule and must not outweigh the send control.
+  Widget _buildDistillChip(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required bool enabled,
+  }) {
+    final chip = InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      onTap: enabled ? widget.onDistill : null,
+      child: Container(
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: enabled ? colorScheme.accentTint : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          border: enabled
+              ? Border.all(color: colorScheme.primary.withValues(alpha: AppAlpha.ring))
+              : Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_stories_outlined,
+              size: 13,
+              color: enabled ? colorScheme.onAccentTint : colorScheme.outline,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              l10n.optDistillAction,
+              style: textTheme.labelMedium?.copyWith(
+                color: enabled ? colorScheme.onAccentTint : colorScheme.outline,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    // The tooltip explains the *disabled* state — the enabled chip's label
+    // already says what it does.
+    return enabled ? chip : Tooltip(message: l10n.optDistillDisabledTooltip, child: chip);
+  }
+
+  /// The generation-feedback turn, `20b`: a user-side card that keeps the
+  /// right alignment, accent wash and bottom-right tail of a user bubble, but
+  /// wears a header band (icon + label + version chip) and carries the result
+  /// image's thumbnail — the two things that make it a report on a specific
+  /// version rather than one more instruction.
+  Widget _buildResultFeedbackCard(
+    OptimizerChatEntry entry,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final imageName = entry.note;
+    // Resolved by name against the live reference list: the transcript stores
+    // no paths (they must not ship to providers), and the panel already owns
+    // the name → image binding. A missing image degrades to a plain glyph.
+    final image = imageName == null
+        ? null
+        : context
+            .watch<WorkbenchUIState>()
+            .optimizerReferenceImages
+            .cast<AppImage?>()
+            .firstWhere((i) => i?.name == imageName, orElse: () => null);
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: _userBubbleMaxWidth),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: colorScheme.accentTint,
+          borderRadius: const BorderRadius.only(
+            topLeft: _bubbleRadius,
+            topRight: _bubbleRadius,
+            bottomLeft: _bubbleRadius,
+            bottomRight: _tailRadius,
+          ),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: AppAlpha.ring),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: colorScheme.outlineVariant),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.chat_bubble_outline,
+                      size: 13, color: colorScheme.onAccentTint),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.optResultFeedbackChatLabel,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onAccentTint,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (entry.version != null) ...[
+                    const SizedBox(width: 7),
+                    _versionChip('v${entry.version}', colorScheme, accent: true),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    child: SizedBox(
+                      width: 48,
+                      height: 60,
+                      child: image != null
+                          ? Image(image: image.imageProvider, fit: BoxFit.cover)
+                          : ColoredBox(
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Icon(Icons.image_outlined,
+                                  size: 18, color: colorScheme.outline),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SelectableText(
+                          entry.text,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onAccentTint,
+                            height: AppType.looseHeight,
+                          ),
+                        ),
+                        if (imageName != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            imageName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.mono.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The distill request, drawn as a compact user-side pill: the user pressed
+  /// a button, so the turn reads in their voice, but the boilerplate
+  /// instruction it carries is not worth a bubble of body text. The design's
+  /// step checklist ("comparing v1 → v2 → v3…") is deliberately not drawn —
+  /// the app does not know those steps, and the real tool timeline that
+  /// follows this entry shows what the agent actually did.
+  Widget _buildKbDistillRequestCard(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: _userBubbleMaxWidth),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: colorScheme.accentTint,
+          borderRadius: const BorderRadius.only(
+            topLeft: _bubbleRadius,
+            topRight: _bubbleRadius,
+            bottomLeft: _bubbleRadius,
+            bottomRight: _tailRadius,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_stories_outlined,
+                    size: 14, color: colorScheme.onAccentTint),
+                const SizedBox(width: 7),
+                Text(
+                  l10n.optDistillAction,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onAccentTint,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 3),
+            Text(
+              l10n.optKbDistillRequested,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: AppType.looseHeight,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A small mono version capsule — the `v1`/`v2`/`v3` the design threads
+  /// through every surface of the feedback loop.
+  Widget _versionChip(String text, ColorScheme colorScheme, {bool accent = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      decoration: BoxDecoration(
+        color: accent
+            ? colorScheme.primary.withValues(alpha: AppAlpha.tint)
+            : colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+              color: accent ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+
+  /// The applied edits of the finished distill turn, or null when the wrap-up
+  /// card (`20d`·d) has nothing to say: no distill ran, an edit is still
+  /// awaiting review, or nothing reached disk. Derived from the transcript on
+  /// every build — the card's presence IS the state, so there is nothing to
+  /// invalidate.
+  static List<OptimizerChatEntry>? _distillOutcome(List<OptimizerChatEntry> transcript) {
+    int distillIndex = -1;
+    for (var i = transcript.length - 1; i >= 0; i--) {
+      if (transcript[i].kind == OptimizerEntryKind.kbDistill) {
+        distillIndex = i;
+        break;
+      }
+    }
+    if (distillIndex < 0) return null;
+    final applied = <OptimizerChatEntry>[];
+    for (var i = distillIndex + 1; i < transcript.length; i++) {
+      final e = transcript[i];
+      if (e.kind != OptimizerEntryKind.kbEdit) continue;
+      // A pending edit means the review is still open — summarizing now
+      // would claim an outcome the user has not decided yet.
+      if (e.editState == KbEditState.pending) return null;
+      if (e.editState == KbEditState.applied) applied.add(e);
+    }
+    return applied.isEmpty ? null : applied;
+  }
+
+  /// The distill wrap-up card: which files the session's lessons landed in,
+  /// with real +/− line counts from the same diff the review cards showed.
+  Widget _buildDistillDoneCard(
+    PromptOptimizerSession session,
+    List<OptimizerChatEntry> applied,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = AppSemanticColors.of(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: _replyMaxWidth),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: semantic.successContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check, size: 12, color: semantic.onSuccessContainer),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.optDistillDoneTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (session.promptVersions > 0) ...[
+                    const SizedBox(width: 8),
+                    _versionChip('v${session.promptVersions}', colorScheme),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 9, 14, 9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final edit in applied)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Icon(Icons.description_outlined,
+                              size: 13, color: colorScheme.onSurfaceVariant),
+                          const SizedBox(width: 7),
+                          Flexible(
+                            child: Text(
+                              edit.targetPath ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelMedium?.mono
+                                  .copyWith(color: colorScheme.onSurface),
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          ..._lineCountBadges(edit, textTheme, semantic, colorScheme),
+                          if (edit.note != null) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                edit.note!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: textTheme.labelSmall
+                                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (widget.onSaveFinalPrompt != null && session.refinedPrompt != null)
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppButton(
+                    label: l10n.optSaveFinalPrompt,
+                    icon: Icons.bookmark_add_outlined,
+                    variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.compact,
+                    onPressed: widget.onSaveFinalPrompt,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// `+a` / `−r` from the staged edit's own before/after texts — the same
+  /// numbers the review card's diff showed, so the wrap-up never claims a
+  /// different change than the one that was approved.
+  List<Widget> _lineCountBadges(
+    OptimizerChatEntry edit,
+    TextTheme textTheme,
+    AppSemanticColors semantic,
+    ColorScheme colorScheme,
+  ) {
+    final (added, removed) =
+        TextDiff.counts(edit.oldContent ?? '', edit.newContent ?? '');
+    final style = textTheme.labelSmall?.mono.copyWith(fontWeight: FontWeight.w600);
+    return [
+      if (added > 0) Text('+$added', style: style?.copyWith(color: semantic.success)),
+      if (added > 0 && removed > 0) const SizedBox(width: 4),
+      if (removed > 0) Text('−$removed', style: style?.copyWith(color: colorScheme.error)),
+    ];
+  }
+
   /// The composer: what will be sent, the text, and how to send it.
   ///
   /// The send control moved out of `suffixIcon` and onto its own footer row.
@@ -1283,11 +1727,23 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
   /// the text grew to six lines, and there was nowhere to say that the
   /// reference images go with the message — which is the one thing about this
   /// box that is not obvious.
-  Widget _buildInputBar(AppLocalizations l10n, ColorScheme colorScheme, int maxLines) {
+  Widget _buildInputBar(
+    PromptOptimizerSession session,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    int maxLines,
+  ) {
     final busy = widget.isBusy;
     final canSend = !busy;
     final textTheme = Theme.of(context).textTheme;
     final attachedCount = context.watch<WorkbenchUIState>().optimizerReferenceImages.length;
+    // The distill chip (`20d` a/b) rides the composer footer in knowledge
+    // sessions: it sends a turn, so it belongs with the other send control.
+    final showDistill = widget.onDistill != null && session.usesKnowledgeBase;
+    final canDistill = !busy && session.promptVersions > 0;
+    final feedbackCount = session.transcript
+        .where((e) => e.kind == OptimizerEntryKind.resultFeedback)
+        .length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -1377,13 +1833,29 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
                     // nicety, while the attachment count changes what gets
                     // sent and the button is the action itself. Below this the
                     // three together do not fit, and a squeezed pane is
-                    // exactly where the composer must not overflow.
-                    final showHint = constraints.maxWidth >= 460;
+                    // exactly where the composer must not overflow. The distill
+                    // chip raises the bar — with it in the row, the hint has to
+                    // yield sooner — and its own counter goes first of all.
+                    final showHint = constraints.maxWidth >= (showDistill ? 560 : 460);
+                    final showDistillCounts =
+                        showDistill && canDistill && constraints.maxWidth >= 640;
 
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(14, 0, 10, 10),
                       child: Row(
                         children: [
+                        if (showDistill) ...[
+                          _buildDistillChip(l10n, colorScheme, textTheme, enabled: canDistill),
+                          if (showDistillCounts) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.optDistillCounts(session.promptVersions, feedbackCount),
+                              style: textTheme.labelSmall?.mono
+                                  .copyWith(color: colorScheme.outline),
+                            ),
+                          ],
+                          const SizedBox(width: 10),
+                        ],
                         if (attachedCount > 0) ...[
                           // Capped, not [Flexible]. Two flex children split the
                           // free space evenly and the unused half of the first
