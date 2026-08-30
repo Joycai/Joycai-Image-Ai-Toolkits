@@ -143,7 +143,23 @@ class AskUserAnswer {
 }
 
 /// Kinds of entries shown in the optimizer chat transcript.
-enum OptimizerEntryKind { user, assistant, tool, prompt, error, notice, kbEdit, askUser }
+///
+/// [resultFeedback] is a user turn reporting the outcome of generating with a
+/// staged prompt version (the feedback text plus which version and result
+/// image it concerns). [kbDistill] marks the user's request to distill the
+/// session's lessons into the knowledge base.
+enum OptimizerEntryKind {
+  user,
+  assistant,
+  tool,
+  prompt,
+  error,
+  notice,
+  kbEdit,
+  askUser,
+  resultFeedback,
+  kbDistill,
+}
 
 /// One rendered line of the optimizer conversation.
 class OptimizerChatEntry {
@@ -269,13 +285,39 @@ class PromptOptimizerSession extends ChangeNotifier {
 
   /// True when the agent may propose knowledge-base edits.
   ///
-  /// Both halves matter. The mode is what makes editing the point of the
-  /// session; the policy is the user's standing answer to whether that is
-  /// currently allowed, and turning it off has to withdraw the tool rather
-  /// than merely hide its button — a model offered a tool will find a reason
-  /// to call it.
+  /// Both halves matter. The mode (or a pending distill request — see
+  /// [hasPendingKbDistill]) is what makes editing the point of the turn; the
+  /// policy is the user's standing answer to whether that is currently
+  /// allowed, and turning it off has to withdraw the tool rather than merely
+  /// hide its button — a model offered a tool will find a reason to call it.
+  ///
+  /// A distill request escalates a [AssistantMode.knowledgeBase] session
+  /// rather than requiring the user to have picked the maintenance mode up
+  /// front — nobody knows at session start whether a tuning run will end up
+  /// worth distilling. The escalation is derived from history, so it survives
+  /// restore and expires the moment the user sends their next ordinary
+  /// message.
   bool get canWriteKnowledge =>
-      mode == AssistantMode.knowledgeEdit && writePolicy.allowWrites;
+      (mode == AssistantMode.knowledgeEdit ||
+          (mode == AssistantMode.knowledgeBase && hasPendingKbDistill)) &&
+      writePolicy.allowWrites;
+
+  /// True while the most recent *real* user turn is a distill request
+  /// ([PromptOptimizerAgent.kbDistillMarker]).
+  ///
+  /// Derived from [history] rather than tracked in a flag (invariant: derive,
+  /// don't track — see assistant-context.md): tool results, view-image
+  /// attachments and ask_user answers appended during the distill turn do not
+  /// clear it — the model may keep its write tools across an ask_user round
+  /// trip — while the user's next ordinary message does.
+  bool get hasPendingKbDistill {
+    for (int i = history.length - 1; i >= 0; i--) {
+      final m = history[i];
+      if (!PromptOptimizerAgent._isRealUserTurn(m)) continue;
+      return m.content.startsWith(PromptOptimizerAgent.kbDistillMarker);
+    }
+    return false;
+  }
 
   /// Chars-per-token measured from the last request the provider reported
   /// token usage for, or null while it has reported none.
@@ -354,6 +396,54 @@ class PromptOptimizerSession extends ChangeNotifier {
     _addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: text));
   }
 
+  /// Appends the user's feedback on a generated result: which prompt
+  /// [promptVersion] produced it, which attached image ([imageName]) shows it,
+  /// and what the user says is wrong (or right) about it.
+  ///
+  /// Encoded as a marker-prefixed user message with a one-line JSON header so
+  /// everything downstream can *derive* it from history — the transcript on
+  /// restore, the iteration ledger, and the result-image metadata that
+  /// `list_reference_images` reports. The image itself is NOT attached here:
+  /// it goes into the reference list (kind "result") and the model views it
+  /// lazily via `view_image`, exactly like any other reference, so the
+  /// attachment economics (eliding, re-view liveness) stay unchanged.
+  ///
+  /// Binding to the image is by name: the reference list is keyed positionally
+  /// per turn, so a path would be the only stable alternative — and paths do
+  /// not belong in content shipped to a provider. A same-named collision
+  /// merely mislabels the listing metadata, never the feedback text.
+  void addResultFeedback({
+    required String imageName,
+    required int promptVersion,
+    required String feedback,
+  }) {
+    final header = jsonEncode({'prompt_version': promptVersion, 'image': imageName});
+    history.add(LLMMessage(
+      role: LLMRole.user,
+      content: '${PromptOptimizerAgent.resultFeedbackMarker} $header\n${feedback.trim()}',
+    ));
+    _addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.resultFeedback,
+      text: feedback.trim(),
+      version: promptVersion,
+      note: imageName,
+    ));
+  }
+
+  /// Appends a distill-request turn. [content] must already carry
+  /// [PromptOptimizerAgent.kbDistillMarker] — composed by
+  /// `stageKbDistillRequest`, which owns the instruction wording and the
+  /// iteration ledger it embeds. Only meaningful in knowledge sessions.
+  void addKbDistillTurn(String content) {
+    assert(content.startsWith(PromptOptimizerAgent.kbDistillMarker));
+    assert(usesKnowledgeBase);
+    history.add(LLMMessage(role: LLMRole.user, content: content));
+    _addEntry(OptimizerChatEntry(
+      kind: OptimizerEntryKind.kbDistill,
+      text: PromptOptimizerAgent.kbDistillNoticeToken,
+    ));
+  }
+
   void _addEntry(OptimizerChatEntry entry) {
     _transcript = [..._transcript, entry];
     notifyListeners();
@@ -419,6 +509,13 @@ class PromptOptimizerSession extends ChangeNotifier {
   /// and it is the state with the most UI of its own.
   @visibleForTesting
   void setRunningForTest(bool running) => _setRunning(running);
+
+  /// Flips a staged edit's state without touching disk — the real
+  /// [PromptOptimizerAgent.applyStagedKbEdit] writes through
+  /// [KnowledgeBaseService], which a widget test has no folder for.
+  @visibleForTesting
+  void resolveKbEditForTest(String editId, KbEditState state) =>
+      _resolveKbEdit(editId, state);
 
   @visibleForTesting
   String stageKbEditForTest({
@@ -548,6 +645,23 @@ class PromptOptimizerSession extends ChangeNotifier {
             }
           } else if (msg.content.startsWith(PromptOptimizerAgent.summaryMarker)) {
             // Compaction summaries are context, not chat lines.
+          } else if (msg.content.startsWith(PromptOptimizerAgent.resultFeedbackMarker)) {
+            final parsed = PromptOptimizerAgent.tryParseResultFeedback(msg.content);
+            // A header that fails to parse degrades to a plain user bubble —
+            // the text is still the user's words, only the card dressing is lost.
+            entries.add(parsed == null
+                ? OptimizerChatEntry(kind: OptimizerEntryKind.user, text: msg.content)
+                : OptimizerChatEntry(
+                    kind: OptimizerEntryKind.resultFeedback,
+                    text: parsed.feedback,
+                    version: parsed.promptVersion,
+                    note: parsed.imageName,
+                  ));
+          } else if (msg.content.startsWith(PromptOptimizerAgent.kbDistillMarker)) {
+            entries.add(OptimizerChatEntry(
+              kind: OptimizerEntryKind.kbDistill,
+              text: PromptOptimizerAgent.kbDistillNoticeToken,
+            ));
           } else {
             entries.add(OptimizerChatEntry(kind: OptimizerEntryKind.user, text: msg.content));
           }
@@ -735,10 +849,67 @@ class PromptOptimizerAgent {
   static const String viewResultMarker = '[view_image result]';
   static const String summaryMarker = '[Conversation summary]';
 
+  /// Marker of a user turn reporting a generation result — see
+  /// [PromptOptimizerSession.addResultFeedback] for the wire format.
+  static const String resultFeedbackMarker = '[result_feedback]';
+
+  /// Marker of the user's "distill this session into the knowledge base"
+  /// request. Unlike [viewResultMarker]/[summaryMarker] messages, both this
+  /// and [resultFeedbackMarker] ARE real user turns ([_isRealUserTurn]): they
+  /// open a turn the user initiated, so they count toward the protected
+  /// window and boundary math like any typed message.
+  static const String kbDistillMarker = '[kb_distill]';
+
   /// Transcript-notice tokens, mapped to localized strings at render time.
   static const String compactedNoticeToken = '__compacted__';
   static const String imageMissingNoticeToken = '__image_missing__';
   static const String kbEntryTooLargeNoticeToken = '__kb_entry_too_large__';
+  static const String kbDistillNoticeToken = '__kb_distill__';
+
+  /// Parses a [resultFeedbackMarker] message back into its parts, or null when
+  /// the header line is not the JSON [PromptOptimizerSession.addResultFeedback]
+  /// writes. Shared by transcript restore, the iteration ledger, and the
+  /// result-image metadata in `list_reference_images` — one format, one parser.
+  static ({int? promptVersion, String imageName, String feedback})?
+      tryParseResultFeedback(String content) {
+    if (!content.startsWith(resultFeedbackMarker)) return null;
+    final rest = content.substring(resultFeedbackMarker.length);
+    final newline = rest.indexOf('\n');
+    final headerLine = (newline < 0 ? rest : rest.substring(0, newline)).trim();
+    final feedback = newline < 0 ? '' : rest.substring(newline + 1).trim();
+    try {
+      final header = jsonDecode(headerLine);
+      if (header is! Map) return null;
+      final image = header['image']?.toString() ?? '';
+      if (image.isEmpty) return null;
+      final rawVersion = header['prompt_version'];
+      final version =
+          rawVersion is int ? rawVersion : int.tryParse(rawVersion?.toString() ?? '');
+      return (promptVersion: version, imageName: image, feedback: feedback);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Result-image metadata derived from [history], keyed by image name:
+  /// which prompt version the image came from and what the user said about
+  /// it (the latest feedback wins when an image is reported on twice).
+  ///
+  /// Derived per call rather than stored anywhere — feedback lives in the
+  /// history as [resultFeedbackMarker] messages, so this works identically
+  /// for live and restored sessions and nothing can go stale.
+  static Map<String, ({int? promptVersion, String feedback})> resultImageInfoByName(
+      List<LLMMessage> history) {
+    final info = <String, ({int? promptVersion, String feedback})>{};
+    for (final m in history) {
+      if (m.role != LLMRole.user) continue;
+      final parsed = tryParseResultFeedback(m.content);
+      if (parsed == null) continue;
+      info[parsed.imageName] =
+          (promptVersion: parsed.promptVersion, feedback: parsed.feedback);
+    }
+    return info;
+  }
 
   /// Share of the window above which the system prompt is called out.
   ///
@@ -1173,7 +1344,12 @@ class PromptOptimizerAgent {
   }) async {
     session._setRunning(true);
     final knowledgeMode = session.usesKnowledgeBase;
+    // In knowledgeBase mode a pending distill request escalates
+    // canWriteKnowledge for exactly as long as the request is the latest real
+    // user turn — so editMode (toolset, turn budget, the write gate) follows
+    // automatically; only the system prompt needs the explicit flag.
     final editMode = session.canWriteKnowledge;
+    final distillTurn = knowledgeMode && session.hasPendingKbDistill;
     if (knowledgeMode && (knowledgeRoot == null || knowledgeEntryContent == null)) {
       session._setRunning(false);
       throw StateError('Knowledge mode requires knowledgeRoot and knowledgeEntryContent.');
@@ -1217,13 +1393,20 @@ class PromptOptimizerAgent {
     // budget check and the request itself must see the same string — it is the
     // largest fixed cost in the window (the knowledge-base file map lives in
     // it) and is re-sent in full every single request.
-    final systemPromptText = editMode
-        ? _buildKnowledgeEditSystemPrompt(
-            knowledgeEntryContent!, effectiveRefs.length, effectiveForceView)
-        : knowledgeMode
-            ? _buildKnowledgeSystemPrompt(
+    final systemPromptText = distillTurn
+        // Distill outranks the edit prompt even in knowledgeEdit mode: the
+        // deliverable of this turn is distilled lessons, and the distillation
+        // guardrails (scope, provenance, contradictions) only live here.
+        // canWrite must be passed, not assumed — with writes disabled the
+        // model still runs the review but must present findings as text.
+        ? _buildKnowledgeDistillSystemPrompt(knowledgeEntryContent!, canWrite: editMode)
+        : editMode
+            ? _buildKnowledgeEditSystemPrompt(
                 knowledgeEntryContent!, effectiveRefs.length, effectiveForceView)
-            : _buildSystemPrompt(systemPrompt, effectiveRefs.length, effectiveForceView);
+            : knowledgeMode
+                ? _buildKnowledgeSystemPrompt(
+                    knowledgeEntryContent!, effectiveRefs.length, effectiveForceView)
+                : _buildSystemPrompt(systemPrompt, effectiveRefs.length, effectiveForceView);
 
     // Say something while there is still something to say. Compaction only
     // folds history, so it can never shrink this — past a certain size the turn
@@ -2135,7 +2318,9 @@ class PromptOptimizerAgent {
                 'dense working summary. Keep, verbatim where possible: the '
                 'user\'s core request and all confirmed design/character '
                 'details; every knowledge-base file already consulted (paths '
-                'only); the LATEST submitted prompt in full; unresolved '
+                'only); the LATEST submitted prompt in full; the outcome of '
+                'every generation-feedback round (which prompt version, what '
+                'the user reported, what was changed in response); unresolved '
                 'questions. Discard tool chatter. Answer with the summary '
                 'only.',
           ),
@@ -2806,14 +2991,28 @@ class PromptOptimizerAgent {
         if (referenceImages.isEmpty) {
           return {'images': [], 'note': 'The user attached no reference images.'};
         }
+        // Result images (fed back from generation) are the same list entries
+        // as references — the distinction is derived from the feedback
+        // messages in history, so it needs no extra plumbing or persistence.
+        final resultInfo = resultImageInfoByName(session.history);
         return {
           'images': [
             for (int i = 0; i < referenceImages.length; i++)
-              {
-                'id': i + 1,
-                'name': referenceImages[i]['name'],
-                'size_kb': _fileSizeKb(referenceImages[i]['path']),
-              }
+              () {
+                final name = referenceImages[i]['name'];
+                final info = resultInfo[name];
+                return {
+                  'id': i + 1,
+                  'name': name,
+                  'size_kb': _fileSizeKb(referenceImages[i]['path']),
+                  'kind': info == null ? 'reference' : 'result',
+                  if (info?.promptVersion != null) 'prompt_version': info!.promptVersion,
+                  if (info != null && info.feedback.isNotEmpty)
+                    'user_feedback': info.feedback.length > 300
+                        ? '${info.feedback.substring(0, 300)}…'
+                        : info.feedback,
+                };
+              }(),
           ],
         };
 
@@ -3093,6 +3292,19 @@ class PromptOptimizerAgent {
     session._resolveAskUser(callId, AskUserState.dismissed);
   }
 
+  /// How the model should treat generation-feedback rounds. Appended to every
+  /// mode's system prompt: feedback can arrive in any of them, and a model
+  /// that has never heard of the marker treats the JSON header as noise.
+  static const String _feedbackRoundNote =
+      '\nFeedback rounds: a user message starting with "$resultFeedbackMarker" '
+      'reports what happened when the user generated with one of your '
+      'submitted prompts. Its JSON header names the prompt version and the '
+      'result image; the text after it is the user\'s critique. The result '
+      'image is in list_reference_images with kind "result" — view it when '
+      'the critique concerns something visual, diagnose the gap against the '
+      'references and the rules you are working from, and deliver a complete '
+      'revised prompt via submit_prompt (never a fragment).';
+
   static String _buildSystemPrompt(
     String? template,
     int referenceImageCount,
@@ -3132,7 +3344,8 @@ class PromptOptimizerAgent {
         'question — but never ask about details you can reasonably infer. '
         'Afterwards you may also reply with a brief comment.\n'
         'The user may reply with follow-up adjustments — deliver every '
-        'revision through submit_prompt again, always with the full prompt.';
+        'revision through submit_prompt again, always with the full prompt.'
+        '$_feedbackRoundNote';
   }
 
   /// System prompt for [AssistantMode.knowledgeBase]. Built-in — user presets
@@ -3183,7 +3396,8 @@ class PromptOptimizerAgent {
         'references already settle.\n'
         'The user may reply with follow-up adjustments — apply the knowledge '
         'base rules again and deliver every revision through submit_prompt '
-        'with the full prompt.';
+        'with the full prompt.'
+        '$_feedbackRoundNote';
   }
 
   /// System prompt for [AssistantMode.knowledgeEdit]. Built-in like the
@@ -3240,7 +3454,72 @@ class PromptOptimizerAgent {
         'Every edit is STAGED and shown to the user for approval — nothing you '
         'write reaches disk until they accept it. So never claim a change has '
         'been saved, and do not re-read a file expecting to find your own '
-        'pending edit. After staging, briefly tell the user what you changed.';
+        'pending edit. After staging, briefly tell the user what you changed.'
+        '$_feedbackRoundNote';
+  }
+
+  /// System prompt for a distill turn: the user has asked (via
+  /// [kbDistillMarker]) to fold this session's tuning lessons back into the
+  /// knowledge base. Built-in like the other knowledge prompts.
+  ///
+  /// The guardrails here are the feature: distilled sessions are how a
+  /// knowledge base either compounds or rots, and every rule below exists to
+  /// keep a single anecdote from being written as a universal law. [canWrite]
+  /// is false when the user has switched knowledge writing off — the review
+  /// still runs, the findings just stay in chat.
+  static String _buildKnowledgeDistillSystemPrompt(
+    String entryContent, {
+    required bool canWrite,
+  }) {
+    final deliverStep = canWrite
+        ? '5. Deliver each change with write_knowledge_file — one file per '
+            'call, the COMPLETE new content (no patch mode), and you MUST '
+            'read an existing file with read_knowledge_file before rewriting '
+            'it. Every edit is STAGED for the user to approve; never claim it '
+            'is saved. If you add or rename a file, update the entry file '
+            '(${KnowledgeBaseService.entryFileName}) in the same turn so the '
+            'file map keeps matching the tree.\n'
+        : '5. Knowledge-base writing is currently switched OFF for this '
+            'session, so do NOT call write_knowledge_file. Present each '
+            'proposed change in chat instead: the target file, the new or '
+            'changed passage, and why.\n';
+    return 'You are distilling the lessons of a finished prompt-tuning '
+        'session into the user\'s prompt-engineering knowledge base — a '
+        'folder of rule files whose entry file (the file map) is included '
+        'below. The user\'s distill request carries an iteration ledger: '
+        'every prompt version this session produced and what the user '
+        'reported about the images each one generated.\n\n'
+        '=== KNOWLEDGE BASE ENTRY (file map) ===\n'
+        '$entryContent\n'
+        '=== END OF ENTRY ===\n\n'
+        'Tools:\n'
+        '- list_knowledge_files / read_knowledge_file: browse and read '
+        'knowledge files on demand.\n'
+        '${canWrite ? '- write_knowledge_file: propose creating or rewriting one file — how you deliver changes.\n' : ''}'
+        '- list_reference_images / view_image: revisit the reference and '
+        'result images when a lesson needs visual confirmation.\n'
+        '- ask_user: ask up to 4 structured questions with concrete options.\n'
+        'Workflow:\n'
+        '1. Reconstruct from the ledger what actually changed between '
+        'versions and which change fixed which reported problem. Only a '
+        'cause-and-effect pair the ledger supports is a lesson; a change '
+        'that merely coincided with approval is not.\n'
+        '2. Locate where each lesson belongs: read the existing rule files '
+        'the file map points to for the relevant topics. Prefer amending an '
+        'existing file over creating a new one. A lesson with no natural '
+        'home goes into lessons.md at the knowledge-base root (create it if '
+        'missing, and add it to the file map).\n'
+        '3. Write each lesson as a SCOPED rule, not a universal law: state '
+        'the conditions it was observed under (model, subject, scenario) and '
+        'end it with a short provenance note (date and a few words on the '
+        'task). One session is one data point — phrase it as such.\n'
+        '4. Never silently overwrite a rule the new lesson contradicts. '
+        'Either ask the user via ask_user which should stand, or record the '
+        'lesson as a scoped exception next to the existing rule.\n'
+        '$deliverStep'
+        '6. Finish with a short chat summary of what you distilled and where '
+        'it went. If the ledger supports no real lesson, say so — writing '
+        'noise into the knowledge base is worse than writing nothing.';
   }
 
   static int _fileSizeKb(String? path) {
