@@ -137,12 +137,21 @@ class MiniMaxImagesProtocol implements ImageGenProtocol {
           '(downloaded inline; upstream URLs expire in $_urlLifetime)',
           level: 'DEBUG');
 
+      // No usage block on this surface — MiniMax bills images per call, and
+      // its `metadata` carries success/failure counts (as strings) rather
+      // than tokens. What it does report is published, and the image count
+      // with it, so the response's metadata is never empty: LLMService's
+      // non-streaming path records usage only for a non-empty metadata map,
+      // and `const {}` made every request-billed image-01 generation
+      // invisible to the usage table — billed upstream, absent from metrics.
+      final rawMeta = data['metadata'];
       return LLMResponse(
         text: '',
         generatedImages: images,
-        // No usage block on this surface — MiniMax bills images per call, and
-        // `metadata` carries success/failure counts rather than tokens.
-        metadata: const {},
+        metadata: {
+          'image_count': images.length,
+          if (rawMeta is Map) ...rawMeta.cast<String, dynamic>(),
+        },
       );
     } finally {
       client.close();

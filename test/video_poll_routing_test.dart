@@ -54,4 +54,31 @@ void main() {
         .checkOperation(config(Vendors.dashscope), 'a1b2c3d4-task');
     expect(paths.single, contains('/tasks/a1b2c3d4-task'));
   });
+
+  test('the guard holds on a channel re-pointed at a ④ vendor', () async {
+    // The ① branch had this rule from the start; the anthropic branch did
+    // not, so editing a channel's supplier to minimax-anthropic mid-poll
+    // handed the in-flight `video_…` id to MiniMax's /v2 query, where it
+    // resolves to nothing and the task fails permanently.
+    await LLMDispatcher()
+        .checkOperation(config(Vendors.minimaxAnthropic), 'video_abc');
+    expect(paths.single, endsWith('/videos/video_abc'));
+  });
+
+  test('the guard holds on a channel re-pointed at dashscope-native', () async {
+    await LLMDispatcher()
+        .checkOperation(config(Vendors.dashscopeNative), 'video_abc');
+    expect(paths.single, endsWith('/videos/video_abc'));
+  });
+
+  test('a ④ vendor still polls its own ids natively', () async {
+    try {
+      await LLMDispatcher()
+          .checkOperation(config(Vendors.minimaxAnthropic), '260900000000000');
+    } on Exception {
+      // The stub's body is not a MiniMax task object; only the routing —
+      // which path the poll went out on — is what this test pins.
+    }
+    expect(paths.single, isNot(contains('/videos/')));
+  });
 }

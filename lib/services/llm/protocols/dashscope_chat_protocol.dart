@@ -54,7 +54,8 @@ class DashScopeChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async {
     final config = target.config;
-    final multimodal = dashscopeChatIsMultimodal(target, history);
+    final multimodal = dashscopeChatIsMultimodal(target);
+    _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
     logger?.call('Preparing DashScope native chat request to: ${url.host}',
         level: 'DEBUG');
@@ -159,7 +160,8 @@ class DashScopeChatProtocol implements ChatProtocol {
     LLMLogger? logger,
   }) async* {
     final config = target.config;
-    final multimodal = dashscopeChatIsMultimodal(target, history);
+    final multimodal = dashscopeChatIsMultimodal(target);
+    _warnIfAttachmentsDropped(target, history, multimodal, logger);
     final url = Uri.parse(dashscopeChatUrl(config.endpoint, multimodal));
     logger?.call('Starting DashScope native chat stream: ${url.host}',
         level: 'DEBUG');
@@ -264,15 +266,29 @@ class DashScopeChatProtocol implements ChatProtocol {
         final message = dashscopeChatMessage(frame);
         if (message == null) continue;
 
-        streamedToolCalls.feed(message['tool_calls']);
+        final rawToolCalls = message['tool_calls'];
+        streamedToolCalls.feed(rawToolCalls);
+        if (rawToolCalls is List && rawToolCalls.isNotEmpty) {
+          // Keepalive, same as ①: fragments buffer silently until the flush
+          // after the loop, but the consumer's idle guard resets only on
+          // chunks it receives — a long tool-call-only answer would
+          // otherwise time out mid-delivery and be re-sent.
+          yield LLMResponseChunk();
+        }
 
         final rawReasoning = message['reasoning_content'];
         if (rawReasoning is String && rawReasoning.isNotEmpty) {
           // Its own channel: a consumer that accumulates textPart into a
-          // deliverable must never get the thinking glued into it.
+          // deliverable must never get the thinking glued into it. The field
+          // name rides along for the replay obligation, matching the sync
+          // path — the native face uses the same `reasoning_content` key as
+          // the ① compatible face.
           final delta = reasoning.feed(rawReasoning);
           if (delta.isNotEmpty) {
-            yield LLMResponseChunk(reasoningPart: delta);
+            yield LLMResponseChunk(
+              reasoningPart: delta,
+              reasoningFieldName: 'reasoning_content',
+            );
           }
         }
 
@@ -321,30 +337,67 @@ class DashScopeChatProtocol implements ChatProtocol {
 /// The test is against **everything emitted so far**, not against the last
 /// frame: a cumulative frame always has the accumulation as its prefix,
 /// while a delta almost never does — it would have to repeat the entire
-/// answer so far as its own opening. The two are genuinely
-/// indistinguishable only while the accumulation *is* the previous frame
-/// (`"a"` then `"ab"`), a window one frame wide at the very start of the
-/// stream that costs at most a character; comparing against the last frame
-/// instead would leave that window open for the whole stream.
+/// answer so far as its own opening. "Almost" is real, though: repetitive
+/// content (markdown rules, ellipses, repeated CJK) makes a delta that opens
+/// by restating the whole accumulation reachable at any point in the stream,
+/// not just in the first frame, and the prefix test alone would silently
+/// swallow the repeated span.
+///
+/// So the dialect is *latched*: a cumulative stream can only ever extend the
+/// accumulation, which means the first frame that fails to do so proves the
+/// stream speaks deltas, and every later frame is appended without another
+/// look. Ordinary prose trips the latch on the second frame; only a stream
+/// whose every frame so far kept extending the accumulation — which is what
+/// cumulative *is* — still faces the heuristic, where the ambiguity costs at
+/// most the repeated span. (A frame exactly equal to the accumulation stays
+/// ambiguous — a cumulative frame with no new tokens reads the same as a
+/// delta repeating everything — and is appended without latching, matching
+/// the delta assumption the append path always made.)
 ///
 /// Public only so `test/dashscope_chat_payload_test.dart` can reach it; the
 /// stream path is the sole caller.
 class DashScopeStreamChannel {
   final StringBuffer _emitted = StringBuffer();
+  bool _deltaConfirmed = false;
 
   /// The new span in [frame], and the accumulation advanced past it.
   String feed(String frame) {
     final seen = _emitted.toString();
-    if (seen.isNotEmpty &&
-        frame.length > seen.length &&
-        frame.startsWith(seen)) {
+    if (seen.isEmpty || _deltaConfirmed) {
+      _emitted.write(frame);
+      return frame;
+    }
+    if (frame.length > seen.length && frame.startsWith(seen)) {
       final delta = frame.substring(seen.length);
       _emitted.write(delta);
       return delta;
     }
+    // A cumulative frame restates everything emitted so far; this one did
+    // not, so the stream speaks deltas — permanently. The one exception is a
+    // frame *equal* to the accumulation, which either dialect can produce.
+    if (frame != seen) _deltaConfirmed = true;
     _emitted.write(frame);
     return frame;
   }
+}
+
+/// Says out loud what the text endpoint will do silently: drop every image.
+///
+/// Reaching here with attachments and a text model is a conversation that
+/// includes a reference image on a model that cannot see one — the request
+/// still answers (the multimodal endpoint would reject the model outright),
+/// but the user should learn why the model ignores the picture.
+void _warnIfAttachmentsDropped(LLMTarget target, List<LLMMessage> history,
+    bool multimodal, LLMLogger? logger) {
+  if (multimodal) return;
+  final count = dashscopeAttachmentCount(history);
+  if (count == 0) return;
+  logger?.call(
+    '${target.config.modelId} is served by the text endpoint, which cannot '
+    'carry images — $count attachment(s) will not reach the model. Use a '
+    'vision model (qwen-vl / qwen-omni) for image turns.',
+    level: 'WARN',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -355,14 +408,17 @@ class DashScopeStreamChannel {
 
 /// Which of the two native chat endpoints this request belongs to.
 ///
-/// The model's own declaration (layer 3) decides it — `qwen-vl`, `qwen-omni`
-/// and `qwen-audio` are served only by the multimodal path — and an
-/// attachment forces it regardless: sending one to the text endpoint is not
-/// an error there, the part is simply dropped and the model answers as though
-/// it had never seen the image.
-bool dashscopeChatIsMultimodal(LLMTarget target, List<LLMMessage> history) =>
-    target.model.needsMultimodalChatSurface ||
-    history.any((m) => m.attachments.isNotEmpty);
+/// The model's own declaration (layer 3) decides it, alone — `qwen-vl`,
+/// `qwen-omni` and `qwen-audio` are served only by the multimodal path, and
+/// text models only by the text path. The split is by *model*, not by request
+/// content (docs/api/qianwen-bailian.md §2, pitfall #10): an attachment used
+/// to force the multimodal endpoint regardless, which sent every image-bearing
+/// turn of a text model (`qwen-max`, `qwen3`) to an endpoint that does not
+/// list it — an upstream "model not supported" error on the whole request,
+/// where the text endpoint merely drops the image part. Neither direction is
+/// good; only one of them answers at all, so the callers log the drop instead.
+bool dashscopeChatIsMultimodal(LLMTarget target) =>
+    target.model.needsMultimodalChatSurface;
 
 /// The native chat URL implied by a channel's stored endpoint.
 String dashscopeChatUrl(String endpoint, bool multimodal) =>
@@ -445,7 +501,7 @@ bool? dashscopeThinkingRequest(ReasoningEffort? effort) => switch (effort) {
 ///
 /// The multimodal endpoint rejects a bare string even for a turn that carries
 /// no image at all, and [dashscopeChatIsMultimodal] is a property of the
-/// *history*: one attachment anywhere puts every message of the conversation
+/// *model*: a VL/omni/audio model puts every message of the conversation
 /// on that endpoint. Which is why this is not something only the branches
 /// that build image parts have to think about — a tool result and a
 /// tool-calling assistant turn carry no image and still have to be lists,

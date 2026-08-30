@@ -508,6 +508,30 @@ class LLMDispatcher {
     }
   }
 
+  /// Whether a family's chat wire consumes [LLMModelConfig.reasoningEffort].
+  ///
+  /// The model editor shows the reasoning-intensity control only where
+  /// turning the knob changes the request — a knob whose only effect is
+  /// nothing is worse than no knob. The answer lives here, with every other
+  /// capability query the UI consults (`streamSupportsTools`,
+  /// `protocolMenuFor`), because a copy of it in the editor is a silent
+  /// failure the day a family gains the ability: C2 read
+  /// `effectiveReasoningEffort` to drive `enable_thinking` from the day it
+  /// shipped, while the editor's own two-family gate kept the control hidden
+  /// on every dashscope-native channel — thinking could never be turned off
+  /// there, with nothing anywhere reporting why.
+  static bool chatConsumesReasoningEffort(ProtocolFamily family) {
+    switch (family) {
+      case ProtocolFamily.openai: // reasoning_effort
+      case ProtocolFamily.anthropic: // thinking budget tiers
+      case ProtocolFamily.dashscope: // enable_thinking / thinking_budget
+        return true;
+      case ProtocolFamily.gemini:
+      case ProtocolFamily.midjourney:
+        return false;
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {
@@ -749,6 +773,14 @@ class LLMDispatcher {
         };
 
       case ProtocolFamily.anthropic:
+        // The id decides ahead of the vendor's declaration, same rule (and
+        // comment) as the ① branch below: tasks outlive the config that
+        // started them, and a channel re-pointed at a ④ vendor mid-poll must
+        // not hand a Sora-style id to MiniMax's `/v2` query, where it means
+        // nothing and the in-flight task fails permanently.
+        if (operationName.startsWith('video_')) {
+          return _openaiVideos.poll(target, operationName, logger: logger);
+        }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from the vendor-native surface it declares.
         final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
@@ -765,6 +797,12 @@ class LLMDispatcher {
         return _veo.poll(target, operationName, logger: logger);
 
       case ProtocolFamily.dashscope:
+        // Same in-flight guard as the ① and ④ branches — a `video_…` id was
+        // issued by the `/v1/videos` surface, never by `video-synthesis`,
+        // whatever the channel's wiring says today.
+        if (operationName.startsWith('video_')) {
+          return _openaiVideos.poll(target, operationName, logger: logger);
+        }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from `video-synthesis`, and its poll already
         // translates DashScope's task states into the Veo-shaped envelope
@@ -915,7 +953,20 @@ class LLMDispatcher {
 
   Future<List<DiscoveredModel>> discoverModels(LLMModelConfig config) async {
     final target = resolveTarget(config);
-    final listed = await _fetchListedModels(target);
+    List<DiscoveredModel> listed;
+    try {
+      listed = await _fetchListedModels(target);
+    } catch (_) {
+      // The catalog's whole reason to exist is hosts whose listing endpoint
+      // is missing — a stock SGLang H3-Base serve often has no
+      // `GET /v1/models` at all — so it must survive the listing failing, or
+      // "fetch models" errors out on exactly the deployment the catalog was
+      // declared for and the user hand-types a repo-path id the vendor
+      // already knows. A vendor that declares no catalog keeps the error:
+      // there, the listing is the only possible answer.
+      if (target.vendor.unlistedModels.isEmpty) rethrow;
+      return mergeUnlistedModels(target.vendor, const []);
+    }
     // Applied on every family rather than in the branches that need it, so
     // "does this vendor's catalog take effect here?" is never a per-family
     // question. A vendor that declares none passes through untouched.

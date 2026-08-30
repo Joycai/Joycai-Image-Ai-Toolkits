@@ -58,6 +58,27 @@ void main() {
     });
   });
 
+  group('resolveImageRef', () {
+    void log(String message, {String level = 'INFO'}) {}
+
+    test('a truncated data URI is skipped, not a crash', () async {
+      // A comma-less ref shorter than the 32-char log excerpt used to throw
+      // RangeError out of the log line itself, aborting the whole generation
+      // instead of skipping the one bad image. All three image surfaces
+      // await this helper in an unguarded loop.
+      final client = http.Client();
+      addTearDown(client.close);
+      expect(await resolveImageRef('data:image/png', client, log), isNull);
+      expect(await resolveImageRef('data:', client, log), isNull);
+      expect(
+          await resolveImageRef(
+              'data:image/png;base64-but-no-comma-and-quite-long-indeed',
+              client,
+              log),
+          isNull);
+    });
+  });
+
   group('decodeJsonBody (B2)', () {
     test('non-2xx throws with the status code — even for an HTML body', () {
       // The old Gemini order (jsonDecode first) turned a gateway's HTML 502

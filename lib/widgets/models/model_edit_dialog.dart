@@ -747,11 +747,10 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
           value: forceViewAllImages,
           onChanged: (v) => setState(() => forceViewAllImages = v),
         ),
-        // Reasoning intensity exists on the ① and ④ families (wire spellings
-        // differ; the vocabulary is the app's own). ③/midjourney channels
-        // don't see the control — a knob whose only effect is nothing is
-        // worse than no knob.
-        if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
+        // Which families consume the knob is the dispatcher's knowledge, not
+        // this dialog's — a copy here went stale the day C2 started reading
+        // reasoningEffort and hid the control on dashscope-native channels.
+        if (family != null && LLMDispatcher.chatConsumesReasoningEffort(family))
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: AppLabelledField(
@@ -907,7 +906,8 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             l10n.capabilities,
             capabilities.isEmpty ? '—' : capabilities.join(' · '),
           ),
-          if (family == ProtocolFamily.openai || family == ProtocolFamily.anthropic)
+          if (family != null &&
+              LLMDispatcher.chatConsumesReasoningEffort(family))
             _previewRow(
               colorScheme,
               l10n.reasoningEffort,

@@ -129,12 +129,17 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
           '(downloaded inline; upstream URLs expire in $_urlLifetimeNote)',
           level: 'DEBUG');
 
+      // The image count backstops a missing `usage` block: an empty metadata
+      // map skips usage recording on the non-streaming path, which turns a
+      // billed generation into one the metrics page never saw.
       return LLMResponse(
         text: '',
         generatedImages: images,
-        metadata: data['usage'] is Map
-            ? (data['usage'] as Map).cast<String, dynamic>()
-            : const {},
+        metadata: {
+          'image_count': images.length,
+          if (data['usage'] is Map)
+            ...(data['usage'] as Map).cast<String, dynamic>(),
+        },
       );
     } finally {
       client.close();

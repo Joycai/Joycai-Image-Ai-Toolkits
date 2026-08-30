@@ -352,8 +352,11 @@ Future<Uint8List?> resolveImageRef(
   if (ref.startsWith('data:')) {
     final comma = ref.indexOf(',');
     if (comma < 0) {
-      logger?.call('Malformed data URI (no comma): ${ref.substring(0, 32)}…',
-          level: 'WARN');
+      // Length-guarded: a truncated ref can be shorter than the excerpt, and
+      // a RangeError out of the *log line* would abort the generation this
+      // path exists to skip past.
+      final excerpt = ref.length > 32 ? '${ref.substring(0, 32)}…' : ref;
+      logger?.call('Malformed data URI (no comma): $excerpt', level: 'WARN');
       return null;
     }
     payload = ref.substring(comma + 1);

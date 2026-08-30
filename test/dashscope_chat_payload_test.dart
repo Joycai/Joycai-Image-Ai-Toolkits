@@ -63,25 +63,18 @@ void main() {
     test('VL / omni / audio ids declare themselves multimodal', () {
       for (final id in ['qwen3-vl-plus', 'qwen-vl', 'qwen-omni-turbo',
                         'qwen-audio-turbo']) {
-        expect(dashscopeChatIsMultimodal(target(id), [user('hi')]), isTrue,
-            reason: id);
+        expect(dashscopeChatIsMultimodal(target(id)), isTrue, reason: id);
       }
-      expect(dashscopeChatIsMultimodal(target('qwen-max'), [user('hi')]),
-          isFalse);
+      expect(dashscopeChatIsMultimodal(target('qwen-max')), isFalse);
     });
 
-    test('an attachment forces the multimodal path on any model', () {
-      // The text endpoint accepts the request and drops the image, so the
-      // model answers as though it never saw one — no error to notice.
-      final withImage = LLMMessage(
-        role: LLMRole.user,
-        content: 'what is this',
-        attachments: [
-          LLMAttachment.fromBytes(Uint8List.fromList([1, 2, 3]), 'image/png'),
-        ],
-      );
-      expect(dashscopeChatIsMultimodal(target('qwen-max'), [withImage]),
-          isTrue);
+    test('an attachment does not move a text model off its endpoint', () {
+      // The two endpoints split by *model*, not request content
+      // (docs/api/qianwen-bailian.md pitfall #10): qwen-max is not served by
+      // multimodal-generation at all, so routing an image-bearing turn there
+      // failed the whole request with "model not supported". On the text
+      // endpoint the image part is dropped (and logged) but the turn answers.
+      expect(dashscopeChatIsMultimodal(target('qwen-max')), isFalse);
     });
   });
 
@@ -357,6 +350,40 @@ void main() {
       expect(settled.feed('x'), 'x');
       expect(settled.feed('a'), 'a');
       expect(settled.feed('ab'), 'ab');
+    });
+
+    test('a proven delta stream never re-enters the prefix heuristic', () {
+      // Repetitive content makes "delta that opens by restating the whole
+      // accumulation" reachable mid-stream: deltas "a", "b", "abc" — the
+      // third happens to start with the accumulated "ab". The prefix test
+      // alone emitted only "c" and the answer lost two characters, silently.
+      // But frame two already proved this stream speaks deltas (a cumulative
+      // frame can only extend the accumulation), so frame three must append.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('a'), 'a');
+      expect(channel.feed('b'), 'b');
+      expect(channel.feed('abc'), 'abc',
+          reason: 'the dialect was settled one frame earlier — this is a '
+              'delta, not a cumulative restatement');
+    });
+
+    test('markdown rules survive a delta stream', () {
+      // The realistic trigger: every delta is a run of the same character,
+      // so each one starts with everything emitted so far.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('--'), '--');
+      expect(channel.feed('--'), '--');
+      expect(channel.feed('----'), '----');
+    });
+
+    test('a cumulative stream still trims after any number of frames', () {
+      // The latch must not fire on frames that keep extending the
+      // accumulation — that is exactly what cumulative looks like.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('He'), 'He');
+      expect(channel.feed('Hello'), 'llo');
+      expect(channel.feed('Hello world'), ' world');
+      expect(channel.feed('Hello world!'), '!');
     });
   });
 
