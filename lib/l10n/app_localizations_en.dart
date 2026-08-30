@@ -2972,6 +2972,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'Earlier messages were compacted into a summary to save context.';
 
   @override
+  String get optKbDistillRequested =>
+      'Requested: distill this session\'s lessons into the knowledge base.';
+
+  @override
+  String get optResultFeedbackAction => 'Feedback to assistant';
+
+  @override
+  String get optResultFeedbackChatLabel => 'Result feedback';
+
+  @override
+  String get optResultFeedbackHint => 'What about this image misses the mark?';
+
+  @override
+  String optResultFeedbackHelper(int version) {
+    return 'This result image joins the conversation with your feedback — the assistant iterates on v$version.';
+  }
+
+  @override
+  String get optDistillAction => 'Distill session lessons';
+
+  @override
+  String get optDistillDisabledTooltip =>
+      'No prompt versions in this session yet — let the assistant optimize once first';
+
+  @override
+  String optDistillCounts(int versions, int feedbacks) {
+    return '$versions versions · $feedbacks feedback';
+  }
+
+  @override
+  String get optDistillAlreadyPending =>
+      'A distill request is already waiting to run.';
+
+  @override
+  String get optResultImages => 'Results';
+
+  @override
+  String get optResultNoFeedback => 'No feedback yet';
+
+  @override
+  String get optDistillDoneTitle => 'Lessons written to the knowledge base';
+
+  @override
+  String get optSaveFinalPrompt => 'Save final prompt to library';
+
+  @override
+  String get optTimelineTitle => 'Iteration timeline';
+
+  @override
+  String optTimelineCount(int count) {
+    return '$count versions';
+  }
+
+  @override
+  String get optFeedbackShort => 'Feedback';
+
+  @override
+  String get optPromptVersionLabel => 'Prompt';
+
+  @override
   String get optImageMissing =>
       'Some reference images of this conversation no longer exist — re-add them to continue using them.';
 

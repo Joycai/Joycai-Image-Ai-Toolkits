@@ -15,6 +15,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import 'image_card_context_menu.dart';
 import 'preview/media_preview_dialog.dart' show previewHeroTag;
+import 'result_feedback_dialog.dart';
 
 /// Ink laid over a photograph, for the chips that have to stay readable on
 /// top of one.
@@ -406,6 +407,12 @@ class _ImageCardState extends State<ImageCard> {
   /// what this was: the nested fills read as buttons on top of a button.
   Widget _buildHoverActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // The feedback action (`20a`) exists only once the assistant has staged a
+    // prompt version — there is nothing to give feedback *on* before that.
+    // Read without listening: the bar is rebuilt on every hover entry anyway.
+    final promptVersions = Provider.of<WorkbenchUIState>(context, listen: false)
+        .optimizerSession
+        .promptVersions;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -437,10 +444,76 @@ class _ImageCardState extends State<ImageCard> {
               onPressed: () => _handleCrop(context),
               tooltip: l10n.cropAndResize,
             ),
+            if (promptVersions > 0) ...[
+              Container(
+                width: 1,
+                height: 18,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                color: _overlayInk.withValues(alpha: 0.22),
+              ),
+              // `20a`: the fourth action, the only one with a label — it is
+              // the odd one out (it talks to the assistant, not to a tool)
+              // and the pill is what says so. Accent-on-overlay, the one
+              // accent role that reads on a fixed dark scrim.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(13),
+                  onTap: () => _handleFeedback(context),
+                  child: Container(
+                    height: 26,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.accentOnOverlay,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 13,
+                          color: Theme.of(context).colorScheme.onPrimaryFixed,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          l10n.optResultFeedbackAction,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimaryFixed,
+                                fontWeight: FontWeight.w600,
+                                height: 1,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// Collects the critique, stages it on the session (which latches an
+  /// assistant-turn request the workbench screen consumes), and jumps to the
+  /// assistant tab so the user lands where the conversation continues.
+  Future<void> _handleFeedback(BuildContext context) async {
+    final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
+    final appState = Provider.of<AppState>(context, listen: false);
+    final version = workbenchUIState.optimizerSession.promptVersions;
+    if (version < 1) return;
+    final feedback = await showResultFeedbackDialog(
+      context,
+      image: widget.imageFile,
+      promptVersion: version,
+    );
+    if (feedback == null || feedback.isEmpty) return;
+    if (!workbenchUIState.sendResultFeedback(widget.imageFile, feedback: feedback)) {
+      return;
+    }
+    appState.setWorkbenchTab(4); // Prompt assistant
   }
 
   Widget _buildFooter(BuildContext context, ColorScheme colorScheme) {

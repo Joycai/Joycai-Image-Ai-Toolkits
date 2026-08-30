@@ -681,6 +681,18 @@ void seedOptimizerSession(AppState appState) {
       content: '已完成图 1 与图 2 的融合，重点保留了眼镜与五官继承、服装分层与环境融合规则。'
           '如需微调细节，直接告诉我。',
     ),
+    // One generation-feedback round (`20b`): a marker-encoded user turn, in
+    // the exact wire format `addResultFeedback` writes, so `fromStored`
+    // derives the feedback card, the reference panel's results group and the
+    // iteration timeline all from the same message — the layouts the loop
+    // screens actually produce. The image name is the second gallery fixture,
+    // which is also on the reference list, so the card's thumbnail resolves.
+    LLMMessage(
+      role: LLMRole.user,
+      content: '[result_feedback] '
+          '{"prompt_version":1,"image":"${images.last.name}"}\n'
+          '裙摆的褶皱层数比设定图少了一层，腰封的金属扣完全没有出现，环境光偏冷。',
+    ),
   ];
 
   final PromptOptimizerSession session = PromptOptimizerSession.fromStored(

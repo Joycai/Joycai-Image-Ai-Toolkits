@@ -5452,6 +5452,108 @@ abstract class AppLocalizations {
   /// **'Earlier messages were compacted into a summary to save context.'**
   String get optCompactedNotice;
 
+  /// No description provided for @optKbDistillRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested: distill this session\'s lessons into the knowledge base.'**
+  String get optKbDistillRequested;
+
+  /// No description provided for @optResultFeedbackAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback to assistant'**
+  String get optResultFeedbackAction;
+
+  /// No description provided for @optResultFeedbackChatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Result feedback'**
+  String get optResultFeedbackChatLabel;
+
+  /// No description provided for @optResultFeedbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What about this image misses the mark?'**
+  String get optResultFeedbackHint;
+
+  /// No description provided for @optResultFeedbackHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'This result image joins the conversation with your feedback — the assistant iterates on v{version}.'**
+  String optResultFeedbackHelper(int version);
+
+  /// No description provided for @optDistillAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Distill session lessons'**
+  String get optDistillAction;
+
+  /// No description provided for @optDistillDisabledTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'No prompt versions in this session yet — let the assistant optimize once first'**
+  String get optDistillDisabledTooltip;
+
+  /// No description provided for @optDistillCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{versions} versions · {feedbacks} feedback'**
+  String optDistillCounts(int versions, int feedbacks);
+
+  /// No description provided for @optDistillAlreadyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'A distill request is already waiting to run.'**
+  String get optDistillAlreadyPending;
+
+  /// No description provided for @optResultImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get optResultImages;
+
+  /// No description provided for @optResultNoFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'No feedback yet'**
+  String get optResultNoFeedback;
+
+  /// No description provided for @optDistillDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons written to the knowledge base'**
+  String get optDistillDoneTitle;
+
+  /// No description provided for @optSaveFinalPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Save final prompt to library'**
+  String get optSaveFinalPrompt;
+
+  /// No description provided for @optTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iteration timeline'**
+  String get optTimelineTitle;
+
+  /// No description provided for @optTimelineCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} versions'**
+  String optTimelineCount(int count);
+
+  /// No description provided for @optFeedbackShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get optFeedbackShort;
+
+  /// No description provided for @optPromptVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get optPromptVersionLabel;
+
   /// No description provided for @optImageMissing.
   ///
   /// In en, this message translates to:

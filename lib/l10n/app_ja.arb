@@ -1357,6 +1357,47 @@
   "optDeleteSessionConfirm": "この会話を完全に削除しますか？",
   "optKbEntryTooLarge": "ナレッジベースの README.md がこのモデルのコンテキストウィンドウの大部分を占めています。毎回のリクエストで再送され、要約でも縮められません。内容を減らすか、より大きなウィンドウのモデルを選んでください。",
   "optCompactedNotice": "コンテキスト節約のため、以前のメッセージは要約に圧縮されました。",
+  "optKbDistillRequested": "リクエスト済み：今回の調整で得た知見をナレッジベースへ整理します。",
+  "optResultFeedbackAction": "アシスタントに報告",
+  "optResultFeedbackChatLabel": "生成結果の報告",
+  "optResultFeedbackHint": "この画像のどこが期待と違いますか？",
+  "optResultFeedbackHelper": "この結果画像は報告と一緒に会話へ送られ、アシスタントが v{version} を基に調整を続けます。",
+  "@optResultFeedbackHelper": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAction": "今回の知見をまとめる",
+  "optDistillDisabledTooltip": "このセッションにはまだプロンプト版がありません。先に一度最適化してください",
+  "optDistillCounts": "{versions} 版 · フィードバック {feedbacks} 件",
+  "@optDistillCounts": {
+    "placeholders": {
+      "versions": {
+        "type": "int"
+      },
+      "feedbacks": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAlreadyPending": "まとめリクエストはすでに実行待ちです。",
+  "optResultImages": "結果画像",
+  "optResultNoFeedback": "未報告",
+  "optDistillDoneTitle": "今回の知見をナレッジベースに書き込みました",
+  "optSaveFinalPrompt": "最終プロンプトをライブラリへ保存",
+  "optTimelineTitle": "イテレーション履歴",
+  "optTimelineCount": "{count} 版",
+  "@optTimelineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optFeedbackShort": "フィードバック",
+  "optPromptVersionLabel": "プロンプト",
   "optImageMissing": "この会話の一部の参照画像が見つかりません。再追加すると引き続き使用できます。",
   "optRetry": "再試行",
   "optModeKnowledgeEdit": "ナレッジ編集",

@@ -486,6 +486,47 @@
   "optDeleteSessionConfirm": "Delete this conversation permanently?",
   "optKbEntryTooLarge": "The knowledge base's README.md takes up a large share of this model's context window. It is re-sent with every request and summarizing cannot shrink it — trim it, or pick a model with a larger window.",
   "optCompactedNotice": "Earlier messages were compacted into a summary to save context.",
+  "optKbDistillRequested": "Requested: distill this session's lessons into the knowledge base.",
+  "optResultFeedbackAction": "Feedback to assistant",
+  "optResultFeedbackChatLabel": "Result feedback",
+  "optResultFeedbackHint": "What about this image misses the mark?",
+  "optResultFeedbackHelper": "This result image joins the conversation with your feedback — the assistant iterates on v{version}.",
+  "@optResultFeedbackHelper": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAction": "Distill session lessons",
+  "optDistillDisabledTooltip": "No prompt versions in this session yet — let the assistant optimize once first",
+  "optDistillCounts": "{versions} versions · {feedbacks} feedback",
+  "@optDistillCounts": {
+    "placeholders": {
+      "versions": {
+        "type": "int"
+      },
+      "feedbacks": {
+        "type": "int"
+      }
+    }
+  },
+  "optDistillAlreadyPending": "A distill request is already waiting to run.",
+  "optResultImages": "Results",
+  "optResultNoFeedback": "No feedback yet",
+  "optDistillDoneTitle": "Lessons written to the knowledge base",
+  "optSaveFinalPrompt": "Save final prompt to library",
+  "optTimelineTitle": "Iteration timeline",
+  "optTimelineCount": "{count} versions",
+  "@optTimelineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "optFeedbackShort": "Feedback",
+  "optPromptVersionLabel": "Prompt",
   "optImageMissing": "Some reference images of this conversation no longer exist — re-add them to continue using them.",
   "optRetry": "Retry",
   "optModeKnowledgeEdit": "Edit KB",
