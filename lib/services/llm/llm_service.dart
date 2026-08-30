@@ -77,6 +77,7 @@ class LLMService {
           onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
           String accumulatedText = "";
           String accumulatedReasoning = "";
+          String? reasoningFieldName;
           List<Uint8List> accumulatedImages = [];
           List<LLMToolCall> accumulatedToolCalls = [];
           Map<String, dynamic>? finalMetadata;
@@ -108,6 +109,15 @@ class LLMService {
               // thought.
               accumulatedReasoning += chunk.reasoningPart!;
               onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
+            }
+            // The ①/C2 echo-back key, carried per chunk — losing it here is
+            // what silently dropped tool-turn reasoning from replayed history
+            // and broke DeepSeek's echo-back contract once tool-bearing
+            // requests started streaming. ④ never sets it, so its history
+            // keeps a null field name and the ① payload builder does not
+            // invent a key for a signed-block obligation.
+            if (chunk.reasoningFieldName != null) {
+              reasoningFieldName = chunk.reasoningFieldName;
             }
             if (chunk.textPart != null) {
               accumulatedText += chunk.textPart!;
@@ -152,10 +162,8 @@ class LLMService {
             toolCalls: accumulatedToolCalls,
             reasoningContent:
                 accumulatedReasoning.isEmpty ? null : accumulatedReasoning,
-            // No field *name*: ④'s echo-back obligation is the whole signed
-            // block, not a field on the message. Leaving it null is what
-            // stops the ① payload builder inventing a key for it if this
-            // history is ever replayed against an ① endpoint.
+            reasoningFieldName:
+                accumulatedReasoning.isEmpty ? null : reasoningFieldName,
             reasoningSignature: reasoningSignature,
             rawThinkingBlocks: rawThinkingBlocks,
             rawThinkingModelId:

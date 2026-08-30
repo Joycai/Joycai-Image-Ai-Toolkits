@@ -754,6 +754,14 @@ class LLMResponseChunk {
   /// accumulate text never glue the model's thinking into the deliverable.
   final String? reasoningPart;
 
+  /// Wire field name of [reasoningPart] — the ①/C2 echo-back key
+  /// ([LLMMessage.reasoningFieldName]), carried per chunk because the stream
+  /// consumer assembles an [LLMResponse] and the replay obligation travels
+  /// with the name, not just the text. Null on ④, whose obligation is the
+  /// signed block ([rawThinkingBlocks]), and for inline `<think>` reasoning,
+  /// which carries no obligation at all.
+  final String? reasoningFieldName;
+
   final Uint8List? imagePart;
   final Map<String, dynamic>? metadata;
 
@@ -788,6 +796,7 @@ class LLMResponseChunk {
   LLMResponseChunk({
     this.textPart,
     this.reasoningPart,
+    this.reasoningFieldName,
     this.imagePart,
     this.metadata,
     this.toolCallPart,
