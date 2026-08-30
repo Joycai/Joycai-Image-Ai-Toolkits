@@ -7,6 +7,7 @@ import 'package:joycai_image_ai_toolkits/services/llm/model_descriptor.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/openai_chat_protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/protocols/protocol.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Pins the two stream-level obligations that came due when
 /// `streamingDeclaresTools` flipped ① onto the streaming path — both silent
@@ -23,6 +24,15 @@ import 'package:joycai_image_ai_toolkits/services/llm/vendors/vendors.dart';
 ///   rejects with a 400 on the next request of the conversation.
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+  // generateStream touches AppState, whose singletons open the app database
+  // in a fire-and-forget future. Without an FFI-backed factory that open
+  // fails on the CI runner and the async error is pinned on whichever test
+  // finished first ("failed after test completion") — same setup as
+  // llm_config_resolver_test.dart.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   late Directory home;
   late HttpServer server;
   late List<String> sseLines;
