@@ -165,25 +165,63 @@ class StreamingToolCallAccumulator {
     for (var position = 0; position < rawToolCalls.length; position++) {
       final tc = rawToolCalls[position];
       if (tc is! Map) continue;
-      // `index` is the grouping key the spec guarantees. Its position in this
-      // frame's array is the fallback for relays that omit the field, which
-      // is what the field would have said anyway.
+      // `index` is the grouping key the spec guarantees. For relays that omit
+      // the field, the fallback is resolved from the call's own identity —
+      // see [_slotForIndexless] for why bare array position is not enough.
       final rawIndex = tc['index'];
-      final index = rawIndex is num ? rawIndex.toInt() : position;
+      final index =
+          rawIndex is num ? rawIndex.toInt() : _slotForIndexless(tc, position);
       final pending = _calls.putIfAbsent(index, _PendingToolCall.new);
       pending.id = _merge(pending.id, tc['id']);
       final fn = tc['function'];
       if (fn is! Map) continue;
-      pending.name = _merge(pending.name, fn['name']);
+      final rawName = fn['name'];
+      // Dialect telltale, read before the merges fold this frame in: a
+      // cumulative frame restates the whole call every time — name included —
+      // while ① deltas carry only `index` + `arguments` once the call is
+      // open. A nameless frame on an already-named call is therefore a delta,
+      // and its arguments append unconditionally. This closes the one gap the
+      // prefix heuristic in [_merge] leaves open: a delta that happens to
+      // begin by repeating the entire accumulation (`{"a":` + `{"a":1}}`),
+      // which the heuristic alone would swallow as a cumulative repeat.
+      final isNamelessDelta =
+          pending.name.isNotEmpty && (rawName is! String || rawName.isEmpty);
+      pending.name = _merge(pending.name, rawName);
       final rawArgs = fn['arguments'];
       if (rawArgs is Map<String, dynamic>) {
         // Already whole — no wire sends an object in pieces — so it replaces
         // rather than merges.
         pending.decodedArguments = rawArgs;
+      } else if (isNamelessDelta && rawArgs is String) {
+        pending.arguments = pending.arguments + rawArgs;
       } else {
         pending.arguments = _merge(pending.arguments, rawArgs);
       }
     }
+  }
+
+  /// Grouping slot for a fragment whose frame omitted `index`.
+  ///
+  /// Array position is the spec-shaped fallback — it is what the field would
+  /// have said for calls sharing one frame. But a relay that omits `index`
+  /// and streams *multiple* calls in separate single-element frames puts every
+  /// call at position 0, and merging them builds one blended call — the
+  /// silent loss an agent loop cannot detect. The call's `id` disambiguates:
+  /// a fragment carrying a known id joins that call, one carrying a new id
+  /// opens a fresh slot. Fragments with no id keep the positional answer.
+  int _slotForIndexless(Map<dynamic, dynamic> tc, int position) {
+    final rawId = tc['id'];
+    if (rawId is String && rawId.isNotEmpty) {
+      for (final entry in _calls.entries) {
+        if (entry.value.id == rawId) return entry.key;
+      }
+      if (_calls.containsKey(position) &&
+          _calls[position]!.id.isNotEmpty &&
+          _calls[position]!.id != rawId) {
+        return _calls.keys.reduce((a, b) => a > b ? a : b) + 1;
+      }
+    }
+    return position;
   }
 
   /// Everything assembled so far, in `index` order, and the accumulator
@@ -212,10 +250,12 @@ class StreamingToolCallAccumulator {
   /// accumulation is empty. Anything else is a delta and is appended.
   ///
   /// The one shape this cannot tell apart is a delta that opens by repeating
-  /// the entire accumulation. Fragmented JSON does not do that: a delta
-  /// resumes where the last one stopped, so it matches from position 0 only
-  /// when it is restating the whole document. Same trade
-  /// `DashScopeStreamChannel` makes for text.
+  /// the entire accumulation. For arguments, [feed] resolves that ambiguity
+  /// before it reaches here — a nameless frame on a named call is a delta by
+  /// construction and appends unconditionally — so this heuristic only
+  /// decides frames that restate the name, which is the cumulative dialect's
+  /// signature. `DashScopeStreamChannel` faces the same ambiguity for text,
+  /// where no such telltale exists.
   static String _merge(String seen, Object? raw) {
     if (raw is! String || raw.isEmpty) return seen;
     if (raw.startsWith(seen)) return raw;
@@ -709,7 +749,18 @@ class OpenAIChatProtocol implements ChatProtocol {
           // tool-bearing request these fragments *are* the reply, and losing
           // one to a shape surprise elsewhere in the chunk would produce a
           // call with truncated arguments rather than a visible failure.
-          streamedToolCalls.feed(delta['tool_calls']);
+          final rawToolCalls = delta['tool_calls'];
+          streamedToolCalls.feed(rawToolCalls);
+          if (rawToolCalls is List && rawToolCalls.isNotEmpty) {
+            // Keepalive. Fragments buffer silently until the flush after the
+            // loop, but the consumer's idle guard resets only on chunks it
+            // receives — a model answering with one long tool call and no
+            // text would otherwise look like a dead connection at exactly
+            // the moment it is delivering
+            // (docs/plans/2026-08-assistant-timeout.md, the case streaming
+            // tools exists to fix).
+            yield LLMResponseChunk();
+          }
 
           final structured = extractStructuredImages(delta);
           for (final img in structured.bytes) {
@@ -725,12 +776,22 @@ class OpenAIChatProtocol implements ChatProtocol {
           // array would otherwise throw into the catch below and be dropped as
           // "parse noise", losing the reply one chunk at a time.
           final text = contentToText(delta?['content']);
-          final reasoning = delta?['reasoning_content'] ?? delta?['reasoning'];
+          final rawReasoningContent = delta?['reasoning_content'];
+          final reasoning = rawReasoningContent ?? delta?['reasoning'];
 
           if (reasoning is String && reasoning.isNotEmpty) {
             // Dedicated channel: consumers that accumulate textPart into a
-            // deliverable must never glue the thinking into it.
-            yield LLMResponseChunk(reasoningPart: reasoning);
+            // deliverable must never glue the thinking into it. The field
+            // *name* rides along — same probe as the sync path — because a
+            // tool-calling turn's replay must echo the reasoning under the
+            // key it arrived with (reasoning.md §3), and the stream consumer
+            // cannot recover the name from the text alone.
+            yield LLMResponseChunk(
+              reasoningPart: reasoning,
+              reasoningFieldName: rawReasoningContent != null
+                  ? 'reasoning_content'
+                  : 'reasoning',
+            );
           }
 
           if (text.isNotEmpty) {

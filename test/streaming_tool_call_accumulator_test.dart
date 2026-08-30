@@ -105,6 +105,32 @@ void main() {
       });
     });
 
+    test('appends a delta that opens by repeating the whole accumulation', () {
+      // `{"a":{"a":1}}` split at a token boundary: the second fragment starts
+      // with everything received so far. The prefix heuristic alone read that
+      // as a cumulative repeat and replaced the accumulation — the arguments
+      // decoded as {} and the tool ran on nothing. A nameless frame on a
+      // named call is a delta by construction, so it must append.
+      final acc = StreamingToolCallAccumulator()
+        ..feed([
+          {
+            'index': 0,
+            'id': 'c',
+            'function': {'name': 'search', 'arguments': '{"a":'},
+          }
+        ])
+        ..feed([
+          {
+            'index': 0,
+            'function': {'arguments': '{"a":1}}'},
+          }
+        ]);
+
+      expect(acc.flush().single.arguments, {
+        'a': {'a': 1}
+      });
+    });
+
     test('falls back to array position when a relay omits index', () {
       final acc = StreamingToolCallAccumulator()
         ..feed([
@@ -119,6 +145,54 @@ void main() {
         ]);
 
       expect(acc.flush().map((c) => c.name).toList(), ['one', 'two']);
+    });
+
+    test('keeps index-less calls apart when they arrive in separate frames',
+        () {
+      // The other way a relay omits index: each call complete, one per chunk,
+      // every one at array position 0. Merging them by position blends two
+      // calls into one — the id is what tells them apart.
+      final acc = StreamingToolCallAccumulator()
+        ..feed([
+          {
+            'id': 'call_a',
+            'function': {'name': 'get_weather', 'arguments': '{"city":"HZ"}'},
+          },
+        ])
+        ..feed([
+          {
+            'id': 'call_b',
+            'function': {'name': 'get_time', 'arguments': '{"tz":"UTC"}'},
+          },
+        ]);
+
+      final calls = acc.flush();
+      expect(calls.map((c) => c.name).toList(), ['get_weather', 'get_time']);
+      expect(calls[0].arguments, {'city': 'HZ'});
+      expect(calls[1].arguments, {'tz': 'UTC'});
+    });
+
+    test('an index-less cumulative repeat still joins its own call by id', () {
+      // Cumulative dialect with the index dropped by an intermediary: the
+      // repeated id must route the frame back to the same slot, not open a
+      // second call.
+      final acc = StreamingToolCallAccumulator()
+        ..feed([
+          {
+            'id': 'call_1',
+            'function': {'name': 'view_image', 'arguments': '{"path"'},
+          },
+        ])
+        ..feed([
+          {
+            'id': 'call_1',
+            'function': {'name': 'view_image', 'arguments': '{"path":"a.png"}'},
+          },
+        ]);
+
+      final call = acc.flush().single;
+      expect(call.name, 'view_image');
+      expect(call.arguments, {'path': 'a.png'});
     });
 
     test('synthesizes an id when the relay assigns none', () {
