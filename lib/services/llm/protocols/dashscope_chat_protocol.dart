@@ -264,15 +264,29 @@ class DashScopeChatProtocol implements ChatProtocol {
         final message = dashscopeChatMessage(frame);
         if (message == null) continue;
 
-        streamedToolCalls.feed(message['tool_calls']);
+        final rawToolCalls = message['tool_calls'];
+        streamedToolCalls.feed(rawToolCalls);
+        if (rawToolCalls is List && rawToolCalls.isNotEmpty) {
+          // Keepalive, same as ①: fragments buffer silently until the flush
+          // after the loop, but the consumer's idle guard resets only on
+          // chunks it receives — a long tool-call-only answer would
+          // otherwise time out mid-delivery and be re-sent.
+          yield LLMResponseChunk();
+        }
 
         final rawReasoning = message['reasoning_content'];
         if (rawReasoning is String && rawReasoning.isNotEmpty) {
           // Its own channel: a consumer that accumulates textPart into a
-          // deliverable must never get the thinking glued into it.
+          // deliverable must never get the thinking glued into it. The field
+          // name rides along for the replay obligation, matching the sync
+          // path — the native face uses the same `reasoning_content` key as
+          // the ① compatible face.
           final delta = reasoning.feed(rawReasoning);
           if (delta.isNotEmpty) {
-            yield LLMResponseChunk(reasoningPart: delta);
+            yield LLMResponseChunk(
+              reasoningPart: delta,
+              reasoningFieldName: 'reasoning_content',
+            );
           }
         }
 
@@ -321,27 +335,45 @@ class DashScopeChatProtocol implements ChatProtocol {
 /// The test is against **everything emitted so far**, not against the last
 /// frame: a cumulative frame always has the accumulation as its prefix,
 /// while a delta almost never does — it would have to repeat the entire
-/// answer so far as its own opening. The two are genuinely
-/// indistinguishable only while the accumulation *is* the previous frame
-/// (`"a"` then `"ab"`), a window one frame wide at the very start of the
-/// stream that costs at most a character; comparing against the last frame
-/// instead would leave that window open for the whole stream.
+/// answer so far as its own opening. "Almost" is real, though: repetitive
+/// content (markdown rules, ellipses, repeated CJK) makes a delta that opens
+/// by restating the whole accumulation reachable at any point in the stream,
+/// not just in the first frame, and the prefix test alone would silently
+/// swallow the repeated span.
+///
+/// So the dialect is *latched*: a cumulative stream can only ever extend the
+/// accumulation, which means the first frame that fails to do so proves the
+/// stream speaks deltas, and every later frame is appended without another
+/// look. Ordinary prose trips the latch on the second frame; only a stream
+/// whose every frame so far kept extending the accumulation — which is what
+/// cumulative *is* — still faces the heuristic, where the ambiguity costs at
+/// most the repeated span. (A frame exactly equal to the accumulation stays
+/// ambiguous — a cumulative frame with no new tokens reads the same as a
+/// delta repeating everything — and is appended without latching, matching
+/// the delta assumption the append path always made.)
 ///
 /// Public only so `test/dashscope_chat_payload_test.dart` can reach it; the
 /// stream path is the sole caller.
 class DashScopeStreamChannel {
   final StringBuffer _emitted = StringBuffer();
+  bool _deltaConfirmed = false;
 
   /// The new span in [frame], and the accumulation advanced past it.
   String feed(String frame) {
     final seen = _emitted.toString();
-    if (seen.isNotEmpty &&
-        frame.length > seen.length &&
-        frame.startsWith(seen)) {
+    if (seen.isEmpty || _deltaConfirmed) {
+      _emitted.write(frame);
+      return frame;
+    }
+    if (frame.length > seen.length && frame.startsWith(seen)) {
       final delta = frame.substring(seen.length);
       _emitted.write(delta);
       return delta;
     }
+    // A cumulative frame restates everything emitted so far; this one did
+    // not, so the stream speaks deltas — permanently. The one exception is a
+    // frame *equal* to the accumulation, which either dialect can produce.
+    if (frame != seen) _deltaConfirmed = true;
     _emitted.write(frame);
     return frame;
   }

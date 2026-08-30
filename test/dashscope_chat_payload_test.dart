@@ -358,6 +358,40 @@ void main() {
       expect(settled.feed('a'), 'a');
       expect(settled.feed('ab'), 'ab');
     });
+
+    test('a proven delta stream never re-enters the prefix heuristic', () {
+      // Repetitive content makes "delta that opens by restating the whole
+      // accumulation" reachable mid-stream: deltas "a", "b", "abc" — the
+      // third happens to start with the accumulated "ab". The prefix test
+      // alone emitted only "c" and the answer lost two characters, silently.
+      // But frame two already proved this stream speaks deltas (a cumulative
+      // frame can only extend the accumulation), so frame three must append.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('a'), 'a');
+      expect(channel.feed('b'), 'b');
+      expect(channel.feed('abc'), 'abc',
+          reason: 'the dialect was settled one frame earlier — this is a '
+              'delta, not a cumulative restatement');
+    });
+
+    test('markdown rules survive a delta stream', () {
+      // The realistic trigger: every delta is a run of the same character,
+      // so each one starts with everything emitted so far.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('--'), '--');
+      expect(channel.feed('--'), '--');
+      expect(channel.feed('----'), '----');
+    });
+
+    test('a cumulative stream still trims after any number of frames', () {
+      // The latch must not fire on frames that keep extending the
+      // accumulation — that is exactly what cumulative looks like.
+      final channel = DashScopeStreamChannel();
+      expect(channel.feed('He'), 'He');
+      expect(channel.feed('Hello'), 'llo');
+      expect(channel.feed('Hello world'), ' world');
+      expect(channel.feed('Hello world!'), '!');
+    });
   });
 
   group('response parsing', () {
