@@ -388,6 +388,45 @@ void main() {
           ModelFamily.other);
     });
 
+    test('Hailuo-generation ids are video models on every channel', () {
+      // The regression this guards: only `minimax-h3*` classified as video,
+      // so every cloud Hailuo id fell to chat and the workbench's video
+      // panel could not list it anywhere — not on a MiniMax channel, not on
+      // a relay, and a hand-set video tag could not save it because
+      // canRunVideoJob answers from the same classification.
+      for (final id in [
+        'MiniMax-Hailuo-2.3',
+        'MiniMax-Hailuo-2.3-Fast',
+        'MiniMax-Hailuo-02',
+        'video-01',
+        'T2V-01', // marker at the START of the id — the generic
+        'I2V-01-Director', // `-t2v`/`-i2v` contains-rule cannot see these
+        'I2V-01-live',
+        'S2V-01',
+      ]) {
+        expect(ModelFamilyClassifier.classify(id), ModelFamily.openaiVideo,
+            reason: id);
+        expect(ModelFamilyClassifier.inferTag(id), 'video', reason: id);
+        // The picker's gate, on both MiniMax faces and a generic relay.
+        for (final channel in [
+          Vendors.minimax,
+          Vendors.minimaxAnthropic,
+          Vendors.newApiOpenAI,
+        ]) {
+          expect(
+            LLMDispatcher().canRunVideoJob(mm(id, channel)),
+            isTrue,
+            reason: '$id on $channel',
+          );
+        }
+      }
+      // The neighbouring non-video ids must stay out: `video-01` is a rule
+      // away from `image-01`, and the chat models share the MiniMax prefix.
+      expect(ModelFamilyClassifier.classify('image-01'),
+          ModelFamily.minimaxImage);
+      expect(ModelFamilyClassifier.classify('MiniMax-M3'), ModelFamily.other);
+    });
+
     test('the image surface is reachable from the anthropic-led face', () {
       // The regression this guards: ④'s own answer is "there is no image
       // surface", and the dispatcher used to throw/route to chat on the
