@@ -21,6 +21,7 @@ import '../services/database_service.dart';
 import '../services/font_service.dart';
 import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
+import '../services/prompt_provenance.dart';
 import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
@@ -173,6 +174,11 @@ class AppState extends ChangeNotifier {
   VeoAspectRatio lastVideoAspectRatio = VeoAspectRatio.r16_9;
   String lastPrompt = "";
   String lastVideoPrompt = "";
+
+  /// The prompt most recently applied from the assistant, for
+  /// generation-task provenance. In-memory by design (see the class doc);
+  /// [AppStateWorkbench.submitTask] consults it, nothing rebuilds off it.
+  AppliedAssistantPrompt? appliedAssistantPrompt;
   // Recently submitted prompts, newest first, capped per medium. Rewritten as
   // fresh lists by [loadPromptHistory] so selectors see the change.
   List<PromptHistoryEntry> imagePromptHistory = [];

@@ -17,6 +17,27 @@ class TaskRepository {
     return await db.query('tasks', orderBy: 'start_time DESC', limit: limit);
   }
 
+  /// Tasks whose parameters carry the given assistant session id — the
+  /// stored side of generation→prompt-version provenance.
+  ///
+  /// The LIKE over the parameters JSON is only a prefilter (it can match the
+  /// id embedded in some other string); callers re-check the decoded
+  /// parameters via `PromptProvenance.resultVersionsFromTasks`. Ascending by
+  /// start time so later tasks win map collisions there.
+  Future<List<Map<String, dynamic>>> getTasksForAssistantSession(
+    String sessionId, {
+    int limit = 500,
+  }) async {
+    final db = await _db;
+    return await db.query(
+      'tasks',
+      where: 'parameters LIKE ?',
+      whereArgs: ['%"assistantSessionId":"$sessionId"%'],
+      orderBy: 'start_time ASC',
+      limit: limit,
+    );
+  }
+
   Future<void> deleteTask(String id) async {
     final db = await _db;
     await db.delete('tasks', where: 'id = ?', whereArgs: [id]);

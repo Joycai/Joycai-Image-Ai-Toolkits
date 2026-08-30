@@ -23,6 +23,7 @@ import '../../services/assistant_kb_distill.dart';
 import '../../services/knowledge_base_service.dart';
 import '../../services/knowledge_base_starter.dart';
 import '../../services/prompt_optimizer_agent.dart';
+import '../../services/prompt_provenance.dart';
 import '../../services/task_queue_service.dart';
 import '../../state/app_state.dart';
 import '../../state/gallery_state.dart';
@@ -121,10 +122,27 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
   }
 
   void _onTaskEvent(TaskEvent event) {
-    if (event.type == TaskEventType.imageResult && event.taskType == TaskType.videoGenerate) {
-      if (!mounted) return;
-      final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+    if (event.type != TaskEventType.imageResult || !mounted) return;
+    final uiState = Provider.of<WorkbenchUIState>(context, listen: false);
+    if (event.taskType == TaskType.videoGenerate) {
       uiState.setLastGeneratedVideoPath(event.data as String);
+    }
+
+    // Provenance hand-off #3, live half: a result of a task tagged with the
+    // on-screen session gets its version into the badge map the moment it
+    // lands — the stored half (refreshResultProvenance) covers restarts.
+    final taskService = Provider.of<TaskQueueService>(context, listen: false);
+    final task = taskService.queue
+        .cast<TaskItem?>()
+        .firstWhere((t) => t!.id == event.taskId, orElse: () => null);
+    if (task == null) return;
+    if (task.parameters[PromptProvenance.sessionParamKey] !=
+        uiState.optimizerSession.id) {
+      return;
+    }
+    final version = PromptProvenance.decodeVersionParam(task.parameters);
+    if (version != null) {
+      uiState.recordResultProvenance(event.data as String, version);
     }
   }
 
@@ -703,6 +721,18 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
 
   void _handleOptimizerApply(String prompt) {
     if (_appState == null || prompt.isEmpty) return;
+    // Provenance hand-off #1: remember which version this text is, so a
+    // generation run with it unchanged can be tagged. The version is looked
+    // up by text rather than taken as "the latest" — every prompt card has
+    // its own apply button, so the user can apply v2 after v3 exists.
+    final session =
+        Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
+    final version =
+        PromptProvenance.versionForPromptText(session.transcript, prompt);
+    _appState!.appliedAssistantPrompt = version == null
+        ? null
+        : AppliedAssistantPrompt(
+            sessionId: session.id, version: version, text: prompt);
     _appState!.updateWorkbenchConfig(prompt: prompt);
     _appState!.setWorkbenchTab(0);
     AppSnackBar.info(context, AppLocalizations.of(context)!.promptApplied);

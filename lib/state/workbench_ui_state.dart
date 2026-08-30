@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/app_image.dart';
+import '../models/task_item.dart';
 import '../services/assistant_kb_distill.dart';
 import '../services/prompt_optimizer_agent.dart';
+import '../services/prompt_provenance.dart';
 import '../services/repositories/assistant_session_repository.dart';
+import '../services/repositories/task_repository.dart';
 
 /// How the comparator arranges the two images.
 ///
@@ -114,6 +117,8 @@ class WorkbenchUIState extends ChangeNotifier {
     PromptOptimizerAgent.sessions.remove(optimizerSession.id);
     optimizerSession = PromptOptimizerSession(mode: mode ?? optimizerSession.mode);
     PromptOptimizerAgent.sessions[optimizerSession.id] = optimizerSession;
+    // A fresh session has generated nothing; no query needed.
+    resultVersionByPath = const {};
     notifyListeners();
   }
 
@@ -189,7 +194,12 @@ class WorkbenchUIState extends ChangeNotifier {
     optimizerSession = session;
     PromptOptimizerAgent.sessions[session.id] = session;
     optimizerReferenceImages = references;
+    // Cleared now, refilled asynchronously: a restored session's past
+    // generations live in the tasks table, and the stale map of the previous
+    // session must not badge this one's gallery while the query runs.
+    resultVersionByPath = const {};
     notifyListeners();
+    refreshResultProvenance();
   }
 
   /// Switching modes always starts a fresh conversation (mode is fixed per
@@ -269,6 +279,43 @@ class WorkbenchUIState extends ChangeNotifier {
     _assistantTurnRequested = true;
     notifyListeners();
     return true;
+  }
+
+  /// `result path → prompt version` for the LIVE assistant session — what the
+  /// gallery's version badge and the feedback dialog's binding read.
+  ///
+  /// A projection of the tasks table (whose parameters carry the provenance
+  /// tags `submitTask` wrote), rebuilt on session switch and appended to as
+  /// results land. Never persisted on its own: the tasks table is the record,
+  /// this map is its index for the one session on screen.
+  Map<String, int> resultVersionByPath = const {};
+
+  /// Rebuilds [resultVersionByPath] from stored tasks for the live session.
+  Future<void> refreshResultProvenance() async {
+    final sessionId = optimizerSession.id;
+    Map<String, int> versions;
+    try {
+      final rows = await TaskRepository().getTasksForAssistantSession(sessionId);
+      versions = PromptProvenance.resultVersionsFromTasks(
+        rows.map(TaskItem.fromMap),
+        sessionId,
+      );
+    } catch (_) {
+      // No database (tests) or a corrupt row — the badge is a convenience,
+      // not something worth failing a session switch over.
+      versions = const {};
+    }
+    // The session may have been switched again while the query ran.
+    if (optimizerSession.id != sessionId) return;
+    resultVersionByPath = versions;
+    notifyListeners();
+  }
+
+  /// Records one freshly generated result, from the task-event stream.
+  void recordResultProvenance(String path, int version) {
+    if (resultVersionByPath[path] == version) return;
+    resultVersionByPath = {...resultVersionByPath, path: version};
+    notifyListeners();
   }
 
   /// Set when something outside the assistant screen (the gallery card's
