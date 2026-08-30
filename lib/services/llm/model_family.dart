@@ -126,6 +126,33 @@ class ModelFamilyClassifier {
       return ModelFamily.openaiVideo;
     }
 
+    // --- MiniMax cloud video, Hailuo generation ---
+    // `MiniMax-Hailuo-2.3(-Fast)` / `MiniMax-Hailuo-02`, and the older
+    // `video-01` / `T2V-01(-Director)` / `I2V-01(-Director|-live)` / `S2V-01`
+    // ids (platform.minimax.io video-generation reference). Without these
+    // rules every one of them classified as chat and the video workbench
+    // could not list them on any channel — the generic `-t2v`/`-i2v` rule
+    // below misses `T2V-01`, whose marker sits at the start of the id.
+    //
+    // Classifies into [ModelFamily.openaiVideo] ("this is an async
+    // video-task model") on the same reasoning as H3 above: *which* video
+    // protocol serves it is the vendor's declaration, so on a relay these
+    // ids ride the `/v1/videos` route (NewAPI exposes Hailuo under its
+    // unified video format). Note MiniMax's *own* current `/v2` task surface
+    // documents only `MiniMax-H3` — the Hailuo generation lives on the
+    // legacy `/v1/video_generation` wire this app does not implement — so on
+    // an official MiniMax channel these ids submit to `/v2` and stand or
+    // fall with what that surface still accepts. The `minimax-hailuo` prefix
+    // cannot collide with the chat ids (`MiniMax-M3`, `abab*`), and the
+    // spelled-out `?2v-01` prefixes keep the same caution as H3 vs M3 above.
+    if (id.startsWith('minimax-hailuo') ||
+        id.startsWith('video-01') ||
+        id.startsWith('t2v-01') ||
+        id.startsWith('i2v-01') ||
+        id.startsWith('s2v-01')) {
+      return ModelFamily.openaiVideo;
+    }
+
     // --- DashScope native video (wan3.x, async-task only) ---
     // `wan3.0-video(-prime)` matches none of the rules below (`wan2.5*`,
     // `wan-*`, `-t2v`/`-i2v`), so it needs its own — placed with the video
