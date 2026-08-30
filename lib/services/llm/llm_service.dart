@@ -540,7 +540,7 @@ class LLMService {
     _sessions.remove(sessionId);
   }
 
-  Future<String> startLongRunning({
+  Future<LLMOperationTicket> startLongRunning({
     required dynamic modelIdentifier,
     required List<LLMMessage> messages,
     String? contextId,
@@ -550,7 +550,7 @@ class LLMService {
       modelIdentifier,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
-    final operationName = await _dispatcher.startLongRunning(
+    final ticket = await _dispatcher.startLongRunning(
       config,
       messages,
       options: options,
@@ -563,12 +563,13 @@ class LLMService {
     // submit time; the row records the request itself (tokens 0).
     _recordUsage(config.modelId, config, const {'operation': 'submit'},
         modelDbId: modelIdentifier is int ? modelIdentifier : null);
-    return operationName;
+    return ticket;
   }
 
   Future<Map<String, dynamic>> checkOperation({
     required dynamic modelIdentifier,
     required String operationName,
+    String? operationSurface,
     String? contextId,
   }) async {
     final config = await _configResolver.resolveConfig(
@@ -578,6 +579,7 @@ class LLMService {
     return await _dispatcher.checkOperation(
       config,
       operationName,
+      surfaceId: operationSurface,
       logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
     );
   }
@@ -596,6 +598,7 @@ class LLMService {
   Future<String?> cancelOperation({
     required dynamic modelIdentifier,
     required String operationName,
+    String? operationSurface,
     String? contextId,
   }) async {
     try {
@@ -613,6 +616,7 @@ class LLMService {
           .cancelOperation(
             config,
             operationName,
+            surfaceId: operationSurface,
             logger: (msg, {level = 'INFO'}) =>
                 onLogAdded?.call(msg, level: level, contextId: contextId),
           )

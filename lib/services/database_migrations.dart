@@ -62,6 +62,7 @@ class DatabaseMigration {
     if (oldVersion < 35) await _createV35Columns(db);
     if (oldVersion < 36) await _createV36Columns(db);
     if (oldVersion < 37) await _createV37Columns(db);
+    if (oldVersion < 38) await _createV38Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -99,6 +100,7 @@ class DatabaseMigration {
     await _createV35Columns(db);
     await _createV36Columns(db);
     await _createV37Columns(db);
+    await _createV38Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -138,6 +140,25 @@ class DatabaseMigration {
     final added = await _addColumnIfNotExists(
         db, 'llm_channels', 'sort_order', 'INTEGER DEFAULT 0');
     if (added) await db.execute('UPDATE llm_channels SET sort_order = id');
+  }
+
+  /// Provenance of a video task's long-running operation: the upstream id and
+  /// the wire surface (`WireProtocol.id` string) that issued it, written when
+  /// the submit is accepted. Polling routes on the surface, so a channel
+  /// re-pointed at another vendor mid-job keeps polling where the job
+  /// actually runs. Not derivable from any other table (the v32 lesson does
+  /// not apply): it records a historical fact — where the job *was*
+  /// submitted — that the current channel row no longer proves. NULL on
+  /// pre-v38 rows and non-video tasks; readers fall back to id-prefix
+  /// routing.
+  static Future<void> _createV38Columns(Database db) async {
+    // Guarded like v37: every real database has had `tasks` since v1, but
+    // `migrate` keys each step off `oldVersion` alone, so partial fixtures
+    // (migration tests exercising one older step) reach this too — and an
+    // ALTER against a missing table throws rather than being skipped.
+    if (!await _tableExists(db, 'tasks')) return;
+    await _addColumnIfNotExists(db, 'tasks', 'operation_name', 'TEXT');
+    await _addColumnIfNotExists(db, 'tasks', 'operation_surface', 'TEXT');
   }
 
   static Future<bool> _tableExists(Database db, String tableName) async {

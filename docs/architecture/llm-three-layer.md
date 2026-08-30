@@ -116,6 +116,16 @@ surface 开关"表达不了它。绑定关系升级为：
   `/v1/videos`，④ 族没有默认，null 就是最终答案。`startLongRunning`、
   `checkOperation`、`canRunVideoJob` 三处共用，避免"提交能跑、轮询不认"这类
   半边路由。
+- **视频任务的轮询按持久化的提交佐证路由，不按渠道现状。**
+  `startLongRunning` 返回 `LLMOperationTicket`（operation id + 发出它的
+  `WireProtocol`），executor 把两者一起写进 `tasks` 表
+  （v38 的 `operation_name` / `operation_surface` 列）；此后每一轮
+  `checkOperation` / `cancelOperation` 带回 `surfaceId`，dispatcher 经
+  `_videoJobProtocolFor`（`_nativeVideoProtocol` 的超集，补上两个从不被声明
+  的家族默认面 ①/`veo`）直达当初的面。任务比启动它的配置活得久：渠道中途
+  被改指到别家 vendor，轮询也不会再送进陌生的状态词表。`video_` 前缀守卫
+  仍在家族分支里，作为 v38 之前旧行与无佐证调用方的兜底；cancel 在佐证面
+  没有取消能力时回答 null，**绝不**回落到渠道当前声明的面。
 - **`test/wire_protocol_routing_test.dart`** 钉住"重构前存在的每个
   (vendor, model) 组合仍解析到同一条路"；
   `test/dashscope_chat_payload_test.dart` 钉住私有 chat 面的线上规则

@@ -417,12 +417,21 @@ extension TaskExecutors on TaskQueueService {
     ];
 
     // 2. Start Long Running Operation
-    final operationName = await LLMService().startLongRunning(
+    final ticket = await LLMService().startLongRunning(
       modelIdentifier: task.modelDbId ?? task.modelId,
       messages: messages,
       contextId: task.id,
       options: task.parameters,
     );
+    final operationName = ticket.name;
+
+    // Persist the id and its provenance immediately: the poll loop re-resolves
+    // the channel from the database every round, and the channel can be edited
+    // (even re-pointed at another vendor) while this job runs. The persisted
+    // surface is what keeps every later poll on the surface that issued the id.
+    task.operationName = operationName;
+    task.operationSurface = ticket.surfaceId;
+    await DatabaseService().saveTask(task.toMap());
 
     task.addLog('LRO started: $operationName');
     _emit(task.id, TaskEventType.progress, 0.05);
@@ -438,6 +447,7 @@ extension TaskExecutors on TaskQueueService {
         final action = await LLMService().cancelOperation(
           modelIdentifier: task.modelDbId ?? task.modelId,
           operationName: operationName,
+          operationSurface: task.operationSurface,
           contextId: task.id,
         );
         task.addLog(action == null
@@ -453,6 +463,7 @@ extension TaskExecutors on TaskQueueService {
       final opStatus = await LLMService().checkOperation(
         modelIdentifier: task.modelDbId ?? task.modelId,
         operationName: operationName,
+        operationSurface: task.operationSurface,
         contextId: task.id,
       );
 
