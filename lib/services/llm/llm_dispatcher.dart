@@ -773,6 +773,14 @@ class LLMDispatcher {
         };
 
       case ProtocolFamily.anthropic:
+        // The id decides ahead of the vendor's declaration, same rule (and
+        // comment) as the ① branch below: tasks outlive the config that
+        // started them, and a channel re-pointed at a ④ vendor mid-poll must
+        // not hand a Sora-style id to MiniMax's `/v2` query, where it means
+        // nothing and the in-flight task fails permanently.
+        if (operationName.startsWith('video_')) {
+          return _openaiVideos.poll(target, operationName, logger: logger);
+        }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from the vendor-native surface it declares.
         final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
@@ -789,6 +797,12 @@ class LLMDispatcher {
         return _veo.poll(target, operationName, logger: logger);
 
       case ProtocolFamily.dashscope:
+        // Same in-flight guard as the ① and ④ branches — a `video_…` id was
+        // issued by the `/v1/videos` surface, never by `video-synthesis`,
+        // whatever the channel's wiring says today.
+        if (operationName.startsWith('video_')) {
+          return _openaiVideos.poll(target, operationName, logger: logger);
+        }
         // Symmetric with the submit above: an operation on this channel can
         // only have come from `video-synthesis`, and its poll already
         // translates DashScope's task states into the Veo-shaped envelope
