@@ -33,7 +33,17 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  late Directory home;
+  // generateStream touches AppState, whose construction reaches
+  // path_provider — same mock the debug-logger test uses. One directory for
+  // the whole suite, created before any test and never deleted mid-run: the
+  // singletons open the app database lazily in a fire-and-forget future, and
+  // a per-test tearDown that removes the directory races that open. On
+  // Windows the delete failed on locked files and the race stayed invisible;
+  // on the Linux CI runner it succeeded, the open found no directory
+  // (SqliteException 14), and the async error was pinned on whichever test
+  // finished first. systemTemp is left to the OS cleaner.
+  final home = Directory.systemTemp.createTempSync('joycai_stream');
+
   late HttpServer server;
   late List<String> sseLines;
 
@@ -52,9 +62,6 @@ void main() {
   }
 
   setUp(() async {
-    // generateStream touches AppState, whose construction reaches
-    // path_provider — same mock the debug-logger test uses.
-    home = Directory.systemTemp.createTempSync('joycai_stream');
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       (MethodCall call) async => home.path,
@@ -77,13 +84,6 @@ void main() {
   tearDown(() async {
     await server.close(force: true);
     LLMClientPool.disposeAll();
-    // Best-effort: AppState's singletons keep files open for the process's
-    // lifetime, and a locked file must not fail the suite.
-    try {
-      if (home.existsSync()) home.deleteSync(recursive: true);
-    } on FileSystemException {
-      // Left for the OS temp cleaner.
-    }
   });
 
   test('tool-call fragments keep the stream audibly alive', () async {

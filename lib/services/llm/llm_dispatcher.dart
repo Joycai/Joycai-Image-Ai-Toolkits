@@ -44,6 +44,28 @@ import 'vendors/vendors.dart';
 /// [LLMDispatcher.generateTimeout] guessing when the caller already knows.
 const String expectedOutputTokensKey = 'expectedOutputTokens';
 
+/// What [LLMDispatcher.startLongRunning] hands back: the upstream operation id
+/// together with the wire surface that issued it.
+///
+/// The surface is the operation's provenance. Tasks outlive the config that
+/// started them — the channel can be re-pointed at another vendor while the
+/// job is still running — so callers persist [surfaceId] next to the id and
+/// pass it back to [LLMDispatcher.checkOperation] / [cancelOperation], which
+/// then poll the surface the job actually came from instead of re-deriving a
+/// route from the channel's *current* wiring. [surface] is null only for the
+/// simulated path, which never leaves the process.
+class LLMOperationTicket {
+  final String name;
+  final WireProtocol? surface;
+
+  /// The stable string form ([WireProtocol.id]) for persistence. Parsed back
+  /// leniently ([WireProtocol.tryParse]) so a row written by a newer build
+  /// degrades to the legacy routing instead of failing.
+  String? get surfaceId => surface?.id;
+
+  const LLMOperationTicket(this.name, this.surface);
+}
+
 class LLMDispatcher {
   // Layer-1 protocol implementations (stateless).
   static final _openaiChat = OpenAIChatProtocol();
@@ -654,7 +676,7 @@ class LLMDispatcher {
   // Long-running operations (video jobs)
   // ---------------------------------------------------------------------------
 
-  Future<String> startLongRunning(
+  Future<LLMOperationTicket> startLongRunning(
     LLMModelConfig config,
     List<LLMMessage> history, {
     Map<String, dynamic>? options,
@@ -679,8 +701,11 @@ class LLMDispatcher {
         final nativeVideo = _nativeVideoProtocol(target.vendor.videoProtocol);
         if (target.model.family == ModelFamily.openaiVideo &&
             nativeVideo != null) {
-          return nativeVideo.submit(target, history,
-              options: options, logger: logger);
+          return LLMOperationTicket(
+            await nativeVideo.submit(target, history,
+                options: options, logger: logger),
+            target.vendor.videoProtocol,
+          );
         }
         throw UnsupportedError(
           'The Anthropic Messages API has no image or video generation '
@@ -690,7 +715,10 @@ class LLMDispatcher {
 
       case ProtocolFamily.gemini:
         // Veo via :predictLongRunning.
-        return _veo.submit(target, history, options: options, logger: logger);
+        return LLMOperationTicket(
+          await _veo.submit(target, history, options: options, logger: logger),
+          WireProtocol.geminiVeo,
+        );
 
       case ProtocolFamily.dashscope:
         // `video-synthesis` + the shared task poller. The vendor declares the
@@ -699,8 +727,11 @@ class LLMDispatcher {
         // no video surface declared should say so, not submit blindly.
         if (target.model.family == ModelFamily.openaiVideo &&
             target.vendor.videoProtocol == WireProtocol.dashscopeVideo) {
-          return _dashscopeVideo.submit(target, history,
-              options: options, logger: logger);
+          return LLMOperationTicket(
+            await _dashscopeVideo.submit(target, history,
+                options: options, logger: logger),
+            WireProtocol.dashscopeVideo,
+          );
         }
         throw UnsupportedError(
           'The model "${config.modelId}" is not a DashScope video model; '
@@ -712,15 +743,24 @@ class LLMDispatcher {
           // Vendors with a native async-video surface replace the Sora-style
           // multipart `/videos` default: xAI's `/videos/generations` JSON,
           // DashScope's `video-synthesis` task flow.
-          final protocol =
-              _nativeVideoProtocol(target.vendor.videoProtocol) ?? _openaiVideos;
-          return protocol.submit(target, history, options: options, logger: logger);
+          final declared = _nativeVideoProtocol(target.vendor.videoProtocol);
+          final protocol = declared ?? _openaiVideos;
+          return LLMOperationTicket(
+            await protocol.submit(target, history,
+                options: options, logger: logger),
+            declared != null
+                ? target.vendor.videoProtocol
+                : WireProtocol.openaiVideos,
+          );
         }
 
         final isSimulation = options?['simulation'] == true || target.model.isMockModel;
         if (isSimulation) {
           logger?.call('Simulating long-running operation for OpenAI-style model: ${config.modelId}', level: 'INFO');
-          return 'openai_lro_sim_${DateTime.now().millisecondsSinceEpoch}';
+          // No wire surface issued this id; a null surface routes its polls
+          // through the legacy family switch, whose sim check answers them.
+          return LLMOperationTicket(
+              'openai_lro_sim_${DateTime.now().millisecondsSinceEpoch}', null);
         }
 
         throw UnsupportedError(
@@ -730,12 +770,27 @@ class LLMDispatcher {
     }
   }
 
+  /// Polls a long-running operation.
+  ///
+  /// [surfaceId] is the persisted provenance from the [LLMOperationTicket]
+  /// that started the job. When it names a video surface, the poll goes
+  /// straight there — the channel's current family, vendor declaration and
+  /// id shape are all ignored, because the record of where the job was
+  /// submitted outranks every heuristic about where it *would* be submitted
+  /// today. Absent or unrecognized (a pre-v38 task row, the simulated path,
+  /// a row written by a newer build), routing falls back to the family
+  /// switch below with its id-prefix guards.
   Future<Map<String, dynamic>> checkOperation(
     LLMModelConfig config,
     String operationName, {
+    String? surfaceId,
     LLMLogger? logger,
   }) async {
     final target = resolveTarget(config);
+    final pinned = _videoJobProtocolFor(WireProtocol.tryParse(surfaceId));
+    if (pinned != null) {
+      return pinned.poll(target, operationName, logger: logger);
+    }
     switch (target.vendor.family) {
       case ProtocolFamily.midjourney:
         // Translated into the same Veo-shaped envelope every other family's
@@ -832,6 +887,10 @@ class LLMDispatcher {
         // Sora-style ids start with `video_` (NewAPI / OpenAI Sora format),
         // which only the ① `/v1/videos` surface emits — so the id itself,
         // not the channel's current wiring, decides where it is polled.
+        // (Tasks submitted since the ticket carries a surface never reach
+        // this switch; the prefix guards here and in the ④/C2 branches keep
+        // rows persisted before that — and any caller without a surface —
+        // polling correctly.)
         //
         // Ahead of the vendor switch below on purpose. Tasks outlive the
         // config that started them: a vendor that gains a `videoProtocol`
@@ -880,9 +939,22 @@ class LLMDispatcher {
   Future<String?> cancelOperation(
     LLMModelConfig config,
     String operationName, {
+    String? surfaceId,
     LLMLogger? logger,
   }) async {
     final target = resolveTarget(config);
+    // Same provenance rule as checkOperation: a persisted surface names the
+    // one place a cancel may go. If that surface has no cancel, the answer
+    // is null — falling back to the channel's *current* declaration here
+    // would aim the cancel at a surface the job never ran on.
+    final surface = WireProtocol.tryParse(surfaceId);
+    if (surface != null) {
+      // Typed Object? so the `is!` test can promote: CancellableJobProtocol
+      // is a sibling interface of VideoJobProtocol, not a subtype.
+      final Object? pinned = _videoJobProtocolFor(surface);
+      if (pinned is! CancellableJobProtocol) return null;
+      return pinned.cancel(target, operationName, logger: logger);
+    }
     final protocol = _cancellableJobProtocol(target);
     if (protocol == null) return null;
     return protocol.cancel(target, operationName, logger: logger);
@@ -905,6 +977,20 @@ class LLMDispatcher {
         WireProtocol.minimaxVideo => _minimaxVideo,
         WireProtocol.minimaxH3BaseVideo => _minimaxH3BaseVideo,
         _ => null,
+      };
+
+  /// The implementation behind *any* video-job surface — the superset of
+  /// [_nativeVideoProtocol] that also answers for the two surfaces vendors
+  /// never declare (①'s Sora-style default and Veo, which are family
+  /// defaults rather than declarations). This is what a persisted
+  /// [LLMOperationTicket.surfaceId] resolves through, so every surface a
+  /// ticket can name must appear here; a non-video or unknown value answers
+  /// null and the caller falls back to legacy routing.
+  VideoJobProtocol? _videoJobProtocolFor(WireProtocol? surface) =>
+      switch (surface) {
+        WireProtocol.openaiVideos => _openaiVideos,
+        WireProtocol.geminiVeo => _veo,
+        _ => _nativeVideoProtocol(surface),
       };
 
   /// Whether this channel can start a video job for this model at all — the

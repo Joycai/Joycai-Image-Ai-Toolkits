@@ -175,6 +175,32 @@ void main() {
     return db;
   }
 
+  test('v38 adds the operation provenance columns to tasks', () async {
+    final db = await openV30TasksDb();
+    addTearDown(db.close);
+
+    await DatabaseMigration.migrate(db, 37, 38);
+
+    expect(await columnsOf(db, 'tasks'),
+        containsAll(['operation_name', 'operation_surface']));
+
+    // Pre-v38 rows read back with null provenance — the poll router treats
+    // that as "fall back to the id-prefix guards", never as an error.
+    await db.insert('tasks', {
+      'id': 'pre-v38-task',
+      'image_path': '[]',
+      'status': 'processing',
+      'parameters': '{}',
+      'result_path': '[]',
+      'model_id': 'sora-2',
+    });
+    final row = (await db.query('tasks')).single;
+    expect(TaskItem.fromMap(row).operationSurface, isNull);
+
+    // Re-running the step (upgrade/downgrade round trip) must be a no-op.
+    await DatabaseMigration.migrate(db, 37, 38);
+  });
+
   test('v31 adds the logs column to an existing database', () async {
     final db = await openV30TasksDb();
     addTearDown(db.close);
