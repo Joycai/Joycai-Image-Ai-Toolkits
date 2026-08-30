@@ -670,8 +670,12 @@ class OpenAIChatProtocol implements ChatProtocol {
     final response = await client.send(request);
 
     if (response.statusCode != 200) {
+      // Read unconditionally, not just for the debug log: the body carries
+      // the provider's actual complaint, and draining it also settles the
+      // pooled client's transfer count the moment it happens rather than at
+      // the handle's close.
+      final body = await response.stream.bytesToString();
       if (debugFile != null) {
-        final body = await response.stream.bytesToString();
         await LLMDebugLogger.appendLine(debugFile, 'Error Status: ${response.statusCode}');
         await LLMDebugLogger.appendLine(debugFile, 'Error Body: $body');
         await LLMDebugLogger.finish(debugFile);
@@ -679,7 +683,8 @@ class OpenAIChatProtocol implements ChatProtocol {
       logger?.call('Stream request failed with status: ${response.statusCode}', level: 'ERROR');
       client.close();
       throw LLMApiException(
-          'OpenAI API Stream Request failed: ${response.statusCode}',
+          'OpenAI API Stream Request failed: ${response.statusCode} - '
+          '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
           statusCode: response.statusCode);
     }
 

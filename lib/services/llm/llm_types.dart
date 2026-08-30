@@ -497,10 +497,13 @@ class LLMModelConfig {
   /// more times in a single agent turn, against a host that is usually far
   /// away.
   ///
-  /// The returned handle's `close()` does nothing: ownership stays with
-  /// [LLMClientPool]. Every protocol closes its client in a `finally`, which
-  /// is right for a private client and fatal for a shared one, and swallowing
-  /// the call is safer than teaching twenty-seven call sites the difference.
+  /// The returned handle's `close()` releases a *lease*, never the shared
+  /// client: ownership stays with [LLMClientPool]. Every protocol closes its
+  /// client in a `finally`, which is right for a private client and fatal for
+  /// a shared one — so the call is repurposed as the lease's end. The lease
+  /// is what keeps a poll loop's client alive through the sleeps between
+  /// requests, and what lets an evicted client actually close once its last
+  /// holder leaves.
   http.Client createClient() => LLMClientPool.take(this);
 
   /// Everything that determines which connection a request opens.
@@ -591,18 +594,35 @@ class LLMClientPool {
 
   @visibleForTesting
   static int get liveClients => _clients.length;
+
+  /// The lease-plus-transfer count of the pooled entry for [connectionKey],
+  /// or null when nothing is pooled there. Test-only: the count's job is to
+  /// gate eviction, and a count that silently sticks above zero is a client
+  /// that never closes.
+  @visibleForTesting
+  static int? inFlightFor(String connectionKey) =>
+      _clients[connectionKey]?.inFlight;
 }
 
-/// One pooled connection, plus a count of the requests still riding on it.
+/// One pooled connection, plus a count of the *leases* still riding on it.
 ///
 /// The count is what makes eviction safe. Eviction and use are unrelated
-/// events — a video poll loop or an SSE stream can be mid-transfer when a
+/// events — a video poll loop or an SSE stream can be mid-work when a
 /// ninth endpoint pushes its client past the cap — and closing an
 /// [IOClient] is `close(force: true)`: it does not drain, it tears the
 /// sockets down, and the in-flight request dies with a `ClientException`.
 /// One multi-face channel occupies up to three [LLMModelConfig.connectionKey]s
 /// on its own, so the cap is reachable with a handful of channels and this is
 /// an ordinary session, not a corner.
+///
+/// A lease spans a *handle's whole lifetime* — `createClient()` to the
+/// protocol's `finally`-guaranteed `close()` — not just each transfer. The
+/// distinction is what keeps a poll loop alive: it holds one handle across
+/// submit + polls with sleeps in between, and a count that only tracked
+/// transfers read those sleeps as "idle, safe to close", killing the
+/// already-billed job at its next poll. Per-transfer retains still exist on
+/// top (a body can outlive a carelessly early `close()`), but the lease is
+/// what eviction actually waits for.
 ///
 /// So eviction drops the *pool's* reference and nothing more; whoever leaves
 /// last closes the client.
@@ -630,12 +650,25 @@ class _PooledClient {
   int get inFlight => _inFlight;
 }
 
-/// A pooled client handle whose [close] is a no-op — see
-/// [LLMModelConfig.createClient].
+/// A pooled client handle. [close] releases the handle's lease rather than
+/// closing the shared client — see [LLMModelConfig.createClient].
 class _SharedClient extends http.BaseClient {
   final _PooledClient _pooled;
 
-  _SharedClient(this._pooled);
+  /// Transfer releases not yet fired — bodies still (supposedly) being read.
+  /// [close] force-releases them: the protocol's `finally` has declared the
+  /// request over, and a body nobody listened to (the throw-on-non-200 paths
+  /// never subscribe) would otherwise hold its retain forever, leaving the
+  /// evicted client — and its sockets — unclosable.
+  final Set<void Function()> _pendingTransfers = {};
+
+  bool _closed = false;
+
+  _SharedClient(this._pooled) {
+    // The lease. Held from creation to [close], covering the gaps between
+    // requests that a per-transfer count cannot see.
+    _pooled.retain();
+  }
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -653,11 +686,14 @@ class _SharedClient extends http.BaseClient {
     // client was closed underneath it is exactly what the count exists to
     // prevent.
     var released = false;
-    void release() {
+    late final void Function() release;
+    release = () {
       if (released) return;
       released = true;
+      _pendingTransfers.remove(release);
       _pooled.release();
-    }
+    };
+    _pendingTransfers.add(release);
 
     return http.StreamedResponse(
       _releaseWhenDone(response.stream, release),
@@ -699,8 +735,17 @@ class _SharedClient extends http.BaseClient {
     return controller.stream;
   }
 
+  /// Ends this handle's lease. Idempotent; the shared client itself closes
+  /// only once every lease and transfer is gone *and* the pool has evicted it.
   @override
-  void close() {}
+  void close() {
+    if (_closed) return;
+    _closed = true;
+    for (final release in _pendingTransfers.toList()) {
+      release();
+    }
+    _pooled.release();
+  }
 }
 
 class LLMResponse {

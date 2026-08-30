@@ -125,6 +125,79 @@ void main() {
     expect(await body, 'firstsecond');
   });
 
+  test('a handle held across polls survives eviction between requests', () async {
+    // The gap the lease exists for: an async job loop takes one client for
+    // submit + polls with sleeps in between. Between polls nothing is
+    // mid-transfer, and a count that only tracked transfers read that as
+    // "safe to close" — the next poll then died with ClientException and the
+    // already-billed job was abandoned.
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final endpoint = 'http://127.0.0.1:${server.port}';
+
+    server.listen((request) async {
+      request.response.write('ok');
+      await request.response.close();
+    });
+
+    final client = config(endpoint: endpoint).createClient();
+    // First "poll", fully drained — the idle moment follows.
+    expect((await client.get(Uri.parse(endpoint))).body, 'ok');
+
+    // Eight more endpoints push the idle client out of the cap.
+    for (var i = 0; i < 8; i++) {
+      config(endpoint: 'https://evictor$i.example.com/v1').createClient();
+    }
+
+    // Next poll on the same handle must still work: the lease held from
+    // createClient() to close() is what defers the actual teardown.
+    expect((await client.get(Uri.parse(endpoint))).body, 'ok');
+    client.close();
+  });
+
+  test('a lease is counted from take to close', () {
+    final key = config().connectionKey;
+    final first = config().createClient();
+    expect(LLMClientPool.inFlightFor(key), 1);
+
+    final second = config().createClient();
+    expect(LLMClientPool.inFlightFor(key), 2);
+
+    first.close();
+    first.close(); // Idempotent — a double close must not free someone else's lease.
+    expect(LLMClientPool.inFlightFor(key), 1);
+
+    second.close();
+    expect(LLMClientPool.inFlightFor(key), 0);
+  });
+
+  test('a body nobody listened to is released by close', () async {
+    // The throw-on-non-200 paths never subscribe to the response stream, and
+    // a transfer retain that waits for a listener that never comes held the
+    // count above zero forever — an evicted client (and its sockets) could
+    // then never close. The protocol's finally-guaranteed close() settles it.
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final endpoint = 'http://127.0.0.1:${server.port}';
+
+    server.listen((request) async {
+      request.response.statusCode = 429;
+      request.response.write('{"error":"rate limited"}');
+      await request.response.close();
+    });
+
+    final key = config(endpoint: endpoint).connectionKey;
+    final client = config(endpoint: endpoint).createClient();
+    final response =
+        await client.send(http.Request('GET', Uri.parse(endpoint)));
+    expect(response.statusCode, 429);
+
+    // Throw-path shape: the body stream is abandoned, the handle closed.
+    client.close();
+    expect(LLMClientPool.inFlightFor(key), 0,
+        reason: 'the unlistened transfer must not outlive the handle');
+  });
+
   test('a hit refreshes recency, so a busy channel is not evicted', () {
     const busy = 'https://busy.example.com/v1';
     config(endpoint: busy).createClient();
