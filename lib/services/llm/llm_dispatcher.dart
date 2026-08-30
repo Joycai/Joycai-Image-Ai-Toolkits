@@ -508,6 +508,30 @@ class LLMDispatcher {
     }
   }
 
+  /// Whether a family's chat wire consumes [LLMModelConfig.reasoningEffort].
+  ///
+  /// The model editor shows the reasoning-intensity control only where
+  /// turning the knob changes the request — a knob whose only effect is
+  /// nothing is worse than no knob. The answer lives here, with every other
+  /// capability query the UI consults (`streamSupportsTools`,
+  /// `protocolMenuFor`), because a copy of it in the editor is a silent
+  /// failure the day a family gains the ability: C2 read
+  /// `effectiveReasoningEffort` to drive `enable_thinking` from the day it
+  /// shipped, while the editor's own two-family gate kept the control hidden
+  /// on every dashscope-native channel — thinking could never be turned off
+  /// there, with nothing anywhere reporting why.
+  static bool chatConsumesReasoningEffort(ProtocolFamily family) {
+    switch (family) {
+      case ProtocolFamily.openai: // reasoning_effort
+      case ProtocolFamily.anthropic: // thinking budget tiers
+      case ProtocolFamily.dashscope: // enable_thinking / thinking_budget
+        return true;
+      case ProtocolFamily.gemini:
+      case ProtocolFamily.midjourney:
+        return false;
+    }
+  }
+
   Stream<LLMResponseChunk> generateStream(
     LLMModelConfig config,
     List<LLMMessage> history, {
