@@ -249,6 +249,13 @@ extension AppStateWorkbench on AppState {
     params['imagePrefix'] = galleryState.imagePrefix;
     params['retryCount'] = retryCount;
     params['compressReferenceImages'] = compressReferenceImages;
+    // Generation→prompt-version provenance: only while the outgoing prompt is
+    // byte-for-byte (trimmed) the text the assistant staged — an edited
+    // prompt is the user's own and gets no version tag. The tagged
+    // parameters persist with the task, which is what lets the gallery badge
+    // and the feedback dialog derive provenance after a restart.
+    final provenanceParams = appliedAssistantPrompt?.taskParamsFor(prompt);
+    if (provenanceParams != null) params.addAll(provenanceParams);
     // Gemini safety thresholds travel with the task so payload builders can
     // apply them per request (Map<String,String>, JSON-safe for persistence).
     params[SafetySettings.paramKey] = Map<String, String>.from(safetyThresholds);

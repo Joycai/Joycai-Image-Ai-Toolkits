@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
@@ -341,8 +342,45 @@ class _ImageCardState extends State<ImageCard> {
                         right: 0,
                         child: Center(child: _buildHoverActions(context)),
                       ),
-                    if (selected)
-                      Positioned(top: 6, right: 6, child: _buildSelectionBadge(colorScheme)),
+                    // The provenance badge (`20a`): which assistant prompt
+                    // version generated this picture. Derived from the tagged
+                    // task record via the session-scoped map on the state —
+                    // present only while that session is the live one. Sits
+                    // left of the selection badge so both stay readable when
+                    // the card is picked as a reference.
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Builder(builder: (context) {
+                            final version = context.select<WorkbenchUIState, int?>(
+                                (w) => w.resultVersionByPath[widget.imageFile.path]);
+                            if (version == null) return const SizedBox.shrink();
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: _chipScrim,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'v$version',
+                                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                                      color: _overlayInk,
+                                      fontWeight: FontWeight.w600,
+                                      height: AppType.tightHeight,
+                                    ),
+                              ),
+                            );
+                          }),
+                          if (selected) ...[
+                            const SizedBox(width: 5),
+                            _buildSelectionBadge(colorScheme),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -502,7 +540,12 @@ class _ImageCardState extends State<ImageCard> {
   Future<void> _handleFeedback(BuildContext context) async {
     final workbenchUIState = Provider.of<WorkbenchUIState>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
-    final version = workbenchUIState.optimizerSession.promptVersions;
+    // Provenance first, latest version as the fallback: an image the task
+    // record ties to v2 gives feedback on v2 even after v3 was staged —
+    // that binding is the whole reason the tag exists.
+    final version =
+        workbenchUIState.resultVersionByPath[widget.imageFile.path] ??
+            workbenchUIState.optimizerSession.promptVersions;
     if (version < 1) return;
     final feedback = await showResultFeedbackDialog(
       context,
@@ -510,7 +553,11 @@ class _ImageCardState extends State<ImageCard> {
       promptVersion: version,
     );
     if (feedback == null || feedback.isEmpty) return;
-    if (!workbenchUIState.sendResultFeedback(widget.imageFile, feedback: feedback)) {
+    if (!workbenchUIState.sendResultFeedback(
+      widget.imageFile,
+      feedback: feedback,
+      promptVersion: version,
+    )) {
       return;
     }
     appState.setWorkbenchTab(4); // Prompt assistant
