@@ -32,25 +32,20 @@ void main() {
       expect(decodedTask.endTime, task.endTime);
     });
 
-    test('operation provenance survives a toMap/fromMap round trip', () {
-      // The poll loop reads these back to route on the surface that issued
-      // the id — losing either in persistence silently reverts routing to
-      // the channel's current wiring.
-      final task = _bareTask()
-        ..operationName = 'video_abc'
-        ..operationSurface = 'openai-videos';
+    test('operation surface survives a toMap/fromMap round trip', () {
+      // The poll loop reads this back to route on the surface that issued the
+      // id — losing it in persistence silently reverts routing to the
+      // channel's current wiring. (The id itself is not persisted: nothing
+      // resumes a poll across a restart.)
+      final task = _bareTask()..operationSurface = 'openai-videos';
 
       final decoded = TaskItem.fromMap(task.toMap());
 
-      expect(decoded.operationName, 'video_abc');
       expect(decoded.operationSurface, 'openai-videos');
 
-      // Rows written before schema v38 have neither column.
-      final legacy = _bareTask().toMap()
-        ..remove('operation_name')
-        ..remove('operation_surface');
+      // Rows written before schema v38 have no column.
+      final legacy = _bareTask().toMap()..remove('operation_surface');
       final legacyTask = TaskItem.fromMap(legacy);
-      expect(legacyTask.operationName, isNull);
       expect(legacyTask.operationSurface, isNull);
     });
 

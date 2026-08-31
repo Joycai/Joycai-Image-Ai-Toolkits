@@ -259,6 +259,12 @@ class WorkbenchUIState extends ChangeNotifier {
     int? promptVersion,
   }) {
     final session = optimizerSession;
+    // Never inject into a live turn: it would wedge a user message between an
+    // assistant tool-call message and its results (the shape both endpoints
+    // 400 on) and queue a second turn. The pill is already withdrawn while
+    // running; this guards the async gap after the dialog opens. Same
+    // contract as _handleAskUserAnswer / _handleOptimizerRetry.
+    if (session.isRunning) return false;
     final version = promptVersion ?? session.promptVersions;
     if (version < 1 || feedback.trim().isEmpty) return false;
     // A feedback click while a question card is pending answers it the same

@@ -105,7 +105,17 @@ class AssistantKbDistill {
   /// version number rides along for display only (see
   /// [IterationFeedback.statedVersion]).
   static List<IterationLedgerEntry> buildIterationLedger(List<LLMMessage> history) {
-    final entries = <IterationLedgerEntry>[];
+    // Accumulate into local growable records first, then freeze each into an
+    // immutable [IterationLedgerEntry] at the end. The entry's `feedback` list
+    // is never mutated after construction, so the type stays safely
+    // const-constructible — a `const IterationLedgerEntry(feedback: [])`
+    // would otherwise throw on the first `.add` here (unmodifiable list).
+    final versions = <({
+      int version,
+      String? note,
+      String prompt,
+      List<IterationFeedback> feedback,
+    })>[];
     final seenPrompts = <String>{};
     for (final m in history) {
       switch (m.role) {
@@ -115,17 +125,17 @@ class AssistantKbDistill {
             final prompt = call.arguments['prompt']?.toString().trim() ?? '';
             if (prompt.isEmpty || !seenPrompts.add(prompt)) continue;
             final note = call.arguments['note']?.toString().trim();
-            entries.add(IterationLedgerEntry(
-              version: entries.length + 1,
+            versions.add((
+              version: versions.length + 1,
               note: (note == null || note.isEmpty) ? null : note,
               prompt: prompt,
-              feedback: [],
+              feedback: <IterationFeedback>[],
             ));
           }
         case LLMRole.user:
           final parsed = PromptOptimizerAgent.tryParseResultFeedback(m.content);
-          if (parsed == null || entries.isEmpty) continue;
-          final target = entries.last;
+          if (parsed == null || versions.isEmpty) continue;
+          final target = versions.last;
           final duplicate = target.feedback.any((f) =>
               f.imageName == parsed.imageName && f.feedback == parsed.feedback);
           if (duplicate) continue;
@@ -139,7 +149,15 @@ class AssistantKbDistill {
           break;
       }
     }
-    return entries;
+    return [
+      for (final v in versions)
+        IterationLedgerEntry(
+          version: v.version,
+          note: v.note,
+          prompt: v.prompt,
+          feedback: List.unmodifiable(v.feedback),
+        ),
+    ];
   }
 
   /// Character budget for a non-final prompt excerpt in the rendered ledger.

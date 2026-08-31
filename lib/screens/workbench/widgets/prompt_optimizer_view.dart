@@ -299,8 +299,16 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     // The distill wrap-up (`20d`·d), only once the turn is over and every
     // staged edit has been decided. Mutually exclusive with `extra` by
     // construction: one needs the turn running, the other needs it finished.
-    final distillApplied = widget.isBusy ? null : _distillOutcome(session.transcript);
-    final int wrapUp = distillApplied == null ? 0 : 1;
+    // Anchored to the distill turn's end rather than the list tail — [wrapUpAt]
+    // is the row index it is spliced in *before*, which equals rows.length
+    // only while the distill is still the latest activity.
+    final distill = widget.isBusy ? null : _distillOutcome(session.transcript);
+    int? wrapUpAt;
+    if (distill != null) {
+      final at = rows.indexWhere((r) => r.startIndex >= distill.insertBefore);
+      wrapUpAt = at < 0 ? rows.length : at;
+    }
+    final int wrapUp = wrapUpAt == null ? 0 : 1;
 
     return ListView.builder(
       controller: _scrollCtrl,
@@ -311,13 +319,17 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       itemCount: rows.length + extra + wrapUp,
       itemBuilder: (context, index) {
         final Widget child;
-        if (index == rows.length) {
-          child = extra == 1
-              ? _buildRunningCard(session, l10n, colorScheme)
-              : _buildDistillDoneCard(session, distillApplied!, l10n, colorScheme);
+        if (extra == 1 && index == rows.length) {
+          child = _buildRunningCard(session, l10n, colorScheme);
+        } else if (wrapUpAt != null && index == wrapUpAt) {
+          child = _buildDistillDoneCard(
+              session, distill!.applied, l10n, colorScheme);
         } else {
-          final row = rows[index];
-          final isLast = index == rows.length - 1;
+          // Rows after the spliced-in wrap-up card shift by one.
+          final rowIndex =
+              (wrapUpAt != null && index > wrapUpAt) ? index - 1 : index;
+          final row = rows[rowIndex];
+          final isLast = rowIndex == rows.length - 1;
           child = row.isToolGroup
               ? _buildAgentTimeline(
                   row,
@@ -1551,12 +1563,19 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
     );
   }
 
-  /// The applied edits of the finished distill turn, or null when the wrap-up
-  /// card (`20d`·d) has nothing to say: no distill ran, an edit is still
-  /// awaiting review, or nothing reached disk. Derived from the transcript on
-  /// every build — the card's presence IS the state, so there is nothing to
-  /// invalidate.
-  static List<OptimizerChatEntry>? _distillOutcome(List<OptimizerChatEntry> transcript) {
+  /// The applied edits of the finished distill turn plus where its wrap-up
+  /// card belongs, or null when the card (`20d`·d) has nothing to say: no
+  /// distill ran, an edit is still awaiting review, or nothing reached disk.
+  /// Derived from the transcript on every build — the card's presence IS the
+  /// state, so there is nothing to invalidate.
+  ///
+  /// [insertBefore] is the transcript index where the distill turn ends — the
+  /// next user-initiated entry after it, or the transcript length when the
+  /// distill is the latest activity. The card anchors there rather than at the
+  /// list tail, so continuing the conversation does not leave it floating
+  /// below later messages with a version chip that no longer matches.
+  static ({List<OptimizerChatEntry> applied, int insertBefore})? _distillOutcome(
+      List<OptimizerChatEntry> transcript) {
     int distillIndex = -1;
     for (var i = transcript.length - 1; i >= 0; i--) {
       if (transcript[i].kind == OptimizerEntryKind.kbDistill) {
@@ -1565,8 +1584,20 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       }
     }
     if (distillIndex < 0) return null;
-    final applied = <OptimizerChatEntry>[];
+    // The distill turn runs until the next user-initiated entry (a typed
+    // message, a result-feedback report, or another distill request).
+    int boundary = transcript.length;
     for (var i = distillIndex + 1; i < transcript.length; i++) {
+      final k = transcript[i].kind;
+      if (k == OptimizerEntryKind.user ||
+          k == OptimizerEntryKind.resultFeedback ||
+          k == OptimizerEntryKind.kbDistill) {
+        boundary = i;
+        break;
+      }
+    }
+    final applied = <OptimizerChatEntry>[];
+    for (var i = distillIndex + 1; i < boundary; i++) {
       final e = transcript[i];
       if (e.kind != OptimizerEntryKind.kbEdit) continue;
       // A pending edit means the review is still open — summarizing now
@@ -1574,7 +1605,8 @@ class _PromptOptimizerChatViewState extends State<PromptOptimizerChatView> {
       if (e.editState == KbEditState.pending) return null;
       if (e.editState == KbEditState.applied) applied.add(e);
     }
-    return applied.isEmpty ? null : applied;
+    if (applied.isEmpty) return null;
+    return (applied: applied, insertBefore: boundary);
   }
 
   /// The distill wrap-up card: which files the session's lessons landed in,

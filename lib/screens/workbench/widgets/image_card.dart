@@ -446,11 +446,14 @@ class _ImageCardState extends State<ImageCard> {
   Widget _buildHoverActions(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // The feedback action (`20a`) exists only once the assistant has staged a
-    // prompt version — there is nothing to give feedback *on* before that.
-    // Read without listening: the bar is rebuilt on every hover entry anyway.
-    final promptVersions = Provider.of<WorkbenchUIState>(context, listen: false)
-        .optimizerSession
-        .promptVersions;
+    // prompt version — there is nothing to give feedback *on* before that —
+    // and is withdrawn while a turn is running, so a click cannot land in the
+    // middle of one. Both `promptVersions` and `isRunning` live on the
+    // session, so the pill is wrapped in a ListenableBuilder on it: reading
+    // once (as before) missed a version that staged while the cursor sat
+    // still, and offered feedback during a live turn.
+    final session =
+        Provider.of<WorkbenchUIState>(context, listen: false).optimizerSession;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -482,52 +485,63 @@ class _ImageCardState extends State<ImageCard> {
               onPressed: () => _handleCrop(context),
               tooltip: l10n.cropAndResize,
             ),
-            if (promptVersions > 0) ...[
-              Container(
-                width: 1,
-                height: 18,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                color: _overlayInk.withValues(alpha: 0.22),
-              ),
-              // `20a`: the fourth action, the only one with a label — it is
-              // the odd one out (it talks to the assistant, not to a tool)
-              // and the pill is what says so. Accent-on-overlay, the one
-              // accent role that reads on a fixed dark scrim.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(13),
-                  onTap: () => _handleFeedback(context),
-                  child: Container(
-                    height: 26,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.accentOnOverlay,
-                      borderRadius: BorderRadius.circular(13),
+            ListenableBuilder(
+              listenable: session,
+              builder: (context, _) {
+                if (session.promptVersions <= 0 || session.isRunning) {
+                  return const SizedBox.shrink();
+                }
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 1,
+                      height: 18,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      color: _overlayInk.withValues(alpha: 0.22),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 13,
-                          color: Theme.of(context).colorScheme.onPrimaryFixed,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l10n.optResultFeedbackAction,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    // `20a`: the fourth action, the only one with a label — it
+                    // is the odd one out (it talks to the assistant, not to a
+                    // tool) and the pill is what says so. Accent-on-overlay,
+                    // the one accent role that reads on a fixed dark scrim.
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(13),
+                        onTap: () => _handleFeedback(context),
+                        child: Container(
+                          height: 26,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.accentOnOverlay,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 13,
                                 color: Theme.of(context).colorScheme.onPrimaryFixed,
-                                fontWeight: FontWeight.w600,
-                                height: 1,
                               ),
+                              const SizedBox(width: 6),
+                              Text(
+                                l10n.optResultFeedbackAction,
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.onPrimaryFixed,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            ],
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

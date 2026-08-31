@@ -131,13 +131,20 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     // Provenance hand-off #3, live half: a result of a task tagged with the
     // on-screen session gets its version into the badge map the moment it
     // lands — the stored half (refreshResultProvenance) covers restarts.
+    //
+    // Only a session that has staged a prompt version can own a tagged task
+    // (the tag is written when an *applied* assistant prompt is generated
+    // with), so skip the queue scan entirely for the common case — a plain
+    // generation with no assistant loop engaged — rather than walking the
+    // queue on every image result to discard the untagged task it finds.
+    final session = uiState.optimizerSession;
+    if (session.promptVersions == 0) return;
     final taskService = Provider.of<TaskQueueService>(context, listen: false);
     final task = taskService.queue
         .cast<TaskItem?>()
         .firstWhere((t) => t!.id == event.taskId, orElse: () => null);
     if (task == null) return;
-    if (task.parameters[PromptProvenance.sessionParamKey] !=
-        uiState.optimizerSession.id) {
+    if (task.parameters[PromptProvenance.sessionParamKey] != session.id) {
       return;
     }
     final version = PromptProvenance.decodeVersionParam(task.parameters);
@@ -174,6 +181,9 @@ class _WorkbenchScreenState extends State<WorkbenchScreen> with SingleTickerProv
     final l10n = AppLocalizations.of(context)!;
     final session = workbenchUIState.optimizerSession;
 
+    // A turn already in flight owns the session; starting a second one would
+    // corrupt its history. Same guard as _handleAskUserAnswer / _handleRetry.
+    if (session.isRunning) return;
     if (workbenchUIState.optSelectedModelDbId == null || _appState == null) {
       AppSnackBar.warning(context, l10n.noModelsConfigured);
       return;

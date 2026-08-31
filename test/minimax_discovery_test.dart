@@ -142,6 +142,29 @@ void main() {
         throwsA(isA<LLMApiException>()),
       );
     });
+
+    test('propagates an auth failure even for a vendor with a catalog',
+        () async {
+      // Only a *missing* listing (404) falls back to the catalog. A bad key
+      // (401) must still surface: swallowing it into the three catalog rows
+      // would make a mistyped key read as a working channel.
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        request.response.statusCode = 401;
+        await request.response.close();
+      });
+
+      expect(
+        () => LLMDispatcher().discoverModels(LLMModelConfig(
+          modelId: 'MiniMaxAI/MiniMax-H3',
+          channelType: Vendors.minimaxH3Base,
+          endpoint: 'http://127.0.0.1:${server.port}/v1',
+          apiKey: 'wrong',
+        )),
+        throwsA(isA<LLMApiException>()),
+      );
+    });
   });
 
   group('unlistedBeyond', () {

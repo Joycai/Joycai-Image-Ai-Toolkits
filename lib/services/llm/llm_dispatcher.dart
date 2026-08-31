@@ -1042,15 +1042,19 @@ class LLMDispatcher {
     List<DiscoveredModel> listed;
     try {
       listed = await _fetchListedModels(target);
-    } catch (_) {
+    } catch (e) {
       // The catalog's whole reason to exist is hosts whose listing endpoint
-      // is missing — a stock SGLang H3-Base serve often has no
-      // `GET /v1/models` at all — so it must survive the listing failing, or
-      // "fetch models" errors out on exactly the deployment the catalog was
-      // declared for and the user hand-types a repo-path id the vendor
-      // already knows. A vendor that declares no catalog keeps the error:
-      // there, the listing is the only possible answer.
-      if (target.vendor.unlistedModels.isEmpty) rethrow;
+      // is *missing* — a stock SGLang H3-Base serve often has no
+      // `GET /v1/models` at all — so a missing listing must fall back to the
+      // catalog rather than error out on the exact deployment it was declared
+      // for. But only a missing listing: an auth failure, a 5xx, or a dead
+      // connection is a real error the user needs to see, and swallowing it
+      // into a three-row catalog would make a mistyped key read as a working
+      // channel. A vendor that declares no catalog keeps every error — there
+      // the listing is the only possible answer.
+      if (target.vendor.unlistedModels.isEmpty || !_isMissingListing(e)) {
+        rethrow;
+      }
       return mergeUnlistedModels(target.vendor, const []);
     }
     // Applied on every family rather than in the branches that need it, so
@@ -1084,6 +1088,20 @@ class LLMDispatcher {
     }
   }
 
+  /// Whether [e] means "this host serves no model listing", the only failure
+  /// the unlisted-models catalog is a fallback for.
+  ///
+  /// A 404/405 (`GET /models` not routed) or a non-JSON body (the base URL
+  /// answered with an HTML 404 / login page rather than the API) are the
+  /// "no listing here" signatures. An auth failure (401/403), a server error
+  /// (5xx), a rate limit, or a transport failure (SocketException,
+  /// ClientException, timeout) are real errors the caller must see, not
+  /// reasons to silently substitute the catalog.
+  static bool _isMissingListing(Object e) {
+    if (e is! LLMApiException) return false;
+    if (e.isNonJsonBody) return true;
+    return e.statusCode == 404 || e.statusCode == 405;
+  }
 }
 
 /// [listed] plus [vendor]'s native-surface models

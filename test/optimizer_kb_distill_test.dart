@@ -144,6 +144,37 @@ void main() {
       expect(session.hasPendingKbDistill, isFalse);
     });
 
+    test('a free-text answer to the distill turn\'s ask_user keeps it pending',
+        () {
+      final session = kbSession();
+      session.addKbDistillTurn('${PromptOptimizerAgent.kbDistillMarker} go');
+      expect(session.hasPendingKbDistill, isTrue);
+
+      // The distill turn pauses on an ask_user (rule 4: contradictions); the
+      // model's message carries the call and the turn returns with it dangling.
+      session.history.add(LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        toolCalls: [
+          LLMToolCall(id: 'ask1', name: 'ask_user', arguments: const {}),
+        ],
+      ));
+      // The user answers in the composer, not the card: the call is paired
+      // with a tool result, then the free text is appended as a user turn —
+      // a real user turn, but one immediately preceded by that tool result.
+      session.history.add(LLMMessage(
+        role: LLMRole.tool,
+        content: '{"status":"ok"}',
+        toolCallId: 'ask1',
+        toolName: 'ask_user',
+      ));
+      session.addUserTurn('用新规则，把旧的降级为例外');
+
+      // It continues the distill turn, so write access must survive it —
+      // exactly as the card path (a bare tool result) already does.
+      expect(session.hasPendingKbDistill, isTrue);
+    });
+
     test('a pending distill escalates canWriteKnowledge in knowledgeBase mode, policy permitting', () {
       final session = kbSession();
       session.addUserTurn('优化');

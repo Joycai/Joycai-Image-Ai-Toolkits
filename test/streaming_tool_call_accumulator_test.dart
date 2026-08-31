@@ -195,6 +195,41 @@ void main() {
       expect(call.arguments, {'path': 'a.png'});
     });
 
+    test('keeps index-less calls apart when only openers carry id', () {
+      // The fragmented variant: id + name arrive only on each call's opening
+      // frame, then bare `arguments` deltas with neither index nor id. Array
+      // position 0 would merge call B's argument tail onto call A; a bare
+      // fragment must follow the call that is actually streaming.
+      final acc = StreamingToolCallAccumulator()
+        ..feed([
+          {
+            'id': 'call_a',
+            'function': {'name': 'get_weather', 'arguments': '{"city":'},
+          },
+        ])
+        ..feed([
+          {
+            'function': {'arguments': '"HZ"}'},
+          },
+        ])
+        ..feed([
+          {
+            'id': 'call_b',
+            'function': {'name': 'get_time', 'arguments': '{"tz":'},
+          },
+        ])
+        ..feed([
+          {
+            'function': {'arguments': '"UTC"}'},
+          },
+        ]);
+
+      final calls = acc.flush();
+      expect(calls.map((c) => c.name).toList(), ['get_weather', 'get_time']);
+      expect(calls[0].arguments, {'city': 'HZ'});
+      expect(calls[1].arguments, {'tz': 'UTC'});
+    });
+
     test('synthesizes an id when the relay assigns none', () {
       final acc = StreamingToolCallAccumulator()
         ..feed([
@@ -242,6 +277,34 @@ void main() {
 
       final call = acc.flush().single;
       expect(call.id, 'call_1');
+      expect(call.name, 'view_image');
+      expect(call.arguments, {'path': 'a.png'});
+    });
+
+    test('does not double a cumulative call that restates id but drops name',
+        () {
+      // A cumulative dialect that repeats the full arguments each frame and
+      // keeps the id, but sends `name` only on the opener. The second frame is
+      // a full restatement, not a delta — appending it would double the
+      // arguments. The retained id is what tells it apart from a bare ①
+      // continuation and routes it back through the prefix merge.
+      final acc = StreamingToolCallAccumulator()
+        ..feed([
+          {
+            'index': 0,
+            'id': 'call_1',
+            'function': {'name': 'view_image', 'arguments': '{"path":'},
+          }
+        ])
+        ..feed([
+          {
+            'index': 0,
+            'id': 'call_1',
+            'function': {'arguments': '{"path":"a.png"}'},
+          }
+        ]);
+
+      final call = acc.flush().single;
       expect(call.name, 'view_image');
       expect(call.arguments, {'path': 'a.png'});
     });
