@@ -425,11 +425,12 @@ extension TaskExecutors on TaskQueueService {
     );
     final operationName = ticket.name;
 
-    // Persist the id and its provenance immediately: the poll loop re-resolves
-    // the channel from the database every round, and the channel can be edited
+    // Persist the issuing surface immediately: the poll loop re-resolves the
+    // channel from the database every round, and the channel can be edited
     // (even re-pointed at another vendor) while this job runs. The persisted
     // surface is what keeps every later poll on the surface that issued the id.
-    task.operationName = operationName;
+    // The id itself stays in this local scope — nothing resumes a poll across
+    // a restart, so it is not persisted on the task.
     task.operationSurface = ticket.surfaceId;
     await DatabaseService().saveTask(task.toMap());
 

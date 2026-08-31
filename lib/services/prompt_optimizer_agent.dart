@@ -314,6 +314,17 @@ class PromptOptimizerSession extends ChangeNotifier {
     for (int i = history.length - 1; i >= 0; i--) {
       final m = history[i];
       if (!PromptOptimizerAgent._isRealUserTurn(m)) continue;
+      // A free-text answer to a pending ask_user is a *continuation* of the
+      // turn that asked, not a new request, and must not clear the
+      // escalation — otherwise a distill turn that paused on an ask_user
+      // (its rule 4: contradictions) and was answered in the composer loses
+      // its write tools on resume. It is appended right after the tool
+      // result that pairs the dangling call (resolvePendingAskUserAsFreeText),
+      // so it is the one real user turn preceded by a tool message; a fresh
+      // request always follows the previous turn's assistant message. The
+      // card path already survives — it appends only a tool message. Skip
+      // and keep walking back to the request that opened the turn.
+      if (i > 0 && history[i - 1].role == LLMRole.tool) continue;
       return m.content.startsWith(PromptOptimizerAgent.kbDistillMarker);
     }
     return false;

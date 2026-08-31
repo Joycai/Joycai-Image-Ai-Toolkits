@@ -225,4 +225,34 @@ void main() {
       expect(envelope['progress'], 40);
     });
   });
+
+  group('minimaxH3TempRefIsStale', () {
+    final now = DateTime(2026, 8, 31, 12, 0);
+
+    test('an old reference temp file is stale', () {
+      expect(
+        minimaxH3TempRefIsStale(
+            '${minimaxH3TempRefPrefix}123.jpg', now.subtract(const Duration(hours: 7)), now),
+        isTrue,
+      );
+    });
+
+    test('a young file is spared — a job may still be reading it', () {
+      // The server dereferences these during generation; reaping one an hour
+      // old could kill an in-flight job.
+      expect(
+        minimaxH3TempRefIsStale(
+            '${minimaxH3TempRefPrefix}123.jpg', now.subtract(const Duration(hours: 1)), now),
+        isFalse,
+      );
+    });
+
+    test('an unrelated temp file is never touched, however old', () {
+      expect(
+        minimaxH3TempRefIsStale(
+            'some_other_app.tmp', now.subtract(const Duration(days: 30)), now),
+        isFalse,
+      );
+    });
+  });
 }

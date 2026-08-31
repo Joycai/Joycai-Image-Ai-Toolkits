@@ -160,13 +160,18 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
   /// workbench's oversize-compression path strips the original file) into the
   /// system temp directory — the wire carries paths, not bytes, so a path has
   /// to exist somewhere the server can read.
+  ///
+  /// These files cannot be removed at submit time — the server dereferences
+  /// them asynchronously during generation — so they are reaped later by
+  /// [sweepStaleTempRefs] at startup instead.
   Future<String?> _attachmentFilePath(
       LLMAttachment att, LLMLogger? logger) async {
     if (att.path != null) return att.path;
     final bytes = att.bytes;
     if (bytes == null) return null;
     final file = File(
-        '${Directory.systemTemp.path}${Platform.pathSeparator}joycai_h3_ref_'
+        '${Directory.systemTemp.path}${Platform.pathSeparator}'
+        '$minimaxH3TempRefPrefix'
         '${DateTime.now().microsecondsSinceEpoch}.${extForMime(att.mimeType)}');
     await file.writeAsBytes(bytes);
     logger?.call(
@@ -174,5 +179,35 @@ class MiniMaxH3BaseVideoProtocol implements VideoJobProtocol {
         '${file.path} so it can travel as a file:// URI.',
         level: 'INFO');
     return file.path;
+  }
+
+  /// Deletes H3 reference temp files old enough that no job could still need
+  /// them (see [_attachmentFilePath] for why they outlive the submit).
+  ///
+  /// Best-effort and non-blocking: meant to be `unawaited` at startup. Every
+  /// IO error — a temp dir that cannot be listed, a file deleted underneath
+  /// us — is swallowed; a leftover reaped one run late is harmless, and a
+  /// failed sweep must never keep the app from starting.
+  static Future<void> sweepStaleTempRefs() async {
+    final now = DateTime.now();
+    try {
+      await for (final entity
+          in Directory.systemTemp.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final segments = entity.uri.pathSegments;
+        final name = segments.isEmpty ? '' : segments.last;
+        if (!name.startsWith(minimaxH3TempRefPrefix)) continue;
+        try {
+          final modified = (await entity.stat()).modified;
+          if (minimaxH3TempRefIsStale(name, modified, now)) {
+            await entity.delete();
+          }
+        } catch (_) {
+          // A file that vanished or could not be statted/deleted — skip it.
+        }
+      }
+    } catch (_) {
+      // Temp directory unreadable; nothing to sweep.
+    }
   }
 }

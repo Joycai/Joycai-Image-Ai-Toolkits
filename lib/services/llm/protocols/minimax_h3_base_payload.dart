@@ -61,6 +61,28 @@ class MiniMaxH3Media {
 String minimaxH3FileUri(String path, {required bool windows}) =>
     Uri.file(path, windows: windows).toString();
 
+/// The filename prefix every materialized H3 reference temp file carries.
+/// The writer ([MiniMaxH3BaseVideoProtocol._attachmentFilePath]) and the
+/// startup sweeper both key off this, so they cannot drift apart.
+const String minimaxH3TempRefPrefix = 'joycai_h3_ref_';
+
+/// Whether a temp file named [basename], last modified at [modified], is a
+/// stale H3 reference the startup sweep may delete at [now].
+///
+/// Guarded by both the prefix and an age floor: an H3 job's reference files
+/// are read by the *server* asynchronously during generation, so a file young
+/// enough to belong to an in-flight job must never be reaped. [maxAge]
+/// (default 6h) is comfortably longer than any single video job.
+bool minimaxH3TempRefIsStale(
+  String basename,
+  DateTime modified,
+  DateTime now, {
+  Duration maxAge = const Duration(hours: 6),
+}) {
+  if (!basename.startsWith(minimaxH3TempRefPrefix)) return false;
+  return now.difference(modified) > maxAge;
+}
+
 /// Split [media] into the items that will be sent and the ones dropped by the
 /// keyframe/reference exclusivity rule — the same client-side rule the cloud
 /// surface applies (`partitionMiniMaxVideoMedia`), for the same reason: the

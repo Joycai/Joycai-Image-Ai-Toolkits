@@ -22,20 +22,27 @@ class TaskRepository {
   ///
   /// The LIKE over the parameters JSON is only a prefilter (it can match the
   /// id embedded in some other string); callers re-check the decoded
-  /// parameters via `PromptProvenance.resultVersionsFromTasks`. Ascending by
-  /// start time so later tasks win map collisions there.
+  /// parameters via `PromptProvenance.resultVersionsFromTasks`.
+  ///
+  /// Queried DESC and returned reversed to ascending: SQLite applies LIMIT
+  /// after ORDER BY, so `ASC LIMIT` kept the *oldest* [limit] rows and dropped
+  /// the most recent generations — exactly the ones on screen — once a
+  /// long-lived session passed the cap. DESC keeps the newest within the cap;
+  /// the reversal restores the ascending order the caller relies on, so later
+  /// tasks still win map collisions in `resultVersionsFromTasks`.
   Future<List<Map<String, dynamic>>> getTasksForAssistantSession(
     String sessionId, {
     int limit = 500,
   }) async {
     final db = await _db;
-    return await db.query(
+    final rows = await db.query(
       'tasks',
       where: 'parameters LIKE ?',
       whereArgs: ['%"assistantSessionId":"$sessionId"%'],
-      orderBy: 'start_time ASC',
+      orderBy: 'start_time DESC',
       limit: limit,
     );
+    return rows.reversed.toList();
   }
 
   Future<void> deleteTask(String id) async {

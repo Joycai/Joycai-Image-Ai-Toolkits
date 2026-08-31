@@ -154,6 +154,11 @@ Map<String, dynamic> decodeToolArguments(Object? rawArgs, {LLMLogger? logger}) {
 class StreamingToolCallAccumulator {
   final Map<int, _PendingToolCall> _calls = {};
 
+  /// The slot the last index-less frame resolved to. A bare continuation
+  /// fragment (no `index`, no `id`) joins it rather than array position 0 —
+  /// see [_slotForIndexless].
+  int? _lastIndexlessSlot;
+
   /// Whether any fragment has arrived. False on a stream that answered with
   /// text alone, which is the common case.
   bool get isEmpty => _calls.isEmpty;
@@ -176,16 +181,24 @@ class StreamingToolCallAccumulator {
       final fn = tc['function'];
       if (fn is! Map) continue;
       final rawName = fn['name'];
-      // Dialect telltale, read before the merges fold this frame in: a
-      // cumulative frame restates the whole call every time — name included —
-      // while ① deltas carry only `index` + `arguments` once the call is
-      // open. A nameless frame on an already-named call is therefore a delta,
-      // and its arguments append unconditionally. This closes the one gap the
-      // prefix heuristic in [_merge] leaves open: a delta that happens to
-      // begin by repeating the entire accumulation (`{"a":` + `{"a":1}}`),
-      // which the heuristic alone would swallow as a cumulative repeat.
-      final isNamelessDelta =
-          pending.name.isNotEmpty && (rawName is! String || rawName.isEmpty);
+      // Dialect telltale, read before the merges fold this frame in. A bare ①
+      // continuation delta carries only `index` + `arguments` once the call
+      // is open — no id, no name — while a cumulative frame restates the whole
+      // call object (id + name + the full arguments so far) every time. So a
+      // frame that drops BOTH id and name on an already-named call is a delta,
+      // and its arguments append unconditionally: this closes the gap the
+      // prefix heuristic in [_merge] leaves open — a delta that opens by
+      // repeating the accumulation (`{"a":` + `{"a":1}}`), which the heuristic
+      // alone would swallow as a cumulative repeat. Requiring the id to be
+      // absent too is what keeps a cumulative dialect that restates its id but
+      // not its name (arguments still restated in full) OUT of the delta path,
+      // where appending would double its arguments; it routes to [_merge]
+      // instead, whose prefix test replaces the restated frame.
+      final rawId = tc['id'];
+      final frameHasId = rawId is String && rawId.isNotEmpty;
+      final isNamelessDelta = pending.name.isNotEmpty &&
+          !frameHasId &&
+          (rawName is! String || rawName.isEmpty);
       pending.name = _merge(pending.name, rawName);
       final rawArgs = fn['arguments'];
       if (rawArgs is Map<String, dynamic>) {
@@ -208,20 +221,41 @@ class StreamingToolCallAccumulator {
   /// call at position 0, and merging them builds one blended call — the
   /// silent loss an agent loop cannot detect. The call's `id` disambiguates:
   /// a fragment carrying a known id joins that call, one carrying a new id
-  /// opens a fresh slot. Fragments with no id keep the positional answer.
+  /// opens a fresh slot.
+  ///
+  /// A fragment with NO id is a bare continuation. Array position 0 sends
+  /// every such fragment to the first call, so a second call arriving in its
+  /// own single-element frame (id + name on the opener, bare `arguments`
+  /// afterwards) has its argument tail merged onto call A. Routing a bare
+  /// fragment to the most recently opened index-less slot instead follows the
+  /// call that is actually streaming — the only reading that holds when calls
+  /// arrive one-after-another rather than interleaved (a relay that interleaves
+  /// keeps `index`, which never reaches here).
   int _slotForIndexless(Map<dynamic, dynamic> tc, int position) {
     final rawId = tc['id'];
+    final int slot;
     if (rawId is String && rawId.isNotEmpty) {
+      int? matched;
       for (final entry in _calls.entries) {
-        if (entry.value.id == rawId) return entry.key;
+        if (entry.value.id == rawId) {
+          matched = entry.key;
+          break;
+        }
       }
-      if (_calls.containsKey(position) &&
+      if (matched != null) {
+        slot = matched;
+      } else if (_calls.containsKey(position) &&
           _calls[position]!.id.isNotEmpty &&
           _calls[position]!.id != rawId) {
-        return _calls.keys.reduce((a, b) => a > b ? a : b) + 1;
+        slot = _calls.keys.reduce((a, b) => a > b ? a : b) + 1;
+      } else {
+        slot = position;
       }
+    } else {
+      slot = _lastIndexlessSlot ?? position;
     }
-    return position;
+    _lastIndexlessSlot = slot;
+    return slot;
   }
 
   /// Everything assembled so far, in `index` order, and the accumulator
@@ -239,6 +273,7 @@ class StreamingToolCallAccumulator {
       ));
     }
     _calls.clear();
+    _lastIndexlessSlot = null;
     return calls;
   }
 

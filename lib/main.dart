@@ -21,6 +21,7 @@ import 'screens/prompts/prompts_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/wizard/setup_wizard.dart';
 import 'screens/workbench/workbench_screen.dart';
+import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/notification_service.dart';
 import 'services/task_queue_service.dart';
 import 'services/video_thumbnail_service.dart';
@@ -44,6 +45,10 @@ void main() async {
 
   // Prune stale video thumbnails in the background; don't block startup.
   unawaited(VideoThumbnailService.instance.cleanup());
+
+  // Reap H3 local-video reference temp files left behind by past submits;
+  // background, best-effort. See MiniMaxH3BaseVideoProtocol.sweepStaleTempRefs.
+  unawaited(MiniMaxH3BaseVideoProtocol.sweepStaleTempRefs());
 
   runApp(
     MultiProvider(

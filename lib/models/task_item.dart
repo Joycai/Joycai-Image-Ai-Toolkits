@@ -43,12 +43,16 @@ class TaskItem {
   DateTime? endTime;
   double? progress; // 0.0 to 1.0 (transient)
 
-  /// Upstream operation id of a long-running (video) job, set once the submit
-  /// is accepted, plus the wire surface that issued it (a `WireProtocol.id`
-  /// string). Persisted together because the id is only meaningful on the
-  /// surface that minted it: the poll loop passes both back so routing
-  /// follows the job's provenance, not the channel's current wiring.
-  String? operationName;
+  /// The wire surface that issued a long-running (video) job's operation id
+  /// (a `WireProtocol.id` string), recorded once the submit is accepted. The
+  /// poll loop passes it back so routing follows the job's provenance, not the
+  /// channel's current wiring — a channel re-pointed at another vendor
+  /// mid-job keeps polling where the job actually runs.
+  ///
+  /// The operation id itself is not persisted on the task: nothing resumes a
+  /// poll across an app restart, so it lives only in the poll loop's local
+  /// scope. (The `operation_name` column added in v38 is left in the schema
+  /// but no longer written.)
   String? operationSurface;
 
   TaskItem({
@@ -67,7 +71,6 @@ class TaskItem {
     this.startTime,
     this.endTime,
     this.progress,
-    this.operationName,
     this.operationSurface,
   })  : logs = logs ?? [],
         resultPaths = resultPaths ?? [];
@@ -105,7 +108,6 @@ class TaskItem {
       'logs': jsonEncode(logs),
       'start_time': startTime?.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
-      'operation_name': operationName,
       'operation_surface': operationSurface,
     };
   }
@@ -138,7 +140,6 @@ class TaskItem {
       logs: _decodeLogs(map['logs']),
       startTime: map['start_time'] != null ? DateTime.parse(map['start_time']) : null,
       endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
-      operationName: map['operation_name'] as String?,
       operationSurface: map['operation_surface'] as String?,
     );
   }
