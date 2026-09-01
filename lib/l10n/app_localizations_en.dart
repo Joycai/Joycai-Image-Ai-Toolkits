@@ -2693,6 +2693,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thumbnailSize => 'Thumbnail Size';
 
   @override
+  String get thumbnailDisplay => 'Thumbnail Display';
+
+  @override
+  String get thumbnailFitContain => 'Fit (whole image)';
+
+  @override
+  String get thumbnailFitCover => 'Fill (cropped)';
+
+  @override
   String get deleteFile => 'Delete File';
 
   @override

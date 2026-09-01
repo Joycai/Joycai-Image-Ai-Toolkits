@@ -40,6 +40,9 @@
     }
   },
   "thumbnailSize": "Thumbnail Size",
+  "thumbnailDisplay": "Thumbnail Display",
+  "thumbnailFitContain": "Fit (whole image)",
+  "thumbnailFitCover": "Fill (cropped)",
   "deleteFile": "Delete File",
   "deleteFileConfirmTitle": "Delete File?",
   "deleteFileConfirmMessage": "Are you sure you want to delete \"{filename}\"?",

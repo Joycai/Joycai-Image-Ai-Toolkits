@@ -2602,6 +2602,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get thumbnailSize => '缩略图大小';
 
   @override
+  String get thumbnailDisplay => '缩略图展示';
+
+  @override
+  String get thumbnailFitContain => '适应（完整显示）';
+
+  @override
+  String get thumbnailFitCover => '填充（裁切铺满）';
+
+  @override
   String get deleteFile => '删除文件';
 
   @override
@@ -6280,6 +6289,15 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get thumbnailSize => '縮圖大小';
+
+  @override
+  String get thumbnailDisplay => '縮圖顯示';
+
+  @override
+  String get thumbnailFitContain => '適應（完整顯示）';
+
+  @override
+  String get thumbnailFitCover => '填滿（裁切鋪滿）';
 
   @override
   String get deleteFile => '刪除檔案';

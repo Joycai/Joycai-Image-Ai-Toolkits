@@ -1493,6 +1493,9 @@
     }
   },
   "thumbnailSize": "缩略图大小",
+  "thumbnailDisplay": "缩略图展示",
+  "thumbnailFitContain": "适应（完整显示）",
+  "thumbnailFitCover": "填充（裁切铺满）",
   "deleteFile": "删除文件",
   "deleteFileConfirmTitle": "删除文件？",
   "deleteFileConfirmMessage": "确定要删除“{filename}”吗？",

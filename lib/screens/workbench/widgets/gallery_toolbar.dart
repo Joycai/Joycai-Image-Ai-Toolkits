@@ -8,11 +8,14 @@ import '../../../core/app_theme.dart';
 import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
+import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
+import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
+import '../../../widgets/thumbnail_fit_toggle.dart';
 
 class GalleryToolbar extends StatelessWidget {
   const GalleryToolbar({
@@ -87,6 +90,7 @@ class GalleryToolbar extends StatelessWidget {
           ],
           _divider(colorScheme),
           _buildZoomSlider(context, galleryState, colorScheme, thumbnailSize),
+          const ThumbnailFitToggle(),
         ];
 
         return Container(
@@ -178,6 +182,7 @@ class GalleryToolbar extends StatelessWidget {
     bool isDesktop,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final thumbnailFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
 
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, size: 20),
@@ -192,6 +197,10 @@ class GalleryToolbar extends StatelessWidget {
             if (context.mounted) {
               _showThumbnailSizeDialog(context, galleryState, thumbnailSize, l10n);
             }
+          case 'thumbnail_fit_fit':
+            context.read<AppState>().setThumbnailFit(ThumbnailFit.fit);
+          case 'thumbnail_fit_fill':
+            context.read<AppState>().setThumbnailFit(ThumbnailFit.fill);
           case 'refresh':
             galleryState.refreshImages();
           case 'clear_temp':
@@ -228,6 +237,14 @@ class GalleryToolbar extends StatelessWidget {
             dense: true,
           ),
         ),
+        // The inline fit control folds in here rather than disappearing: this
+        // menu *is* the toolbar once the bar is too narrow to lay it out.
+        for (final option in ThumbnailFit.values)
+          CheckedPopupMenuItem(
+            value: 'thumbnail_fit_${option.name}',
+            checked: option == thumbnailFit,
+            child: Text(thumbnailFitLabel(l10n, option)),
+          ),
         const PopupMenuDivider(),
         PopupMenuItem(
           value: 'refresh',
@@ -329,6 +346,7 @@ class GalleryToolbar extends StatelessWidget {
         _kIconButtonCompact * 2 + // select all, deselect
         _kDivider +
         _kZoomSlider +
+        _kIconButton + // thumbnail fit
         _kIconButton + // refresh
         _kDivider +
         (isDesktop ? 0 : _kIconButton) + // camera stays inline on touch
