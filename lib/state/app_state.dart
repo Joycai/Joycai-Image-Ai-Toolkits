@@ -26,6 +26,7 @@ import '../services/task_queue_service.dart';
 import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
 import 'file_browser_state.dart';
+import 'file_staging_state.dart';
 import 'gallery_state.dart';
 import 'log_state.dart';
 import 'workbench_ui_state.dart';
@@ -42,6 +43,12 @@ class AppState extends ChangeNotifier {
   final GalleryState galleryState = GalleryState();
   final DownloaderState downloaderState = DownloaderState();
   final FileBrowserState fileBrowserState = FileBrowserState();
+
+  /// The file browser's staging area. Separate from [fileBrowserState]
+  /// because it deliberately outlives everything that state prunes: the
+  /// selection is dropped on every refresh, filter and sort, and a list that
+  /// survives those is the entire feature.
+  final FileStagingState fileStagingState = FileStagingState();
   final WorkbenchUIState workbenchUIState = WorkbenchUIState();
 
   /// Execution log. Pointedly absent from the listener wiring below: log lines
@@ -319,6 +326,7 @@ class AppState extends ChangeNotifier {
   void dispose() {
     galleryState.dispose();
     fileBrowserState.dispose();
+    fileStagingState.dispose();
     logState.dispose();
     _sidebarWidthSaveTimer?.cancel();
     _consoleHeightSaveTimer?.cancel();
