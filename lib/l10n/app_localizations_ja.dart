@@ -172,7 +172,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get stagingEmptyDesc =>
-      'ファイルを選んでステージングに追加し、任意のフォルダーへ移動またはコピーします。追加は印を付けるだけで、貼り付けるまで書き込みは発生しません。';
+      'ファイルを選んで「ステージングに追加」を押すと、動かしたいファイルをここに控えます。印を付けるだけで、ファイルは移動しません。フォルダーの切り替え、絞り込み、アプリの再起動でも消えません。';
 
   @override
   String get stagingTarget => '対象フォルダー';
@@ -459,6 +459,122 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get renameTemplateLabel => 'テンプレート';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '$count 件を移動中';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '$count 件をコピー中';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '別ドライブ';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 件 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '$name をコピー中';
+  }
+
+  @override
+  String get pasteRollbackNote =>
+      '別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。';
+
+  @override
+  String get pasteRunInBackground => 'バックグラウンドで実行';
+
+  @override
+  String get pasteMoveDone => '移動が完了しました';
+
+  @override
+  String get pasteCopyDone => 'コピーが完了しました';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 件 · $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => 'スキップ（対象と同じ）';
+
+  @override
+  String get pasteStatFailed => '失敗';
+
+  @override
+  String get pasteRetry => '再試行';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失敗・スキップの $kept 件はステージングに残り、成功した $moved 件は取り除かれました。';
+  }
+
+  @override
+  String get pasteExportLog => 'ログを書き出す';
+
+  @override
+  String pasteLogSaved(String path) {
+    return 'ログを $path に保存しました';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 件が $folder の既存名と衝突';
+  }
+
+  @override
+  String get conflictsIntro => '項目ごとに選ぶか、下のチェックで残りにも同じ選択を適用します。';
+
+  @override
+  String get conflictPending => '未決定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '書き込み · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '既存 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '対象のファイルは置き換えられます。元に戻せません';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '残り $count 件にも同じ選択を適用';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '適用して続行';
+
+  @override
+  String dragMoveHint(int count) {
+    return '$count 件を移動 · Ctrl でコピー';
+  }
+
+  @override
+  String get showInSystem => 'システムで表示';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

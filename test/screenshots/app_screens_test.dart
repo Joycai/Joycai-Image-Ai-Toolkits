@@ -7,6 +7,8 @@
 // flutter_test_config.dart always overwrites and always passes. See
 // docs/ui-screenshot-harness.md.
 
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +105,80 @@ void main() {
           browser.clearSelection();
           for (final BrowserFile f in browser.filteredFiles.skip(4).take(3)) {
             browser.toggleSelection(f);
+          }
+        },
+      );
+    });
+  }
+
+  // `B1a 12c` — the panel with nothing in it. The loop above photographs the
+  // browser with an empty staging area, but the panel only opens itself once
+  // something is staged, so the state that has to explain the feature was the
+  // one state never rendered.
+  testWidgets('fileBrowser · stagingEmpty @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'stagingEmpty',
+      before: (WidgetTester tester) async {
+        final AppState appState = AppState();
+        appState.fileStagingState.clear();
+        appState.fileStagingState.setDestination(null);
+        appState.fileBrowserState.clearSelection();
+      },
+      after: (WidgetTester tester) async {
+        await tester.tap(find.byTooltip('暂存区').first);
+        for (int i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 120));
+        }
+      },
+    );
+  });
+
+  // `B1a 12e` — the conflict pass. Needs a real name collision on disk, so the
+  // fixture grows a subfolder holding a file the staged one would land on.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · conflicts @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'conflicts',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          final browser = appState.fileBrowserState;
+          final staging = appState.fileStagingState;
+
+          final Directory dest =
+              Directory(p.join(env.browserDir.path, 'archive'));
+          // Real files, written through runAsync: `before` runs in the
+          // fake-async zone where dart:io never completes.
+          await tester.runAsync(() async {
+            if (!await dest.exists()) await dest.create();
+            for (final BrowserFile f in browser.filteredFiles.take(3)) {
+              await File(p.join(dest.path, f.name)).writeAsString('older copy');
+            }
+          });
+
+          staging.clear();
+          staging.addAll(browser.filteredFiles.take(3));
+          staging.setDestination(dest.path);
+          browser.clearSelection();
+        },
+        after: (WidgetTester tester) async {
+          await tester.runAsync(() async {
+            await tester.tap(find.text('移动到此'));
+            await tester.pump();
+            await Future<void>.delayed(const Duration(milliseconds: 500));
+          });
+          for (int i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 120));
           }
         },
       );

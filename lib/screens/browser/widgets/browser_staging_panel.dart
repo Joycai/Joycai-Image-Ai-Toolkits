@@ -53,13 +53,17 @@ class BrowserStagingPanel extends StatelessWidget {
       child: Column(
         children: [
           _Header(staging: staging),
-          if (staging.isEmpty)
-            const Expanded(child: _EmptyState())
-          else ...[
-            _DestinationCard(destination: destination),
-            Expanded(child: _ItemList(staging: staging, destination: destination)),
-            _Footer(staging: staging, destination: destination, onPaste: onPaste),
-          ],
+          // `12c` keeps the destination card and the footer on an empty panel,
+          // with the buttons disabled. They are what the panel *is*; hiding
+          // them until something is staged would make the empty state a
+          // different, smaller feature.
+          _DestinationCard(destination: destination),
+          Expanded(
+            child: staging.isEmpty
+                ? const _EmptyState()
+                : _ItemList(staging: staging, destination: destination),
+          ),
+          _Footer(staging: staging, destination: destination, onPaste: onPaste),
         ],
       ),
     );
@@ -482,21 +486,27 @@ class _StagedRowState extends State<_StagedRow> {
               ),
             ],
             const SizedBox(width: 4),
-            Tooltip(
-              message: l10n.removeFromStaging,
-              child: InkWell(
-                onTap: widget.onRemove,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: Icon(
-                    Icons.close,
-                    size: 12,
-                    color: _hovered ? colorScheme.onSurfaceVariant : colorScheme.outline,
-                  ),
-                ),
-              ),
+            // Shown on hover only. Twelve rows each carrying a permanent ✕
+            // reads as a list of delete buttons that happen to have file names
+            // beside them; the reserved width keeps the names from reflowing
+            // as the pointer moves down the list.
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: _hovered
+                  ? Tooltip(
+                      message: l10n.removeFromStaging,
+                      child: InkWell(
+                        onTap: widget.onRemove,
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                        child: Icon(
+                          Icons.close,
+                          size: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           ],
         ),
@@ -612,6 +622,8 @@ class _Footer extends StatelessWidget {
   /// Assembled from parts rather than one plural string so the clauses that
   /// do not apply are absent, not zeroed.
   String _summary(AppLocalizations l10n, int atTarget) {
+    if (staging.isEmpty) return l10n.stagingItemsCount(0);
+
     final parts = <String>[
       l10n.stagingItemsCount(staging.count),
       AppConstants.formatFileSize(staging.totalBytes),

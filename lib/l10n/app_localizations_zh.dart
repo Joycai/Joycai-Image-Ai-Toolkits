@@ -172,7 +172,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stagingEmptyDesc =>
-      '选中文件后加入暂存区，然后在任意文件夹里移动或复制过去。加入只是标记，粘贴前不会写入磁盘。';
+      '选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。';
 
   @override
   String get stagingTarget => '目标目录';
@@ -457,6 +457,121 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get renameTemplateLabel => '模板';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '正在移动 $count 项';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '正在复制 $count 项';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '跨磁盘';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 项 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '正在复制 $name';
+  }
+
+  @override
+  String get pasteRollbackNote => '跨磁盘移动按「复制 + 删除」执行；取消时已复制的文件将被回滚删除，源文件保持不动。';
+
+  @override
+  String get pasteRunInBackground => '后台运行';
+
+  @override
+  String get pasteMoveDone => '移动完成';
+
+  @override
+  String get pasteCopyDone => '复制完成';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 项 · 用时 $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => '跳过（与目标相同）';
+
+  @override
+  String get pasteStatFailed => '失败';
+
+  @override
+  String get pasteRetry => '重试';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失败与跳过的 $kept 项仍保留在暂存区，成功的 $moved 项已自动移出。';
+  }
+
+  @override
+  String get pasteExportLog => '导出日志';
+
+  @override
+  String pasteLogSaved(String path) {
+    return '日志已保存到 $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 项与目标 $folder 重名';
+  }
+
+  @override
+  String get conflictsIntro => '逐项选择处理方式；也可以勾选下方「对剩余项应用」。';
+
+  @override
+  String get conflictPending => '待定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '写入 · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '已有 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '目标文件将被替换，不可撤销';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '对剩余 $count 项应用同一选择';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '应用并继续';
+
+  @override
+  String dragMoveHint(int count) {
+    return '移动 $count 项 · 按住 Ctrl 复制';
+  }
+
+  @override
+  String get showInSystem => '在系统中显示';
 
   @override
   String get appTitle => 'Joycai Image AI 工具集';
@@ -3739,7 +3854,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get stagingEmptyDesc =>
-      '選取檔案後加入暫存區，然後在任意資料夾裡移動或複製過去。加入只是標記，貼上前不會寫入磁碟。';
+      '選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。';
 
   @override
   String get stagingTarget => '目標目錄';
@@ -4024,6 +4139,121 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get renameTemplateLabel => '範本';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '正在移動 $count 項';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '正在複製 $count 項';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '跨磁碟';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 項 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '正在複製 $name';
+  }
+
+  @override
+  String get pasteRollbackNote => '跨磁碟移動按「複製 + 刪除」執行；取消時已複製的檔案將被回滾刪除，來源檔案保持不動。';
+
+  @override
+  String get pasteRunInBackground => '背景執行';
+
+  @override
+  String get pasteMoveDone => '移動完成';
+
+  @override
+  String get pasteCopyDone => '複製完成';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 項 · 用時 $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => '跳過（與目標相同）';
+
+  @override
+  String get pasteStatFailed => '失敗';
+
+  @override
+  String get pasteRetry => '重試';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失敗與跳過的 $kept 項仍保留在暫存區，成功的 $moved 項已自動移出。';
+  }
+
+  @override
+  String get pasteExportLog => '匯出日誌';
+
+  @override
+  String pasteLogSaved(String path) {
+    return '日誌已儲存到 $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 項與目標 $folder 重名';
+  }
+
+  @override
+  String get conflictsIntro => '逐項選擇處理方式；也可以勾選下方「對剩餘項套用」。';
+
+  @override
+  String get conflictPending => '待定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '寫入 · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '已有 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '目標檔案將被替換，不可撤銷';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '對剩餘 $count 項套用同一選擇';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '套用並繼續';
+
+  @override
+  String dragMoveHint(int count) {
+    return '移動 $count 項 · 按住 Ctrl 複製';
+  }
+
+  @override
+  String get showInSystem => '在系統中顯示';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

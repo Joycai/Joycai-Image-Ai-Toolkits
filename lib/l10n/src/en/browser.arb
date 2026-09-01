@@ -78,7 +78,7 @@
   "stagedBadge": "Staged",
   "clearStaging": "Clear",
   "stagingEmptyTitle": "Staging is empty",
-  "stagingEmptyDesc": "Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.",
+  "stagingEmptyDesc": "Pick files and hit Add to Staging to note down what you want to move. It only marks them - nothing is moved. Switching folders, filtering, or restarting the app will not lose it.",
   "stagingTarget": "DESTINATION",
   "stagingNoTarget": "No destination picked",
   "stagingTargetHint": "Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.",
@@ -370,5 +370,154 @@
   },
   "renameRetryBatch": "Retry these",
   "renameEditConfig": "Edit config",
-  "renameTemplateLabel": "Template"
+  "renameTemplateLabel": "Template",
+  "pasteMovingCount": "Moving {count} items",
+  "@pasteMovingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCopyingCount": "Copying {count} items",
+  "@pasteCopyingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteRoute": "{from_} to {to}",
+  "@pasteRoute": {
+    "placeholders": {
+      "from_": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCrossVolumeTag": "across drives",
+  "pasteProgressItems": "{done} / {total} items · {doneSize} / {totalSize}",
+  "@pasteProgressItems": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "doneSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCurrentFile": "Copying {name}",
+  "@pasteCurrentFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteRollbackNote": "A cross-drive move runs as copy then delete. Cancelling deletes the copy that was in flight and leaves the source where it is.",
+  "pasteRunInBackground": "Run in background",
+  "pasteMoveDone": "Move finished",
+  "pasteCopyDone": "Copy finished",
+  "pasteElapsed": "{count} items · {time}",
+  "@pasteElapsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteStatSucceeded": "Transferred",
+  "pasteStatSkipped": "Skipped (already there)",
+  "pasteStatFailed": "Failed",
+  "pasteRetry": "Retry",
+  "pasteKeptInStaging": "The {kept} failed or skipped items stay in Staging; the {moved} that went through were taken out.",
+  "@pasteKeptInStaging": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "moved": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteExportLog": "Export log",
+  "pasteLogSaved": "Log saved to {path}",
+  "@pasteLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsSubtitle": "{count} of {total} clash with names in {folder}",
+  "@conflictsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsIntro": "Choose what to do with each, or tick the box below to apply one answer to the rest.",
+  "conflictPending": "Undecided",
+  "conflictWriteInfo": "Incoming · {size} · {date}",
+  "@conflictWriteInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictExistingInfo": "Already there · {size} · {date}",
+  "@conflictExistingInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictOverwriteWarning": "The file there will be replaced. This cannot be undone.",
+  "conflictApplyRestCount": "Apply the same answer to the remaining {count}",
+  "@conflictApplyRestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictApplyAndContinue": "Apply and continue",
+  "dragMoveHint": "Move {count} · hold Ctrl to copy",
+  "@dragMoveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showInSystem": "Show in system"
 }

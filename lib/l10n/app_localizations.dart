@@ -410,7 +410,7 @@ abstract class AppLocalizations {
   /// No description provided for @stagingEmptyDesc.
   ///
   /// In en, this message translates to:
-  /// **'Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.'**
+  /// **'Pick files and hit Add to Staging to note down what you want to move. It only marks them - nothing is moved. Switching folders, filtering, or restarting the app will not lose it.'**
   String get stagingEmptyDesc;
 
   /// No description provided for @stagingTarget.
@@ -874,6 +874,179 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Template'**
   String get renameTemplateLabel;
+
+  /// No description provided for @pasteMovingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving {count} items'**
+  String pasteMovingCount(int count);
+
+  /// No description provided for @pasteCopyingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying {count} items'**
+  String pasteCopyingCount(int count);
+
+  /// No description provided for @pasteRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'{from_} to {to}'**
+  String pasteRoute(String from_, String to);
+
+  /// No description provided for @pasteCrossVolumeTag.
+  ///
+  /// In en, this message translates to:
+  /// **'across drives'**
+  String get pasteCrossVolumeTag;
+
+  /// No description provided for @pasteProgressItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total} items · {doneSize} / {totalSize}'**
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  );
+
+  /// No description provided for @pasteCurrentFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying {name}'**
+  String pasteCurrentFile(String name);
+
+  /// No description provided for @pasteRollbackNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A cross-drive move runs as copy then delete. Cancelling deletes the copy that was in flight and leaves the source where it is.'**
+  String get pasteRollbackNote;
+
+  /// No description provided for @pasteRunInBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Run in background'**
+  String get pasteRunInBackground;
+
+  /// No description provided for @pasteMoveDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Move finished'**
+  String get pasteMoveDone;
+
+  /// No description provided for @pasteCopyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy finished'**
+  String get pasteCopyDone;
+
+  /// No description provided for @pasteElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items · {time}'**
+  String pasteElapsed(int count, String time);
+
+  /// No description provided for @pasteStatSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferred'**
+  String get pasteStatSucceeded;
+
+  /// No description provided for @pasteStatSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped (already there)'**
+  String get pasteStatSkipped;
+
+  /// No description provided for @pasteStatFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get pasteStatFailed;
+
+  /// No description provided for @pasteRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get pasteRetry;
+
+  /// No description provided for @pasteKeptInStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'The {kept} failed or skipped items stay in Staging; the {moved} that went through were taken out.'**
+  String pasteKeptInStaging(int kept, int moved);
+
+  /// No description provided for @pasteExportLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Export log'**
+  String get pasteExportLog;
+
+  /// No description provided for @pasteLogSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Log saved to {path}'**
+  String pasteLogSaved(String path);
+
+  /// No description provided for @conflictsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} clash with names in {folder}'**
+  String conflictsSubtitle(int count, int total, String folder);
+
+  /// No description provided for @conflictsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to do with each, or tick the box below to apply one answer to the rest.'**
+  String get conflictsIntro;
+
+  /// No description provided for @conflictPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Undecided'**
+  String get conflictPending;
+
+  /// No description provided for @conflictWriteInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming · {size} · {date}'**
+  String conflictWriteInfo(String size, String date);
+
+  /// No description provided for @conflictExistingInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Already there · {size} · {date}'**
+  String conflictExistingInfo(String size, String date);
+
+  /// No description provided for @conflictOverwriteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'The file there will be replaced. This cannot be undone.'**
+  String get conflictOverwriteWarning;
+
+  /// No description provided for @conflictApplyRestCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the same answer to the remaining {count}'**
+  String conflictApplyRestCount(int count);
+
+  /// No description provided for @conflictApplyAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply and continue'**
+  String get conflictApplyAndContinue;
+
+  /// No description provided for @dragMoveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} · hold Ctrl to copy'**
+  String dragMoveHint(int count);
+
+  /// No description provided for @showInSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in system'**
+  String get showInSystem;
 
   /// No description provided for @appTitle.
   ///

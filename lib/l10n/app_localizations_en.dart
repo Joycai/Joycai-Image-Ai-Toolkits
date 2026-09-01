@@ -175,7 +175,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stagingEmptyDesc =>
-      'Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.';
+      'Pick files and hit Add to Staging to note down what you want to move. It only marks them - nothing is moved. Switching folders, filtering, or restarting the app will not lose it.';
 
   @override
   String get stagingTarget => 'DESTINATION';
@@ -462,6 +462,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get renameTemplateLabel => 'Template';
+
+  @override
+  String pasteMovingCount(int count) {
+    return 'Moving $count items';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return 'Copying $count items';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ to $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => 'across drives';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total items · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return 'Copying $name';
+  }
+
+  @override
+  String get pasteRollbackNote =>
+      'A cross-drive move runs as copy then delete. Cancelling deletes the copy that was in flight and leaves the source where it is.';
+
+  @override
+  String get pasteRunInBackground => 'Run in background';
+
+  @override
+  String get pasteMoveDone => 'Move finished';
+
+  @override
+  String get pasteCopyDone => 'Copy finished';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count items · $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => 'Transferred';
+
+  @override
+  String get pasteStatSkipped => 'Skipped (already there)';
+
+  @override
+  String get pasteStatFailed => 'Failed';
+
+  @override
+  String get pasteRetry => 'Retry';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return 'The $kept failed or skipped items stay in Staging; the $moved that went through were taken out.';
+  }
+
+  @override
+  String get pasteExportLog => 'Export log';
+
+  @override
+  String pasteLogSaved(String path) {
+    return 'Log saved to $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count of $total clash with names in $folder';
+  }
+
+  @override
+  String get conflictsIntro =>
+      'Choose what to do with each, or tick the box below to apply one answer to the rest.';
+
+  @override
+  String get conflictPending => 'Undecided';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return 'Incoming · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return 'Already there · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning =>
+      'The file there will be replaced. This cannot be undone.';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return 'Apply the same answer to the remaining $count';
+  }
+
+  @override
+  String get conflictApplyAndContinue => 'Apply and continue';
+
+  @override
+  String dragMoveHint(int count) {
+    return 'Move $count · hold Ctrl to copy';
+  }
+
+  @override
+  String get showInSystem => 'Show in system';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

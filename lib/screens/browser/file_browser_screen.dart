@@ -476,10 +476,17 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
           itemCount: state.filteredFiles.length,
           itemBuilder: (context, index) {
             final file = state.filteredFiles[index];
+            final isSelected = state.selectedFiles.contains(file);
             return FileCard(
               file: file,
-              isSelected: state.selectedFiles.contains(file),
+              isSelected: isSelected,
               isStaged: staging.contains(file.path),
+              // Dragging a card inside the selection drags the whole
+              // selection; dragging one outside it drags only that file. Same
+              // rule the context menu uses, so the count in the drag chip and
+              // the count in the menu never disagree.
+              dragPayload:
+                  isSelected ? state.selectedFiles.toList() : <BrowserFile>[file],
               thumbnailSize: state.thumbnailSize,
               heroScope: kBrowserPreviewHeroScope,
               onTap: () => _handleSelectionTap(state, file),

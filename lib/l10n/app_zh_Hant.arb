@@ -64,7 +64,7 @@
   "stagedBadge": "已暫存",
   "clearStaging": "清空",
   "stagingEmptyTitle": "暫存區是空的",
-  "stagingEmptyDesc": "選取檔案後加入暫存區，然後在任意資料夾裡移動或複製過去。加入只是標記，貼上前不會寫入磁碟。",
+  "stagingEmptyDesc": "選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。",
   "stagingTarget": "目標目錄",
   "stagingNoTarget": "未選擇目標目錄",
   "stagingTargetHint": "在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。",
@@ -357,6 +357,155 @@
   "renameRetryBatch": "重試此批",
   "renameEditConfig": "編輯設定",
   "renameTemplateLabel": "範本",
+  "pasteMovingCount": "正在移動 {count} 項",
+  "@pasteMovingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCopyingCount": "正在複製 {count} 項",
+  "@pasteCopyingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteRoute": "{from_} → {to}",
+  "@pasteRoute": {
+    "placeholders": {
+      "from_": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCrossVolumeTag": "跨磁碟",
+  "pasteProgressItems": "{done} / {total} 項 · {doneSize} / {totalSize}",
+  "@pasteProgressItems": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "doneSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCurrentFile": "正在複製 {name}",
+  "@pasteCurrentFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteRollbackNote": "跨磁碟移動按「複製 + 刪除」執行；取消時已複製的檔案將被回滾刪除，來源檔案保持不動。",
+  "pasteRunInBackground": "背景執行",
+  "pasteMoveDone": "移動完成",
+  "pasteCopyDone": "複製完成",
+  "pasteElapsed": "{count} 項 · 用時 {time}",
+  "@pasteElapsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteStatSucceeded": "成功",
+  "pasteStatSkipped": "跳過（與目標相同）",
+  "pasteStatFailed": "失敗",
+  "pasteRetry": "重試",
+  "pasteKeptInStaging": "失敗與跳過的 {kept} 項仍保留在暫存區，成功的 {moved} 項已自動移出。",
+  "@pasteKeptInStaging": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "moved": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteExportLog": "匯出日誌",
+  "pasteLogSaved": "日誌已儲存到 {path}",
+  "@pasteLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsSubtitle": "{count} / {total} 項與目標 {folder} 重名",
+  "@conflictsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsIntro": "逐項選擇處理方式；也可以勾選下方「對剩餘項套用」。",
+  "conflictPending": "待定",
+  "conflictWriteInfo": "寫入 · {size} · {date}",
+  "@conflictWriteInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictExistingInfo": "已有 · {size} · {date}",
+  "@conflictExistingInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictOverwriteWarning": "目標檔案將被替換，不可撤銷",
+  "conflictApplyRestCount": "對剩餘 {count} 項套用同一選擇",
+  "@conflictApplyRestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictApplyAndContinue": "套用並繼續",
+  "dragMoveHint": "移動 {count} 項 · 按住 Ctrl 複製",
+  "@dragMoveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showInSystem": "在系統中顯示",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "儲存",
   "update": "更新",

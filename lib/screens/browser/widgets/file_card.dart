@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_decode.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
@@ -30,6 +31,11 @@ class FileCard extends StatefulWidget {
   /// opens into (see [previewHeroTag]); null leaves the card un-tagged.
   final String? heroScope;
 
+  /// The files this card drags. Normally the whole selection when the card is
+  /// part of it, this one file otherwise — resolved by the caller, because
+  /// only the screen knows what is selected.
+  final List<BrowserFile> dragPayload;
+
   const FileCard({
     super.key,
     required this.file,
@@ -40,6 +46,7 @@ class FileCard extends StatefulWidget {
     this.onDoubleTap,
     required this.onSecondaryTap,
     this.heroScope,
+    this.dragPayload = const [],
   });
 
   @override
@@ -104,7 +111,7 @@ class _FileCardState extends State<FileCard> {
     // double-tap recognizer defers a quick click's onTapDown past the 300ms
     // disambiguation window. The open/select commits keep their deferral; the
     // card visibly taking the press does not.
-    return Listener(
+    final card = Listener(
       onPointerDown: (_) => setState(() => _isPressed = true),
       onPointerUp: (_) => setState(() => _isPressed = false),
       onPointerCancel: (_) => setState(() => _isPressed = false),
@@ -259,6 +266,58 @@ class _FileCardState extends State<FileCard> {
           ),
         ),
       ),
+      ),
+    );
+
+    if (widget.dragPayload.isEmpty) return card;
+
+    // `12d`'s second entry point. The drag carries files rather than paths so
+    // the drop target can label itself with a count without going back to the
+    // browser state for it.
+    return Draggable<List<BrowserFile>>(
+      data: widget.dragPayload,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: _DragChip(count: widget.dragPayload.length),
+      // The card stays put and dims: a grid that reflows mid-drag loses the
+      // drop target the user was aiming at.
+      childWhenDragging: Opacity(opacity: 0.4, child: card),
+      child: card,
+    );
+  }
+}
+
+/// What follows the pointer during a drag onto a folder.
+class _DragChip extends StatelessWidget {
+  final int count;
+
+  const _DragChip({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        margin: const EdgeInsets.only(left: 12, top: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppOverlay.ink,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Text(
+          l10n.dragMoveHint(count),
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppOverlay.onInk, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

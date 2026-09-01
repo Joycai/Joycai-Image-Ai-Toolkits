@@ -857,11 +857,10 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       if (!_isGenerating && _unresolvedCount > 0) l10n.renameConflictsPending(_unresolvedCount),
     ].join(' · ');
 
-    return SizedBox(
-      height: 56,
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
+    // No height or side insets of its own: AppDialog pads the footer band, and
+    // adding a second set turns the strip above the buttons into dead space.
+    return Row(
+      children: [
           Expanded(
             child: Text(
               summary,
@@ -886,9 +885,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             loading: _isSubmitting,
             onPressed: (_applyCount == 0 || _isGenerating || _isSubmitting) ? null : _apply,
           ),
-          const SizedBox(width: 16),
-        ],
-      ),
+      ],
     );
   }
 }

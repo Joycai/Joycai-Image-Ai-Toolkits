@@ -64,7 +64,7 @@
   "stagedBadge": "ステージ済み",
   "clearStaging": "クリア",
   "stagingEmptyTitle": "ステージングは空です",
-  "stagingEmptyDesc": "ファイルを選んでステージングに追加し、任意のフォルダーへ移動またはコピーします。追加は印を付けるだけで、貼り付けるまで書き込みは発生しません。",
+  "stagingEmptyDesc": "ファイルを選んで「ステージングに追加」を押すと、動かしたいファイルをここに控えます。印を付けるだけで、ファイルは移動しません。フォルダーの切り替え、絞り込み、アプリの再起動でも消えません。",
   "stagingTarget": "対象フォルダー",
   "stagingNoTarget": "対象フォルダー未選択",
   "stagingTargetHint": "左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。",
@@ -356,5 +356,154 @@
   },
   "renameRetryBatch": "再試行",
   "renameEditConfig": "設定を編集",
-  "renameTemplateLabel": "テンプレート"
+  "renameTemplateLabel": "テンプレート",
+  "pasteMovingCount": "{count} 件を移動中",
+  "@pasteMovingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCopyingCount": "{count} 件をコピー中",
+  "@pasteCopyingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteRoute": "{from_} → {to}",
+  "@pasteRoute": {
+    "placeholders": {
+      "from_": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCrossVolumeTag": "別ドライブ",
+  "pasteProgressItems": "{done} / {total} 件 · {doneSize} / {totalSize}",
+  "@pasteProgressItems": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "doneSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCurrentFile": "{name} をコピー中",
+  "@pasteCurrentFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteRollbackNote": "別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。",
+  "pasteRunInBackground": "バックグラウンドで実行",
+  "pasteMoveDone": "移動が完了しました",
+  "pasteCopyDone": "コピーが完了しました",
+  "pasteElapsed": "{count} 件 · {time}",
+  "@pasteElapsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteStatSucceeded": "成功",
+  "pasteStatSkipped": "スキップ（対象と同じ）",
+  "pasteStatFailed": "失敗",
+  "pasteRetry": "再試行",
+  "pasteKeptInStaging": "失敗・スキップの {kept} 件はステージングに残り、成功した {moved} 件は取り除かれました。",
+  "@pasteKeptInStaging": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "moved": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteExportLog": "ログを書き出す",
+  "pasteLogSaved": "ログを {path} に保存しました",
+  "@pasteLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsSubtitle": "{count} / {total} 件が {folder} の既存名と衝突",
+  "@conflictsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsIntro": "項目ごとに選ぶか、下のチェックで残りにも同じ選択を適用します。",
+  "conflictPending": "未決定",
+  "conflictWriteInfo": "書き込み · {size} · {date}",
+  "@conflictWriteInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictExistingInfo": "既存 · {size} · {date}",
+  "@conflictExistingInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictOverwriteWarning": "対象のファイルは置き換えられます。元に戻せません",
+  "conflictApplyRestCount": "残り {count} 件にも同じ選択を適用",
+  "@conflictApplyRestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictApplyAndContinue": "適用して続行",
+  "dragMoveHint": "{count} 件を移動 · Ctrl でコピー",
+  "@dragMoveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showInSystem": "システムで表示"
 }

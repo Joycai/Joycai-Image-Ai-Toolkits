@@ -311,6 +311,24 @@ class FileTransferService {
             // platform, and a genuine permission error simply fails the copy
             // below and is reported the way it would have been anyway.
             await File(entry.sourcePath).copy(target);
+
+            // The one place a cancel can arrive mid-file. A cross-volume move
+            // is a copy and *then* a delete, and the copy is the long half —
+            // so the check goes between them, and a cancel that lands here
+            // rolls the copy back rather than completing a move the user just
+            // stopped. `12f` promises exactly this: the copy is undone, the
+            // source stays put.
+            if (isCancelled?.call() ?? false) {
+              try {
+                await File(target).delete();
+              } on FileSystemException {
+                // Nothing better to do: the source is still there, which is
+                // the half that matters.
+              }
+              cancelled = true;
+              break;
+            }
+
             try {
               await File(entry.sourcePath).delete();
             } on FileSystemException catch (e) {

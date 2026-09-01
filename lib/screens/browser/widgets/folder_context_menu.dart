@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/design_tokens.dart';
+import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/file_transfer_service.dart';
 import '../../../state/app_state.dart';
@@ -38,6 +39,11 @@ void showFolderContextMenu({
         label: l10n.onlyThisDirectory,
         onTap: () => appState.fileBrowserState.setExclusiveDirectory(path),
       ),
+      _item(
+        icon: Icons.deselect,
+        label: l10n.deselectAllDirectories,
+        onTap: () => appState.fileBrowserState.clearActiveDirectories(),
+      ),
       if (staged > 0) ...[
         const PopupMenuDivider(),
         // The count is in the label because this menu commits immediately —
@@ -54,6 +60,12 @@ void showFolderContextMenu({
           onTap: () => runStagingPaste(context, mode: FileTransferMode.copy, destination: path),
         ),
       ],
+      const PopupMenuDivider(),
+      _item(
+        icon: Icons.open_in_new,
+        label: l10n.showInSystem,
+        onTap: () => FileUtils.openPath(path),
+      ),
     ],
   );
 }
