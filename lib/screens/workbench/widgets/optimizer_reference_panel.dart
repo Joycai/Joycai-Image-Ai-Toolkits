@@ -3,12 +3,15 @@ import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
+import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../services/prompt_optimizer_agent.dart';
+import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/app_section_label.dart';
+import '../../../widgets/thumbnail_fit_toggle.dart';
 
 class OptimizerReferencePanel extends StatelessWidget {
   const OptimizerReferencePanel({super.key});
@@ -26,6 +29,10 @@ class OptimizerReferencePanel extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final images = workbenchUIState.optimizerReferenceImages;
     final session = workbenchUIState.optimizerSession;
+    // Shared with the gallery and the file browser — see [ThumbnailFit].
+    // Read here and passed down: the cards are built inside a ListView
+    // builder, whose element is the wrong place to hang the dependency.
+    final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
 
     if (images.isEmpty) {
       return Column(
@@ -91,15 +98,24 @@ class OptimizerReferencePanel extends StatelessWidget {
           children: [
             AppSectionLabel(
               l10n.referenceImages,
-              padding: const EdgeInsets.fromLTRB(16, 16, 12, 8),
-              trailing: refs.isEmpty
-                  ? null
-                  : Text(
+              padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
+              // The count and the fit control share the label's baseline row.
+              // The control belongs here rather than in the workbench toolbar
+              // above: that bar names the assistant, this one names the strip
+              // whose cards the setting redraws.
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (refs.isNotEmpty)
+                    Text(
                       '${refs.length}',
                       style: Theme.of(context).textTheme.labelMedium?.mono.copyWith(
                             color: colorScheme.outline,
                           ),
                     ),
+                  const ThumbnailFitToggle(iconSize: 16, size: 28),
+                ],
+              ),
             ),
             Expanded(
               child: ListView.builder(
@@ -109,7 +125,7 @@ class OptimizerReferencePanel extends StatelessWidget {
                   if (row < refs.length) {
                     final index = refs[row];
                     return _imageCard(context, l10n, colorScheme, workbenchUIState,
-                        session, images[index], index,
+                        session, images[index], index, thumbFit,
                         meta: null);
                   }
                   if (row == refs.length) {
@@ -136,7 +152,7 @@ class OptimizerReferencePanel extends StatelessWidget {
                   final index = results[row - refs.length - 1];
                   final image = images[index];
                   return _imageCard(context, l10n, colorScheme, workbenchUIState,
-                      session, image, index,
+                      session, image, index, thumbFit,
                       meta: resultInfo[image.name]);
                 },
               ),
@@ -167,7 +183,8 @@ class OptimizerReferencePanel extends StatelessWidget {
     WorkbenchUIState workbenchUIState,
     PromptOptimizerSession session,
     AppImage image,
-    int index, {
+    int index,
+    ThumbnailFit thumbFit, {
     required ({int? promptVersion, String feedback})? meta,
   }) {
     final viewed = session.viewedImagePaths.contains(image.path);
@@ -192,7 +209,7 @@ class OptimizerReferencePanel extends StatelessWidget {
                 children: [
                   ColoredBox(
                     color: colorScheme.surfaceContainerHighest,
-                    child: Image(image: image.imageProvider, fit: BoxFit.cover),
+                    child: Image(image: image.imageProvider, fit: thumbFit.boxFit),
                   ),
                   Positioned(
                     top: 7,

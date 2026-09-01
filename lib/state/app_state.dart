@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
 import '../core/safety_settings.dart';
+import '../core/thumbnail_fit.dart';
 import '../l10n/app_localizations.dart';
 import '../services/llm/llm_dispatcher.dart';
 import '../services/llm/llm_types.dart';
@@ -133,6 +134,12 @@ class AppState extends ChangeNotifier {
   // designed look stays; users on weak/integrated GPUs can trade it for frame
   // rate — measured at ~19ms/frame on an iGPU at 4K.
   bool reduceVisualEffects = false;
+
+  /// How thumbnails fill their tile, in every grid that draws one — the
+  /// gallery, the file browser and the assistant's reference panel. See
+  /// [ThumbnailFit] for why the three share one setting instead of each
+  /// keeping its own.
+  ThumbnailFit thumbnailFit = ThumbnailFit.fit;
 
   // Navigation State
   int activeScreenIndex = 0;
@@ -408,6 +415,7 @@ class AppState extends ChangeNotifier {
 
     enableApiDebug = (await _db.getSetting('enable_api_debug') ?? 'false') == 'true';
     reduceVisualEffects = (await _db.getSetting('reduce_visual_effects') ?? 'false') == 'true';
+    thumbnailFit = ThumbnailFit.fromString(await _db.getSetting('thumbnail_fit'));
 
     // Load theme mode
     final savedTheme = await _db.getSetting('theme_mode');
@@ -597,6 +605,13 @@ class AppState extends ChangeNotifier {
       }
     }
     await _db.saveSetting('locale', localeStr);
+    notifyListeners();
+  }
+
+  Future<void> setThumbnailFit(ThumbnailFit value) async {
+    if (thumbnailFit == value) return;
+    thumbnailFit = value;
+    await _db.saveSetting('thumbnail_fit', value.name);
     notifyListeners();
   }
 

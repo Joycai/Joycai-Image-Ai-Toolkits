@@ -2631,6 +2631,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get thumbnailSize => 'サムネイルサイズ';
 
   @override
+  String get thumbnailDisplay => 'サムネイル表示';
+
+  @override
+  String get thumbnailFitContain => 'フィット（全体表示）';
+
+  @override
+  String get thumbnailFitCover => 'フィル（切り抜き）';
+
+  @override
   String get deleteFile => 'ファイルを削除';
 
   @override

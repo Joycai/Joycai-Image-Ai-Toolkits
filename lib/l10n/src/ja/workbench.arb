@@ -40,6 +40,9 @@
     }
   },
   "thumbnailSize": "サムネイルサイズ",
+  "thumbnailDisplay": "サムネイル表示",
+  "thumbnailFitContain": "フィット（全体表示）",
+  "thumbnailFitCover": "フィル（切り抜き）",
   "deleteFile": "ファイルを削除",
   "deleteFileConfirmTitle": "ファイルを削除しますか？",
   "deleteFileConfirmMessage": "「{filename}」を削除してもよろしいですか？",

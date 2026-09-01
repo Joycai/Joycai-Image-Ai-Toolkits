@@ -8,6 +8,7 @@ import '../../../core/constants.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../core/thumbnail_decode.dart';
+import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../services/image_metadata_service.dart';
@@ -134,7 +135,8 @@ class _ImageCardState extends State<ImageCard> {
     }
   }
 
-  Widget _buildThumbnail(BuildContext context, ColorScheme colorScheme, {double? width, double? height}) {
+  Widget _buildThumbnail(BuildContext context, ColorScheme colorScheme, ThumbnailFit thumbFit,
+      {double? width, double? height}) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
 
     if (isVideo) {
@@ -149,7 +151,7 @@ class _ImageCardState extends State<ImageCard> {
               Positioned.fill(
                 child: Image.file(
                   File(_videoThumbnailPath!),
-                  fit: BoxFit.cover,
+                  fit: thumbFit.boxFit,
                   errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
@@ -199,7 +201,7 @@ class _ImageCardState extends State<ImageCard> {
         // grid on every frame of that drag.
         width: thumbnailDecodeWidth(context, width ?? widget.thumbnailSize),
       ),
-      fit: BoxFit.contain,
+      fit: thumbFit.boxFit,
       errorBuilder: (context, error, stackTrace) => Container(
         color: colorScheme.surfaceContainerHighest,
         child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
@@ -211,6 +213,11 @@ class _ImageCardState extends State<ImageCard> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = Responsive.isMobile(context);
+    // Read once here and handed down, rather than looked up in
+    // [_buildThumbnail]: that runs three times per build (drag proxy, ghost,
+    // card) and one dependency is enough. `select` keeps the card out of
+    // AppState's general notification traffic.
+    final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
 
     return Draggable<AppImage>(
       data: widget.imageFile,
@@ -221,12 +228,12 @@ class _ImageCardState extends State<ImageCard> {
         child: SizedBox(
           width: 100,
           height: 100,
-          child: _buildThumbnail(context, colorScheme, width: 100, height: 100),
+          child: _buildThumbnail(context, colorScheme, thumbFit, width: 100, height: 100),
         ),
       ),
       childWhenDragging: Opacity(
         opacity: 0.3,
-        child: _buildCardContent(context, colorScheme, isMobile),
+        child: _buildCardContent(context, colorScheme, isMobile, thumbFit),
       ),
       // A drag steals the pointer stream: the Listener below never sees the
       // up event once the drag proxy takes over, so the press is released
@@ -253,7 +260,7 @@ class _ImageCardState extends State<ImageCard> {
               scale: _isPressed ? 0.97 : 1.0,
               duration: AppMotion.durationOf(context, AppMotion.hover),
               curve: AppMotion.enter,
-              child: _buildCardContent(context, colorScheme, isMobile),
+              child: _buildCardContent(context, colorScheme, isMobile, thumbFit),
             ),
           ),
         ),
@@ -261,7 +268,8 @@ class _ImageCardState extends State<ImageCard> {
     );
   }
 
-  Widget _buildCardContent(BuildContext context, ColorScheme colorScheme, bool isMobile) {
+  Widget _buildCardContent(
+      BuildContext context, ColorScheme colorScheme, bool isMobile, ThumbnailFit thumbFit) {
     final isVideo = AppConstants.isVideoFile(widget.imageFile.path);
     final selected = widget.isSelected;
 
@@ -312,11 +320,11 @@ class _ImageCardState extends State<ImageCard> {
                     // and badges in place — which is exactly the hole a
                     // promoted photo should leave behind.
                     if (widget.heroScope == null)
-                      _buildThumbnail(context, colorScheme)
+                      _buildThumbnail(context, colorScheme, thumbFit)
                     else
                       Hero(
                         tag: previewHeroTag(widget.heroScope!, widget.imageFile.path),
-                        child: _buildThumbnail(context, colorScheme),
+                        child: _buildThumbnail(context, colorScheme, thumbFit),
                       ),
                     if (_dimensions.isNotEmpty)
                       // Bounded on the right, not just placed on the left.

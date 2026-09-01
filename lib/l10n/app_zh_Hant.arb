@@ -1367,6 +1367,9 @@
     }
   },
   "thumbnailSize": "縮圖大小",
+  "thumbnailDisplay": "縮圖顯示",
+  "thumbnailFitContain": "適應（完整顯示）",
+  "thumbnailFitCover": "填滿（裁切鋪滿）",
   "deleteFile": "刪除檔案",
   "deleteFileConfirmTitle": "刪除檔案？",
   "deleteFileConfirmMessage": "您確定要刪除「{filename}」嗎？",

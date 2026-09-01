@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../state/file_browser_state.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
+import '../../../widgets/thumbnail_fit_toggle.dart';
 
 /// Single control row under the header: category chips on the left,
 /// sort control and thumbnail-size slider on the right.
@@ -61,6 +62,9 @@ class BrowserFilterBar extends StatelessWidget {
                 tooltip: l10n.thumbnailSize,
                 visualDensity: VisualDensity.compact,
               ),
+            // Stays inline at every width. It is one glyph, and unlike the
+            // size slider there is nothing of it left to collapse.
+            const ThumbnailFitToggle(),
           ],
         ],
       ),

@@ -4876,6 +4876,24 @@ abstract class AppLocalizations {
   /// **'Thumbnail Size'**
   String get thumbnailSize;
 
+  /// No description provided for @thumbnailDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Thumbnail Display'**
+  String get thumbnailDisplay;
+
+  /// No description provided for @thumbnailFitContain.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit (whole image)'**
+  String get thumbnailFitContain;
+
+  /// No description provided for @thumbnailFitCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill (cropped)'**
+  String get thumbnailFitCover;
+
   /// No description provided for @deleteFile.
   ///
   /// In en, this message translates to:

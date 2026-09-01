@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/app_theme.dart';
 import '../../../core/design_tokens.dart';
 import '../../../core/thumbnail_decode.dart';
+import '../../../core/thumbnail_fit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
 import '../../../services/image_metadata_service.dart';
+import '../../../state/app_state.dart';
 import '../../workbench/widgets/preview/media_preview_dialog.dart' show previewHeroTag;
 import '../../workbench/widgets/preview/video_thumbnail.dart';
 
@@ -99,6 +102,9 @@ class _FileCardState extends State<FileCard> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Shared with the gallery and the assistant panel — see [ThumbnailFit].
+    // `select` keeps a grid of these out of AppState's general traffic.
+    final thumbFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
 
     // Glass, not opaque. `B1` answers the open question about the file area by
     // following `A1`: the grid is transparent and the window's backdrop shows
@@ -173,10 +179,10 @@ class _FileCardState extends State<FileCard> {
                                               // [thumbnailDecodeWidth].
                                               width: thumbnailDecodeWidth(context, widget.thumbnailSize),
                                             ),
-                                            fit: BoxFit.cover,
+                                            fit: thumbFit.boxFit,
                                           )
                                         : widget.file.category == FileCategory.video
-                                            ? VideoThumbnail(videoPath: widget.file.path, fit: BoxFit.cover)
+                                            ? VideoThumbnail(videoPath: widget.file.path, fit: thumbFit.boxFit)
                                             : Center(child: Icon(widget.file.icon, size: 48, color: widget.file.color.withAlpha(150))),
                                   ),
                                 ),
