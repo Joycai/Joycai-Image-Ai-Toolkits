@@ -41,12 +41,19 @@ class _AboutSectionState extends State<AboutSection> {
     return AppSection(
       gap: 10,
       children: [
-        Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset('assets/icon/icon.png', width: 72, height: 72),
-            ),
+        // Full width, or the Column shrink-wraps to its widest text and the
+        // whole block lands at the pane's left edge (AppSection aligns its
+        // children to the start) — the icon then only looks centred relative
+        // to the title, not the pane.
+        SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset('assets/icon/icon.png', width: 72, height: 72),
+              ),
             const SizedBox(height: 12),
             Text(
               l10n.appTitle,
@@ -57,7 +64,8 @@ class _AboutSectionState extends State<AboutSection> {
               _version.isEmpty ? '' : l10n.aboutVersion(_version),
               style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         // `D1`'s rows carry no leading glyph. Dropped rather than kept: a
