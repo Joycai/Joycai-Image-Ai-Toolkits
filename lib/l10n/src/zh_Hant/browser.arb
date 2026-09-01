@@ -49,5 +49,152 @@
   "featureLimitedOnMobile": "功能受限於行動裝置",
   "fileBrowserDesktopOnlyDesc": "由於作業系統沙盒限制，進階檔案瀏覽器和批次重新命名功能僅適用於桌面版本。",
   "fileBrowseriOSHint": "請使用系統「檔案」App 來管理您產生的圖像。",
-  "fileBrowserAndroidHint": "請使用裝置的檔案管理員來整理檔案。"
+  "fileBrowserAndroidHint": "請使用裝置的檔案管理員來整理檔案。",
+  "stagingArea": "暫存區",
+  "addToStaging": "加入暫存區",
+  "addToStagingCount": "加入暫存區 · {count} 項",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "從暫存區移除",
+  "stagedBadge": "已暫存",
+  "clearStaging": "清空",
+  "stagingEmptyTitle": "暫存區是空的",
+  "stagingEmptyDesc": "選取檔案後加入暫存區，然後在任意資料夾裡移動或複製過去。加入只是標記，貼上前不會寫入磁碟。",
+  "stagingTarget": "目標目錄",
+  "stagingNoTarget": "未選擇目標目錄",
+  "stagingTargetHint": "在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。",
+  "stagingRestored": "已從上次工作階段恢復 {count} 項",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "與目標相同 · 執行時跳過",
+  "stagingMissing": "已失效",
+  "stagingClearMissing": "清理失效項 ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "移動到此",
+  "copyHere": "複製到此",
+  "moveCountHere": "移動 {count} 項到此",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "複製 {count} 項到此",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} 項",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} 項失效",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} 項已在目標目錄（將跳過）",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "僅看此目錄",
+  "pasteMoveTitle": "移動到 {folder}",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "複製到 {folder}",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "請先指定目標目錄",
+  "pasteDestinationGone": "目標目錄已不存在",
+  "pasteNothingToDo": "沒有可搬運的檔案",
+  "conflictsTitle": "處理同名衝突",
+  "conflictSkip": "跳過",
+  "conflictOverwrite": "覆蓋",
+  "conflictRename": "自動改名",
+  "conflictApplyToRest": "對全部剩餘項套用",
+  "conflictReasonExists": "目標目錄中已存在",
+  "conflictReasonDuplicate": "另一個暫存檔案同名",
+  "conflictReasonSameLocation": "已在此目錄中",
+  "conflictReasonMissing": "來源檔案已不存在",
+  "pasteCrossVolumeWarning": "跨磁碟搬運：先複製再刪除，耗時更久，且可能中途停下。",
+  "pasteRunningMove": "正在移動…",
+  "pasteRunningCopy": "正在複製…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "搬運完成",
+  "pasteCancelledTitle": "搬運已取消",
+  "pasteSucceededCount": "成功 {count} 項",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "跳過 {count} 項",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "失敗 {count} 項",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

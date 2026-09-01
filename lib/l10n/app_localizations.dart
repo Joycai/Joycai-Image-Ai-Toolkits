@@ -365,6 +365,282 @@ abstract class AppLocalizations {
   /// **'Please use your device\'s file manager to organize files.'**
   String get fileBrowserAndroidHint;
 
+  /// No description provided for @stagingArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging'**
+  String get stagingArea;
+
+  /// No description provided for @addToStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Staging'**
+  String get addToStaging;
+
+  /// No description provided for @addToStagingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Staging - {count}'**
+  String addToStagingCount(int count);
+
+  /// No description provided for @removeFromStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Staging'**
+  String get removeFromStaging;
+
+  /// No description provided for @stagedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Staged'**
+  String get stagedBadge;
+
+  /// No description provided for @clearStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearStaging;
+
+  /// No description provided for @stagingEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging is empty'**
+  String get stagingEmptyTitle;
+
+  /// No description provided for @stagingEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.'**
+  String get stagingEmptyDesc;
+
+  /// No description provided for @stagingTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'DESTINATION'**
+  String get stagingTarget;
+
+  /// No description provided for @stagingNoTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'No destination picked'**
+  String get stagingNoTarget;
+
+  /// No description provided for @stagingTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.'**
+  String get stagingTargetHint;
+
+  /// No description provided for @stagingRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored {count} from the last session'**
+  String stagingRestored(int count);
+
+  /// No description provided for @stagingSameAsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Already here - will be skipped'**
+  String get stagingSameAsTarget;
+
+  /// No description provided for @stagingMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get stagingMissing;
+
+  /// No description provided for @stagingClearMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove missing ({count})'**
+  String stagingClearMissing(int count);
+
+  /// No description provided for @moveHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Move here'**
+  String get moveHere;
+
+  /// No description provided for @copyHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy here'**
+  String get copyHere;
+
+  /// No description provided for @moveCountHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} here'**
+  String moveCountHere(int count);
+
+  /// No description provided for @copyCountHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy {count} here'**
+  String copyCountHere(int count);
+
+  /// No description provided for @stagingItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String stagingItemsCount(int count);
+
+  /// No description provided for @stagingMissingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} missing'**
+  String stagingMissingCount(int count);
+
+  /// No description provided for @stagingAtTargetCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} already there (skipped)'**
+  String stagingAtTargetCount(int count);
+
+  /// No description provided for @onlyThisDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Show only this folder'**
+  String get onlyThisDirectory;
+
+  /// No description provided for @pasteMoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {folder}'**
+  String pasteMoveTitle(String folder);
+
+  /// No description provided for @pasteCopyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to {folder}'**
+  String pasteCopyTitle(String folder);
+
+  /// No description provided for @pasteNoDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a destination folder first'**
+  String get pasteNoDestination;
+
+  /// No description provided for @pasteDestinationGone.
+  ///
+  /// In en, this message translates to:
+  /// **'The destination folder no longer exists'**
+  String get pasteDestinationGone;
+
+  /// No description provided for @pasteNothingToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to transfer'**
+  String get pasteNothingToDo;
+
+  /// No description provided for @conflictsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve name conflicts'**
+  String get conflictsTitle;
+
+  /// No description provided for @conflictSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get conflictSkip;
+
+  /// No description provided for @conflictOverwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite'**
+  String get conflictOverwrite;
+
+  /// No description provided for @conflictRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep both'**
+  String get conflictRename;
+
+  /// No description provided for @conflictApplyToRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to all remaining'**
+  String get conflictApplyToRest;
+
+  /// No description provided for @conflictReasonExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in the destination'**
+  String get conflictReasonExists;
+
+  /// No description provided for @conflictReasonDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Another staged file has this name'**
+  String get conflictReasonDuplicate;
+
+  /// No description provided for @conflictReasonSameLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in this folder'**
+  String get conflictReasonSameLocation;
+
+  /// No description provided for @conflictReasonMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Source file is gone'**
+  String get conflictReasonMissing;
+
+  /// No description provided for @pasteCrossVolumeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'A different drive - files are copied then deleted, which takes longer and can stop partway.'**
+  String get pasteCrossVolumeWarning;
+
+  /// No description provided for @pasteRunningMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving…'**
+  String get pasteRunningMove;
+
+  /// No description provided for @pasteRunningCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying…'**
+  String get pasteRunningCopy;
+
+  /// No description provided for @pasteProgressCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total}'**
+  String pasteProgressCount(int done, int total);
+
+  /// No description provided for @pasteDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer finished'**
+  String get pasteDoneTitle;
+
+  /// No description provided for @pasteCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer cancelled'**
+  String get pasteCancelledTitle;
+
+  /// No description provided for @pasteSucceededCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} transferred'**
+  String pasteSucceededCount(int count);
+
+  /// No description provided for @pasteSkippedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} skipped'**
+  String pasteSkippedCount(int count);
+
+  /// No description provided for @pasteFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} failed'**
+  String pasteFailedCount(int count);
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

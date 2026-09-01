@@ -12,6 +12,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+
+import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
@@ -54,6 +57,54 @@ void main() {
         screen: screen,
         size: kShotSizes.last,
         brightness: Brightness.dark,
+      );
+    });
+  }
+
+  // The staging area only exists once something is in it, and the loop above
+  // photographs the browser with an empty one — which is the one state of this
+  // feature that shows none of it. `12a` is the frame being implemented here,
+  // so it gets its own shot with the panel populated, a destination named, a
+  // selection live (floating bar) and a mark that has gone stale.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · staging @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'staging',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          final browser = appState.fileBrowserState;
+          final staging = appState.fileStagingState;
+
+          staging.clear();
+          staging.addAll(browser.filteredFiles.take(5));
+          // A mark whose file is gone — the panel has to keep showing it.
+          staging.addAll(<BrowserFile>[
+            BrowserFile(
+              path: p.join(env.browserDir.path, 'deleted_by_someone_else.png'),
+              name: 'deleted_by_someone_else.png',
+              category: FileCategory.image,
+              size: 0,
+              modified: DateTime(2026, 8, 1),
+            ),
+          ]);
+          // `runAsync`, not a bare await: `before` runs inside the test's
+          // fake-async zone, where a real `File.stat()` never completes and the
+          // await hangs the shot forever.
+          await tester.runAsync(() => staging.revalidate());
+          staging.setDestination(env.browserDir.path);
+
+          browser.clearSelection();
+          for (final BrowserFile f in browser.filteredFiles.skip(4).take(3)) {
+            browser.toggleSelection(f);
+          }
+        },
       );
     });
   }

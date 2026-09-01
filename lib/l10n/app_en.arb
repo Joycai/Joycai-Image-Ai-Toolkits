@@ -64,6 +64,153 @@
   "fileBrowserDesktopOnlyDesc": "Due to OS sandboxing restrictions, the advanced file browser and mass renaming features are only available on Desktop versions.",
   "fileBrowseriOSHint": "Please use the system 'Files' app to manage your generated images.",
   "fileBrowserAndroidHint": "Please use your device's file manager to organize files.",
+  "stagingArea": "Staging",
+  "addToStaging": "Add to Staging",
+  "addToStagingCount": "Add to Staging - {count}",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "Remove from Staging",
+  "stagedBadge": "Staged",
+  "clearStaging": "Clear",
+  "stagingEmptyTitle": "Staging is empty",
+  "stagingEmptyDesc": "Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.",
+  "stagingTarget": "DESTINATION",
+  "stagingNoTarget": "No destination picked",
+  "stagingTargetHint": "Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.",
+  "stagingRestored": "Restored {count} from the last session",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "Already here - will be skipped",
+  "stagingMissing": "Missing",
+  "stagingClearMissing": "Remove missing ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "Move here",
+  "copyHere": "Copy here",
+  "moveCountHere": "Move {count} here",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "Copy {count} here",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} items",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} missing",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} already there (skipped)",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "Show only this folder",
+  "pasteMoveTitle": "Move to {folder}",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "Copy to {folder}",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "Pick a destination folder first",
+  "pasteDestinationGone": "The destination folder no longer exists",
+  "pasteNothingToDo": "Nothing to transfer",
+  "conflictsTitle": "Resolve name conflicts",
+  "conflictSkip": "Skip",
+  "conflictOverwrite": "Overwrite",
+  "conflictRename": "Keep both",
+  "conflictApplyToRest": "Apply to all remaining",
+  "conflictReasonExists": "Already in the destination",
+  "conflictReasonDuplicate": "Another staged file has this name",
+  "conflictReasonSameLocation": "Already in this folder",
+  "conflictReasonMissing": "Source file is gone",
+  "pasteCrossVolumeWarning": "A different drive - files are copied then deleted, which takes longer and can stop partway.",
+  "pasteRunningMove": "Moving…",
+  "pasteRunningCopy": "Copying…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "Transfer finished",
+  "pasteCancelledTitle": "Transfer cancelled",
+  "pasteSucceededCount": "{count} transferred",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "{count} skipped",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "{count} failed",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",

@@ -148,6 +148,173 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileBrowserAndroidHint => '请使用设备的文件管理器来整理文件。';
 
   @override
+  String get stagingArea => '暂存区';
+
+  @override
+  String get addToStaging => '加入暂存区';
+
+  @override
+  String addToStagingCount(int count) {
+    return '加入暂存区 · $count 项';
+  }
+
+  @override
+  String get removeFromStaging => '从暂存区移除';
+
+  @override
+  String get stagedBadge => '已暂存';
+
+  @override
+  String get clearStaging => '清空';
+
+  @override
+  String get stagingEmptyTitle => '暂存区是空的';
+
+  @override
+  String get stagingEmptyDesc =>
+      '选中文件后加入暂存区，然后在任意文件夹里移动或复制过去。加入只是标记，粘贴前不会写入磁盘。';
+
+  @override
+  String get stagingTarget => '目标目录';
+
+  @override
+  String get stagingNoTarget => '未选择目标目录';
+
+  @override
+  String get stagingTargetHint => '在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
+
+  @override
+  String stagingRestored(int count) {
+    return '已从上次会话恢复 $count 项';
+  }
+
+  @override
+  String get stagingSameAsTarget => '与目标相同 · 执行时跳过';
+
+  @override
+  String get stagingMissing => '已失效';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '清理失效项 ($count)';
+  }
+
+  @override
+  String get moveHere => '移动到此';
+
+  @override
+  String get copyHere => '复制到此';
+
+  @override
+  String moveCountHere(int count) {
+    return '移动 $count 项到此';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '复制 $count 项到此';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 项失效';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 项已在目标目录（将跳过）';
+  }
+
+  @override
+  String get onlyThisDirectory => '仅看此目录';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '移动到 $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '复制到 $folder';
+  }
+
+  @override
+  String get pasteNoDestination => '请先指定目标目录';
+
+  @override
+  String get pasteDestinationGone => '目标目录已不存在';
+
+  @override
+  String get pasteNothingToDo => '没有可搬运的文件';
+
+  @override
+  String get conflictsTitle => '处理同名冲突';
+
+  @override
+  String get conflictSkip => '跳过';
+
+  @override
+  String get conflictOverwrite => '覆盖';
+
+  @override
+  String get conflictRename => '自动改名';
+
+  @override
+  String get conflictApplyToRest => '对全部剩余项应用';
+
+  @override
+  String get conflictReasonExists => '目标目录中已存在';
+
+  @override
+  String get conflictReasonDuplicate => '另一个暂存文件同名';
+
+  @override
+  String get conflictReasonSameLocation => '已在此目录中';
+
+  @override
+  String get conflictReasonMissing => '源文件已不存在';
+
+  @override
+  String get pasteCrossVolumeWarning => '跨盘搬运：先复制再删除，耗时更久，且可能中途停下。';
+
+  @override
+  String get pasteRunningMove => '正在移动…';
+
+  @override
+  String get pasteRunningCopy => '正在复制…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '搬运完成';
+
+  @override
+  String get pasteCancelledTitle => '搬运已取消';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '成功 $count 项';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '跳过 $count 项';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '失败 $count 项';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -3402,6 +3569,173 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fileBrowserAndroidHint => '請使用裝置的檔案管理員來整理檔案。';
+
+  @override
+  String get stagingArea => '暫存區';
+
+  @override
+  String get addToStaging => '加入暫存區';
+
+  @override
+  String addToStagingCount(int count) {
+    return '加入暫存區 · $count 項';
+  }
+
+  @override
+  String get removeFromStaging => '從暫存區移除';
+
+  @override
+  String get stagedBadge => '已暫存';
+
+  @override
+  String get clearStaging => '清空';
+
+  @override
+  String get stagingEmptyTitle => '暫存區是空的';
+
+  @override
+  String get stagingEmptyDesc =>
+      '選取檔案後加入暫存區，然後在任意資料夾裡移動或複製過去。加入只是標記，貼上前不會寫入磁碟。';
+
+  @override
+  String get stagingTarget => '目標目錄';
+
+  @override
+  String get stagingNoTarget => '未選擇目標目錄';
+
+  @override
+  String get stagingTargetHint => '在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
+
+  @override
+  String stagingRestored(int count) {
+    return '已從上次工作階段恢復 $count 項';
+  }
+
+  @override
+  String get stagingSameAsTarget => '與目標相同 · 執行時跳過';
+
+  @override
+  String get stagingMissing => '已失效';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '清理失效項 ($count)';
+  }
+
+  @override
+  String get moveHere => '移動到此';
+
+  @override
+  String get copyHere => '複製到此';
+
+  @override
+  String moveCountHere(int count) {
+    return '移動 $count 項到此';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '複製 $count 項到此';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 項';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 項失效';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 項已在目標目錄（將跳過）';
+  }
+
+  @override
+  String get onlyThisDirectory => '僅看此目錄';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '移動到 $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '複製到 $folder';
+  }
+
+  @override
+  String get pasteNoDestination => '請先指定目標目錄';
+
+  @override
+  String get pasteDestinationGone => '目標目錄已不存在';
+
+  @override
+  String get pasteNothingToDo => '沒有可搬運的檔案';
+
+  @override
+  String get conflictsTitle => '處理同名衝突';
+
+  @override
+  String get conflictSkip => '跳過';
+
+  @override
+  String get conflictOverwrite => '覆蓋';
+
+  @override
+  String get conflictRename => '自動改名';
+
+  @override
+  String get conflictApplyToRest => '對全部剩餘項套用';
+
+  @override
+  String get conflictReasonExists => '目標目錄中已存在';
+
+  @override
+  String get conflictReasonDuplicate => '另一個暫存檔案同名';
+
+  @override
+  String get conflictReasonSameLocation => '已在此目錄中';
+
+  @override
+  String get conflictReasonMissing => '來源檔案已不存在';
+
+  @override
+  String get pasteCrossVolumeWarning => '跨磁碟搬運：先複製再刪除，耗時更久，且可能中途停下。';
+
+  @override
+  String get pasteRunningMove => '正在移動…';
+
+  @override
+  String get pasteRunningCopy => '正在複製…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '搬運完成';
+
+  @override
+  String get pasteCancelledTitle => '搬運已取消';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '成功 $count 項';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '跳過 $count 項';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '失敗 $count 項';
+  }
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

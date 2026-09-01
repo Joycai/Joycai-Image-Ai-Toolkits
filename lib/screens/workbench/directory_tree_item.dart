@@ -8,6 +8,7 @@ import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
+import '../browser/widgets/folder_context_menu.dart';
 
 /// Folders are amber everywhere in the app. It is the one colour in the tree
 /// that is not reporting state, which is exactly why a folder can keep it.
@@ -186,7 +187,21 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               side: BorderSide(color: borderColor),
             ),
             clipBehavior: Clip.antiAlias,
-            child: ListTile(
+            // The file browser's paste target is named here and nowhere else.
+            // `12d` puts it on the folder's own context menu because that is
+            // the only place in the app where a folder is a thing you can
+            // point at — the grid shows a merged listing with no folder of its
+            // own. Gated on the browser: the workbench's copy of this tree has
+            // no staging area behind it.
+            child: GestureDetector(
+              onSecondaryTapDown: widget.useFileBrowserState
+                  ? (details) => showFolderContextMenu(
+                        context: context,
+                        path: widget.path,
+                        position: details.globalPosition,
+                      )
+                  : null,
+              child: ListTile(
           dense: true,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
@@ -284,6 +299,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               appState.galleryState.setViewFolder(widget.path);
             }
           },
+              ),
             ),
           ),
         ),

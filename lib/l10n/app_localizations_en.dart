@@ -151,6 +151,175 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please use your device\'s file manager to organize files.';
 
   @override
+  String get stagingArea => 'Staging';
+
+  @override
+  String get addToStaging => 'Add to Staging';
+
+  @override
+  String addToStagingCount(int count) {
+    return 'Add to Staging - $count';
+  }
+
+  @override
+  String get removeFromStaging => 'Remove from Staging';
+
+  @override
+  String get stagedBadge => 'Staged';
+
+  @override
+  String get clearStaging => 'Clear';
+
+  @override
+  String get stagingEmptyTitle => 'Staging is empty';
+
+  @override
+  String get stagingEmptyDesc =>
+      'Pick files, add them to Staging, then move or copy them into any folder. Adding is only a mark - nothing is written until you paste.';
+
+  @override
+  String get stagingTarget => 'DESTINATION';
+
+  @override
+  String get stagingNoTarget => 'No destination picked';
+
+  @override
+  String get stagingTargetHint =>
+      'Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.';
+
+  @override
+  String stagingRestored(int count) {
+    return 'Restored $count from the last session';
+  }
+
+  @override
+  String get stagingSameAsTarget => 'Already here - will be skipped';
+
+  @override
+  String get stagingMissing => 'Missing';
+
+  @override
+  String stagingClearMissing(int count) {
+    return 'Remove missing ($count)';
+  }
+
+  @override
+  String get moveHere => 'Move here';
+
+  @override
+  String get copyHere => 'Copy here';
+
+  @override
+  String moveCountHere(int count) {
+    return 'Move $count here';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return 'Copy $count here';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count missing';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count already there (skipped)';
+  }
+
+  @override
+  String get onlyThisDirectory => 'Show only this folder';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return 'Move to $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return 'Copy to $folder';
+  }
+
+  @override
+  String get pasteNoDestination => 'Pick a destination folder first';
+
+  @override
+  String get pasteDestinationGone => 'The destination folder no longer exists';
+
+  @override
+  String get pasteNothingToDo => 'Nothing to transfer';
+
+  @override
+  String get conflictsTitle => 'Resolve name conflicts';
+
+  @override
+  String get conflictSkip => 'Skip';
+
+  @override
+  String get conflictOverwrite => 'Overwrite';
+
+  @override
+  String get conflictRename => 'Keep both';
+
+  @override
+  String get conflictApplyToRest => 'Apply to all remaining';
+
+  @override
+  String get conflictReasonExists => 'Already in the destination';
+
+  @override
+  String get conflictReasonDuplicate => 'Another staged file has this name';
+
+  @override
+  String get conflictReasonSameLocation => 'Already in this folder';
+
+  @override
+  String get conflictReasonMissing => 'Source file is gone';
+
+  @override
+  String get pasteCrossVolumeWarning =>
+      'A different drive - files are copied then deleted, which takes longer and can stop partway.';
+
+  @override
+  String get pasteRunningMove => 'Moving…';
+
+  @override
+  String get pasteRunningCopy => 'Copying…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => 'Transfer finished';
+
+  @override
+  String get pasteCancelledTitle => 'Transfer cancelled';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '$count transferred';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '$count skipped';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '$count failed';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

@@ -202,4 +202,69 @@ void main() {
       expect(restored.isEmpty, isTrue);
     });
   });
+
+  group('restored notice', () {
+    test('counts what came back, and stops claiming it once the user edits',
+        () async {
+      // The line says how the panel got its contents, not what is in it. After
+      // an add it is no longer describing the list on screen.
+      await DatabaseService().saveSetting(
+        FileStagingState.settingsKey,
+        [p.join(root.path, 'a.png'), p.join(root.path, 'b.png')].join('\n'),
+      );
+
+      final state = await freshState();
+      expect(state.restoredCount, 2);
+
+      state.addAll([fileAt(root, 'c.png')]);
+
+      expect(state.restoredCount, 0);
+    });
+
+    test('a session that staged its own files never claims a restore', () async {
+      final state = await freshState();
+      state.addAll([fileAt(root, 'a.png')]);
+
+      expect(state.restoredCount, 0);
+    });
+  });
+
+  group('destination', () {
+    test('starts unset and notifies when named', () async {
+      // Unset is the honest starting value: the browser shows several folders
+      // merged, so there is no current one to default to.
+      final state = await freshState();
+      expect(state.destination, isNull);
+
+      var notifications = 0;
+      state.addListener(() => notifications++);
+      state.setDestination(root.path);
+
+      expect(state.destination, root.path);
+      expect(notifications, 1);
+    });
+
+    test('naming the same folder twice does not notify', () async {
+      final state = await freshState();
+      state.setDestination(root.path);
+
+      var notifications = 0;
+      state.addListener(() => notifications++);
+      state.setDestination(root.path);
+
+      expect(notifications, 0);
+    });
+
+    test('is not persisted across a restart', () async {
+      // A destination carried over from a previous session is a stale answer
+      // to a question the user has not asked yet.
+      final state = await freshState();
+      state.setDestination(root.path);
+      await Future<void>.delayed(Duration.zero);
+
+      final restored = await freshState();
+
+      expect(restored.destination, isNull);
+    });
+  });
 }

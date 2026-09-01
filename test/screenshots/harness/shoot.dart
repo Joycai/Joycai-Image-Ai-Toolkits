@@ -182,6 +182,7 @@ Widget _appTree(AppState appState) {
       ChangeNotifierProvider.value(value: appState.taskQueue),
       ChangeNotifierProvider.value(value: appState.workbenchUIState),
       ChangeNotifierProvider.value(value: appState.fileBrowserState),
+      ChangeNotifierProvider.value(value: appState.fileStagingState),
       // main.dart does not register this one, but several widgets read it.
       ChangeNotifierProvider.value(value: appState.galleryState),
       ChangeNotifierProvider.value(value: appState.downloaderState),

@@ -64,6 +64,153 @@
   "fileBrowserDesktopOnlyDesc": "由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。",
   "fileBrowseriOSHint": "请使用系统文件 App 来管理您的生成图像。",
   "fileBrowserAndroidHint": "请使用设备的文件管理器来整理文件。",
+  "stagingArea": "暂存区",
+  "addToStaging": "加入暂存区",
+  "addToStagingCount": "加入暂存区 · {count} 项",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "从暂存区移除",
+  "stagedBadge": "已暂存",
+  "clearStaging": "清空",
+  "stagingEmptyTitle": "暂存区是空的",
+  "stagingEmptyDesc": "选中文件后加入暂存区，然后在任意文件夹里移动或复制过去。加入只是标记，粘贴前不会写入磁盘。",
+  "stagingTarget": "目标目录",
+  "stagingNoTarget": "未选择目标目录",
+  "stagingTargetHint": "在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。",
+  "stagingRestored": "已从上次会话恢复 {count} 项",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "与目标相同 · 执行时跳过",
+  "stagingMissing": "已失效",
+  "stagingClearMissing": "清理失效项 ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "移动到此",
+  "copyHere": "复制到此",
+  "moveCountHere": "移动 {count} 项到此",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "复制 {count} 项到此",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} 项",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} 项失效",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} 项已在目标目录（将跳过）",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "仅看此目录",
+  "pasteMoveTitle": "移动到 {folder}",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "复制到 {folder}",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "请先指定目标目录",
+  "pasteDestinationGone": "目标目录已不存在",
+  "pasteNothingToDo": "没有可搬运的文件",
+  "conflictsTitle": "处理同名冲突",
+  "conflictSkip": "跳过",
+  "conflictOverwrite": "覆盖",
+  "conflictRename": "自动改名",
+  "conflictApplyToRest": "对全部剩余项应用",
+  "conflictReasonExists": "目标目录中已存在",
+  "conflictReasonDuplicate": "另一个暂存文件同名",
+  "conflictReasonSameLocation": "已在此目录中",
+  "conflictReasonMissing": "源文件已不存在",
+  "pasteCrossVolumeWarning": "跨盘搬运：先复制再删除，耗时更久，且可能中途停下。",
+  "pasteRunningMove": "正在移动…",
+  "pasteRunningCopy": "正在复制…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "搬运完成",
+  "pasteCancelledTitle": "搬运已取消",
+  "pasteSucceededCount": "成功 {count} 项",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "跳过 {count} 项",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "失败 {count} 项",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI 工具集",
   "save": "保存",
   "update": "更新",

@@ -148,6 +148,175 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fileBrowserAndroidHint => 'ファイルの整理には、デバイスのファイルマネージャーをご使用ください。';
 
   @override
+  String get stagingArea => 'ステージング';
+
+  @override
+  String get addToStaging => 'ステージングに追加';
+
+  @override
+  String addToStagingCount(int count) {
+    return 'ステージングに追加 · $count 件';
+  }
+
+  @override
+  String get removeFromStaging => 'ステージングから削除';
+
+  @override
+  String get stagedBadge => 'ステージ済み';
+
+  @override
+  String get clearStaging => 'クリア';
+
+  @override
+  String get stagingEmptyTitle => 'ステージングは空です';
+
+  @override
+  String get stagingEmptyDesc =>
+      'ファイルを選んでステージングに追加し、任意のフォルダーへ移動またはコピーします。追加は印を付けるだけで、貼り付けるまで書き込みは発生しません。';
+
+  @override
+  String get stagingTarget => '対象フォルダー';
+
+  @override
+  String get stagingNoTarget => '対象フォルダー未選択';
+
+  @override
+  String get stagingTargetHint =>
+      '左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。';
+
+  @override
+  String stagingRestored(int count) {
+    return '前回のセッションから $count 件を復元';
+  }
+
+  @override
+  String get stagingSameAsTarget => '対象と同じ · 実行時にスキップ';
+
+  @override
+  String get stagingMissing => '見つかりません';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '無効な項目を削除 ($count)';
+  }
+
+  @override
+  String get moveHere => 'ここへ移動';
+
+  @override
+  String get copyHere => 'ここへコピー';
+
+  @override
+  String moveCountHere(int count) {
+    return '$count 件をここへ移動';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '$count 件をここへコピー';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 件';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 件が無効';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 件は対象内（スキップ）';
+  }
+
+  @override
+  String get onlyThisDirectory => 'このフォルダーのみ表示';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '$folder へ移動';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '$folder へコピー';
+  }
+
+  @override
+  String get pasteNoDestination => '先に対象フォルダーを指定してください';
+
+  @override
+  String get pasteDestinationGone => '対象フォルダーが存在しません';
+
+  @override
+  String get pasteNothingToDo => '転送するファイルがありません';
+
+  @override
+  String get conflictsTitle => '名前の衝突を解決';
+
+  @override
+  String get conflictSkip => 'スキップ';
+
+  @override
+  String get conflictOverwrite => '上書き';
+
+  @override
+  String get conflictRename => '両方保持';
+
+  @override
+  String get conflictApplyToRest => '残りすべてに適用';
+
+  @override
+  String get conflictReasonExists => '対象フォルダーに既にあります';
+
+  @override
+  String get conflictReasonDuplicate => '別のステージング項目と同名';
+
+  @override
+  String get conflictReasonSameLocation => 'すでにこのフォルダー内';
+
+  @override
+  String get conflictReasonMissing => '元ファイルが存在しません';
+
+  @override
+  String get pasteCrossVolumeWarning =>
+      '別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。';
+
+  @override
+  String get pasteRunningMove => '移動中…';
+
+  @override
+  String get pasteRunningCopy => 'コピー中…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '転送が完了しました';
+
+  @override
+  String get pasteCancelledTitle => '転送を中止しました';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '$count 件成功';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '$count 件スキップ';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '$count 件失敗';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

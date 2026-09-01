@@ -49,5 +49,152 @@
   "featureLimitedOnMobile": "モバイルでは機能が制限されています",
   "fileBrowserDesktopOnlyDesc": "OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。",
   "fileBrowseriOSHint": "生成した画像の管理には、システムの「ファイル」アプリをご使用ください。",
-  "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。"
+  "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。",
+  "stagingArea": "ステージング",
+  "addToStaging": "ステージングに追加",
+  "addToStagingCount": "ステージングに追加 · {count} 件",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "ステージングから削除",
+  "stagedBadge": "ステージ済み",
+  "clearStaging": "クリア",
+  "stagingEmptyTitle": "ステージングは空です",
+  "stagingEmptyDesc": "ファイルを選んでステージングに追加し、任意のフォルダーへ移動またはコピーします。追加は印を付けるだけで、貼り付けるまで書き込みは発生しません。",
+  "stagingTarget": "対象フォルダー",
+  "stagingNoTarget": "対象フォルダー未選択",
+  "stagingTargetHint": "左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。",
+  "stagingRestored": "前回のセッションから {count} 件を復元",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "対象と同じ · 実行時にスキップ",
+  "stagingMissing": "見つかりません",
+  "stagingClearMissing": "無効な項目を削除 ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "ここへ移動",
+  "copyHere": "ここへコピー",
+  "moveCountHere": "{count} 件をここへ移動",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "{count} 件をここへコピー",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} 件",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} 件が無効",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} 件は対象内（スキップ）",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "このフォルダーのみ表示",
+  "pasteMoveTitle": "{folder} へ移動",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "{folder} へコピー",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "先に対象フォルダーを指定してください",
+  "pasteDestinationGone": "対象フォルダーが存在しません",
+  "pasteNothingToDo": "転送するファイルがありません",
+  "conflictsTitle": "名前の衝突を解決",
+  "conflictSkip": "スキップ",
+  "conflictOverwrite": "上書き",
+  "conflictRename": "両方保持",
+  "conflictApplyToRest": "残りすべてに適用",
+  "conflictReasonExists": "対象フォルダーに既にあります",
+  "conflictReasonDuplicate": "別のステージング項目と同名",
+  "conflictReasonSameLocation": "すでにこのフォルダー内",
+  "conflictReasonMissing": "元ファイルが存在しません",
+  "pasteCrossVolumeWarning": "別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。",
+  "pasteRunningMove": "移動中…",
+  "pasteRunningCopy": "コピー中…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "転送が完了しました",
+  "pasteCancelledTitle": "転送を中止しました",
+  "pasteSucceededCount": "{count} 件成功",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "{count} 件スキップ",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "{count} 件失敗",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

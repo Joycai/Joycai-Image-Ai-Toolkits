@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
+import '../../core/design_tokens.dart';
 import '../../core/file_utils.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
@@ -15,17 +16,23 @@ import '../../services/database_service.dart';
 import '../../services/image_metadata_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
+import '../../state/file_staging_state.dart';
 import '../../state/workbench_ui_state.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_search_field.dart';
 import '../../widgets/app_run_console.dart';
+import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_side_panel.dart';
+import '../../widgets/app_window_frame.dart';
 import '../../widgets/dialogs/file_rename_dialog.dart';
 import '../../widgets/panel_resizer.dart';
 import '../../widgets/unified_sidebar.dart';
 import '../workbench/widgets/preview/media_preview_dialog.dart';
 import 'ai_rename_dialog.dart';
+import 'staging_paste_flow.dart';
 import 'widgets/browser_filter_bar.dart';
 import 'widgets/browser_selection_bar.dart';
+import 'widgets/browser_staging_panel.dart';
 import 'widgets/file_card.dart';
 import 'widgets/file_context_menu.dart';
 
@@ -43,6 +50,13 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   double _sidebarWidth = 260;
+
+  /// Whether the staging column is showing. `12a` keeps it out of the way
+  /// until it has something to hold — it costs 300px, which is two of the
+  /// grid's six columns — so it opens the first time anything is staged and
+  /// is closable from the toolbar afterwards.
+  bool _stagingOpen = false;
+  bool _stagingAutoOpened = false;
 
   /// Drag accumulator, allowed [_kDragSlack] past the limits so the handle
   /// re-engages where the pointer actually is after a drag past the end,
@@ -183,94 +197,39 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Widget _buildDesktopLayout(AppLocalizations l10n) {
     final fileBrowserState = context.watch<FileBrowserState>();
+    final staging = context.watch<FileStagingState>();
     final colorScheme = Theme.of(context).colorScheme;
     final isNarrow = Responsive.isNarrow(context);
 
-    final fileCount = fileBrowserState.filteredFiles.length;
-    final selectedCount = fileBrowserState.selectedFiles.length;
+    // The panel earns its width the moment there is something in it, and only
+    // the first time — reopening it after the user closed it would be the app
+    // arguing with them.
+    if (staging.isNotEmpty && !_stagingAutoOpened) {
+      _stagingAutoOpened = true;
+      _stagingOpen = true;
+    } else if (staging.isEmpty && _stagingAutoOpened) {
+      _stagingAutoOpened = false;
+    }
 
-    // Header lives inside the content card (its bottom border becomes an
-    // internal divider on the inset-panel canvas).
-    final header = Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withAlpha(90))),
-      ),
-      child: Row(
-        children: [
-          if (isNarrow)
-            Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            )
-          else ...[
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.folder_open_rounded, size: 22, color: colorScheme.primary),
-            ),
-            const SizedBox(width: 14),
-          ],
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.fileBrowser,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 3),
-              _buildHeaderSummary(fileCount, selectedCount, l10n, colorScheme),
-            ],
-          ),
-          const SizedBox(width: 20),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: _buildSearchField(fileBrowserState, l10n, colorScheme),
-            ),
-          ),
-          const Spacer(),
-          AppIconButton(
-            icon: fileBrowserState.viewMode == BrowserViewMode.grid
-                ? Icons.view_list
-                : Icons.grid_view,
-            tooltip: l10n.switchViewMode,
-            onPressed: () => fileBrowserState.setViewMode(
-              fileBrowserState.viewMode == BrowserViewMode.grid
-                  ? BrowserViewMode.list
-                  : BrowserViewMode.grid,
-            ),
-          ),
-          const SizedBox(width: 8),
-          AppIconButton(
-            icon: Icons.refresh,
-            tooltip: l10n.refresh,
-            onPressed: () => fileBrowserState.refresh(),
-          ),
-        ],
-      ),
-    );
+    // At tablet width the grid cannot spare 300px, so the panel becomes a
+    // sheet reached from the toolbar button instead of a column.
+    final showStagingColumn = _stagingOpen && !isNarrow;
 
     return Focus(
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
-        backgroundColor: colorScheme.surfaceContainer,
+        // Transparent over the window's backdrop, exactly as `A1` does it: the
+        // side columns and the header are opaque and paint over the mesh, and
+        // the file grid between them does not. Falls back to the canvas colour
+        // where there is no custom window frame to show through to.
+        backgroundColor: usesCustomWindowChrome
+            ? Colors.transparent
+            : colorScheme.surfaceContainer,
         drawer: isNarrow
             ? const Drawer(child: UnifiedSidebar(useFileBrowserState: true))
             : null,
         bottomNavigationBar: const AppRunConsole(),
-        // Flush columns, no canvas inset. `B1` draws this screen the way `A1`
-        // draws the workbench — a directory column, a hairline, and the grid
-        // taking the rest — and the two are the same kind of screen.
         body: Row(
             children: [
               if (!isNarrow) ...[
@@ -296,16 +255,21 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               Expanded(
                 child: PanelCard(
                   shape: PanelShape.column,
+                  // The centre column paints nothing; its header and filter bar
+                  // carry their own opaque grounds and the grid below them is
+                  // bare. This is `B1`'s answer to the question the old frame
+                  // left open, and it is the same answer `A1` gives.
+                  ground: Colors.transparent,
                   child: Column(
                     children: [
-                      header,
+                      _buildHeader(fileBrowserState, staging, l10n, colorScheme, isNarrow),
                       BrowserFilterBar(state: fileBrowserState),
                       Expanded(
                         child: Stack(
                           children: [
                             fileBrowserState.viewMode == BrowserViewMode.grid
-                                ? _buildFileGrid(context, fileBrowserState)
-                                : _buildFileListView(context, fileBrowserState),
+                                ? _buildFileGrid(context, fileBrowserState, staging)
+                                : _buildFileListView(context, fileBrowserState, staging),
                             Positioned(
                               left: 0,
                               right: 0,
@@ -314,6 +278,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                                 child: BrowserSelectionBar(
                                   state: fileBrowserState,
                                   onAiRename: () => _showAiRenameDialog(context),
+                                  onAddToStaging: () => _addSelectionToStaging(fileBrowserState, staging),
+                                  allSelectionStaged: fileBrowserState.selectedFiles.isNotEmpty &&
+                                      fileBrowserState.selectedFiles
+                                          .every((f) => staging.contains(f.path)),
                                 ),
                               ),
                             ),
@@ -324,33 +292,141 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                   ),
                 ),
               ),
+              if (showStagingColumn)
+                BrowserStagingPanel(
+                  destination: staging.destination,
+                  onPaste: (mode) => runStagingPaste(context, mode: mode),
+                ),
             ],
         ),
       ),
     );
   }
 
-  /// What the folder holds, and how much of it you have picked. The selection
-  /// is in the primary colour because it is the half that changes as you work.
+  Widget _buildHeader(
+    FileBrowserState state,
+    FileStagingState staging,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+    bool isNarrow,
+  ) {
+    // Header lives inside the content card; its bottom border is the hairline
+    // between the opaque bar and the transparent grid under it.
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          if (isNarrow)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            )
+          else ...[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colorScheme.accentTint,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              child: Icon(Icons.folder_open_rounded, size: 20, color: colorScheme.onAccentTint),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.fileBrowser, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 2),
+              _buildHeaderSummary(
+                state.filteredFiles.length,
+                state.selectedFiles.length,
+                l10n,
+                colorScheme,
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460, minWidth: 120),
+              child: SizedBox(
+                height: 34,
+                child: AppSearchField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  hint: l10n.searchFilesHint,
+                  onChanged: state.setSearchQuery,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+          _StagingToolbarButton(
+            count: staging.count,
+            open: _stagingOpen,
+            onPressed: () {
+              if (Responsive.isNarrow(context)) {
+                _showStagingSheet(context);
+              } else {
+                setState(() => _stagingOpen = !_stagingOpen);
+              }
+            },
+          ),
+          const SizedBox(width: 10),
+          AppSegmentedControl<BrowserViewMode>(
+            segments: [
+              AppSegment(value: BrowserViewMode.grid, label: l10n.catAll, icon: Icons.grid_view),
+              AppSegment(value: BrowserViewMode.list, label: l10n.switchViewMode, icon: Icons.view_list),
+            ],
+            value: state.viewMode,
+            onChanged: state.setViewMode,
+            compact: true,
+            iconOnly: true,
+            // The chosen view lifts out of the track rather than tinting: the
+            // accent on this screen means a selected *file*, and spending it
+            // on the navigation is what leaves the selection nothing to say.
+            style: AppSegmentStyle.raised,
+          ),
+          const SizedBox(width: 10),
+          AppIconButton(
+            icon: Icons.refresh,
+            tooltip: l10n.refresh,
+            onPressed: () => state.refresh(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// What the folder holds, and how much of it you have picked. Both halves in
+  /// mono — they are counts, and they change under the pointer, so they must
+  /// not reflow the line as the digits change.
   Widget _buildHeaderSummary(
     int fileCount,
     int selectedCount,
     AppLocalizations l10n,
     ColorScheme colorScheme,
   ) {
+    final base = Theme.of(context).textTheme.bodySmall?.mono;
     return Text.rich(
       TextSpan(
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        style: base?.copyWith(color: colorScheme.outline),
         children: [
-          TextSpan(
-            text: l10n.filesCount(fileCount),
-            style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
-          ),
+          TextSpan(text: l10n.filesCount(fileCount)),
           if (selectedCount > 0) ...[
-            TextSpan(text: '  ·  ', style: TextStyle(color: colorScheme.outline)),
+            const TextSpan(text: '  ·  '),
             TextSpan(
               text: l10n.imagesSelected(selectedCount),
-              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+              style: TextStyle(color: colorScheme.onAccentTint, fontWeight: FontWeight.w600),
             ),
           ],
         ],
@@ -360,19 +436,29 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-  Widget _buildSearchField(FileBrowserState state, AppLocalizations l10n, ColorScheme colorScheme) {
-    return SizedBox(
-      height: 40,
-      child: AppSearchField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        hint: l10n.searchFilesHint,
-        onChanged: state.setSearchQuery,
-      ),
+  void _addSelectionToStaging(FileBrowserState state, FileStagingState staging) {
+    staging.addAll(state.selectedFiles);
+  }
+
+  /// The staging panel where there is no room for a column.
+  Future<void> _showStagingSheet(BuildContext context) {
+    return AppSidePanel.show(
+      context,
+      width: kStagingPanelWidth,
+      builder: (sheetContext) {
+        final staging = sheetContext.watch<FileStagingState>();
+        return BrowserStagingPanel(
+          destination: staging.destination,
+          onPaste: (mode) {
+            Navigator.pop(sheetContext);
+            runStagingPaste(context, mode: mode);
+          },
+        );
+      },
     );
   }
 
-  Widget _buildFileGrid(BuildContext context, FileBrowserState state) {
+  Widget _buildFileGrid(BuildContext context, FileBrowserState state, FileStagingState staging) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
 
     return LayoutBuilder(
@@ -393,6 +479,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             return FileCard(
               file: file,
               isSelected: state.selectedFiles.contains(file),
+              isStaged: staging.contains(file.path),
               thumbnailSize: state.thumbnailSize,
               heroScope: kBrowserPreviewHeroScope,
               onTap: () => _handleSelectionTap(state, file),
@@ -405,8 +492,10 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
     );
   }
 
-  Widget _buildFileListView(BuildContext context, FileBrowserState state) {
+  Widget _buildFileListView(BuildContext context, FileBrowserState state, FileStagingState staging) {
     if (state.filteredFiles.isEmpty) return _buildEmptyState(context);
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
@@ -415,6 +504,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       itemBuilder: (context, index) {
         final file = state.filteredFiles[index];
         final isSelected = state.selectedFiles.contains(file);
+        final isStaged = staging.contains(file.path);
         return GestureDetector(
           onSecondaryTapDown: (details) => _showContextMenu(context, file, details.globalPosition),
           onDoubleTap: () => _openWithPreview(context, file, state),
@@ -425,13 +515,32 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             title: Text(
               file.name,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                color: isSelected ? colorScheme.onAccentTint : null,
               ),
             ),
             subtitle: _FileListItemSubtitle(file: file),
             selected: isSelected,
             onTap: () => _handleSelectionTap(state, file),
-            trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
+            // Both marks can be on one row, so they take different slots
+            // rather than one trailing widget that has to choose.
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isStaged)
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: AppOverlay.ink.withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                    ),
+                    child: const Icon(Icons.inbox_rounded, size: 11, color: Colors.white),
+                  ),
+                if (isStaged && isSelected) const SizedBox(width: 8),
+                if (isSelected)
+                  Icon(Icons.check_circle, size: 20, color: colorScheme.primary),
+              ],
+            ),
           ),
         );
       },
@@ -487,6 +596,67 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
       position: position,
       workbenchUIState: Provider.of<WorkbenchUIState>(context, listen: false),
       onRefresh: () => state.refresh(),
+    );
+  }
+}
+
+/// The toolbar's way into the staging column, carrying its count.
+///
+/// A badge rather than a number in the label: at zero the button is still
+/// there — the feature has to be discoverable before anything is in it — and
+/// a badge is the one form that can be absent without the button resizing.
+class _StagingToolbarButton extends StatelessWidget {
+  final int count;
+  final bool open;
+  final VoidCallback onPressed;
+
+  const _StagingToolbarButton({
+    required this.count,
+    required this.open,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        AppIconButton(
+          icon: Icons.inbox_outlined,
+          tooltip: l10n.stagingArea,
+          selected: open,
+          onPressed: onPressed,
+        ),
+        if (count > 0)
+          Positioned(
+            top: -6,
+            right: -6,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 17),
+              height: 17,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                // A ring in the bar's own colour, so the badge reads as
+                // sitting on the button rather than merging with whatever
+                // control is beside it.
+                border: Border.all(color: colorScheme.surfaceContainerLow, width: 2),
+              ),
+              child: Text(
+                '$count',
+                style: Theme.of(context).textTheme.labelSmall?.mono.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

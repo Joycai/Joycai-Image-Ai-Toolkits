@@ -37,6 +37,7 @@ class FileStagingState extends ChangeNotifier {
   List<BrowserFile> _items = const [];
   Set<String> _paths = const {};
   Set<String> _missingPaths = const {};
+  int _restoredCount = 0;
 
   late final Future<void> _ready = _restore();
 
@@ -63,6 +64,30 @@ class FileStagingState extends ChangeNotifier {
 
   /// Staged paths whose file was not on disk at the last [revalidate].
   Set<String> get missingPaths => _missingPaths;
+
+  /// How many marks came back from the previous session, and 0 once the user
+  /// has touched the list in this one.
+  ///
+  /// Drives `12a`'s "restored N" line, which is a notice about how the panel
+  /// got its contents rather than a property of the contents. Once the user
+  /// adds or removes anything, the list is no longer what was restored and the
+  /// line has stopped being true.
+  int get restoredCount => _restoredCount;
+
+  /// Where a paste would land, or null until the user names one.
+  ///
+  /// Deliberately not inferred and deliberately not persisted. The browser
+  /// lists several active directories merged, so there is no "current folder"
+  /// to fall back on — and a destination carried over from a previous session
+  /// would be a stale answer to a question the user has not asked yet.
+  String? get destination => _destination;
+  String? _destination;
+
+  void setDestination(String? path) {
+    if (_destination == path) return;
+    _destination = path;
+    notifyListeners();
+  }
 
   int get count => _items.length;
 
@@ -100,6 +125,7 @@ class FileStagingState extends ChangeNotifier {
     final added = files.where((f) => !_paths.contains(f.path)).toList();
     if (added.isEmpty) return;
 
+    _restoredCount = 0;
     _items = [..._items, ...added];
     _paths = {..._paths, ...added.map((f) => f.path)};
     _persist();
@@ -114,6 +140,7 @@ class FileStagingState extends ChangeNotifier {
     final drop = paths.toSet();
     if (!drop.any(_paths.contains)) return;
 
+    _restoredCount = 0;
     _items = _items.where((f) => !drop.contains(f.path)).toList();
     _paths = _paths.where((path) => !drop.contains(path)).toSet();
     _missingPaths = _missingPaths.where((path) => !drop.contains(path)).toSet();
@@ -124,6 +151,7 @@ class FileStagingState extends ChangeNotifier {
   void clear() {
     if (_items.isEmpty) return;
 
+    _restoredCount = 0;
     _items = const [];
     _paths = const {};
     _missingPaths = const {};
@@ -191,6 +219,7 @@ class FileStagingState extends ChangeNotifier {
 
     _items = paths.map(BrowserFile.unresolved).toList();
     _paths = paths.toSet();
+    _restoredCount = paths.length;
     notifyListeners();
 
     // Sizes and timestamps are not persisted — they are the disk's to report,
