@@ -589,6 +589,17 @@ class _AppNavRail extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
 
+    // The Ctrl/Cmd+digit shortcut a rail item answers to. Its number is the
+    // item's position in the full nav list (1-based) — the same order
+    // _handleGlobalKey maps the digit keys onto — and only the first eight,
+    // which are the only digits bound. Surfaced in the tooltip so the shortcut
+    // is discoverable at all; nothing else in the UI hints it exists.
+    final modifier = Platform.isMacOS ? '⌘' : 'Ctrl';
+    String? shortcutHint(int oneBasedIndex) =>
+        oneBasedIndex <= _MainNavigationScreenState._navDigitKeys.length
+            ? '$modifier+$oneBasedIndex'
+            : null;
+
     return Container(
       width: railWidth,
       // Opaque since the restyle. `A1` and `D1` both give the rail a ground of
@@ -621,6 +632,7 @@ class _AppNavRail extends StatelessWidget {
                       showLabel: showLabels,
                       badge: badge,
                       railWidth: railWidth,
+                      shortcutHint: shortcutHint(idx + 1),
                       onTap: () => onSelect(idx),
                     );
                   }),
@@ -638,6 +650,7 @@ class _AppNavRail extends StatelessWidget {
               showLabel: showLabels,
               badge: 0,
               railWidth: railWidth,
+              shortcutHint: shortcutHint(definitions.length),
               onTap: onSettings,
             ),
           ),
@@ -654,6 +667,10 @@ class _RailItem extends StatefulWidget {
   final bool showLabel;
   final int badge;
   final double railWidth;
+
+  /// e.g. "Ctrl+1"; appended to the tooltip so the keyboard shortcut is
+  /// discoverable. Null for items with no bound shortcut.
+  final String? shortcutHint;
   final VoidCallback onTap;
 
   const _RailItem({
@@ -663,6 +680,7 @@ class _RailItem extends StatefulWidget {
     required this.showLabel,
     required this.badge,
     required this.railWidth,
+    this.shortcutHint,
     required this.onTap,
   });
 
@@ -691,10 +709,18 @@ class _RailItemState extends State<_RailItem> {
             ? colorScheme.onSurfaceVariant.withAlpha(16)
             : Colors.transparent;
 
+    final tooltip = widget.shortcutHint == null
+        ? widget.label
+        : '${widget.label} · ${widget.shortcutHint}';
+
     return Padding(
       // 7, so the item lands on `16a`'s 58 inside the 72px rail.
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      child: MouseRegion(
+      child: Tooltip(
+        message: tooltip,
+        // Off to the side, clear of the rail item it describes.
+        preferBelow: false,
+        child: MouseRegion(
         onEnter: (_) => setState(() => _hovering = true),
         onExit: (_) => setState(() => _hovering = false),
         child: GestureDetector(
@@ -743,6 +769,7 @@ class _RailItemState extends State<_RailItem> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );
