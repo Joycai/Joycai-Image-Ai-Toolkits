@@ -641,6 +641,240 @@ abstract class AppLocalizations {
   /// **'{count} failed'**
   String pasteFailedCount(int count);
 
+  /// No description provided for @renameSubtitleFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{files} files from {dirs} folders'**
+  String renameSubtitleFiles(int files, int dirs);
+
+  /// No description provided for @renameSectionModel.
+  ///
+  /// In en, this message translates to:
+  /// **'MODEL'**
+  String get renameSectionModel;
+
+  /// No description provided for @renameSectionTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'NAMING TEMPLATE'**
+  String get renameSectionTemplate;
+
+  /// No description provided for @renameSectionInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'EXTRA INSTRUCTIONS'**
+  String get renameSectionInstructions;
+
+  /// No description provided for @renameBatchEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'{files} files · {size} per batch · {batches} batches'**
+  String renameBatchEstimate(int files, int size, int batches);
+
+  /// No description provided for @renameStopGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop generating'**
+  String get renameStopGenerating;
+
+  /// No description provided for @renameRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get renameRegenerate;
+
+  /// No description provided for @renameFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get renameFilterAll;
+
+  /// No description provided for @renameFilterConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicts'**
+  String get renameFilterConflicts;
+
+  /// No description provided for @renameFilterSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get renameFilterSkipped;
+
+  /// No description provided for @renameNextConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Next conflict'**
+  String get renameNextConflict;
+
+  /// No description provided for @renameEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No suggestions yet'**
+  String get renameEmptyTitle;
+
+  /// No description provided for @renameEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a model and a naming template on the left, then Generate. The {files} files go out in {batches} batches of {size}; you can start reviewing while the rest are still coming.'**
+  String renameEmptyDesc(int files, int batches, int size);
+
+  /// No description provided for @renameGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating suggestions'**
+  String get renameGenerating;
+
+  /// No description provided for @renameBatchProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch {batch} / {total} · {done} / {files} produced'**
+  String renameBatchProgress(int batch, int total, int done, int files);
+
+  /// No description provided for @renameStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get renameStop;
+
+  /// No description provided for @renameProducedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} produced · reviewable now, applied once generation finishes'**
+  String renameProducedHint(int count);
+
+  /// No description provided for @renameSuggestionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} suggestions'**
+  String renameSuggestionsCount(int count);
+
+  /// No description provided for @renameSkippedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} skipped'**
+  String renameSkippedCount(int count);
+
+  /// No description provided for @renameEditingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'renaming row {row} in place'**
+  String renameEditingHint(int row);
+
+  /// No description provided for @renameConflictsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} conflicts unresolved · they will not be applied'**
+  String renameConflictsPending(int count);
+
+  /// No description provided for @renameApplyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply {count} renames'**
+  String renameApplyCount(int count);
+
+  /// No description provided for @renameApplyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply {count}'**
+  String renameApplyShort(int count);
+
+  /// No description provided for @renameDuplicateBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Name taken'**
+  String get renameDuplicateBadge;
+
+  /// No description provided for @renameSkippedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get renameSkippedBadge;
+
+  /// No description provided for @renameRenamedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Renamed'**
+  String get renameRenamedBadge;
+
+  /// No description provided for @renameActionAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get renameActionAccept;
+
+  /// No description provided for @renameActionSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get renameActionSkip;
+
+  /// No description provided for @renameActionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get renameActionEdit;
+
+  /// No description provided for @renameActionUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo skip'**
+  String get renameActionUndo;
+
+  /// No description provided for @renameConflictAutoRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameConflictAutoRename;
+
+  /// No description provided for @renameNoModelsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No chat model available'**
+  String get renameNoModelsTitle;
+
+  /// No description provided for @renameNoModelsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.'**
+  String get renameNoModelsDesc;
+
+  /// No description provided for @renameGoToSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to settings'**
+  String get renameGoToSettings;
+
+  /// No description provided for @renameBatchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch {batch} failed · {reason}'**
+  String renameBatchFailed(int batch, String reason);
+
+  /// No description provided for @renameBatchFailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The {kept} suggestions produced so far are kept; the {missing} files with no name can be retried on their own.'**
+  String renameBatchFailedDesc(int kept, int missing);
+
+  /// No description provided for @renameRetryBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry these'**
+  String get renameRetryBatch;
+
+  /// No description provided for @renameEditConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit config'**
+  String get renameEditConfig;
+
+  /// No description provided for @renameTemplateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get renameTemplateLabel;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

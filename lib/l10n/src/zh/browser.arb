@@ -210,5 +210,165 @@
         "type": "int"
       }
     }
-  }
+  },
+  "renameSubtitleFiles": "{files} 个文件 · 来自 {dirs} 个目录",
+  "@renameSubtitleFiles": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSectionModel": "模型",
+  "renameSectionTemplate": "命名模板",
+  "renameSectionInstructions": "补充指令",
+  "renameBatchEstimate": "{files} 个文件 · 每批 {size} · 预计 {batches} 批",
+  "@renameBatchEstimate": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStopGenerating": "中断生成",
+  "renameRegenerate": "重新生成",
+  "renameFilterAll": "全部",
+  "renameFilterConflicts": "冲突",
+  "renameFilterSkipped": "已跳过",
+  "renameNextConflict": "下一个冲突",
+  "renameEmptyTitle": "还没有建议",
+  "renameEmptyDesc": "在左侧选好模型与命名模板后点「生成建议」。{files} 个文件将按每批 {size} 个分 {batches} 批提交，生成过程中即可开始逐项审阅。",
+  "@renameEmptyDesc": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "renameGenerating": "正在生成建议",
+  "renameBatchProgress": "第 {batch} / {total} 批 · 已产出 {done} / {files} 条",
+  "@renameBatchProgress": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStop": "中断",
+  "renameProducedHint": "已产出 {count} 条 · 生成完成前可先审阅，不能应用",
+  "@renameProducedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSuggestionsCount": "{count} 条建议",
+  "@renameSuggestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSkippedCount": "已跳过 {count}",
+  "@renameSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameEditingHint": "第 {row} 行正在就地改名",
+  "@renameEditingHint": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "renameConflictsPending": "{count} 个冲突待处理 · 未决冲突不会被应用",
+  "@renameConflictsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyCount": "应用 {count} 项重命名",
+  "@renameApplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyShort": "应用 {count} 项",
+  "@renameApplyShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameDuplicateBadge": "重名",
+  "renameSkippedBadge": "已跳过",
+  "renameRenamedBadge": "已改名",
+  "renameActionAccept": "接受",
+  "renameActionSkip": "跳过",
+  "renameActionEdit": "就地改名",
+  "renameActionUndo": "撤销跳过",
+  "renameConflictAutoRename": "改名",
+  "renameNoModelsTitle": "没有可用的语言模型",
+  "renameNoModelsDesc": "批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。",
+  "renameGoToSettings": "前往设置",
+  "renameBatchFailed": "第 {batch} 批请求失败 · {reason}",
+  "@renameBatchFailed": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "renameBatchFailedDesc": "已产出的 {kept} 条建议已保留，未生成的 {missing} 个文件可单独重试",
+  "@renameBatchFailedDesc": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "renameRetryBatch": "重试此批",
+  "renameEditConfig": "编辑配置",
+  "renameTemplateLabel": "模板"
 }

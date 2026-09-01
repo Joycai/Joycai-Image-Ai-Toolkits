@@ -109,6 +109,48 @@ void main() {
     });
   }
 
+  // The AI rename dialog — `B4 13a`. Its result states need a live model, so
+  // only the opened-but-not-generated frame is reachable here; that still
+  // covers the shell, the config column, the result toolbar, the empty state
+  // and the footer, which is where the redraw's shape lives.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · aiRename @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'aiRename',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          appState.fileStagingState.clear();
+          final browser = appState.fileBrowserState;
+          browser.clearSelection();
+          for (final BrowserFile f in browser.filteredFiles.take(6)) {
+            browser.toggleSelection(f);
+          }
+        },
+        after: (WidgetTester tester) async {
+          // Tap and wait inside `runAsync`: the dialog reads its templates and
+          // its last-used model out of the database on mount, and that real
+          // I/O never completes in the fake-async zone. Without it the shot
+          // photographs an empty config column and calls it the design.
+          await tester.runAsync(() async {
+            await tester.tap(find.text('AI 批量重命名').last);
+            await tester.pump();
+            await Future<void>.delayed(const Duration(milliseconds: 600));
+          });
+          for (int i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
   // The workbench is eight screens wearing one nav entry, and the loop above
   // only ever photographs tab 0. The crop editor and the prompt assistant —
   // two of the three pages the design spec redraws in full — were therefore

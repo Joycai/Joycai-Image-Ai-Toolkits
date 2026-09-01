@@ -197,6 +197,166 @@
       }
     }
   },
+  "renameSubtitleFiles": "{files} 件 · {dirs} フォルダー",
+  "@renameSubtitleFiles": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSectionModel": "モデル",
+  "renameSectionTemplate": "命名テンプレート",
+  "renameSectionInstructions": "追加指示",
+  "renameBatchEstimate": "{files} 件 · 1 バッチ {size} 件 · 約 {batches} バッチ",
+  "@renameBatchEstimate": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStopGenerating": "生成を中断",
+  "renameRegenerate": "再生成",
+  "renameFilterAll": "すべて",
+  "renameFilterConflicts": "衝突",
+  "renameFilterSkipped": "スキップ済み",
+  "renameNextConflict": "次の衝突へ",
+  "renameEmptyTitle": "まだ提案はありません",
+  "renameEmptyDesc": "左でモデルと命名テンプレートを選び「提案を生成」を押します。{files} 件は {size} 件ずつ {batches} バッチで送信され、生成中でも順に確認できます。",
+  "@renameEmptyDesc": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "renameGenerating": "提案を生成中",
+  "renameBatchProgress": "バッチ {batch} / {total} · {done} / {files} 件生成",
+  "@renameBatchProgress": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStop": "中断",
+  "renameProducedHint": "{count} 件生成済み · 生成完了までは確認のみ",
+  "@renameProducedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSuggestionsCount": "提案 {count} 件",
+  "@renameSuggestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSkippedCount": "スキップ {count} 件",
+  "@renameSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameEditingHint": "{row} 行目を編集中",
+  "@renameEditingHint": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "renameConflictsPending": "未解決の衝突 {count} 件 · 適用されません",
+  "@renameConflictsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyCount": "{count} 件を適用",
+  "@renameApplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyShort": "{count} 件適用",
+  "@renameApplyShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameDuplicateBadge": "名前が重複",
+  "renameSkippedBadge": "スキップ",
+  "renameRenamedBadge": "改名済み",
+  "renameActionAccept": "採用",
+  "renameActionSkip": "スキップ",
+  "renameActionEdit": "名前を編集",
+  "renameActionUndo": "スキップを取消",
+  "renameConflictAutoRename": "改名",
+  "renameNoModelsTitle": "利用できるモデルがありません",
+  "renameNoModelsDesc": "一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。",
+  "renameGoToSettings": "設定を開く",
+  "renameBatchFailed": "バッチ {batch} が失敗 · {reason}",
+  "@renameBatchFailed": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "renameBatchFailedDesc": "生成済みの {kept} 件は保持されます。未生成の {missing} 件は個別に再試行できます",
+  "@renameBatchFailedDesc": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "renameRetryBatch": "再試行",
+  "renameEditConfig": "設定を編集",
+  "renameTemplateLabel": "テンプレート",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",

@@ -320,6 +320,150 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files files from $dirs folders';
+  }
+
+  @override
+  String get renameSectionModel => 'MODEL';
+
+  @override
+  String get renameSectionTemplate => 'NAMING TEMPLATE';
+
+  @override
+  String get renameSectionInstructions => 'EXTRA INSTRUCTIONS';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files files · $size per batch · $batches batches';
+  }
+
+  @override
+  String get renameStopGenerating => 'Stop generating';
+
+  @override
+  String get renameRegenerate => 'Regenerate';
+
+  @override
+  String get renameFilterAll => 'All';
+
+  @override
+  String get renameFilterConflicts => 'Conflicts';
+
+  @override
+  String get renameFilterSkipped => 'Skipped';
+
+  @override
+  String get renameNextConflict => 'Next conflict';
+
+  @override
+  String get renameEmptyTitle => 'No suggestions yet';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return 'Pick a model and a naming template on the left, then Generate. The $files files go out in $batches batches of $size; you can start reviewing while the rest are still coming.';
+  }
+
+  @override
+  String get renameGenerating => 'Generating suggestions';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return 'Batch $batch / $total · $done / $files produced';
+  }
+
+  @override
+  String get renameStop => 'Stop';
+
+  @override
+  String renameProducedHint(int count) {
+    return '$count produced · reviewable now, applied once generation finishes';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count suggestions';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '$count skipped';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return 'renaming row $row in place';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count conflicts unresolved · they will not be applied';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return 'Apply $count renames';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return 'Apply $count';
+  }
+
+  @override
+  String get renameDuplicateBadge => 'Name taken';
+
+  @override
+  String get renameSkippedBadge => 'Skipped';
+
+  @override
+  String get renameRenamedBadge => 'Renamed';
+
+  @override
+  String get renameActionAccept => 'Accept';
+
+  @override
+  String get renameActionSkip => 'Skip';
+
+  @override
+  String get renameActionEdit => 'Edit name';
+
+  @override
+  String get renameActionUndo => 'Undo skip';
+
+  @override
+  String get renameConflictAutoRename => 'Rename';
+
+  @override
+  String get renameNoModelsTitle => 'No chat model available';
+
+  @override
+  String get renameNoModelsDesc =>
+      'Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.';
+
+  @override
+  String get renameGoToSettings => 'Go to settings';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return 'Batch $batch failed · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return 'The $kept suggestions produced so far are kept; the $missing files with no name can be retried on their own.';
+  }
+
+  @override
+  String get renameRetryBatch => 'Retry these';
+
+  @override
+  String get renameEditConfig => 'Edit config';
+
+  @override
+  String get renameTemplateLabel => 'Template';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

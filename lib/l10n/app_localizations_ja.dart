@@ -317,6 +317,150 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 件 · $dirs フォルダー';
+  }
+
+  @override
+  String get renameSectionModel => 'モデル';
+
+  @override
+  String get renameSectionTemplate => '命名テンプレート';
+
+  @override
+  String get renameSectionInstructions => '追加指示';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 件 · 1 バッチ $size 件 · 約 $batches バッチ';
+  }
+
+  @override
+  String get renameStopGenerating => '生成を中断';
+
+  @override
+  String get renameRegenerate => '再生成';
+
+  @override
+  String get renameFilterAll => 'すべて';
+
+  @override
+  String get renameFilterConflicts => '衝突';
+
+  @override
+  String get renameFilterSkipped => 'スキップ済み';
+
+  @override
+  String get renameNextConflict => '次の衝突へ';
+
+  @override
+  String get renameEmptyTitle => 'まだ提案はありません';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '左でモデルと命名テンプレートを選び「提案を生成」を押します。$files 件は $size 件ずつ $batches バッチで送信され、生成中でも順に確認できます。';
+  }
+
+  @override
+  String get renameGenerating => '提案を生成中';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return 'バッチ $batch / $total · $done / $files 件生成';
+  }
+
+  @override
+  String get renameStop => '中断';
+
+  @override
+  String renameProducedHint(int count) {
+    return '$count 件生成済み · 生成完了までは確認のみ';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '提案 $count 件';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return 'スキップ $count 件';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '$row 行目を編集中';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '未解決の衝突 $count 件 · 適用されません';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '$count 件を適用';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '$count 件適用';
+  }
+
+  @override
+  String get renameDuplicateBadge => '名前が重複';
+
+  @override
+  String get renameSkippedBadge => 'スキップ';
+
+  @override
+  String get renameRenamedBadge => '改名済み';
+
+  @override
+  String get renameActionAccept => '採用';
+
+  @override
+  String get renameActionSkip => 'スキップ';
+
+  @override
+  String get renameActionEdit => '名前を編集';
+
+  @override
+  String get renameActionUndo => 'スキップを取消';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '利用できるモデルがありません';
+
+  @override
+  String get renameNoModelsDesc =>
+      '一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。';
+
+  @override
+  String get renameGoToSettings => '設定を開く';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return 'バッチ $batch が失敗 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '生成済みの $kept 件は保持されます。未生成の $missing 件は個別に再試行できます';
+  }
+
+  @override
+  String get renameRetryBatch => '再試行';
+
+  @override
+  String get renameEditConfig => '設定を編集';
+
+  @override
+  String get renameTemplateLabel => 'テンプレート';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

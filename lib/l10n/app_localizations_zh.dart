@@ -315,6 +315,150 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 个文件 · 来自 $dirs 个目录';
+  }
+
+  @override
+  String get renameSectionModel => '模型';
+
+  @override
+  String get renameSectionTemplate => '命名模板';
+
+  @override
+  String get renameSectionInstructions => '补充指令';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 个文件 · 每批 $size · 预计 $batches 批';
+  }
+
+  @override
+  String get renameStopGenerating => '中断生成';
+
+  @override
+  String get renameRegenerate => '重新生成';
+
+  @override
+  String get renameFilterAll => '全部';
+
+  @override
+  String get renameFilterConflicts => '冲突';
+
+  @override
+  String get renameFilterSkipped => '已跳过';
+
+  @override
+  String get renameNextConflict => '下一个冲突';
+
+  @override
+  String get renameEmptyTitle => '还没有建议';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '在左侧选好模型与命名模板后点「生成建议」。$files 个文件将按每批 $size 个分 $batches 批提交，生成过程中即可开始逐项审阅。';
+  }
+
+  @override
+  String get renameGenerating => '正在生成建议';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return '第 $batch / $total 批 · 已产出 $done / $files 条';
+  }
+
+  @override
+  String get renameStop => '中断';
+
+  @override
+  String renameProducedHint(int count) {
+    return '已产出 $count 条 · 生成完成前可先审阅，不能应用';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count 条建议';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '已跳过 $count';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '第 $row 行正在就地改名';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count 个冲突待处理 · 未决冲突不会被应用';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '应用 $count 项重命名';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '应用 $count 项';
+  }
+
+  @override
+  String get renameDuplicateBadge => '重名';
+
+  @override
+  String get renameSkippedBadge => '已跳过';
+
+  @override
+  String get renameRenamedBadge => '已改名';
+
+  @override
+  String get renameActionAccept => '接受';
+
+  @override
+  String get renameActionSkip => '跳过';
+
+  @override
+  String get renameActionEdit => '就地改名';
+
+  @override
+  String get renameActionUndo => '撤销跳过';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '没有可用的语言模型';
+
+  @override
+  String get renameNoModelsDesc =>
+      '批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。';
+
+  @override
+  String get renameGoToSettings => '前往设置';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return '第 $batch 批请求失败 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '已产出的 $kept 条建议已保留，未生成的 $missing 个文件可单独重试';
+  }
+
+  @override
+  String get renameRetryBatch => '重试此批';
+
+  @override
+  String get renameEditConfig => '编辑配置';
+
+  @override
+  String get renameTemplateLabel => '模板';
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -3736,6 +3880,150 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String pasteFailedCount(int count) {
     return '失敗 $count 項';
   }
+
+  @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 個檔案 · 來自 $dirs 個目錄';
+  }
+
+  @override
+  String get renameSectionModel => '模型';
+
+  @override
+  String get renameSectionTemplate => '命名範本';
+
+  @override
+  String get renameSectionInstructions => '補充指令';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 個檔案 · 每批 $size · 預計 $batches 批';
+  }
+
+  @override
+  String get renameStopGenerating => '中斷生成';
+
+  @override
+  String get renameRegenerate => '重新生成';
+
+  @override
+  String get renameFilterAll => '全部';
+
+  @override
+  String get renameFilterConflicts => '衝突';
+
+  @override
+  String get renameFilterSkipped => '已跳過';
+
+  @override
+  String get renameNextConflict => '下一個衝突';
+
+  @override
+  String get renameEmptyTitle => '還沒有建議';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '在左側選好模型與命名範本後點「生成建議」。$files 個檔案將按每批 $size 個分 $batches 批提交，生成過程中即可開始逐項審閱。';
+  }
+
+  @override
+  String get renameGenerating => '正在生成建議';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return '第 $batch / $total 批 · 已產出 $done / $files 條';
+  }
+
+  @override
+  String get renameStop => '中斷';
+
+  @override
+  String renameProducedHint(int count) {
+    return '已產出 $count 條 · 生成完成前可先審閱，不能套用';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count 條建議';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '已跳過 $count';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '第 $row 行正在就地改名';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count 個衝突待處理 · 未決衝突不會被套用';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '套用 $count 項重新命名';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '套用 $count 項';
+  }
+
+  @override
+  String get renameDuplicateBadge => '重名';
+
+  @override
+  String get renameSkippedBadge => '已跳過';
+
+  @override
+  String get renameRenamedBadge => '已改名';
+
+  @override
+  String get renameActionAccept => '接受';
+
+  @override
+  String get renameActionSkip => '跳過';
+
+  @override
+  String get renameActionEdit => '就地改名';
+
+  @override
+  String get renameActionUndo => '撤銷跳過';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '沒有可用的語言模型';
+
+  @override
+  String get renameNoModelsDesc =>
+      '批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。';
+
+  @override
+  String get renameGoToSettings => '前往設定';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return '第 $batch 批請求失敗 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '已產出的 $kept 條建議已保留，未生成的 $missing 個檔案可單獨重試';
+  }
+
+  @override
+  String get renameRetryBatch => '重試此批';
+
+  @override
+  String get renameEditConfig => '編輯設定';
+
+  @override
+  String get renameTemplateLabel => '範本';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

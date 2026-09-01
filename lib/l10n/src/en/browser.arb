@@ -210,5 +210,165 @@
         "type": "int"
       }
     }
-  }
+  },
+  "renameSubtitleFiles": "{files} files from {dirs} folders",
+  "@renameSubtitleFiles": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSectionModel": "MODEL",
+  "renameSectionTemplate": "NAMING TEMPLATE",
+  "renameSectionInstructions": "EXTRA INSTRUCTIONS",
+  "renameBatchEstimate": "{files} files · {size} per batch · {batches} batches",
+  "@renameBatchEstimate": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStopGenerating": "Stop generating",
+  "renameRegenerate": "Regenerate",
+  "renameFilterAll": "All",
+  "renameFilterConflicts": "Conflicts",
+  "renameFilterSkipped": "Skipped",
+  "renameNextConflict": "Next conflict",
+  "renameEmptyTitle": "No suggestions yet",
+  "renameEmptyDesc": "Pick a model and a naming template on the left, then Generate. The {files} files go out in {batches} batches of {size}; you can start reviewing while the rest are still coming.",
+  "@renameEmptyDesc": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "renameGenerating": "Generating suggestions",
+  "renameBatchProgress": "Batch {batch} / {total} · {done} / {files} produced",
+  "@renameBatchProgress": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStop": "Stop",
+  "renameProducedHint": "{count} produced · reviewable now, applied once generation finishes",
+  "@renameProducedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSuggestionsCount": "{count} suggestions",
+  "@renameSuggestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSkippedCount": "{count} skipped",
+  "@renameSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameEditingHint": "renaming row {row} in place",
+  "@renameEditingHint": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "renameConflictsPending": "{count} conflicts unresolved · they will not be applied",
+  "@renameConflictsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyCount": "Apply {count} renames",
+  "@renameApplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyShort": "Apply {count}",
+  "@renameApplyShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameDuplicateBadge": "Name taken",
+  "renameSkippedBadge": "Skipped",
+  "renameRenamedBadge": "Renamed",
+  "renameActionAccept": "Accept",
+  "renameActionSkip": "Skip",
+  "renameActionEdit": "Edit name",
+  "renameActionUndo": "Undo skip",
+  "renameConflictAutoRename": "Rename",
+  "renameNoModelsTitle": "No chat model available",
+  "renameNoModelsDesc": "Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.",
+  "renameGoToSettings": "Go to settings",
+  "renameBatchFailed": "Batch {batch} failed · {reason}",
+  "@renameBatchFailed": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "renameBatchFailedDesc": "The {kept} suggestions produced so far are kept; the {missing} files with no name can be retried on their own.",
+  "@renameBatchFailedDesc": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "renameRetryBatch": "Retry these",
+  "renameEditConfig": "Edit config",
+  "renameTemplateLabel": "Template"
 }

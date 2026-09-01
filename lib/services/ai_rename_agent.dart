@@ -12,7 +12,26 @@ class RenameProposal {
   final String oldName;
   final String newName;
 
-  RenameProposal({required this.path, required this.oldName, required this.newName});
+  /// Replace the file already at the target name instead of skipping.
+  ///
+  /// Never set by the model — only by a person answering a conflict in the
+  /// review dialog. The agent has no business deleting a file the user has not
+  /// looked at, and a proposal arriving from a model always carries false.
+  final bool overwrite;
+
+  RenameProposal({
+    required this.path,
+    required this.oldName,
+    required this.newName,
+    this.overwrite = false,
+  });
+
+  RenameProposal copyWith({String? newName, bool? overwrite}) => RenameProposal(
+        path: path,
+        oldName: oldName,
+        newName: newName ?? this.newName,
+        overwrite: overwrite ?? this.overwrite,
+      );
 }
 
 /// Runs the AI batch-rename flow as a standard LLM tool-use agent loop.
@@ -79,6 +98,16 @@ class AiRenameAgent {
   /// reliably handle in one context. Proposals accumulate across batches, and
   /// duplicate-target detection spans all batches. [onBatchProgress] reports
   /// (completedBatches, totalBatches) before each batch starts.
+  ///
+  /// [onProposals] fires after every batch with everything collected so far,
+  /// so a caller can show rows as they arrive rather than staring at a spinner
+  /// until the last batch lands — `B4 13b` reviews the produced rows while the
+  /// rest are still generating.
+  ///
+  /// [onBatchFailed] reports a batch the run gave up on, with the file paths
+  /// it covered. Those files simply have no proposal; the ones already
+  /// collected are kept, which is what lets `13f` offer a retry over the
+  /// remainder instead of discarding the whole run.
   static Future<List<RenameProposal>> collectProposals({
     required dynamic modelIdentifier,
     required List<Map<String, String>> filesData,
@@ -88,6 +117,8 @@ class AiRenameAgent {
     int batchSize = defaultBatchSize,
     void Function(String message)? onLog,
     void Function(int current, int total)? onBatchProgress,
+    void Function(List<RenameProposal> collected)? onProposals,
+    void Function(int batch, int total, Object error, List<String> paths)? onBatchFailed,
     bool Function()? isCancelled,
   }) async {
     // path → proposal (a later call for the same path overrides the earlier one).
@@ -124,11 +155,18 @@ class AiRenameAgent {
           isCancelled: isCancelled,
         );
         consecutiveFailures = 0;
+        onProposals?.call(proposals.values.toList());
       } catch (e) {
         // Nothing staged at all and the very first batch died — the model or
         // server is likely misconfigured; surface the error to the caller.
         if (proposals.isEmpty && batch == 0) rethrow;
         consecutiveFailures++;
+        onBatchFailed?.call(
+          batch + 1,
+          totalBatches,
+          e,
+          [for (final f in chunk) f['path'] ?? ''],
+        );
         onLog?.call('Batch ${batch + 1}/$totalBatches failed: $e — '
             'keeping the ${proposals.length} rename(s) staged so far.');
         if (consecutiveFailures >= 2) {
@@ -252,9 +290,17 @@ class AiRenameAgent {
       final newPath = p.join(p.dirname(proposal.path), proposal.newName);
       if (proposal.newName == proposal.oldName) continue;
       if (await oldFile.exists()) {
-        if (await File(newPath).exists()) {
-          onLog?.call('Skipped (target exists): ${proposal.newName}');
-          continue;
+        final target = File(newPath);
+        if (await target.exists()) {
+          if (!proposal.overwrite) {
+            onLog?.call('Skipped (target exists): ${proposal.newName}');
+            continue;
+          }
+          // Deleted rather than renamed over: `File.rename` onto an existing
+          // path throws on Windows, so the overwrite the user asked for would
+          // fail on the platform this app is most used on.
+          await target.delete();
+          onLog?.call('Overwrote: ${proposal.newName}');
         }
         await oldFile.rename(newPath);
         renamed++;
