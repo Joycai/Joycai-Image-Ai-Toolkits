@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 /// Which way a staged file travels.
@@ -240,6 +241,15 @@ class FileTransferService {
     Map<String, FileConflictResolution> resolutions = const {},
     void Function(FileTransferProgress)? onProgress,
     bool Function()? isCancelled,
+
+    /// Take the copy-then-delete path for a move even when a plain rename
+    /// would work.
+    ///
+    /// A test seam. That path only runs when source and destination are on
+    /// different volumes, which a test on one machine cannot arrange — and it
+    /// is the path that deletes a file, so leaving it unexercised was not an
+    /// option. Production never sets this.
+    @visibleForTesting bool forceCopyDelete = false,
   }) async {
     final succeeded = <String>[];
     final skipped = <String>[];
@@ -303,43 +313,28 @@ class FileTransferService {
         if (plan.mode == FileTransferMode.copy) {
           await File(entry.sourcePath).copy(target);
         } else {
-          try {
-            await File(entry.sourcePath).rename(target);
-          } on FileSystemException {
-            // Almost always a cross-device rename, which no platform allows.
-            // Caught broadly rather than by errno: the codes differ per
-            // platform, and a genuine permission error simply fails the copy
-            // below and is reported the way it would have been anyway.
-            await File(entry.sourcePath).copy(target);
+          var renamed = false;
+          if (!forceCopyDelete) {
+            try {
+              await File(entry.sourcePath).rename(target);
+              renamed = true;
+            } on FileSystemException {
+              // Almost always a cross-device rename, which no platform allows.
+              // Caught broadly rather than by errno: the codes differ per
+              // platform, and a genuine permission error simply fails the copy
+              // below and is reported the way it would have been anyway.
+            }
+          }
 
-            // The one place a cancel can arrive mid-file. A cross-volume move
-            // is a copy and *then* a delete, and the copy is the long half —
-            // so the check goes between them, and a cancel that lands here
-            // rolls the copy back rather than completing a move the user just
-            // stopped. `12f` promises exactly this: the copy is undone, the
-            // source stays put.
-            if (isCancelled?.call() ?? false) {
-              try {
-                await File(target).delete();
-              } on FileSystemException {
-                // Nothing better to do: the source is still there, which is
-                // the half that matters.
-              }
+          if (!renamed) {
+            final fallback = await _copyThenDelete(entry, target, isCancelled);
+            if (fallback.outcome == _MoveFallback.cancelledRolledBack) {
               cancelled = true;
               break;
             }
-
-            try {
-              await File(entry.sourcePath).delete();
-            } on FileSystemException catch (e) {
-              // The copy landed, so the destination is complete — but the
-              // move did not, and the user now has two of the file. Reported
-              // as a failure precisely because the tidy-up is theirs.
+            if (fallback.outcome == _MoveFallback.sourceNotRemoved) {
               bytesDone += entry.size;
-              failed.add(FileTransferFailure(
-                entry.sourcePath,
-                'Copied to $target, but the original could not be removed: ${e.message}',
-              ));
+              failed.add(FileTransferFailure(entry.sourcePath, fallback.message!));
               continue;
             }
           }
@@ -395,6 +390,47 @@ class FileTransferService {
     return File(path).existsSync() || Directory(path).existsSync();
   }
 
+  /// The move's slow path: copy, then delete the source.
+  ///
+  /// Extracted so the forced-for-tests route and the real cross-device
+  /// fallback run the *same* code. Inlining it in both would leave the test
+  /// exercising a copy of the logic rather than the logic.
+  static Future<_FallbackResult> _copyThenDelete(
+    FileTransferEntry entry,
+    String target,
+    bool Function()? isCancelled,
+  ) async {
+    await File(entry.sourcePath).copy(target);
+
+    // The one place a cancel can arrive mid-file. A cross-volume move is a
+    // copy and *then* a delete, and the copy is the long half — so the check
+    // goes between them, and a cancel landing here rolls the copy back rather
+    // than completing a move the user just stopped. `12f` promises exactly
+    // this: the copy is undone, the source stays put.
+    if (isCancelled?.call() ?? false) {
+      try {
+        await File(target).delete();
+      } on FileSystemException {
+        // Nothing better to do, and the source is still there — which is the
+        // half that matters.
+      }
+      return const _FallbackResult(_MoveFallback.cancelledRolledBack);
+    }
+
+    try {
+      await File(entry.sourcePath).delete();
+    } on FileSystemException catch (e) {
+      // The copy landed, so the destination is complete — but the move did
+      // not, and the user now has two of the file. Reported as a failure
+      // precisely because the tidy-up is theirs.
+      return _FallbackResult(
+        _MoveFallback.sourceNotRemoved,
+        'Copied to $target, but the original could not be removed: ${e.message}',
+      );
+    }
+    return const _FallbackResult(_MoveFallback.done);
+  }
+
   /// Whether a move between these two paths has to cross a volume.
   ///
   /// Compares root prefixes, which answers the question on Windows (`D:` vs
@@ -408,4 +444,26 @@ class FileTransferService {
     if (a.isEmpty || b.isEmpty) return false;
     return !p.equals(a, b);
   }
+}
+
+/// How [FileTransferService._copyThenDelete] ended.
+enum _MoveFallback {
+  /// Copied and the source removed — a completed move.
+  done,
+
+  /// Cancelled between the two halves; the copy was deleted and the source
+  /// left alone.
+  cancelledRolledBack,
+
+  /// Copied, but the source could not be deleted. The file now exists twice.
+  sourceNotRemoved,
+}
+
+class _FallbackResult {
+  final _MoveFallback outcome;
+
+  /// Set only for [_MoveFallback.sourceNotRemoved].
+  final String? message;
+
+  const _FallbackResult(this.outcome, [this.message]);
 }

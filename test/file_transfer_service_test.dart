@@ -308,6 +308,85 @@ void main() {
     });
   });
 
+  group('cross-volume move (copy then delete)', () {
+    // `forceCopyDelete` drives the same helper the real cross-device fallback
+    // reaches. The path only runs when source and destination sit on different
+    // volumes, which one machine cannot arrange in a test — and it is the path
+    // that deletes files, so it is the last one that should go unexercised.
+
+    test('completes the move the long way round', () async {
+      final a = await write(sourceDir, 'a.png', 'aaa');
+
+      final outcome = await FileTransferService.execute(
+        await planFor([a], mode: FileTransferMode.move),
+        forceCopyDelete: true,
+      );
+
+      expect(outcome.isClean, isTrue);
+      expect(File(a).existsSync(), isFalse);
+      expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'aaa');
+    });
+
+    test('a cancel between the copy and the delete rolls the copy back',
+        () async {
+      // The promise `12f` makes to the user in as many words: the copy is
+      // undone, the source stays put. Without the rollback the destination
+      // would keep a file from a run the user stopped, and the progress dialog
+      // said it would not.
+      final a = await write(sourceDir, 'a.png', 'aaa');
+
+      final outcome = await FileTransferService.execute(
+        await planFor([a], mode: FileTransferMode.move),
+        forceCopyDelete: true,
+        // Only true once the copy has happened: `execute` asks before each
+        // file and again between the halves, so the second ask is this one.
+        isCancelled: () => File(p.join(destDir.path, 'a.png')).existsSync(),
+      );
+
+      expect(outcome.cancelled, isTrue);
+      expect(outcome.succeeded, isEmpty);
+      expect(File(a).readAsStringSync(), 'aaa');
+      expect(File(p.join(destDir.path, 'a.png')).existsSync(), isFalse);
+    });
+
+    test('a cancel before the first file copies nothing at all', () async {
+      final a = await write(sourceDir, 'a.png', 'aaa');
+
+      final outcome = await FileTransferService.execute(
+        await planFor([a], mode: FileTransferMode.move),
+        forceCopyDelete: true,
+        isCancelled: () => true,
+      );
+
+      expect(outcome.cancelled, isTrue);
+      expect(File(a).existsSync(), isTrue);
+      expect(File(p.join(destDir.path, 'a.png')).existsSync(), isFalse);
+    });
+
+    test('the files already moved before a cancel stay moved', () async {
+      // The rollback is per-file, not per-run: a move that finished is done,
+      // and undoing it would mean putting a file back from a source that is
+      // already gone. Cancelling on `b`'s arrival lets `a` complete first.
+      final a = await write(sourceDir, 'a.png', 'aaa');
+      final b = await write(sourceDir, 'b.png', 'bbb');
+
+      final outcome = await FileTransferService.execute(
+        await planFor([a, b], mode: FileTransferMode.move),
+        forceCopyDelete: true,
+        isCancelled: () => File(p.join(destDir.path, 'b.png')).existsSync(),
+      );
+
+      expect(outcome.cancelled, isTrue);
+      // `a` went the whole way.
+      expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'aaa');
+      expect(File(a).existsSync(), isFalse);
+      // `b` was rolled back: nothing at the destination, source untouched.
+      expect(File(p.join(destDir.path, 'b.png')).existsSync(), isFalse);
+      expect(File(b).readAsStringSync(), 'bbb');
+      expect(outcome.succeeded, [p.join(destDir.path, 'a.png')]);
+    });
+  });
+
   group('isLikelyCrossVolume', () {
     test('two paths under one root are not', () {
       expect(
