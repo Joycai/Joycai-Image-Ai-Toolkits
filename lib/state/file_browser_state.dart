@@ -65,6 +65,12 @@ class FileBrowserState extends ChangeNotifier {
   List<BrowserFile> allFiles = [];
   List<BrowserFile> filteredFiles = [];
   Set<BrowserFile> selectedFiles = {};
+
+  /// The last file clicked without Shift — the fixed end of a Shift-click
+  /// range. Stored by path, not index, so it survives a re-sort or re-filter;
+  /// [selectRangeTo] resolves it back to an index against the current
+  /// [filteredFiles] at click time.
+  String? _selectionAnchorPath;
   
   FileCategory currentFilter = FileCategory.all;
   String searchQuery = '';
@@ -287,6 +293,35 @@ class FileBrowserState extends ChangeNotifier {
     } else {
       selectedFiles.add(file);
     }
+    // A plain click re-anchors: the next Shift-click ranges from here.
+    _selectionAnchorPath = file.path;
+    notifyListeners();
+  }
+
+  /// Selects every file from the anchor (the last plain click) to [file],
+  /// inclusive, in the current [filteredFiles] order — the Shift-click range.
+  /// Adds the span to whatever is already selected rather than replacing it.
+  /// Falls back to a plain toggle when there is no anchor yet, or the anchor
+  /// has scrolled out of the current filter/search view.
+  void selectRangeTo(BrowserFile file) {
+    final anchorPath = _selectionAnchorPath;
+    if (anchorPath == null) {
+      toggleSelection(file);
+      return;
+    }
+    final anchorIndex = filteredFiles.indexWhere((f) => f.path == anchorPath);
+    final targetIndex = filteredFiles.indexWhere((f) => f.path == file.path);
+    if (anchorIndex == -1 || targetIndex == -1) {
+      toggleSelection(file);
+      return;
+    }
+    final start = anchorIndex < targetIndex ? anchorIndex : targetIndex;
+    final end = anchorIndex < targetIndex ? targetIndex : anchorIndex;
+    for (var i = start; i <= end; i++) {
+      selectedFiles.add(filteredFiles[i]);
+    }
+    // Anchor stays put, so successive Shift-clicks re-range from the same
+    // origin — the behaviour every file manager has.
     notifyListeners();
   }
 
@@ -297,6 +332,7 @@ class FileBrowserState extends ChangeNotifier {
 
   void clearSelection() {
     selectedFiles.clear();
+    _selectionAnchorPath = null;
     notifyListeners();
   }
 

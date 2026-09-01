@@ -395,7 +395,7 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
               isSelected: state.selectedFiles.contains(file),
               thumbnailSize: state.thumbnailSize,
               heroScope: kBrowserPreviewHeroScope,
-              onTap: () => state.toggleSelection(file),
+              onTap: () => _handleSelectionTap(state, file),
               onDoubleTap: () => _openWithPreview(context, file, state),
               onSecondaryTap: (pos) => _showContextMenu(context, file, pos),
             );
@@ -430,12 +430,22 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
             ),
             subtitle: _FileListItemSubtitle(file: file),
             selected: isSelected,
-            onTap: () => state.toggleSelection(file),
+            onTap: () => _handleSelectionTap(state, file),
             trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
           ),
         );
       },
     );
+  }
+
+  /// Single click toggles one file; Shift+click extends the selection from the
+  /// last plain click to this one (see [FileBrowserState.selectRangeTo]).
+  void _handleSelectionTap(FileBrowserState state, BrowserFile file) {
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      state.selectRangeTo(file);
+    } else {
+      state.toggleSelection(file);
+    }
   }
 
   void _openWithPreview(BuildContext context, BrowserFile file, FileBrowserState state) {
