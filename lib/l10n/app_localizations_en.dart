@@ -151,6 +151,437 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please use your device\'s file manager to organize files.';
 
   @override
+  String get stagingArea => 'Staging';
+
+  @override
+  String get addToStaging => 'Add to Staging';
+
+  @override
+  String addToStagingCount(int count) {
+    return 'Add to Staging - $count';
+  }
+
+  @override
+  String get removeFromStaging => 'Remove from Staging';
+
+  @override
+  String get stagedBadge => 'Staged';
+
+  @override
+  String get clearStaging => 'Clear';
+
+  @override
+  String get stagingEmptyTitle => 'Staging is empty';
+
+  @override
+  String get stagingEmptyDesc =>
+      'Pick files and hit Add to Staging to note down what you want to move. It only marks them - nothing is moved. Switching folders, filtering, or restarting the app will not lose it.';
+
+  @override
+  String get stagingTarget => 'DESTINATION';
+
+  @override
+  String get stagingNoTarget => 'No destination picked';
+
+  @override
+  String get stagingTargetHint =>
+      'Right-click a folder in the left column and choose Move / Copy here, or drag files onto a folder.';
+
+  @override
+  String stagingRestored(int count) {
+    return 'Restored $count from the last session';
+  }
+
+  @override
+  String get stagingSameAsTarget => 'Already here - will be skipped';
+
+  @override
+  String get stagingMissing => 'Missing';
+
+  @override
+  String stagingClearMissing(int count) {
+    return 'Remove missing ($count)';
+  }
+
+  @override
+  String get moveHere => 'Move here';
+
+  @override
+  String get copyHere => 'Copy here';
+
+  @override
+  String moveCountHere(int count) {
+    return 'Move $count here';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return 'Copy $count here';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count missing';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count already there (skipped)';
+  }
+
+  @override
+  String get onlyThisDirectory => 'Show only this folder';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return 'Move to $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return 'Copy to $folder';
+  }
+
+  @override
+  String get pasteNoDestination => 'Pick a destination folder first';
+
+  @override
+  String get pasteDestinationGone => 'The destination folder no longer exists';
+
+  @override
+  String get pasteNothingToDo => 'Nothing to transfer';
+
+  @override
+  String get conflictsTitle => 'Resolve name conflicts';
+
+  @override
+  String get conflictSkip => 'Skip';
+
+  @override
+  String get conflictOverwrite => 'Overwrite';
+
+  @override
+  String get conflictRename => 'Keep both';
+
+  @override
+  String get conflictApplyToRest => 'Apply to all remaining';
+
+  @override
+  String get conflictReasonExists => 'Already in the destination';
+
+  @override
+  String get conflictReasonDuplicate => 'Another staged file has this name';
+
+  @override
+  String get conflictReasonSameLocation => 'Already in this folder';
+
+  @override
+  String get conflictReasonMissing => 'Source file is gone';
+
+  @override
+  String get pasteCrossVolumeWarning =>
+      'A different drive - files are copied then deleted, which takes longer and can stop partway.';
+
+  @override
+  String get pasteRunningMove => 'Moving…';
+
+  @override
+  String get pasteRunningCopy => 'Copying…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => 'Transfer finished';
+
+  @override
+  String get pasteCancelledTitle => 'Transfer cancelled';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '$count transferred';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '$count skipped';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '$count failed';
+  }
+
+  @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files files from $dirs folders';
+  }
+
+  @override
+  String get renameSectionModel => 'MODEL';
+
+  @override
+  String get renameSectionTemplate => 'NAMING TEMPLATE';
+
+  @override
+  String get renameSectionInstructions => 'EXTRA INSTRUCTIONS';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files files · $size per batch · $batches batches';
+  }
+
+  @override
+  String get renameStopGenerating => 'Stop generating';
+
+  @override
+  String get renameRegenerate => 'Regenerate';
+
+  @override
+  String get renameFilterAll => 'All';
+
+  @override
+  String get renameFilterConflicts => 'Conflicts';
+
+  @override
+  String get renameFilterSkipped => 'Skipped';
+
+  @override
+  String get renameNextConflict => 'Next conflict';
+
+  @override
+  String get renameEmptyTitle => 'No suggestions yet';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return 'Pick a model and a naming template on the left, then Generate. The $files files go out in $batches batches of $size; you can start reviewing while the rest are still coming.';
+  }
+
+  @override
+  String get renameGenerating => 'Generating suggestions';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return 'Batch $batch / $total · $done / $files produced';
+  }
+
+  @override
+  String get renameStop => 'Stop';
+
+  @override
+  String renameProducedHint(int count) {
+    return '$count produced · reviewable now, applied once generation finishes';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count suggestions';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '$count skipped';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return 'renaming row $row in place';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count conflicts unresolved · they will not be applied';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return 'Apply $count renames';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return 'Apply $count';
+  }
+
+  @override
+  String get renameDuplicateBadge => 'Name taken';
+
+  @override
+  String get renameSkippedBadge => 'Skipped';
+
+  @override
+  String get renameRenamedBadge => 'Renamed';
+
+  @override
+  String get renameActionAccept => 'Accept';
+
+  @override
+  String get renameActionSkip => 'Skip';
+
+  @override
+  String get renameActionEdit => 'Edit name';
+
+  @override
+  String get renameActionUndo => 'Undo skip';
+
+  @override
+  String get renameConflictAutoRename => 'Rename';
+
+  @override
+  String get renameNoModelsTitle => 'No chat model available';
+
+  @override
+  String get renameNoModelsDesc =>
+      'Batch renaming needs a chat model to read the pictures and write the names. Configure at least one working channel under Models and Channels first.';
+
+  @override
+  String get renameGoToSettings => 'Go to settings';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return 'Batch $batch failed · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return 'The $kept suggestions produced so far are kept; the $missing files with no name can be retried on their own.';
+  }
+
+  @override
+  String get renameRetryBatch => 'Retry these';
+
+  @override
+  String get renameEditConfig => 'Edit config';
+
+  @override
+  String get renameTemplateLabel => 'Template';
+
+  @override
+  String pasteMovingCount(int count) {
+    return 'Moving $count items';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return 'Copying $count items';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ to $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => 'across drives';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total items · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return 'Copying $name';
+  }
+
+  @override
+  String get pasteRollbackNote =>
+      'A cross-drive move runs as copy then delete. Cancelling deletes the copy that was in flight and leaves the source where it is.';
+
+  @override
+  String get pasteRunInBackground => 'Run in background';
+
+  @override
+  String get pasteMoveDone => 'Move finished';
+
+  @override
+  String get pasteCopyDone => 'Copy finished';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count items · $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => 'Transferred';
+
+  @override
+  String get pasteStatSkipped => 'Skipped (already there)';
+
+  @override
+  String get pasteStatFailed => 'Failed';
+
+  @override
+  String get pasteRetry => 'Retry';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return 'The $kept failed or skipped items stay in Staging; the $moved that went through were taken out.';
+  }
+
+  @override
+  String get pasteExportLog => 'Export log';
+
+  @override
+  String pasteLogSaved(String path) {
+    return 'Log saved to $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count of $total clash with names in $folder';
+  }
+
+  @override
+  String get conflictsIntro =>
+      'Choose what to do with each, or tick the box below to apply one answer to the rest.';
+
+  @override
+  String get conflictPending => 'Undecided';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return 'Incoming · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return 'Already there · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning =>
+      'The file there will be replaced. This cannot be undone.';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return 'Apply the same answer to the remaining $count';
+  }
+
+  @override
+  String get conflictApplyAndContinue => 'Apply and continue';
+
+  @override
+  String dragMoveHint(int count) {
+    return 'Move $count · hold Ctrl to copy';
+  }
+
+  @override
+  String get showInSystem => 'Show in system';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

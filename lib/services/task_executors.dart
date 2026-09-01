@@ -341,6 +341,9 @@ extension TaskExecutors on TaskQueueService {
                 path: m['path']?.toString() ?? '',
                 oldName: m['old_name']?.toString() ?? '',
                 newName: m['new_name']?.toString() ?? '',
+                // Only ever true because a person answered a conflict in the
+                // review dialog; absent means the safe reading.
+                overwrite: m['overwrite'] == true || m['overwrite'] == 'true',
               ))
           .where((prop) => prop.path.isNotEmpty && prop.newName.isNotEmpty)
           .toList();

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
@@ -8,6 +9,12 @@ import '../../services/file_permission_service.dart';
 import '../../state/app_state.dart';
 import '../../state/file_browser_state.dart';
 import '../../state/gallery_state.dart';
+import '../../core/design_tokens.dart';
+import '../../widgets/dashed_border.dart';
+import '../../models/browser_file.dart';
+import '../../services/file_transfer_service.dart';
+import '../browser/staging_paste_flow.dart';
+import '../browser/widgets/folder_context_menu.dart';
 
 /// Folders are amber everywhere in the app. It is the one colour in the tree
 /// that is not reporting state, which is exactly why a folder can keep it.
@@ -179,14 +186,37 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
         // says so at every build. Same fill, same border, same radius.
         Container(
           margin: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-          child: Material(
-            color: boxColor ?? Colors.transparent,
+          // `12d`'s second way to name a destination: drop the selection on a
+          // folder. Default is move, Ctrl copies — the convention every file
+          // manager already trained the user on. Browser only; the workbench
+          // shares this tree and has nothing to paste.
+          child: _MaybeDropTarget(
+            enabled: widget.useFileBrowserState,
+            path: widget.path,
+            builder: (context, hovered) => Material(
+            color: hovered ? colorScheme.accentTint : (boxColor ?? Colors.transparent),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: borderColor),
+              side: hovered
+                  ? BorderSide(color: colorScheme.primary, width: 1.5)
+                  : BorderSide(color: borderColor),
             ),
             clipBehavior: Clip.antiAlias,
-            child: ListTile(
+            // The file browser's paste target is named here and nowhere else.
+            // `12d` puts it on the folder's own context menu because that is
+            // the only place in the app where a folder is a thing you can
+            // point at — the grid shows a merged listing with no folder of its
+            // own. Gated on the browser: the workbench's copy of this tree has
+            // no staging area behind it.
+            child: GestureDetector(
+              onSecondaryTapDown: widget.useFileBrowserState
+                  ? (details) => showFolderContextMenu(
+                        context: context,
+                        path: widget.path,
+                        position: details.globalPosition,
+                      )
+                  : null,
+              child: ListTile(
           dense: true,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.only(left: widget.isRoot ? 8 : 4, right: 4),
@@ -284,6 +314,8 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
               appState.galleryState.setViewFolder(widget.path);
             }
           },
+              ),
+            ),
             ),
           ),
         ),
@@ -306,6 +338,59 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
             ),
           ),
       ],
+    );
+  }
+}
+/// A folder row that accepts a dragged selection, when the browser owns this
+/// tree.
+///
+/// Split out so the tree item itself stays one widget whichever screen it is
+/// on: the workbench's copy builds the row through the same builder with the
+/// target simply absent.
+class _MaybeDropTarget extends StatelessWidget {
+  final bool enabled;
+  final String path;
+  final Widget Function(BuildContext context, bool hovered) builder;
+
+  const _MaybeDropTarget({
+    required this.enabled,
+    required this.path,
+    required this.builder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return builder(context, false);
+
+    return DragTarget<List<BrowserFile>>(
+      onWillAcceptWithDetails: (details) => details.data.isNotEmpty,
+      onAcceptWithDetails: (details) {
+        // Read at drop time, not at drag start: the user can reach for Ctrl
+        // after picking the files up, which is when they decide it is a copy.
+        final copying = HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed;
+        runStagingPaste(
+          context,
+          mode: copying ? FileTransferMode.copy : FileTransferMode.move,
+          destination: path,
+          files: details.data,
+        );
+      },
+      builder: (context, candidate, rejected) => Stack(
+        children: [
+          builder(context, candidate.isNotEmpty),
+          if (candidate.isNotEmpty)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DashedBorder(
+                  color: Theme.of(context).colorScheme.primary,
+                  radius: 8,
+                  strokeWidth: 1.5,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

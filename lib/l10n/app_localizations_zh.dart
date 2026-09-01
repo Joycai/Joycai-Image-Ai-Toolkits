@@ -148,6 +148,432 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileBrowserAndroidHint => '请使用设备的文件管理器来整理文件。';
 
   @override
+  String get stagingArea => '暂存区';
+
+  @override
+  String get addToStaging => '加入暂存区';
+
+  @override
+  String addToStagingCount(int count) {
+    return '加入暂存区 · $count 项';
+  }
+
+  @override
+  String get removeFromStaging => '从暂存区移除';
+
+  @override
+  String get stagedBadge => '已暂存';
+
+  @override
+  String get clearStaging => '清空';
+
+  @override
+  String get stagingEmptyTitle => '暂存区是空的';
+
+  @override
+  String get stagingEmptyDesc =>
+      '选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。';
+
+  @override
+  String get stagingTarget => '目标目录';
+
+  @override
+  String get stagingNoTarget => '未选择目标目录';
+
+  @override
+  String get stagingTargetHint => '在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。';
+
+  @override
+  String stagingRestored(int count) {
+    return '已从上次会话恢复 $count 项';
+  }
+
+  @override
+  String get stagingSameAsTarget => '与目标相同 · 执行时跳过';
+
+  @override
+  String get stagingMissing => '已失效';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '清理失效项 ($count)';
+  }
+
+  @override
+  String get moveHere => '移动到此';
+
+  @override
+  String get copyHere => '复制到此';
+
+  @override
+  String moveCountHere(int count) {
+    return '移动 $count 项到此';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '复制 $count 项到此';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 项失效';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 项已在目标目录（将跳过）';
+  }
+
+  @override
+  String get onlyThisDirectory => '仅看此目录';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '移动到 $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '复制到 $folder';
+  }
+
+  @override
+  String get pasteNoDestination => '请先指定目标目录';
+
+  @override
+  String get pasteDestinationGone => '目标目录已不存在';
+
+  @override
+  String get pasteNothingToDo => '没有可搬运的文件';
+
+  @override
+  String get conflictsTitle => '处理同名冲突';
+
+  @override
+  String get conflictSkip => '跳过';
+
+  @override
+  String get conflictOverwrite => '覆盖';
+
+  @override
+  String get conflictRename => '自动改名';
+
+  @override
+  String get conflictApplyToRest => '对全部剩余项应用';
+
+  @override
+  String get conflictReasonExists => '目标目录中已存在';
+
+  @override
+  String get conflictReasonDuplicate => '另一个暂存文件同名';
+
+  @override
+  String get conflictReasonSameLocation => '已在此目录中';
+
+  @override
+  String get conflictReasonMissing => '源文件已不存在';
+
+  @override
+  String get pasteCrossVolumeWarning => '跨盘搬运：先复制再删除，耗时更久，且可能中途停下。';
+
+  @override
+  String get pasteRunningMove => '正在移动…';
+
+  @override
+  String get pasteRunningCopy => '正在复制…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '搬运完成';
+
+  @override
+  String get pasteCancelledTitle => '搬运已取消';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '成功 $count 项';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '跳过 $count 项';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '失败 $count 项';
+  }
+
+  @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 个文件 · 来自 $dirs 个目录';
+  }
+
+  @override
+  String get renameSectionModel => '模型';
+
+  @override
+  String get renameSectionTemplate => '命名模板';
+
+  @override
+  String get renameSectionInstructions => '补充指令';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 个文件 · 每批 $size · 预计 $batches 批';
+  }
+
+  @override
+  String get renameStopGenerating => '中断生成';
+
+  @override
+  String get renameRegenerate => '重新生成';
+
+  @override
+  String get renameFilterAll => '全部';
+
+  @override
+  String get renameFilterConflicts => '冲突';
+
+  @override
+  String get renameFilterSkipped => '已跳过';
+
+  @override
+  String get renameNextConflict => '下一个冲突';
+
+  @override
+  String get renameEmptyTitle => '还没有建议';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '在左侧选好模型与命名模板后点「生成建议」。$files 个文件将按每批 $size 个分 $batches 批提交，生成过程中即可开始逐项审阅。';
+  }
+
+  @override
+  String get renameGenerating => '正在生成建议';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return '第 $batch / $total 批 · 已产出 $done / $files 条';
+  }
+
+  @override
+  String get renameStop => '中断';
+
+  @override
+  String renameProducedHint(int count) {
+    return '已产出 $count 条 · 生成完成前可先审阅，不能应用';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count 条建议';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '已跳过 $count';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '第 $row 行正在就地改名';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count 个冲突待处理 · 未决冲突不会被应用';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '应用 $count 项重命名';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '应用 $count 项';
+  }
+
+  @override
+  String get renameDuplicateBadge => '重名';
+
+  @override
+  String get renameSkippedBadge => '已跳过';
+
+  @override
+  String get renameRenamedBadge => '已改名';
+
+  @override
+  String get renameActionAccept => '接受';
+
+  @override
+  String get renameActionSkip => '跳过';
+
+  @override
+  String get renameActionEdit => '就地改名';
+
+  @override
+  String get renameActionUndo => '撤销跳过';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '没有可用的语言模型';
+
+  @override
+  String get renameNoModelsDesc =>
+      '批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。';
+
+  @override
+  String get renameGoToSettings => '前往设置';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return '第 $batch 批请求失败 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '已产出的 $kept 条建议已保留，未生成的 $missing 个文件可单独重试';
+  }
+
+  @override
+  String get renameRetryBatch => '重试此批';
+
+  @override
+  String get renameEditConfig => '编辑配置';
+
+  @override
+  String get renameTemplateLabel => '模板';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '正在移动 $count 项';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '正在复制 $count 项';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '跨磁盘';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 项 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '正在复制 $name';
+  }
+
+  @override
+  String get pasteRollbackNote => '跨磁盘移动按「复制 + 删除」执行；取消时已复制的文件将被回滚删除，源文件保持不动。';
+
+  @override
+  String get pasteRunInBackground => '后台运行';
+
+  @override
+  String get pasteMoveDone => '移动完成';
+
+  @override
+  String get pasteCopyDone => '复制完成';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 项 · 用时 $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => '跳过（与目标相同）';
+
+  @override
+  String get pasteStatFailed => '失败';
+
+  @override
+  String get pasteRetry => '重试';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失败与跳过的 $kept 项仍保留在暂存区，成功的 $moved 项已自动移出。';
+  }
+
+  @override
+  String get pasteExportLog => '导出日志';
+
+  @override
+  String pasteLogSaved(String path) {
+    return '日志已保存到 $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 项与目标 $folder 重名';
+  }
+
+  @override
+  String get conflictsIntro => '逐项选择处理方式；也可以勾选下方「对剩余项应用」。';
+
+  @override
+  String get conflictPending => '待定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '写入 · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '已有 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '目标文件将被替换，不可撤销';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '对剩余 $count 项应用同一选择';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '应用并继续';
+
+  @override
+  String dragMoveHint(int count) {
+    return '移动 $count 项 · 按住 Ctrl 复制';
+  }
+
+  @override
+  String get showInSystem => '在系统中显示';
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -3402,6 +3828,432 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fileBrowserAndroidHint => '請使用裝置的檔案管理員來整理檔案。';
+
+  @override
+  String get stagingArea => '暫存區';
+
+  @override
+  String get addToStaging => '加入暫存區';
+
+  @override
+  String addToStagingCount(int count) {
+    return '加入暫存區 · $count 項';
+  }
+
+  @override
+  String get removeFromStaging => '從暫存區移除';
+
+  @override
+  String get stagedBadge => '已暫存';
+
+  @override
+  String get clearStaging => '清空';
+
+  @override
+  String get stagingEmptyTitle => '暫存區是空的';
+
+  @override
+  String get stagingEmptyDesc =>
+      '選取檔案後點「加入暫存區」，把要搬運的檔案先記在這裡 —— 只做標記，不移動任何檔案。切換目錄、篩選或重新啟動應用都不會丟。';
+
+  @override
+  String get stagingTarget => '目標目錄';
+
+  @override
+  String get stagingNoTarget => '未選擇目標目錄';
+
+  @override
+  String get stagingTargetHint => '在左欄資料夾上按右鍵「移動 / 複製到此」，或把檔案直接拖到資料夾上。';
+
+  @override
+  String stagingRestored(int count) {
+    return '已從上次工作階段恢復 $count 項';
+  }
+
+  @override
+  String get stagingSameAsTarget => '與目標相同 · 執行時跳過';
+
+  @override
+  String get stagingMissing => '已失效';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '清理失效項 ($count)';
+  }
+
+  @override
+  String get moveHere => '移動到此';
+
+  @override
+  String get copyHere => '複製到此';
+
+  @override
+  String moveCountHere(int count) {
+    return '移動 $count 項到此';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '複製 $count 項到此';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 項';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 項失效';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 項已在目標目錄（將跳過）';
+  }
+
+  @override
+  String get onlyThisDirectory => '僅看此目錄';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '移動到 $folder';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '複製到 $folder';
+  }
+
+  @override
+  String get pasteNoDestination => '請先指定目標目錄';
+
+  @override
+  String get pasteDestinationGone => '目標目錄已不存在';
+
+  @override
+  String get pasteNothingToDo => '沒有可搬運的檔案';
+
+  @override
+  String get conflictsTitle => '處理同名衝突';
+
+  @override
+  String get conflictSkip => '跳過';
+
+  @override
+  String get conflictOverwrite => '覆蓋';
+
+  @override
+  String get conflictRename => '自動改名';
+
+  @override
+  String get conflictApplyToRest => '對全部剩餘項套用';
+
+  @override
+  String get conflictReasonExists => '目標目錄中已存在';
+
+  @override
+  String get conflictReasonDuplicate => '另一個暫存檔案同名';
+
+  @override
+  String get conflictReasonSameLocation => '已在此目錄中';
+
+  @override
+  String get conflictReasonMissing => '來源檔案已不存在';
+
+  @override
+  String get pasteCrossVolumeWarning => '跨磁碟搬運：先複製再刪除，耗時更久，且可能中途停下。';
+
+  @override
+  String get pasteRunningMove => '正在移動…';
+
+  @override
+  String get pasteRunningCopy => '正在複製…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '搬運完成';
+
+  @override
+  String get pasteCancelledTitle => '搬運已取消';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '成功 $count 項';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '跳過 $count 項';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '失敗 $count 項';
+  }
+
+  @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 個檔案 · 來自 $dirs 個目錄';
+  }
+
+  @override
+  String get renameSectionModel => '模型';
+
+  @override
+  String get renameSectionTemplate => '命名範本';
+
+  @override
+  String get renameSectionInstructions => '補充指令';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 個檔案 · 每批 $size · 預計 $batches 批';
+  }
+
+  @override
+  String get renameStopGenerating => '中斷生成';
+
+  @override
+  String get renameRegenerate => '重新生成';
+
+  @override
+  String get renameFilterAll => '全部';
+
+  @override
+  String get renameFilterConflicts => '衝突';
+
+  @override
+  String get renameFilterSkipped => '已跳過';
+
+  @override
+  String get renameNextConflict => '下一個衝突';
+
+  @override
+  String get renameEmptyTitle => '還沒有建議';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '在左側選好模型與命名範本後點「生成建議」。$files 個檔案將按每批 $size 個分 $batches 批提交，生成過程中即可開始逐項審閱。';
+  }
+
+  @override
+  String get renameGenerating => '正在生成建議';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return '第 $batch / $total 批 · 已產出 $done / $files 條';
+  }
+
+  @override
+  String get renameStop => '中斷';
+
+  @override
+  String renameProducedHint(int count) {
+    return '已產出 $count 條 · 生成完成前可先審閱，不能套用';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '$count 條建議';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return '已跳過 $count';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '第 $row 行正在就地改名';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '$count 個衝突待處理 · 未決衝突不會被套用';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '套用 $count 項重新命名';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '套用 $count 項';
+  }
+
+  @override
+  String get renameDuplicateBadge => '重名';
+
+  @override
+  String get renameSkippedBadge => '已跳過';
+
+  @override
+  String get renameRenamedBadge => '已改名';
+
+  @override
+  String get renameActionAccept => '接受';
+
+  @override
+  String get renameActionSkip => '跳過';
+
+  @override
+  String get renameActionEdit => '就地改名';
+
+  @override
+  String get renameActionUndo => '撤銷跳過';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '沒有可用的語言模型';
+
+  @override
+  String get renameNoModelsDesc =>
+      '批次重新命名需要一個對話模型來閱讀圖片並產生名字。請先在「模型與通道」裡設定至少一個可用通道。';
+
+  @override
+  String get renameGoToSettings => '前往設定';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return '第 $batch 批請求失敗 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '已產出的 $kept 條建議已保留，未生成的 $missing 個檔案可單獨重試';
+  }
+
+  @override
+  String get renameRetryBatch => '重試此批';
+
+  @override
+  String get renameEditConfig => '編輯設定';
+
+  @override
+  String get renameTemplateLabel => '範本';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '正在移動 $count 項';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '正在複製 $count 項';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '跨磁碟';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 項 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '正在複製 $name';
+  }
+
+  @override
+  String get pasteRollbackNote => '跨磁碟移動按「複製 + 刪除」執行；取消時已複製的檔案將被回滾刪除，來源檔案保持不動。';
+
+  @override
+  String get pasteRunInBackground => '背景執行';
+
+  @override
+  String get pasteMoveDone => '移動完成';
+
+  @override
+  String get pasteCopyDone => '複製完成';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 項 · 用時 $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => '跳過（與目標相同）';
+
+  @override
+  String get pasteStatFailed => '失敗';
+
+  @override
+  String get pasteRetry => '重試';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失敗與跳過的 $kept 項仍保留在暫存區，成功的 $moved 項已自動移出。';
+  }
+
+  @override
+  String get pasteExportLog => '匯出日誌';
+
+  @override
+  String pasteLogSaved(String path) {
+    return '日誌已儲存到 $path';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 項與目標 $folder 重名';
+  }
+
+  @override
+  String get conflictsIntro => '逐項選擇處理方式；也可以勾選下方「對剩餘項套用」。';
+
+  @override
+  String get conflictPending => '待定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '寫入 · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '已有 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '目標檔案將被替換，不可撤銷';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '對剩餘 $count 項套用同一選擇';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '套用並繼續';
+
+  @override
+  String dragMoveHint(int count) {
+    return '移動 $count 項 · 按住 Ctrl 複製';
+  }
+
+  @override
+  String get showInSystem => '在系統中顯示';
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';

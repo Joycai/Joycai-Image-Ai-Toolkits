@@ -57,6 +57,7 @@ void main() async {
         ChangeNotifierProvider<TaskQueueService>.value(value: appState.taskQueue),
         ChangeNotifierProvider.value(value: appState.workbenchUIState),
         ChangeNotifierProvider.value(value: appState.fileBrowserState),
+        ChangeNotifierProvider.value(value: appState.fileStagingState),
         ChangeNotifierProvider.value(value: appState.downloaderState),
         ChangeNotifierProvider.value(value: appState.galleryState),
         // Separate from AppState on purpose — see LogState.

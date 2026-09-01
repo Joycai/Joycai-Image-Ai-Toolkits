@@ -50,6 +50,462 @@
   "fileBrowserDesktopOnlyDesc": "OSのサンドボックス制限により、高度なファイルブラウザと一括名前変更機能はデスクトップ版のみで使用できます。",
   "fileBrowseriOSHint": "生成した画像の管理には、システムの「ファイル」アプリをご使用ください。",
   "fileBrowserAndroidHint": "ファイルの整理には、デバイスのファイルマネージャーをご使用ください。",
+  "stagingArea": "ステージング",
+  "addToStaging": "ステージングに追加",
+  "addToStagingCount": "ステージングに追加 · {count} 件",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "ステージングから削除",
+  "stagedBadge": "ステージ済み",
+  "clearStaging": "クリア",
+  "stagingEmptyTitle": "ステージングは空です",
+  "stagingEmptyDesc": "ファイルを選んで「ステージングに追加」を押すと、動かしたいファイルをここに控えます。印を付けるだけで、ファイルは移動しません。フォルダーの切り替え、絞り込み、アプリの再起動でも消えません。",
+  "stagingTarget": "対象フォルダー",
+  "stagingNoTarget": "対象フォルダー未選択",
+  "stagingTargetHint": "左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。",
+  "stagingRestored": "前回のセッションから {count} 件を復元",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "対象と同じ · 実行時にスキップ",
+  "stagingMissing": "見つかりません",
+  "stagingClearMissing": "無効な項目を削除 ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "ここへ移動",
+  "copyHere": "ここへコピー",
+  "moveCountHere": "{count} 件をここへ移動",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "{count} 件をここへコピー",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} 件",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} 件が無効",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} 件は対象内（スキップ）",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "このフォルダーのみ表示",
+  "pasteMoveTitle": "{folder} へ移動",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "{folder} へコピー",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "先に対象フォルダーを指定してください",
+  "pasteDestinationGone": "対象フォルダーが存在しません",
+  "pasteNothingToDo": "転送するファイルがありません",
+  "conflictsTitle": "名前の衝突を解決",
+  "conflictSkip": "スキップ",
+  "conflictOverwrite": "上書き",
+  "conflictRename": "両方保持",
+  "conflictApplyToRest": "残りすべてに適用",
+  "conflictReasonExists": "対象フォルダーに既にあります",
+  "conflictReasonDuplicate": "別のステージング項目と同名",
+  "conflictReasonSameLocation": "すでにこのフォルダー内",
+  "conflictReasonMissing": "元ファイルが存在しません",
+  "pasteCrossVolumeWarning": "別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。",
+  "pasteRunningMove": "移動中…",
+  "pasteRunningCopy": "コピー中…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "転送が完了しました",
+  "pasteCancelledTitle": "転送を中止しました",
+  "pasteSucceededCount": "{count} 件成功",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "{count} 件スキップ",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "{count} 件失敗",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSubtitleFiles": "{files} 件 · {dirs} フォルダー",
+  "@renameSubtitleFiles": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSectionModel": "モデル",
+  "renameSectionTemplate": "命名テンプレート",
+  "renameSectionInstructions": "追加指示",
+  "renameBatchEstimate": "{files} 件 · 1 バッチ {size} 件 · 約 {batches} バッチ",
+  "@renameBatchEstimate": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStopGenerating": "生成を中断",
+  "renameRegenerate": "再生成",
+  "renameFilterAll": "すべて",
+  "renameFilterConflicts": "衝突",
+  "renameFilterSkipped": "スキップ済み",
+  "renameNextConflict": "次の衝突へ",
+  "renameEmptyTitle": "まだ提案はありません",
+  "renameEmptyDesc": "左でモデルと命名テンプレートを選び「提案を生成」を押します。{files} 件は {size} 件ずつ {batches} バッチで送信され、生成中でも順に確認できます。",
+  "@renameEmptyDesc": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "renameGenerating": "提案を生成中",
+  "renameBatchProgress": "バッチ {batch} / {total} · {done} / {files} 件生成",
+  "@renameBatchProgress": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStop": "中断",
+  "renameProducedHint": "{count} 件生成済み · 生成完了までは確認のみ",
+  "@renameProducedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSuggestionsCount": "提案 {count} 件",
+  "@renameSuggestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSkippedCount": "スキップ {count} 件",
+  "@renameSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameEditingHint": "{row} 行目を編集中",
+  "@renameEditingHint": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "renameConflictsPending": "未解決の衝突 {count} 件 · 適用されません",
+  "@renameConflictsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyCount": "{count} 件を適用",
+  "@renameApplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyShort": "{count} 件適用",
+  "@renameApplyShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameDuplicateBadge": "名前が重複",
+  "renameSkippedBadge": "スキップ",
+  "renameRenamedBadge": "改名済み",
+  "renameActionAccept": "採用",
+  "renameActionSkip": "スキップ",
+  "renameActionEdit": "名前を編集",
+  "renameActionUndo": "スキップを取消",
+  "renameConflictAutoRename": "改名",
+  "renameNoModelsTitle": "利用できるモデルがありません",
+  "renameNoModelsDesc": "一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。",
+  "renameGoToSettings": "設定を開く",
+  "renameBatchFailed": "バッチ {batch} が失敗 · {reason}",
+  "@renameBatchFailed": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "renameBatchFailedDesc": "生成済みの {kept} 件は保持されます。未生成の {missing} 件は個別に再試行できます",
+  "@renameBatchFailedDesc": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "renameRetryBatch": "再試行",
+  "renameEditConfig": "設定を編集",
+  "renameTemplateLabel": "テンプレート",
+  "pasteMovingCount": "{count} 件を移動中",
+  "@pasteMovingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCopyingCount": "{count} 件をコピー中",
+  "@pasteCopyingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteRoute": "{from_} → {to}",
+  "@pasteRoute": {
+    "placeholders": {
+      "from_": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCrossVolumeTag": "別ドライブ",
+  "pasteProgressItems": "{done} / {total} 件 · {doneSize} / {totalSize}",
+  "@pasteProgressItems": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "doneSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCurrentFile": "{name} をコピー中",
+  "@pasteCurrentFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteRollbackNote": "別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。",
+  "pasteRunInBackground": "バックグラウンドで実行",
+  "pasteMoveDone": "移動が完了しました",
+  "pasteCopyDone": "コピーが完了しました",
+  "pasteElapsed": "{count} 件 · {time}",
+  "@pasteElapsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteStatSucceeded": "成功",
+  "pasteStatSkipped": "スキップ（対象と同じ）",
+  "pasteStatFailed": "失敗",
+  "pasteRetry": "再試行",
+  "pasteKeptInStaging": "失敗・スキップの {kept} 件はステージングに残り、成功した {moved} 件は取り除かれました。",
+  "@pasteKeptInStaging": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "moved": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteExportLog": "ログを書き出す",
+  "pasteLogSaved": "ログを {path} に保存しました",
+  "@pasteLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsSubtitle": "{count} / {total} 件が {folder} の既存名と衝突",
+  "@conflictsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsIntro": "項目ごとに選ぶか、下のチェックで残りにも同じ選択を適用します。",
+  "conflictPending": "未決定",
+  "conflictWriteInfo": "書き込み · {size} · {date}",
+  "@conflictWriteInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictExistingInfo": "既存 · {size} · {date}",
+  "@conflictExistingInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictOverwriteWarning": "対象のファイルは置き換えられます。元に戻せません",
+  "conflictApplyRestCount": "残り {count} 件にも同じ選択を適用",
+  "@conflictApplyRestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictApplyAndContinue": "適用して続行",
+  "dragMoveHint": "{count} 件を移動 · Ctrl でコピー",
+  "@dragMoveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showInSystem": "システムで表示",
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",

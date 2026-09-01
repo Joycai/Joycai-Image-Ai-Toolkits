@@ -7,11 +7,16 @@
 // flutter_test_config.dart always overwrites and always passes. See
 // docs/ui-screenshot-harness.md.
 
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+
+import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
@@ -54,6 +59,170 @@ void main() {
         screen: screen,
         size: kShotSizes.last,
         brightness: Brightness.dark,
+      );
+    });
+  }
+
+  // The staging area only exists once something is in it, and the loop above
+  // photographs the browser with an empty one — which is the one state of this
+  // feature that shows none of it. `12a` is the frame being implemented here,
+  // so it gets its own shot with the panel populated, a destination named, a
+  // selection live (floating bar) and a mark that has gone stale.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · staging @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'staging',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          final browser = appState.fileBrowserState;
+          final staging = appState.fileStagingState;
+
+          staging.clear();
+          staging.addAll(browser.filteredFiles.take(5));
+          // A mark whose file is gone — the panel has to keep showing it.
+          staging.addAll(<BrowserFile>[
+            BrowserFile(
+              path: p.join(env.browserDir.path, 'deleted_by_someone_else.png'),
+              name: 'deleted_by_someone_else.png',
+              category: FileCategory.image,
+              size: 0,
+              modified: DateTime(2026, 8, 1),
+            ),
+          ]);
+          // `runAsync`, not a bare await: `before` runs inside the test's
+          // fake-async zone, where a real `File.stat()` never completes and the
+          // await hangs the shot forever.
+          await tester.runAsync(() => staging.revalidate());
+          staging.setDestination(env.browserDir.path);
+
+          browser.clearSelection();
+          for (final BrowserFile f in browser.filteredFiles.skip(4).take(3)) {
+            browser.toggleSelection(f);
+          }
+        },
+      );
+    });
+  }
+
+  // `B1a 12c` — the panel with nothing in it. The loop above photographs the
+  // browser with an empty staging area, but the panel only opens itself once
+  // something is staged, so the state that has to explain the feature was the
+  // one state never rendered.
+  testWidgets('fileBrowser · stagingEmpty @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'stagingEmpty',
+      before: (WidgetTester tester) async {
+        final AppState appState = AppState();
+        appState.fileStagingState.clear();
+        appState.fileStagingState.setDestination(null);
+        appState.fileBrowserState.clearSelection();
+      },
+      after: (WidgetTester tester) async {
+        await tester.tap(find.byTooltip('暂存区').first);
+        for (int i = 0; i < 4; i++) {
+          await tester.pump(const Duration(milliseconds: 120));
+        }
+      },
+    );
+  });
+
+  // `B1a 12e` — the conflict pass. Needs a real name collision on disk, so the
+  // fixture grows a subfolder holding a file the staged one would land on.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · conflicts @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'conflicts',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          final browser = appState.fileBrowserState;
+          final staging = appState.fileStagingState;
+
+          final Directory dest =
+              Directory(p.join(env.browserDir.path, 'archive'));
+          // Real files, written through runAsync: `before` runs in the
+          // fake-async zone where dart:io never completes.
+          await tester.runAsync(() async {
+            if (!await dest.exists()) await dest.create();
+            for (final BrowserFile f in browser.filteredFiles.take(3)) {
+              await File(p.join(dest.path, f.name)).writeAsString('older copy');
+            }
+          });
+
+          staging.clear();
+          staging.addAll(browser.filteredFiles.take(3));
+          staging.setDestination(dest.path);
+          browser.clearSelection();
+        },
+        after: (WidgetTester tester) async {
+          await tester.runAsync(() async {
+            await tester.tap(find.text('移动到此'));
+            await tester.pump();
+            await Future<void>.delayed(const Duration(milliseconds: 500));
+          });
+          for (int i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
+      );
+    });
+  }
+
+  // The AI rename dialog — `B4 13a`. Its result states need a live model, so
+  // only the opened-but-not-generated frame is reachable here; that still
+  // covers the shell, the config column, the result toolbar, the empty state
+  // and the footer, which is where the redraw's shape lives.
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('fileBrowser · aiRename @ desktop ${brightness.name}', (
+      WidgetTester tester,
+    ) async {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.fileBrowser,
+        size: kShotSizes.last,
+        brightness: brightness,
+        suffix: 'aiRename',
+        before: (WidgetTester tester) async {
+          final AppState appState = AppState();
+          appState.fileStagingState.clear();
+          final browser = appState.fileBrowserState;
+          browser.clearSelection();
+          for (final BrowserFile f in browser.filteredFiles.take(6)) {
+            browser.toggleSelection(f);
+          }
+        },
+        after: (WidgetTester tester) async {
+          // Tap and wait inside `runAsync`: the dialog reads its templates and
+          // its last-used model out of the database on mount, and that real
+          // I/O never completes in the fake-async zone. Without it the shot
+          // photographs an empty config column and calls it the design.
+          await tester.runAsync(() async {
+            await tester.tap(find.text('AI 批量重命名').last);
+            await tester.pump();
+            await Future<void>.delayed(const Duration(milliseconds: 600));
+          });
+          for (int i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
+        },
       );
     });
   }

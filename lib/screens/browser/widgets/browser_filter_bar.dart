@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../core/design_tokens.dart';
 import '../../../core/responsive.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/browser_file.dart';
@@ -138,10 +139,17 @@ class BrowserFilterBar extends StatelessWidget {
         SizedBox(
           width: 96,
           child: SliderTheme(
-            data: const SliderThemeData(
+            // Neutral, not the accent. `11a` draws the size slider in the
+            // grey family: it reports a preference, not a selection, and the
+            // accent on this bar already belongs to the chosen category chip.
+            data: SliderThemeData(
               trackHeight: 3,
-              thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: RoundSliderOverlayShape(overlayRadius: 14),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              activeTrackColor: colorScheme.outline,
+              inactiveTrackColor: colorScheme.surfaceContainerHighest,
+              thumbColor: colorScheme.onSurfaceVariant,
+              overlayColor: colorScheme.onSurface.withValues(alpha: 0.08),
             ),
             child: Slider(
               value: state.thumbnailSize,
@@ -199,20 +207,21 @@ class _CategoryPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final color = selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant;
 
     return Material(
-      color: selected ? colorScheme.primary.withValues(alpha: 0.15) : Colors.transparent,
-      borderRadius: BorderRadius.circular(appButtonRadius),
+      color: selected ? colorScheme.accentTint : Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: InkWell(
         onTap: selected ? null : onTap,
-        borderRadius: BorderRadius.circular(appButtonRadius),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         child: Container(
+          height: 30,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(appButtonRadius),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(
-              color: selected ? colorScheme.primary.withValues(alpha: 0.6) : Colors.transparent,
+              color: selected ? colorScheme.accentRing : Colors.transparent,
             ),
           ),
           child: Row(

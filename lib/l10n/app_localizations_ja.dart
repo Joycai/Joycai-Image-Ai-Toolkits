@@ -148,6 +148,435 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fileBrowserAndroidHint => 'ファイルの整理には、デバイスのファイルマネージャーをご使用ください。';
 
   @override
+  String get stagingArea => 'ステージング';
+
+  @override
+  String get addToStaging => 'ステージングに追加';
+
+  @override
+  String addToStagingCount(int count) {
+    return 'ステージングに追加 · $count 件';
+  }
+
+  @override
+  String get removeFromStaging => 'ステージングから削除';
+
+  @override
+  String get stagedBadge => 'ステージ済み';
+
+  @override
+  String get clearStaging => 'クリア';
+
+  @override
+  String get stagingEmptyTitle => 'ステージングは空です';
+
+  @override
+  String get stagingEmptyDesc =>
+      'ファイルを選んで「ステージングに追加」を押すと、動かしたいファイルをここに控えます。印を付けるだけで、ファイルは移動しません。フォルダーの切り替え、絞り込み、アプリの再起動でも消えません。';
+
+  @override
+  String get stagingTarget => '対象フォルダー';
+
+  @override
+  String get stagingNoTarget => '対象フォルダー未選択';
+
+  @override
+  String get stagingTargetHint =>
+      '左カラムのフォルダーを右クリックして「ここへ移動 / コピー」を選ぶか、ファイルをフォルダーへドラッグします。';
+
+  @override
+  String stagingRestored(int count) {
+    return '前回のセッションから $count 件を復元';
+  }
+
+  @override
+  String get stagingSameAsTarget => '対象と同じ · 実行時にスキップ';
+
+  @override
+  String get stagingMissing => '見つかりません';
+
+  @override
+  String stagingClearMissing(int count) {
+    return '無効な項目を削除 ($count)';
+  }
+
+  @override
+  String get moveHere => 'ここへ移動';
+
+  @override
+  String get copyHere => 'ここへコピー';
+
+  @override
+  String moveCountHere(int count) {
+    return '$count 件をここへ移動';
+  }
+
+  @override
+  String copyCountHere(int count) {
+    return '$count 件をここへコピー';
+  }
+
+  @override
+  String stagingItemsCount(int count) {
+    return '$count 件';
+  }
+
+  @override
+  String stagingMissingCount(int count) {
+    return '$count 件が無効';
+  }
+
+  @override
+  String stagingAtTargetCount(int count) {
+    return '$count 件は対象内（スキップ）';
+  }
+
+  @override
+  String get onlyThisDirectory => 'このフォルダーのみ表示';
+
+  @override
+  String pasteMoveTitle(String folder) {
+    return '$folder へ移動';
+  }
+
+  @override
+  String pasteCopyTitle(String folder) {
+    return '$folder へコピー';
+  }
+
+  @override
+  String get pasteNoDestination => '先に対象フォルダーを指定してください';
+
+  @override
+  String get pasteDestinationGone => '対象フォルダーが存在しません';
+
+  @override
+  String get pasteNothingToDo => '転送するファイルがありません';
+
+  @override
+  String get conflictsTitle => '名前の衝突を解決';
+
+  @override
+  String get conflictSkip => 'スキップ';
+
+  @override
+  String get conflictOverwrite => '上書き';
+
+  @override
+  String get conflictRename => '両方保持';
+
+  @override
+  String get conflictApplyToRest => '残りすべてに適用';
+
+  @override
+  String get conflictReasonExists => '対象フォルダーに既にあります';
+
+  @override
+  String get conflictReasonDuplicate => '別のステージング項目と同名';
+
+  @override
+  String get conflictReasonSameLocation => 'すでにこのフォルダー内';
+
+  @override
+  String get conflictReasonMissing => '元ファイルが存在しません';
+
+  @override
+  String get pasteCrossVolumeWarning =>
+      '別ドライブへの転送: コピー後に削除するため時間がかかり、途中で止まることがあります。';
+
+  @override
+  String get pasteRunningMove => '移動中…';
+
+  @override
+  String get pasteRunningCopy => 'コピー中…';
+
+  @override
+  String pasteProgressCount(int done, int total) {
+    return '$done / $total';
+  }
+
+  @override
+  String get pasteDoneTitle => '転送が完了しました';
+
+  @override
+  String get pasteCancelledTitle => '転送を中止しました';
+
+  @override
+  String pasteSucceededCount(int count) {
+    return '$count 件成功';
+  }
+
+  @override
+  String pasteSkippedCount(int count) {
+    return '$count 件スキップ';
+  }
+
+  @override
+  String pasteFailedCount(int count) {
+    return '$count 件失敗';
+  }
+
+  @override
+  String renameSubtitleFiles(int files, int dirs) {
+    return '$files 件 · $dirs フォルダー';
+  }
+
+  @override
+  String get renameSectionModel => 'モデル';
+
+  @override
+  String get renameSectionTemplate => '命名テンプレート';
+
+  @override
+  String get renameSectionInstructions => '追加指示';
+
+  @override
+  String renameBatchEstimate(int files, int size, int batches) {
+    return '$files 件 · 1 バッチ $size 件 · 約 $batches バッチ';
+  }
+
+  @override
+  String get renameStopGenerating => '生成を中断';
+
+  @override
+  String get renameRegenerate => '再生成';
+
+  @override
+  String get renameFilterAll => 'すべて';
+
+  @override
+  String get renameFilterConflicts => '衝突';
+
+  @override
+  String get renameFilterSkipped => 'スキップ済み';
+
+  @override
+  String get renameNextConflict => '次の衝突へ';
+
+  @override
+  String get renameEmptyTitle => 'まだ提案はありません';
+
+  @override
+  String renameEmptyDesc(int files, int batches, int size) {
+    return '左でモデルと命名テンプレートを選び「提案を生成」を押します。$files 件は $size 件ずつ $batches バッチで送信され、生成中でも順に確認できます。';
+  }
+
+  @override
+  String get renameGenerating => '提案を生成中';
+
+  @override
+  String renameBatchProgress(int batch, int total, int done, int files) {
+    return 'バッチ $batch / $total · $done / $files 件生成';
+  }
+
+  @override
+  String get renameStop => '中断';
+
+  @override
+  String renameProducedHint(int count) {
+    return '$count 件生成済み · 生成完了までは確認のみ';
+  }
+
+  @override
+  String renameSuggestionsCount(int count) {
+    return '提案 $count 件';
+  }
+
+  @override
+  String renameSkippedCount(int count) {
+    return 'スキップ $count 件';
+  }
+
+  @override
+  String renameEditingHint(int row) {
+    return '$row 行目を編集中';
+  }
+
+  @override
+  String renameConflictsPending(int count) {
+    return '未解決の衝突 $count 件 · 適用されません';
+  }
+
+  @override
+  String renameApplyCount(int count) {
+    return '$count 件を適用';
+  }
+
+  @override
+  String renameApplyShort(int count) {
+    return '$count 件適用';
+  }
+
+  @override
+  String get renameDuplicateBadge => '名前が重複';
+
+  @override
+  String get renameSkippedBadge => 'スキップ';
+
+  @override
+  String get renameRenamedBadge => '改名済み';
+
+  @override
+  String get renameActionAccept => '採用';
+
+  @override
+  String get renameActionSkip => 'スキップ';
+
+  @override
+  String get renameActionEdit => '名前を編集';
+
+  @override
+  String get renameActionUndo => 'スキップを取消';
+
+  @override
+  String get renameConflictAutoRename => '改名';
+
+  @override
+  String get renameNoModelsTitle => '利用できるモデルがありません';
+
+  @override
+  String get renameNoModelsDesc =>
+      '一括リネームには画像を読んで名前を作るチャットモデルが必要です。まず「モデルとチャネル」で利用可能なチャネルを設定してください。';
+
+  @override
+  String get renameGoToSettings => '設定を開く';
+
+  @override
+  String renameBatchFailed(int batch, String reason) {
+    return 'バッチ $batch が失敗 · $reason';
+  }
+
+  @override
+  String renameBatchFailedDesc(int kept, int missing) {
+    return '生成済みの $kept 件は保持されます。未生成の $missing 件は個別に再試行できます';
+  }
+
+  @override
+  String get renameRetryBatch => '再試行';
+
+  @override
+  String get renameEditConfig => '設定を編集';
+
+  @override
+  String get renameTemplateLabel => 'テンプレート';
+
+  @override
+  String pasteMovingCount(int count) {
+    return '$count 件を移動中';
+  }
+
+  @override
+  String pasteCopyingCount(int count) {
+    return '$count 件をコピー中';
+  }
+
+  @override
+  String pasteRoute(String from_, String to) {
+    return '$from_ → $to';
+  }
+
+  @override
+  String get pasteCrossVolumeTag => '別ドライブ';
+
+  @override
+  String pasteProgressItems(
+    int done,
+    int total,
+    String doneSize,
+    String totalSize,
+  ) {
+    return '$done / $total 件 · $doneSize / $totalSize';
+  }
+
+  @override
+  String pasteCurrentFile(String name) {
+    return '$name をコピー中';
+  }
+
+  @override
+  String get pasteRollbackNote =>
+      '別ドライブへの移動はコピー後に削除します。中止すると進行中のコピーは削除され、元ファイルはそのまま残ります。';
+
+  @override
+  String get pasteRunInBackground => 'バックグラウンドで実行';
+
+  @override
+  String get pasteMoveDone => '移動が完了しました';
+
+  @override
+  String get pasteCopyDone => 'コピーが完了しました';
+
+  @override
+  String pasteElapsed(int count, String time) {
+    return '$count 件 · $time';
+  }
+
+  @override
+  String get pasteStatSucceeded => '成功';
+
+  @override
+  String get pasteStatSkipped => 'スキップ（対象と同じ）';
+
+  @override
+  String get pasteStatFailed => '失敗';
+
+  @override
+  String get pasteRetry => '再試行';
+
+  @override
+  String pasteKeptInStaging(int kept, int moved) {
+    return '失敗・スキップの $kept 件はステージングに残り、成功した $moved 件は取り除かれました。';
+  }
+
+  @override
+  String get pasteExportLog => 'ログを書き出す';
+
+  @override
+  String pasteLogSaved(String path) {
+    return 'ログを $path に保存しました';
+  }
+
+  @override
+  String conflictsSubtitle(int count, int total, String folder) {
+    return '$count / $total 件が $folder の既存名と衝突';
+  }
+
+  @override
+  String get conflictsIntro => '項目ごとに選ぶか、下のチェックで残りにも同じ選択を適用します。';
+
+  @override
+  String get conflictPending => '未決定';
+
+  @override
+  String conflictWriteInfo(String size, String date) {
+    return '書き込み · $size · $date';
+  }
+
+  @override
+  String conflictExistingInfo(String size, String date) {
+    return '既存 · $size · $date';
+  }
+
+  @override
+  String get conflictOverwriteWarning => '対象のファイルは置き換えられます。元に戻せません';
+
+  @override
+  String conflictApplyRestCount(int count) {
+    return '残り $count 件にも同じ選択を適用';
+  }
+
+  @override
+  String get conflictApplyAndContinue => '適用して続行';
+
+  @override
+  String dragMoveHint(int count) {
+    return '$count 件を移動 · Ctrl でコピー';
+  }
+
+  @override
+  String get showInSystem => 'システムで表示';
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override

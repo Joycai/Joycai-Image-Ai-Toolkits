@@ -64,6 +64,462 @@
   "fileBrowserDesktopOnlyDesc": "由于操作系统沙盒限制，高级文件浏览器和批量重命名功能仅在桌面版本上可用。",
   "fileBrowseriOSHint": "请使用系统文件 App 来管理您的生成图像。",
   "fileBrowserAndroidHint": "请使用设备的文件管理器来整理文件。",
+  "stagingArea": "暂存区",
+  "addToStaging": "加入暂存区",
+  "addToStagingCount": "加入暂存区 · {count} 项",
+  "@addToStagingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromStaging": "从暂存区移除",
+  "stagedBadge": "已暂存",
+  "clearStaging": "清空",
+  "stagingEmptyTitle": "暂存区是空的",
+  "stagingEmptyDesc": "选中文件后点「加入暂存区」，把要搬运的文件先记在这里 —— 只做标记，不移动任何文件。切换目录、筛选或重启应用都不会丢。",
+  "stagingTarget": "目标目录",
+  "stagingNoTarget": "未选择目标目录",
+  "stagingTargetHint": "在左栏文件夹上右键「移动 / 复制到此」，或把文件直接拖到文件夹上。",
+  "stagingRestored": "已从上次会话恢复 {count} 项",
+  "@stagingRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingSameAsTarget": "与目标相同 · 执行时跳过",
+  "stagingMissing": "已失效",
+  "stagingClearMissing": "清理失效项 ({count})",
+  "@stagingClearMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveHere": "移动到此",
+  "copyHere": "复制到此",
+  "moveCountHere": "移动 {count} 项到此",
+  "@moveCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCountHere": "复制 {count} 项到此",
+  "@copyCountHere": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingItemsCount": "{count} 项",
+  "@stagingItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingMissingCount": "{count} 项失效",
+  "@stagingMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stagingAtTargetCount": "{count} 项已在目标目录（将跳过）",
+  "@stagingAtTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onlyThisDirectory": "仅看此目录",
+  "pasteMoveTitle": "移动到 {folder}",
+  "@pasteMoveTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCopyTitle": "复制到 {folder}",
+  "@pasteCopyTitle": {
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteNoDestination": "请先指定目标目录",
+  "pasteDestinationGone": "目标目录已不存在",
+  "pasteNothingToDo": "没有可搬运的文件",
+  "conflictsTitle": "处理同名冲突",
+  "conflictSkip": "跳过",
+  "conflictOverwrite": "覆盖",
+  "conflictRename": "自动改名",
+  "conflictApplyToRest": "对全部剩余项应用",
+  "conflictReasonExists": "目标目录中已存在",
+  "conflictReasonDuplicate": "另一个暂存文件同名",
+  "conflictReasonSameLocation": "已在此目录中",
+  "conflictReasonMissing": "源文件已不存在",
+  "pasteCrossVolumeWarning": "跨盘搬运：先复制再删除，耗时更久，且可能中途停下。",
+  "pasteRunningMove": "正在移动…",
+  "pasteRunningCopy": "正在复制…",
+  "pasteProgressCount": "{done} / {total}",
+  "@pasteProgressCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteDoneTitle": "搬运完成",
+  "pasteCancelledTitle": "搬运已取消",
+  "pasteSucceededCount": "成功 {count} 项",
+  "@pasteSucceededCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteSkippedCount": "跳过 {count} 项",
+  "@pasteSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteFailedCount": "失败 {count} 项",
+  "@pasteFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSubtitleFiles": "{files} 个文件 · 来自 {dirs} 个目录",
+  "@renameSubtitleFiles": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "dirs": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSectionModel": "模型",
+  "renameSectionTemplate": "命名模板",
+  "renameSectionInstructions": "补充指令",
+  "renameBatchEstimate": "{files} 个文件 · 每批 {size} · 预计 {batches} 批",
+  "@renameBatchEstimate": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStopGenerating": "中断生成",
+  "renameRegenerate": "重新生成",
+  "renameFilterAll": "全部",
+  "renameFilterConflicts": "冲突",
+  "renameFilterSkipped": "已跳过",
+  "renameNextConflict": "下一个冲突",
+  "renameEmptyTitle": "还没有建议",
+  "renameEmptyDesc": "在左侧选好模型与命名模板后点「生成建议」。{files} 个文件将按每批 {size} 个分 {batches} 批提交，生成过程中即可开始逐项审阅。",
+  "@renameEmptyDesc": {
+    "placeholders": {
+      "files": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      },
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "renameGenerating": "正在生成建议",
+  "renameBatchProgress": "第 {batch} / {total} 批 · 已产出 {done} / {files} 条",
+  "@renameBatchProgress": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "renameStop": "中断",
+  "renameProducedHint": "已产出 {count} 条 · 生成完成前可先审阅，不能应用",
+  "@renameProducedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSuggestionsCount": "{count} 条建议",
+  "@renameSuggestionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameSkippedCount": "已跳过 {count}",
+  "@renameSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameEditingHint": "第 {row} 行正在就地改名",
+  "@renameEditingHint": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      }
+    }
+  },
+  "renameConflictsPending": "{count} 个冲突待处理 · 未决冲突不会被应用",
+  "@renameConflictsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyCount": "应用 {count} 项重命名",
+  "@renameApplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameApplyShort": "应用 {count} 项",
+  "@renameApplyShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "renameDuplicateBadge": "重名",
+  "renameSkippedBadge": "已跳过",
+  "renameRenamedBadge": "已改名",
+  "renameActionAccept": "接受",
+  "renameActionSkip": "跳过",
+  "renameActionEdit": "就地改名",
+  "renameActionUndo": "撤销跳过",
+  "renameConflictAutoRename": "改名",
+  "renameNoModelsTitle": "没有可用的语言模型",
+  "renameNoModelsDesc": "批量重命名需要一个对话模型来阅读图片并生成名字。请先在「模型与渠道」里配置至少一个可用渠道。",
+  "renameGoToSettings": "前往设置",
+  "renameBatchFailed": "第 {batch} 批请求失败 · {reason}",
+  "@renameBatchFailed": {
+    "placeholders": {
+      "batch": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "renameBatchFailedDesc": "已产出的 {kept} 条建议已保留，未生成的 {missing} 个文件可单独重试",
+  "@renameBatchFailedDesc": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "renameRetryBatch": "重试此批",
+  "renameEditConfig": "编辑配置",
+  "renameTemplateLabel": "模板",
+  "pasteMovingCount": "正在移动 {count} 项",
+  "@pasteMovingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteCopyingCount": "正在复制 {count} 项",
+  "@pasteCopyingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteRoute": "{from_} → {to}",
+  "@pasteRoute": {
+    "placeholders": {
+      "from_": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCrossVolumeTag": "跨磁盘",
+  "pasteProgressItems": "{done} / {total} 项 · {doneSize} / {totalSize}",
+  "@pasteProgressItems": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "doneSize": {
+        "type": "String"
+      },
+      "totalSize": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteCurrentFile": "正在复制 {name}",
+  "@pasteCurrentFile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteRollbackNote": "跨磁盘移动按「复制 + 删除」执行；取消时已复制的文件将被回滚删除，源文件保持不动。",
+  "pasteRunInBackground": "后台运行",
+  "pasteMoveDone": "移动完成",
+  "pasteCopyDone": "复制完成",
+  "pasteElapsed": "{count} 项 · 用时 {time}",
+  "@pasteElapsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pasteStatSucceeded": "成功",
+  "pasteStatSkipped": "跳过（与目标相同）",
+  "pasteStatFailed": "失败",
+  "pasteRetry": "重试",
+  "pasteKeptInStaging": "失败与跳过的 {kept} 项仍保留在暂存区，成功的 {moved} 项已自动移出。",
+  "@pasteKeptInStaging": {
+    "placeholders": {
+      "kept": {
+        "type": "int"
+      },
+      "moved": {
+        "type": "int"
+      }
+    }
+  },
+  "pasteExportLog": "导出日志",
+  "pasteLogSaved": "日志已保存到 {path}",
+  "@pasteLogSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsSubtitle": "{count} / {total} 项与目标 {folder} 重名",
+  "@conflictsSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictsIntro": "逐项选择处理方式；也可以勾选下方「对剩余项应用」。",
+  "conflictPending": "待定",
+  "conflictWriteInfo": "写入 · {size} · {date}",
+  "@conflictWriteInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictExistingInfo": "已有 · {size} · {date}",
+  "@conflictExistingInfo": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "conflictOverwriteWarning": "目标文件将被替换，不可撤销",
+  "conflictApplyRestCount": "对剩余 {count} 项应用同一选择",
+  "@conflictApplyRestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictApplyAndContinue": "应用并继续",
+  "dragMoveHint": "移动 {count} 项 · 按住 Ctrl 复制",
+  "@dragMoveHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showInSystem": "在系统中显示",
   "appTitle": "Joycai Image AI 工具集",
   "save": "保存",
   "update": "更新",
