@@ -31,6 +31,7 @@ import 'file_staging_state.dart';
 import 'gallery_state.dart';
 import 'log_state.dart';
 import 'workbench_ui_state.dart';
+import 'task_list_state.dart';
 
 part 'app_state_data.dart';
 part 'app_state_workbench.dart';
@@ -51,6 +52,7 @@ class AppState extends ChangeNotifier {
   /// survives those is the entire feature.
   final FileStagingState fileStagingState = FileStagingState();
   final WorkbenchUIState workbenchUIState = WorkbenchUIState();
+  final TaskListState taskListState = TaskListState();
 
   /// Execution log. Pointedly absent from the listener wiring below: log lines
   /// arrive one per streamed chunk, and forwarding them here would rebuild
@@ -398,6 +400,8 @@ class AppState extends ChangeNotifier {
             SafetySettings.normalize(jsonDecode(savedSafety) as Map);
       } catch (_) {/* keep defaults on malformed data */}
     }
+
+    await taskListState.load();
 
     notificationsEnabled = (await _db.getSetting('notifications_enabled') ?? 'true') == 'true';
     isConsoleExpanded = (await _db.getSetting('is_console_expanded') ?? 'false') == 'true';

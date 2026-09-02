@@ -144,5 +144,26 @@
   "statusShortRunning": "执行",
   "statusShortPending": "待",
   "statusShortDone": "完成",
-  "statusShortFailed": "失败"
+  "statusShortFailed": "失败",
+  "sortNewestFirst": "最新在前",
+  "sortOldestFirst": "最早在前",
+  "sortSection": "排序",
+  "pinActiveTasks": "执行中与待处理置顶",
+  "restByCreatedTime": "其余按创建时间",
+  "createdAt": "创建",
+  "cancelledByUser": "已取消 · 手动",
+  "noRunningTasks": "没有执行中的任务",
+  "noPendingTasks": "没有待处理的任务",
+  "noCompletedTasks": "没有已完成的任务",
+  "noFailedTasks": "没有失败的任务",
+  "filteredEmptyHint": "当前筛选下没有任务，其余 {count} 个任务未受影响。",
+  "@filteredEmptyHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewAllTasks": "查看全部",
+  "durationLabel": "用时"
 }

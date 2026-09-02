@@ -2446,6 +2446,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statusShortFailed => '失败';
 
   @override
+  String get sortNewestFirst => '最新在前';
+
+  @override
+  String get sortOldestFirst => '最早在前';
+
+  @override
+  String get sortSection => '排序';
+
+  @override
+  String get pinActiveTasks => '执行中与待处理置顶';
+
+  @override
+  String get restByCreatedTime => '其余按创建时间';
+
+  @override
+  String get createdAt => '创建';
+
+  @override
+  String get cancelledByUser => '已取消 · 手动';
+
+  @override
+  String get noRunningTasks => '没有执行中的任务';
+
+  @override
+  String get noPendingTasks => '没有待处理的任务';
+
+  @override
+  String get noCompletedTasks => '没有已完成的任务';
+
+  @override
+  String get noFailedTasks => '没有失败的任务';
+
+  @override
+  String filteredEmptyHint(int count) {
+    return '当前筛选下没有任务，其余 $count 个任务未受影响。';
+  }
+
+  @override
+  String get viewAllTasks => '查看全部';
+
+  @override
+  String get durationLabel => '用时';
+
+  @override
   String get setupWizardTitle => '欢迎设置向导';
 
   @override
@@ -6134,6 +6178,50 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get statusShortFailed => '失敗';
+
+  @override
+  String get sortNewestFirst => '最新在前';
+
+  @override
+  String get sortOldestFirst => '最早在前';
+
+  @override
+  String get sortSection => '排序';
+
+  @override
+  String get pinActiveTasks => '執行中與待處理置頂';
+
+  @override
+  String get restByCreatedTime => '其餘按建立時間';
+
+  @override
+  String get createdAt => '建立';
+
+  @override
+  String get cancelledByUser => '已取消 · 手動';
+
+  @override
+  String get noRunningTasks => '沒有執行中的任務';
+
+  @override
+  String get noPendingTasks => '沒有待處理的任務';
+
+  @override
+  String get noCompletedTasks => '沒有已完成的任務';
+
+  @override
+  String get noFailedTasks => '沒有失敗的任務';
+
+  @override
+  String filteredEmptyHint(int count) {
+    return '目前篩選下沒有任務，其餘 $count 個任務未受影響。';
+  }
+
+  @override
+  String get viewAllTasks => '查看全部';
+
+  @override
+  String get durationLabel => '用時';
 
   @override
   String get setupWizardTitle => '歡迎設定';

@@ -132,6 +132,17 @@ void main() {
     expect(withResults, greaterThan(0));
     expect(withSourcesOnly, greaterThan(0), reason: 'fixture no longer exercises the empty slot');
 
+    // The list opens newest-first (`C1 11a`), which puts the finished rows —
+    // the ones with pictures — at the bottom, past a 900px viewport. Scroll
+    // to them; the builder keeps enough above in its cache extent that the
+    // empty slots stay on screen too.
+    final Finder list = find.ancestor(
+      of: find.byType(DashedBorder).first,
+      matching: find.byType(ListView),
+    );
+    await tester.drag(list, const Offset(0, -1000));
+    await tester.pumpAndSettle();
+
     // Every image on screen belongs to a task that produced one.
     expect(find.byType(Image), findsAtLeast(withResults));
     expect(find.byType(DashedBorder), findsWidgets);

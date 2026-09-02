@@ -4570,6 +4570,90 @@ abstract class AppLocalizations {
   /// **'fail'**
   String get statusShortFailed;
 
+  /// No description provided for @sortNewestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortNewestFirst;
+
+  /// No description provided for @sortOldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get sortOldestFirst;
+
+  /// No description provided for @sortSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sortSection;
+
+  /// No description provided for @pinActiveTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin running & pending'**
+  String get pinActiveTasks;
+
+  /// No description provided for @restByCreatedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest by creation time'**
+  String get restByCreatedTime;
+
+  /// No description provided for @createdAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get createdAt;
+
+  /// No description provided for @cancelledByUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled · manual'**
+  String get cancelledByUser;
+
+  /// No description provided for @noRunningTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No running tasks'**
+  String get noRunningTasks;
+
+  /// No description provided for @noPendingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending tasks'**
+  String get noPendingTasks;
+
+  /// No description provided for @noCompletedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed tasks'**
+  String get noCompletedTasks;
+
+  /// No description provided for @noFailedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No failed tasks'**
+  String get noFailedTasks;
+
+  /// No description provided for @filteredEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches this filter. The other {count} tasks are unaffected.'**
+  String filteredEmptyHint(int count);
+
+  /// No description provided for @viewAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get viewAllTasks;
+
+  /// No description provided for @durationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed'**
+  String get durationLabel;
+
   /// No description provided for @setupWizardTitle.
   ///
   /// In en, this message translates to:

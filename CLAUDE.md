@@ -21,7 +21,7 @@ flutter test test/screenshots/component_gallery_test.dart  # every component, 8 
 ```
 lib/
   main.dart             # app entry, MultiProvider root, NavigationRail (desktop) / NavigationBar+Drawer (mobile)
-  state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState
+  state/                # ChangeNotifier classes: AppState, GalleryState, FileBrowserState, DownloaderState, WorkbenchUIState, TaskListState
   services/             # all business logic
     llm/                # LLMService facade + LLMDispatcher; three-layer API stack (see architecture note)
       protocols/        # layer 1 — wire formats: openai_chat/images/videos, xai_images/videos, gemini_chat/imagen/veo, anthropic_chat, midjourney, dashscope_images
@@ -31,6 +31,7 @@ lib/
     database_service.dart         # SQLite via sqflite/sqflite_common_ffi
     database_migrations.dart      # schema migrations
     task_queue_service.dart       # concurrency queue, Stream<TaskEvent>, ETA estimation
+    task_list_ordering.dart       # task-list filter/sort: created_at is the only key; pinning is a switch over it
     prompt_optimizer_agent.dart   # Prompt Assistant agent: tool loop, modes (system prompt / knowledge base), session persistence + compaction
     knowledge_base_service.dart   # local knowledge-base folder access (README.md entry, paged reads)
     llm/context_budget.dart       # sole interpreter of a model's context window (see architecture note below)

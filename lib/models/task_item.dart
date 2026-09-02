@@ -43,6 +43,14 @@ class TaskItem {
   DateTime? endTime;
   double? progress; // 0.0 to 1.0 (transient)
 
+  /// When the task was queued. The task list's one sort key (`C1 11a`).
+  ///
+  /// Distinct from [startTime], which is when execution began: a task that
+  /// waited behind others, or was retried, starts long after it was created —
+  /// and [retryTask] clears [startTime] but never this, so a re-run keeps its
+  /// place in the list instead of jumping to the top.
+  final DateTime createdAt;
+
   /// The wire surface that issued a long-running (video) job's operation id
   /// (a `WireProtocol.id` string), recorded once the submit is accepted. The
   /// poll loop passes it back so routing follows the job's provenance, not the
@@ -72,8 +80,10 @@ class TaskItem {
     this.endTime,
     this.progress,
     this.operationSurface,
+    DateTime? createdAt,
   })  : logs = logs ?? [],
-        resultPaths = resultPaths ?? [];
+        resultPaths = resultPaths ?? [],
+        createdAt = createdAt ?? DateTime.now();
 
   /// Marks where [addLog] dropped the head of an over-long log.
   static const String logTruncationMarker = '[…] earlier lines dropped (log capped at $maxLogLines lines)';
@@ -109,7 +119,24 @@ class TaskItem {
       'start_time': startTime?.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
       'operation_surface': operationSurface,
+      'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  /// Rows written before schema v39 have no `created_at`. The migration
+  /// backfills it, but a backup restored from an older build lands its rows
+  /// in the current schema without going through that step — so fall through
+  /// the timestamps the row does have, in the order that best approximates
+  /// when it was queued, rather than sinking the reload.
+  static DateTime _decodeCreatedAt(Map<String, dynamic> map) {
+    for (final key in const ['created_at', 'start_time', 'end_time']) {
+      final raw = map[key];
+      if (raw is String && raw.isNotEmpty) {
+        final parsed = DateTime.tryParse(raw);
+        if (parsed != null) return parsed;
+      }
+    }
+    return DateTime.now();
   }
 
   /// Tasks written before schema v31 have no `logs` value, and a hand-edited or
@@ -141,6 +168,7 @@ class TaskItem {
       startTime: map['start_time'] != null ? DateTime.parse(map['start_time']) : null,
       endTime: map['end_time'] != null ? DateTime.parse(map['end_time']) : null,
       operationSurface: map['operation_surface'] as String?,
+      createdAt: _decodeCreatedAt(map),
     );
   }
 }

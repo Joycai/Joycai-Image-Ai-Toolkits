@@ -380,8 +380,11 @@ Future<void> _seedKnowledgeBase(DatabaseService db, FixtureEnv env) async {
 // ---------------------------------------------------------------------------
 
 Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) async {
-  // TaskQueueService._loadRecentTasks only reads the newest 10 rows, so keep
-  // the total at or under that or the older ones simply never appear.
+  // Creation times run oldest to newest down this list and are what the
+  // screen sorts by (`C1 11a`); each is set a minute before its start so the
+  // two clocks never coincide in a screenshot. The pending pair is the newest,
+  // which is the ordinary shape of a queue — and the shape the old
+  // status-first sort hid.
   final List<TaskItem> tasks = <TaskItem>[
     _task(
       id: 'fixture-task-1',
@@ -391,6 +394,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       imagePaths: images.source.take(2).toList(),
       resultPaths: images.output.take(2).toList(),
       startedMinutesAgo: 240,
+      createdMinutesAgo: 241,
       durationSeconds: 47,
     ),
     _task(
@@ -401,6 +405,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       imagePaths: images.source.skip(2).take(1).toList(),
       resultPaths: images.output.skip(2).take(1).toList(),
       startedMinutesAgo: 180,
+      createdMinutesAgo: 181,
       durationSeconds: 31,
     ),
     _task(
@@ -410,6 +415,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       status: TaskStatus.failed,
       imagePaths: images.source.skip(3).take(1).toList(),
       startedMinutesAgo: 120,
+      createdMinutesAgo: 121,
       durationSeconds: 12,
       error: '429 RESOURCE_EXHAUSTED: 配额已用尽，请稍后重试',
     ),
@@ -421,6 +427,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       status: TaskStatus.completed,
       imagePaths: images.source.skip(4).take(1).toList(),
       startedMinutesAgo: 90,
+      createdMinutesAgo: 91,
       durationSeconds: 186,
     ),
     _task(
@@ -431,6 +438,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       status: TaskStatus.cancelled,
       imagePaths: const <String>[],
       startedMinutesAgo: 60,
+      createdMinutesAgo: 61,
       durationSeconds: 8,
     ),
     _task(
@@ -439,6 +447,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       modelIndex: 0,
       status: TaskStatus.pending,
       imagePaths: images.source.skip(5).take(3).toList(),
+      createdMinutesAgo: 5,
     ),
     _task(
       id: 'fixture-task-7',
@@ -446,6 +455,7 @@ Future<void> _seedTasks(DatabaseService db, _Catalog catalog, _Images images) as
       modelIndex: 0,
       status: TaskStatus.pending,
       imagePaths: images.source.skip(8).take(2).toList(),
+      createdMinutesAgo: 3,
     ),
   ];
 
@@ -463,12 +473,14 @@ TaskItem _task({
   TaskType type = TaskType.imageProcess,
   List<String> resultPaths = const <String>[],
   int? startedMinutesAgo,
+  required int createdMinutesAgo,
   int durationSeconds = 0,
   String? error,
 }) {
   final DateTime? start = startedMinutesAgo == null
       ? null
       : kSeedNow.subtract(Duration(minutes: startedMinutesAgo));
+  final DateTime created = kSeedNow.subtract(Duration(minutes: createdMinutesAgo));
   final TaskItem task = TaskItem(
     id: id,
     type: type,
@@ -483,6 +495,7 @@ TaskItem _task({
     },
     status: status,
     resultPaths: List<String>.from(resultPaths),
+    createdAt: created,
     startTime: start,
     endTime: start?.add(Duration(seconds: durationSeconds)),
     logs: _logLines(status, error),
