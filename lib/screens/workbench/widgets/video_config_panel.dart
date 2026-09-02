@@ -12,6 +12,7 @@ import '../../../models/prompt_history_entry.dart';
 import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
+import '../../../widgets/app_dropdown.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../core/design_tokens.dart';
 import '../../../widgets/app_labelled_field.dart';
@@ -367,17 +368,20 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final overridesResolution = caps.videoParams.any((p) => p.key == 'resolution');
     final overridesAspectRatio = caps.videoParams.any((p) => p.key == 'aspectRatio');
 
+    // [AppDropdown]s, drawn as the same box as the channel and model pickers
+    // in the row above — `17b` gives the card's four fields one geometry. As
+    // raw `DropdownButtonFormField`s these two were ten pixels taller than the
+    // pickers, in a larger face, under a filled triangle.
     final sharedControls = <Widget>[
       if (!overridesResolution)
         Expanded(
           child: AppLabelledField(
             label: l10n.videoResolution,
-            child: DropdownButtonFormField<VeoResolution>(
-              initialValue: appState.lastVideoResolution,
-              items: VeoResolution.values.map((v) => DropdownMenuItem(
-                value: v,
-                child: Text(v.value),
-              )).toList(),
+            child: AppDropdown<VeoResolution>(
+              value: appState.lastVideoResolution,
+              items: [
+                for (final v in VeoResolution.values) AppDropdownItem(value: v, label: v.value),
+              ],
               onChanged: (v) => appState.updateVideoConfig(resolution: v),
             ),
           ),
@@ -387,12 +391,11 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         Expanded(
           child: AppLabelledField(
             label: l10n.videoAspectRatio,
-            child: DropdownButtonFormField<VeoAspectRatio>(
-              initialValue: appState.lastVideoAspectRatio,
-              items: VeoAspectRatio.values.map((v) => DropdownMenuItem(
-                value: v,
-                child: Text(v.value),
-              )).toList(),
+            child: AppDropdown<VeoAspectRatio>(
+              value: appState.lastVideoAspectRatio,
+              items: [
+                for (final v in VeoAspectRatio.values) AppDropdownItem(value: v, label: v.value),
+              ],
               onChanged: (v) => appState.updateVideoConfig(aspectRatio: v),
             ),
           ),
@@ -530,17 +533,15 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
     final current = appState.getVideoParam(modelId, spec);
     switch (spec.control) {
       case ParamControl.dropdown:
-        return DropdownButton<String>(
-          isExpanded: true,
+        // The same box as the shared resolution and aspect fields above it —
+        // this was a bare [DropdownButton] over a hand-drawn rule, the one
+        // control in the card with no box at all.
+        return AppDropdown<String>(
           value: current,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-          underline: Container(height: 1, color: colorScheme.outlineVariant),
-          items: spec.options
-              .map((o) => DropdownMenuItem(
-                    value: o.value,
-                    child: Text(_videoOptionLabel(l10n, spec.key, o.value)),
-                  ))
-              .toList(),
+          items: [
+            for (final o in spec.options)
+              AppDropdownItem(value: o.value, label: _videoOptionLabel(l10n, spec.key, o.value)),
+          ],
           onChanged: (v) {
             if (v != null) appState.setVideoParam(modelId, spec.key, v);
           },

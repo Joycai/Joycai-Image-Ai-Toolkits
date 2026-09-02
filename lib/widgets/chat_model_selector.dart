@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
@@ -11,8 +10,15 @@ import 'searchable_picker.dart';
 
 /// How a [ChatModelSelector] presents itself.
 enum ChatModelSelectorStyle {
-  /// A bordered form field, for a selector standing among other inputs in a
-  /// dialog or toolbar.
+  /// The bare picker, drawn as every other select-like field in the app —
+  /// whatever [ThemeData.inputDecorationTheme] gives it, or the caller's own
+  /// [ChatModelSelector.decoration]. It carries no caption of its own: `B4`
+  /// heads it with the dialog's section label, `B2` notches one into the
+  /// toolbar field, and each caller draws the one it wants.
+  ///
+  /// This used to float a Material `labelText` inside the box, which made it
+  /// the one select in the app wearing a label no other field had, at a
+  /// height no other field had either.
   field,
 
   /// A card with the label above the value, for a selector that is a section
@@ -29,6 +35,14 @@ class ChatModelSelector extends StatelessWidget {
   final List<LLMModel>? models;
   final ChatModelSelectorStyle style;
 
+  /// [ChatModelSelectorStyle.field] only: the box to draw instead of the
+  /// theme's. The downloader's toolbar passes its own so this field is the
+  /// same object as the two beside it.
+  final InputDecoration? decoration;
+
+  /// [ChatModelSelectorStyle.field] only: see [SearchablePickerField.expands].
+  final bool expands;
+
   const ChatModelSelector({
     super.key,
     required this.selectedModelId,
@@ -37,6 +51,8 @@ class ChatModelSelector extends StatelessWidget {
     this.prefixIcon,
     this.models,
     this.style = ChatModelSelectorStyle.field,
+    this.decoration,
+    this.expands = false,
   });
 
   @override
@@ -84,6 +100,7 @@ class ChatModelSelector extends StatelessWidget {
       dialogTitle: label ?? l10n.model,
       dialogIcon: prefixIcon ?? Icons.memory_outlined,
       enabled: chatModels.isNotEmpty,
+      expands: !isCard && expands,
       decoration: isCard
           ? InputDecoration(
               labelText: label ?? l10n.model,
@@ -107,15 +124,7 @@ class ChatModelSelector extends StatelessWidget {
               ),
               contentPadding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
             )
-          : InputDecoration(
-              labelText: label ?? l10n.model,
-              // The selector's corner matches the buttons it sits beside, rather
-              // than Material's default 4 — a toolbar of mixed radii reads as
-              // mixed parts.
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(appButtonRadius)),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
+          : decoration ?? const InputDecoration(),
     );
   }
 }

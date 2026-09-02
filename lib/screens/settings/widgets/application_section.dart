@@ -16,11 +16,17 @@ import '../../../services/llm/llm_debug_logger.dart';
 import '../../../services/prompt_optimizer_agent.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dropdown.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_section.dart';
 import '../../../widgets/app_setting_row.dart';
 import '../../../widgets/app_switch.dart';
 import '../../../widgets/searchable_picker.dart';
+
+/// Wide enough for the longest value either of the assistant rows offers
+/// ("100", "100%") beside the chevron; the row's trailing slot is unbounded,
+/// and an expanded dropdown needs a width from somewhere.
+const double _settingDropdownWidth = 112;
 
 class ApplicationSection extends StatefulWidget {
   const ApplicationSection({super.key});
@@ -161,38 +167,42 @@ class _ApplicationSectionState extends State<ApplicationSection> {
         AppSettingRow(
           title: l10n.assistantRetention,
           description: l10n.assistantRetentionDesc,
-          trailing: DropdownButton<int>(
-            value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
-            underline: const SizedBox.shrink(),
-            items: const [10, 20, 50, 100]
-                .map((n) => DropdownMenuItem(value: n, child: Text('$n')))
-                .toList(),
-            onChanged: (v) async {
-              if (v == null) return;
-              await _db.saveSetting(PromptOptimizerAgent.retentionSettingKey, '$v');
-              setState(() => _assistantRetention = v);
-            },
+          // Boxed like every other select in the app; as bare
+          // `DropdownButton`s these two were a number and a triangle floating
+          // in the row.
+          trailing: SizedBox(
+            width: _settingDropdownWidth,
+            child: AppDropdown<int>(
+              value: const [10, 20, 50, 100].contains(_assistantRetention) ? _assistantRetention : 20,
+              items: [
+                for (final n in const [10, 20, 50, 100]) AppDropdownItem(value: n, label: '$n'),
+              ],
+              onChanged: (v) async {
+                if (v == null) return;
+                await _db.saveSetting(PromptOptimizerAgent.retentionSettingKey, '$v');
+                setState(() => _assistantRetention = v);
+              },
+            ),
           ),
         ),
         AppSettingRow(
           title: l10n.assistantContextRatio,
           description: l10n.assistantContextRatioDesc,
-          trailing: DropdownButton<double>(
-            value: _contextRatios.contains(_assistantContextRatio)
-                ? _assistantContextRatio
-                : PromptOptimizerAgent.defaultContextRatio,
-            underline: const SizedBox.shrink(),
-            items: _contextRatios
-                .map((r) => DropdownMenuItem(
-                      value: r,
-                      child: Text('${(r * 100).round()}%'),
-                    ))
-                .toList(),
-            onChanged: (v) async {
-              if (v == null) return;
-              await _db.saveSetting(PromptOptimizerAgent.contextRatioSettingKey, '$v');
-              setState(() => _assistantContextRatio = v);
-            },
+          trailing: SizedBox(
+            width: _settingDropdownWidth,
+            child: AppDropdown<double>(
+              value: _contextRatios.contains(_assistantContextRatio)
+                  ? _assistantContextRatio
+                  : PromptOptimizerAgent.defaultContextRatio,
+              items: [
+                for (final r in _contextRatios) AppDropdownItem(value: r, label: '${(r * 100).round()}%'),
+              ],
+              onChanged: (v) async {
+                if (v == null) return;
+                await _db.saveSetting(PromptOptimizerAgent.contextRatioSettingKey, '$v');
+                setState(() => _assistantContextRatio = v);
+              },
+            ),
           ),
         ),
         AppSettingRow(

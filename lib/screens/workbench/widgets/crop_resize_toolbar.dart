@@ -13,6 +13,7 @@ import '../../../services/image_processing_service.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dropdown.dart';
 import '../../../widgets/app_setting_row.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
@@ -617,10 +618,15 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
 
     var width = 28.0 + field(l10n.width) + 6 + 28 + 6 + field(l10n.height) + 10;
     if (samplingLabel) width += _textWidth(l10n.cropResizeResample, textTheme.bodySmall) + 6;
-    // The dropdown sizes to its widest option, plus its box and chevron.
-    width += 38 + _textWidth('Lanczos', textTheme.bodyMedium);
+    width += _samplingDropdownWidth(textTheme);
     return width;
   }
+
+  /// The resample dropdown is boxed to its widest option: the theme's 12px
+  /// insets each side, the 16px chevron with 8 before it, a 1px border each
+  /// side. The same number sizes the control and budgets for it, so the fit
+  /// prediction cannot drift from what is drawn.
+  double _samplingDropdownWidth(TextTheme textTheme) => 50 + _textWidth('Lanczos', textTheme.bodySmall);
 
   /// Material's own icon-button padding, spelled out so the estimate tracks
   /// what the buttons actually render: text 12/16, filled and outlined 16/24,
@@ -852,28 +858,22 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
           ),
           const SizedBox(width: 6),
         ],
-        Container(
-          height: appButtonMinHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(appButtonRadius),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: uiState.samplingMethod,
-              isDense: true,
-              icon: Icon(Icons.expand_more, size: 16, color: colorScheme.onSurfaceVariant),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
-              items: const [
-                DropdownMenuItem(value: 'lanczos', child: Text("Lanczos")),
-                DropdownMenuItem(value: 'cubic', child: Text("Cubic")),
-                DropdownMenuItem(value: 'linear', child: Text("Linear")),
-                DropdownMenuItem(value: 'nearest', child: Text("Nearest")),
-              ],
-              onChanged: (v) => uiState.setSamplingMethod(v!),
-            ),
+        // The library's dropdown, pinned to the toolbar's control height.
+        // This was a hand-drawn box around a bare DropdownButton — the right
+        // shape, but the one select in the app not drawn by the widget that
+        // draws the rest.
+        SizedBox(
+          width: _samplingDropdownWidth(Theme.of(context).textTheme),
+          child: AppDropdown<String>(
+            height: appButtonMinHeight,
+            value: uiState.samplingMethod,
+            items: const [
+              AppDropdownItem(value: 'lanczos', label: 'Lanczos'),
+              AppDropdownItem(value: 'cubic', label: 'Cubic'),
+              AppDropdownItem(value: 'linear', label: 'Linear'),
+              AppDropdownItem(value: 'nearest', label: 'Nearest'),
+            ],
+            onChanged: (v) => uiState.setSamplingMethod(v!),
           ),
         ),
       ],

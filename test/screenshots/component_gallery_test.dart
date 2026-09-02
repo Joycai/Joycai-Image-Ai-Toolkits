@@ -36,6 +36,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_empty_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
@@ -178,10 +179,10 @@ class _Gallery extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(labelText: '下拉'),
-                    initialValue: 0,
-                    items: const [DropdownMenuItem(value: 0, child: Text('Lanczos'))],
+                  child: AppDropdown<int>(
+                    label: '下拉',
+                    value: 0,
+                    items: const [AppDropdownItem(value: 0, label: 'Lanczos')],
                     onChanged: (_) {},
                   ),
                 ),

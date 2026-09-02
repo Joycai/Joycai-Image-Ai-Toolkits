@@ -12,6 +12,7 @@ import '../../services/llm/llm_dispatcher.dart';
 import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../app_button.dart';
+import '../app_dropdown.dart';
 import '../app_card.dart';
 import '../app_dialog.dart';
 import '../app_labelled_field.dart';
@@ -755,22 +756,18 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
             padding: const EdgeInsets.only(top: 8),
             child: AppLabelledField(
               label: l10n.reasoningEffort,
-              child: DropdownButtonFormField<String>(
-                // '' stands in for null: a nullable-valued form field cannot
-                // distinguish "user picked default" from "no selection".
-                initialValue: reasoningEffort ?? '',
-                isExpanded: true,
+              child: AppDropdown<String>(
+                // '' stands in for null: a null value on a dropdown means "no
+                // selection", not "the default was picked".
+                value: reasoningEffort ?? '',
                 items: [
-                  for (final (value, label) in _effortOptions)
-                    DropdownMenuItem(value: value, child: Text(label)),
+                  for (final (value, label) in _effortOptions) AppDropdownItem(value: value, label: label),
                 ],
                 onChanged: (v) =>
                     setState(() => reasoningEffort = (v == null || v.isEmpty) ? null : v),
-                decoration: InputDecoration(
-                  helperText: l10n.reasoningEffortDesc,
-                  helperMaxLines: 3,
-                  prefixIcon: const Icon(Icons.lightbulb_outlined),
-                ),
+                prefixIcon: Icons.lightbulb_outlined,
+                helperText: l10n.reasoningEffortDesc,
+                helperMaxLines: 3,
               ),
             ),
           ),
@@ -799,20 +796,15 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         const SizedBox(height: 12),
         AppLabelledField(
           label: l10n.feeGroup,
-          child: DropdownButtonFormField<int>(
-          initialValue: feeGroupId,
-          isExpanded: true,
-          items: [
-            DropdownMenuItem(
-              value: null,
-              child: Text(l10n.noFeeGroup, style: TextStyle(color: colorScheme.outline)),
-            ),
-            ...appState.allPricingGroups.map((g) => DropdownMenuItem(value: g.id!, child: Text(g.name))),
-          ],
-          onChanged: (v) => setState(() => feeGroupId = v),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.money_outlined),
-          ),
+          child: AppDropdown<int?>(
+            value: feeGroupId,
+            items: [
+              // A real answer — no group — drawn as the absence it is.
+              AppDropdownItem(value: null, label: l10n.noFeeGroup, muted: true),
+              for (final g in appState.allPricingGroups) AppDropdownItem(value: g.id!, label: g.name),
+            ],
+            onChanged: (v) => setState(() => feeGroupId = v),
+            prefixIcon: Icons.money_outlined,
           ),
         ),
       ],
@@ -984,7 +976,6 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
 
   Widget _protocolSection(ColorScheme colorScheme) {
     final l10n = widget.l10n;
-    final textTheme = Theme.of(context).textTheme;
     final menu = _protocolMenu;
     final active = _activePin;
     final auto = menu.isEmpty ? null : menu.first;
@@ -1008,45 +999,30 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
         const SizedBox(height: 12),
         AppLabelledField(
           label: l10n.interfaceProtocol,
-          child: DropdownButtonFormField<String>(
-            // Re-created whenever the pair changes: a form field only reads
-            // initialValue once, and the menu it belongs to changes with the
-            // channel and the id.
-            key: ValueKey(
-                'wire-protocol-${_selectedChannel(widget.appState)?.type}-${idCtrl.text.trim()}'),
+          // Controlled, so the menu can change with the channel and the id
+          // without the field having to be re-keyed to forget an old value.
+          child: AppDropdown<String>(
             // '' stands in for auto, same convention as the effort dropdown.
             // A stale stored value also *displays* as auto (that is how it
             // routes) — the helper line below says why.
-            initialValue: active?.id ?? '',
-            isExpanded: true,
+            value: active?.id ?? '',
             items: [
-              DropdownMenuItem(value: '', child: Text(l10n.protocolAuto)),
-              for (final p in menu)
-                DropdownMenuItem(
-                    value: p.id, child: Text(wireProtocolLabel(l10n, p))),
-            ],
-            // The closed field answers "which one actually runs": the auto
-            // entry names its resolution (18a: 自动 · 当前解析为 X).
-            selectedItemBuilder: (context) => [
-              Text(
-                auto == null
+              // The closed field answers "which one actually runs": the auto
+              // entry names its resolution (18a: 自动 · 当前解析为 X).
+              AppDropdownItem(
+                value: '',
+                label: l10n.protocolAuto,
+                selectedLabel: auto == null
                     ? l10n.protocolAuto
                     : l10n.protocolAutoResolved(wireProtocolLabel(l10n, auto)),
-                overflow: TextOverflow.ellipsis,
               ),
-              for (final p in menu)
-                Text(wireProtocolLabel(l10n, p),
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium
-                        ?.copyWith(color: colorScheme.primary)),
+              for (final p in menu) AppDropdownItem(value: p.id, label: wireProtocolLabel(l10n, p)),
             ],
             onChanged: (v) => setState(
                 () => wireProtocol = (v == null || v.isEmpty) ? null : v),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.alt_route_outlined),
-              helperText: helper,
-              helperMaxLines: 3,
-            ),
+            prefixIcon: Icons.alt_route_outlined,
+            helperText: helper,
+            helperMaxLines: 3,
           ),
         ),
       ],

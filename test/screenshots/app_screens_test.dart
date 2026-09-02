@@ -305,6 +305,47 @@ void main() {
     });
   }
 
+  // The same panel with the model card open — `16a` draws it that way, and
+  // the two pickers plus the parameter rows under them are the only place in
+  // the app the channel/model pair is drawn side by side, so a collapsed card
+  // photographs none of what that frame settles. Same for `A6`'s video card.
+  for (final _ModelCardShot card in const <_ModelCardShot>[
+    _ModelCardShot(tab: 0, suffix: 'modelCard'),
+    _ModelCardShot(tab: 5, suffix: 'videoModelCard'),
+  ]) {
+    for (final Brightness brightness in Brightness.values) {
+      testWidgets('workbench · ${card.suffix} @ desktop ${brightness.name}', (
+        WidgetTester tester,
+      ) async {
+        await shoot(
+          tester,
+          env: env,
+          screen: AppScreen.workbench,
+          size: kShotSizes.last,
+          brightness: brightness,
+          suffix: card.suffix,
+          before: (_) async {
+            AppState().setWorkbenchTab(card.tab);
+            AppState().isConsoleExpanded = false;
+          },
+          after: (WidgetTester tester) async {
+            if (card.tab == 0) {
+              AppState().clearImageSelection();
+              seedImageSelection(AppState());
+              for (int p = 0; p < 5; p++) {
+                await tester.pump(const Duration(milliseconds: 120));
+              }
+            }
+            await tester.tap(find.text('模型选择').last);
+            for (int p = 0; p < 5; p++) {
+              await tester.pump(const Duration(milliseconds: 120));
+            }
+          },
+        );
+      });
+    }
+  }
+
   // A queue row opened. `C1 10i` is most of what a row can show — the log, the
   // parameters, the outputs, the way out — and all of it is behind a tap, so
   // the loop above only ever photographs the collapsed third of this screen.
@@ -787,3 +828,10 @@ final List<_WorkbenchTab> _workbenchTabs = <_WorkbenchTab>[
   // the frame slots are the point and they are empty without one.
   _WorkbenchTab('video', 5, (AppState s) => seedImageSelection(s), seedOnSettled: true),
 ];
+
+class _ModelCardShot {
+  const _ModelCardShot({required this.tab, required this.suffix});
+
+  final int tab;
+  final String suffix;
+}

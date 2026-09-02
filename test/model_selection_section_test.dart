@@ -6,6 +6,7 @@ import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_channel.dart';
 import 'package:joycai_image_ai_toolkits/models/llm_model.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/model_selection_section.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
 
 /// Covers the two ways the workbench's model card can disagree with itself.
 ///
@@ -107,9 +108,10 @@ void main() {
     expect(writes, ['8:1'], reason: 'the pick should have been handed to the caller');
 
     // Now switch models before the write lands: `stored` is deliberately left
-    // at 'not_set', so `initialValue` is unchanged between the two builds and
-    // a reused FormField would keep its own '8:1' — a value absent from the
-    // narrow table, which the inner DropdownButton asserts on.
+    // at 'not_set', so a dropdown that owned its own value (the FormField
+    // this row used to be) would keep '8:1' across the two builds — a value
+    // absent from the narrow table, which the inner DropdownButton asserts
+    // on. The controlled [AppDropdown] shows the resolver's answer instead.
     await tester.pumpWidget(host(
       models: [wide, narrow],
       selectedModelDbId: narrow.id,
@@ -138,7 +140,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      expect(find.byType(AppDropdown<String>), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -151,7 +153,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(DropdownButtonFormField<String>), findsWidgets);
+      expect(find.byType(AppDropdown<String>), findsWidgets);
     });
   });
 }

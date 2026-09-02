@@ -13,6 +13,7 @@ import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../api_key_field.dart';
 import '../app_labelled_field.dart';
+import '../app_dropdown.dart';
 import '../app_button.dart';
 import '../app_setting_row.dart';
 import '../app_dialog.dart';
@@ -437,9 +438,8 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
       children: [
         AppLabelledField(
           label: l10n.protocolField,
-          child: DropdownButtonFormField<String>(
-            initialValue: type,
-            isExpanded: true,
+          child: AppDropdown<String>(
+            value: type,
             // The four protocol families, plus this channel's own stored type
             // when it is not one of them. The old field mixed protocol and
             // supplier into one list and went stale every time a vendor was
@@ -447,28 +447,25 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
             // half names only the wire format (spec D2 `16d` note B).
             items: [
               for (final family in ProtocolFamily.values)
-                DropdownMenuItem(
+                AppDropdownItem(
                   value: genericVendorForFamily(family),
-                  child: Text(protocolFamilyLabel(l10n, family)),
+                  label: protocolFamilyLabel(l10n, family),
                 ),
               // A stored type that is a *specific* supplier — dashscope-api,
               // newapi-gemini, the deprecated official-google-genai-api — has
               // to be representable or the dropdown asserts and the channel
               // cannot be opened at all. It is listed as itself, last.
               if (!_typeIsGenericFamily)
-                DropdownMenuItem(
+                AppDropdownItem(
                   value: type,
                   // Named by family *and* supplier: the family alone would read
                   // identically to the generic item above it, and the supplier
                   // alone would hide which wire format this channel speaks.
-                  child: Text(
-                    [
-                      protocolFamilyLabel(l10n, Vendors.byId(type).family),
-                      channelTypeLabel(l10n, type),
-                      if (isDeprecatedChannelType(type)) l10n.deprecatedLabel,
-                    ].join(' · '),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  label: [
+                    protocolFamilyLabel(l10n, Vendors.byId(type).family),
+                    channelTypeLabel(l10n, type),
+                    if (isDeprecatedChannelType(type)) l10n.deprecatedLabel,
+                  ].join(' · '),
                 ),
             ],
             onChanged: (v) => setState(() {
@@ -478,16 +475,9 @@ class _ChannelEditDialogState extends State<ChannelEditDialog> {
               // unless the address still says otherwise.
               _presetId = presetForChannelType(type, endpoint: epCtrl.text)?.id;
             }),
-            decoration: const InputDecoration(
-              // The spec's glyph is a hexagon — a wire format as a package
-              // shape — not Material's circle-square-triangle "category".
-              prefixIcon: Icon(Icons.hexagon_outlined, size: 20),
-            ),
-            // The style applies to the popup menu items too — it must carry an
-            // explicit color or the items render with the wrong default.
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+            // The spec's glyph is a hexagon — a wire format as a package
+            // shape — not Material's circle-square-triangle "category".
+            prefixIcon: Icons.hexagon_outlined,
           ),
         ),
         const SizedBox(height: 12),

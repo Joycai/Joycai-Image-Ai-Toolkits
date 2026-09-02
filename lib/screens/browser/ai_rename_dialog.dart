@@ -445,12 +445,15 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // No section label above this one: [ChatModelSelector] always draws
-          // its own, so the heading `13a` puts here is already on the field.
-          // One combined picker rather than the frame's separate channel and
-          // model boxes: this is the app's shared chat-model control and it
-          // already names both, so splitting it here would make this the one
-          // screen that picks a model differently.
+          // `13a` heads the column with a section label and draws the boxes
+          // under it as every other select in the design: the outline, the
+          // control radius, one chevron. One combined picker rather than the
+          // frame's separate channel and model boxes: this is the app's shared
+          // chat-model control and it already names both, so splitting it
+          // here would make this the one screen that picks a model
+          // differently.
+          _SectionLabel(l10n.model),
+          const SizedBox(height: 8),
           ChatModelSelector(
             selectedModelId: _selectedModelDbId,
             onChanged: (v) => setState(() => _selectedModelDbId = v),
