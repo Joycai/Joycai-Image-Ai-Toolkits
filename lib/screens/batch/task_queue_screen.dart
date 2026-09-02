@@ -15,21 +15,21 @@ import '../../core/design_tokens.dart';
 import '../../core/responsive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/task_queue_service.dart';
+import '../../services/task_list_ordering.dart';
 import '../../state/app_state.dart';
+import '../../state/task_list_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/dashed_border.dart';
 import '../../widgets/scroll_edge_fade.dart';
 import '../../widgets/smooth_progress.dart';
 import '../../widgets/app_section_label.dart';
 import '../../core/file_utils.dart';
-import '../../widgets/app_dialog.dart';
 import '../../widgets/app_icon_button.dart';
 import '../../widgets/app_run_console.dart';
+import '../../widgets/app_segmented_control.dart';
+import '../../widgets/app_switch.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/dialogs/task_log_dialog.dart';
-
-/// Which subset of tasks the list shows.
-enum _TaskFilter { all, running, pending, done, failed }
 
 /// The colour a status is spoken in, shared by a task's accent stripe, its
 /// leading tile and its count in the header — so one glance down the stripes
@@ -63,7 +63,9 @@ class TaskQueueScreen extends StatefulWidget {
 }
 
 class _TaskQueueScreenState extends State<TaskQueueScreen> {
-  _TaskFilter _filter = _TaskFilter.all;
+  /// Whether the phone layout's more-menu is up, so the button that opened it
+  /// can wear the selected skin while it is (`C1 11c` note 03).
+  bool _menuOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +74,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     // the 500ms progress tick rebuilt every screen in the app, not just this
     // one. `appState` stays on as the handle the helpers below reach through.
     context.watch<TaskQueueService>();
+    // Filter, sort and pinning live in [TaskListState], not in this State —
+    // the screen is rebuilt from scratch on every visit, and a filter kept
+    // here was back on 「全部」 each time.
+    final listState = context.watch<TaskListState>();
     final appState = Provider.of<AppState>(context, listen: false);
     final l10n = AppLocalizations.of(context)!;
 
@@ -81,10 +87,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     final inBottomSheet = context.findAncestorWidgetOfExactType<BottomSheet>() != null;
 
     if (Responsive.isNarrow(context)) {
-      return _buildMobileLayout(context, appState, l10n, inBottomSheet: inBottomSheet);
+      return _buildMobileLayout(context, appState, listState, l10n, inBottomSheet: inBottomSheet);
     }
 
-    final content = _buildDesktopContent(context, appState, l10n);
+    final content = _buildDesktopContent(context, appState, listState, l10n);
     if (inBottomSheet) return content;
 
     return Scaffold(
@@ -94,44 +100,17 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
     );
   }
 
-  // ── Shared: filtering + status-priority sorting ─────────────────────────────
-
-  List<TaskItem> _visibleTasks(List<TaskItem> queue) {
-    // Newest first within each group.
-    final reversed = queue.reversed.toList();
-
-    final filtered = switch (_filter) {
-      _TaskFilter.all => reversed,
-      _TaskFilter.running => reversed.where((t) => t.status == TaskStatus.processing).toList(),
-      _TaskFilter.pending => reversed.where((t) => t.status == TaskStatus.pending).toList(),
-      _TaskFilter.done => reversed.where((t) => t.status == TaskStatus.completed).toList(),
-      _TaskFilter.failed => reversed
-          .where((t) => t.status == TaskStatus.failed || t.status == TaskStatus.cancelled)
-          .toList(),
-    };
-
-    int priority(TaskItem t) => switch (t.status) {
-          TaskStatus.processing => 0,
-          TaskStatus.pending => 1,
-          _ => 2,
-        };
-
-    // Stable sort: running pinned on top, then queued, then history.
-    final sorted = List<TaskItem>.from(filtered);
-    sorted.sort((a, b) => priority(a).compareTo(priority(b)));
-    return sorted;
-  }
-
   // ── Mobile layout ───────────────────────────────────────────────────────────
 
   Widget _buildMobileLayout(
     BuildContext context,
     AppState appState,
+    TaskListState listState,
     AppLocalizations l10n, {
     required bool inBottomSheet,
   }) {
     final queue = appState.taskQueue.queue;
-    final tasks = _visibleTasks(queue);
+    final tasks = listState.arrange(queue);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -151,21 +130,14 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
             _buildHeaderSummary(queue, l10n, colorScheme, compact: true),
           ],
         ),
+        // One button. `11c` folds the bulk actions into its menu beside the
+        // sort and pin settings, and drops the refresh: the queue notifies
+        // this screen itself, so that button only ever redrew what was
+        // already current.
         actions: [
-          IconButton(
-            onPressed: () => appState.taskQueue.refreshQueue(),
-            icon: const Icon(Icons.refresh),
-            tooltip: l10n.refresh,
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (val) => _handleBulkAction(val, appState.taskQueue),
-            itemBuilder: (context) => [
-              PopupMenuItem(value: 'clear_completed', child: Text(l10n.clearCompleted)),
-              PopupMenuItem(value: 'cancel_pending', child: Text(l10n.cancelAllPending)),
-              const PopupMenuDivider(),
-              PopupMenuItem(value: 'clear_all', enabled: queue.isNotEmpty, child: Text(l10n.clearAll)),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _buildMobileMoreButton(context, appState, listState, queue, l10n),
           ),
         ],
       ),
@@ -173,27 +145,253 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
         children: [
           SizedBox(
             height: 58,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: _buildFilterPills(context, queue, l10n),
+            // A fade at the right edge instead of `10k`'s 「›」 (`11c` note
+            // 02): with the sort tools out of this strip the five pills all
+            // but fit, and what is cut off says "continues" better softened
+            // than pointed at.
+            child: ScrollEdgeFade(
+              axis: Axis.horizontal,
+              extent: 36,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: _buildFilterPills(context, queue, listState, l10n),
+              ),
             ),
           ),
           Expanded(
             child: tasks.isEmpty
-                ? _buildEmptyState(colorScheme, l10n)
-                : _buildTaskList(tasks, const EdgeInsets.fromLTRB(12, 2, 12, 12), isMobile: true),
+                ? _buildEmptyOrFiltered(context, listState, queue, l10n)
+                : _buildTaskList(
+                    tasks,
+                    const EdgeInsets.fromLTRB(12, 2, 12, 12),
+                    l10n,
+                    isMobile: true,
+                  ),
           ),
         ],
       ),
     );
   }
 
+  /// The phone's more button.
+  ///
+  /// `showMenu` from an [AppIconButton] rather than a [PopupMenuButton]: the
+  /// menu has to be told apart from the row kebabs under it, which `11c`
+  /// does by giving its button the pills' selected skin while it is open —
+  /// and a [PopupMenuButton] never says whether it is.
+  Widget _buildMobileMoreButton(
+    BuildContext context,
+    AppState appState,
+    TaskListState listState,
+    List<TaskItem> queue,
+    AppLocalizations l10n,
+  ) {
+    return Builder(
+      builder: (buttonContext) => AppIconButton(
+        icon: Icons.more_vert,
+        tooltip: l10n.more,
+        selected: _menuOpen,
+        onPressed: () => _openMobileMenu(buttonContext, appState, listState, queue, l10n),
+      ),
+    );
+  }
+
+  /// `11c` note 01: a sort section of two single-choice rows, the pin switch,
+  /// a hairline, then the two bulk actions the desktop header carries.
+  Future<void> _openMobileMenu(
+    BuildContext buttonContext,
+    AppState appState,
+    TaskListState listState,
+    List<TaskItem> queue,
+    AppLocalizations l10n,
+  ) async {
+    final colorScheme = Theme.of(buttonContext).colorScheme;
+    final textTheme = Theme.of(buttonContext).textTheme;
+
+    final button = buttonContext.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(buttonContext).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    final queued = queue.where((t) => t.status == TaskStatus.pending).length;
+    final finished = queue.where((t) => !isActiveTask(t)).length;
+
+    // The chosen order wears the pills' selected fill and a check; the other
+    // is plain. Radios would say the same at twice the weight, in a menu
+    // whose other rows carry none.
+    PopupMenuItem<String> choice({
+      required String value,
+      required IconData icon,
+      required String label,
+      required bool selected,
+    }) {
+      return PopupMenuItem<String>(
+        value: value,
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: selected ? colorScheme.accentTint : null,
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: AppSize.iconMd,
+                color: selected ? colorScheme.onAccentTint : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: selected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (selected)
+                Icon(Icons.check, size: AppSize.iconSm, color: colorScheme.onAccentTint),
+            ],
+          ),
+        ),
+      );
+    }
+
+    PopupMenuItem<String> action({
+      required String value,
+      required IconData icon,
+      required String label,
+      required bool enabled,
+      Color? color,
+    }) {
+      final ink = !enabled
+          ? colorScheme.onSurface.withValues(alpha: AppAlpha.disabled)
+          : color ?? colorScheme.onSurfaceVariant;
+      return PopupMenuItem<String>(
+        value: value,
+        enabled: enabled,
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: AppSize.iconMd, color: ink),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: ink),
+            ),
+          ],
+        ),
+      );
+    }
+
+    setState(() => _menuOpen = true);
+    final selected = await showMenu<String>(
+      context: buttonContext,
+      position: position,
+      constraints: const BoxConstraints(minWidth: 262),
+      items: [
+        PopupMenuItem<String>(
+          enabled: false,
+          height: 28,
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+          child: Text(
+            l10n.sortSection.toUpperCase(),
+            style: textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              letterSpacing: AppType.trackedLabelSpacing,
+              color: colorScheme.outline,
+            ),
+          ),
+        ),
+        choice(
+          value: 'sort_newest',
+          icon: Icons.arrow_downward_rounded,
+          label: l10n.sortNewestFirst,
+          selected: listState.sortOrder == TaskSortOrder.newestFirst,
+        ),
+        choice(
+          value: 'sort_oldest',
+          icon: Icons.arrow_upward_rounded,
+          label: l10n.sortOldestFirst,
+          selected: listState.sortOrder == TaskSortOrder.oldestFirst,
+        ),
+        PopupMenuItem<String>(
+          value: 'toggle_pin',
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.pinActiveTasks,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              // The switch is a picture of the state; the row is the control.
+              IgnorePointer(
+                child: AppSwitch(value: listState.pinActive, onChanged: (_) {}),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        action(
+          value: 'cancel_pending',
+          icon: Icons.pause,
+          label: l10n.cancelAllPending,
+          enabled: queued > 0,
+        ),
+        action(
+          value: 'clear_completed',
+          icon: Icons.delete_outline,
+          label: l10n.clearCompleted,
+          enabled: finished > 0,
+          color: colorScheme.error,
+        ),
+      ],
+    );
+    if (!mounted) return;
+    setState(() => _menuOpen = false);
+
+    switch (selected) {
+      case 'sort_newest':
+        listState.setSortOrder(TaskSortOrder.newestFirst);
+      case 'sort_oldest':
+        listState.setSortOrder(TaskSortOrder.oldestFirst);
+      case 'toggle_pin':
+        listState.setPinActive(!listState.pinActive);
+      case 'cancel_pending':
+      case 'clear_completed':
+        _handleBulkAction(selected!, appState.taskQueue);
+      default:
+        break;
+    }
+  }
+
   // ── Desktop content: header, filters and task cards on the canvas ───────────
 
-  Widget _buildDesktopContent(BuildContext context, AppState appState, AppLocalizations l10n) {
+  Widget _buildDesktopContent(
+    BuildContext context,
+    AppState appState,
+    TaskListState listState,
+    AppLocalizations l10n,
+  ) {
     final queue = appState.taskQueue.queue;
-    final tasks = _visibleTasks(queue);
+    final tasks = listState.arrange(queue);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
@@ -203,27 +401,145 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           child: _buildHeader(context, appState, queue, l10n, colorScheme),
         ),
+        // Filters on the left, the sort and pin tools on the right, one row.
+        // `11a` puts them together because they answer one question — what
+        // am I looking at, in what order — and keeps them out of the header
+        // because the header's buttons *do* things to the queue, where these
+        // only change how it is read.
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: _buildFilterPills(context, queue, l10n),
+          child: Row(
+            children: [
+              Expanded(
+                child: ScrollEdgeFade(
+                  axis: Axis.horizontal,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _buildFilterPills(context, queue, listState, l10n),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              _buildSortControls(context, listState, l10n, colorScheme),
+            ],
           ),
         ),
         Expanded(
           child: tasks.isEmpty
-              ? _buildEmptyState(colorScheme, l10n)
-              : _buildTaskList(tasks, const EdgeInsets.fromLTRB(16, 14, 16, 12), isMobile: false),
+              ? _buildEmptyOrFiltered(context, listState, queue, l10n)
+              : _buildTaskList(
+                  tasks,
+                  const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                  l10n,
+                  isMobile: false,
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildTaskList(List<TaskItem> tasks, EdgeInsets padding, {required bool isMobile}) {
+  /// Sort direction and the pin switch — `11a` notes 02 and 03.
+  ///
+  /// A size down from the pills beside them and the raised style rather than
+  /// the tinted: these are tools for *reading* the list, not categories of
+  /// it, and at the pills' height in the pills' accent they read as three
+  /// more filters. The switch is only offered under 「全部」 — every other
+  /// filter shows a single status, so there is nothing for it to lift above
+  /// what.
+  Widget _buildSortControls(
+    BuildContext context,
+    TaskListState listState,
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppSegmentedControl<TaskSortOrder>(
+          compact: true,
+          style: AppSegmentStyle.raised,
+          segments: [
+            AppSegment(
+              value: TaskSortOrder.newestFirst,
+              icon: Icons.arrow_downward_rounded,
+              label: l10n.sortNewestFirst,
+            ),
+            AppSegment(
+              value: TaskSortOrder.oldestFirst,
+              icon: Icons.arrow_upward_rounded,
+              label: l10n.sortOldestFirst,
+            ),
+          ],
+          value: listState.sortOrder,
+          onChanged: listState.setSortOrder,
+        ),
+        if (listState.filter == TaskFilter.all) ...[
+          const SizedBox(width: 16),
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            onTap: () => listState.setPinActive(!listState.pinActive),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l10n.pinActiveTasks,
+                    style: textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  AppSwitch(value: listState.pinActive, onChanged: listState.setPinActive),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// The empty canvas: the queue's own when there is nothing at all, and the
+  /// filter's when there is plenty but none of it is what was asked for.
+  Widget _buildEmptyOrFiltered(
+    BuildContext context,
+    TaskListState listState,
+    List<TaskItem> queue,
+    AppLocalizations l10n,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (queue.isEmpty) return _buildEmptyState(colorScheme, l10n);
+    return _buildFilteredEmptyState(context, listState, queue.length, l10n);
+  }
+
+  Widget _buildTaskList(
+    ArrangedTasks tasks,
+    EdgeInsets padding,
+    AppLocalizations l10n, {
+    required bool isMobile,
+  }) {
+    // Keyed by id: a task crosses the seam the moment it finishes, and the
+    // key is what carries its open/closed state across with it instead of
+    // handing it to whichever row now sits at its old index.
+    Widget card(TaskItem task) =>
+        _TaskCard(key: ValueKey(task.id), task: task, isMobile: isMobile);
+
+    final pinned = tasks.pinned.length;
+    final dividers = tasks.hasDivider ? 1 : 0;
     return ListView.builder(
       padding: padding,
-      itemCount: tasks.length,
-      itemBuilder: (context, index) => _TaskCard(task: tasks[index], isMobile: isMobile),
+      itemCount: tasks.length + dividers,
+      itemBuilder: (context, index) {
+        if (index < pinned) return card(tasks.pinned[index]);
+        final below = index - pinned;
+        if (dividers == 1 && below == 0) {
+          return _GroupDivider(label: l10n.restByCreatedTime);
+        }
+        return card(tasks.rest[below - dividers]);
+      },
     );
   }
 
@@ -274,12 +590,10 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        AppIconButton(
-          icon: Icons.tune,
-          tooltip: l10n.concurrencyLimit(appState.taskQueue.concurrencyLimit),
-          onPressed: () => _showConcurrencyDialog(context, l10n, appState),
-        ),
-        const SizedBox(width: 8),
+        // No queue-settings button here any more (`11a` note 05). The
+        // concurrency slider lives with the rest of the queue settings in the
+        // workbench's dialog, and beside the sort tools a third slider glyph
+        // on this screen read as one of them.
         OutlinedButton.icon(
           onPressed:
               queued == 0 ? null : () => _handleBulkAction('cancel_pending', appState.taskQueue),
@@ -370,74 +684,35 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
 
   // ── Filter pills ────────────────────────────────────────────────────────────
 
-  Widget _buildFilterPills(BuildContext context, List<TaskItem> queue, AppLocalizations l10n) {
-    int countOf(bool Function(TaskItem) test) => queue.where(test).length;
+  Widget _buildFilterPills(
+    BuildContext context,
+    List<TaskItem> queue,
+    TaskListState listState,
+    AppLocalizations l10n,
+  ) {
+    int countOf(TaskFilter filter) => queue.where(filter.matches).length;
 
-    final entries = <(_TaskFilter, String, int)>[
-      (_TaskFilter.all, l10n.filterAll, queue.length),
-      (_TaskFilter.running, l10n.processingTasks, countOf((t) => t.status == TaskStatus.processing)),
-      (_TaskFilter.pending, l10n.pendingTasks, countOf((t) => t.status == TaskStatus.pending)),
-      (_TaskFilter.done, l10n.completedTasks, countOf((t) => t.status == TaskStatus.completed)),
-      (
-        _TaskFilter.failed,
-        l10n.failedTasks,
-        countOf((t) => t.status == TaskStatus.failed || t.status == TaskStatus.cancelled),
-      ),
+    final entries = <(TaskFilter, String)>[
+      (TaskFilter.all, l10n.filterAll),
+      (TaskFilter.running, l10n.processingTasks),
+      (TaskFilter.pending, l10n.pendingTasks),
+      (TaskFilter.done, l10n.completedTasks),
+      (TaskFilter.failed, l10n.failedTasks),
     ];
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final (filter, label, count) in entries) ...[
+        for (final (filter, label) in entries) ...[
           _FilterPill(
             label: label,
-            count: count,
-            selected: _filter == filter,
-            onTap: () => setState(() => _filter = filter),
+            count: countOf(filter),
+            selected: listState.filter == filter,
+            onTap: () => listState.setFilter(filter),
           ),
           const SizedBox(width: 8),
         ],
       ],
-    );
-  }
-
-  void _showConcurrencyDialog(BuildContext context, AppLocalizations l10n, AppState appState) {
-    // AppDialog is built directly rather than via AppDialog.show: the heading
-    // carries the live value, so the whole dialog has to sit inside the
-    // StatefulBuilder.
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          final queue = Provider.of<TaskQueueService>(dialogContext);
-          return AppDialog(
-            title: l10n.concurrencyLimit(queue.concurrencyLimit),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Slider(
-                  value: queue.concurrencyLimit.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  onChanged: (v) {
-                    queue.updateConcurrency(v.round());
-                    setDialogState(() {});
-                  },
-                ),
-                Text(queue.concurrencyLimit.toString()),
-              ],
-            ),
-            actions: [
-              AppButton(
-                label: l10n.close,
-                variant: AppButtonVariant.text,
-                onPressed: () => Navigator.pop(dialogContext),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 
@@ -508,6 +783,118 @@ class _TaskQueueScreenState extends State<TaskQueueScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// `11d`. Empty because of the filter, not because of the queue — and the
+  /// three things that say so: the header counts and the other pills keep
+  /// their figures, only the chosen pill reads 0; the block is a size down
+  /// from `10j`, on a grey plate rather than the accent one, since nothing
+  /// is wrong; and its one action puts the filter back rather than sending
+  /// the user to the workbench, which would be a way out of a screen that is
+  /// not empty.
+  Widget _buildFilteredEmptyState(
+    BuildContext context,
+    TaskListState listState,
+    int total,
+    AppLocalizations l10n,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final title = switch (listState.filter) {
+      TaskFilter.running => l10n.noRunningTasks,
+      TaskFilter.pending => l10n.noPendingTasks,
+      TaskFilter.done => l10n.noCompletedTasks,
+      TaskFilter.failed => l10n.noFailedTasks,
+      TaskFilter.all => l10n.noTasksInQueue,
+    };
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: Icon(
+                Icons.filter_list_off_rounded,
+                size: AppSize.iconLg,
+                color: colorScheme.outline,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(title, style: textTheme.titleSmall),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Text(
+                l10n.filteredEmptyHint(total),
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: AppType.looseHeight,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            AppButton(
+              label: l10n.viewAllTasks,
+              variant: AppButtonVariant.secondary,
+              size: AppButtonSize.compact,
+              onPressed: () => listState.setFilter(TaskFilter.all),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The seam between the pinned tasks and the rest — `11a` note 03.
+///
+/// A hairline and four grey words, and deliberately no more: the rows on
+/// either side already say what they are through their stripes and glyphs,
+/// and a heading over each group would be a third place stating the status.
+/// Drawn only while the pin switch is on; off, the list is one run of
+/// creation times and there is nothing for a seam to separate.
+class _GroupDivider extends StatelessWidget {
+  final String label;
+
+  const _GroupDivider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    Widget hairline() => Expanded(
+          child: Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+      child: Row(
+        children: [
+          hairline(),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.4,
+                  color: colorScheme.outline,
+                ),
+          ),
+          const SizedBox(width: 12),
+          hairline(),
+        ],
       ),
     );
   }
@@ -716,7 +1103,7 @@ class TaskInfoRow extends StatelessWidget {
 class _TaskCard extends StatefulWidget {
   final TaskItem task;
   final bool isMobile;
-  const _TaskCard({required this.task, required this.isMobile});
+  const _TaskCard({super.key, required this.task, required this.isMobile});
 
   @override
   State<_TaskCard> createState() => _TaskCardState();
@@ -856,7 +1243,9 @@ class _TaskCardState extends State<_TaskCard> {
     final icon = switch (task.status) {
       TaskStatus.completed => Icons.check,
       TaskStatus.failed => Icons.warning_amber_rounded,
-      TaskStatus.cancelled => Icons.block,
+      // A stop square, per `11a` note 04 — cancelled is "stopped", not
+      // "forbidden", and the row is grey rather than red for the same reason.
+      TaskStatus.cancelled => Icons.stop_rounded,
       _ => _typeIcon(task.type),
     };
 
@@ -960,20 +1349,12 @@ class _TaskCardState extends State<_TaskCard> {
         if (position > 0) {
           facts.add(Text(l10n.queuedPosition(position), style: muted));
         }
-      case TaskStatus.completed:
-        final duration = _elapsed(task);
-        if (duration != null) {
-          facts.add(Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.schedule, size: 12, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 5),
-              Text(l10n.tookDuration(duration), style: muted),
-            ],
-          ));
-        }
+      // No 「用时 0:45」 on a finished row any more (`11a` note 01): the
+      // row's clock is now its creation time, and a duration beside it
+      // invited arithmetic between two figures that do not add up. Started,
+      // finished and elapsed all live in the expanded panel.
       case TaskStatus.cancelled:
-        facts.add(Text(l10n.statusCancelled, style: muted));
+        facts.add(Text(l10n.cancelledByUser, style: muted));
       default:
         break;
     }
@@ -1023,16 +1404,23 @@ class _TaskCardState extends State<_TaskCard> {
     final textTheme = Theme.of(context).textTheme;
     final widgets = <Widget>[];
 
+    final Widget? progress = task.status == TaskStatus.processing
+        ? Text(
+            _progressLabel(task),
+            style: textTheme.bodySmall?.mono.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onAccentTint,
+            ),
+          )
+        : null;
+
     switch (task.status) {
       case TaskStatus.processing:
-        widgets.add(Text(
-          _progressLabel(task),
-          style: textTheme.bodySmall?.mono.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onAccentTint,
-          ),
-        ));
-        widgets.add(const SizedBox(width: 10));
+        // On a phone the figure stacks over the clock instead (`11c` note 04).
+        if (!widget.isMobile) {
+          widgets.add(progress!);
+          widgets.add(const SizedBox(width: 10));
+        }
       case TaskStatus.pending:
         widgets.add(_statusPill(l10n.pendingTasks, colorScheme.onSurfaceVariant, colorScheme));
         widgets.add(const SizedBox(width: 10));
@@ -1061,6 +1449,10 @@ class _TaskCardState extends State<_TaskCard> {
     // of thumbnails to a count, and the clock stays. A phone row that showed
     // neither could not tell a finished task from a cancelled one without
     // reading its status glyph.
+    //
+    // The clock is the creation time on every row (`11a` note 01). It used to
+    // be "finished, else started", which left a pending row reading `--:--`
+    // and put two different clocks in one column.
     if (widget.isMobile) {
       if (task.resultPaths.isNotEmpty) {
         widgets.add(Container(
@@ -1089,14 +1481,21 @@ class _TaskCardState extends State<_TaskCard> {
         ));
         widgets.add(const SizedBox(width: 8));
       }
-      widgets.add(Text(
-        _formatClock(task.endTime ?? task.startTime),
+      final clock = Text(
+        _formatClock(task.createdAt),
         style: textTheme.labelSmall?.mono.copyWith(color: colorScheme.outline),
-      ));
+      );
+      widgets.add(progress == null
+          ? clock
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [progress, const SizedBox(height: 3), clock],
+            ));
       widgets.add(const SizedBox(width: 4));
     } else {
       widgets.add(Text(
-        _formatClock(task.endTime ?? task.startTime),
+        _formatClock(task.createdAt),
         style: textTheme.bodySmall?.mono.copyWith(
           color: colorScheme.onSurfaceVariant,
         ),
@@ -1531,8 +1930,10 @@ class _TaskCardState extends State<_TaskCard> {
 
     final params = <(String, String)>[
       (l10n.model, task.modelId),
+      (l10n.createdAt, _formatClock(task.createdAt)),
       (l10n.started, _formatClock(task.startTime)),
       (l10n.finished, _formatClock(task.endTime)),
+      (l10n.durationLabel, _elapsed(task) ?? ''),
       if (task.type == TaskType.imageProcess)
         (
           l10n.config,

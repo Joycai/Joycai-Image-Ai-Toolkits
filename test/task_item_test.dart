@@ -73,6 +73,47 @@ void main() {
       expect(decoded.logs, task.logs);
     });
 
+    test('createdAt survives a toMap/fromMap round trip', () {
+      final task = TaskItem(
+        id: 'created',
+        imagePaths: const [],
+        modelId: 'm',
+        parameters: const {},
+        createdAt: DateTime(2026, 9, 2, 13, 15, 30),
+      );
+      final decoded = TaskItem.fromMap(task.toMap());
+      expect(decoded.createdAt, DateTime(2026, 9, 2, 13, 15, 30));
+    });
+
+    test('a row without created_at falls back to start_time, then end_time', () {
+      // Rows a pre-v39 backup restores into the current schema, which the
+      // migration never saw.
+      final base = TaskItem(
+        id: 'old',
+        imagePaths: const [],
+        modelId: 'm',
+        parameters: const {},
+      ).toMap()
+        ..remove('created_at');
+
+      final started = TaskItem.fromMap({
+        ...base,
+        'start_time': DateTime(2026, 1, 1, 10).toIso8601String(),
+        'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
+      });
+      expect(started.createdAt, DateTime(2026, 1, 1, 10));
+
+      final endedOnly = TaskItem.fromMap({
+        ...base,
+        'end_time': DateTime(2026, 1, 1, 11).toIso8601String(),
+      });
+      expect(endedOnly.createdAt, DateTime(2026, 1, 1, 11));
+
+      final before = DateTime.now();
+      final bare = TaskItem.fromMap(base);
+      expect(bare.createdAt.isBefore(before), isFalse);
+    });
+
     test('fromMap tolerates a missing or unreadable logs column', () {
       // Rows written before schema v31 have no `logs` value at all.
       final legacy = _bareTask().toMap()..remove('logs');

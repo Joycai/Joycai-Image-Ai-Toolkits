@@ -2530,6 +2530,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusShortFailed => 'fail';
 
   @override
+  String get sortNewestFirst => 'Newest first';
+
+  @override
+  String get sortOldestFirst => 'Oldest first';
+
+  @override
+  String get sortSection => 'Sort';
+
+  @override
+  String get pinActiveTasks => 'Pin running & pending';
+
+  @override
+  String get restByCreatedTime => 'Rest by creation time';
+
+  @override
+  String get createdAt => 'Created';
+
+  @override
+  String get cancelledByUser => 'Cancelled · manual';
+
+  @override
+  String get noRunningTasks => 'No running tasks';
+
+  @override
+  String get noPendingTasks => 'No pending tasks';
+
+  @override
+  String get noCompletedTasks => 'No completed tasks';
+
+  @override
+  String get noFailedTasks => 'No failed tasks';
+
+  @override
+  String filteredEmptyHint(int count) {
+    return 'Nothing matches this filter. The other $count tasks are unaffected.';
+  }
+
+  @override
+  String get viewAllTasks => 'View all';
+
+  @override
+  String get durationLabel => 'Elapsed';
+
+  @override
   String get setupWizardTitle => 'Welcome Setup';
 
   @override

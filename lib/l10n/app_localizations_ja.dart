@@ -2475,6 +2475,50 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statusShortFailed => '失敗';
 
   @override
+  String get sortNewestFirst => '新しい順';
+
+  @override
+  String get sortOldestFirst => '古い順';
+
+  @override
+  String get sortSection => '並べ替え';
+
+  @override
+  String get pinActiveTasks => '実行中と待機中を上部に固定';
+
+  @override
+  String get restByCreatedTime => '残りは作成時刻順';
+
+  @override
+  String get createdAt => '作成';
+
+  @override
+  String get cancelledByUser => 'キャンセル済み · 手動';
+
+  @override
+  String get noRunningTasks => '実行中のタスクはありません';
+
+  @override
+  String get noPendingTasks => '待機中のタスクはありません';
+
+  @override
+  String get noCompletedTasks => '完了したタスクはありません';
+
+  @override
+  String get noFailedTasks => '失敗したタスクはありません';
+
+  @override
+  String filteredEmptyHint(int count) {
+    return 'この絞り込みに該当するタスクはありません。他の $count 件のタスクは影響を受けません。';
+  }
+
+  @override
+  String get viewAllTasks => 'すべて表示';
+
+  @override
+  String get durationLabel => '所要時間';
+
+  @override
   String get setupWizardTitle => 'ようこそセットアップ';
 
   @override

@@ -63,6 +63,7 @@ class DatabaseMigration {
     if (oldVersion < 36) await _createV36Columns(db);
     if (oldVersion < 37) await _createV37Columns(db);
     if (oldVersion < 38) await _createV38Columns(db);
+    if (oldVersion < 39) await _createV39Columns(db);
   }
 
   static Future<void> onCreate(Database db) async {
@@ -101,6 +102,7 @@ class DatabaseMigration {
     await _createV36Columns(db);
     await _createV37Columns(db);
     await _createV38Columns(db);
+    await _createV39Columns(db);
     // Presets are synchronized in DatabaseService
   }
 
@@ -159,6 +161,26 @@ class DatabaseMigration {
     if (!await _tableExists(db, 'tasks')) return;
     await _addColumnIfNotExists(db, 'tasks', 'operation_name', 'TEXT');
     await _addColumnIfNotExists(db, 'tasks', 'operation_surface', 'TEXT');
+  }
+
+  /// `tasks.created_at` — when the task was queued, the task list's one sort
+  /// key (`C1 11a`). Until now the list had only `start_time`, which a pending
+  /// row does not have and a retry rewrites, so neither "newest first" nor a
+  /// stable position across a restart was possible.
+  ///
+  /// Backfilled from what each row already recorded: `start_time` is the
+  /// closest thing a finished task has to a creation time, `end_time` the
+  /// next best, and a row with neither (a task that never ran) is stamped
+  /// with the upgrade moment — local time, ISO-shaped, so it parses the same
+  /// way the Dart-written values do.
+  static Future<void> _createV39Columns(Database db) async {
+    if (!await _tableExists(db, 'tasks')) return;
+    await _addColumnIfNotExists(db, 'tasks', 'created_at', 'TEXT');
+    await db.execute(
+      "UPDATE tasks SET created_at = COALESCE(start_time, end_time, "
+      "strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')) "
+      "WHERE created_at IS NULL",
+    );
   }
 
   static Future<bool> _tableExists(Database db, String tableName) async {

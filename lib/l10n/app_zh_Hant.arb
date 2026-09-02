@@ -1309,6 +1309,27 @@
   "statusShortPending": "待",
   "statusShortDone": "完成",
   "statusShortFailed": "失敗",
+  "sortNewestFirst": "最新在前",
+  "sortOldestFirst": "最早在前",
+  "sortSection": "排序",
+  "pinActiveTasks": "執行中與待處理置頂",
+  "restByCreatedTime": "其餘按建立時間",
+  "createdAt": "建立",
+  "cancelledByUser": "已取消 · 手動",
+  "noRunningTasks": "沒有執行中的任務",
+  "noPendingTasks": "沒有待處理的任務",
+  "noCompletedTasks": "沒有已完成的任務",
+  "noFailedTasks": "沒有失敗的任務",
+  "filteredEmptyHint": "目前篩選下沒有任務，其餘 {count} 個任務未受影響。",
+  "@filteredEmptyHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewAllTasks": "查看全部",
+  "durationLabel": "用時",
   "setupWizardTitle": "歡迎設定",
   "welcomeMessage": "歡迎使用 Joycai Image AI Toolkits！讓我們為您完成設定。",
   "getStarted": "開始使用",

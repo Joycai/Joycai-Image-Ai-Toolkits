@@ -201,6 +201,66 @@ void main() {
     await DatabaseMigration.migrate(db, 37, 38);
   });
 
+  test('v39 adds tasks.created_at and backfills it from what each row has', () async {
+    final db = await openV30TasksDb();
+    addTearDown(db.close);
+
+    // Three kinds of pre-v39 row: one that ran, one that only ever finished
+    // (a restore-shaped oddity), and one still waiting with no clock at all.
+    await db.insert('tasks', {
+      'id': 'ran',
+      'image_path': '[]',
+      'status': 'completed',
+      'parameters': '{}',
+      'result_path': '[]',
+      'start_time': '2026-09-01T10:00:00.000',
+      'end_time': '2026-09-01T10:01:00.000',
+    });
+    await db.insert('tasks', {
+      'id': 'ended-only',
+      'image_path': '[]',
+      'status': 'completed',
+      'parameters': '{}',
+      'result_path': '[]',
+      'end_time': '2026-09-01T11:00:00.000',
+    });
+    await db.insert('tasks', {
+      'id': 'waiting',
+      'image_path': '[]',
+      'status': 'pending',
+      'parameters': '{}',
+      'result_path': '[]',
+    });
+
+    final before = DateTime.now();
+    await DatabaseMigration.migrate(db, 38, 39);
+
+    expect(await columnsOf(db, 'tasks'), contains('created_at'));
+
+    final rows = {
+      for (final row in await db.query('tasks')) row['id'] as String: TaskItem.fromMap(row),
+    };
+    expect(rows['ran']!.createdAt, DateTime(2026, 9, 1, 10));
+    expect(rows['ended-only']!.createdAt, DateTime(2026, 9, 1, 11));
+    // Stamped with the upgrade moment, in local time, so it sorts as the
+    // newest thing in the list rather than as 1970.
+    final stamped = rows['waiting']!.createdAt;
+    expect(stamped.isBefore(before.subtract(const Duration(minutes: 1))), isFalse);
+    expect(stamped.isAfter(DateTime.now().add(const Duration(minutes: 1))), isFalse);
+
+    // Re-running the step must neither throw nor restamp what is filled.
+    await DatabaseMigration.migrate(db, 38, 39);
+    final again = TaskItem.fromMap((await db.query('tasks', where: 'id = ?', whereArgs: ['ran'])).single);
+    expect(again.createdAt, DateTime(2026, 9, 1, 10));
+  });
+
+  test('a fresh database is created with tasks.created_at', () async {
+    final db = await factory.openDatabase(inMemoryDatabasePath);
+    addTearDown(db.close);
+    await DatabaseMigration.onCreate(db);
+    expect(await columnsOf(db, 'tasks'), contains('created_at'));
+  });
+
   test('v31 adds the logs column to an existing database', () async {
     final db = await openV30TasksDb();
     addTearDown(db.close);

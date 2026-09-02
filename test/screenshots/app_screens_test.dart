@@ -12,6 +12,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:joycai_image_ai_toolkits/services/task_queue_service.dart';
+import 'package:joycai_image_ai_toolkits/services/task_list_ordering.dart';
 import 'package:joycai_image_ai_toolkits/widgets/task_capsule_monitor.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -328,6 +330,58 @@ void main() {
       );
     });
   }
+
+  // The phone's more-menu (`C1 11c`): sort, pin and the bulk actions, all
+  // behind one button, and a hand-positioned `showMenu` — the one thing on
+  // this screen a wrong anchor would put off the edge of a 375px window.
+  testWidgets('tasks · menu @ mobile light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.tasks,
+      size: kShotSizes.first,
+      brightness: Brightness.light,
+      suffix: 'menu',
+      after: (WidgetTester tester) async {
+        await tester.tap(find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.more_vert),
+        ));
+        for (int p = 0; p < 5; p++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      },
+    );
+  });
+
+  // A filter with nothing in it (`C1 11d`): the counts stay, the block is a
+  // size down from the queue's own empty state, and the one button puts the
+  // filter back. The fixture has every status, so the failed rows are lifted
+  // out of the live queue for the shot and put back after it.
+  testWidgets('tasks · filteredEmpty @ desktop light', (WidgetTester tester) async {
+    final List<TaskItem> queue = AppState().taskQueue.queue;
+    final List<TaskItem> lifted = queue
+        .where((TaskItem t) => t.status == TaskStatus.failed || t.status == TaskStatus.cancelled)
+        .toList();
+    try {
+      await shoot(
+        tester,
+        env: env,
+        screen: AppScreen.tasks,
+        size: kShotSizes.last,
+        brightness: Brightness.light,
+        suffix: 'filteredEmpty',
+        before: (_) async {
+          queue.removeWhere(lifted.contains);
+          AppState().taskListState.setFilter(TaskFilter.failed);
+        },
+      );
+    } finally {
+      queue.addAll(lifted);
+      AppState().taskListState.setFilter(TaskFilter.all);
+      AppState().taskQueue.refreshQueue();
+    }
+  });
 
   // The floating task capsule, opened. It is only on screen while the queue has
   // work and no screen is already showing that queue, and its interesting half

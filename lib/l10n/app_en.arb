@@ -1470,6 +1470,27 @@
   "statusShortPending": "wait",
   "statusShortDone": "done",
   "statusShortFailed": "fail",
+  "sortNewestFirst": "Newest first",
+  "sortOldestFirst": "Oldest first",
+  "sortSection": "Sort",
+  "pinActiveTasks": "Pin running & pending",
+  "restByCreatedTime": "Rest by creation time",
+  "createdAt": "Created",
+  "cancelledByUser": "Cancelled · manual",
+  "noRunningTasks": "No running tasks",
+  "noPendingTasks": "No pending tasks",
+  "noCompletedTasks": "No completed tasks",
+  "noFailedTasks": "No failed tasks",
+  "filteredEmptyHint": "Nothing matches this filter. The other {count} tasks are unaffected.",
+  "@filteredEmptyHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewAllTasks": "View all",
+  "durationLabel": "Elapsed",
   "setupWizardTitle": "Welcome Setup",
   "welcomeMessage": "Welcome to Joycai Image AI Toolkits! Let's get you set up.",
   "getStarted": "Get Started",

@@ -1309,6 +1309,27 @@
   "statusShortPending": "待機",
   "statusShortDone": "完了",
   "statusShortFailed": "失敗",
+  "sortNewestFirst": "新しい順",
+  "sortOldestFirst": "古い順",
+  "sortSection": "並べ替え",
+  "pinActiveTasks": "実行中と待機中を上部に固定",
+  "restByCreatedTime": "残りは作成時刻順",
+  "createdAt": "作成",
+  "cancelledByUser": "キャンセル済み · 手動",
+  "noRunningTasks": "実行中のタスクはありません",
+  "noPendingTasks": "待機中のタスクはありません",
+  "noCompletedTasks": "完了したタスクはありません",
+  "noFailedTasks": "失敗したタスクはありません",
+  "filteredEmptyHint": "この絞り込みに該当するタスクはありません。他の {count} 件のタスクは影響を受けません。",
+  "@filteredEmptyHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewAllTasks": "すべて表示",
+  "durationLabel": "所要時間",
   "setupWizardTitle": "ようこそセットアップ",
   "welcomeMessage": "Joycai Image AI Toolkitsへようこそ！セットアップを始めましょう。",
   "getStarted": "始める",

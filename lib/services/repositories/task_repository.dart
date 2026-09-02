@@ -12,9 +12,20 @@ class TaskRepository {
     await db.insert('tasks', task, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  /// The newest [limit] tasks by creation time.
+  ///
+  /// Ordered by `created_at`, not `start_time`: a pending task has no start
+  /// time, and under `start_time DESC` SQLite sorted those NULLs *last* — so
+  /// the tasks still waiting were the first ones the cap dropped. The
+  /// COALESCE covers rows a restored pre-v39 backup lands without the column
+  /// filled, the same fallback `TaskItem.fromMap` applies.
   Future<List<Map<String, dynamic>>> getRecentTasks(int limit) async {
     final db = await _db;
-    return await db.query('tasks', orderBy: 'start_time DESC', limit: limit);
+    return await db.query(
+      'tasks',
+      orderBy: 'COALESCE(created_at, start_time, end_time) DESC',
+      limit: limit,
+    );
   }
 
   /// Tasks whose parameters carry the given assistant session id — the

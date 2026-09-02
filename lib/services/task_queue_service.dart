@@ -60,11 +60,22 @@ class TaskQueueService extends ChangeNotifier {
     _loadRecentTasks();
   }
 
+  /// How many tasks come back from the database on launch.
+  ///
+  /// Was 10, which made the history a window rather than a list: a session
+  /// of a dozen generations lost its first two on the next launch. Rows are
+  /// cheap to hold (the log is capped at [TaskItem.maxLogLines]); the list
+  /// is a builder, so nothing is laid out until scrolled to.
+  static const int reloadLimit = 200;
+
   Future<void> _loadRecentTasks() async {
     final db = DatabaseService();
     await db.cleanupStuckTasks();
-    final tasks = await db.getRecentTasks(10);
+    final tasks = await db.getRecentTasks(reloadLimit);
     _queue.clear();
+    // Newest-first from the query, reversed so the queue itself runs oldest
+    // to newest — the order `_attemptNextExecution` walks it in, which is
+    // what makes a task submitted earlier run earlier.
     _queue.addAll(tasks.map((t) => TaskItem.fromMap(t)).toList().reversed);
     notifyListeners();
   }
