@@ -16,6 +16,7 @@ import '../../services/llm/vendors/vendors.dart';
 import '../../state/app_state.dart';
 import '../../widgets/api_key_field.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_setting_row.dart';
 import '../../widgets/app_switch.dart';
 import '../../widgets/app_dialog.dart';
@@ -573,17 +574,15 @@ class _SetupWizardState extends State<SetupWizard> {
             ),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _modelTag,
+          AppDropdown<String>(
+            label: l10n.tag,
+            value: _modelTag,
             items: const [
-              DropdownMenuItem(value: 'chat', child: Text('Chat')),
-              DropdownMenuItem(value: 'multimodal', child: Text('Multimodal')),
-              DropdownMenuItem(value: 'image', child: Text('Image')),
+              AppDropdownItem(value: 'chat', label: 'Chat'),
+              AppDropdownItem(value: 'multimodal', label: 'Multimodal'),
+              AppDropdownItem(value: 'image', label: 'Image'),
             ],
             onChanged: (v) => setState(() => _modelTag = v!),
-            decoration: InputDecoration(
-              labelText: l10n.tag,
-            ),
           ),
         ],
       ),

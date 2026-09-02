@@ -38,6 +38,6 @@ void main() {
       enabled: false,
     )));
 
-    expect(tester.widget<DropdownButtonFormField<int>>(find.byType(DropdownButtonFormField<int>)).onChanged, isNull);
+    expect(tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>)).onChanged, isNull);
   });
 }

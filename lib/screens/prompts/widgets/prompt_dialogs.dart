@@ -9,6 +9,7 @@ import '../../../models/prompt.dart';
 import '../../../models/tag.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dropdown.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/color_picker_widget.dart';
 import '../../../widgets/markdown_editor.dart';
@@ -163,12 +164,14 @@ Future<bool> showSystemPromptEditDialog(
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 1,
-                    child: DropdownButtonFormField<String>(
-                      initialValue: selectedType,
-                      decoration: InputDecoration(labelText: l10n.templateType),
+                    // A floating label like the title field beside it, so
+                    // the two read as one row.
+                    child: AppDropdown<String>(
+                      label: l10n.templateType,
+                      value: selectedType,
                       items: [
-                        DropdownMenuItem(value: 'refiner', child: Text(l10n.typeRefiner)),
-                        DropdownMenuItem(value: 'rename', child: Text(l10n.typeRename)),
+                        AppDropdownItem(value: 'refiner', label: l10n.typeRefiner),
+                        AppDropdownItem(value: 'rename', label: l10n.typeRename),
                       ],
                       onChanged: (v) => setDialogState(() => selectedType = v!),
                     ),

@@ -52,7 +52,7 @@ class DownloaderToolbar extends StatelessWidget {
         // Monospace: this is an address, not prose. Fixed widths make a typo in
         // a long path something you can see rather than something you re-read.
         style: Theme.of(context).textTheme.bodyMedium?.mono,
-        decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
+        decoration: _fieldDecoration(context, colorScheme, hint: l10n.websiteUrl, icon: Icons.link),
       ),
     );
 
@@ -65,12 +65,23 @@ class DownloaderToolbar extends StatelessWidget {
       ),
     );
 
+    // The same box as the URL and requirement fields — their fill, their
+    // radius, their 44px — so the row reads as three of one thing. It was the
+    // one outlined control on a row of filled ones, and the one whose height
+    // was its own. `10f` keeps the caption *on* this field, notched into the
+    // top edge, because a caption above it would push the box out of line
+    // with the two beside it, which have none.
     final modelSelector = SizedBox(
       width: 250,
+      height: _controlHeight,
       child: ChatModelSelector(
         selectedModelId: state.selectedModelDbId,
         label: l10n.analysisModel,
         onChanged: (v) => state.setState(selectedModelDbId: v),
+        decoration: _fieldDecoration(context, colorScheme, label: l10n.analysisModel),
+        // A picker is one line of text and sizes itself to it; in a 44px box
+        // that left it a short field with empty space under it. Told to fill.
+        expands: true,
       ),
     );
 
@@ -156,13 +167,25 @@ class DownloaderToolbar extends StatelessWidget {
 /// than following the theme's outlined input because the URL bar is the one
 /// field that spans the toolbar and reads as a surface of its own, not as a
 /// control in a row of controls.
+/// The toolbar's field: a soft fill, no outline, the control radius.
+///
+/// [hint] and [icon] are a text field's; [label] is the model selector's
+/// notched caption. The selector has no prefix glyph to inset its text, so it
+/// takes the theme's horizontal inset where the text fields take none.
 InputDecoration _fieldDecoration(
-    BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
+  BuildContext context,
+  ColorScheme colorScheme, {
+  String? hint,
+  IconData? icon,
+  String? label,
+}) {
   return InputDecoration(
     hintText: hint,
     hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-    prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
-    contentPadding: EdgeInsets.zero,
+    labelText: label,
+    floatingLabelBehavior: FloatingLabelBehavior.always,
+    prefixIcon: icon == null ? null : Icon(icon, size: 18, color: colorScheme.outline),
+    contentPadding: icon == null ? const EdgeInsets.symmetric(horizontal: 12) : EdgeInsets.zero,
     filled: true,
     fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
     border: OutlineInputBorder(

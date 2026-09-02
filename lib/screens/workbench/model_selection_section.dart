@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
+import '../../widgets/app_dropdown.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/app_labelled_field.dart';
 import '../../widgets/app_text_field.dart';
@@ -173,38 +174,24 @@ class ModelSelectionSection extends StatelessWidget {
   }
 
   Widget _buildParamRow(BuildContext context, String modelId, ParamSpec spec, AppLocalizations l10n) {
-    final colorScheme = Theme.of(context).colorScheme;
     final current = imageParamResolver(modelId, spec);
 
     Widget control;
     switch (spec.control) {
       case ParamControl.dropdown:
-        // A themed field rather than a bare [DropdownButton] under a
-        // hand-drawn rule. An option set is short enough that Material's own
-        // menu costs nothing here — what it was missing was the box, which
-        // left it reading as a different family of control from the two
-        // pickers directly above it in the same card.
-        control = DropdownButtonFormField<String>(
-          // Keyed, because a `FormField` owns its value rather than taking it
-          // from the caller every build: `initialValue` only re-syncs when it
-          // *changes* between two builds. Switch model while a parameter write
-          // is still in flight and this element is reused with the old value
-          // against the new model's options — which asserts when the value is
-          // absent from them, and silently displays a value the state does not
-          // hold when it happens to be present. A key per model and parameter
-          // makes it a fresh element instead.
-          key: ValueKey<String>('$modelId.${spec.key}'),
-          isExpanded: true,
-          isDense: true,
-          initialValue: current,
-          decoration: const InputDecoration(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
-          items: spec.options
-              .map((o) => DropdownMenuItem(
-                    value: o.value,
-                    child: Text(_optionLabel(l10n, spec.key, o.value)),
-                  ))
-              .toList(),
+        // The library's dropdown, which is drawn as the same box as the two
+        // pickers above it. A raw `DropdownButtonFormField` here was the
+        // theme's outline around Material's own dense button — ten pixels
+        // taller than the pickers, in a larger face, under a filled triangle —
+        // and `16a` draws the three as one family. Controlled, so the value
+        // is the resolver's every build; the `FormField` this replaces owned
+        // its own and had to be re-keyed per model to drop a stale one.
+        control = AppDropdown<String>(
+          value: current,
+          items: [
+            for (final o in spec.options)
+              AppDropdownItem(value: o.value, label: _optionLabel(l10n, spec.key, o.value)),
+          ],
           onChanged: (v) {
             if (v != null) onImageParamChanged(modelId, spec.key, v);
           },

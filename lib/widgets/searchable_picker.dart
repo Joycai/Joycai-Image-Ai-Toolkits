@@ -94,6 +94,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     this.decoration = const InputDecoration(),
     this.enabled = true,
     this.badgeStyle = PickerBadge.chip,
+    this.expands = false,
   });
 
   /// The current selection, already resolved by the caller. `null` draws
@@ -139,6 +140,16 @@ class SearchablePickerField<T> extends StatefulWidget {
   /// chips whatever this says, because there the tag is what the user is
   /// reading the row for.
   final PickerBadge badgeStyle;
+
+  /// Fill whatever height the parent gives, with the value centred in it.
+  ///
+  /// Off by default: the field is one line of text in the theme's insets,
+  /// and that is its height. On for a field that has to stand in a row of
+  /// controls sized by something else — the downloader's toolbar sets its
+  /// three fields to one height and this is the one of them that would
+  /// otherwise be shorter. **Requires a bounded height**; an [InputDecorator]
+  /// asked to expand into an unbounded one throws.
+  final bool expands;
 
   @override
   State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
@@ -213,6 +224,8 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
           ),
           isFocused: _focused,
           isHovering: _hovered,
+          expands: widget.expands,
+          textAlignVertical: widget.expands ? TextAlignVertical.center : null,
           // Never "empty", even with nothing selected: this field always draws
           // something in its content area — the value or [hint] — so a
           // decoration that carries a `labelText` must float it rather than
