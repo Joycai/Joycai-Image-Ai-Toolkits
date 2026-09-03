@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/design_tokens.dart';
+import 'app_field_size.dart';
 
 /// One choice in an [AppDropdown].
 class AppDropdownItem<T> {
@@ -47,6 +48,10 @@ class AppDropdownItem<T> {
 /// picker's do; the vertical inset is derived so the two land at the same
 /// height (see [_verticalInset]).
 ///
+/// Two sizes, per `10a`: [AppFieldSize.large] is the theme's own field height
+/// and the default; [AppFieldSize.regular] pins the box to 32 for the
+/// workbench sidebar and a dialog's compact form. A row never mixes them.
+///
 /// Controlled, not a `FormField`: [value] is what the caller holds, every
 /// build. `DropdownButtonFormField` owns its value and only re-syncs when
 /// `initialValue` *changes* between builds, which is how a parameter row
@@ -63,16 +68,19 @@ class AppDropdown<T> extends StatefulWidget {
   final String? hint;
 
   /// A glyph ahead of the value, the way the model and channel editors' text
-  /// fields carry one. Drawn at the same size the channel editor's protocol
-  /// field settled on, and it brings Material's 48px minimum with it — which
-  /// is the height of the fields it sits among there.
+  /// fields carry one. Drawn at the size the channel editor's protocol field
+  /// settled on. Material would give it a 48px box; `FilledFieldScope`, which
+  /// those editors sit in, constrains it so the field stays the large 40.
   final IconData? prefixIcon;
 
   /// A line under the box, in the decoration's helper slot.
   final String? helperText;
   final int? helperMaxLines;
 
-  /// Pin the box to this height instead of the theme's. For a toolbar whose
+  /// Which of the spec's two sizes this is. See [AppFieldSize].
+  final AppFieldSize size;
+
+  /// Pin the box to this height instead of the size's. For a toolbar whose
   /// every control is [AppSize.control] tall; the vertical inset is derived
   /// from it rather than the theme's.
   final double? height;
@@ -89,6 +97,7 @@ class AppDropdown<T> extends StatefulWidget {
     this.prefixIcon,
     this.helperText,
     this.helperMaxLines,
+    this.size = AppFieldSize.large,
     this.height,
     this.enabled = true,
   });
@@ -161,8 +170,9 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     final textTheme = theme.textTheme;
     final enabled = widget.enabled && widget.onChanged != null;
 
-    // bodySmall, as the picker and the dense config panels these sit in.
-    final valueStyle = textTheme.bodySmall?.copyWith(
+    final size = widget.size;
+    // The size's type, as the picker draws it.
+    final valueStyle = size.valueStyle(textTheme)?.copyWith(
       color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
     );
     final outline = enabled ? colorScheme.outline : colorScheme.outline.withValues(alpha: AppAlpha.disabled);
@@ -170,13 +180,14 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
     final themeInset =
         theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+    final pinned = widget.height ?? size.height;
     final double vertical;
-    if (widget.height != null) {
+    if (pinned != null) {
       // The box's own 1px border top and bottom comes out of the pinned height
       // before the button is centred in what is left.
-      vertical = math.max(0, (widget.height! - 2 - _buttonHeight(context, valueStyle, AppSize.iconSm)) / 2);
+      vertical = math.max(0, (pinned - 2 - _buttonHeight(context, valueStyle, size.chevron)) / 2);
     } else {
-      vertical = _verticalInset(context, valueStyle, themeInset.top, AppSize.iconSm);
+      vertical = _verticalInset(context, valueStyle, themeInset.top, size.chevron);
     }
 
     Text itemText(AppDropdownItem<T> item, String text) => Text(
@@ -196,7 +207,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
         helperMaxLines: widget.helperMaxLines,
         prefixIcon: widget.prefixIcon == null ? null : Icon(widget.prefixIcon, size: AppSize.iconLg),
         enabled: enabled,
-        contentPadding: EdgeInsets.fromLTRB(themeInset.left, vertical, themeInset.right, vertical),
+        contentPadding: EdgeInsets.fromLTRB(size.inset, vertical, size.inset, vertical),
       ),
       isFocused: _focused,
       isHovering: _hovered,
@@ -211,9 +222,13 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
           isExpanded: true,
           isDense: true,
           // expand_more, not the filled triangle: the design draws one
-          // downward chevron on every select-like field.
-          icon: Icon(Icons.expand_more, color: outline),
-          iconSize: AppSize.iconSm,
+          // downward chevron on every select-like field. The gap before it is
+          // the size's, not Material's.
+          icon: Padding(
+            padding: EdgeInsetsDirectional.only(start: size.chevronGap),
+            child: Icon(Icons.expand_more, color: outline),
+          ),
+          iconSize: size.chevron,
           style: valueStyle,
           hint: widget.hint == null
               ? null
@@ -250,7 +265,7 @@ class _AppDropdownState<T> extends State<AppDropdown<T>> {
       ),
     );
 
-    if (widget.height != null) field = SizedBox(height: widget.height, child: field);
+    if (pinned != null) field = SizedBox(height: pinned, child: field);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),

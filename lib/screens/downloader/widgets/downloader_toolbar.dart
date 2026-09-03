@@ -10,12 +10,13 @@ import '../../../widgets/app_button.dart';
 import '../../../widgets/app_search_field.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
+import '../../../widgets/app_labelled_field.dart';
 import '../../../widgets/chat_model_selector.dart';
 import '../../../widgets/app_switch.dart';
 
-/// Height of the toolbar's inputs and the controls that line up with them.
-/// Taller than a bare button: these are fields you type a URL into.
-const double _controlHeight = 44;
+/// Height of the toolbar's inputs and the controls that line up with them:
+/// `10f` draws the whole query bar at the spec's large field, 40.
+const double _controlHeight = 40;
 
 /// Top toolbar of the image downloader.
 ///
@@ -52,7 +53,7 @@ class DownloaderToolbar extends StatelessWidget {
         // Monospace: this is an address, not prose. Fixed widths make a typo in
         // a long path something you can see rather than something you re-read.
         style: Theme.of(context).textTheme.bodyMedium?.mono,
-        decoration: _fieldDecoration(context, colorScheme, hint: l10n.websiteUrl, icon: Icons.link),
+        decoration: _fieldDecoration(context, colorScheme, l10n.websiteUrl, Icons.link),
       ),
     );
 
@@ -65,23 +66,20 @@ class DownloaderToolbar extends StatelessWidget {
       ),
     );
 
-    // The same box as the URL and requirement fields — their fill, their
-    // radius, their 44px — so the row reads as three of one thing. It was the
-    // one outlined control on a row of filled ones, and the one whose height
-    // was its own. `10f` keeps the caption *on* this field, notched into the
-    // top edge, because a caption above it would push the box out of line
-    // with the two beside it, which have none.
+    // The large select with its caption above, as `10f` draws it: the box
+    // is the theme's 40, the same as the two fields beside it, and the row
+    // aligns everything to the bottom so the box lines up with them under
+    // its own caption. A notched caption on the field was tried and is what
+    // the spec now rules out for every select.
     final modelSelector = SizedBox(
       width: 250,
-      height: _controlHeight,
-      child: ChatModelSelector(
-        selectedModelId: state.selectedModelDbId,
+      child: AppLabelledField(
         label: l10n.analysisModel,
-        onChanged: (v) => state.setState(selectedModelDbId: v),
-        decoration: _fieldDecoration(context, colorScheme, label: l10n.analysisModel),
-        // A picker is one line of text and sizes itself to it; in a 44px box
-        // that left it a short field with empty space under it. Told to fill.
-        expands: true,
+        child: ChatModelSelector(
+          selectedModelId: state.selectedModelDbId,
+          label: l10n.analysisModel,
+          onChanged: (v) => state.setState(selectedModelDbId: v),
+        ),
       ),
     );
 
@@ -146,11 +144,23 @@ class DownloaderToolbar extends StatelessWidget {
               // Below ~820 the requirement field is squeezed to a few
               // characters by the controls beside it, so it takes its own row.
               if (constraints.maxWidth >= 820)
-                Row(children: [Expanded(child: requirementField), const SizedBox(width: 8), ...actions])
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [Expanded(child: requirementField), const SizedBox(width: 8), ...actions],
+                )
               else ...[
                 requirementField,
                 const SizedBox(height: 10),
-                Row(children: [Expanded(child: modelSelector), const SizedBox(width: 8), findButton, const SizedBox(width: 8), advancedButton]),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(child: modelSelector),
+                    const SizedBox(width: 8),
+                    findButton,
+                    const SizedBox(width: 8),
+                    advancedButton,
+                  ],
+                ),
               ],
             ],
           );
@@ -167,35 +177,19 @@ class DownloaderToolbar extends StatelessWidget {
 /// than following the theme's outlined input because the URL bar is the one
 /// field that spans the toolbar and reads as a surface of its own, not as a
 /// control in a row of controls.
-/// The toolbar's field: a soft fill, no outline, the control radius.
+/// The URL field's decoration: the theme's outlined box — `10f` draws the
+/// query bar's fields with the same hairline as every other input — with a
+/// glyph ahead of the address. Zero inset because the field is sized by the
+/// toolbar and centres itself in it, as `AppSearchField` beside it does.
 ///
-/// [hint] and [icon] are a text field's; [label] is the model selector's
-/// notched caption. The selector has no prefix glyph to inset its text, so it
-/// takes the theme's horizontal inset where the text fields take none.
-InputDecoration _fieldDecoration(
-  BuildContext context,
-  ColorScheme colorScheme, {
-  String? hint,
-  IconData? icon,
-  String? label,
-}) {
+/// This used to be a soft fill with no outline, which made the bar the one
+/// place in the app whose inputs were drawn differently from the theme's.
+InputDecoration _fieldDecoration(BuildContext context, ColorScheme colorScheme, String hint, IconData icon) {
   return InputDecoration(
     hintText: hint,
     hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-    labelText: label,
-    floatingLabelBehavior: FloatingLabelBehavior.always,
-    prefixIcon: icon == null ? null : Icon(icon, size: 18, color: colorScheme.outline),
-    contentPadding: icon == null ? const EdgeInsets.symmetric(horizontal: 12) : EdgeInsets.zero,
-    filled: true,
-    fillColor: colorScheme.surfaceContainerHighest.withAlpha(80),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(appButtonRadius),
-      borderSide: BorderSide.none,
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(appButtonRadius),
-      borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-    ),
+    prefixIcon: Icon(icon, size: 18, color: colorScheme.outline),
+    contentPadding: EdgeInsets.zero,
   );
 }
 

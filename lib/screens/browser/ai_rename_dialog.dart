@@ -20,6 +20,7 @@ import '../../state/file_browser_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/app_field_size.dart';
 import '../../widgets/chat_model_selector.dart';
 
 /// Below this the two-column shell stops working and the dialog folds into
@@ -457,6 +458,8 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
           ChatModelSelector(
             selectedModelId: _selectedModelDbId,
             onChanged: (v) => setState(() => _selectedModelDbId = v),
+            // A dialog's compact form is the 32px size (`13a`).
+            size: AppFieldSize.regular,
           ),
           const SizedBox(height: 14),
           _SectionLabel(l10n.renameSectionTemplate),

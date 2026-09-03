@@ -14,6 +14,7 @@ import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_field_size.dart';
 import '../../../widgets/app_setting_row.dart';
 import '../../../widgets/app_dialog.dart';
 import '../../../widgets/app_icon_button.dart';
@@ -622,11 +623,12 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
     return width;
   }
 
-  /// The resample dropdown is boxed to its widest option: the theme's 12px
-  /// insets each side, the 16px chevron with 8 before it, a 1px border each
-  /// side. The same number sizes the control and budgets for it, so the fit
-  /// prediction cannot drift from what is drawn.
-  double _samplingDropdownWidth(TextTheme textTheme) => 50 + _textWidth('Lanczos', textTheme.bodySmall);
+  /// The resample dropdown is boxed to its widest option: the regular size's
+  /// 10px insets each side, its 14px chevron with 7 before it, a 1px border
+  /// each side, and 8 of slack. The same number sizes the control and budgets
+  /// for it, so the fit prediction cannot drift from what is drawn.
+  double _samplingDropdownWidth(TextTheme textTheme) =>
+      50 + _textWidth('Lanczos', AppFieldSize.regular.valueStyle(textTheme));
 
   /// Material's own icon-button padding, spelled out so the estimate tracks
   /// what the buttons actually render: text 12/16, filled and outlined 16/24,
@@ -865,6 +867,10 @@ class _CropResizeToolbarState extends State<CropResizeToolbar> {
         SizedBox(
           width: _samplingDropdownWidth(Theme.of(context).textTheme),
           child: AppDropdown<String>(
+            // Regular type in a box pinned to the toolbar's own control
+            // height: the toolbar's every control is 36, and `10a`'s rule is
+            // that a select matches the row it stands in.
+            size: AppFieldSize.regular,
             height: appButtonMinHeight,
             value: uiState.samplingMethod,
             items: const [
