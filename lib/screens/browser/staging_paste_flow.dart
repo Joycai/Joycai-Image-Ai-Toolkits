@@ -20,6 +20,7 @@ import '../../state/file_staging_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_dialog.dart';
 import '../../widgets/app_snackbar.dart';
+import 'widgets/transfer_dialog_parts.dart';
 
 /// Runs a staging-area paste end to end: plan, resolve conflicts, execute with
 /// progress, then reconcile the staging list and the browser listing.
@@ -617,7 +618,7 @@ class _ProgressDialog extends StatelessWidget {
                 ),
                 if (plan.crossVolume) ...[
                   const SizedBox(height: 12),
-                  _InfoNote(text: l10n.pasteRollbackNote),
+                  TransferInfoNote(text: l10n.pasteRollbackNote),
                 ],
               ],
             );
@@ -638,40 +639,6 @@ class _ProgressDialog extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoNote extends StatelessWidget {
-  final String text;
-
-  const _InfoNote({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final semantic = AppSemanticColors.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-      decoration: BoxDecoration(
-        color: semantic.info.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.control),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline, size: AppSize.iconSm, color: semantic.info),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.55,
-                  ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -712,7 +679,7 @@ Future<void> _showSummary(
         Row(
           children: [
             Expanded(
-              child: _StatCell(
+              child: TransferStatCell(
                 value: outcome.succeeded.length,
                 label: l10n.pasteStatSucceeded,
                 color: semantic.success,
@@ -720,7 +687,7 @@ Future<void> _showSummary(
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _StatCell(
+              child: TransferStatCell(
                 value: outcome.skipped.length,
                 label: l10n.pasteStatSkipped,
                 color: colorScheme.onSurfaceVariant,
@@ -728,7 +695,7 @@ Future<void> _showSummary(
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _StatCell(
+              child: TransferStatCell(
                 value: outcome.failed.length,
                 label: l10n.pasteStatFailed,
                 color: colorScheme.error,
@@ -775,50 +742,6 @@ Future<void> _showSummary(
       ],
     ),
   );
-}
-
-class _StatCell extends StatelessWidget {
-  final int value;
-  final String label;
-  final Color color;
-
-  const _StatCell({required this.value, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$value',
-            style: textTheme.titleLarge?.mono.copyWith(
-              // A zero is not news. Colouring it would make an untouched
-              // counter as loud as a real failure.
-              color: value == 0 ? colorScheme.outline : color,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-            maxLines: 2,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _FailureRow extends StatelessWidget {

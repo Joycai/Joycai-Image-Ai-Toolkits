@@ -577,6 +577,184 @@ class AppLocalizationsJa extends AppLocalizations {
   String get showInSystem => 'システムで表示';
 
   @override
+  String get newSubfolder => '新しいサブフォルダー';
+
+  @override
+  String get newFolderDefaultName => '新しいフォルダー';
+
+  @override
+  String get moveFolderTo => '移動先…';
+
+  @override
+  String get removeFromList => 'リストから削除';
+
+  @override
+  String get rootCannotMove => 'ルートフォルダーは移動できません';
+
+  @override
+  String get deleteFolderTitle => 'フォルダーを削除しますか？';
+
+  @override
+  String get trashFolderTitle => 'ゴミ箱に移動しますか？';
+
+  @override
+  String get deleteFolderEmptyDesc => 'このフォルダーは空です。削除すると元に戻せません。';
+
+  @override
+  String get trashFolderEmptyDesc => 'このフォルダーは空です。削除後はシステムのゴミ箱から復元できます。';
+
+  @override
+  String get deleteFolderIrreversible => 'この操作は元に戻せません';
+
+  @override
+  String get trashFolderRestorable => 'システムのゴミ箱から復元できます';
+
+  @override
+  String get inventorySubfolders => 'サブフォルダー';
+
+  @override
+  String get inventoryFiles => 'ファイル';
+
+  @override
+  String get inventorySize => 'サイズ';
+
+  @override
+  String get inventoryCounting => '集計中…';
+
+  @override
+  String deleteFolderCount(int count) {
+    return '$count 項目を削除';
+  }
+
+  @override
+  String trashFolderCount(int count) {
+    return '$count 項目をゴミ箱へ';
+  }
+
+  @override
+  String get moveToTrash => 'ゴミ箱に移動';
+
+  @override
+  String get folderNameEmpty => '名前を入力してください';
+
+  @override
+  String folderNameIllegalChars(String chars) {
+    return '名前に $chars は使えません';
+  }
+
+  @override
+  String get folderNameReserved => 'システムの予約名です';
+
+  @override
+  String get folderNameExists => '同名のフォルダーがすでにあります';
+
+  @override
+  String get folderPathRegistered => 'このパスはすでにリストにあります';
+
+  @override
+  String get moveFolderIntoSelf => 'フォルダーを自身の中に移動することはできません';
+
+  @override
+  String get moveFolderSameParent => 'フォルダーはすでにその場所にあります';
+
+  @override
+  String get moveFolderTargetExists => '移動先に同名の項目があります';
+
+  @override
+  String dragMoveFolderHint(String name) {
+    return '「$name」を移動';
+  }
+
+  @override
+  String dragCopyFolderHint(String name) {
+    return '「$name」をコピー';
+  }
+
+  @override
+  String folderMovingTitle(String name) {
+    return 'フォルダー $name を移動中';
+  }
+
+  @override
+  String folderCopyingTitle(String name) {
+    return 'フォルダー $name をコピー中';
+  }
+
+  @override
+  String folderTransferItems(int count) {
+    return '$count 項目';
+  }
+
+  @override
+  String get folderMoveCrossVolumeNote =>
+      '別のドライブです。先にコピーし、すべて到着してから元を削除します。キャンセルしても失われるものはありません。';
+
+  @override
+  String get folderMoveCancelledTitle => '移動をキャンセルしました';
+
+  @override
+  String get folderCopyCancelledTitle => 'コピーをキャンセルしました';
+
+  @override
+  String folderTransferStoppedAt(int done, int total) {
+    return '$done / $total 項目で停止';
+  }
+
+  @override
+  String get folderMoveStatCopied => '移動先にコピー済み';
+
+  @override
+  String get folderMoveStatPending => '未開始';
+
+  @override
+  String get folderMoveStatSourceKept => '元に保持';
+
+  @override
+  String get folderMoveCancelledDesc =>
+      '元のフォルダーはそのまま残っています。コピー済みのファイルは移動先に残るので、後で再度ドロップすれば同名の項目は個別に処理されます。';
+
+  @override
+  String get showDestinationInSystem => '移動先をシステムで表示';
+
+  @override
+  String get gotIt => 'OK';
+
+  @override
+  String folderCreated(String name) {
+    return '$name を作成しました';
+  }
+
+  @override
+  String folderRenamed(String name) {
+    return '$name に名前を変更しました';
+  }
+
+  @override
+  String folderDeleted(String name) {
+    return '$name を削除しました';
+  }
+
+  @override
+  String folderTrashed(String name) {
+    return '$name をゴミ箱に移動しました';
+  }
+
+  @override
+  String folderMoved(String name, String target) {
+    return '$name を $target に移動しました';
+  }
+
+  @override
+  String folderCopied(String name, String target) {
+    return '$name を $target にコピーしました';
+  }
+
+  @override
+  String folderOpFailed(String error) {
+    return '操作に失敗しました: $error';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -2334,9 +2512,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cancelTask => 'タスクをキャンセル';
 
   @override
-  String get removeFromList => 'リストから削除';
-
-  @override
   String get images => '画像';
 
   @override
@@ -2693,9 +2868,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String deleteFileConfirmMessage(String filename) {
     return '「$filename」を削除してもよろしいですか？';
   }
-
-  @override
-  String get moveToTrash => 'ゴミ箱に移動';
 
   @override
   String get permanentlyDelete => '完全に削除';

@@ -574,6 +574,184 @@ class AppLocalizationsZh extends AppLocalizations {
   String get showInSystem => '在系统中显示';
 
   @override
+  String get newSubfolder => '新建子文件夹';
+
+  @override
+  String get newFolderDefaultName => '新建文件夹';
+
+  @override
+  String get moveFolderTo => '移动到…';
+
+  @override
+  String get removeFromList => '从列表中移除';
+
+  @override
+  String get rootCannotMove => '根目录不能移动';
+
+  @override
+  String get deleteFolderTitle => '删除文件夹？';
+
+  @override
+  String get trashFolderTitle => '移到回收站？';
+
+  @override
+  String get deleteFolderEmptyDesc => '这个文件夹是空的，删除后无法撤销。';
+
+  @override
+  String get trashFolderEmptyDesc => '这个文件夹是空的，删除后可从系统回收站找回。';
+
+  @override
+  String get deleteFolderIrreversible => '此操作无法撤销';
+
+  @override
+  String get trashFolderRestorable => '可从系统回收站找回';
+
+  @override
+  String get inventorySubfolders => '子文件夹';
+
+  @override
+  String get inventoryFiles => '文件';
+
+  @override
+  String get inventorySize => '大小';
+
+  @override
+  String get inventoryCounting => '正在盘点…';
+
+  @override
+  String deleteFolderCount(int count) {
+    return '删除 $count 项';
+  }
+
+  @override
+  String trashFolderCount(int count) {
+    return '移到回收站 · $count 项';
+  }
+
+  @override
+  String get moveToTrash => '移至回收站';
+
+  @override
+  String get folderNameEmpty => '名称不能为空';
+
+  @override
+  String folderNameIllegalChars(String chars) {
+    return '名称不能包含 $chars';
+  }
+
+  @override
+  String get folderNameReserved => '这是系统保留名';
+
+  @override
+  String get folderNameExists => '已有同名文件夹';
+
+  @override
+  String get folderPathRegistered => '该路径已在列表中';
+
+  @override
+  String get moveFolderIntoSelf => '文件夹不能移动到自身内部';
+
+  @override
+  String get moveFolderSameParent => '文件夹已在该位置';
+
+  @override
+  String get moveFolderTargetExists => '目标位置已有同名项';
+
+  @override
+  String dragMoveFolderHint(String name) {
+    return '移动「$name」';
+  }
+
+  @override
+  String dragCopyFolderHint(String name) {
+    return '复制「$name」';
+  }
+
+  @override
+  String folderMovingTitle(String name) {
+    return '正在移动文件夹 $name';
+  }
+
+  @override
+  String folderCopyingTitle(String name) {
+    return '正在复制文件夹 $name';
+  }
+
+  @override
+  String folderTransferItems(int count) {
+    return '$count 项';
+  }
+
+  @override
+  String get folderMoveCrossVolumeNote =>
+      '不同磁盘 · 先复制再删除，源目录会在全部到达后才移除，取消不会丢失任何内容。';
+
+  @override
+  String get folderMoveCancelledTitle => '已取消移动';
+
+  @override
+  String get folderCopyCancelledTitle => '已取消复制';
+
+  @override
+  String folderTransferStoppedAt(int done, int total) {
+    return '在 $done / $total 项处停止';
+  }
+
+  @override
+  String get folderMoveStatCopied => '已复制到目标';
+
+  @override
+  String get folderMoveStatPending => '未开始';
+
+  @override
+  String get folderMoveStatSourceKept => '源目录保留';
+
+  @override
+  String get folderMoveCancelledDesc =>
+      '源目录完整保留，未删除任何文件。已复制到目标的项保留在目标位置，可稍后重新拖动，同名项会逐项处理。';
+
+  @override
+  String get showDestinationInSystem => '在系统中显示目标';
+
+  @override
+  String get gotIt => '知道了';
+
+  @override
+  String folderCreated(String name) {
+    return '已创建 $name';
+  }
+
+  @override
+  String folderRenamed(String name) {
+    return '已重命名为 $name';
+  }
+
+  @override
+  String folderDeleted(String name) {
+    return '已删除 $name';
+  }
+
+  @override
+  String folderTrashed(String name) {
+    return '已将 $name 移到回收站';
+  }
+
+  @override
+  String folderMoved(String name, String target) {
+    return '已移动 $name 到 $target';
+  }
+
+  @override
+  String folderCopied(String name, String target) {
+    return '已复制 $name 到 $target';
+  }
+
+  @override
+  String folderOpFailed(String error) {
+    return '操作失败：$error';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI 工具集';
 
   @override
@@ -2305,9 +2483,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancelTask => '取消任务';
 
   @override
-  String get removeFromList => '从列表中移除';
-
-  @override
   String get images => '图像';
 
   @override
@@ -2664,9 +2839,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String deleteFileConfirmMessage(String filename) {
     return '确定要删除“$filename”吗？';
   }
-
-  @override
-  String get moveToTrash => '移至回收站';
 
   @override
   String get permanentlyDelete => '永久删除';
@@ -4307,6 +4479,184 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get showInSystem => '在系統中顯示';
+
+  @override
+  String get newSubfolder => '新增子資料夾';
+
+  @override
+  String get newFolderDefaultName => '新增資料夾';
+
+  @override
+  String get moveFolderTo => '移動到…';
+
+  @override
+  String get removeFromList => '從清單中移除';
+
+  @override
+  String get rootCannotMove => '根目錄無法移動';
+
+  @override
+  String get deleteFolderTitle => '刪除資料夾？';
+
+  @override
+  String get trashFolderTitle => '移到垃圾桶？';
+
+  @override
+  String get deleteFolderEmptyDesc => '這個資料夾是空的，刪除後無法復原。';
+
+  @override
+  String get trashFolderEmptyDesc => '這個資料夾是空的，刪除後可從系統垃圾桶找回。';
+
+  @override
+  String get deleteFolderIrreversible => '此操作無法復原';
+
+  @override
+  String get trashFolderRestorable => '可從系統垃圾桶找回';
+
+  @override
+  String get inventorySubfolders => '子資料夾';
+
+  @override
+  String get inventoryFiles => '檔案';
+
+  @override
+  String get inventorySize => '大小';
+
+  @override
+  String get inventoryCounting => '正在盤點…';
+
+  @override
+  String deleteFolderCount(int count) {
+    return '刪除 $count 項';
+  }
+
+  @override
+  String trashFolderCount(int count) {
+    return '移到垃圾桶 · $count 項';
+  }
+
+  @override
+  String get moveToTrash => '移至資源回收筒';
+
+  @override
+  String get folderNameEmpty => '名稱不能為空';
+
+  @override
+  String folderNameIllegalChars(String chars) {
+    return '名稱不能包含 $chars';
+  }
+
+  @override
+  String get folderNameReserved => '這是系統保留名稱';
+
+  @override
+  String get folderNameExists => '已有同名資料夾';
+
+  @override
+  String get folderPathRegistered => '該路徑已在清單中';
+
+  @override
+  String get moveFolderIntoSelf => '資料夾不能移動到自身內部';
+
+  @override
+  String get moveFolderSameParent => '資料夾已在該位置';
+
+  @override
+  String get moveFolderTargetExists => '目標位置已有同名項目';
+
+  @override
+  String dragMoveFolderHint(String name) {
+    return '移動「$name」';
+  }
+
+  @override
+  String dragCopyFolderHint(String name) {
+    return '複製「$name」';
+  }
+
+  @override
+  String folderMovingTitle(String name) {
+    return '正在移動資料夾 $name';
+  }
+
+  @override
+  String folderCopyingTitle(String name) {
+    return '正在複製資料夾 $name';
+  }
+
+  @override
+  String folderTransferItems(int count) {
+    return '$count 項';
+  }
+
+  @override
+  String get folderMoveCrossVolumeNote =>
+      '不同磁碟 · 先複製再刪除，來源目錄會在全部到達後才移除，取消不會遺失任何內容。';
+
+  @override
+  String get folderMoveCancelledTitle => '已取消移動';
+
+  @override
+  String get folderCopyCancelledTitle => '已取消複製';
+
+  @override
+  String folderTransferStoppedAt(int done, int total) {
+    return '在 $done / $total 項處停止';
+  }
+
+  @override
+  String get folderMoveStatCopied => '已複製到目標';
+
+  @override
+  String get folderMoveStatPending => '未開始';
+
+  @override
+  String get folderMoveStatSourceKept => '來源目錄保留';
+
+  @override
+  String get folderMoveCancelledDesc =>
+      '來源目錄完整保留，未刪除任何檔案。已複製到目標的項目保留在目標位置，可稍後重新拖曳，同名項目會逐項處理。';
+
+  @override
+  String get showDestinationInSystem => '在系統中顯示目標';
+
+  @override
+  String get gotIt => '知道了';
+
+  @override
+  String folderCreated(String name) {
+    return '已建立 $name';
+  }
+
+  @override
+  String folderRenamed(String name) {
+    return '已重新命名為 $name';
+  }
+
+  @override
+  String folderDeleted(String name) {
+    return '已刪除 $name';
+  }
+
+  @override
+  String folderTrashed(String name) {
+    return '已將 $name 移到垃圾桶';
+  }
+
+  @override
+  String folderMoved(String name, String target) {
+    return '已移動 $name 到 $target';
+  }
+
+  @override
+  String folderCopied(String name, String target) {
+    return '已複製 $name 到 $target';
+  }
+
+  @override
+  String folderOpFailed(String error) {
+    return '操作失敗：$error';
+  }
 
   @override
   String get appTitle => 'Joycai Image AI Toolkits';
@@ -6039,9 +6389,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get cancelTask => '取消任務';
 
   @override
-  String get removeFromList => '從清單中移除';
-
-  @override
   String get images => '圖片';
 
   @override
@@ -6397,9 +6744,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String deleteFileConfirmMessage(String filename) {
     return '您確定要刪除「$filename」嗎？';
   }
-
-  @override
-  String get moveToTrash => '移至資源回收筒';
 
   @override
   String get permanentlyDelete => '永久刪除';

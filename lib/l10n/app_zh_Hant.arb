@@ -506,6 +506,175 @@
     }
   },
   "showInSystem": "在系統中顯示",
+  "newSubfolder": "新增子資料夾",
+  "newFolderDefaultName": "新增資料夾",
+  "moveFolderTo": "移動到…",
+  "removeFromList": "從清單中移除",
+  "rootCannotMove": "根目錄無法移動",
+  "deleteFolderTitle": "刪除資料夾？",
+  "trashFolderTitle": "移到垃圾桶？",
+  "deleteFolderEmptyDesc": "這個資料夾是空的，刪除後無法復原。",
+  "trashFolderEmptyDesc": "這個資料夾是空的，刪除後可從系統垃圾桶找回。",
+  "deleteFolderIrreversible": "此操作無法復原",
+  "trashFolderRestorable": "可從系統垃圾桶找回",
+  "inventorySubfolders": "子資料夾",
+  "inventoryFiles": "檔案",
+  "inventorySize": "大小",
+  "inventoryCounting": "正在盤點…",
+  "deleteFolderCount": "刪除 {count} 項",
+  "@deleteFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashFolderCount": "移到垃圾桶 · {count} 項",
+  "@trashFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveToTrash": "移至資源回收筒",
+  "folderNameEmpty": "名稱不能為空",
+  "folderNameIllegalChars": "名稱不能包含 {chars}",
+  "@folderNameIllegalChars": {
+    "placeholders": {
+      "chars": {
+        "type": "String"
+      }
+    }
+  },
+  "folderNameReserved": "這是系統保留名稱",
+  "folderNameExists": "已有同名資料夾",
+  "folderPathRegistered": "該路徑已在清單中",
+  "moveFolderIntoSelf": "資料夾不能移動到自身內部",
+  "moveFolderSameParent": "資料夾已在該位置",
+  "moveFolderTargetExists": "目標位置已有同名項目",
+  "dragMoveFolderHint": "移動「{name}」",
+  "@dragMoveFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dragCopyFolderHint": "複製「{name}」",
+  "@dragCopyFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMovingTitle": "正在移動資料夾 {name}",
+  "@folderMovingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopyingTitle": "正在複製資料夾 {name}",
+  "@folderCopyingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTransferItems": "{count} 項",
+  "@folderTransferItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveCrossVolumeNote": "不同磁碟 · 先複製再刪除，來源目錄會在全部到達後才移除，取消不會遺失任何內容。",
+  "folderMoveCancelledTitle": "已取消移動",
+  "folderCopyCancelledTitle": "已取消複製",
+  "folderTransferStoppedAt": "在 {done} / {total} 項處停止",
+  "@folderTransferStoppedAt": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveStatCopied": "已複製到目標",
+  "folderMoveStatPending": "未開始",
+  "folderMoveStatSourceKept": "來源目錄保留",
+  "folderMoveCancelledDesc": "來源目錄完整保留，未刪除任何檔案。已複製到目標的項目保留在目標位置，可稍後重新拖曳，同名項目會逐項處理。",
+  "showDestinationInSystem": "在系統中顯示目標",
+  "gotIt": "知道了",
+  "folderCreated": "已建立 {name}",
+  "@folderCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderRenamed": "已重新命名為 {name}",
+  "@folderRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderDeleted": "已刪除 {name}",
+  "@folderDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTrashed": "已將 {name} 移到垃圾桶",
+  "@folderTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMoved": "已移動 {name} 到 {target}",
+  "@folderMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopied": "已複製 {name} 到 {target}",
+  "@folderCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderOpFailed": "操作失敗：{error}",
+  "@folderOpFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI Toolkits",
   "save": "儲存",
   "update": "更新",
@@ -1181,7 +1350,6 @@
   "cancelAll": "全部取消",
   "cancelAllPending": "取消所有待處理",
   "cancelTask": "取消任務",
-  "removeFromList": "從清單中移除",
   "images": "圖片",
   "filesCount": "{count} 個檔案",
   "@filesCount": {
@@ -1401,7 +1569,6 @@
       }
     }
   },
-  "moveToTrash": "移至資源回收筒",
   "permanentlyDelete": "永久刪除",
   "deleteSuccess": "刪除成功",
   "deleteFailed": "刪除失敗：{error}",

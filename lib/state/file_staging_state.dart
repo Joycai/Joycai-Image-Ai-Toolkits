@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../core/file_utils.dart';
 import '../models/browser_file.dart';
 import '../services/database_service.dart';
 
@@ -156,6 +157,44 @@ class FileStagingState extends ChangeNotifier {
     _paths = const {};
     _missingPaths = const {};
     _persist();
+    notifyListeners();
+  }
+
+  /// Re-points every mark under [from] at [to] after that folder was renamed
+  /// or moved. Without this the next [revalidate] would report them all
+  /// missing — and they are not, they just answer to a new address.
+  void rewritePathPrefix(String from, String to) {
+    var changed = false;
+    final items = <BrowserFile>[];
+    for (final item in _items) {
+      final moved = FileUtils.rebasePath(item.path, from: from, to: to);
+      if (moved == null) {
+        items.add(item);
+        continue;
+      }
+      changed = true;
+      items.add(BrowserFile(
+        path: moved,
+        name: item.name,
+        category: item.category,
+        size: item.size,
+        modified: item.modified,
+      ));
+    }
+    final destination = _destination == null
+        ? null
+        : FileUtils.rebasePath(_destination!, from: from, to: to);
+    if (!changed && destination == null) return;
+
+    if (changed) {
+      _items = items;
+      _paths = items.map((f) => f.path).toSet();
+      _missingPaths = {
+        for (final path in _missingPaths) FileUtils.rebasePath(path, from: from, to: to) ?? path,
+      };
+      _persist();
+    }
+    if (destination != null) _destination = destination;
     notifyListeners();
   }
 

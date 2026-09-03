@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/constants.dart';
+import '../core/file_utils.dart';
 import '../models/app_image.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
@@ -315,6 +316,46 @@ class GalleryState extends ChangeNotifier {
       _setupSourceWatchers();
       notifyListeners();
     }
+  }
+
+  /// Follows a folder that the file browser renamed or moved, when the
+  /// workbench had registered it (or something inside it) as a source or as
+  /// the output directory. Otherwise that registration would turn
+  /// "unreachable" the moment the browser finished.
+  Future<void> rewritePathPrefix(String from, String to) async {
+    var changed = false;
+    final sources = <String>[];
+    for (final path in sourceDirectories) {
+      final moved = FileUtils.rebasePath(path, from: from, to: to);
+      if (moved != null) {
+        await _db.renameSourceDirectory(path, moved);
+        changed = true;
+      }
+      sources.add(moved ?? path);
+    }
+    final active = [
+      for (final path in activeSourceDirectories)
+        FileUtils.rebasePath(path, from: from, to: to) ?? path,
+    ];
+
+    final output = outputDirectory == null
+        ? null
+        : FileUtils.rebasePath(outputDirectory!, from: from, to: to);
+    if (output != null) {
+      outputDirectory = output;
+      await _db.saveSetting('output_directory', output);
+      _setupOutputWatcher();
+      changed = true;
+    }
+    if (!changed) return;
+
+    sourceDirectories = sources;
+    activeSourceDirectories = active;
+    _log('Followed folder change: $from -> $to');
+    _scanImages();
+    _scanProcessedImages();
+    _setupSourceWatchers();
+    notifyListeners();
   }
 
   Future<void> toggleDirectory(String path) async {

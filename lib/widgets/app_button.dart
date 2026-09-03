@@ -144,6 +144,11 @@ class AppButton extends StatelessWidget {
   /// of their colour pair.
   final bool accentLabel;
 
+  /// Takes keyboard focus when the button appears, so Enter lands here. A
+  /// destructive dialog gives this to *Cancel*: Enter must never be the key
+  /// that deletes.
+  final bool autofocus;
+
   const AppButton({
     super.key,
     required this.label,
@@ -155,6 +160,7 @@ class AppButton extends StatelessWidget {
     this.size = AppButtonSize.normal,
     this.fullWidth = false,
     this.accentLabel = false,
+    this.autofocus = false,
   });
 
   /// The label, plus [secondaryLabel] trailing it when set.
@@ -249,14 +255,14 @@ class AppButton extends StatelessWidget {
     switch (variant) {
       case AppButtonVariant.primary:
       case AppButtonVariant.destructive:
-        return FilledButton(style: style, onPressed: onPressed, child: child);
+        return FilledButton(style: style, onPressed: onPressed, autofocus: autofocus, child: child);
       case AppButtonVariant.text:
       case AppButtonVariant.destructiveText:
-        return TextButton(style: style, onPressed: onPressed, child: child);
+        return TextButton(style: style, onPressed: onPressed, autofocus: autofocus, child: child);
       case AppButtonVariant.secondary:
       case AppButtonVariant.tonal:
       case AppButtonVariant.destructiveOutline:
-        return OutlinedButton(style: style, onPressed: onPressed, child: child);
+        return OutlinedButton(style: style, onPressed: onPressed, autofocus: autofocus, child: child);
     }
   }
 
@@ -272,6 +278,7 @@ class AppButton extends StatelessWidget {
         return FilledButton.icon(
           style: style,
           onPressed: onPressed,
+          autofocus: autofocus,
           icon: Icon(icon, size: _iconSize),
           label: label,
         );
@@ -280,6 +287,7 @@ class AppButton extends StatelessWidget {
         return TextButton.icon(
           style: style,
           onPressed: onPressed,
+          autofocus: autofocus,
           icon: Icon(icon, size: _iconSize),
           label: label,
         );
@@ -289,6 +297,7 @@ class AppButton extends StatelessWidget {
         return OutlinedButton.icon(
           style: style,
           onPressed: onPressed,
+          autofocus: autofocus,
           icon: Icon(icon, size: _iconSize),
           label: label,
         );

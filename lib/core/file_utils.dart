@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
 class FileUtils {
@@ -31,5 +32,18 @@ class FileUtils {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// [path] with the [from] prefix swapped for [to], or null when [path] is
+  /// neither [from] itself nor inside it.
+  ///
+  /// The one primitive behind every "a folder was renamed or moved, fix up
+  /// what pointed at it" pass — the browser's directory lists, the staging
+  /// marks, the workbench's registered sources. Segment-aware: `D:i_res`
+  /// does not match `D:i_res2`, which a bare `startsWith` would.
+  static String? rebasePath(String path, {required String from, required String to}) {
+    if (p.equals(path, from)) return to;
+    if (!p.isWithin(from, path)) return null;
+    return p.join(to, p.relative(path, from: from));
   }
 }

@@ -519,5 +519,174 @@
       }
     }
   },
-  "showInSystem": "在系统中显示"
+  "showInSystem": "在系统中显示",
+  "newSubfolder": "新建子文件夹",
+  "newFolderDefaultName": "新建文件夹",
+  "moveFolderTo": "移动到…",
+  "removeFromList": "从列表移除",
+  "rootCannotMove": "根目录不能移动",
+  "deleteFolderTitle": "删除文件夹？",
+  "trashFolderTitle": "移到回收站？",
+  "deleteFolderEmptyDesc": "这个文件夹是空的，删除后无法撤销。",
+  "trashFolderEmptyDesc": "这个文件夹是空的，删除后可从系统回收站找回。",
+  "deleteFolderIrreversible": "此操作无法撤销",
+  "trashFolderRestorable": "可从系统回收站找回",
+  "inventorySubfolders": "子文件夹",
+  "inventoryFiles": "文件",
+  "inventorySize": "大小",
+  "inventoryCounting": "正在盘点…",
+  "deleteFolderCount": "删除 {count} 项",
+  "@deleteFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashFolderCount": "移到回收站 · {count} 项",
+  "@trashFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveToTrash": "移到回收站",
+  "folderNameEmpty": "名称不能为空",
+  "folderNameIllegalChars": "名称不能包含 {chars}",
+  "@folderNameIllegalChars": {
+    "placeholders": {
+      "chars": {
+        "type": "String"
+      }
+    }
+  },
+  "folderNameReserved": "这是系统保留名",
+  "folderNameExists": "已有同名文件夹",
+  "folderPathRegistered": "该路径已在列表中",
+  "moveFolderIntoSelf": "文件夹不能移动到自身内部",
+  "moveFolderSameParent": "文件夹已在该位置",
+  "moveFolderTargetExists": "目标位置已有同名项",
+  "dragMoveFolderHint": "移动「{name}」",
+  "@dragMoveFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dragCopyFolderHint": "复制「{name}」",
+  "@dragCopyFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMovingTitle": "正在移动文件夹 {name}",
+  "@folderMovingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopyingTitle": "正在复制文件夹 {name}",
+  "@folderCopyingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTransferItems": "{count} 项",
+  "@folderTransferItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveCrossVolumeNote": "不同磁盘 · 先复制再删除，源目录会在全部到达后才移除，取消不会丢失任何内容。",
+  "folderMoveCancelledTitle": "已取消移动",
+  "folderCopyCancelledTitle": "已取消复制",
+  "folderTransferStoppedAt": "在 {done} / {total} 项处停止",
+  "@folderTransferStoppedAt": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveStatCopied": "已复制到目标",
+  "folderMoveStatPending": "未开始",
+  "folderMoveStatSourceKept": "源目录保留",
+  "folderMoveCancelledDesc": "源目录完整保留，未删除任何文件。已复制到目标的项保留在目标位置，可稍后重新拖动，同名项会逐项处理。",
+  "showDestinationInSystem": "在系统中显示目标",
+  "gotIt": "知道了",
+  "folderCreated": "已创建 {name}",
+  "@folderCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderRenamed": "已重命名为 {name}",
+  "@folderRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderDeleted": "已删除 {name}",
+  "@folderDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTrashed": "已将 {name} 移到回收站",
+  "@folderTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMoved": "已移动 {name} 到 {target}",
+  "@folderMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopied": "已复制 {name} 到 {target}",
+  "@folderCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderOpFailed": "操作失败：{error}",
+  "@folderOpFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
