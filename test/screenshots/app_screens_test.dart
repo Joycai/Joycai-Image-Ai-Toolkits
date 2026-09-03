@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
+import 'package:joycai_image_ai_toolkits/screens/workbench/directory_tree_item.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_segmented_control.dart';
@@ -186,6 +187,103 @@ void main() {
       );
     });
   }
+
+  // `B1b 13a/13b/13d` — the folder management the tree grew: the root's
+  // context menu (with its "remove from list" / disabled "move to…" rules),
+  // the in-row name field for a new subfolder, and the delete confirmation
+  // for a subfolder that has something in it.
+  Future<void> ensureArchive(WidgetTester tester) => tester.runAsync(() async {
+        final Directory dest = Directory(p.join(env.browserDir.path, 'archive'));
+        if (!await dest.exists()) await dest.create();
+        await File(p.join(dest.path, 'kept.txt')).writeAsString('kept');
+      });
+
+  // The folder name also appears in the staging panel's group header when
+  // an earlier shot left marks behind, so the row is found through the tree.
+  Finder treeRow(String name) => find.descendant(
+        of: find.byType(DirectoryTreeItem),
+        matching: find.text(name),
+      );
+
+  Finder menuItem(String label) => find.descendant(
+        of: find.byType(PopupMenuItem<void>),
+        matching: find.text(label),
+      );
+
+  Future<void> settle(WidgetTester tester, [int frames = 6]) async {
+    for (int i = 0; i < frames; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+  }
+
+  testWidgets('fileBrowser · folderMenu @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'folderMenu',
+      before: ensureArchive,
+      after: (WidgetTester tester) async {
+        await tester.tap(treeRow('browser').first, buttons: kSecondaryButton);
+        await settle(tester);
+      },
+    );
+  });
+
+  testWidgets('fileBrowser · folderNew @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'folderNew',
+      before: ensureArchive,
+      after: (WidgetTester tester) async {
+        await tester.tap(treeRow('browser').first, buttons: kSecondaryButton);
+        await settle(tester);
+        // The subfolder listing behind the editor is real dart:io.
+        await tester.runAsync(() async {
+          await tester.tap(menuItem('新建子文件夹'));
+          await tester.pump();
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        });
+        await settle(tester);
+      },
+    );
+  });
+
+  testWidgets('fileBrowser · folderDelete @ desktop light', (WidgetTester tester) async {
+    await shoot(
+      tester,
+      env: env,
+      screen: AppScreen.fileBrowser,
+      size: kShotSizes.last,
+      suffix: 'folderDelete',
+      before: ensureArchive,
+      after: (WidgetTester tester) async {
+        await tester.runAsync(() async {
+          await tester.tap(find.descendant(
+            of: find.byType(DirectoryTreeItem),
+            matching: find.byIcon(Icons.expand_more),
+          ));
+          await tester.pump();
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        });
+        await settle(tester);
+        await tester.tap(treeRow('archive').first, buttons: kSecondaryButton);
+        await settle(tester);
+        // The inventory runs in a compute isolate; the dialog opens first and
+        // fills its counts when that lands.
+        await tester.runAsync(() async {
+          await tester.tap(menuItem('删除'));
+          await tester.pump();
+          await Future<void>.delayed(const Duration(milliseconds: 800));
+        });
+        await settle(tester);
+      },
+    );
+  });
 
   // The AI rename dialog — `B4 13a`. Its result states need a live model, so
   // only the opened-but-not-generated frame is reachable here; that still

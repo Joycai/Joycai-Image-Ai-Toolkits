@@ -520,6 +520,175 @@
     }
   },
   "showInSystem": "Show in system",
+  "newSubfolder": "New subfolder",
+  "newFolderDefaultName": "New folder",
+  "moveFolderTo": "Move to…",
+  "removeFromList": "Remove from list",
+  "rootCannotMove": "Root folders cannot be moved",
+  "deleteFolderTitle": "Delete folder?",
+  "trashFolderTitle": "Move to trash?",
+  "deleteFolderEmptyDesc": "This folder is empty. Deleting it cannot be undone.",
+  "trashFolderEmptyDesc": "This folder is empty. It can be restored from the system trash.",
+  "deleteFolderIrreversible": "This cannot be undone",
+  "trashFolderRestorable": "Can be restored from the system trash",
+  "inventorySubfolders": "Subfolders",
+  "inventoryFiles": "Files",
+  "inventorySize": "Size",
+  "inventoryCounting": "Counting…",
+  "deleteFolderCount": "Delete {count} items",
+  "@deleteFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashFolderCount": "Move {count} items to trash",
+  "@trashFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveToTrash": "Move to Trash",
+  "folderNameEmpty": "Name cannot be empty",
+  "folderNameIllegalChars": "Name cannot contain {chars}",
+  "@folderNameIllegalChars": {
+    "placeholders": {
+      "chars": {
+        "type": "String"
+      }
+    }
+  },
+  "folderNameReserved": "This name is reserved by the system",
+  "folderNameExists": "A folder with this name already exists",
+  "folderPathRegistered": "This path is already in the list",
+  "moveFolderIntoSelf": "A folder cannot be moved into itself",
+  "moveFolderSameParent": "The folder is already there",
+  "moveFolderTargetExists": "The destination already has an entry with this name",
+  "dragMoveFolderHint": "Move “{name}”",
+  "@dragMoveFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dragCopyFolderHint": "Copy “{name}”",
+  "@dragCopyFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMovingTitle": "Moving folder {name}",
+  "@folderMovingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopyingTitle": "Copying folder {name}",
+  "@folderCopyingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTransferItems": "{count} items",
+  "@folderTransferItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveCrossVolumeNote": "A different drive. The folder is copied first and the source is removed only after everything has arrived, so cancelling never loses anything.",
+  "folderMoveCancelledTitle": "Move cancelled",
+  "folderCopyCancelledTitle": "Copy cancelled",
+  "folderTransferStoppedAt": "stopped at {done} / {total} items",
+  "@folderTransferStoppedAt": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveStatCopied": "Copied to destination",
+  "folderMoveStatPending": "Not started",
+  "folderMoveStatSourceKept": "Kept in source",
+  "folderMoveCancelledDesc": "The source folder is untouched. The files already copied stay in the destination; drop the folder again later and same-name files will be handled one by one.",
+  "showDestinationInSystem": "Show destination in system",
+  "gotIt": "Got it",
+  "folderCreated": "Created {name}",
+  "@folderCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderRenamed": "Renamed to {name}",
+  "@folderRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderDeleted": "Deleted {name}",
+  "@folderDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTrashed": "Moved {name} to trash",
+  "@folderTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMoved": "Moved {name} to {target}",
+  "@folderMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopied": "Copied {name} to {target}",
+  "@folderCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderOpFailed": "Operation failed: {error}",
+  "@folderOpFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI Toolkits",
   "save": "Save",
   "update": "Update",
@@ -1347,7 +1516,6 @@
   "clearAllConfirm": "This will remove all non-running tasks. This action cannot be undone.",
   "cancelAllPending": "Cancel All Pending",
   "cancelTask": "Cancel Task",
-  "removeFromList": "Remove from list",
   "images": "Images",
   "filesCount": "{count} files",
   "@filesCount": {
@@ -1562,7 +1730,6 @@
       }
     }
   },
-  "moveToTrash": "Move to Trash",
   "permanentlyDelete": "Permanently Delete",
   "deleteSuccess": "Deleted successfully",
   "deleteFailed": "Failed to delete: {error}",

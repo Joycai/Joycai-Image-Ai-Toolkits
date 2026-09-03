@@ -41,6 +41,10 @@ dependencies:
   video_player_win: ^3.2.2
   fc_native_video_thumbnail: ^3.0.1
   window_manager: ^0.5.2
+  # Both only for the Windows recycle-bin call in trash_service.dart; win32 was
+  # already here transitively.
+  win32: ^6.4.0
+  ffi: ^2.1.4
 
 dev_dependencies:
   flutter_test:

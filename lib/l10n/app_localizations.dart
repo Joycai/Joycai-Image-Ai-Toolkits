@@ -1048,6 +1048,294 @@ abstract class AppLocalizations {
   /// **'Show in system'**
   String get showInSystem;
 
+  /// No description provided for @newSubfolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New subfolder'**
+  String get newSubfolder;
+
+  /// No description provided for @newFolderDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get newFolderDefaultName;
+
+  /// No description provided for @moveFolderTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to…'**
+  String get moveFolderTo;
+
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
+  /// No description provided for @rootCannotMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Root folders cannot be moved'**
+  String get rootCannotMove;
+
+  /// No description provided for @deleteFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder?'**
+  String get deleteFolderTitle;
+
+  /// No description provided for @trashFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to trash?'**
+  String get trashFolderTitle;
+
+  /// No description provided for @deleteFolderEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is empty. Deleting it cannot be undone.'**
+  String get deleteFolderEmptyDesc;
+
+  /// No description provided for @trashFolderEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is empty. It can be restored from the system trash.'**
+  String get trashFolderEmptyDesc;
+
+  /// No description provided for @deleteFolderIrreversible.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone'**
+  String get deleteFolderIrreversible;
+
+  /// No description provided for @trashFolderRestorable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can be restored from the system trash'**
+  String get trashFolderRestorable;
+
+  /// No description provided for @inventorySubfolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Subfolders'**
+  String get inventorySubfolders;
+
+  /// No description provided for @inventoryFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get inventoryFiles;
+
+  /// No description provided for @inventorySize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get inventorySize;
+
+  /// No description provided for @inventoryCounting.
+  ///
+  /// In en, this message translates to:
+  /// **'Counting…'**
+  String get inventoryCounting;
+
+  /// No description provided for @deleteFolderCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} items'**
+  String deleteFolderCount(int count);
+
+  /// No description provided for @trashFolderCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {count} items to trash'**
+  String trashFolderCount(int count);
+
+  /// No description provided for @moveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Trash'**
+  String get moveToTrash;
+
+  /// No description provided for @folderNameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot be empty'**
+  String get folderNameEmpty;
+
+  /// No description provided for @folderNameIllegalChars.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot contain {chars}'**
+  String folderNameIllegalChars(String chars);
+
+  /// No description provided for @folderNameReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'This name is reserved by the system'**
+  String get folderNameReserved;
+
+  /// No description provided for @folderNameExists.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder with this name already exists'**
+  String get folderNameExists;
+
+  /// No description provided for @folderPathRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This path is already in the list'**
+  String get folderPathRegistered;
+
+  /// No description provided for @moveFolderIntoSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder cannot be moved into itself'**
+  String get moveFolderIntoSelf;
+
+  /// No description provided for @moveFolderSameParent.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder is already there'**
+  String get moveFolderSameParent;
+
+  /// No description provided for @moveFolderTargetExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The destination already has an entry with this name'**
+  String get moveFolderTargetExists;
+
+  /// No description provided for @dragMoveFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Move “{name}”'**
+  String dragMoveFolderHint(String name);
+
+  /// No description provided for @dragCopyFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy “{name}”'**
+  String dragCopyFolderHint(String name);
+
+  /// No description provided for @folderMovingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving folder {name}'**
+  String folderMovingTitle(String name);
+
+  /// No description provided for @folderCopyingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying folder {name}'**
+  String folderCopyingTitle(String name);
+
+  /// No description provided for @folderTransferItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String folderTransferItems(int count);
+
+  /// No description provided for @folderMoveCrossVolumeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A different drive. The folder is copied first and the source is removed only after everything has arrived, so cancelling never loses anything.'**
+  String get folderMoveCrossVolumeNote;
+
+  /// No description provided for @folderMoveCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move cancelled'**
+  String get folderMoveCancelledTitle;
+
+  /// No description provided for @folderCopyCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy cancelled'**
+  String get folderCopyCancelledTitle;
+
+  /// No description provided for @folderTransferStoppedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'stopped at {done} / {total} items'**
+  String folderTransferStoppedAt(int done, int total);
+
+  /// No description provided for @folderMoveStatCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to destination'**
+  String get folderMoveStatCopied;
+
+  /// No description provided for @folderMoveStatPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get folderMoveStatPending;
+
+  /// No description provided for @folderMoveStatSourceKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in source'**
+  String get folderMoveStatSourceKept;
+
+  /// No description provided for @folderMoveCancelledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The source folder is untouched. The files already copied stay in the destination; drop the folder again later and same-name files will be handled one by one.'**
+  String get folderMoveCancelledDesc;
+
+  /// No description provided for @showDestinationInSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Show destination in system'**
+  String get showDestinationInSystem;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @folderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {name}'**
+  String folderCreated(String name);
+
+  /// No description provided for @folderRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Renamed to {name}'**
+  String folderRenamed(String name);
+
+  /// No description provided for @folderDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {name}'**
+  String folderDeleted(String name);
+
+  /// No description provided for @folderTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {name} to trash'**
+  String folderTrashed(String name);
+
+  /// No description provided for @folderMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {name} to {target}'**
+  String folderMoved(String name, String target);
+
+  /// No description provided for @folderCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {name} to {target}'**
+  String folderCopied(String name, String target);
+
+  /// No description provided for @folderOpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation failed: {error}'**
+  String folderOpFailed(String error);
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -4336,12 +4624,6 @@ abstract class AppLocalizations {
   /// **'Cancel Task'**
   String get cancelTask;
 
-  /// No description provided for @removeFromList.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from list'**
-  String get removeFromList;
-
   /// No description provided for @images.
   ///
   /// In en, this message translates to:
@@ -4995,12 +5277,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to delete \"{filename}\"?'**
   String deleteFileConfirmMessage(String filename);
-
-  /// No description provided for @moveToTrash.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to Trash'**
-  String get moveToTrash;
 
   /// No description provided for @permanentlyDelete.
   ///

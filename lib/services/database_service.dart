@@ -290,6 +290,13 @@ class DatabaseService {
     await db.delete('source_directories', where: 'path = ?', whereArgs: [path]);
   }
 
+  /// Re-keys a registered source directory after the folder itself was
+  /// renamed or moved. Keeps its selection flag.
+  Future<void> renameSourceDirectory(String from, String to) async {
+    final db = await database;
+    await db.update('source_directories', {'path': to}, where: 'path = ?', whereArgs: [from]);
+  }
+
   Future<void> updateDirectorySelection(String path, bool isSelected) async {   
     final db = await database;
     await db.update('source_directories', {'is_selected': isSelected ? 1 : 0}, where: 'path = ?', whereArgs: [path]);

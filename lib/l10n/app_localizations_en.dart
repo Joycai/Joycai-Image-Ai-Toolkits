@@ -582,6 +582,187 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showInSystem => 'Show in system';
 
   @override
+  String get newSubfolder => 'New subfolder';
+
+  @override
+  String get newFolderDefaultName => 'New folder';
+
+  @override
+  String get moveFolderTo => 'Move to…';
+
+  @override
+  String get removeFromList => 'Remove from list';
+
+  @override
+  String get rootCannotMove => 'Root folders cannot be moved';
+
+  @override
+  String get deleteFolderTitle => 'Delete folder?';
+
+  @override
+  String get trashFolderTitle => 'Move to trash?';
+
+  @override
+  String get deleteFolderEmptyDesc =>
+      'This folder is empty. Deleting it cannot be undone.';
+
+  @override
+  String get trashFolderEmptyDesc =>
+      'This folder is empty. It can be restored from the system trash.';
+
+  @override
+  String get deleteFolderIrreversible => 'This cannot be undone';
+
+  @override
+  String get trashFolderRestorable => 'Can be restored from the system trash';
+
+  @override
+  String get inventorySubfolders => 'Subfolders';
+
+  @override
+  String get inventoryFiles => 'Files';
+
+  @override
+  String get inventorySize => 'Size';
+
+  @override
+  String get inventoryCounting => 'Counting…';
+
+  @override
+  String deleteFolderCount(int count) {
+    return 'Delete $count items';
+  }
+
+  @override
+  String trashFolderCount(int count) {
+    return 'Move $count items to trash';
+  }
+
+  @override
+  String get moveToTrash => 'Move to Trash';
+
+  @override
+  String get folderNameEmpty => 'Name cannot be empty';
+
+  @override
+  String folderNameIllegalChars(String chars) {
+    return 'Name cannot contain $chars';
+  }
+
+  @override
+  String get folderNameReserved => 'This name is reserved by the system';
+
+  @override
+  String get folderNameExists => 'A folder with this name already exists';
+
+  @override
+  String get folderPathRegistered => 'This path is already in the list';
+
+  @override
+  String get moveFolderIntoSelf => 'A folder cannot be moved into itself';
+
+  @override
+  String get moveFolderSameParent => 'The folder is already there';
+
+  @override
+  String get moveFolderTargetExists =>
+      'The destination already has an entry with this name';
+
+  @override
+  String dragMoveFolderHint(String name) {
+    return 'Move “$name”';
+  }
+
+  @override
+  String dragCopyFolderHint(String name) {
+    return 'Copy “$name”';
+  }
+
+  @override
+  String folderMovingTitle(String name) {
+    return 'Moving folder $name';
+  }
+
+  @override
+  String folderCopyingTitle(String name) {
+    return 'Copying folder $name';
+  }
+
+  @override
+  String folderTransferItems(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get folderMoveCrossVolumeNote =>
+      'A different drive. The folder is copied first and the source is removed only after everything has arrived, so cancelling never loses anything.';
+
+  @override
+  String get folderMoveCancelledTitle => 'Move cancelled';
+
+  @override
+  String get folderCopyCancelledTitle => 'Copy cancelled';
+
+  @override
+  String folderTransferStoppedAt(int done, int total) {
+    return 'stopped at $done / $total items';
+  }
+
+  @override
+  String get folderMoveStatCopied => 'Copied to destination';
+
+  @override
+  String get folderMoveStatPending => 'Not started';
+
+  @override
+  String get folderMoveStatSourceKept => 'Kept in source';
+
+  @override
+  String get folderMoveCancelledDesc =>
+      'The source folder is untouched. The files already copied stay in the destination; drop the folder again later and same-name files will be handled one by one.';
+
+  @override
+  String get showDestinationInSystem => 'Show destination in system';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String folderCreated(String name) {
+    return 'Created $name';
+  }
+
+  @override
+  String folderRenamed(String name) {
+    return 'Renamed to $name';
+  }
+
+  @override
+  String folderDeleted(String name) {
+    return 'Deleted $name';
+  }
+
+  @override
+  String folderTrashed(String name) {
+    return 'Moved $name to trash';
+  }
+
+  @override
+  String folderMoved(String name, String target) {
+    return 'Moved $name to $target';
+  }
+
+  @override
+  String folderCopied(String name, String target) {
+    return 'Copied $name to $target';
+  }
+
+  @override
+  String folderOpFailed(String error) {
+    return 'Operation failed: $error';
+  }
+
+  @override
   String get appTitle => 'Joycai Image AI Toolkits';
 
   @override
@@ -2388,9 +2569,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelTask => 'Cancel Task';
 
   @override
-  String get removeFromList => 'Remove from list';
-
-  @override
   String get images => 'Images';
 
   @override
@@ -2755,9 +2933,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteFileConfirmMessage(String filename) {
     return 'Are you sure you want to delete \"$filename\"?';
   }
-
-  @override
-  String get moveToTrash => 'Move to Trash';
 
   @override
   String get permanentlyDelete => 'Permanently Delete';

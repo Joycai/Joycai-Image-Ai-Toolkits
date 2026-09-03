@@ -506,6 +506,175 @@
     }
   },
   "showInSystem": "システムで表示",
+  "newSubfolder": "新しいサブフォルダー",
+  "newFolderDefaultName": "新しいフォルダー",
+  "moveFolderTo": "移動先…",
+  "removeFromList": "リストから削除",
+  "rootCannotMove": "ルートフォルダーは移動できません",
+  "deleteFolderTitle": "フォルダーを削除しますか？",
+  "trashFolderTitle": "ゴミ箱に移動しますか？",
+  "deleteFolderEmptyDesc": "このフォルダーは空です。削除すると元に戻せません。",
+  "trashFolderEmptyDesc": "このフォルダーは空です。削除後はシステムのゴミ箱から復元できます。",
+  "deleteFolderIrreversible": "この操作は元に戻せません",
+  "trashFolderRestorable": "システムのゴミ箱から復元できます",
+  "inventorySubfolders": "サブフォルダー",
+  "inventoryFiles": "ファイル",
+  "inventorySize": "サイズ",
+  "inventoryCounting": "集計中…",
+  "deleteFolderCount": "{count} 項目を削除",
+  "@deleteFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashFolderCount": "{count} 項目をゴミ箱へ",
+  "@trashFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moveToTrash": "ゴミ箱に移動",
+  "folderNameEmpty": "名前を入力してください",
+  "folderNameIllegalChars": "名前に {chars} は使えません",
+  "@folderNameIllegalChars": {
+    "placeholders": {
+      "chars": {
+        "type": "String"
+      }
+    }
+  },
+  "folderNameReserved": "システムの予約名です",
+  "folderNameExists": "同名のフォルダーがすでにあります",
+  "folderPathRegistered": "このパスはすでにリストにあります",
+  "moveFolderIntoSelf": "フォルダーを自身の中に移動することはできません",
+  "moveFolderSameParent": "フォルダーはすでにその場所にあります",
+  "moveFolderTargetExists": "移動先に同名の項目があります",
+  "dragMoveFolderHint": "「{name}」を移動",
+  "@dragMoveFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dragCopyFolderHint": "「{name}」をコピー",
+  "@dragCopyFolderHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMovingTitle": "フォルダー {name} を移動中",
+  "@folderMovingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopyingTitle": "フォルダー {name} をコピー中",
+  "@folderCopyingTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTransferItems": "{count} 項目",
+  "@folderTransferItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveCrossVolumeNote": "別のドライブです。先にコピーし、すべて到着してから元を削除します。キャンセルしても失われるものはありません。",
+  "folderMoveCancelledTitle": "移動をキャンセルしました",
+  "folderCopyCancelledTitle": "コピーをキャンセルしました",
+  "folderTransferStoppedAt": "{done} / {total} 項目で停止",
+  "@folderTransferStoppedAt": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "folderMoveStatCopied": "移動先にコピー済み",
+  "folderMoveStatPending": "未開始",
+  "folderMoveStatSourceKept": "元に保持",
+  "folderMoveCancelledDesc": "元のフォルダーはそのまま残っています。コピー済みのファイルは移動先に残るので、後で再度ドロップすれば同名の項目は個別に処理されます。",
+  "showDestinationInSystem": "移動先をシステムで表示",
+  "gotIt": "OK",
+  "folderCreated": "{name} を作成しました",
+  "@folderCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderRenamed": "{name} に名前を変更しました",
+  "@folderRenamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderDeleted": "{name} を削除しました",
+  "@folderDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderTrashed": "{name} をゴミ箱に移動しました",
+  "@folderTrashed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "folderMoved": "{name} を {target} に移動しました",
+  "@folderMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderCopied": "{name} を {target} にコピーしました",
+  "@folderCopied": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "folderOpFailed": "操作に失敗しました: {error}",
+  "@folderOpFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "appTitle": "Joycai Image AI Toolkits",
   "save": "保存",
   "update": "更新",
@@ -1181,7 +1350,6 @@
   "cancelAll": "すべてキャンセル",
   "cancelAllPending": "すべての保留中をキャンセル",
   "cancelTask": "タスクをキャンセル",
-  "removeFromList": "リストから削除",
   "images": "画像",
   "filesCount": "{count} 個のファイル",
   "@filesCount": {
@@ -1401,7 +1569,6 @@
       }
     }
   },
-  "moveToTrash": "ゴミ箱に移動",
   "permanentlyDelete": "完全に削除",
   "deleteSuccess": "削除に成功しました",
   "deleteFailed": "削除に失敗しました: {error}",

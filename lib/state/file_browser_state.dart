@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../core/file_utils.dart';
 import '../models/browser_file.dart';
 import '../services/database_service.dart';
 import '../services/file_permission_service.dart';
@@ -176,6 +177,63 @@ class FileBrowserState extends ChangeNotifier {
     activeDirectories = [path];
     await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
     refresh();
+  }
+
+  /// Points every registered and active directory under [from] at [to]
+  /// instead — what a rename or move of a folder in the tree has to do to the
+  /// lists that name it, roots included. No-op when nothing pointed there.
+  /// Does not rescan: the caller refreshes once after every list is in step.
+  Future<void> rewritePathPrefix(String from, String to) async {
+    List<String> rewrite(List<String> paths) => [
+          for (final path in paths) FileUtils.rebasePath(path, from: from, to: to) ?? path,
+        ];
+    final newSources = rewrite(sourceDirectories);
+    final newActive = rewrite(activeDirectories);
+    final changed = !listEquals(newSources, sourceDirectories) || !listEquals(newActive, activeDirectories);
+    if (!changed) return;
+
+    sourceDirectories = newSources;
+    activeDirectories = newActive;
+    await _db.saveSetting('browser_source_directories', sourceDirectories.join('|'));
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    notifyListeners();
+  }
+
+  /// Forgets the active directories at or under [path] after the folder was
+  /// deleted. If the user was looking at one of them, its parent takes over —
+  /// the grid going blank because the folder under it vanished reads as a
+  /// bug, not as a consequence.
+  Future<void> pruneRemoved(String path) async {
+    final removed = activeDirectories
+        .where((d) => p.equals(d, path) || p.isWithin(path, d))
+        .toList();
+    if (removed.isEmpty) return;
+
+    final kept = activeDirectories.where((d) => !removed.contains(d)).toList();
+    final parent = p.dirname(path);
+    final parentInTree = sourceDirectories.any((r) => p.equals(r, parent) || p.isWithin(r, parent));
+    if (parentInTree && !kept.any((d) => p.equals(d, parent))) kept.add(parent);
+
+    activeDirectories = kept;
+    await _db.saveSetting('browser_active_directories', activeDirectories.join('|'));
+    notifyListeners();
+  }
+
+  /// The row the tree should pulse once it next draws — a folder just
+  /// created, renamed or dropped somewhere, so the eye finds where it landed.
+  /// Cleared on its own after the pulse has had time to play.
+  String? get flashPath => _flashPath;
+  String? _flashPath;
+  Timer? _flashTimer;
+
+  void flash(String path) {
+    _flashTimer?.cancel();
+    _flashPath = path;
+    notifyListeners();
+    _flashTimer = Timer(const Duration(milliseconds: 1500), () {
+      _flashPath = null;
+      notifyListeners();
+    });
   }
 
   void updateDirectories(List<String> dirs) {
