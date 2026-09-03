@@ -198,6 +198,18 @@ void main() {
         await File(p.join(dest.path, 'kept.txt')).writeAsString('kept');
       });
 
+  // The folder name also appears in the staging panel's group header when
+  // an earlier shot left marks behind, so the row is found through the tree.
+  Finder treeRow(String name) => find.descendant(
+        of: find.byType(DirectoryTreeItem),
+        matching: find.text(name),
+      );
+
+  Finder menuItem(String label) => find.descendant(
+        of: find.byType(PopupMenuItem<void>),
+        matching: find.text(label),
+      );
+
   Future<void> settle(WidgetTester tester, [int frames = 6]) async {
     for (int i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 120));
@@ -213,7 +225,7 @@ void main() {
       suffix: 'folderMenu',
       before: ensureArchive,
       after: (WidgetTester tester) async {
-        await tester.tap(find.text('browser'), buttons: kSecondaryButton);
+        await tester.tap(treeRow('browser').first, buttons: kSecondaryButton);
         await settle(tester);
       },
     );
@@ -228,11 +240,11 @@ void main() {
       suffix: 'folderNew',
       before: ensureArchive,
       after: (WidgetTester tester) async {
-        await tester.tap(find.text('browser'), buttons: kSecondaryButton);
+        await tester.tap(treeRow('browser').first, buttons: kSecondaryButton);
         await settle(tester);
         // The subfolder listing behind the editor is real dart:io.
         await tester.runAsync(() async {
-          await tester.tap(find.text('新建子文件夹'));
+          await tester.tap(menuItem('新建子文件夹'));
           await tester.pump();
           await Future<void>.delayed(const Duration(milliseconds: 400));
         });
@@ -259,12 +271,12 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 400));
         });
         await settle(tester);
-        await tester.tap(find.text('archive'), buttons: kSecondaryButton);
+        await tester.tap(treeRow('archive').first, buttons: kSecondaryButton);
         await settle(tester);
         // The inventory runs in a compute isolate; the dialog opens first and
         // fills its counts when that lands.
         await tester.runAsync(() async {
-          await tester.tap(find.text('删除').last);
+          await tester.tap(menuItem('删除'));
           await tester.pump();
           await Future<void>.delayed(const Duration(milliseconds: 800));
         });
