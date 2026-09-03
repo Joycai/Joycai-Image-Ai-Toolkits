@@ -804,6 +804,7 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
   }
 
   Widget _buildRowList(bool isNarrow) {
+    final l10n = AppLocalizations.of(context)!;
     final rows = _visibleRows;
     return ListView.builder(
       controller: _resultScroll,
@@ -830,8 +831,15 @@ class _AiRenameDialogState extends State<AiRenameDialog> {
             _editController.text = row.newName;
           }),
           onCommitEdit: (value) {
+            final trimmed = value.trim();
+            if (trimmed.isNotEmpty && !AiRenameAgent.isSafeFileName(trimmed)) {
+              AppSnackBar.warning(
+                context,
+                l10n.folderNameIllegalChars(r'/ \\ ..'),
+              );
+              return;
+            }
             setState(() {
-              final trimmed = value.trim();
               if (trimmed.isNotEmpty) {
                 row.newName = trimmed;
                 row.autoRenamed = false;

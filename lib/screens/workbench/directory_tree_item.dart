@@ -47,7 +47,7 @@ class DirectoryTreeItem extends StatefulWidget {
   final String path;
   final bool isRoot;
   final bool useFileBrowserState;
-  final Function(String, String)? onRemove; // Only needed for roots
+  final Function(String, String)? onRemove;
 
   const DirectoryTreeItem({
     super.key,
@@ -135,7 +135,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
     if (newPath != null) {
       // If it was a root, we might need to replace it in the list
-      if (widget.isRoot) {
+      if (_isRegisteredRoot) {
         if (widget.useFileBrowserState) {
           await appState.fileBrowserState.removeBaseDirectory(widget.path);
           await appState.fileBrowserState.addBaseDirectory(newPath);
@@ -202,6 +202,13 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
 
   Set<String> get _roots =>
       Provider.of<FileBrowserState>(context, listen: false).sourceDirectories.toSet();
+
+  bool get _isRegisteredRoot {
+    final roots = widget.useFileBrowserState
+        ? Provider.of<FileBrowserState>(context, listen: false).sourceDirectories
+        : Provider.of<GalleryState>(context, listen: false).sourceDirectories;
+    return FolderOperationsService.isRegisteredRoot(widget.path, roots);
+  }
 
   String? _nameError(AppLocalizations l10n, String parent, String name, {String? currentPath}) {
     final error = FolderOperationsService.validateName(
@@ -287,7 +294,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
   }
 
   void _delete() {
-    if (widget.isRoot) {
+    if (_isRegisteredRoot) {
       widget.onRemove?.call(widget.path, p.basename(widget.path));
     } else {
       runFolderDelete(context, widget.path);
@@ -318,7 +325,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
       context: context,
       path: widget.path,
       position: position,
-      isRoot: widget.isRoot,
+      isRoot: _isRegisteredRoot,
       onNewSubfolder: () => WidgetsBinding.instance.addPostFrameCallback((_) => _startCreate()),
       onRename: () => WidgetsBinding.instance.addPostFrameCallback((_) => _startRename()),
       onMoveTo: () => WidgetsBinding.instance.addPostFrameCallback((_) => _moveTo()),
@@ -483,7 +490,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                 visualDensity: VisualDensity.compact,
               ),
 
-            if (widget.isRoot && widget.onRemove != null)
+            if (_isRegisteredRoot && widget.onRemove != null)
               IconButton(
                 icon: const Icon(Icons.close, size: 16),
                 onPressed: () => widget.onRemove!(widget.path, folderName),
@@ -590,7 +597,9 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
                     path: dir.path,
                     isRoot: false,
                     useFileBrowserState: widget.useFileBrowserState,
-                    // onRemove not needed for children
+                    // Registered roots can also appear below another root.
+                    // Carry this callback so those rows remain protected.
+                    onRemove: widget.onRemove,
                   );
                 }),
               ],
@@ -602,7 +611,7 @@ class _DirectoryTreeItemState extends State<DirectoryTreeItem> {
     // Roots do not move — they are registrations, and "remove from list" is
     // how one changes. So a root row is not draggable at all: no chip, no
     // dimming, nothing lights up. The tree simply does not answer.
-    if (!widget.useFileBrowserState || widget.isRoot || isUnreachable) return column;
+    if (!widget.useFileBrowserState || _isRegisteredRoot || isUnreachable) return column;
 
     return Draggable<FolderDragPayload>(
       data: FolderDragPayload(widget.path),

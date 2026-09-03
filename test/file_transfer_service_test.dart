@@ -113,6 +113,15 @@ void main() {
       expect(plan.destinationExists, isFalse);
       expect(plan.entries.single.conflict, FileTransferConflict.none);
     });
+
+    test('a directory at the target name is a conflict too', () async {
+      final a = await write(sourceDir, 'a.png', 'aaa');
+      await Directory(p.join(destDir.path, 'a.png')).create();
+
+      final plan = await planFor([a]);
+
+      expect(plan.entries.single.conflict, FileTransferConflict.targetExists);
+    });
   });
 
   group('uniqueTargetPath', () {
@@ -188,6 +197,38 @@ void main() {
       expect(outcome.skipped, [a]);
       expect(outcome.succeeded, isEmpty);
       expect(File(p.join(destDir.path, 'a.png')).readAsStringSync(), 'old');
+    });
+
+    test('a target created after planning is not silently overwritten',
+        () async {
+      final a = await write(sourceDir, 'a.png', 'new');
+      final plan = await planFor([a]);
+      await write(destDir, 'a.png', 'arrived later');
+
+      final outcome = await FileTransferService.execute(plan);
+
+      expect(outcome.skipped, [a]);
+      expect(outcome.succeeded, isEmpty);
+      expect(File(a).readAsStringSync(), 'new');
+      expect(
+        File(p.join(destDir.path, 'a.png')).readAsStringSync(),
+        'arrived later',
+      );
+    });
+
+    test('a move also preserves a target created after planning', () async {
+      final a = await write(sourceDir, 'a.png', 'new');
+      final plan = await planFor([a], mode: FileTransferMode.move);
+      await write(destDir, 'a.png', 'arrived later');
+
+      final outcome = await FileTransferService.execute(plan);
+
+      expect(outcome.skipped, [a]);
+      expect(File(a).readAsStringSync(), 'new');
+      expect(
+        File(p.join(destDir.path, 'a.png')).readAsStringSync(),
+        'arrived later',
+      );
     });
 
     test('overwrite replaces the file at the destination', () async {

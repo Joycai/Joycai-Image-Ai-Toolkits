@@ -38,7 +38,11 @@ Future<void> runFolderDelete(BuildContext context, String path) async {
   if (confirmed != true || !context.mounted) return;
 
   try {
-    await FolderOperationsService.delete(path, toTrash: toTrash);
+    await FolderOperationsService.delete(
+      path,
+      toTrash: toTrash,
+      protectedRoots: appState.fileBrowserState.sourceDirectories,
+    );
   } on FileSystemException catch (e) {
     if (context.mounted) AppSnackBar.error(context, l10n.folderOpFailed(e.message));
     return;
