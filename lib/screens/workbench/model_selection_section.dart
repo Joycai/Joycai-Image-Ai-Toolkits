@@ -6,6 +6,7 @@ import '../../models/llm_channel.dart';
 import '../../models/llm_model.dart';
 import '../../services/llm/model_capabilities.dart';
 import '../../widgets/app_dropdown.dart';
+import '../../widgets/app_field_size.dart';
 import '../../widgets/app_segmented_control.dart';
 import '../../widgets/app_labelled_field.dart';
 import '../../widgets/app_text_field.dart';
@@ -105,10 +106,13 @@ class ModelSelectionSection extends StatelessWidget {
             child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Regular, per `16a`: a sidebar card's fields are the 32px size.
               Expanded(
                 child: AppLabelledField(
                   label: l10n.channel,
+                  size: AppFieldSize.regular,
                   child: SearchablePickerField<int>(
+                    size: AppFieldSize.regular,
                     selected: selectedChannel == null ? null : channelPickerOption(selectedChannel),
                     optionsBuilder: () => channels.map(channelPickerOption).toList(),
                     onChanged: onChannelChanged,
@@ -129,7 +133,9 @@ class ModelSelectionSection extends StatelessWidget {
                   // already 「模型选择」, and the caption under it was saying it
                   // a second time. `16a` labels the field 「模型」.
                   label: l10n.model,
+                  size: AppFieldSize.regular,
                   child: SearchablePickerField<int>(
+                    size: AppFieldSize.regular,
                     selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
                     // Built on open, not on build. This is the list that used
                     // to freeze the window for hundreds of milliseconds.
@@ -187,6 +193,7 @@ class ModelSelectionSection extends StatelessWidget {
         // is the resolver's every build; the `FormField` this replaces owned
         // its own and had to be re-keyed per model to drop a stale one.
         control = AppDropdown<String>(
+          size: AppFieldSize.regular,
           value: current,
           items: [
             for (final o in spec.options)
@@ -223,7 +230,8 @@ class ModelSelectionSection extends StatelessWidget {
         control = OutlinedButton(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            minimumSize: const Size(0, 30),
+            // The row's other controls are the regular 32; this one is too.
+            minimumSize: const Size(0, 32),
             visualDensity: VisualDensity.compact,
             textStyle: Theme.of(context).textTheme.bodySmall,
             alignment: Alignment.centerLeft,

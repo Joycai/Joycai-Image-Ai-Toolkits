@@ -7,6 +7,7 @@ import '../core/design_tokens.dart';
 import '../l10n/app_localizations.dart';
 import 'app_dialog.dart';
 import 'app_empty_state.dart';
+import 'app_field_size.dart';
 import 'app_search_field.dart';
 import 'models/channel_avatar.dart';
 import 'models/model_tag_chip.dart';
@@ -94,7 +95,7 @@ class SearchablePickerField<T> extends StatefulWidget {
     this.decoration = const InputDecoration(),
     this.enabled = true,
     this.badgeStyle = PickerBadge.chip,
-    this.expands = false,
+    this.size = AppFieldSize.large,
   });
 
   /// The current selection, already resolved by the caller. `null` draws
@@ -141,15 +142,12 @@ class SearchablePickerField<T> extends StatefulWidget {
   /// reading the row for.
   final PickerBadge badgeStyle;
 
-  /// Fill whatever height the parent gives, with the value centred in it.
+  /// Which of the spec's two sizes this is. See [AppFieldSize].
   ///
-  /// Off by default: the field is one line of text in the theme's insets,
-  /// and that is its height. On for a field that has to stand in a row of
-  /// controls sized by something else — the downloader's toolbar sets its
-  /// three fields to one height and this is the one of them that would
-  /// otherwise be shorter. **Requires a bounded height**; an [InputDecorator]
-  /// asked to expand into an unbounded one throws.
-  final bool expands;
+  /// [AppFieldSize.large] — the default — is one line of type in the theme's
+  /// insets, which is the theme's field height. [AppFieldSize.regular] pins
+  /// the box to 32 and centres the value in it.
+  final AppFieldSize size;
 
   @override
   State<SearchablePickerField<T>> createState() => _SearchablePickerFieldState<T>();
@@ -186,16 +184,25 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final value = widget.selected;
     final enabled = widget.enabled;
+    final size = widget.size;
 
-    // bodySmall, matching the dense config panels these sit in and the
-    // dropdowns they replace.
-    final valueStyle = textTheme.bodySmall?.copyWith(
+    // The size's type — 500 weight either way, as `10a` sets a select's value.
+    final valueStyle = size.valueStyle(textTheme)?.copyWith(
       color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: AppAlpha.disabled),
     );
+    // The theme's vertical inset with the size's horizontal one, unless the
+    // caller's decoration brought its own. The trailing chevron carries the
+    // right-hand inset itself (below), so the content stops at zero there.
+    final themeInset = theme.inputDecorationTheme.contentPadding?.resolve(Directionality.of(context)) ??
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 10);
+    final contentPadding = widget.decoration.contentPadding ??
+        EdgeInsetsDirectional.fromSTEB(size.inset, themeInset.top, 0, themeInset.bottom);
+    final pinned = size.height;
     // Disabled *and* empty is the common state of these fields — they are
     // empty precisely when there is nothing to choose from — so the hint has
     // to dim with the border and the glyph instead of keeping its enabled tone.
@@ -211,21 +218,30 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
         onFocusChange: (v) => setState(() => _focused = v),
         onHover: (v) => setState(() => _hovered = v),
         borderRadius: BorderRadius.circular(AppRadius.control),
-        child: InputDecorator(
-          // Border, radius and insets are the caller's decoration or, by
-          // default, the theme's; only the trailing glyph is this widget's own.
+        child: SizedBox(
+          height: pinned,
+          child: InputDecorator(
+          // Border and radius are the caller's decoration or, by default, the
+          // theme's; the insets and the trailing glyph are the size's.
           decoration: widget.decoration.copyWith(
             enabled: enabled,
+            contentPadding: contentPadding,
             // expand_more, not unfold_more: the design draws a single
             // downward chevron on every select-like field, and this is the one
-            // widget behind all of them.
-            suffixIcon: Icon(Icons.expand_more, size: AppSize.iconSm, color: outline),
-            suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 0),
+            // widget behind all of them. It brings the gap before it and the
+            // inset after it, so both are exactly the size's.
+            suffixIcon: Padding(
+              padding: EdgeInsetsDirectional.only(start: size.chevronGap, end: size.inset),
+              child: Icon(Icons.expand_more, size: size.chevron, color: outline),
+            ),
+            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
           ),
           isFocused: _focused,
           isHovering: _hovered,
-          expands: widget.expands,
-          textAlignVertical: widget.expands ? TextAlignVertical.center : null,
+          // A pinned box is filled and the value centred in it; an unpinned
+          // one is sized by its line of type, as an AppTextField is.
+          expands: pinned != null,
+          textAlignVertical: pinned != null ? TextAlignVertical.center : null,
           // Never "empty", even with nothing selected: this field always draws
           // something in its content area — the value or [hint] — so a
           // decoration that carries a `labelText` must float it rather than
@@ -268,6 +284,7 @@ class _SearchablePickerFieldState<T> extends State<SearchablePickerField<T>> {
                     ],
                   ),
                 ),
+          ),
         ),
       ),
     );

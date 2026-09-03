@@ -192,6 +192,12 @@ class FilledFieldScope extends StatelessWidget {
           // rather than a raised chip. Which is the right physics for a place
           // you type into.
           fillColor: theme.colorScheme.surfaceContainerLowest,
+          // `D2` draws these forms' fields at 40, glyph or no glyph. Material
+          // gives a prefix or suffix icon a 48px box, and that box — not the
+          // text — was setting every iconed field in the editors eight pixels
+          // taller than the dropdowns and the fields without one.
+          prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
+          suffixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 0),
         ),
       ),
       child: child,

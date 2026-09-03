@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'app_field_size.dart';
+
 /// A caption over the control it names.
 ///
 /// The form idiom every settled frame draws — `A1 16a`/`17b`'s model card,
-/// `D2 13a`/`13c`'s model editor, `15a`/`15c`'s channel editor: an 11px
-/// semibold caption, 4px, then the control. Not Material's floating
+/// `D2 13a`/`13c`'s model editor, `15a`/`15c`'s channel editor: a semibold
+/// caption, a few pixels, then the control. Not Material's floating
 /// `labelText`, which lives *inside* the box and shrinks when the field has a
-/// value.
+/// value — `10a` rules that out for every select.
+///
+/// Sized with the control under it: [AppFieldSize.regular] is the 11.5/600
+/// caption 4px over a 32px box, [AppFieldSize.large] the 12/500 caption 6px
+/// over a 40px one. The default is large, as it is for the fields.
 ///
 /// Not a variant of [InputDecoration] because the controls under it are not
 /// all inputs: a picker, a dropdown and a segmented track all take this
@@ -18,10 +24,16 @@ import 'package:flutter/material.dart';
 /// known the whole time; what was missing was a place to put the one copy,
 /// and it only appeared once a *third* screen needed it.
 class AppLabelledField extends StatelessWidget {
-  const AppLabelledField({super.key, required this.label, required this.child});
+  const AppLabelledField({
+    super.key,
+    required this.label,
+    required this.child,
+    this.size = AppFieldSize.large,
+  });
 
   final String label;
   final Widget child;
+  final AppFieldSize size;
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +44,8 @@ class AppLabelledField extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
+          Text(label, style: size.captionStyle(Theme.of(context).textTheme)),
+          SizedBox(height: size.captionGap),
           child,
         ],
       ),

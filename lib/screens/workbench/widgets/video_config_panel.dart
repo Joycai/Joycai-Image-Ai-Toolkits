@@ -13,6 +13,7 @@ import '../../../services/llm/model_capabilities.dart';
 import '../../../state/app_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_dropdown.dart';
+import '../../../widgets/app_field_size.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../core/design_tokens.dart';
 import '../../../widgets/app_labelled_field.dart';
@@ -377,7 +378,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         Expanded(
           child: AppLabelledField(
             label: l10n.videoResolution,
+            size: AppFieldSize.regular,
             child: AppDropdown<VeoResolution>(
+              size: AppFieldSize.regular,
               value: appState.lastVideoResolution,
               items: [
                 for (final v in VeoResolution.values) AppDropdownItem(value: v, label: v.value),
@@ -391,7 +394,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         Expanded(
           child: AppLabelledField(
             label: l10n.videoAspectRatio,
+            size: AppFieldSize.regular,
             child: AppDropdown<VeoAspectRatio>(
+              size: AppFieldSize.regular,
               value: appState.lastVideoAspectRatio,
               items: [
                 for (final v in VeoAspectRatio.values) AppDropdownItem(value: v, label: v.value),
@@ -422,7 +427,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 Expanded(
                   child: AppLabelledField(
                     label: l10n.channel,
+                    size: AppFieldSize.regular,
                     child: SearchablePickerField<int>(
+                      size: AppFieldSize.regular,
                       selected:
                           selectedChannel == null ? null : channelPickerOption(selectedChannel),
                       optionsBuilder: () => videoChannels.map(channelPickerOption).toList(),
@@ -446,7 +453,9 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
                 Expanded(
                   child: AppLabelledField(
                     label: l10n.model,
+                    size: AppFieldSize.regular,
                     child: SearchablePickerField<int>(
+                      size: AppFieldSize.regular,
                       selected: modelInChannel == null ? null : modelPickerOption(modelInChannel),
                       // Built on open, not on build — the same reason the
                       // image panel's is: a relay's worth of video models used
@@ -537,6 +546,7 @@ class _VideoConfigPanelState extends State<VideoConfigPanel> {
         // this was a bare [DropdownButton] over a hand-drawn rule, the one
         // control in the card with no box at all.
         return AppDropdown<String>(
+          size: AppFieldSize.regular,
           value: current,
           items: [
             for (final o in spec.options)

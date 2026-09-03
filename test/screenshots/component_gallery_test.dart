@@ -38,6 +38,8 @@ import 'package:joycai_image_ai_toolkits/widgets/app_card.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dropdown.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_empty_state.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_field_size.dart';
+import 'package:joycai_image_ai_toolkits/widgets/app_labelled_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_icon_button.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_search_field.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_section_label.dart';
@@ -184,6 +186,35 @@ class _Gallery extends StatelessWidget {
                     value: 0,
                     items: const [AppDropdownItem(value: 0, label: 'Lanczos')],
                     onChanged: (_) {},
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              // The select's two sizes side by side, captioned above as `10a`
+              // draws them: regular (32, the sidebar's) and large (40, the
+              // theme's and every form's).
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                  child: AppLabelledField(
+                    label: '渠道 · 默认 32',
+                    size: AppFieldSize.regular,
+                    child: AppDropdown<int>(
+                      size: AppFieldSize.regular,
+                      value: 0,
+                      items: const [AppDropdownItem(value: 0, label: '企业 CLI')],
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppLabelledField(
+                    label: '渠道类型 · 大号 40',
+                    child: AppDropdown<int>(
+                      value: 0,
+                      items: const [AppDropdownItem(value: 0, label: 'OpenAI 兼容接口')],
+                      onChanged: (_) {},
+                    ),
                   ),
                 ),
               ]),

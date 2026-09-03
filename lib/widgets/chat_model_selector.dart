@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../models/llm_channel.dart';
 import '../models/llm_model.dart';
 import '../state/app_state.dart';
+import 'app_field_size.dart';
 import 'models/model_picker_options.dart';
 import 'searchable_picker.dart';
 
@@ -40,8 +41,8 @@ class ChatModelSelector extends StatelessWidget {
   /// same object as the two beside it.
   final InputDecoration? decoration;
 
-  /// [ChatModelSelectorStyle.field] only: see [SearchablePickerField.expands].
-  final bool expands;
+  /// [ChatModelSelectorStyle.field] only: see [SearchablePickerField.size].
+  final AppFieldSize size;
 
   const ChatModelSelector({
     super.key,
@@ -52,7 +53,7 @@ class ChatModelSelector extends StatelessWidget {
     this.models,
     this.style = ChatModelSelectorStyle.field,
     this.decoration,
-    this.expands = false,
+    this.size = AppFieldSize.large,
   });
 
   @override
@@ -100,7 +101,7 @@ class ChatModelSelector extends StatelessWidget {
       dialogTitle: label ?? l10n.model,
       dialogIcon: prefixIcon ?? Icons.memory_outlined,
       enabled: chatModels.isNotEmpty,
-      expands: !isCard && expands,
+      size: isCard ? AppFieldSize.large : size,
       decoration: isCard
           ? InputDecoration(
               labelText: label ?? l10n.model,

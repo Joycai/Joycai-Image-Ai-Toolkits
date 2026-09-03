@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/design_tokens.dart';
+
 import 'app_text_field.dart';
 
 /// A secret-entry field: obscured by default with a reveal toggle, for API
@@ -63,6 +65,12 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
       suffixIcon: canObscure
           ? IconButton(
               icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+              // Sized to the field, not Material's 48: an IconButton's own
+              // minimum would otherwise hold this one input taller than the
+              // form around it.
+              iconSize: AppSize.iconLg,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
               onPressed: () => setState(() => _obscureText = !_obscureText),
             )
           : null,
