@@ -49,6 +49,13 @@ class RenameProposal {
 /// apply them — the dialog shows a preview for user confirmation, the task
 /// queue applies them at the end of the task.
 class AiRenameAgent {
+  static const String _windowsIllegal = r'<>:"/\|?*';
+  static const Set<String> _windowsReserved = {
+    'CON', 'PRN', 'AUX', 'NUL',
+    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+  };
+
   static const int _maxTurns = 16;
 
   /// Files are fed to the model in chunks of this size. Small local models
@@ -286,6 +293,10 @@ class AiRenameAgent {
   }) async {
     int renamed = 0;
     for (final proposal in proposals) {
+      if (!isSafeFileName(proposal.newName)) {
+        onLog?.call('Skipped (unsafe name): ${proposal.newName}');
+        continue;
+      }
       final oldFile = File(proposal.path);
       final newPath = p.join(p.dirname(proposal.path), proposal.newName);
       if (proposal.newName == proposal.oldName) continue;
@@ -350,7 +361,7 @@ class AiRenameAgent {
                 '(1..${filesData.length}).',
           };
         }
-        if (!_isSafeFileName(newName)) {
+        if (!isSafeFileName(newName)) {
           onLog?.call('Tool call rejected: unsafe name "$newName"');
           return {
             'status': 'error',
@@ -398,11 +409,26 @@ class AiRenameAgent {
         'and stop calling tools.';
   }
 
-  static bool _isSafeFileName(String name) {
-    return !name.contains('..') &&
-        !name.contains('/') &&
-        !name.contains('\\') &&
-        !name.contains('\x00') &&
-        name.trim().isNotEmpty;
+  /// Whether [name] is a plain file name rather than a path.
+  ///
+  /// Names edited by a person and names proposed by a model must pass the same
+  /// boundary. [applyProposals] checks again so persisted or hand-built
+  /// proposals cannot bypass the UI.
+  static bool isSafeFileName(String name, {bool? windows}) {
+    if (name.trim().isEmpty || name == '.' || name.contains('..')) return false;
+    if (name.contains('/') || name.contains('\\')) return false;
+    if (name.runes.any((rune) => rune < 0x20)) return false;
+
+    if (windows ?? Platform.isWindows) {
+      if (name.endsWith('.') || name.endsWith(' ')) return false;
+      if (name.runes.any(
+        (rune) => _windowsIllegal.contains(String.fromCharCode(rune)),
+      )) {
+        return false;
+      }
+      final stem = name.split('.').first.toUpperCase();
+      if (_windowsReserved.contains(stem)) return false;
+    }
+    return true;
   }
 }

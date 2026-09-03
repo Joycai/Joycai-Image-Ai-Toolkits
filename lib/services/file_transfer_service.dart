@@ -206,7 +206,7 @@ class FileTransferService {
         conflict = FileTransferConflict.sameLocation;
       } else if (plannedTargets.any((t) => p.equals(t, target))) {
         conflict = FileTransferConflict.duplicateInBatch;
-      } else if (await File(target).exists()) {
+      } else if (await _entityExists(target)) {
         conflict = FileTransferConflict.targetExists;
       } else {
         conflict = FileTransferConflict.none;
@@ -302,6 +302,19 @@ class FileTransferService {
         continue;
       }
 
+      // A plan is only a snapshot. Re-check immediately before writing so a
+      // file created while the conflict dialog was open is never overwritten
+      // without an explicit overwrite decision.
+      if (!await File(entry.sourcePath).exists()) {
+        skipped.add(entry.sourcePath);
+        continue;
+      }
+      if (resolution != FileConflictResolution.overwrite &&
+          await _entityExists(target)) {
+        skipped.add(entry.sourcePath);
+        continue;
+      }
+
       try {
         if (resolution == FileConflictResolution.overwrite) {
           final existing = File(target);
@@ -387,8 +400,14 @@ class FileTransferService {
 
   static bool _isTaken(String path, Set<String>? reserved) {
     if (reserved != null && reserved.any((r) => p.equals(r, path))) return true;
-    return File(path).existsSync() || Directory(path).existsSync();
+    return File(path).existsSync() ||
+        Directory(path).existsSync() ||
+        Link(path).existsSync();
   }
+
+  static Future<bool> _entityExists(String path) async =>
+      await FileSystemEntity.type(path, followLinks: false) !=
+      FileSystemEntityType.notFound;
 
   /// The move's slow path: copy, then delete the source.
   ///

@@ -45,7 +45,10 @@ void main() {
       expect(check('a/b'), FolderNameError.illegalChars);
       expect(check(r'a\b'), FolderNameError.illegalChars);
       expect(check('a:b'), FolderNameError.illegalChars);
-      expect(check('ab'), FolderNameError.illegalChars);
+      expect(
+        check('a${String.fromCharCode(1)}b'),
+        FolderNameError.illegalChars,
+      );
       expect(check('CON'), FolderNameError.reservedName);
       expect(check('lpt1.txt'), FolderNameError.reservedName);
       // Reserved names are a Windows thing.
@@ -134,6 +137,40 @@ void main() {
       expect(await dir.exists(), isFalse);
       expect(await Directory(p.join(root.path, 'gone')).exists(), isFalse);
     });
+
+    test('delete refuses a registered root even when a caller reaches the service',
+        () async {
+      final registered = await mkdir('registered');
+      await write('registered/a.txt', 'a');
+
+      await expectLater(
+        FolderOperationsService.delete(
+          registered.path,
+          toTrash: false,
+          protectedRoots: [registered.path],
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      expect(await File(p.join(registered.path, 'a.txt')).readAsString(), 'a');
+    });
+  });
+
+  test('registration protection follows a nested root path', () {
+    final parent = p.join(root.path, 'library');
+    final nestedRoot = p.join(parent, 'favorites');
+
+    expect(
+      FolderOperationsService.isRegisteredRoot(nestedRoot, [parent, nestedRoot]),
+      isTrue,
+    );
+    expect(
+      FolderOperationsService.isRegisteredRoot(
+        p.join(parent, 'ordinary'),
+        [parent, nestedRoot],
+      ),
+      isFalse,
+    );
   });
 
   group('canTransfer', () {
@@ -153,6 +190,19 @@ void main() {
       expect(can(src.path, other.path), FolderMoveRejection.targetExists);
       expect(can(src.path, free.path, roots: {src.path}), FolderMoveRejection.isRoot);
       expect(can(src.path, free.path), isNull);
+    });
+
+    test('a dangling link at the target name is still a clash', () async {
+      if (Platform.isWindows) return;
+
+      final src = await mkdir('linked-source');
+      final dest = await mkdir('linked-dest');
+      await Link(p.join(dest.path, p.basename(src.path))).create('missing-target');
+
+      expect(
+        FolderOperationsService.canTransfer(src.path, dest.path),
+        FolderMoveRejection.targetExists,
+      );
     });
 
     test('a copy may go back to its own parent and may take a root', () async {
@@ -214,6 +264,32 @@ void main() {
       expect(await File(p.join(target, 'a.txt')).readAsString(), 'aaa');
       expect(await File(p.join(target, 'sub', 'deep', 'b.txt')).readAsString(), 'bb');
       expect(await Directory(p.join(target, 'empty')).exists(), isTrue);
+      expect(await src.exists(), isFalse);
+    });
+
+    test('the copy-delete route preserves symbolic links before removing the source',
+        () async {
+      if (Platform.isWindows) return;
+
+      final src = await mkdir('linked');
+      await write('linked/a.txt', 'a');
+      await Link(p.join(src.path, 'alias.txt')).create('a.txt');
+      final dest = await mkdir('dest');
+
+      final outcome = await FolderOperationsService.transfer(
+        src.path,
+        dest.path,
+        mode: FolderTransferMode.move,
+        forceCopyDelete: true,
+      );
+
+      final target = p.join(dest.path, 'linked');
+      final copiedLink = Link(p.join(target, 'alias.txt'));
+      expect(outcome.isClean, isTrue);
+      expect(outcome.filesDone, 2);
+      expect(await copiedLink.exists(), isTrue);
+      expect(await copiedLink.target(), 'a.txt');
+      expect(await File(copiedLink.path).readAsString(), 'a');
       expect(await src.exists(), isFalse);
     });
 

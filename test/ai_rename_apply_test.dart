@@ -83,6 +83,31 @@ void main() {
     expect(File(source).readAsStringSync(), 'aaa');
   });
 
+  test('a path-shaped name cannot move a file outside its directory', () async {
+    final source = await write('a.png', 'aaa');
+    final logs = <String>[];
+
+    final count = await AiRenameAgent.applyProposals(
+      [proposal(source, '../escaped.png')],
+      onLog: logs.add,
+    );
+
+    expect(count, 0);
+    expect(File(source).readAsStringSync(), 'aaa');
+    expect(File(p.join(dir.parent.path, 'escaped.png')).existsSync(), isFalse);
+    expect(logs.single, contains('unsafe name'));
+  });
+
+  test('the shared validator rejects separators and control characters', () {
+    expect(AiRenameAgent.isSafeFileName('good-name.png'), isTrue);
+    expect(AiRenameAgent.isSafeFileName('../outside.png'), isFalse);
+    expect(AiRenameAgent.isSafeFileName(r'subdir\\name.png'), isFalse);
+    expect(AiRenameAgent.isSafeFileName('bad\u0001name.png'), isFalse);
+    expect(AiRenameAgent.isSafeFileName('.'), isFalse);
+    expect(AiRenameAgent.isSafeFileName('CON.png', windows: true), isFalse);
+    expect(AiRenameAgent.isSafeFileName('bad:name.png', windows: true), isFalse);
+  });
+
   test('a source that has gone is skipped, not thrown', () async {
     // Between the preview and the apply the file can be moved by anything on
     // the machine; the rest of the batch still has to land.

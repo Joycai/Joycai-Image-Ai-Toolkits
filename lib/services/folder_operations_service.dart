@@ -63,7 +63,7 @@ class FolderTransferOutcome {
 
   final bool cancelled;
 
-  /// Files that reached the destination before the run ended.
+  /// Files and symbolic links that reached the destination before the run ended.
   final int filesDone;
   final int filesTotal;
 
@@ -164,7 +164,7 @@ class FolderOperationsService {
   /// the disk compares — case-insensitively on Windows and macOS.
   static bool _entryExists(String parent, String name) {
     final direct = p.join(parent, name);
-    if (Directory(direct).existsSync() || File(direct).existsSync()) return true;
+    if (_pathExists(direct)) return true;
     if (!_caseInsensitiveFs) return false;
     try {
       final lower = name.toLowerCase();
@@ -177,6 +177,16 @@ class FolderOperationsService {
   }
 
   static bool get _caseInsensitiveFs => Platform.isWindows || Platform.isMacOS;
+
+  static bool _pathExists(String path) {
+    try {
+      return FileSystemEntity.typeSync(path, followLinks: false) !=
+          FileSystemEntityType.notFound;
+    } on FileSystemException {
+      // An unreadable target is not safe to replace.
+      return true;
+    }
+  }
 
   static bool _sameName(String a, String b) {
     if (p.equals(a, b)) return true;
@@ -202,6 +212,10 @@ class FolderOperationsService {
           } on FileSystemException {
             // Counted, just not weighed.
           }
+        } else if (entity is Link) {
+          // A link is still an item the delete confirmation must disclose.
+          // Never follow it: deleting this tree removes the link, not its target.
+          files++;
         }
       }
     } on FileSystemException {
@@ -232,7 +246,16 @@ class FolderOperationsService {
   ///
   /// [toTrash] is only honoured where [trashSupported] is true; asking for it
   /// elsewhere throws rather than quietly deleting forever.
-  static Future<void> delete(String path, {required bool toTrash}) async {
+  /// [protectedRoots] is checked again here so a stale or incorrectly nested
+  /// tree row cannot physically delete a registered root.
+  static Future<void> delete(
+    String path, {
+    required bool toTrash,
+    Iterable<String> protectedRoots = const {},
+  }) async {
+    if (isRegisteredRoot(path, protectedRoots)) {
+      throw FileSystemException('A registered root can only be removed from the list', path);
+    }
     if (toTrash) {
       if (!await trashSupported) {
         throw FileSystemException('Trash is not available on this platform', path);
@@ -242,6 +265,13 @@ class FolderOperationsService {
     }
     await Directory(path).delete(recursive: true);
   }
+
+  /// Whether [path] is one of the browser's registered roots.
+  ///
+  /// Registration follows the path, not the row's position in the tree: an
+  /// overlapping root can also appear as a child beneath another root.
+  static bool isRegisteredRoot(String path, Iterable<String> roots) =>
+      roots.any((root) => p.equals(root, path));
 
   /// Why [source] cannot go into [destination], or null when it can.
   ///
@@ -254,12 +284,12 @@ class FolderOperationsService {
     FolderTransferMode mode = FolderTransferMode.move,
   }) {
     final moving = mode == FolderTransferMode.move;
-    if (moving && roots.any((r) => p.equals(r, source))) return FolderMoveRejection.isRoot;
+    if (moving && isRegisteredRoot(source, roots)) return FolderMoveRejection.isRoot;
     if (p.equals(source, destination)) return FolderMoveRejection.intoSelf;
     if (p.isWithin(source, destination)) return FolderMoveRejection.intoDescendant;
     if (moving && p.equals(p.dirname(source), destination)) return FolderMoveRejection.sameParent;
     final target = p.join(destination, p.basename(source));
-    if (Directory(target).existsSync() || File(target).existsSync()) {
+    if (_pathExists(target)) {
       return FolderMoveRejection.targetExists;
     }
     return null;
@@ -296,7 +326,7 @@ class FolderOperationsService {
     if (p.equals(source, target) || p.isWithin(source, target)) {
       throw FileSystemException('Cannot move a folder into itself', source);
     }
-    if (Directory(target).existsSync() || File(target).existsSync()) {
+    if (_pathExists(target)) {
       throw FileSystemException('The destination already has an entry of this name', target);
     }
 
@@ -320,6 +350,7 @@ class FolderOperationsService {
     // Walk first, so the progress readout has a denominator.
     final files = <File>[];
     final dirs = <Directory>[];
+    final links = <Link>[];
     var bytesTotal = 0;
     await for (final entity in Directory(source).list(recursive: true, followLinks: false)) {
       if (entity is Directory) {
@@ -331,6 +362,11 @@ class FolderOperationsService {
         } on FileSystemException {
           // Unweighed, still copied.
         }
+      } else if (entity is Link) {
+        // Preserve the link itself. Following it could copy data outside the
+        // selected tree; ignoring it would lose the link when a move deletes
+        // the source after the copy completes.
+        links.add(entity);
       }
     }
 
@@ -341,13 +377,14 @@ class FolderOperationsService {
       await Directory(p.join(target, p.relative(dir.path, from: source))).create(recursive: true);
     }
 
+    final entries = <FileSystemEntity>[...links, ...files];
     var bytesDone = 0;
     var done = 0;
-    for (final file in files) {
+    for (final entity in entries) {
       if (isCancelled?.call() ?? false) {
         onProgress?.call(FileTransferProgress(
           index: done,
-          total: files.length,
+          total: entries.length,
           name: '',
           bytesDone: bytesDone,
           bytesTotal: bytesTotal,
@@ -357,31 +394,38 @@ class FolderOperationsService {
           copied: true,
           cancelled: true,
           filesDone: done,
-          filesTotal: files.length,
+          filesTotal: entries.length,
         );
       }
 
-      final relative = p.relative(file.path, from: source);
+      final relative = p.relative(entity.path, from: source);
       onProgress?.call(FileTransferProgress(
         index: done,
-        total: files.length,
+        total: entries.length,
         name: relative,
         bytesDone: bytesDone,
         bytesTotal: bytesTotal,
       ));
 
-      await file.copy(p.join(target, relative));
+      final targetPath = p.join(target, relative);
+      if (entity is Link) {
+        await Link(targetPath).create(await entity.target());
+      } else if (entity is File) {
+        await entity.copy(targetPath);
+      }
       done++;
-      try {
-        bytesDone += await file.length();
-      } on FileSystemException {
-        // Same file that was unweighed above.
+      if (entity is File) {
+        try {
+          bytesDone += await entity.length();
+        } on FileSystemException {
+          // Same file that was unweighed above.
+        }
       }
     }
 
     onProgress?.call(FileTransferProgress(
       index: done,
-      total: files.length,
+      total: entries.length,
       name: '',
       bytesDone: bytesDone,
       bytesTotal: bytesTotal,
@@ -401,7 +445,7 @@ class FolderOperationsService {
       copied: true,
       cancelled: false,
       filesDone: done,
-      filesTotal: files.length,
+      filesTotal: entries.length,
       failure: failure,
     );
   }

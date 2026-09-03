@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -754,8 +754,11 @@ class DatabaseService {
   }
 
   /// Identity of a channel across a wipe, since primary keys are reassigned.
+  ///
+  /// NUL-separated, as an escape rather than a literal byte: the literal made
+  /// every text tool treat this file as binary.
   String _channelIdentity(Map<String, dynamic> row) =>
-      '${row['type']} ${row['endpoint']} ${row['display_name']}';
+      '${row['type']}\u0000${row['endpoint']}\u0000${row['display_name']}';
 
   /// Snapshot the API keys currently in the database, keyed by channel identity.
   Future<Map<String, String>> _collectChannelKeys(DatabaseExecutor txn) async {
