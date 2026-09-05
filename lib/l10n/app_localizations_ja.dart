@@ -2382,7 +2382,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get runSetupWizard => 'セットアップウィザードを実行';
 
   @override
-  String get clearDownloaderCache => 'ダウンローダーキャッシュをクリア';
+  String get clearTempFiles => '一時ファイルを削除';
+
+  @override
+  String get clearTempFilesConfirmTitle => '一時ファイルを削除しますか？';
+
+  @override
+  String clearTempFilesConfirmMessage(String size) {
+    return 'マスク、切り抜きのコピー、ダウンローダーのキャッシュ、動画サムネイル $size を削除します。一時ワークスペース内でこれらを参照している項目も併せて取り除かれます。ご自身のフォルダ内のファイルはそのままです。';
+  }
+
+  @override
+  String tempFilesCleared(String size) {
+    return '$size を解放しました。';
+  }
 
   @override
   String get enableApiDebug => 'APIデバッグログを有効にする';
@@ -2397,9 +2410,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get iosOutputRecommend =>
       '推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。';
-
-  @override
-  String get downloaderCacheCleared => 'ダウンローダーのキャッシュがクリアされました。';
 
   @override
   String get knowledgeBaseFolder => 'ナレッジベースフォルダ';
@@ -2822,6 +2832,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get clearTempWorkspace => 'ワークスペースをクリア';
+
+  @override
+  String get clearTempWorkspaceConfirmTitle => 'ワークスペースをクリアしますか？';
+
+  @override
+  String clearTempWorkspaceConfirmMessage(int count) {
+    return '一時ワークスペースから $count 件すべてを取り除きます。ファイル自体は削除されません。';
+  }
+
+  @override
+  String get removeFromWorkspace => '一時ワークスペースから外す';
 
   @override
   String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加';

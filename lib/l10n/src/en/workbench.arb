@@ -25,6 +25,16 @@
   "importFromGallery": "Import from Gallery",
   "takePhoto": "Take Photo",
   "clearTempWorkspace": "Clear Workspace",
+  "clearTempWorkspaceConfirmTitle": "Clear Workspace?",
+  "clearTempWorkspaceConfirmMessage": "Remove all {count} items from the temporary workspace? The files themselves are not deleted.",
+  "@clearTempWorkspaceConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromWorkspace": "Remove from Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
   "imageLoadFailed": "Failed to load image",

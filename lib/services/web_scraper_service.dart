@@ -81,25 +81,6 @@ class WebScraperService {
     return dir;
   }
 
-  Future<void> clearCache() async {
-    final dir = await _cacheDir;
-    if (await dir.exists()) {
-      await dir.delete(recursive: true);
-    }
-  }
-
-  Future<int> getCacheSize() async {
-    final dir = await _cacheDir;
-    if (!await dir.exists()) return 0;
-    int size = 0;
-    await for (final file in dir.list(recursive: true)) {
-      if (file is File) {
-        size += await file.length();
-      }
-    }
-    return size;
-  }
-
   Future<String> fetchRawHtml({
     required String url,
     String? cookies,

@@ -24,6 +24,7 @@ import 'screens/workbench/workbench_screen.dart';
 import 'services/llm/protocols/minimax_h3_base_video_protocol.dart';
 import 'services/notification_service.dart';
 import 'services/task_queue_service.dart';
+import 'services/temp_storage_service.dart';
 import 'services/video_thumbnail_service.dart';
 import 'services/window_chrome_service.dart';
 import 'state/app_state.dart';
@@ -49,6 +50,10 @@ void main() async {
   // Reap H3 local-video reference temp files left behind by past submits;
   // background, best-effort. See MiniMaxH3BaseVideoProtocol.sweepStaleTempRefs.
   unawaited(MiniMaxH3BaseVideoProtocol.sweepStaleTempRefs());
+
+  // Take the masks, crop copies and page cache that have gone cold. Startup is
+  // the one moment nothing holds them — see TempStorageService.sweep.
+  unawaited(TempStorageService.instance.sweep());
 
   runApp(
     MultiProvider(

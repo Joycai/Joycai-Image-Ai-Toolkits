@@ -4384,11 +4384,29 @@ abstract class AppLocalizations {
   /// **'Run Setup Wizard'**
   String get runSetupWizard;
 
-  /// No description provided for @clearDownloaderCache.
+  /// No description provided for @clearTempFiles.
   ///
   /// In en, this message translates to:
-  /// **'Clear Downloader Cache'**
-  String get clearDownloaderCache;
+  /// **'Clear Temporary Files'**
+  String get clearTempFiles;
+
+  /// No description provided for @clearTempFilesConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Temporary Files?'**
+  String get clearTempFilesConfirmTitle;
+
+  /// No description provided for @clearTempFilesConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes {size} of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.'**
+  String clearTempFilesConfirmMessage(String size);
+
+  /// No description provided for @tempFilesCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Freed {size}.'**
+  String tempFilesCleared(String size);
 
   /// No description provided for @enableApiDebug.
   ///
@@ -4413,12 +4431,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recommended: Leave as default on iOS. The app\'s folder is visible in the \'Files\' app.'**
   String get iosOutputRecommend;
-
-  /// No description provided for @downloaderCacheCleared.
-  ///
-  /// In en, this message translates to:
-  /// **'Downloader cache cleared.'**
-  String get downloaderCacheCleared;
 
   /// No description provided for @knowledgeBaseFolder.
   ///
@@ -5193,6 +5205,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear Workspace'**
   String get clearTempWorkspace;
+
+  /// No description provided for @clearTempWorkspaceConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Workspace?'**
+  String get clearTempWorkspaceConfirmTitle;
+
+  /// No description provided for @clearTempWorkspaceConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all {count} items from the temporary workspace? The files themselves are not deleted.'**
+  String clearTempWorkspaceConfirmMessage(int count);
+
+  /// No description provided for @removeFromWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Workspace'**
+  String get removeFromWorkspace;
 
   /// No description provided for @dropFilesHere.
   ///

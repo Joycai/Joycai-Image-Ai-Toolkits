@@ -14,6 +14,7 @@ import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
 import '../../../state/gallery_state.dart';
 import '../../../widgets/app_button.dart';
+import '../../../widgets/app_dialog.dart';
 import '../../../widgets/dialogs/thumbnail_size_dialog.dart';
 import '../../../widgets/thumbnail_fit_toggle.dart';
 
@@ -36,6 +37,16 @@ class GalleryToolbar extends StatelessWidget {
     final selectableCount = galleryState.galleryImages.where((img) => !AppConstants.isVideoFile(img.path)).length;
     final thumbnailSize = galleryState.thumbnailSize;
 
+    // Scoped to the workspace view rather than shown wherever the workspace
+    // happens to be non-empty. It used to hang off `!isDesktop`, which on a
+    // wide desktop bar left the action with no host at all -- the inline
+    // button was excluded and the overflow menu that carries the other copy
+    // only exists once the bar is too narrow to inline. Tying it to the view
+    // gives it a home on every layout, and keeps a destructive control off
+    // the bar while the thing it clears is not the thing on screen.
+    final showClearTemp =
+        galleryState.viewMode == GalleryViewMode.temp && galleryState.droppedImages.isNotEmpty;
+
     // Measured against this bar, not the window. The centre panel is what
     // squeezes here -- open both side panels on a wide screen and the screen
     // is still "desktop" while this bar has a few hundred pixels, which is how
@@ -46,8 +57,8 @@ class GalleryToolbar extends StatelessWidget {
         // user can scale text, so no fixed pixel threshold is right in every
         // case -- one tuned to English clips Japanese, and one padded for
         // Japanese collapses an English bar that had room to spare.
-        final canInline =
-            constraints.maxWidth >= _inlineWidthNeeded(context, l10n, selectedCount, isDesktop);
+        final canInline = constraints.maxWidth >=
+            _inlineWidthNeeded(context, l10n, selectedCount, isDesktop, showClearTemp);
 
         // The toggle keeps its natural width in every case the trailing
         // controls can resolve by collapsing. Only once they have collapsed
@@ -79,13 +90,13 @@ class GalleryToolbar extends StatelessWidget {
             tooltip: l10n.clear,
             visualDensity: VisualDensity.compact,
           ),
-          if (!isDesktop && galleryState.droppedImages.isNotEmpty) ...[
+          if (showClearTemp) ...[
             _divider(colorScheme),
             AppButton(
               label: l10n.clearTempWorkspace,
               icon: Icons.delete_sweep_outlined,
               variant: AppButtonVariant.destructiveText,
-              onPressed: () => galleryState.clearDroppedImages(),
+              onPressed: () => _confirmClearTempWorkspace(context, galleryState, l10n),
             ),
           ],
           _divider(colorScheme),
@@ -159,7 +170,8 @@ class GalleryToolbar extends StatelessWidget {
               onPressed: () => _pickFromGallery(galleryState),
             )
           else
-            _buildOverflowMenu(context, galleryState, l10n, selectedCount, thumbnailSize, isDesktop),
+            _buildOverflowMenu(
+                context, galleryState, l10n, selectedCount, thumbnailSize, isDesktop, showClearTemp),
         ],
       ),
         );
@@ -180,6 +192,7 @@ class GalleryToolbar extends StatelessWidget {
     int selectedCount,
     double thumbnailSize,
     bool isDesktop,
+    bool showClearTemp,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final thumbnailFit = context.select<AppState, ThumbnailFit>((s) => s.thumbnailFit);
@@ -204,7 +217,7 @@ class GalleryToolbar extends StatelessWidget {
           case 'refresh':
             galleryState.refreshImages();
           case 'clear_temp':
-            galleryState.clearDroppedImages();
+            _confirmClearTempWorkspace(context, galleryState, l10n);
           case 'camera':
             await _pickFromCamera(galleryState);
           case 'import':
@@ -254,7 +267,7 @@ class GalleryToolbar extends StatelessWidget {
             dense: true,
           ),
         ),
-        if (galleryState.droppedImages.isNotEmpty)
+        if (showClearTemp)
           PopupMenuItem(
             value: 'clear_temp',
             child: ListTile(
@@ -280,6 +293,40 @@ class GalleryToolbar extends StatelessWidget {
             title: Text(l10n.importFromGallery),
             dense: true,
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Empties the temporary workspace, behind a confirmation.
+  ///
+  /// Asked rather than done outright because the workspace is assembled by
+  /// hand -- dragged in, cropped into, picked from the system gallery -- and
+  /// there is no undo for it. The message says the files survive: this drops
+  /// references, it does not delete anything from disk.
+  void _confirmClearTempWorkspace(
+    BuildContext context,
+    GalleryState galleryState,
+    AppLocalizations l10n,
+  ) {
+    final count = galleryState.droppedImages.length;
+    AppDialog.show<void>(
+      context,
+      title: l10n.clearTempWorkspaceConfirmTitle,
+      content: Text(l10n.clearTempWorkspaceConfirmMessage(count)),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+        ),
+        AppButton(
+          label: l10n.clearTempWorkspace,
+          variant: AppButtonVariant.destructive,
+          onPressed: () {
+            galleryState.clearDroppedImages();
+            Navigator.pop(context);
+          },
         ),
       ],
     );
@@ -331,6 +378,7 @@ class GalleryToolbar extends StatelessWidget {
     AppLocalizations l10n,
     int selectedCount,
     bool isDesktop,
+    bool showClearTemp,
   ) {
     final textTheme = Theme.of(context).textTheme;
 
@@ -338,12 +386,21 @@ class GalleryToolbar extends StatelessWidget {
         _measureText(context, l10n.selectedCount(selectedCount), textTheme.labelMedium) + _kChipChrome;
     final import =
         _measureText(context, l10n.importFromGallery, textTheme.labelLarge) + _kLabelledButtonChrome;
+    // Counted only while it is on the bar. Left out of this sum, the workspace
+    // view measured as though the button were not there and the row overflowed
+    // by exactly its width.
+    final clearTemp = showClearTemp
+        ? _measureText(context, l10n.clearTempWorkspace, textTheme.labelLarge) +
+            _kLabelledButtonChrome +
+            _kDivider
+        : 0.0;
 
     return _kBarPadding +
         _toggleNaturalWidth(context, l10n) +
         _kToggleGap +
         chip +
         _kIconButtonCompact * 2 + // select all, deselect
+        clearTemp +
         _kDivider +
         _kZoomSlider +
         _kIconButton + // thumbnail fit

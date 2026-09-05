@@ -516,6 +516,19 @@ class GalleryState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Drops one picture out of the temporary workspace.
+  ///
+  /// The file is left alone: what the workspace holds is a reference, and the
+  /// picture usually lives in a folder of the user's own. Deleting from disk
+  /// is a separate action with its own confirmation.
+  void removeDroppedImage(String path) {
+    final remaining = droppedImages.where((img) => img.path != path).toList();
+    if (remaining.length == droppedImages.length) return;
+    droppedImages = remaining;
+    _cleanupSelection();
+    notifyListeners();
+  }
+
   void clearDroppedImages() {
     droppedImages = [];
     _cleanupSelection();

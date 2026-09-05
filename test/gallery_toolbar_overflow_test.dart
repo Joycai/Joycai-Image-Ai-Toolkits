@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
+import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/screens/workbench/widgets/gallery_toolbar.dart';
 import 'package:joycai_image_ai_toolkits/state/app_state.dart';
+import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -30,7 +32,14 @@ void main() {
 
   /// Renders the toolbar at [barWidth] while the *window* stays desktop-sized,
   /// which is exactly the situation that broke.
-  Future<void> pumpAtWidth(WidgetTester tester, double barWidth) async {
+  ///
+  /// [workspaceCount] seeds the temporary workspace and switches the gallery
+  /// to it, which is the state the clear-workspace action keys off.
+  Future<AppState> pumpAtWidth(
+    WidgetTester tester,
+    double barWidth, {
+    int workspaceCount = 0,
+  }) async {
     tester.view.physicalSize = const Size(1600, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -40,6 +49,14 @@ void main() {
     // widget tests in this repo leave it to the test runner for the same
     // reason.
     final appState = AppState();
+
+    if (workspaceCount > 0) {
+      appState.galleryState.addDroppedFiles([
+        for (var i = 0; i < workspaceCount; i++)
+          AppImage(path: '/tmp/workspace_$i.png', name: 'workspace_$i.png'),
+      ]);
+      appState.galleryState.setViewMode(GalleryViewMode.temp);
+    }
 
     await tester.pumpWidget(
       MultiProvider(
@@ -61,6 +78,7 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 100));
+    return appState;
   }
 
   testWidgets('a squeezed bar still renders without overflowing', (tester) async {
@@ -172,6 +190,83 @@ void main() {
 
     expect(find.byType(AppDialog), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('a roomy bar carries the clear-workspace action', (tester) async {
+    // The bug: this action was gated on `!isDesktop` inline and otherwise
+    // lived only in the overflow menu, which exists only once the bar is too
+    // narrow to inline. On a wide desktop bar both hosts were absent and the
+    // temporary workspace could not be emptied at all.
+    //
+    // 1500 rather than the 1200 the other roomy test uses: flutter_test's
+    // placeholder font measures every glyph as a full square em, so the added
+    // button costs ~2.4x its real width and 1200 test-pixels no longer inlines.
+    await pumpAtWidth(tester, 1500, workspaceCount: 3);
+
+    expect(find.byType(PopupMenuButton<String>), findsNothing,
+        reason: 'This width inlines, so the menu is not the host here');
+    expect(find.text('Clear Workspace'), findsOneWidget);
+  });
+
+  testWidgets('the clear-workspace action stays off the bar outside the workspace view', (tester) async {
+    // Nothing dropped, so nothing to clear -- and the action acts on a view
+    // that is not the one on screen.
+    await pumpAtWidth(tester, 1200);
+
+    expect(find.text('Clear Workspace'), findsNothing);
+  });
+
+  testWidgets('the squeezed bar keeps the clear-workspace action in its menu', (tester) async {
+    await pumpAtWidth(tester, 420, workspaceCount: 3);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear Workspace'), findsOneWidget);
+  });
+
+  testWidgets('clearing the workspace asks first, and empties it on yes', (tester) async {
+    final appState = await pumpAtWidth(tester, 1500, workspaceCount: 3);
+
+    await tester.tap(find.text('Clear Workspace'));
+    await tester.pumpAndSettle();
+
+    // Asked, not done: the workspace is assembled by hand and has no undo.
+    expect(find.byType(AppDialog), findsOneWidget);
+    expect(appState.galleryState.droppedImages, hasLength(3));
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(appState.galleryState.droppedImages, hasLength(3),
+        reason: 'Cancel must leave the workspace alone');
+
+    await tester.tap(find.text('Clear Workspace'));
+    await tester.pumpAndSettle();
+    // The dialog's own button, not the one on the bar behind it.
+    await tester.tap(find.descendant(
+      of: find.byType(AppDialog),
+      matching: find.text('Clear Workspace'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(appState.galleryState.droppedImages, isEmpty);
+  });
+
+  testWidgets('no width clips or overflows with the workspace on screen', (tester) async {
+    // The same sweep as above, but with the clear button present: its width
+    // has to be part of what decides whether the bar can inline. Left out of
+    // that sum, the workspace view measured as though the button were not
+    // there and overflowed by exactly its width.
+    for (var width = 420.0; width <= 1400.0; width += 20) {
+      await pumpAtWidth(tester, width, workspaceCount: 3);
+
+      expect(tester.takeException(), isNull, reason: 'Overflow at ${width}px');
+
+      final bar = tester.getRect(find.byType(GalleryToolbar));
+      final toggle = tester.getRect(find.text('All Results'));
+      expect(toggle.right, lessThanOrEqualTo(bar.right + 0.01),
+          reason: 'View toggle clipped at ${width}px');
+    }
   });
 
   testWidgets('the collapsed menu still reaches every control it swallowed', (tester) async {

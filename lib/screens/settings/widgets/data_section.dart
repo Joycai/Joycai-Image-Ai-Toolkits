@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/backup_error_text.dart';
+import '../../../core/constants.dart';
 import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
+import '../../../services/temp_storage_service.dart';
 import '../../../state/app_state.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_dialog.dart';
@@ -41,33 +43,28 @@ class DataSection extends StatelessWidget {
       (onPressed: () => _importSettings(context, l10n), icon: Icons.upload, label: l10n.importSettings, color: null),
       (onPressed: () => _openAppDataDir(context), icon: Icons.folder_shared, label: l10n.openAppDataDirectory, color: null),
       (onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SetupWizard())), icon: Icons.auto_fix_high, label: l10n.runSetupWizard, color: null),
-      (
-        onPressed: () async {
-          final appState = Provider.of<AppState>(context, listen: false);
-          await appState.clearDownloaderCache();
-          if (context.mounted) AppSnackBar.success(context, AppLocalizations.of(context)!.downloaderCacheCleared);
-        },
-        icon: Icons.delete_sweep_outlined,
-        label: l10n.clearDownloaderCache,
-        color: null
-      ),
-      (onPressed: () => _resetSettings(context, l10n), icon: Icons.refresh, label: l10n.resetAllSettings, color: colorScheme.error),
+    ];
+    final reset = (onPressed: () => _resetSettings(context, l10n), icon: Icons.refresh, label: l10n.resetAllSettings, color: colorScheme.error);
+
+    // The scratch-file control is its own widget rather than another record:
+    // it carries a measured size in its label, which means state and a reload
+    // after the clear. It goes second to last, so the two actions that throw
+    // something away stay together at the end.
+    final buttons = <Widget>[
+      ...actions.map((a) => _buildActionBtn(context, a, isMobile)),
+      _TempFilesButton(fullWidth: isMobile),
+      _buildActionBtn(context, reset, isMobile),
     ];
 
     if (isMobile) {
       return Column(
-        children: actions.map((a) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildActionBtn(context, a, true),
-        )).toList(),
+        children: buttons
+            .map((b) => Padding(padding: const EdgeInsets.only(bottom: 12), child: b))
+            .toList(),
       );
     }
 
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: actions.map((a) => _buildActionBtn(context, a, false)).toList(),
-    );
+    return Wrap(spacing: 16, runSpacing: 16, children: buttons);
   }
 
   Widget _buildActionBtn(BuildContext context, dynamic action, bool fullWidth) {
@@ -335,6 +332,96 @@ class DataSection extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+/// "Clear Temporary Files", with what they currently cost on the label.
+///
+/// The size is the point: without it this is a button whose effect the user
+/// cannot see either before or after pressing it, and there is no other place
+/// in the app that says how much scratch space is in use. It reloads after a
+/// clear, so the number is the answer as well as the prompt.
+class _TempFilesButton extends StatefulWidget {
+  final bool fullWidth;
+
+  const _TempFilesButton({required this.fullWidth});
+
+  @override
+  State<_TempFilesButton> createState() => _TempFilesButtonState();
+}
+
+class _TempFilesButtonState extends State<_TempFilesButton> {
+  int? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _measure();
+  }
+
+  Future<void> _measure() async {
+    final bytes = await TempStorageService.instance.measure();
+    if (mounted) setState(() => _bytes = bytes);
+  }
+
+  Future<void> _clear() async {
+    final l10n = AppLocalizations.of(context)!;
+    final bytes = _bytes ?? 0;
+
+    // The size goes in the question, not just on the button: this is the one
+    // action here that can take a mask or a crop the workspace is still
+    // pointing at, so what it costs and what it touches are both spelled out.
+    final confirmed = await AppDialog.show<bool>(
+      context,
+      title: l10n.clearTempFilesConfirmTitle,
+      content: Text(l10n.clearTempFilesConfirmMessage(AppConstants.formatFileSize(bytes))),
+      actions: [
+        AppButton(
+          label: l10n.cancel,
+          variant: AppButtonVariant.text,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        AppButton(
+          label: l10n.clearTempFiles,
+          variant: AppButtonVariant.destructive,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (confirmed != true || !mounted) return;
+
+    final appState = Provider.of<AppState>(context, listen: false);
+    final freed = await TempStorageService.instance.clear();
+    // The workspace may have been holding a mask or a crop that just went; the
+    // refresh is what drops those entries rather than leaving them pointing at
+    // nothing.
+    await appState.galleryState.refreshImages();
+    if (!mounted) return;
+
+    setState(() => _bytes = 0);
+    AppSnackBar.success(context, l10n.tempFilesCleared(AppConstants.formatFileSize(freed)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final bytes = _bytes;
+    // Bare label until the walk finishes, and again once there is nothing to
+    // clear -- "(0 B)" is noise, and the disabled button already says it.
+    final label = (bytes == null || bytes == 0)
+        ? l10n.clearTempFiles
+        : '${l10n.clearTempFiles} (${AppConstants.formatFileSize(bytes)})';
+
+    return SizedBox(
+      width: widget.fullWidth ? double.infinity : 220,
+      height: 50,
+      child: AppButton(
+        label: label,
+        icon: Icons.delete_sweep_outlined,
+        variant: AppButtonVariant.secondary,
+        onPressed: (bytes == null || bytes == 0) ? null : _clear,
+      ),
     );
   }
 }

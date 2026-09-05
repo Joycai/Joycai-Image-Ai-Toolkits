@@ -9,6 +9,7 @@ import '../../../core/file_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/app_image.dart';
 import '../../../state/app_state.dart';
+import '../../../state/gallery_state.dart';
 import '../../../state/workbench_ui_state.dart';
 import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/dialogs/file_rename_dialog.dart';
@@ -225,6 +226,27 @@ void showImageCardContextMenu(
       onTap: () => shareImageFiles(context, filesToShare, l10n, position: position),
     ),
     const PopupMenuDivider(),
+  ]);
+
+  // Only in the workspace view, where it is unambiguous what the picture would
+  // be removed *from*. Elsewhere the same file may also sit in the workspace,
+  // and an entry that quietly reached into another view to change it would be
+  // acting on something not on screen. Sits above Delete as the softer of the
+  // two: this drops a reference, Delete goes to the file.
+  if (appState.galleryState.viewMode == GalleryViewMode.temp) {
+    menuItems.add(
+      PopupMenuItem(
+        child: ListTile(
+          leading: const Icon(Icons.remove_circle_outline, size: 18),
+          title: Text(l10n.removeFromWorkspace),
+          dense: true,
+        ),
+        onTap: () => appState.galleryState.removeDroppedImage(imageFile.path),
+      ),
+    );
+  }
+
+  menuItems.add(
     PopupMenuItem(
       child: ListTile(
         leading: Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
@@ -235,7 +257,7 @@ void showImageCardContextMenu(
         WidgetsBinding.instance.addPostFrameCallback((_) => confirmAndDeleteImageFile(context, imageFile, l10n));
       },
     ),
-  ]);
+  );
 
   showMenu<dynamic>(
     context: context,

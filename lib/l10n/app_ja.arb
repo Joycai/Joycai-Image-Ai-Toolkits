@@ -1289,12 +1289,28 @@
   "restartMessage": "データストレージの場所の変更を適用するには、アプリケーションを再起動する必要があります。",
   "enableNotifications": "システム通知を有効にする",
   "runSetupWizard": "セットアップウィザードを実行",
-  "clearDownloaderCache": "ダウンローダーキャッシュをクリア",
+  "clearTempFiles": "一時ファイルを削除",
+  "clearTempFilesConfirmTitle": "一時ファイルを削除しますか？",
+  "clearTempFilesConfirmMessage": "マスク、切り抜きのコピー、ダウンローダーのキャッシュ、動画サムネイル {size} を削除します。一時ワークスペース内でこれらを参照している項目も併せて取り除かれます。ご自身のフォルダ内のファイルはそのままです。",
+  "@clearTempFilesConfirmMessage": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "tempFilesCleared": "{size} を解放しました。",
+  "@tempFilesCleared": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "enableApiDebug": "APIデバッグログを有効にする",
   "apiDebugDesc": "トラブルシューティングのために生のAPIリクエストとレスポンスをファイルに記録します。警告：マスクされていない場合、APIキーなどの機密データが記録される可能性があります。",
   "openLogFolder": "ログフォルダを開く",
   "iosOutputRecommend": "推奨：iOSではデフォルトのままにしてください。アプリのフォルダは「ファイル」アプリで表示されます。",
-  "downloaderCacheCleared": "ダウンローダーのキャッシュがクリアされました。",
   "knowledgeBaseFolder": "ナレッジベースフォルダ",
   "kbOpenFolder": "フォルダを開く",
   "kbInvalidDir": "フォルダが見つかりません",
@@ -1541,6 +1557,16 @@
   "importFromGallery": "ギャラリーからインポート",
   "takePhoto": "写真を撮る",
   "clearTempWorkspace": "ワークスペースをクリア",
+  "clearTempWorkspaceConfirmTitle": "ワークスペースをクリアしますか？",
+  "clearTempWorkspaceConfirmMessage": "一時ワークスペースから {count} 件すべてを取り除きます。ファイル自体は削除されません。",
+  "@clearTempWorkspaceConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromWorkspace": "一時ワークスペースから外す",
   "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
   "noImagesSelected": "画像が選択されていません",
   "imageLoadFailed": "画像の読み込みに失敗しました",

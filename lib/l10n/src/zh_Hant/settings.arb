@@ -72,12 +72,28 @@
   "restartMessage": "必須重新啟動應用程式才能套用資料儲存位置的變更。",
   "enableNotifications": "啟用系統通知",
   "runSetupWizard": "執行設定精靈",
-  "clearDownloaderCache": "清除下載器快取",
+  "clearTempFiles": "清理暫存檔案",
+  "clearTempFilesConfirmTitle": "清理暫存檔案？",
+  "clearTempFilesConfirmMessage": "將刪除 {size} 的遮罩、裁切副本、下載器快取與影片縮圖。暫存工作區中指向這些檔案的項目會一併移除；你自己資料夾中的檔案不受影響。",
+  "@clearTempFilesConfirmMessage": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "tempFilesCleared": "已釋放 {size}。",
+  "@tempFilesCleared": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "enableApiDebug": "啟用 API 偵錯記錄",
   "apiDebugDesc": "將原始 API 要求和回應記錄到檔案中以進行疑難排解。警告：如果未遮罩，API 金鑰等敏感資料可能會被記錄。",
   "openLogFolder": "開啟記錄資料夾",
   "iosOutputRecommend": "建議：在 iOS 上保留預設值。應用程式的資料夾可在「檔案」應用程式中看到。",
-  "downloaderCacheCleared": "下載器快取已清除。",
   "knowledgeBaseFolder": "知識庫資料夾",
   "kbOpenFolder": "開啟資料夾",
   "kbInvalidDir": "資料夾不存在",

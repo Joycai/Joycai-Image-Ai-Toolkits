@@ -24,7 +24,6 @@ import '../services/llm/llm_service.dart';
 import '../services/notification_service.dart';
 import '../services/prompt_provenance.dart';
 import '../services/task_queue_service.dart';
-import '../services/web_scraper_service.dart';
 import 'downloader_state.dart';
 import 'file_browser_state.dart';
 import 'file_staging_state.dart';
@@ -315,15 +314,6 @@ class AppState extends ChangeNotifier {
     if (modelDbId == null) return false;
     final model = _models.cast<LLMModel?>().firstWhere((m) => m?.id == modelDbId, orElse: () => null);
     return model != null && _supportsVideoForType(model);
-  }
-
-  Future<int> getDownloaderCacheSize() async {
-    return await WebScraperService().getCacheSize();
-  }
-
-  Future<void> clearDownloaderCache() async {
-    await WebScraperService().clearCache();
-    notifyListeners();
   }
 
   List<LLMModel> getModelsForChannel(int? channelId) {
