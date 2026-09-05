@@ -3,10 +3,22 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/image_magic.dart';
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'protocol.dart';
+
+/// The multipart field name the source image(s) of an edit travel under.
+///
+/// One image goes as `image`, several as `image[]`. The plural spelling is
+/// what the current endpoint documents for multi-image edits, but the older
+/// surfaces (dall-e-2's edit, relays built against it) know only the
+/// singular — sending `image[]` for a single picture 400s there, while
+/// `image` is accepted everywhere a single picture is. So the field name
+/// follows the count instead of being the plural always.
+String openaiImageEditFieldName(int imageCount) =>
+    imageCount > 1 ? 'image[]' : 'image';
 
 /// Native OpenAI image generation / editing:
 /// `POST /images/generations` (JSON) and `POST /images/edits` (multipart).
@@ -71,14 +83,15 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
         if (quality != null) request.fields['quality'] = quality;
         request.fields['n'] = '1';
 
+        final field = openaiImageEditFieldName(inputImages.length);
         for (int i = 0; i < inputImages.length; i++) {
           final att = inputImages[i];
           final bytes = await readAttachmentBytes(att);
           if (bytes == null) continue;
           request.files.add(http.MultipartFile.fromBytes(
-            'image[]',
+            field,
             bytes,
-            filename: 'image_$i.${extForMime(att.mimeType)}',
+            filename: 'image_$i.${extForMime(resolveImageMime(bytes, att.mimeType))}',
           ));
         }
 

@@ -30,9 +30,15 @@ void main() {
 
   group('ModelCapabilities', () {
     test('image families expose adapted parameters', () {
-      final nano = ModelCapabilities.forModel('gemini-2.5-flash-image');
+      final nano = ModelCapabilities.forModel('gemini-3.1-flash-image');
       expect(nano.isImageGenerator, true);
       expect(nano.imageParams.map((p) => p.key), containsAll(['aspectRatio', 'imageSize']));
+
+      // The 2.5 generation has no resolution parameter: the control is not
+      // rendered and the field never sent.
+      final legacy = ModelCapabilities.forModel('gemini-2.5-flash-image');
+      expect(legacy.isImageGenerator, true);
+      expect(legacy.imageParams.map((p) => p.key), ['aspectRatio']);
 
       final openai = ModelCapabilities.forModel('gpt-image-1');
       expect(openai.imageParams.map((p) => p.key), containsAll(['imageSize', 'quality']));

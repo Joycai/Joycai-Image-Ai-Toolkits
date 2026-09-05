@@ -41,8 +41,9 @@ Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, 
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       parameters['aspectRatio'] = options['aspectRatio'];
     }
-    if (options.containsKey('imageSize')) {
-      parameters['sampleImageSize'] = options['imageSize'];
+    final size = options['imageSize'];
+    if (size is String && size.isNotEmpty && size != 'not_set') {
+      parameters['sampleImageSize'] = size;
     }
   }
 
@@ -360,7 +361,13 @@ Map<String, dynamic> prepareGooglePayload(
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       imageConfig['aspectRatio'] = options['aspectRatio'];
     }
-    if (options.containsKey('imageSize')) imageConfig['imageSize'] = options['imageSize'];
+    // `not_set` means not sent, like the ratio above: the upstream default is
+    // the 1K tier, and the models without an `imageSize` at all
+    // (gemini-2.5-flash-image) accept only its absence.
+    final size = options['imageSize'];
+    if (size is String && size.isNotEmpty && size != 'not_set') {
+      imageConfig['imageSize'] = size;
+    }
     if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
   }
 

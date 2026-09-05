@@ -354,6 +354,8 @@ class ModelCapabilities {
     if (family == ModelFamily.geminiImage) {
       if (id.contains('gemini-3.1-flash-image')) return _geminiImageV2;
       if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
+      // The 2.5 generation has no resolution parameter at all.
+      if (id.contains('gemini-2.5-flash-image')) return _geminiImageLegacy;
     }
 
     // grok-imagine-video-1.5 exposes a different parameter set (1:1 / 4:3 /
@@ -442,13 +444,44 @@ class ModelCapabilities {
 
   // --- Family parameter tables ---------------------------------------------
 
-  /// 1K / 2K / 4K resolution control shared by every nanoBanana image family.
+  /// 1K / 2K / 4K resolution control shared by the nanoBanana image families
+  /// that have one.
+  ///
+  /// `not_set` is the default and means the field is not sent — the upstream
+  /// default is the 1K tier, so nothing is lost, and "not sent" is the one
+  /// spelling every host accepts. The value must be uppercase `K` on the
+  /// wire; the options carry it that way so nothing has to translate.
   static const _geminiSizeParam = ParamSpec(
     key: 'imageSize',
     labelKey: 'resolution',
     control: ParamControl.segmented,
-    defaultValue: '1K',
-    options: [ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
+    defaultValue: 'not_set',
+    options: [
+      ParamOption('not_set'),
+      ParamOption('1K'),
+      ParamOption('2K'),
+      ParamOption('4K'),
+    ],
+  );
+
+  /// The ten-ratio aspect control every nanoBanana generation shares.
+  static const _geminiAspectParam = ParamSpec(
+    key: 'aspectRatio',
+    labelKey: 'aspectRatio',
+    control: ParamControl.dropdown,
+    defaultValue: 'not_set',
+    options: [
+      ParamOption('not_set'),
+      ParamOption('1:1'),
+      ParamOption('2:3'),
+      ParamOption('3:2'),
+      ParamOption('3:4'),
+      ParamOption('4:3'),
+      ParamOption('4:5'),
+      ParamOption('5:4'),
+      ParamOption('9:16'),
+      ParamOption('16:9'),
+    ],
   );
 
   /// nanoBanana — `gemini-*-image`. Full Gemini aspect-ratio set + 1K/2K/4K.
@@ -456,27 +489,18 @@ class ModelCapabilities {
   static const _geminiImage = ModelCapabilities(
     isImageGenerator: true,
     maxReferenceImages: null,
-    imageParams: [
-      ParamSpec(
-        key: 'aspectRatio',
-        labelKey: 'aspectRatio',
-        control: ParamControl.dropdown,
-        defaultValue: 'not_set',
-        options: [
-          ParamOption('not_set'),
-          ParamOption('1:1'),
-          ParamOption('2:3'),
-          ParamOption('3:2'),
-          ParamOption('3:4'),
-          ParamOption('4:3'),
-          ParamOption('4:5'),
-          ParamOption('5:4'),
-          ParamOption('9:16'),
-          ParamOption('16:9'),
-        ],
-      ),
-      _geminiSizeParam,
-    ],
+    imageParams: [_geminiAspectParam, _geminiSizeParam],
+  );
+
+  /// The first nanoBanana, `gemini-2.5-flash-image`: the same ratios, but
+  /// **no resolution control** — the model has a single 1024px tier and no
+  /// `imageSize` field. Its own table so the control is never rendered and
+  /// the field never sent; the shared table used to send `imageSize: 1K` to
+  /// it on every request by default.
+  static const _geminiImageLegacy = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: null,
+    imageParams: [_geminiAspectParam],
   );
 
   /// Nano Banana Pro — `gemini-3.1-pro-image`. The standard nanoBanana set plus

@@ -1151,8 +1151,9 @@ class OpenAIChatProtocol implements ChatProtocol {
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       portable['aspect_ratio'] = options['aspectRatio'];
     }
-    if (options.containsKey('imageSize')) {
-      portable['image_size'] = options['imageSize'];
+    final size = options['imageSize'];
+    if (size is String && size.isNotEmpty && size != 'not_set') {
+      portable['image_size'] = size;
     }
     if (portable.isEmpty) return;
 

@@ -141,6 +141,31 @@ void main() {
       });
     });
 
+    test('a not_set size is not sent, on either dialect', () {
+      // gemini-2.5-flash-image has no imageSize at all, and every other
+      // nanoBanana defaults to the 1K tier without it — so absence is the one
+      // spelling all of them accept. The shared table used to default to 1K
+      // and send it on every request.
+      final options = {'aspectRatio': '16:9', 'imageSize': 'not_set'};
+      final compat = OpenAIChatProtocol().buildChatPayloadForTest(
+        target('gemini-2.5-flash-image'),
+        [LLMMessage(role: LLMRole.user, content: 'a cat')],
+        options: options,
+        isStreaming: false,
+      );
+      expect((compat['image_config'] as Map).containsKey('image_size'), isFalse);
+      expect((compat['extra_body']['google']['image_config'] as Map).containsKey('image_size'),
+          isFalse);
+
+      final native = prepareGooglePayload(
+        [LLMMessage(role: LLMRole.user, content: 'a cat')],
+        options,
+        null,
+        emitsImages: true,
+      );
+      expect(native['generationConfig']['imageConfig'], {'aspectRatio': '16:9'});
+    });
+
     test('nothing to configure means neither field is sent', () {
       final payload = payloadWith({'aspectRatio': 'not_set'});
       expect(payload.containsKey('image_config'), isFalse);

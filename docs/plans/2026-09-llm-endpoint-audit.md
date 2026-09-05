@@ -129,9 +129,9 @@
 
 ### 第二批 · P1（参数规范性与回包解析）
 
-#### 片 6 · Gemini 图片参数按模型拆表（#8）
+#### 片 6 · Gemini 图片参数按模型拆表（#8）— ✅ 2026-09-05 L1 已落，L2 待 key
 
-**改什么**：`_geminiSizeParam` 加 `not_set` 且作为默认；`prepareGooglePayload` 与 `_applyGeminiCompatExtensions` 对 `not_set` 不发 `imageSize`（aspectRatio 已是这个写法）。`gemini-2.5-flash-image` 在 `forModel` 里落到一张没有 `imageSize` 的表（它只有 1024px 一档）。
+**改什么**：`_geminiSizeParam` 加 `not_set` 且作为默认（原默认 `1K` 意味着每次都发；上游默认本就是 1K 档，改为不发无损）；`prepareGooglePayload`、`prepareImagenPayload` 与 `_applyGeminiCompatExtensions` 对 `not_set` 不发 `imageSize` / `image_size` / `sampleImageSize`（aspectRatio 已是这个写法）。`gemini-2.5-flash-image` 在 `forModel` 里落到新表 `_geminiImageLegacy`——只有 aspectRatio、没有 `imageSize` 控件（它只有 1024px 一档）。十档比例抽成共享的 `_geminiAspectParam`。
 
 **验收**：L1 三条（默认不发、显式发大写 K、2.5-flash-image 表无该参数）；L2 一张 2.5-flash-image 不带 size 200，一张 3.1-flash-image `9:16`+`1K` 出 768×1376（按字节量尺寸）。
 
@@ -144,9 +144,9 @@
 
 **验收**：L1 五形状各一条 + 去重一条 + 短散文不误判一条；L2 在 New API 的 `[R]gpt-image-2` 经 chat 出一张（那份文档实测一小时内回包形状会变，跑两次）。
 
-#### 片 8 · Images 编辑单图用 `image`（#10）
+#### 片 8 · Images 编辑单图用 `image`（#10）— ✅ 2026-09-05 L1 已落，L2 待 key
 
-**改什么**：`OpenAIImagesProtocol` 一张输入图时字段名 `image`，两张以上 `image[]`。L1 两条。L2 gpt-image-2 官方 `/images/edits` 一张。
+**改什么**：`OpenAIImagesProtocol` 一张输入图时字段名 `image`，两张以上 `image[]`（纯函数 `openaiImageEditFieldName`，`test/openai_images_payload_test.dart` 钉住）。顺带：multipart 文件名的扩展名改由字节决定（片 3 的 `resolveImageMime`），不再信附件声明。L2 gpt-image-2 官方 `/images/edits` 一张。
 
 #### 片 9 · DeepSeek 关闭思考的方言（#11）
 
