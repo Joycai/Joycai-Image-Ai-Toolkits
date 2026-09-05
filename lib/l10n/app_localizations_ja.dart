@@ -2824,6 +2824,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get clearTempWorkspace => 'ワークスペースをクリア';
 
   @override
+  String get clearTempWorkspaceConfirmTitle => 'ワークスペースをクリアしますか？';
+
+  @override
+  String clearTempWorkspaceConfirmMessage(int count) {
+    return '一時ワークスペースから $count 件すべてを取り除きます。ファイル自体は削除されません。';
+  }
+
+  @override
   String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加';
 
   @override

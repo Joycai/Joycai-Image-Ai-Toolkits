@@ -25,6 +25,15 @@
   "importFromGallery": "從圖庫匯入",
   "takePhoto": "拍照",
   "clearTempWorkspace": "清除工作區",
+  "clearTempWorkspaceConfirmTitle": "清除暫存工作區？",
+  "clearTempWorkspaceConfirmMessage": "將從暫存工作區移除全部 {count} 項。檔案本身不會被刪除。",
+  "@clearTempWorkspaceConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "dropFilesHere": "將圖片拖放到此處以新增到臨時工作區",
   "noImagesSelected": "未選取圖片",
   "imageLoadFailed": "圖片載入失敗",

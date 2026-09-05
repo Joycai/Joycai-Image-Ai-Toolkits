@@ -2888,6 +2888,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearTempWorkspace => 'Clear Workspace';
 
   @override
+  String get clearTempWorkspaceConfirmTitle => 'Clear Workspace?';
+
+  @override
+  String clearTempWorkspaceConfirmMessage(int count) {
+    return 'Remove all $count items from the temporary workspace? The files themselves are not deleted.';
+  }
+
+  @override
   String get dropFilesHere =>
       'Drop images here to add them to temporary workspace';
 

@@ -2795,6 +2795,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearTempWorkspace => '清空工作区';
 
   @override
+  String get clearTempWorkspaceConfirmTitle => '清空临时工作区？';
+
+  @override
+  String clearTempWorkspaceConfirmMessage(int count) {
+    return '将从临时工作区移除全部 $count 项。文件本身不会被删除。';
+  }
+
+  @override
   String get dropFilesHere => '将图片拖放到此处以添加到临时工作区';
 
   @override
@@ -6698,6 +6706,14 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get clearTempWorkspace => '清除工作區';
+
+  @override
+  String get clearTempWorkspaceConfirmTitle => '清除暫存工作區？';
+
+  @override
+  String clearTempWorkspaceConfirmMessage(int count) {
+    return '將從暫存工作區移除全部 $count 項。檔案本身不會被刪除。';
+  }
 
   @override
   String get dropFilesHere => '將圖片拖放到此處以新增到臨時工作區';

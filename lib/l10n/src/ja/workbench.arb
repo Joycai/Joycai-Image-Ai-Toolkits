@@ -25,6 +25,15 @@
   "importFromGallery": "ギャラリーからインポート",
   "takePhoto": "写真を撮る",
   "clearTempWorkspace": "ワークスペースをクリア",
+  "clearTempWorkspaceConfirmTitle": "ワークスペースをクリアしますか？",
+  "clearTempWorkspaceConfirmMessage": "一時ワークスペースから {count} 件すべてを取り除きます。ファイル自体は削除されません。",
+  "@clearTempWorkspaceConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
   "noImagesSelected": "画像が選択されていません",
   "imageLoadFailed": "画像の読み込みに失敗しました",
