@@ -2221,7 +2221,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get preferHighPerformanceGpuDesc =>
-      'Windowsにディスクリート（専用）GPUでの実行を要求します。次回起動時に反映されます。';
+      '内蔵GPUではなくディスクリート（専用）GPUで描画します。次回起動時に反映されます。';
 
   @override
   String get reduceVisualEffects => '視覚効果を減らす';

@@ -2,21 +2,63 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <string>
+
 #include "flutter_window.h"
 #include "utils.h"
 
-// On hybrid-GPU machines (integrated + discrete), GPU drivers and Windows'
-// default adapter selection look for these exported symbols and, when present,
-// run the app on the high-performance GPU. Rendering this app on an integrated
-// GPU was measured at ~35ms per raster frame at 4K, so the discrete GPU is the
-// right default. An explicit per-app choice in Windows Settings > Display >
-// Graphics still overrides these hints.
-extern "C" {
-  // NVIDIA Optimus
-  __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-  // AMD PowerXpress
-  __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+namespace {
+
+// Where Windows keeps its per-app GPU choice: one string value per exe path,
+// written by Settings > Display > Graphics and by this app's own
+// "Prefer high-performance GPU" toggle (lib/services/gpu_preference_service.dart).
+constexpr wchar_t kGpuPreferenceKey[] =
+    L"Software\\Microsoft\\DirectX\\UserGpuPreferences";
+
+std::wstring GetExecutablePath() {
+  std::wstring path(MAX_PATH, L'\0');
+  while (true) {
+    const DWORD length =
+        ::GetModuleFileName(nullptr, path.data(), static_cast<DWORD>(path.size()));
+    if (length == 0) {
+      return std::wstring();
+    }
+    // A truncated path fills the buffer exactly; anything shorter is complete.
+    if (length < path.size()) {
+      path.resize(length);
+      return path;
+    }
+    path.resize(path.size() * 2);
+  }
 }
+
+// Which adapter to render on. The default is the low-power one: on a hybrid
+// machine the display is usually driven by the integrated GPU, and rendering on
+// the discrete card then pays a cross-adapter copy for every frame. Users who
+// want the dedicated card turn the setting on, which records GpuPreference=2
+// for this exe; the Windows graphics page writes the same entry, so a choice
+// made in either place is honoured here.
+flutter::GpuPreference GetGpuPreference() {
+  const std::wstring exe_path = GetExecutablePath();
+  if (exe_path.empty()) {
+    return flutter::GpuPreference::LowPowerPreference;
+  }
+
+  wchar_t value[256] = {};
+  DWORD size = sizeof(value);
+  if (::RegGetValue(HKEY_CURRENT_USER, kGpuPreferenceKey, exe_path.c_str(),
+                    RRF_RT_REG_SZ, nullptr, value, &size) != ERROR_SUCCESS) {
+    return flutter::GpuPreference::LowPowerPreference;
+  }
+
+  // The data reads like "GpuPreference=2;", sometimes with further tokens the
+  // Settings page appends. 2 is "High performance" in that page's terms.
+  return ::wcsstr(value, L"GpuPreference=2") != nullptr
+             ? flutter::GpuPreference::HighPerformancePreference
+             : flutter::GpuPreference::LowPowerPreference;
+}
+
+}  // namespace
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
@@ -31,6 +73,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
+
+  project.set_gpu_preference(GetGpuPreference());
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
