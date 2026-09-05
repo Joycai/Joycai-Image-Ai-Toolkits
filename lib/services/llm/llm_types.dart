@@ -282,10 +282,23 @@ class LLMMessage {
   /// *silently disabling thinking* (while billing it) rather than erroring.
   final List<Map<String, dynamic>>? rawThinkingBlocks;
 
-  /// The model that produced [rawThinkingBlocks]. Replay is model-scoped:
-  /// another model silently ignores foreign blocks and still bills them as
-  /// input, so the payload builder drops the group on mismatch.
+  /// The model that produced [rawThinkingBlocks] and [rawContentBlocks].
+  /// Replay is model-scoped: another model silently ignores foreign blocks
+  /// and still bills them as input, so the payload builder drops the group
+  /// on mismatch.
   final String? rawThinkingModelId;
+
+  /// ④'s **entire** `content` array of this assistant turn, verbatim, when
+  /// the turn contained a server-side tool run (`server_tool_use` +
+  /// `web_search_tool_result`). Null for every other turn.
+  ///
+  /// A server-tool turn cannot be rebuilt from [content] + [toolCalls]: the
+  /// search blocks carry an `encrypted_content` the API decrypts to recover
+  /// what the model read, and the protocol's `pause_turn` continuation is
+  /// "send the assistant message back *unchanged*". So the whole array is
+  /// kept and the payload builder replays it as-is — the ④ counterpart of
+  /// [rawThinkingBlocks], and scoped by [rawThinkingModelId] the same way.
+  final List<Map<String, dynamic>>? rawContentBlocks;
 
   /// Tool calls carried by an assistant message (echoed back into history
   /// during an agent loop).
@@ -307,6 +320,7 @@ class LLMMessage {
     this.reasoningSignature,
     this.rawThinkingBlocks,
     this.rawThinkingModelId,
+    this.rawContentBlocks,
     this.toolCalls = const [],
     this.toolCallId,
     this.toolName,
@@ -323,6 +337,8 @@ class LLMMessage {
         if (rawThinkingBlocks != null && rawThinkingBlocks!.isNotEmpty)
           'rawThinkingBlocks': rawThinkingBlocks,
         if (rawThinkingModelId != null) 'rawThinkingModelId': rawThinkingModelId,
+        if (rawContentBlocks != null && rawContentBlocks!.isNotEmpty)
+          'rawContentBlocks': rawContentBlocks,
         if (attachments.isNotEmpty)
           'attachments': attachments.map((a) => a.toJson()).whereType<Map<String, dynamic>>().toList(),
         if (toolCalls.isNotEmpty) 'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
@@ -343,6 +359,12 @@ class LLMMessage {
               ]
             : null,
         rawThinkingModelId: json['rawThinkingModelId'] as String?,
+        rawContentBlocks: json['rawContentBlocks'] is List
+            ? [
+                for (final b in json['rawContentBlocks'] as List)
+                  if (b is Map) b.cast<String, dynamic>(),
+              ]
+            : null,
         attachments: [
           for (final a in (json['attachments'] as List? ?? []))
             if (a is Map && LLMAttachment.fromJson(a.cast<String, dynamic>()) != null)
@@ -774,6 +796,12 @@ class LLMResponse {
   /// Producer of [rawThinkingBlocks] — see [LLMMessage.rawThinkingModelId].
   final String? rawThinkingModelId;
 
+  /// ④'s whole content array for a server-tool turn — see
+  /// [LLMMessage.rawContentBlocks]. Must reach the assistant message that
+  /// replays this turn, or the search the host ran is lost to the next
+  /// request and a paused turn cannot be continued.
+  final List<Map<String, dynamic>>? rawContentBlocks;
+
   /// Tool calls requested by the model (empty when it answered directly).
   final List<LLMToolCall> toolCalls;
 
@@ -788,6 +816,7 @@ class LLMResponse {
     this.reasoningSignature,
     this.rawThinkingBlocks,
     this.rawThinkingModelId,
+    this.rawContentBlocks,
     this.toolCalls = const [],
   });
 }
@@ -836,6 +865,10 @@ class LLMResponseChunk {
   /// The seal over the last thinking block, for [LLMMessage.reasoningSignature].
   final String? reasoningSignature;
 
+  /// ④'s whole content array, emitted once at stream end when the turn ran a
+  /// server tool — see [LLMMessage.rawContentBlocks].
+  final List<Map<String, dynamic>>? rawContentBlocks;
+
   final bool isDone;
 
   LLMResponseChunk({
@@ -847,6 +880,7 @@ class LLMResponseChunk {
     this.toolCallPart,
     this.rawThinkingBlocks,
     this.reasoningSignature,
+    this.rawContentBlocks,
     this.isDone = false,
   });
 }

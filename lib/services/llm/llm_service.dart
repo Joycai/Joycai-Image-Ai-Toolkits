@@ -6,6 +6,7 @@ import '../database_service.dart';
 import 'llm_config_resolver.dart';
 import 'llm_dispatcher.dart';
 import 'llm_types.dart';
+import 'turn_continuation.dart';
 
 class LLMService {
   static final LLMService _instance = LLMService._internal();
@@ -28,6 +29,13 @@ class LLMService {
   /// down every other request sharing that connection. On the streaming path
   /// there is a real abort: abandoning the subscription cancels the response
   /// stream, which drops the connection for this request alone.
+  ///
+  /// One call may take more than one request. A host running a server-side
+  /// tool can stop a turn halfway — ④'s `pause_turn`, or MiniMax's `end_turn`
+  /// on a search result — and the turn is then continued here, up to
+  /// [maxTurnContinuations] times, with the partial replies folded into the
+  /// one the caller receives ([mergeTurnParts]). Every part is billed and is
+  /// recorded as usage on its own.
   Future<LLMResponse> request({
     required dynamic modelIdentifier, // Can be String (legacy ID) or int (DbId)
     required List<LLMMessage> messages,
@@ -65,6 +73,14 @@ class LLMService {
 
     final int maxRetries = options?['retryCount'] ?? 0;
     int attempt = 0;
+    void log(String msg, {String level = 'INFO'}) =>
+        onLogAdded?.call(msg, level: level, contextId: contextId);
+
+    // The turn so far: the history this request is asked against (grows by
+    // one continuation at a time) and the partial replies collected on the
+    // way to a finished one.
+    var turnHistory = fullHistory;
+    final parts = <LLMResponse>[];
 
     while (true) {
       // Checked before opening a connection rather than only after: the
@@ -73,163 +89,83 @@ class LLMService {
       // full request.
       if (isCancelled?.call() ?? false) throw const LLMCancelled();
       try {
+        final LLMResponse response;
+        var cancelledMidStream = false;
         if (useStream) {
-          onLogAdded?.call('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
-          String accumulatedText = "";
-          String accumulatedReasoning = "";
-          String? reasoningFieldName;
-          List<Uint8List> accumulatedImages = [];
-          List<LLMToolCall> accumulatedToolCalls = [];
-          Map<String, dynamic>? finalMetadata;
-          List<Map<String, dynamic>>? rawThinkingBlocks;
-          String? reasoningSignature;
-
-          final stream = _dispatcher.generateStream(
-            config,
-            fullHistory,
-            options: options,
-            tools: tools,
-            logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
-          );
-
-          var cancelledMidStream = false;
-          await for (final chunk
-              in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
-            if (isCancelled?.call() ?? false) {
-              // Leaving the loop is the abort. `await for` cancels its
-              // subscription on break, which propagates to the response
-              // stream and drops this request's connection — the only
-              // interruption available while the client itself is pooled.
-              cancelledMidStream = true;
-              break;
-            }
-            if (chunk.reasoningPart != null) {
-              // Surfaced to the console and kept for replay, but never glued
-              // into the deliverable — that must not contain the chain of
-              // thought.
-              accumulatedReasoning += chunk.reasoningPart!;
-              onLogAdded?.call('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG', contextId: contextId);
-            }
-            // The ①/C2 echo-back key, carried per chunk — losing it here is
-            // what silently dropped tool-turn reasoning from replayed history
-            // and broke DeepSeek's echo-back contract once tool-bearing
-            // requests started streaming. ④ never sets it, so its history
-            // keeps a null field name and the ① payload builder does not
-            // invent a key for a signed-block obligation.
-            if (chunk.reasoningFieldName != null) {
-              reasoningFieldName = chunk.reasoningFieldName;
-            }
-            if (chunk.textPart != null) {
-              accumulatedText += chunk.textPart!;
-              // A tool-bearing caller is an agent loop: it consumes whole
-              // responses, and its console is a transcript rather than a live
-              // feed. Logging every fragment would bury that transcript under
-              // hundreds of lines, so the text goes out once at the end
-              // exactly as the standard path does it.
-              if (!toolBearing) {
-                onLogAdded?.call('[AI]: ${chunk.textPart}', level: 'INFO', contextId: contextId);
-              }
-            }
-            if (chunk.imagePart != null) {
-              accumulatedImages.add(chunk.imagePart!);
-            }
-            // Collected rather than ignored: a dropped tool call reads to the
-            // caller as "the model chose to answer directly", which is the one
-            // failure mode an agent loop cannot detect.
-            if (chunk.toolCallPart != null) {
-              accumulatedToolCalls.add(chunk.toolCallPart!);
-            }
-            // The replay carriers arrive once, whole, at stream end — a
-            // tool-calling turn replayed without them is an incomplete
-            // thinking history, which ④ silently strips rather than rejects.
-            if (chunk.rawThinkingBlocks != null) {
-              rawThinkingBlocks = chunk.rawThinkingBlocks;
-            }
-            if (chunk.reasoningSignature != null) {
-              reasoningSignature = chunk.reasoningSignature;
-            }
-            if (chunk.metadata != null) finalMetadata = chunk.metadata;
-          }
-
-          if (toolBearing && accumulatedText.isNotEmpty) {
-            onLogAdded?.call('[AI]: $accumulatedText', level: 'INFO', contextId: contextId);
-          }
-
-          final response = LLMResponse(
-            text: accumulatedText,
-            generatedImages: accumulatedImages,
-            metadata: finalMetadata ?? {},
-            toolCalls: accumulatedToolCalls,
-            reasoningContent:
-                accumulatedReasoning.isEmpty ? null : accumulatedReasoning,
-            reasoningFieldName:
-                accumulatedReasoning.isEmpty ? null : reasoningFieldName,
-            reasoningSignature: reasoningSignature,
-            rawThinkingBlocks: rawThinkingBlocks,
-            rawThinkingModelId:
-                rawThinkingBlocks == null ? null : config.modelId,
-          );
-
-          // Record usage
-          if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
-          }
-
-          // Deliberately after [_recordUsage] and before the session is
-          // touched: whatever the provider streamed before the abort was
-          // generated and billed, so it belongs in the usage table — but a
-          // half-received reply must never enter a conversation, and a
-          // caller that already stopped must not be handed one to display.
-          if (cancelledMidStream || (isCancelled?.call() ?? false)) {
-            throw const LLMCancelled();
-          }
-
-          // Update session
-          if (sessionId != null) {
-            _sessions[sessionId]!.add(LLMMessage(
-              role: LLMRole.assistant,
-              content: response.text,
-            ));
-          }
-
-          return response;
+          log('Connecting to ${config.channelType} (streaming)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG');
+          final streamed = await _streamOnce(config, turnHistory,
+              options: options,
+              tools: tools,
+              toolBearing: toolBearing,
+              isCancelled: isCancelled,
+              log: log);
+          response = streamed.response;
+          cancelledMidStream = streamed.cancelled;
         } else {
-          onLogAdded?.call('Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG', contextId: contextId);
+          log('Connecting to ${config.channelType} (standard)... ${attempt > 0 ? "(Retry $attempt/$maxRetries)" : ""}', level: 'DEBUG');
           final deadline = _dispatcher.generateTimeout(config, options: options);
-          final response = await _dispatcher.generate(
+          response = await _dispatcher.generate(
             config,
-            fullHistory,
+            turnHistory,
             options: options,
             tools: tools,
-            logger: (msg, {level = 'INFO'}) => onLogAdded?.call(msg, level: level, contextId: contextId),
+            logger: log,
             // Its own type rather than the bare TimeoutException Future
             // supplies, so the retry decision can tell "the generation ran
             // long" apart from "the connection died" — see
             // [LLMDeadlineExceeded].
           ).timeout(deadline, onTimeout: () => throw LLMDeadlineExceeded(deadline));
           if (response.text.isNotEmpty) {
-            onLogAdded?.call('[AI]: ${response.text}', level: 'INFO', contextId: contextId);
+            log('[AI]: ${response.text}');
           }
-
-          // Record usage
-          if (response.metadata.isNotEmpty) {
-            _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
-          }
-
-          // The request could not be interrupted (see the doc comment),
-          // but its answer still must not reach a caller that withdrew.
-          if (isCancelled?.call() ?? false) throw const LLMCancelled();
-
-          // Update session
-          if (sessionId != null) {
-            _sessions[sessionId]!.add(LLMMessage(
-              role: LLMRole.assistant,
-              content: response.text,
-            ));
-          }
-
-          return response;
         }
+
+        // Record usage per part, before anything else: whatever the provider
+        // generated was billed, whether or not the turn goes on or the caller
+        // is still there.
+        if (response.metadata.isNotEmpty) {
+          _recordUsage(config.modelId, config, response.metadata, modelDbId: modelIdentifier is int ? modelIdentifier : null, taskTag: options?['usageTag']?.toString());
+        }
+
+        // Deliberately after [_recordUsage] and before the session is
+        // touched: whatever the provider streamed before an abort was
+        // generated and billed, so it belongs in the usage table — but a
+        // half-received reply must never enter a conversation, and a caller
+        // that already stopped must not be handed one to display.
+        if (cancelledMidStream || (isCancelled?.call() ?? false)) {
+          throw const LLMCancelled();
+        }
+
+        parts.add(response);
+
+        // A turn the host stopped halfway is asked to go on — up to the cap.
+        // The retry counter is untouched: this is not a failure, and a
+        // continuation that then fails still gets its own retries.
+        final continuation = continuationFor(response, config.modelId);
+        if (continuation != null) {
+          final done = parts.length - 1;
+          if (done < maxTurnContinuations) {
+            log('The host paused the turn after a server-side tool run; '
+                'continuing (${done + 1}/$maxTurnContinuations).');
+            turnHistory = [...turnHistory, ...continuation];
+            attempt = 0;
+            continue;
+          }
+          log('The host paused the turn $done times; delivering the partial '
+              'answer as-is.', level: 'WARN');
+        }
+
+        final merged = mergeTurnParts(parts);
+
+        // Update session
+        if (sessionId != null) {
+          _sessions[sessionId]!.add(LLMMessage(
+            role: LLMRole.assistant,
+            content: merged.text,
+          ));
+        }
+
+        return merged;
       } catch (e) {
         attempt++;
         if (attempt > maxRetries || !isRetryable(e)) {
@@ -240,10 +176,132 @@ class LLMService {
         // sleep below is time a stopped turn should not spend waiting to
         // re-send a request nobody is waiting for.
         if (isCancelled?.call() ?? false) throw const LLMCancelled();
-        onLogAdded?.call('Request failed: $e. Retrying in 2 seconds...', level: 'WARN', contextId: contextId);
+        log('Request failed: $e. Retrying in 2 seconds...', level: 'WARN');
         await Future.delayed(const Duration(seconds: 2));
       }
     }
+  }
+
+  /// One streamed request, assembled into a whole [LLMResponse].
+  ///
+  /// [cancelled] is true when the caller withdrew mid-stream. The partial
+  /// reply is still returned — its usage has to be recorded, since whatever
+  /// arrived was generated and billed — and it is the caller's job to throw
+  /// [LLMCancelled] instead of using it.
+  Future<({LLMResponse response, bool cancelled})> _streamOnce(
+    LLMModelConfig config,
+    List<LLMMessage> history, {
+    required Map<String, dynamic>? options,
+    required List<LLMTool>? tools,
+    required bool toolBearing,
+    required bool Function()? isCancelled,
+    required void Function(String msg, {String level}) log,
+  }) async {
+    String accumulatedText = "";
+    String accumulatedReasoning = "";
+    String? reasoningFieldName;
+    List<Uint8List> accumulatedImages = [];
+    List<LLMToolCall> accumulatedToolCalls = [];
+    Map<String, dynamic>? finalMetadata;
+    List<Map<String, dynamic>>? rawThinkingBlocks;
+    List<Map<String, dynamic>>? rawContentBlocks;
+    String? reasoningSignature;
+
+    final stream = _dispatcher.generateStream(
+      config,
+      history,
+      options: options,
+      tools: tools,
+      logger: log,
+    );
+
+    var cancelledMidStream = false;
+    await for (final chunk
+        in _idleGuarded(stream, first: _firstChunkGapFor(config, options))) {
+      if (isCancelled?.call() ?? false) {
+        // Leaving the loop is the abort. `await for` cancels its
+        // subscription on break, which propagates to the response
+        // stream and drops this request's connection — the only
+        // interruption available while the client itself is pooled.
+        cancelledMidStream = true;
+        break;
+      }
+      if (chunk.reasoningPart != null) {
+        // Surfaced to the console and kept for replay, but never glued
+        // into the deliverable — that must not contain the chain of
+        // thought.
+        accumulatedReasoning += chunk.reasoningPart!;
+        log('[AI thinking]: ${chunk.reasoningPart}', level: 'DEBUG');
+      }
+      // The ①/C2 echo-back key, carried per chunk — losing it here is
+      // what silently dropped tool-turn reasoning from replayed history
+      // and broke DeepSeek's echo-back contract once tool-bearing
+      // requests started streaming. ④ never sets it, so its history
+      // keeps a null field name and the ① payload builder does not
+      // invent a key for a signed-block obligation.
+      if (chunk.reasoningFieldName != null) {
+        reasoningFieldName = chunk.reasoningFieldName;
+      }
+      if (chunk.textPart != null) {
+        accumulatedText += chunk.textPart!;
+        // A tool-bearing caller is an agent loop: it consumes whole
+        // responses, and its console is a transcript rather than a live
+        // feed. Logging every fragment would bury that transcript under
+        // hundreds of lines, so the text goes out once at the end
+        // exactly as the standard path does it.
+        if (!toolBearing) {
+          log('[AI]: ${chunk.textPart}');
+        }
+      }
+      if (chunk.imagePart != null) {
+        accumulatedImages.add(chunk.imagePart!);
+      }
+      // Collected rather than ignored: a dropped tool call reads to the
+      // caller as "the model chose to answer directly", which is the one
+      // failure mode an agent loop cannot detect.
+      if (chunk.toolCallPart != null) {
+        accumulatedToolCalls.add(chunk.toolCallPart!);
+      }
+      // The replay carriers arrive once, whole, at stream end — a
+      // tool-calling turn replayed without them is an incomplete
+      // thinking history, which ④ silently strips rather than rejects;
+      // a server-tool turn replayed without its content array loses the
+      // search and cannot be continued.
+      if (chunk.rawThinkingBlocks != null) {
+        rawThinkingBlocks = chunk.rawThinkingBlocks;
+      }
+      if (chunk.rawContentBlocks != null) {
+        rawContentBlocks = chunk.rawContentBlocks;
+      }
+      if (chunk.reasoningSignature != null) {
+        reasoningSignature = chunk.reasoningSignature;
+      }
+      if (chunk.metadata != null) finalMetadata = chunk.metadata;
+    }
+
+    if (toolBearing && accumulatedText.isNotEmpty) {
+      log('[AI]: $accumulatedText');
+    }
+
+    final response = LLMResponse(
+      text: accumulatedText,
+      generatedImages: accumulatedImages,
+      metadata: finalMetadata ?? {},
+      toolCalls: accumulatedToolCalls,
+      reasoningContent:
+          accumulatedReasoning.isEmpty ? null : accumulatedReasoning,
+      reasoningFieldName:
+          accumulatedReasoning.isEmpty ? null : reasoningFieldName,
+      reasoningSignature: reasoningSignature,
+      rawThinkingBlocks: rawThinkingBlocks,
+      rawContentBlocks: rawContentBlocks,
+      rawThinkingModelId:
+          rawThinkingBlocks == null && rawContentBlocks == null
+              ? null
+              : config.modelId,
+    );
+
+    return (response: response, cancelled: cancelledMidStream);
   }
 
   /// How long the *first* chunk may take.

@@ -633,7 +633,13 @@ void main() {
         isStreaming: false,
       );
       expect(p['tools'], [
-        {'type': anthropicWebSearchToolType, 'name': 'web_search'}
+        {
+          'type': anthropicWebSearchToolType,
+          'name': 'web_search',
+          // The only brake the API offers: billed per search, and every
+          // result re-billed as input on each later turn.
+          'max_uses': anthropicWebSearchMaxUses,
+        }
       ]);
       expect(p['tool_choice'], {'type': 'auto'});
     });
@@ -730,6 +736,223 @@ void main() {
           ],
         }
       ]);
+    });
+
+    test('the whole content array is kept for a server-tool turn, and only then', () {
+      // The result block carries an encrypted_content the API decrypts; a turn
+      // rebuilt from text + tool calls loses it, and with it the search.
+      final blocks = [
+        {'type': 'text', 'text': 'Searching.'},
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'c1',
+          'content': [
+            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+          ],
+        },
+        {'type': 'text', 'text': 'Found it.'},
+      ];
+      expect(parseAnthropicContent(blocks).rawContentBlocks, blocks);
+
+      final plain = parseAnthropicContent([
+        {'type': 'text', 'text': 'hi'},
+        {'type': 'tool_use', 'id': 't', 'name': 'f', 'input': {}},
+      ]);
+      expect(plain.rawContentBlocks, isEmpty);
+    });
+
+    test('a server-tool turn is replayed verbatim, not rebuilt', () {
+      final blocks = <Map<String, dynamic>>[
+        {'type': 'text', 'text': 'Searching.'},
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'c1',
+          'content': [
+            {'type': 'web_search_result', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+          ],
+        },
+      ];
+      final p = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'Searching.',
+          rawThinkingModelId: 'claude-opus-5',
+          rawContentBlocks: blocks,
+        ),
+      ]);
+      expect((p['messages'] as List)[1]['content'], blocks);
+
+      // Another model produced them: dropped, and the turn rebuilt instead.
+      final foreign = uncachedPayload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'Searching.',
+          rawThinkingModelId: 'claude-haiku-4-5',
+          rawContentBlocks: blocks,
+        ),
+      ]);
+      expect((foreign['messages'] as List)[1]['content'], [
+        {'type': 'text', 'text': 'Searching.'}
+      ]);
+    });
+
+    test('a cache breakpoint on a replayed turn does not write into the history', () {
+      final blocks = <Map<String, dynamic>>[
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {}},
+        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': []},
+        {'type': 'text', 'text': 'Found it.'},
+      ];
+      payload([
+        LLMMessage(role: LLMRole.user, content: 'go'),
+        LLMMessage(
+          role: LLMRole.assistant,
+          content: 'Found it.',
+          rawThinkingModelId: 'claude-opus-5',
+          rawContentBlocks: blocks,
+        ),
+      ]);
+      expect(blocks.last.containsKey('cache_control'), isFalse);
+    });
+
+    test('pause_turn is not stop', () {
+      // The host suspended the turn after a search and wants the message
+      // back; reading it as a finished answer delivered the one line the
+      // model wrote before searching.
+      expect(anthropicFinishReason('pause_turn'), anthropicPauseFinishReason);
+      expect(anthropicFinishReason('end_turn'), 'stop');
+    });
+
+    test('a turn that ends on a search result with no text after it is flagged', () {
+      // MiniMax's shape: it runs the search, returns the results and does not
+      // call the model again — under `end_turn`, so the stop reason is no
+      // help and the shape is the only signal.
+      final content = parseAnthropicContent([
+        {'type': 'text', 'text': 'Let me look.'},
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': []},
+      ]);
+      expect(content.turnIncomplete, isTrue);
+      final metadata = anthropicUsageMetadata(null,
+          stopReason: 'end_turn', turnIncomplete: content.turnIncomplete);
+      expect(metadata[anthropicTurnIncompleteKey], isTrue);
+      expect(metadata['finish_reason'], 'stop');
+
+      // Text after the result means the model did come back.
+      final finished = parseAnthropicContent([
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {}},
+        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': []},
+        {'type': 'text', 'text': 'Here.'},
+      ]);
+      expect(finished.turnIncomplete, isFalse);
+      // A trailing thinking block does not count as the model speaking.
+      final thoughtOnly = parseAnthropicContent([
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {}},
+        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': []},
+        {'type': 'thinking', 'thinking': '', 'signature': 's'},
+      ]);
+      expect(thoughtOnly.turnIncomplete, isTrue);
+    });
+
+    test('a failed search is an error on the run, not zero results', () {
+      // Delivered as a 200 with an error *block* whose content is an object,
+      // not a list; the old parser read it as an empty result list.
+      final content = parseAnthropicContent([
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'c1',
+          'content': {'type': 'web_search_tool_result_error', 'error_code': 'max_uses_exceeded'},
+        },
+      ]);
+      final run = content.serverToolRuns.single;
+      expect(run.error, 'max_uses_exceeded');
+      expect(run.results, isEmpty);
+      final metadata = anthropicUsageMetadata(null, serverToolRuns: content.serverToolRuns);
+      expect((metadata['server_tool_runs'] as List).single['error'], 'max_uses_exceeded');
+    });
+
+    test('the stream assembler keeps the same content array the sync path would', () {
+      final assembler = AnthropicStreamAssembler();
+      final events = <Map<String, dynamic>>[
+        {'type': 'message_start', 'message': {'usage': {'input_tokens': 5}}},
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'Let me '}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'look.'}},
+        {'type': 'content_block_stop', 'index': 0},
+        {'type': 'content_block_start', 'index': 1, 'content_block': {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {}}},
+        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': '{"que'}},
+        {'type': 'content_block_delta', 'index': 1, 'delta': {'type': 'input_json_delta', 'partial_json': 'ry":"q"}'}},
+        {'type': 'content_block_stop', 'index': 1},
+        {
+          'type': 'content_block_start',
+          'index': 2,
+          'content_block': {
+            'type': 'web_search_tool_result',
+            'tool_use_id': 'srv',
+            'content': [
+              {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+            ],
+          },
+        },
+        {'type': 'content_block_stop', 'index': 2},
+        {'type': 'message_delta', 'delta': {'stop_reason': 'pause_turn'}, 'usage': {'output_tokens': 7}},
+        {'type': 'message_stop'},
+      ];
+      final chunks = [for (final e in events) ...assembler.accept(e)];
+      expect(chunks.map((c) => c.textPart).whereType<String>().join(), 'Let me look.');
+      expect(chunks.any((c) => c.toolCallPart != null), isFalse,
+          reason: 'a host-run search is never a call to make');
+
+      final closing = assembler.finish()!;
+      expect(closing.rawContentBlocks, [
+        {'type': 'text', 'text': 'Let me look.'},
+        {'type': 'server_tool_use', 'id': 'srv', 'name': 'web_search', 'input': {'query': 'q'}},
+        {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'srv',
+          'content': [
+            {'type': 'web_search_result', 'title': 'T', 'url': 'https://e.com/a', 'encrypted_content': 'Eqgf'}
+          ],
+        },
+      ]);
+      expect(closing.metadata!['finish_reason'], anthropicPauseFinishReason);
+      expect(closing.metadata![anthropicTurnIncompleteKey], isTrue);
+      expect((closing.metadata!['server_tool_runs'] as List).single['query'], 'q');
+      expect(closing.metadata!['prompt_tokens'], 5);
+    });
+
+    test('the content array survives persistence — the replay outlives the session', () {
+      final blocks = <Map<String, dynamic>>[
+        {'type': 'server_tool_use', 'id': 'c1', 'name': 'web_search', 'input': {'query': 'q'}},
+        {'type': 'web_search_tool_result', 'tool_use_id': 'c1', 'content': [{'encrypted_content': 'E'}]},
+      ];
+      final revived = LLMMessage.fromJson(LLMMessage(
+        role: LLMRole.assistant,
+        content: '',
+        rawThinkingModelId: 'claude-opus-5',
+        rawContentBlocks: blocks,
+      ).toJson());
+      expect(revived.rawContentBlocks, blocks);
+      expect(revived.rawThinkingModelId, 'claude-opus-5');
+      expect(LLMMessage(role: LLMRole.assistant, content: 'x').toJson().containsKey('rawContentBlocks'),
+          isFalse);
+    });
+
+    test('a stream without a server tool carries no content array', () {
+      final assembler = AnthropicStreamAssembler();
+      for (final e in <Map<String, dynamic>>[
+        {'type': 'content_block_start', 'index': 0, 'content_block': {'type': 'text', 'text': ''}},
+        {'type': 'content_block_delta', 'index': 0, 'delta': {'type': 'text_delta', 'text': 'hi'}},
+        {'type': 'content_block_stop', 'index': 0},
+        {'type': 'message_delta', 'delta': {'stop_reason': 'end_turn'}, 'usage': {'output_tokens': 1}},
+      ]) {
+        assembler.accept(e).toList();
+      }
+      expect(assembler.finish()!.rawContentBlocks, isNull);
     });
 
     test('a result whose call went missing still keeps its sources', () {

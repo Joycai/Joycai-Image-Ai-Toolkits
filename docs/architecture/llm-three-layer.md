@@ -317,6 +317,31 @@ thinking / server tool 一起加。
    连带的一条：开了 server tool 之后一轮里会出现**多个 text block**（搜索前一
    段、搜索后一段），所以 block 之间按空行拼接，不是裸接 —— 裸接会把两段话连成
    一句。
+7. **「一次请求 = 一个完整回答」在 server tool 面前不成立，且只有一种停法会
+   明说。** 官方 ④ 用 `stop_reason: pause_turn`（协议发布为
+   `finish_reason: pause`，**不再**翻成 `stop`）；MiniMax 的 ④ 面跑完搜索把结果
+   送回就 `end_turn`，不再叫模型，响应是个格式完好的成功——协议按**形状**判：
+   最后一个非 thinking 块是 `web_search_tool_result` 即 `turn_incomplete`
+   （`anthropicTurnIncompleteKey`）。两种都由 `LLMService.request` 续跑，最多
+   `maxTurnContinuations`（3）次，每段各自记用量，最后
+   `mergeTurnParts` 合成一个响应交给调用方（文本按段落拼、tool_calls 取最后一段、
+   token 求和、content 数组串接）。**续跑的形状不同**（`turn_continuation.dart`）：
+   `pause` 按协议原样送回 assistant 消息；`turn_incomplete` 走纯文本回填——把
+   `server_tool_runs` 渲染成 user 消息，因为 MiniMax **拒收自己发出的**
+   `server_tool_use` 块。
+   为此 server-tool 轮的**整个 `content` 数组原样留存**（`LLMMessage.rawContentBlocks`，
+   与 `rawThinkingBlocks` 同性质、同 `rawThinkingModelId` 作用域，随会话持久化）：
+   结果块里的 `encrypted_content` 是服务端解密用的，改了或缺了 400；
+   `buildAnthropicHistory` 对带它的 assistant 轮整块回放而不重建。流式路径的
+   `AnthropicStreamAssembler` 用 `content_block_start` 的副本 + delta 重组出同一
+   份数组（含 `citations_delta`），`test/anthropic_chat_test.dart` 钉住流式与同步
+   给出同一份。助手对 `write_knowledge_file` 大参数做上下文省略时丢掉这份副本
+   （省略正是为了不重发那段内容），改回重建路径。
+   `web_search_tool_result` 的 `content` 是对象而非数组时是**错误块**
+   （`error_code`：`max_uses_exceeded` / `too_many_requests` / …），记进
+   `ServerToolRun.error` 并 WARN，不是失败——`max_uses_exceeded` 是刹车在起作用。
+   声明 `web_search_20250305` 时同时发 `max_uses`（`anthropicWebSearchMaxUses`
+   = 5）：按次计费且结果在后续每轮反复计入 input，这是唯一的刹车。
 
 **四条 chat wire 现在全都声明工具**（`streamingDeclaresTools`：④ ③ ① C2）。理由
 不是增量消费 —— agent 循环拿不到完整一批就配不出结果 —— 而是**保活**：

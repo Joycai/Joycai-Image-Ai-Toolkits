@@ -106,7 +106,9 @@
 
 **风险**：中。触及 layer 2/3 的接口与 UI。降级重试会让第一次 400 多花一次请求，但只发生一次。
 
-#### 片 5 · `pause_turn` 与服务端工具块的原样回传（#7 #19）
+#### 片 5 · `pause_turn` 与服务端工具块的原样回传（#7 #19）— ✅ 2026-09-05 L1 已落，L2 待 key
+
+> 落地与计划的差异：续跑规则抽成 IO-free 的 `lib/services/llm/turn_continuation.dart`（`continuationFor` / `mergeTurnParts` / `renderServerToolRuns`），`LLMService.request` 只做循环——流式分支抽成 `_streamOnce`，两条路径共用记用量 / 取消 / 续跑 / 会话更新的尾巴（原先重复了两份）。`turn_incomplete` 的判据是「最后一个非 thinking 块是 `web_search_tool_result`」，尾随 thinking 块不算模型说话。流式装配器现在为每个块保留 `content_block_start` 的副本并用 delta 重组（含 `citations_delta`），并修了一个顺带发现的问题：中转在 `content_block_start` 直接给整个 `input` 而不发 `input_json_delta` 时，工具参数会被读成空——现在空 buffer 回落到起始块的 `input`。合并后的 metadata 多一个 `continuations` 计数。上下文预算（`context_budget.dart`）按 observed 用量校准，未单独把 `rawContentBlocks` 计入估算。
 
 **改什么**
 

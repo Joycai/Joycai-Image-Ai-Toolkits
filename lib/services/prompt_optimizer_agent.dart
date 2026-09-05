@@ -1587,6 +1587,7 @@ class PromptOptimizerAgent {
               reasoningSignature: response.reasoningSignature,
               rawThinkingBlocks: response.rawThinkingBlocks,
               rawThinkingModelId: response.rawThinkingModelId,
+              rawContentBlocks: response.rawContentBlocks,
             ));
             session._addEntry(OptimizerChatEntry(kind: OptimizerEntryKind.assistant, text: text));
           }
@@ -1606,6 +1607,7 @@ class PromptOptimizerAgent {
           reasoningSignature: response.reasoningSignature,
           rawThinkingBlocks: response.rawThinkingBlocks,
           rawThinkingModelId: response.rawThinkingModelId,
+          rawContentBlocks: response.rawContentBlocks,
           toolCalls: response.toolCalls,
         ));
         if (response.text.trim().isNotEmpty) {
@@ -2245,6 +2247,13 @@ class PromptOptimizerAgent {
         reasoningSignature: m.reasoningSignature,
         rawThinkingBlocks: m.rawThinkingBlocks,
         rawThinkingModelId: m.rawThinkingModelId,
+        // Not carried: the verbatim copy holds the full file body inside its
+        // tool_use input, which is exactly what this elision exists to keep
+        // out of every later request. Without it the turn is rebuilt from
+        // the elided fields below — a server-tool turn that also wrote a
+        // large file loses its search blocks on replay, which is the cheaper
+        // of the two losses.
+        rawContentBlocks: null,
         toolCalls: [
           for (final c in m.toolCalls)
             if (c.name == 'write_knowledge_file' &&
@@ -3230,6 +3239,10 @@ class PromptOptimizerAgent {
         reasoningSignature: owning.reasoningSignature,
         rawThinkingBlocks: owning.rawThinkingBlocks,
         rawThinkingModelId: owning.rawThinkingModelId,
+        // Stripping a call rewrites the tool_use list, so the verbatim copy
+        // can no longer stand for this turn — it is dropped and the turn is
+        // rebuilt from the fields, like any pre-capture history.
+        rawContentBlocks: null,
         toolCalls: [
           for (final c in owning.toolCalls)
             if (c.id != callId) c,

@@ -37,6 +37,24 @@ const Set<String> anthropicImageMediaTypes = {
 /// verbatim, dated release and all, so one constant covers both.
 const String anthropicWebSearchToolType = 'web_search_20250305';
 
+/// Cap on searches per request. Billing is per search *and* every result is
+/// re-billed as input on each later iteration and turn, and this field is the
+/// only brake the API offers; without it a curious model can run a dozen
+/// searches for one question.
+const int anthropicWebSearchMaxUses = 5;
+
+/// ①-vocabulary `finish_reason` published for ④'s `pause_turn`: the host
+/// suspended a long server-tool turn and wants the assistant message sent
+/// back unchanged so the model can continue it. Not `stop` — a turn that
+/// ends here has a search in it and no answer after it.
+const String anthropicPauseFinishReason = 'pause';
+
+/// Metadata key set when a turn ended on a server-tool result with no text
+/// after it while claiming `end_turn` — MiniMax's ④ face does this (it runs
+/// the search, hands the results back and does not call the model again).
+/// No field says anything was cut short; the shape is the only signal.
+const String anthropicTurnIncompleteKey = 'turn_incomplete';
+
 /// Floor Anthropic puts under `thinking.budget_tokens`. Below it the request
 /// is rejected rather than clamped.
 const int anthropicMinThinkingBudget = 1024;
@@ -101,6 +119,25 @@ AnthropicHistory buildAnthropicHistory(List<LLMMessage> history,
     }
 
     if (msg.role == LLMRole.assistant) {
+      // A server-tool turn is replayed whole, exactly as it arrived: the
+      // result blocks carry an `encrypted_content` the API decrypts to
+      // recover what the model read (modified or missing → 400), and a
+      // `pause_turn` continuation is defined as "send the assistant message
+      // back unchanged". Rebuilding from text + tool calls, as below, would
+      // drop the search blocks and with them the search. Model-scoped like
+      // the thinking blocks: another model ignores them and bills them.
+      final rawContent = msg.rawContentBlocks;
+      if (rawContent != null &&
+          rawContent.isNotEmpty &&
+          (modelId == null || msg.rawThinkingModelId == modelId)) {
+        // Shallow copies, so a cache breakpoint stamped on the last block
+        // later does not write into the persisted history.
+        append('assistant', [
+          for (final block in rawContent) Map<String, dynamic>.of(block),
+        ]);
+        continue;
+      }
+
       final blocks = <Map<String, dynamic>>[];
       // Thinking goes back first, verbatim when the raw blocks were captured
       // (thinking + redacted_thinking, original order and content — the only
@@ -380,7 +417,11 @@ Map<String, dynamic> prepareAnthropicPayload(
         'input_schema': t.parameters,
       },
     if (target.config.enableWebSearch)
-      {'type': anthropicWebSearchToolType, 'name': 'web_search'},
+      {
+        'type': anthropicWebSearchToolType,
+        'name': 'web_search',
+        'max_uses': anthropicWebSearchMaxUses,
+      },
   ];
 
   if (declared.isNotEmpty) {
@@ -456,7 +497,14 @@ class ServerToolRun {
   /// `title → url` of each result, in the order returned.
   final List<({String title, String url})> results;
 
-  const ServerToolRun(this.name, this.query, this.results);
+  /// The host's `error_code` when the search itself failed
+  /// (`too_many_requests`, `max_uses_exceeded`, `unavailable`, …). Delivered
+  /// as a 200 with an error *block*, not an HTTP error, so it has to be read
+  /// off the result. Zero results is not an error — that is an empty list
+  /// with a null here.
+  final String? error;
+
+  const ServerToolRun(this.name, this.query, this.results, {this.error});
 }
 
 /// What one response's `content` block array carried.
@@ -486,6 +534,16 @@ class AnthropicContent {
   /// carriers.
   final List<Map<String, dynamic>> rawThinkingBlocks;
 
+  /// The **whole** content array, verbatim, when the turn ran a server tool;
+  /// empty otherwise. See [LLMMessage.rawContentBlocks].
+  final List<Map<String, dynamic>> rawContentBlocks;
+
+  /// True when the turn stopped on a server-tool result with no text after
+  /// it: the host ran the search and never called the model back. Official
+  /// ④ announces this as `stop_reason: pause_turn`; MiniMax's face reports
+  /// `end_turn` and leaves this shape as the only evidence.
+  final bool turnIncomplete;
+
   const AnthropicContent(
     this.text,
     this.thinking,
@@ -493,6 +551,8 @@ class AnthropicContent {
     this.toolCalls,
     this.serverToolRuns, {
     this.rawThinkingBlocks = const [],
+    this.rawContentBlocks = const [],
+    this.turnIncomplete = false,
   });
 }
 
@@ -509,11 +569,18 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
   // `server_tool_use` and its result are separate blocks tied by an id, and
   // the call always precedes the result.
   final runsByCallId = <String, int>{};
+  var hasServerTool = false;
+  // The type of the last block that is not thinking — what the turn ended
+  // on, for the incomplete-turn test.
+  String? lastVisibleType;
 
   if (rawContent is List) {
     for (final block in rawContent) {
       if (block is! Map) continue;
       final type = block['type'];
+      if (type != 'thinking' && type != 'redacted_thinking') {
+        lastVisibleType = type?.toString();
+      }
       if (type == 'text') {
         final value = block['text'];
         if (value is String && value.isNotEmpty) {
@@ -550,6 +617,7 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
           arguments: input is Map ? input.cast<String, dynamic>() : {},
         ));
       } else if (type == 'server_tool_use') {
+        hasServerTool = true;
         final input = block['input'];
         final query = input is Map ? (input['query']?.toString() ?? '') : '';
         runsByCallId[block['id']?.toString() ?? ''] = serverToolRuns.length;
@@ -559,24 +627,19 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
           const [],
         ));
       } else if (type == 'web_search_tool_result') {
-        final results = <({String title, String url})>[];
-        final entries = block['content'];
-        if (entries is List) {
-          for (final entry in entries) {
-            if (entry is! Map) continue;
-            final url = entry['url']?.toString() ?? '';
-            if (url.isEmpty) continue;
-            results.add((title: entry['title']?.toString() ?? url, url: url));
-          }
-        }
+        hasServerTool = true;
+        final parsed = _parseWebSearchResult(block['content']);
         final index = runsByCallId[block['tool_use_id']?.toString() ?? ''];
         if (index != null) {
           final run = serverToolRuns[index];
-          serverToolRuns[index] = ServerToolRun(run.name, run.query, results);
+          serverToolRuns[index] = ServerToolRun(run.name, run.query,
+              parsed.results,
+              error: parsed.error);
         } else {
           // A result with no call in front of it: keep the sources anyway
           // rather than lose them to a bookkeeping mismatch.
-          serverToolRuns.add(ServerToolRun('web_search', '', results));
+          serverToolRuns.add(ServerToolRun('web_search', '', parsed.results,
+              error: parsed.error));
         }
       }
       // `redacted_thinking` is an opaque encrypted blob — there is nothing to
@@ -592,7 +655,35 @@ AnthropicContent parseAnthropicContent(Object? rawContent) {
     toolCalls,
     serverToolRuns,
     rawThinkingBlocks: rawThinkingBlocks,
+    rawContentBlocks: hasServerTool && rawContent is List
+        ? [
+            for (final block in rawContent)
+              if (block is Map) block.cast<String, dynamic>(),
+          ]
+        : const [],
+    turnIncomplete: hasServerTool && lastVisibleType == 'web_search_tool_result',
   );
+}
+
+/// The `content` of a `web_search_tool_result` block, which is either a list
+/// of results or — when the search itself failed — a single error object
+/// (`{type: web_search_tool_result_error, error_code}`) in the same field.
+({List<({String title, String url})> results, String? error})
+    _parseWebSearchResult(Object? content) {
+  final results = <({String title, String url})>[];
+  if (content is Map) {
+    final code = content['error_code']?.toString();
+    return (results: results, error: code ?? content['type']?.toString());
+  }
+  if (content is List) {
+    for (final entry in content) {
+      if (entry is! Map) continue;
+      final url = entry['url']?.toString() ?? '';
+      if (url.isEmpty) continue;
+      results.add((title: entry['title']?.toString() ?? url, url: url));
+    }
+  }
+  return (results: results, error: null);
 }
 
 /// Response metadata in the shape the billing/accounting layer reads.
@@ -614,6 +705,7 @@ Map<String, dynamic> anthropicUsageMetadata(
   Map<String, dynamic>? usage, {
   String? stopReason,
   List<ServerToolRun> serverToolRuns = const [],
+  bool turnIncomplete = false,
 }) {
   int count(Object? value) => value is num ? value.toInt() : 0;
   final input = count(usage?['input_tokens']);
@@ -633,8 +725,14 @@ Map<String, dynamic> anthropicUsageMetadata(
             'sources': [
               for (final r in run.results) {'title': r.title, 'url': r.url}
             ],
+            if (run.error != null) 'error': run.error,
           }
       ],
+    // The MiniMax-shaped half-turn: `end_turn` on a search result with no
+    // answer after it. `finish_reason` still says `stop` — the field is
+    // honest about what the host said — and this flag says what the shape
+    // said. `LLMService` continues the turn on either signal.
+    if (turnIncomplete) anthropicTurnIncompleteKey: true,
     'stop_reason': ?stopReason,
     // The truncation checks in the assistant loop and the web scraper both
     // key off ①'s vocabulary, so the stop reason is also published under the
@@ -654,8 +752,14 @@ String? anthropicFinishReason(String? stopReason) {
       return 'tool_calls';
     case 'refusal':
       return 'content_filter';
+    case 'pause_turn':
+      // Not finished: the host suspended a server-tool turn and wants the
+      // assistant message sent back unchanged. Mapping this to `stop` read
+      // "the search ran, the model wrote one line, then nothing" as a
+      // complete answer — and there is no other field that says otherwise.
+      return anthropicPauseFinishReason;
     default:
-      // end_turn, stop_sequence, pause_turn — the model finished its turn.
+      // end_turn, stop_sequence — the model finished its turn.
       return 'stop';
   }
 }
@@ -685,17 +789,35 @@ class AnthropicStreamAssembler {
   /// them; the paragraph break belongs at the seam, and only there.
   bool _emittedText = false;
 
-  /// Tool calls and thinking blocks under construction, keyed by the
-  /// content-block index every event carries. Both are finalized on
-  /// `content_block_stop` rather than at stream end: indices are reused
-  /// across blocks, and a call whose arguments are still a JSON fragment
-  /// must never escape (see [LLMResponseChunk.toolCallPart]).
+  /// Tool calls under construction, keyed by the content-block index every
+  /// event carries. Finalized on `content_block_stop` rather than at stream
+  /// end: indices are reused across blocks, and a call whose arguments are
+  /// still a JSON fragment must never escape (see
+  /// [LLMResponseChunk.toolCallPart]).
   final Map<int, ({String id, String name, StringBuffer json})> _pendingCalls = {};
+
+  /// Server-tool calls under construction — same shape, but these are never
+  /// emitted as calls: the host runs them itself.
+  final Map<int, ({String id, String name, StringBuffer json})> _pendingServerCalls = {};
+
+  /// Every block of the turn, verbatim as far as a stream allows, keyed by
+  /// index and in arrival order. This is the replay carrier for a
+  /// server-tool turn ([LLMMessage.rawContentBlocks]): the result blocks
+  /// arrive whole (with their `encrypted_content`), the text blocks are
+  /// re-assembled from their deltas, and the thinking entries are the *same*
+  /// map objects [_pendingThinking] fills in — so both views stay in step.
+  final Map<int, Map<String, dynamic>> _blocks = {};
+  final List<int> _order = [];
   final Map<int, Map<String, dynamic>> _pendingThinking = {};
 
   /// Verbatim, in arrival order — the only history ④ accepts as complete.
   final List<Map<String, dynamic>> _rawThinkingBlocks = [];
   String? _thinkingSignature;
+
+  final List<ServerToolRun> _serverToolRuns = [];
+  final Map<String, int> _runsByCallId = {};
+  bool _hasServerTool = false;
+  String? _lastVisibleType;
 
   static int _indexOf(Map<String, dynamic> event) {
     final raw = event['index'];
@@ -719,47 +841,87 @@ class AnthropicStreamAssembler {
       case 'content_block_start':
         final block = event['content_block'];
         if (block is! Map) return;
-        switch (block['type']) {
+        final index = _indexOf(event);
+        final type = block['type']?.toString();
+        // The verbatim copy this block will grow into. Shallow: the fields
+        // that arrive whole (`content`, `encrypted_content`, `id`) are kept
+        // by reference, the ones that stream (`text`, `input`, `thinking`)
+        // are rewritten below as they complete.
+        final raw = Map<String, dynamic>.of(block.cast<String, dynamic>());
+        _blocks[index] = raw;
+        _order.add(index);
+        if (type != 'thinking' && type != 'redacted_thinking') {
+          _lastVisibleType = type;
+        }
+        switch (type) {
           case 'tool_use':
             // id and name arrive whole here; only `input` is fragmented.
-            _pendingCalls[_indexOf(event)] = (
+            _pendingCalls[index] = (
               id: block['id']?.toString() ?? 'toolu_${_pendingCalls.length}',
               name: block['name']?.toString() ?? '',
               json: StringBuffer(),
             );
           case 'thinking':
-            _pendingThinking[_indexOf(event)] = {
-              'type': 'thinking',
-              'thinking': block['thinking']?.toString() ?? '',
-              'signature': block['signature']?.toString() ?? '',
-            };
+            raw['thinking'] = block['thinking']?.toString() ?? '';
+            raw['signature'] = block['signature']?.toString() ?? '';
+            _pendingThinking[index] = raw;
           case 'redacted_thinking':
             // Opaque and delta-free: complete the moment it starts, but
             // still finalized at stop so it keeps its place in the order.
-            _pendingThinking[_indexOf(event)] = block.cast<String, dynamic>();
+            _pendingThinking[index] = raw;
           case 'text':
+            raw['text'] = block['text']?.toString() ?? '';
             if (_emittedText) yield LLMResponseChunk(textPart: '\n\n');
           case 'server_tool_use':
-            final input = block['input'];
-            final query = input is Map ? (input['query']?.toString() ?? '') : '';
-            // The host is about to run this itself. Announced rather than
-            // silent: the user is paying for it, and with web search the
-            // answer will rest on pages nobody here chose.
+            _hasServerTool = true;
+            // The host is about to run this itself. Its `input` streams as
+            // JSON fragments like a client tool's; the run is recorded once
+            // it is whole. Announced now rather than silent: the user is
+            // paying for it, and with web search the answer will rest on
+            // pages nobody here chose.
+            _pendingServerCalls[index] = (
+              id: block['id']?.toString() ?? '',
+              name: block['name']?.toString() ?? '',
+              json: StringBuffer(),
+            );
+            final startInput = block['input'];
+            final startQuery =
+                startInput is Map ? startInput['query']?.toString() : null;
             logger?.call(
-              'Host running ${block['name']}${query.isEmpty ? '' : '("$query")'}…',
+              'Host running ${block['name']}'
+              '${startQuery == null || startQuery.isEmpty ? '' : '("$startQuery")'}…',
               level: 'INFO',
             );
+          case 'web_search_tool_result':
+            _hasServerTool = true;
+            final parsed = _parseWebSearchResult(block['content']);
+            final at = _runsByCallId[block['tool_use_id']?.toString() ?? ''];
+            if (at != null) {
+              final run = _serverToolRuns[at];
+              _serverToolRuns[at] = ServerToolRun(run.name, run.query,
+                  parsed.results,
+                  error: parsed.error);
+            } else {
+              _serverToolRuns.add(ServerToolRun('web_search', '',
+                  parsed.results,
+                  error: parsed.error));
+            }
         }
 
       case 'content_block_delta':
         final delta = event['delta'];
         if (delta is! Map) return;
+        final index = _indexOf(event);
         switch (delta['type']) {
           case 'text_delta':
             final text = delta['text'];
             if (text is String && text.isNotEmpty) {
               _emittedText = true;
               yield LLMResponseChunk(textPart: text);
+              final block = _blocks[index];
+              if (block != null) {
+                block['text'] = '${block['text'] ?? ''}$text';
+              }
             }
           case 'thinking_delta':
             final thinking = delta['thinking'];
@@ -768,23 +930,37 @@ class AnthropicStreamAssembler {
               // accumulated into the block, because the replay carrier has
               // to be the whole thing, not the display text.
               yield LLMResponseChunk(reasoningPart: thinking);
-              final block = _pendingThinking[_indexOf(event)];
+              final block = _pendingThinking[index];
               if (block != null) {
                 block['thinking'] = '${block['thinking'] ?? ''}$thinking';
               }
             }
           case 'input_json_delta':
             // Tool arguments, as a string fragment that is not valid JSON
-            // until the last one lands.
+            // until the last one lands — for the caller's tools and the
+            // host's alike.
             final partial = delta['partial_json'];
             if (partial is String) {
-              _pendingCalls[_indexOf(event)]?.json.write(partial);
+              _pendingCalls[index]?.json.write(partial);
+              _pendingServerCalls[index]?.json.write(partial);
             }
           case 'signature_delta':
             final seal = delta['signature'];
             if (seal is String && seal.isNotEmpty) {
-              final block = _pendingThinking[_indexOf(event)];
+              final block = _pendingThinking[index];
               if (block != null) block['signature'] = seal;
+            }
+          case 'citations_delta':
+            // Attached to a text block after a search. Kept on the replay
+            // copy so the block goes back as it came.
+            final citation = delta['citation'];
+            final block = _blocks[index];
+            if (citation is Map && block != null) {
+              final existing = block['citations'];
+              block['citations'] = [
+                if (existing is List) ...existing,
+                citation,
+              ];
             }
         }
 
@@ -792,7 +968,21 @@ class AnthropicStreamAssembler {
         final index = _indexOf(event);
         final call = _pendingCalls.remove(index);
         if (call != null) {
-          yield LLMResponseChunk(toolCallPart: _completeCall(call));
+          final completed = _completeCall(call, startedWith: _blocks[index]?['input']);
+          _blocks[index]?['input'] = completed.arguments;
+          yield LLMResponseChunk(toolCallPart: completed);
+        }
+        final serverCall = _pendingServerCalls.remove(index);
+        if (serverCall != null) {
+          final input =
+              _completeCall(serverCall, startedWith: _blocks[index]?['input']).arguments;
+          _blocks[index]?['input'] = input;
+          _runsByCallId[serverCall.id] = _serverToolRuns.length;
+          _serverToolRuns.add(ServerToolRun(
+            serverCall.name,
+            input['query']?.toString() ?? '',
+            const [],
+          ));
         }
         final thought = _pendingThinking.remove(index);
         if (thought != null) _keepForReplay(thought);
@@ -809,7 +999,13 @@ class AnthropicStreamAssembler {
     }
   }
 
-  LLMToolCall _completeCall(({String id, String name, StringBuffer json}) call) {
+  /// [startedWith] is the `input` the opening `content_block_start` carried.
+  /// The spec sends `{}` there and streams the real arguments as fragments,
+  /// but a relay re-assembling the stream may hand the whole object over at
+  /// the start and send no fragments at all — so an empty buffer falls back
+  /// to it rather than to nothing.
+  LLMToolCall _completeCall(({String id, String name, StringBuffer json}) call,
+      {Object? startedWith}) {
     // A tool taking no arguments sends no input_json_delta at all, so an
     // empty buffer is `{}` and not a parse failure. A buffer that is present
     // but unparseable means the stream was cut mid-arguments: dropping the
@@ -818,7 +1014,9 @@ class AnthropicStreamAssembler {
     // with empty arguments and the tool reports the mismatch itself.
     final raw = call.json.toString();
     var arguments = const <String, dynamic>{};
-    if (raw.trim().isNotEmpty) {
+    if (raw.trim().isEmpty && startedWith is Map && startedWith.isNotEmpty) {
+      arguments = startedWith.cast<String, dynamic>();
+    } else if (raw.trim().isNotEmpty) {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is Map<String, dynamic>) arguments = decoded;
@@ -850,26 +1048,51 @@ class AnthropicStreamAssembler {
     }
   }
 
+  /// Whether the turn stopped on a search result with no text after it — the
+  /// MiniMax-shaped half-turn (see [AnthropicContent.turnIncomplete]).
+  bool get turnIncomplete =>
+      _hasServerTool && _lastVisibleType == 'web_search_tool_result';
+
   /// The closing chunk: usage, stop reason, and the replay carriers.
   ///
   /// One chunk rather than three, and only at the end, because the thinking
   /// blocks only become replayable once their last `signature_delta` has
-  /// landed and the consumer needs the whole ordered group or none of it.
-  /// Null when the stream carried none of the three.
+  /// landed and the consumer needs the whole ordered group or none of it —
+  /// and the same holds for a server-tool turn's whole content array.
+  /// Null when the stream carried none of them.
   LLMResponseChunk? finish() {
-    if (_usage.isEmpty && _stopReason == null && _rawThinkingBlocks.isEmpty) {
+    for (final run in _serverToolRuns) {
+      AnthropicChatProtocol._logServerToolRun(run, logger);
+    }
+    if (turnIncomplete) {
+      logger?.call(
+        'The turn ended on a search result with no answer after it — the '
+        'host did not call the model back. The request will be continued.',
+        level: 'WARN',
+      );
+    }
+    final rawContent = _hasServerTool
+        ? [for (final index in _order) _blocks[index]!]
+        : const <Map<String, dynamic>>[];
+    if (_usage.isEmpty &&
+        _stopReason == null &&
+        _rawThinkingBlocks.isEmpty &&
+        rawContent.isEmpty) {
       return null;
     }
     return LLMResponseChunk(
-      metadata: (_usage.isEmpty && _stopReason == null)
+      metadata: (_usage.isEmpty && _stopReason == null && !turnIncomplete)
           ? null
           : anthropicUsageMetadata(
               _usage.isEmpty ? null : _usage,
               stopReason: _stopReason,
+              serverToolRuns: _serverToolRuns,
+              turnIncomplete: turnIncomplete,
             ),
       rawThinkingBlocks:
           _rawThinkingBlocks.isEmpty ? null : List.of(_rawThinkingBlocks),
       reasoningSignature: _thinkingSignature,
+      rawContentBlocks: rawContent.isEmpty ? null : rawContent,
     );
   }
 }
@@ -987,13 +1210,13 @@ class AnthropicChatProtocol implements ChatProtocol {
         logger?.call('Model requested ${content.toolCalls.length} tool call(s).', level: 'DEBUG');
       }
       for (final run in content.serverToolRuns) {
-        // The host already ran these. Logged rather than silent because the
-        // user is paying for them and, with web search, the answer rests on
-        // pages nobody in this app chose.
+        _logServerToolRun(run, logger);
+      }
+      if (content.turnIncomplete) {
         logger?.call(
-          'Host ran ${run.name}("${run.query}") → ${run.results.length} result(s)'
-          '${run.results.isEmpty ? '' : ': ${run.results.map((r) => r.url).join(', ')}'}',
-          level: 'INFO',
+          'The turn ended on a search result with no answer after it — the '
+          'host did not call the model back. The request will be continued.',
+          level: 'WARN',
         );
       }
       logger?.call(
@@ -1007,7 +1230,10 @@ class AnthropicChatProtocol implements ChatProtocol {
           (data['usage'] as Map?)?.cast<String, dynamic>(),
           stopReason: data['stop_reason']?.toString(),
           serverToolRuns: content.serverToolRuns,
+          turnIncomplete: content.turnIncomplete,
         ),
+        rawContentBlocks:
+            content.rawContentBlocks.isEmpty ? null : content.rawContentBlocks,
         reasoningContent: content.thinking,
         // Deliberately no field *name*: ④'s echo-back obligation is not a
         // field on the message but the whole thinking block, verified by its
@@ -1019,12 +1245,33 @@ class AnthropicChatProtocol implements ChatProtocol {
             ? null
             : content.rawThinkingBlocks,
         rawThinkingModelId:
-            content.rawThinkingBlocks.isEmpty ? null : config.modelId,
+            content.rawThinkingBlocks.isEmpty && content.rawContentBlocks.isEmpty
+                ? null
+                : config.modelId,
         toolCalls: content.toolCalls,
       );
     } finally {
       client.close();
     }
+  }
+
+  /// The host already ran this. Logged rather than silent because the user
+  /// is paying for it and, with web search, the answer rests on pages nobody
+  /// in this app chose. A failed search is a WARN, not an error: the request
+  /// itself succeeded, and `max_uses_exceeded` is the brake doing its job.
+  static void _logServerToolRun(ServerToolRun run, LLMLogger? logger) {
+    if (run.error != null) {
+      logger?.call(
+        'Host ran ${run.name}("${run.query}") and it failed: ${run.error}',
+        level: 'WARN',
+      );
+      return;
+    }
+    logger?.call(
+      'Host ran ${run.name}("${run.query}") → ${run.results.length} result(s)'
+      '${run.results.isEmpty ? '' : ': ${run.results.map((r) => r.url).join(', ')}'}',
+      level: 'INFO',
+    );
   }
 
   /// ④ is the family whose streamed tool calls are cheapest to assemble: the
