@@ -1550,6 +1550,7 @@
       }
     }
   },
+  "removeFromWorkspace": "一時ワークスペースから外す",
   "dropFilesHere": "ここに画像をドロップして一時ワークスペースに追加",
   "noImagesSelected": "画像が選択されていません",
   "imageLoadFailed": "画像の読み込みに失敗しました",

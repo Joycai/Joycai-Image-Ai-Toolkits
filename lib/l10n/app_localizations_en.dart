@@ -2896,6 +2896,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get removeFromWorkspace => 'Remove from Workspace';
+
+  @override
   String get dropFilesHere =>
       'Drop images here to add them to temporary workspace';
 

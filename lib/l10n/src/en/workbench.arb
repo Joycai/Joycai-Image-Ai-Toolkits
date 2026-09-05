@@ -34,6 +34,7 @@
       }
     }
   },
+  "removeFromWorkspace": "Remove from Workspace",
   "dropFilesHere": "Drop images here to add them to temporary workspace",
   "noImagesSelected": "No images selected",
   "imageLoadFailed": "Failed to load image",

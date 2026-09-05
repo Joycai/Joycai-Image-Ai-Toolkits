@@ -5206,6 +5206,12 @@ abstract class AppLocalizations {
   /// **'Remove all {count} items from the temporary workspace? The files themselves are not deleted.'**
   String clearTempWorkspaceConfirmMessage(int count);
 
+  /// No description provided for @removeFromWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from Workspace'**
+  String get removeFromWorkspace;
+
   /// No description provided for @dropFilesHere.
   ///
   /// In en, this message translates to:

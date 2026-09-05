@@ -2832,6 +2832,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get removeFromWorkspace => '一時ワークスペースから外す';
+
+  @override
   String get dropFilesHere => 'ここに画像をドロップして一時ワークスペースに追加';
 
   @override

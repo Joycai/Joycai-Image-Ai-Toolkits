@@ -1550,6 +1550,7 @@
       }
     }
   },
+  "removeFromWorkspace": "從暫存工作區移除",
   "dropFilesHere": "將圖片拖放到此處以新增到臨時工作區",
   "noImagesSelected": "未選取圖片",
   "imageLoadFailed": "圖片載入失敗",

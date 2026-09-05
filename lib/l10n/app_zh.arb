@@ -1676,6 +1676,7 @@
       }
     }
   },
+  "removeFromWorkspace": "从临时工作区移除",
   "dropFilesHere": "将图片拖放到此处以添加到临时工作区",
   "noImagesSelected": "未选择图像",
   "imageLoadFailed": "图像加载失败",
