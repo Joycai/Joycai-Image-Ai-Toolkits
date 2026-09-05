@@ -32,6 +32,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   flutter::DartProject project(L"data");
 
+  // Impeller (OpenGLESSDF) cannot import the DXGI shared-handle textures
+  // video_player_win publishes, so every video frame fails with "Could not
+  // create external texture" and the player draws black while audio and the
+  // position keep running. Skia renders the same textures fine, so the video
+  // preview is what pins the renderer here; drop this once the engine can
+  // import them.
+  project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
+
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
