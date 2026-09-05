@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/browser_file.dart';
 import 'package:joycai_image_ai_toolkits/services/database_service.dart';
@@ -8,23 +7,20 @@ import 'package:joycai_image_ai_toolkits/state/file_staging_state.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 /// Covers the file browser's staging area — the marks, not the transfer.
 ///
 /// The one invariant worth a test file: this list outlives everything the
 /// browser prunes. The selection is dropped on every refresh, filter and sort,
 /// so if staging behaved like the selection the feature would not exist.
 void main() {
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   // Persistence is the point of half of these tests, so the real database is
   // used rather than mocked away.
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_file_staging_test');
 
   late Directory root;
 

@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
@@ -12,6 +9,8 @@ import 'package:joycai_image_ai_toolkits/widgets/app_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'support/private_data_dir.dart';
+
 /// Covers the gallery toolbar's behaviour as its own width shrinks.
 ///
 /// The bug this pins: the bar used to decide its layout from the *screen*
@@ -20,15 +19,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 /// bar has a few hundred pixels, so it laid out the full set of controls and
 /// clipped the view toggle mid-word.
 void main() {
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_gallery_toolbar_test');
 
   /// Renders the toolbar at [barWidth] while the *window* stays desktop-sized,
   /// which is exactly the situation that broke.

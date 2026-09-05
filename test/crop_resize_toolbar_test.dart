@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/l10n/app_localizations.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
@@ -10,6 +7,8 @@ import 'package:joycai_image_ai_toolkits/state/app_state.dart';
 import 'package:joycai_image_ai_toolkits/state/workbench_ui_state.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
 
 /// The crop toolbar as its own width shrinks.
 ///
@@ -27,15 +26,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 /// in, which is font-independent, rather than about the pixel each drop
 /// happens at — a constant tuned here would say nothing about the app.
 void main() {
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_crop_toolbar_test');
 
   const fileName = 'yaxin_cowboy_1.png';
 

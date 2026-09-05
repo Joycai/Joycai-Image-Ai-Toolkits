@@ -1,10 +1,9 @@
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/models/app_image.dart';
 import 'package:joycai_image_ai_toolkits/state/gallery_state.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'support/private_data_dir.dart';
 
 /// Covers the selection ordinal the gallery grid labels its thumbnails with.
 ///
@@ -17,15 +16,10 @@ void main() {
   // GalleryState reloads its settings from disk while constructing, so it
   // needs a database and a path_provider even though the selection index
   // itself is pure in-memory bookkeeping.
-  final binding = TestWidgetsFlutterBinding.ensureInitialized();
-
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('plugins.flutter.io/path_provider'),
-    (MethodCall methodCall) async => Directory.systemTemp.path,
-  );
+  usePrivateDataDir('joycai_selection_order_test');
 
   AppImage img(String name) => AppImage(path: '/tmp/$name.png', name: '$name.png');
 
