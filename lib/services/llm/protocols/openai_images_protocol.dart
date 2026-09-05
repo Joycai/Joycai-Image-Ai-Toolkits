@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
-import '../../../core/image_magic.dart';
 import '../../../state/app_state.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
@@ -88,10 +87,13 @@ class OpenAIImagesProtocol implements ImageGenProtocol {
           final att = inputImages[i];
           final bytes = await readAttachmentBytes(att);
           if (bytes == null) continue;
-          request.files.add(http.MultipartFile.fromBytes(
+          // With an explicit Content-Type per part — see [imageMultipartFile]
+          // for the relay that 400s on the octet-stream default.
+          request.files.add(imageMultipartFile(
             field,
             bytes,
-            filename: 'image_$i.${extForMime(resolveImageMime(bytes, att.mimeType))}',
+            declaredMime: att.mimeType,
+            baseName: 'image_$i',
           ));
         }
 

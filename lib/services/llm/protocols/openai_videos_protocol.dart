@@ -82,10 +82,11 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
     if (firstFrame != null) {
       final bytes = await readAttachmentBytes(firstFrame);
       if (bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
+        request.files.add(imageMultipartFile(
           'input_reference',
           bytes,
-          filename: 'first_frame.${extForMime(firstFrame.mimeType)}',
+          declaredMime: firstFrame.mimeType,
+          baseName: 'first_frame',
         ));
       }
     }
@@ -93,10 +94,11 @@ class OpenAIVideosProtocol implements VideoJobProtocol {
       final att = extras[i];
       final bytes = await readAttachmentBytes(att);
       if (bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
+        request.files.add(imageMultipartFile(
           'images[]',
           bytes,
-          filename: 'reference_$i.${extForMime(att.mimeType)}',
+          declaredMime: att.mimeType,
+          baseName: 'reference_$i',
         ));
       }
     }

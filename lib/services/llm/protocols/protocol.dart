@@ -3,7 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
+import '../../../core/image_magic.dart';
 import '../llm_types.dart';
 import '../model_descriptor.dart';
 import '../vendors/vendor_profile.dart';
@@ -367,6 +369,32 @@ Future<Uint8List?> resolveImageRef(
     logger?.call('Failed to decode inline image: $e', level: 'WARN');
     return null;
   }
+}
+
+/// One image as a multipart part, with the `Content-Type` the bytes actually
+/// are.
+///
+/// `MultipartFile.fromBytes` without a content type labels the part
+/// `application/octet-stream`. The official Images API tolerates that; a relay
+/// that translates the multipart edit into its own JSON request (`images[]`
+/// with `data:` URLs) copies the part's declared type into the data URL and
+/// then rejects its own request with 400 "unsupported MIME type
+/// 'application/octet-stream'" (seen live, 2026-09-05). The type is read off
+/// the bytes ([resolveImageMime]) so a `.png` that holds JPEG is labelled
+/// truthfully — the same rule every other surface follows.
+http.MultipartFile imageMultipartFile(
+  String field,
+  Uint8List bytes, {
+  required String declaredMime,
+  required String baseName,
+}) {
+  final mime = resolveImageMime(bytes, declaredMime);
+  return http.MultipartFile.fromBytes(
+    field,
+    bytes,
+    filename: '$baseName.${extForMime(mime)}',
+    contentType: MediaType.parse(mime),
+  );
 }
 
 Future<Uint8List?> readAttachmentBytes(LLMAttachment att) async {
