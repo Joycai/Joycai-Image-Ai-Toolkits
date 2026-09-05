@@ -170,8 +170,8 @@
 
 ### 第三批 · P2
 
-#### 片 11 · 探测把 402 单独报失败（#16）
-`_completionProbe` 对 `statusCode == 402` 返回 `unreachable`（或新增 `quotaExhausted` 状态）并原样转出 `error.message`。L1 一条。
+#### 片 11 · 探测把 402 单独报失败（#16）— ✅ 2026-09-05
+`probe` 与 `_completionProbe` 对 `statusCode == 402` 都返回 `unreachable` 并原样转出 `error.message`；没有新增枚举值——`ChannelProbeStatus` 在编辑器与向导里各有一个穷尽 switch 加四语文案，为一个状态加两处 UI 不值。判定放在「协议形状的拒绝＝连通」之前，402 恰好满足那条规则。L1 两条（`/models` 与补全探测两条路）。
 
 #### 片 12 · 三条小修（#17 #18 #19 的剩余部分）
 - `parseGoogleChunks`：`part['thought'] == true` 的 text 走 `reasoningPart`，不进 `textPart`。
