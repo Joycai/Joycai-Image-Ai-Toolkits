@@ -1668,7 +1668,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reasoningEffortDesc =>
-      '模型作答前的思考强度。默认＝不发送任何字段（由端点自行决定）；其他档位会消耗输出 token。适用于 OpenAI 与 Anthropic 格式渠道。';
+      '模型作答前的思考强度。默认＝不发送任何字段（由端点自行决定）；其他档位会消耗输出 token。适用于 OpenAI 与 Anthropic 格式渠道。Anthropic 格式渠道上，Claude 4.6 及更新的模型以 output_config.effort 下发档位；「最高」只有最新一代模型接受，若 400 报文点名该档位，请降一档。';
 
   @override
   String get reasoningEffortDefault => '默认（不发送）';
@@ -5572,7 +5572,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get reasoningEffortDesc =>
-      '模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。';
+      '模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。Anthropic 格式渠道上，Claude 4.6 及更新的模型以 output_config.effort 下發檔位；「最高」只有最新一代模型接受，若 400 回報點名該檔位，請降一檔。';
 
   @override
   String get reasoningEffortDefault => '預設（不傳送）';

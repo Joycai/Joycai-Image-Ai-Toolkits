@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../state/app_state.dart';
@@ -182,23 +183,32 @@ int anthropicMaxTokens(Map<String, dynamic>? options) =>
 /// send — either the model has it switched off, or the vendor has no such
 /// control to switch.
 ///
-/// [maxTokens] matters only to Anthropic's spelling, where the budget is
+/// [maxTokens] matters only to the budget spelling, where the budget is
 /// carved out of the output cap and must leave room for the answer itself.
+/// The intensity level itself travels separately on the adaptive spelling —
+/// see [anthropicOutputConfig] — because ④ puts it in a different top-level
+/// field.
 Map<String, dynamic>? anthropicThinkingRequest(
   ThinkingDialect dialect, {
   required ReasoningEffort? effort,
   required int maxTokens,
 }) {
-  // ④'s budget dialect has no intensity knob: any level means "thinking
-  // on", off/default mean the field is not sent. The level vocabulary still
-  // matters here because it is the app's single reasoning control — ① turns
-  // the same value into `reasoning_effort`.
+  // Off and default both mean the field is not sent. Not `disabled`: the
+  // newest models reject `{type: "disabled"}` outright (and Opus 5 does at
+  // high effort), and on 4.6–4.8 an absent field *is* off. The cost is that
+  // "off" on a model that thinks by default (Claude 5) is not honoured — a
+  // model that cannot be switched off anyway.
   if (effort == null || effort == ReasoningEffort.off) return null;
   switch (dialect) {
     case ThinkingDialect.none:
       return null;
     case ThinkingDialect.adaptive:
       return {'type': 'adaptive'};
+    case ThinkingDialect.anthropicAdaptive:
+      // `display` is explicit because the newest models default it to
+      // `omitted`: the thinking is billed in full, the text just never
+      // arrives — and this app shows the thinking in its console.
+      return {'type': 'adaptive', 'display': 'summarized'};
     case ThinkingDialect.anthropicBudget:
       // Half the cap, floored at the 1024 the API demands. When the cap is
       // itself below the floor there is no legal budget at all — asking for
@@ -212,6 +222,114 @@ Map<String, dynamic>? anthropicThinkingRequest(
   }
 }
 
+/// The top-level `output_config` for [dialect], or null when the dialect has
+/// no intensity knob. Only the adaptive spelling carries one; the budget
+/// spelling expresses intensity as `budget_tokens`, and MiniMax's has none.
+Map<String, dynamic>? anthropicOutputConfig(
+  ThinkingDialect dialect, {
+  required ReasoningEffort? effort,
+}) {
+  if (dialect != ThinkingDialect.anthropicAdaptive) return null;
+  final wire = anthropicEffortWire(effort);
+  return wire == null ? null : {'effort': wire};
+}
+
+/// ④'s spelling of the app's reasoning vocabulary for `output_config.effort`,
+/// or null for "send nothing". Off is handled upstream — the whole `thinking`
+/// field is withheld — so it never reaches here as a value.
+///
+/// ④'s ladder is `low / medium / high / xhigh / max`. The app has no `xhigh`,
+/// and `max` is accepted only by the newest models; an unsupported value is a
+/// 400 that names the field, which the on-400 retry deliberately does *not*
+/// treat as a dialect problem (see [isAnthropicThinkingRejection]).
+String? anthropicEffortWire(ReasoningEffort? effort) => switch (effort) {
+      null || ReasoningEffort.off => null,
+      ReasoningEffort.low => 'low',
+      ReasoningEffort.medium => 'medium',
+      ReasoningEffort.high => 'high',
+      ReasoningEffort.max => 'max',
+    };
+
+/// The two Anthropic spellings are each other's fallback; MiniMax's has none
+/// to fall to (a rejected `adaptive` there is a real error), and `none` stays
+/// `none`.
+ThinkingDialect? alternateAnthropicThinkingDialect(ThinkingDialect dialect) =>
+    switch (dialect) {
+      ThinkingDialect.anthropicAdaptive => ThinkingDialect.anthropicBudget,
+      ThinkingDialect.anthropicBudget => ThinkingDialect.anthropicAdaptive,
+      ThinkingDialect.adaptive || ThinkingDialect.none => null,
+    };
+
+/// Dialects learned from a 400, keyed by endpoint and model, for the life of
+/// the process.
+///
+/// The first request on a (host, model) that guessed wrong costs one round
+/// trip; every later one goes out right. In-process rather than persisted:
+/// relays re-point model names, and a stale memo would be exactly the wrong
+/// kind of memory.
+final Map<String, ThinkingDialect> _learnedThinkingDialects = {};
+
+String _thinkingMemoKey(LLMTarget target) =>
+    '${target.config.endpoint}|${target.config.modelId}';
+
+/// The thinking spelling this request goes out with.
+///
+/// Resolution order, most specific first:
+///  1. what a previous 400 taught us about this endpoint + model;
+///  2. the model's generation (layer 3): a Claude of 4.5 or earlier takes the
+///     manual form whatever the vendor's default, because both generations
+///     are served on one host under one key and the vendor can only name the
+///     current one. Applies only where the vendor speaks an Anthropic
+///     spelling at all — it must not turn thinking *on* for a vendor that
+///     declared `none`, nor rewrite MiniMax's own dialect;
+///  3. the vendor's default.
+ThinkingDialect resolveAnthropicThinkingDialect(LLMTarget target) {
+  final learned = _learnedThinkingDialects[_thinkingMemoKey(target)];
+  if (learned != null) return learned;
+  final declared = target.vendor.thinking;
+  final isAnthropicSpelling = declared == ThinkingDialect.anthropicAdaptive ||
+      declared == ThinkingDialect.anthropicBudget;
+  if (isAnthropicSpelling && target.model.usesLegacyAnthropicThinking) {
+    return ThinkingDialect.anthropicBudget;
+  }
+  return declared;
+}
+
+/// Records that [rejected] was refused for this endpoint + model and returns
+/// the spelling to retry with, or null when there is none.
+ThinkingDialect? learnAnthropicThinkingDialect(
+    LLMTarget target, ThinkingDialect rejected) {
+  final alternate = alternateAnthropicThinkingDialect(rejected);
+  if (alternate != null) {
+    _learnedThinkingDialects[_thinkingMemoKey(target)] = alternate;
+  }
+  return alternate;
+}
+
+/// Forgets every learned dialect. Tests only.
+@visibleForTesting
+void resetAnthropicThinkingDialectsForTest() => _learnedThinkingDialects.clear();
+
+/// Whether [error] is the API refusing the *shape* of the thinking request —
+/// the one 400 worth answering with the other dialect.
+///
+/// Deliberately narrow. A 400 about `output_config.effort` being unsupported
+/// on this model is a level the user can lower, and switching to the budget
+/// spelling would only produce a second, unrelated 400; a 400 about
+/// `budget_tokens` being too small is the cap, not the dialect. What flips
+/// the dialect is the API not knowing the field at all: `thinking.type` with
+/// an unexpected value, or an `output_config` it has never heard of.
+bool isAnthropicThinkingRejection(Object error) {
+  if (error is! LLMApiException || error.statusCode != 400) return false;
+  final text = error.message.toLowerCase();
+  if (!text.contains('thinking') && !text.contains('output_config')) {
+    return false;
+  }
+  // A complaint about the *value* of effort is not a dialect problem.
+  if (text.contains('effort')) return false;
+  return true;
+}
+
 /// Builds a `POST /messages` body.
 ///
 /// Deliberately sends no `temperature` / `top_p` / `top_k`: Anthropic's
@@ -219,16 +337,22 @@ Map<String, dynamic>? anthropicThinkingRequest(
 /// unconditionally (and with thinking on, rejects them outright), and the app
 /// has no UI that asks for one — so the only thing sending them could do is
 /// turn working requests into 400s.
+///
+/// [dialect] overrides the resolved thinking spelling — the retry path uses
+/// it; every other caller leaves it to [resolveAnthropicThinkingDialect].
 Map<String, dynamic> prepareAnthropicPayload(
   LLMTarget target,
   List<LLMMessage> history, {
   Map<String, dynamic>? options,
   List<LLMTool>? tools,
   required bool isStreaming,
+  ThinkingDialect? dialect,
 }) {
   final converted =
       buildAnthropicHistory(history, modelId: target.config.modelId);
   final maxTokens = anthropicMaxTokens(options);
+  final thinkingDialect = dialect ?? resolveAnthropicThinkingDialect(target);
+  final effort = target.config.effectiveReasoningEffort;
   final payload = <String, dynamic>{
     'model': target.config.modelId,
     'max_tokens': maxTokens,
@@ -236,10 +360,11 @@ Map<String, dynamic> prepareAnthropicPayload(
     'messages': converted.messages,
     'stream': isStreaming,
     'thinking': ?anthropicThinkingRequest(
-      target.vendor.thinking,
-      effort: target.config.effectiveReasoningEffort,
+      thinkingDialect,
+      effort: effort,
       maxTokens: maxTokens,
     ),
+    'output_config': ?anthropicOutputConfig(thinkingDialect, effort: effort),
   };
 
   // Client tools and the host's own tools share one array. A server tool is
@@ -756,6 +881,35 @@ class AnthropicStreamAssembler {
 /// authentication, which comes from the vendor profile; there is no branch on
 /// a vendor id here.
 class AnthropicChatProtocol implements ChatProtocol {
+  /// Whether a failed first attempt is worth one more with the other thinking
+  /// spelling: the API refused the thinking *shape*, and the request actually
+  /// carried one (a request without a thinking field has nothing to respell).
+  /// On success the learned dialect is remembered for this endpoint + model.
+  ThinkingDialect? _retryDialectFor(
+    LLMTarget target,
+    ThinkingDialect sent,
+    Object error,
+    Map<String, dynamic>? options,
+    LLMLogger? logger,
+  ) {
+    if (!isAnthropicThinkingRejection(error)) return null;
+    final carried = anthropicThinkingRequest(
+      sent,
+      effort: target.config.effectiveReasoningEffort,
+      maxTokens: anthropicMaxTokens(options),
+    );
+    if (carried == null) return null;
+    final alternate = learnAnthropicThinkingDialect(target, sent);
+    if (alternate == null) return null;
+    logger?.call(
+      'The endpoint rejected the ${sent.name} thinking spelling for '
+      '${target.config.modelId}; retrying once with ${alternate.name} and '
+      'remembering it for this channel.',
+      level: 'WARN',
+    );
+    return alternate;
+  }
+
   @override
   Future<LLMResponse> generate(
     LLMTarget target,
@@ -764,12 +918,32 @@ class AnthropicChatProtocol implements ChatProtocol {
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async {
+    final dialect = resolveAnthropicThinkingDialect(target);
+    try {
+      return await _generateOnce(target, history,
+          options: options, tools: tools, logger: logger, dialect: dialect);
+    } catch (e) {
+      final retry = _retryDialectFor(target, dialect, e, options, logger);
+      if (retry == null) rethrow;
+      return _generateOnce(target, history,
+          options: options, tools: tools, logger: logger, dialect: retry);
+    }
+  }
+
+  Future<LLMResponse> _generateOnce(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    List<LLMTool>? tools,
+    LLMLogger? logger,
+    required ThinkingDialect dialect,
+  }) async {
     final config = target.config;
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
     logger?.call('Preparing Anthropic request to: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareAnthropicPayload(target, history,
-        options: options, tools: tools, isStreaming: false);
+        options: options, tools: tools, isStreaming: false, dialect: dialect);
 
     logger?.call('Sending POST request...', level: 'DEBUG');
     final client = config.createClient();
@@ -868,12 +1042,37 @@ class AnthropicChatProtocol implements ChatProtocol {
     List<LLMTool>? tools,
     LLMLogger? logger,
   }) async* {
+    final dialect = resolveAnthropicThinkingDialect(target);
+    ThinkingDialect? retry;
+    try {
+      yield* _streamOnce(target, history,
+          options: options, tools: tools, logger: logger, dialect: dialect);
+      return;
+    } catch (e) {
+      // Only a 400 on the opening response qualifies (see
+      // [isAnthropicThinkingRejection]), and that arrives before any chunk
+      // has been yielded — so retrying cannot duplicate delivered output.
+      retry = _retryDialectFor(target, dialect, e, options, logger);
+      if (retry == null) rethrow;
+    }
+    yield* _streamOnce(target, history,
+        options: options, tools: tools, logger: logger, dialect: retry);
+  }
+
+  Stream<LLMResponseChunk> _streamOnce(
+    LLMTarget target,
+    List<LLMMessage> history, {
+    Map<String, dynamic>? options,
+    List<LLMTool>? tools,
+    LLMLogger? logger,
+    required ThinkingDialect dialect,
+  }) async* {
     final config = target.config;
     final url = Uri.parse('${trimBaseUrl(config.endpoint)}/messages');
     logger?.call('Starting Anthropic stream: ${url.host}', level: 'DEBUG');
     final headers = target.headers();
     final payload = prepareAnthropicPayload(target, history,
-        options: options, tools: tools, isStreaming: true);
+        options: options, tools: tools, isStreaming: true, dialect: dialect);
 
     final request = http.Request('POST', url);
     request.headers.addAll(headers);

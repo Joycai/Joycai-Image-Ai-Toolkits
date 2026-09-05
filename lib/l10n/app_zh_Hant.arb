@@ -997,7 +997,7 @@
   "forceViewAllImages": "檢視全部參考圖",
   "forceViewAllImagesDesc": "代理必須檢視所有參考圖後才能提交結果，建議為本地小模型開啟。",
   "reasoningEffort": "推理強度",
-  "reasoningEffortDesc": "模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。",
+  "reasoningEffortDesc": "模型作答前的思考強度。預設＝不傳送任何欄位（由端點自行決定）；其他檔位會消耗輸出 token。適用於 OpenAI 與 Anthropic 格式渠道。Anthropic 格式渠道上，Claude 4.6 及更新的模型以 output_config.effort 下發檔位；「最高」只有最新一代模型接受，若 400 回報點名該檔位，請降一檔。",
   "reasoningEffortDefault": "預設（不傳送）",
   "reasoningEffortOff": "關閉",
   "reasoningEffortLow": "低",

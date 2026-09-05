@@ -380,21 +380,113 @@ void main() {
           isStreaming: false,
         );
 
+    setUp(resetAnthropicThinkingDialectsForTest);
+
+    /// One user turn on [on], for the rules that differ per target.
+    Map<String, dynamic> sendWith(LLMTarget on) => prepareAnthropicPayload(
+          on,
+          [LLMMessage(role: LLMRole.user, content: 'hi')],
+          isStreaming: false,
+        );
+
     test('each host gets its own spelling — there is no shared one', () {
-      // MiniMax says `adaptive`, Anthropic says `enabled` with a budget. A
-      // single hardcoded shape would be a 400 on one of the two, which is why
-      // the dialect is declared on the vendor rather than guessed here.
+      // MiniMax says a bare `adaptive`; Anthropic's current generation says
+      // `adaptive` + `display` with the level in `output_config`; Bailian's
+      // ④ face documents the manual `enabled` + budget. A single hardcoded
+      // shape would be a 400 on two of the three, which is why the dialect
+      // is declared on the vendor rather than guessed here.
       expect(payloadFor(Vendors.minimaxAnthropic)['thinking'],
           {'type': 'adaptive'});
-      expect(payloadFor(Vendors.anthropicRest)['thinking'],
+      expect(payloadFor(Vendors.minimaxAnthropic).containsKey('output_config'),
+          isFalse);
+
+      final official = payloadFor(Vendors.anthropicRest);
+      expect(official['thinking'], {'type': 'adaptive', 'display': 'summarized'});
+      expect(official['output_config'], {'effort': 'medium'});
+      expect(official.containsKey('budget_tokens'), isFalse);
+
+      final bailian = payloadFor(Vendors.dashscope);
+      expect(bailian['thinking'],
           {'type': 'enabled', 'budget_tokens': anthropicDefaultMaxTokens ~/ 2});
+      expect(bailian.containsKey('output_config'), isFalse);
+    });
+
+    test('the level reaches output_config.effort on the adaptive spelling', () {
+      // Before this the five levels collapsed to on/off on ④: the control was
+      // shown, and turning it did nothing to the request.
+      for (final (effort, wire) in [
+        (ReasoningEffort.low, 'low'),
+        (ReasoningEffort.medium, 'medium'),
+        (ReasoningEffort.high, 'high'),
+        (ReasoningEffort.max, 'max'),
+      ]) {
+        final config = LLMModelConfig(
+          modelId: 'claude-opus-5',
+          channelType: Vendors.anthropicRest,
+          endpoint: 'https://api.anthropic.com/v1',
+          apiKey: 'k',
+          reasoningEffort: effort,
+        );
+        final on = LLMTarget(
+          config: config,
+          vendor: Vendors.byId(config.channelType),
+          model: ModelDescriptor.of(config.modelId),
+        );
+        final p = sendWith(on);
+        expect(p['output_config'], {'effort': wire}, reason: effort.name);
+        expect(p['thinking'], {'type': 'adaptive', 'display': 'summarized'});
+      }
     });
 
     test('switched off means the parameter is absent, not false', () {
-      for (final id in [Vendors.anthropicRest, Vendors.minimaxAnthropic]) {
-        expect(payloadFor(id, thinking: false).containsKey('thinking'), isFalse,
+      for (final id in [Vendors.anthropicRest, Vendors.minimaxAnthropic, Vendors.dashscope]) {
+        final p = payloadFor(id, thinking: false);
+        expect(p.containsKey('thinking'), isFalse, reason: id);
+        expect(p.containsKey('output_config'), isFalse, reason: id);
+      }
+    });
+
+    test('a Claude of 4.5 or earlier takes the manual form whatever the vendor says', () {
+      // Both generations are served on one host under one key; the vendor
+      // can only name the current spelling, and 4.5 and earlier know only
+      // the manual one. Layer 3 points them back.
+      for (final id in [
+        'claude-sonnet-4-5-20250929',
+        'claude-opus-4-1-20250805',
+        'claude-3-7-sonnet-20250219',
+        'claude-3-5-haiku-20241022',
+        'claude-sonnet-4-20250514',
+        'claude-haiku-4-5',
+      ]) {
+        final p = sendWith(target(id, thinking: true));
+        expect(p['thinking'],
+            {'type': 'enabled', 'budget_tokens': anthropicDefaultMaxTokens ~/ 2},
+            reason: id);
+        expect(p.containsKey('output_config'), isFalse, reason: id);
+      }
+      for (final id in [
+        'claude-opus-4-6',
+        'claude-sonnet-4.6',
+        'claude-opus-4-8',
+        'claude-opus-5',
+        'claude-sonnet-5-20260301',
+        'anthropic/claude-opus-4.7',
+      ]) {
+        final p = sendWith(target(id, thinking: true));
+        expect(p['thinking'], {'type': 'adaptive', 'display': 'summarized'},
             reason: id);
       }
+    });
+
+    test('the model override never turns thinking on for a vendor without one', () {
+      // `none` stays `none`, and MiniMax keeps its own dialect even for a
+      // Claude-looking id — the override only chooses *between* Anthropic's
+      // two spellings.
+      expect(
+        resolveAnthropicThinkingDialect(
+            target('claude-3-5-sonnet', channelType: Vendors.minimaxAnthropic)),
+        ThinkingDialect.adaptive,
+      );
     });
 
     test('the budget respects the API floor and still leaves room to answer', () {
@@ -402,7 +494,7 @@ void main() {
       // that eats the whole cap leaves nothing for the answer — in which case
       // the request goes out without thinking instead of failing.
       final small = prepareAnthropicPayload(
-        target('m', thinking: true),
+        target('m', channelType: Vendors.dashscope, thinking: true),
         [LLMMessage(role: LLMRole.user, content: 'hi')],
         options: {'maxTokens': 1500},
         isStreaming: false,
@@ -410,12 +502,76 @@ void main() {
       expect(small['thinking'], {'type': 'enabled', 'budget_tokens': 1024});
 
       final tiny = prepareAnthropicPayload(
-        target('m', thinking: true),
+        target('m', channelType: Vendors.dashscope, thinking: true),
         [LLMMessage(role: LLMRole.user, content: 'hi')],
         options: {'maxTokens': 900},
         isStreaming: false,
       );
       expect(tiny.containsKey('thinking'), isFalse);
+    });
+
+    group('learning the dialect from a 400', () {
+      final on = target('some-relay-alias', thinking: true);
+
+      test('a thinking-shaped 400 flips to the other spelling and is remembered', () {
+        expect(resolveAnthropicThinkingDialect(on), ThinkingDialect.anthropicAdaptive);
+
+        final learned = learnAnthropicThinkingDialect(on, ThinkingDialect.anthropicAdaptive);
+        expect(learned, ThinkingDialect.anthropicBudget);
+        expect(resolveAnthropicThinkingDialect(on), ThinkingDialect.anthropicBudget);
+
+        // The memo wins over the layer-3 rule too: what the endpoint said
+        // beats what the id looked like.
+        final legacy = target('claude-3-5-sonnet', thinking: true);
+        learnAnthropicThinkingDialect(legacy, ThinkingDialect.anthropicBudget);
+        expect(resolveAnthropicThinkingDialect(legacy), ThinkingDialect.anthropicAdaptive);
+      });
+
+      test('the memo is per endpoint and model', () {
+        learnAnthropicThinkingDialect(on, ThinkingDialect.anthropicAdaptive);
+        expect(resolveAnthropicThinkingDialect(target('another-model', thinking: true)),
+            ThinkingDialect.anthropicAdaptive);
+      });
+
+      test('the two Anthropic spellings are each other\'s fallback; nothing else has one', () {
+        expect(alternateAnthropicThinkingDialect(ThinkingDialect.anthropicAdaptive),
+            ThinkingDialect.anthropicBudget);
+        expect(alternateAnthropicThinkingDialect(ThinkingDialect.anthropicBudget),
+            ThinkingDialect.anthropicAdaptive);
+        expect(alternateAnthropicThinkingDialect(ThinkingDialect.adaptive), isNull);
+        expect(alternateAnthropicThinkingDialect(ThinkingDialect.none), isNull);
+        expect(learnAnthropicThinkingDialect(
+                target('m', channelType: Vendors.minimaxAnthropic, thinking: true),
+                ThinkingDialect.adaptive),
+            isNull);
+      });
+
+      test('only a 400 that names the thinking field qualifies', () {
+        bool rejects(Object e) => isAnthropicThinkingRejection(e);
+
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 400 - thinking.type: unexpected value "enabled"',
+            statusCode: 400)), isTrue);
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 400 - Extra inputs are not permitted: output_config',
+            statusCode: 400)), isTrue);
+
+        // A level the model does not support is the user's to lower, not a
+        // dialect problem — respelling it would only earn a second 400.
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 400 - output_config.effort: unsupported value "max"',
+            statusCode: 400)), isFalse);
+        // Not about thinking at all.
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 400 - messages: roles must alternate',
+            statusCode: 400)), isFalse);
+        // Not a 400.
+        expect(rejects(LLMApiException(
+            'Anthropic API request failed: 529 - overloaded (thinking)',
+            statusCode: 529)), isFalse);
+        expect(rejects(LLMApiException('thinking envelope', isEnvelope: true)), isFalse);
+        expect(rejects(Exception('thinking')), isFalse);
+      });
     });
 
     test('a sealed thinking block is replayed ahead of the tool call', () {

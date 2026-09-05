@@ -281,11 +281,26 @@ thinking / server tool 一起加。
    必须装在**同一条** user 消息里。三条都由 `buildAnthropicHistory` 负责，
    `test/anthropic_chat_test.dart` 逐条钉住。
 
-5. **thinking 有两套词表，且开了就欠一笔债。** 官方是
+5. **thinking 有三套词表，且开了就欠一笔债。** Anthropic 新代（4.6+）是
+   `{type:"adaptive", display:"summarized"}` + 顶层 `output_config:{effort}`
+   （`display` 必须显式——最新一代默认 `omitted`，思考照全额计费但一个字不给）；
+   Anthropic 旧代（4.5 及更早）与百炼 ④ 面是
    `{type:"enabled", budget_tokens:N}`（N 从 `max_tokens` 里切，下限 1024，
-   且必须给答案留出余量），MiniMax M3 是 `{type:"adaptive"}`。协议不许问"你是
-   谁"，所以问的是 `VendorProfile.thinking`（`ThinkingDialect`）—— **Layer 2 说
-   哪种方言，Layer 1 说 JSON 长什么样**。
+   且必须给答案留出余量）；MiniMax M3 是裸 `{type:"adaptive"}`。**两代 Claude
+   互斥**：4.7+ 收到 `enabled` 直接 400，4.5 不认 `output_config`，而两代
+   住在同一个 host、同一把 key 下。所以 `VendorProfile.thinking` 只是**默认**，
+   协议按请求解析（`resolveAnthropicThinkingDialect`）：一条 400 学来的记忆
+   （按 endpoint + model，进程内）→ Layer 3 的代次判断
+   （`ModelDescriptor.usesLegacyAnthropicThinking`，只在 vendor 说的是 Anthropic
+   拼法时才生效，不会替 `none` 打开思考、也不改写 MiniMax 的方言）→ vendor 默认。
+   400 且报文点名 `thinking` / `output_config`（但**不是** `effort` 的取值——
+   那是档位太高，换拼法只会再吃一个 400）时换另一种拼法重试一次并记住
+   （`isAnthropicThinkingRejection` / `learnAnthropicThinkingDialect`）；中转上
+   模型名是自由文本，代次从名字猜不可靠，这条重试就是为它准备的。协议仍不许问
+   "你是谁"—— **Layer 2 说默认方言，Layer 3 说这个模型是哪一代，Layer 1 说
+   JSON 长什么样**。档位（`ReasoningEffort`）在 adaptive 拼法上落到
+   `output_config.effort`（low/medium/high/max，本仓无 `xhigh`），在 budget 拼法
+   上折叠为"开"，off 与默认一律不发字段（不发 `disabled`：最新一代无条件拒收）。
    开了之后：带工具调用的 assistant 轮**必须原样回传 thinking block，连同
    `signature`**，否则下一次请求被拒。它存在 `LLMMessage.reasoningSignature`
    （随会话持久化），回传时排在 text / tool_use **之前**；没有签名的 thinking

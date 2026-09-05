@@ -83,7 +83,9 @@
 
 **风险**：已存在的 `.png` 文件名不追溯改名。
 
-#### 片 4 · Anthropic thinking 方言按模型、可降级（#4）
+#### 片 4 · Anthropic thinking 方言按模型、可降级（#4）— ✅ 2026-09-05 L1 已落，L2 待 key
+
+> 落地与计划的差异：模型级覆盖没有做成一个 `ThinkingDialect` 字段，而是 Layer 3 的一个布尔（`ModelDescriptor.usesLegacyAnthropicThinking`，规则在 `ModelFamilyClassifier.isLegacyClaudeThinking`：读 `claude` 后第一个版本号，≤ 4.5 为旧代，8 位日期不算 minor），由协议内的 `resolveAnthropicThinkingDialect` 与 vendor 默认合成，且只在 vendor 说的是 Anthropic 拼法时生效。降级触发条件比计划更窄：400 且报文含 `thinking` / `output_config` 但**不含** `effort`——档位取值不被支持是用户该降档的事，换拼法只会再吃一个 400。UI 未改控件，只改了 `reasoningEffortDesc` 四语文案。`off` 仍是不发字段而非 `disabled`（最新一代无条件拒收 `disabled`），代价是 Claude 5 的「关」不生效——它本来也关不掉。
 
 **背景**：`ThinkingDialect` 挂在 vendor 上，同一通道的 Claude 4.5 与 Claude 5 无法分别处理；而在中转上模型名是自由文本，代次从名字猜不可靠（`docs/api/reasoning.md` §1.8）。那份文档给的可移植做法是「默认不发，或发了失败再降级」。
 

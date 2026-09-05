@@ -61,6 +61,16 @@ class ModelDescriptor {
   bool get needsMultimodalChatSurface =>
       ModelFamilyClassifier.isDashScopeMultimodalChat(modelId);
 
+  /// Whether this is a Claude of the generation (4.5 and earlier) that knows
+  /// only the manual thinking form and rejects the adaptive one.
+  ///
+  /// Read by the ④ protocol to override the vendor's default
+  /// `ThinkingDialect`: both generations live on one host under one key, so
+  /// the vendor can only say what the *current* spelling is, and this is the
+  /// per-model exception. False for anything not recognizably a Claude id.
+  bool get usesLegacyAnthropicThinking =>
+      ModelFamilyClassifier.isLegacyClaudeThinking(modelId);
+
   /// True for the `mock-*` ids the simulated long-running-operation path
   /// accepts. Here rather than in the dispatcher because model-id sniffing is
   /// this layer's monopoly.
