@@ -4075,7 +4075,7 @@ abstract class AppLocalizations {
   /// No description provided for @preferHighPerformanceGpuDesc.
   ///
   /// In en, this message translates to:
-  /// **'Asks Windows to run the app on the dedicated graphics card. Takes effect the next time the app starts.'**
+  /// **'Renders on the dedicated graphics card instead of the integrated GPU. Takes effect the next time the app starts.'**
   String get preferHighPerformanceGpuDesc;
 
   /// No description provided for @reduceVisualEffects.

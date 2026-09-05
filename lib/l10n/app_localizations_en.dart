@@ -2269,7 +2269,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preferHighPerformanceGpuDesc =>
-      'Asks Windows to run the app on the dedicated graphics card. Takes effect the next time the app starts.';
+      'Renders on the dedicated graphics card instead of the integrated GPU. Takes effect the next time the app starts.';
 
   @override
   String get reduceVisualEffects => 'Reduce visual effects';

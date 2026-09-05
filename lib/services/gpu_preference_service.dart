@@ -7,11 +7,10 @@ import 'dart:io';
 /// which means dev (Debug runner) and installed builds carry independent
 /// preferences, and a moved installation starts back at the default.
 ///
-/// Windows reads the value once at process start, so a change only applies on
-/// the next launch. The runner also exports the NvOptimusEnablement /
-/// AmdPowerXpressRequestHighPerformance hints (see `windows/runner/main.cpp`);
-/// this registry entry is the stronger, user-level setting for machines whose
-/// drivers ignore those hints.
+/// The Windows runner reads this entry once at startup and picks the engine's
+/// adapter from it (see `windows/runner/main.cpp`), so a change only applies on
+/// the next launch. With no entry the runner renders on the low-power GPU,
+/// which is the default this toggle opts out of.
 class GpuPreferenceService {
   static const String _key =
       r'HKCU\Software\Microsoft\DirectX\UserGpuPreferences';

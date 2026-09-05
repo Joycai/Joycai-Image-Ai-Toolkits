@@ -2198,7 +2198,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get preferHighPerformanceGpu => '优先使用高性能 GPU';
 
   @override
-  String get preferHighPerformanceGpuDesc => '让 Windows 使用独立显卡运行本应用，下次启动时生效。';
+  String get preferHighPerformanceGpuDesc => '使用独立显卡渲染，关闭时使用核显。下次启动时生效。';
 
   @override
   String get reduceVisualEffects => '减少视觉效果';
@@ -6123,8 +6123,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get preferHighPerformanceGpu => '優先使用高效能 GPU';
 
   @override
-  String get preferHighPerformanceGpuDesc =>
-      '讓 Windows 使用獨立顯示卡執行本應用程式，下次啟動時生效。';
+  String get preferHighPerformanceGpuDesc => '使用獨立顯示卡算圖，關閉時使用內顯。下次啟動時生效。';
 
   @override
   String get reduceVisualEffects => '減少視覺效果';

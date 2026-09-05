@@ -20,7 +20,7 @@
   "fontDownloading": "Downloading font…",
   "fontDownloadFailed": "Font download failed. Check your connection and try again.",
   "preferHighPerformanceGpu": "Prefer high-performance GPU",
-  "preferHighPerformanceGpuDesc": "Asks Windows to run the app on the dedicated graphics card. Takes effect the next time the app starts.",
+  "preferHighPerformanceGpuDesc": "Renders on the dedicated graphics card instead of the integrated GPU. Takes effect the next time the app starts.",
   "reduceVisualEffects": "Reduce visual effects",
   "reduceVisualEffectsDesc": "Turns off the blur effects for smoother performance on integrated or low-power GPUs.",
   "googleGenAiSettings": "Google GenAI REST Settings",
