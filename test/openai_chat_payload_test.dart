@@ -368,6 +368,62 @@ void main() {
       expect(payloadFor(effortTarget(legacy: true))['reasoning_effort'], 'medium');
     });
 
+    test('DeepSeek switches off with the thinking object, not with none', () {
+      // DeepSeek's reasoning_effort ladder has no `none`: the value is
+      // ignored and the model thinks — and bills — as usual, with nothing in
+      // the reply to say so. Its off switch is the top-level object.
+      LLMTarget deepseek(ReasoningEffort? effort) {
+        final config = LLMModelConfig(
+          modelId: 'deepseek-v4-pro',
+          channelType: Vendors.deepseek,
+          endpoint: 'https://api.deepseek.com',
+          apiKey: 'k',
+          reasoningEffort: effort,
+        );
+        return LLMTarget(
+          config: config,
+          vendor: Vendors.byId(config.channelType),
+          model: ModelDescriptor.of(config.modelId),
+        );
+      }
+
+      final off = payloadFor(deepseek(ReasoningEffort.off));
+      expect(off['thinking'], {'type': 'disabled'});
+      expect(off.containsKey('reasoning_effort'), isFalse);
+
+      // A level keeps the ladder value DeepSeek does read, and says "on"
+      // explicitly in the same object.
+      final high = payloadFor(deepseek(ReasoningEffort.high));
+      expect(high['thinking'], {'type': 'enabled'});
+      expect(high['reasoning_effort'], 'high');
+
+      // Default still sends neither.
+      final byDefault = payloadFor(deepseek(null));
+      expect(byDefault.containsKey('thinking'), isFalse);
+      expect(byDefault.containsKey('reasoning_effort'), isFalse);
+    });
+
+    test('every other ① vendor never sees the thinking object', () {
+      // It is an unknown field there, and an unknown field is a 400 on the
+      // official host.
+      for (final id in [Vendors.openAIRest, Vendors.newApiOpenAI, Vendors.minimax, Vendors.dashscope]) {
+        final config = LLMModelConfig(
+          modelId: 'm',
+          channelType: id,
+          endpoint: 'https://api.example.com/v1',
+          apiKey: 'k',
+          reasoningEffort: ReasoningEffort.off,
+        );
+        final p = payloadFor(LLMTarget(
+          config: config,
+          vendor: Vendors.byId(id),
+          model: ModelDescriptor.of('m'),
+        ));
+        expect(p.containsKey('thinking'), isFalse, reason: id);
+        expect(p['reasoning_effort'], 'none', reason: id);
+      }
+    });
+
     test('an explicit level beats the legacy flag', () {
       expect(
           payloadFor(effortTarget(effort: ReasoningEffort.off, legacy: true))[

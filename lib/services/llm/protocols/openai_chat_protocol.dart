@@ -10,6 +10,7 @@ import '../../../state/app_state.dart';
 import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
+import '../vendors/vendor_profile.dart' show ThinkingDialect;
 import 'protocol.dart';
 
 /// Recovers a `function.arguments` string that is several JSON objects
@@ -1192,6 +1193,7 @@ class OpenAIChatProtocol implements ChatProtocol {
       };
     }).toList();
 
+    final effort = target.config.effectiveReasoningEffort;
     final payload = <String, dynamic>{
       "model": target.config.modelId,
       "messages": messages,
@@ -1200,8 +1202,15 @@ class OpenAIChatProtocol implements ChatProtocol {
       // minimal-common-denominator rule: every proactively sent field is one
       // some relay can 400 on). `off` goes out as "none": an endpoint that
       // predates the value rejects it audibly, which beats thinking anyway.
-      "reasoning_effort":
-          ?openaiReasoningEffortWire(target.config.effectiveReasoningEffort),
+      //
+      // Except where the vendor says its off switch is somewhere else. On
+      // DeepSeek `none` is not in the ladder and is *ignored* — the model
+      // thinks and bills as usual with nothing in the reply to say so — and
+      // the switch is the top-level `thinking` object below. The level itself
+      // still travels as `reasoning_effort` there (DeepSeek reads it); only
+      // "off" changes spelling, and the field is withheld so a value the host
+      // does not know is not sent alongside the one it does.
+      ...openaiThinkingFields(target.vendor.thinking, effort),
     };
 
     if (tools != null && tools.isNotEmpty) {
@@ -1242,6 +1251,27 @@ class OpenAIChatProtocol implements ChatProtocol {
         ReasoningEffort.high => 'high',
         ReasoningEffort.max => 'max',
       };
+
+  /// The reasoning fields for [dialect] at [effort]: `reasoning_effort` on
+  /// the generic ① wire, plus — or instead, for "off" — the top-level
+  /// `thinking` object on a vendor that declares
+  /// [ThinkingDialect.openaiThinkingObject]. Empty for the default level.
+  static Map<String, dynamic> openaiThinkingFields(
+      ThinkingDialect dialect, ReasoningEffort? effort) {
+    if (effort == null) return const {};
+    if (dialect != ThinkingDialect.openaiThinkingObject) {
+      return {'reasoning_effort': ?openaiReasoningEffortWire(effort)};
+    }
+    if (effort == ReasoningEffort.off) {
+      return {
+        'thinking': {'type': 'disabled'}
+      };
+    }
+    return {
+      'thinking': {'type': 'enabled'},
+      'reasoning_effort': ?openaiReasoningEffortWire(effort),
+    };
+  }
 
   /// Exposes the payload builder to tests — request-shape rules (reasoning
   /// echo-back, tool nesting, image parts) are pinned in

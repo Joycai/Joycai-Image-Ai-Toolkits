@@ -150,7 +150,9 @@
 
 **改什么**：`OpenAIImagesProtocol` 一张输入图时字段名 `image`，两张以上 `image[]`（纯函数 `openaiImageEditFieldName`，`test/openai_images_payload_test.dart` 钉住）。顺带：multipart 文件名的扩展名改由字节决定（片 3 的 `resolveImageMime`），不再信附件声明。L2 gpt-image-2 官方 `/images/edits` 一张。
 
-#### 片 9 · DeepSeek 关闭思考的方言（#11）
+#### 片 9 · DeepSeek 关闭思考的方言（#11）— ✅ 2026-09-05 L1 已落，L2 待 key
+
+> 落地：`ThinkingDialect.openaiThinkingObject`（唯一一个 ① 方言值），`deepseek` vendor 声明；`OpenAIChatProtocol.openaiThinkingFields` 决定字段——off 发 `thinking:{type:"disabled"}` 且**不发** `reasoning_effort:"none"`；档位发 `thinking:{type:"enabled"}` + `reasoning_effort`；默认两者都不发。④ 协议的两个 switch 对该值返回 null。
 
 **改什么**：`ThinkingDialect` 扩到 ① 家族：`deepseek` vendor 声明 `openaiThinkingObject`，off 时发顶层 `thinking:{type:"disabled"}`，其它档位发顶层 `thinking:{type:"enabled"}` + `reasoning_effort`（DeepSeek 两处都收）。其余 ① vendor 保持只发 `reasoning_effort`。`chatConsumesReasoningEffort` 不变。
 

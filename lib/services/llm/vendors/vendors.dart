@@ -179,6 +179,10 @@ class Vendors {
       id: deepseek,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // DeepSeek's off switch is the top-level `thinking` object, not
+      // `reasoning_effort: none` — see [ThinkingDialect.openaiThinkingObject].
+      // Only this vendor: the generic ① profile must never send the object.
+      thinking: ThinkingDialect.openaiThinkingObject,
     ),
     VendorProfile(
       id: minimax,

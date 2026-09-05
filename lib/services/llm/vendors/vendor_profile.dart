@@ -168,6 +168,17 @@ enum ThinkingDialect {
   /// and **off** unless asked, which is the opposite of the current Claude
   /// generation.
   adaptive,
+
+  /// DeepSeek's spelling on the **①** wire: a top-level
+  /// `thinking: {"type": "enabled" | "disabled"}` object beside
+  /// `reasoning_effort`. The one ① dialect this enum names, because it is the
+  /// one where the generic spelling silently fails: DeepSeek's
+  /// `reasoning_effort` ladder has no `none`, so `reasoning_effort: "none"` —
+  /// what every other ① host takes as "off" — is ignored there and the model
+  /// thinks on, and bills on, with nothing in the response saying so. Only
+  /// `{"type": "disabled"}` switches it off. A non-DeepSeek ① host would
+  /// reject the object as an unknown field, which is why it is per vendor.
+  openaiThinkingObject,
 }
 
 class VendorProfile {
