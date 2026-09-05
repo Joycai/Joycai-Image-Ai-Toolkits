@@ -251,6 +251,13 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 /// contents, image-generation config and per-request safety settings (from
 /// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
 ///
+/// Every structural key is spelled **camelCase**. Google accepts snake_case
+/// too, but the relays that host this wire do not — and an unknown key is
+/// ignored, not rejected, so the snake_case spelling fails by making the
+/// image or the system prompt vanish from the request while everything else
+/// works. `test/image_relay_compat_test.dart` walks the payload for any key
+/// carrying an underscore.
+///
 /// [emitsImages] declares `responseModalities: ["TEXT","IMAGE"]`. It comes
 /// from the model descriptor's capabilities, never from the model id — this
 /// layer must not sniff. Nothing else supplies it: a relay only injects the
@@ -320,9 +327,14 @@ Map<String, dynamic> prepareGooglePayload(
     for (var attachment in msg.attachments) {
       if (attachment.path == null && attachment.bytes == null) continue;
       final resolved = ImageCompressor.readForApi(attachment);
+      // camelCase, never snake_case. Google's own host accepts both (proto3
+      // JSON), but the relays that front this wire (New API's Gemini face)
+      // document only the camelCase spelling and *ignore* unrecognized keys
+      // rather than rejecting them — so `inline_data` used to mean the model
+      // never saw the picture, with a 200 and a perfectly normal answer.
       parts.add({
-        "inline_data": {
-          "mime_type": resolved.mimeType,
+        "inlineData": {
+          "mimeType": resolved.mimeType,
           "data": base64Encode(resolved.bytes)
         }
       });
@@ -353,8 +365,9 @@ Map<String, dynamic> prepareGooglePayload(
   }
 
   return {
-    // ignore: use_null_aware_elements
-    if (systemInstruction != null) "system_instruction": systemInstruction,
+    // camelCase for the same reason as `inlineData` above: a relay that reads
+    // only `systemInstruction` silently drops a snake_case system prompt.
+    "systemInstruction": ?systemInstruction,
     "contents": contents,
     if (tools != null && tools.isNotEmpty)
       "tools": [

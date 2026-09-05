@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joycai_image_ai_toolkits/services/llm/llm_types.dart';
@@ -186,6 +187,87 @@ void main() {
       );
       expect(payload['generationConfig']['imageConfig'],
           {'aspectRatio': '16:9', 'imageSize': '2K'});
+    });
+
+    test('an attachment rides as inlineData.mimeType, and system as systemInstruction', () {
+      // Google's host accepts snake_case too; the relays that front this wire
+      // do not, and they *ignore* an unrecognized key rather than rejecting
+      // it — so `inline_data` used to mean the model never saw the picture,
+      // and `system_instruction` that the system prompt silently vanished.
+      final payload = prepareGooglePayload(
+        [
+          LLMMessage(role: LLMRole.system, content: 'be terse'),
+          LLMMessage(
+            role: LLMRole.user,
+            content: 'what colour',
+            attachments: [
+              LLMAttachment.fromBytes(
+                  Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0]),
+                  'image/png'),
+            ],
+          ),
+        ],
+        null,
+        null,
+      );
+
+      expect(payload['systemInstruction'], {'parts': [{'text': 'be terse'}]});
+      expect(payload.containsKey('system_instruction'), isFalse);
+
+      final parts = ((payload['contents'] as List).single as Map)['parts'] as List;
+      final image = parts.whereType<Map>().firstWhere((p) => p.containsKey('inlineData'));
+      expect(image['inlineData']['mimeType'], 'image/png');
+      expect(parts.any((p) => (p as Map).containsKey('inline_data')), isFalse);
+    });
+
+    test('no structural key in the request carries an underscore', () {
+      // One walk over every key rather than a check per field, so the next
+      // field added in snake_case fails here instead of on a relay.
+      final payload = prepareGooglePayload(
+        [
+          LLMMessage(role: LLMRole.system, content: 's'),
+          LLMMessage(
+            role: LLMRole.user,
+            content: 'u',
+            attachments: [
+              LLMAttachment.fromBytes(Uint8List.fromList([0xFF, 0xD8, 0xFF, 0]), 'image/jpeg'),
+            ],
+          ),
+          LLMMessage(
+            role: LLMRole.assistant,
+            content: '',
+            toolCalls: [
+              LLMToolCall(id: 'c1', name: 'f', arguments: {'a': 1}, thoughtSignature: 'sig'),
+            ],
+          ),
+          LLMMessage(role: LLMRole.tool, content: '{"ok":true}', toolCallId: 'c1', toolName: 'f'),
+        ],
+        {'aspectRatio': '1:1', 'imageSize': '1K'},
+        null,
+        tools: [LLMTool(name: 'f', description: 'd', parameters: const {'type': 'object'})],
+        emitsImages: true,
+      );
+
+      // Values under these keys are the caller's own JSON (tool schemas,
+      // tool arguments, tool results, safety enums) — not this wire's keys.
+      const opaque = {'parameters', 'args', 'response', 'safetySettings'};
+      final offenders = <String>[];
+      void walk(Object? node, String path) {
+        if (node is Map) {
+          for (final entry in node.entries) {
+            final key = entry.key.toString();
+            if (key.contains('_')) offenders.add('$path.$key');
+            if (!opaque.contains(key)) walk(entry.value, '$path.$key');
+          }
+        } else if (node is List) {
+          for (var i = 0; i < node.length; i++) {
+            walk(node[i], '$path[$i]');
+          }
+        }
+      }
+
+      walk(payload, r'$');
+      expect(offenders, isEmpty);
     });
   });
 

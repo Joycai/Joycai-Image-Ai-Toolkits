@@ -229,6 +229,20 @@ review 时用下面的模式全仓库 grep 一遍即可：
 - **`redactUrl(url)`**（经 `protocol.dart` 转出口）—— 任何写进 debug 日志的
   请求 URL 必须先过它：Google 系 vendor 的 URL 带 `?key=`，靠日志落盘层的
   正则兜底等于把一个机制的 bug 变成凭证泄漏。
+- **`imageMimeFromBytes` / `imageExtensionFromBytes` / `resolveImageMime`**
+  （`core/image_magic.dart`）—— 图片的类型**读字节，不信声明**。中转的
+  `inlineData.mimeType` 写 `image/png` 给过 JPEG 字节，`b64_json` 根本没有
+  mime，重命名过的 `.png` 里装着 JPEG 也是常态。落盘取扩展名走
+  `imageExtensionFromBytes`（`task_executors.dart`），请求侧的 `media_type` /
+  `mimeType` 由 `ImageCompressor.readForApi` 经 `resolveImageMime` 定 —— ④
+  会校验字节与 `media_type` 是否一致，不一致整个请求 400。声明只在字节认不出
+  时兜底。
+- **③ 的请求键一律 camelCase**（`inlineData` / `mimeType` /
+  `systemInstruction`）。Google 自家 proto3 JSON 两种拼法都收，但挂这条 wire
+  的中转（New API 的 Gemini 面）只认 camelCase，且**未识别的键被忽略而不是
+  拒绝**：snake_case 的后果不是 400，是图片压根没到模型、system 提示被丢，
+  响应 200 一切正常。`test/image_relay_compat_test.dart` 遍历整个 payload
+  断言没有带下划线的结构键，新字段写成 snake 会在那里先挂。
 - **`VendorProfile.downloadHeaders(apiKey)`** —— 下载生成产物（视频/图片 URI）
   时用什么认证头是 Layer 2 知识，executor 只消费；按协议族分支写在调用方
   曾是红线违规（错头会被静默忽略，下一个非 bearer vendor 只会得到一个 403）。
