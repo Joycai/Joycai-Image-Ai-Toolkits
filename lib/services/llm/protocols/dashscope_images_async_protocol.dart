@@ -3,7 +3,9 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/image_magic.dart';
 import '../../../state/app_state.dart';
+import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'dashscope_images_protocol.dart';
@@ -72,10 +74,13 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       inputImages = inputImages.sublist(0, maxRef);
     }
     final imageRefs = <String>[];
+    ({int width, int height})? inputSize;
     for (final att in inputImages) {
       final bytes = await readAttachmentBytes(att);
       if (bytes == null) continue;
-      imageRefs.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
+      inputSize ??= ImageCompressor.dimensionsOf(bytes);
+      imageRefs.add(
+          'data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
     }
 
     final base = dashscopeNativeBase(config.endpoint);
@@ -87,6 +92,8 @@ class DashScopeImagesAsyncProtocol implements ImageGenProtocol {
       prompt: userMsg.content,
       imageRefs: imageRefs,
       options: options,
+      inputSize: inputSize,
+      sendsSize: dashscopeModelTakesSize(target),
     );
 
     logger?.call(

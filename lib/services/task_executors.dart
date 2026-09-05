@@ -123,7 +123,12 @@ extension TaskExecutors on TaskQueueService {
       final bytes = generatedImages[i];
       final prefix = task.parameters['imagePrefix'] ?? 'result';
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${prefix}_${timestamp}_$i.png';
+      // Named by what the bytes are, not by what any header claimed. Relays
+      // have returned JPEG under `mimeType: image/png`, and `b64_json`
+      // carries no type at all — every result used to be written as `.png`
+      // regardless.
+      final fileName =
+          '${prefix}_${timestamp}_$i${imageExtensionFromBytes(bytes)}';
       final filePath = p.join(outputDir, fileName);
 
       final file = File(filePath);

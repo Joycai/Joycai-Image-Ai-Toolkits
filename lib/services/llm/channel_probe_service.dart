@@ -62,6 +62,19 @@ class ChannelProbeService {
 
   static const Duration _stepTimeout = Duration(seconds: 15);
 
+  /// Payment Required: the account behind the key has no credit. Seen live on
+  /// a relay that answers *any* real request this way before it even resolves
+  /// the model — with a complete, protocol-shaped JSON error, which is exactly
+  /// what [_completionProbe] reads as "the endpoint speaks this API". It does
+  /// — but the channel cannot run a single request, and a probe that says
+  /// "connected" about it sends the user off to debug their model list. Not
+  /// an auth failure either: the key is valid, the wallet is empty. Reported
+  /// as unreachable with the provider's own words.
+  static const int _paymentRequired = 402;
+
+  static bool _isQuotaExhausted(LLMApiException e) =>
+      e.statusCode == _paymentRequired;
+
   Future<ChannelProbeResult> probe(LLMModelConfig config) async {
     if (!_dispatcher.discoveryUsesNetwork(config)) {
       return const ChannelProbeResult(ChannelProbeStatus.notSupported);
@@ -74,6 +87,10 @@ class ChannelProbeService {
     } on LLMApiException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
         return ChannelProbeResult(ChannelProbeStatus.authFailed,
+            detail: e.message);
+      }
+      if (_isQuotaExhausted(e)) {
+        return ChannelProbeResult(ChannelProbeStatus.unreachable,
             detail: e.message);
       }
       if (e.isNonJsonBody) {
@@ -123,6 +140,13 @@ class ChannelProbeService {
     } on LLMApiException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
         return ChannelProbeResult(ChannelProbeStatus.authFailed,
+            detail: e.message);
+      }
+      // Ahead of the "protocol-shaped rejection" rule below, which it would
+      // otherwise satisfy: a 402 is a well-formed JSON error from an endpoint
+      // that speaks this API and will run nothing.
+      if (_isQuotaExhausted(e)) {
+        return ChannelProbeResult(ChannelProbeStatus.unreachable,
             detail: e.message);
       }
       if (e.isNonJsonBody) {

@@ -41,8 +41,9 @@ Map<String, dynamic> prepareImagenPayload(List<LLMMessage> history, Map<String, 
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       parameters['aspectRatio'] = options['aspectRatio'];
     }
-    if (options.containsKey('imageSize')) {
-      parameters['sampleImageSize'] = options['imageSize'];
+    final size = options['imageSize'];
+    if (size is String && size.isNotEmpty && size != 'not_set') {
+      parameters['sampleImageSize'] = size;
     }
   }
 
@@ -147,8 +148,57 @@ const Set<String> blockingFinishReasons = {
   'SPII',
 };
 
+/// Finish reasons that mean the model's *thinking* protocol was broken by the
+/// request rather than by content: a replayed turn missing its
+/// `thoughtSignature`, a tool called that was never declared, too many tool
+/// calls in a row. None of them is a policy block and none is a normal end,
+/// and all three used to be logged at INFO and read as a short, complete
+/// answer. The signature one is the ③-shaped replay failure: not a 400, not a
+/// silent downgrade, but a third form — a successful response that stopped
+/// for this reason.
+const Set<String> protocolFinishReasons = {
+  'MISSING_THOUGHT_SIGNATURE',
+  'UNEXPECTED_TOOL_CALL',
+  'TOO_MANY_TOOL_CALLS',
+  'MALFORMED_FUNCTION_CALL',
+};
+
+/// ③'s `finishReason` in ①'s `finish_reason` vocabulary, the one every
+/// consumer of `metadata['finish_reason']` speaks: the assistant loop and the
+/// web scraper both check `== 'length'` for truncation, and until this
+/// existed ③ never published anything there — a truncated Gemini answer was
+/// indistinguishable from a complete one. The ④ twin is
+/// `anthropicFinishReason`.
+String? geminiFinishReason(String? finishReason) {
+  switch (finishReason) {
+    case null:
+      return null;
+    case 'STOP':
+      return 'stop';
+    case 'MAX_TOKENS':
+      return 'length';
+    case 'SAFETY':
+    case 'IMAGE_SAFETY':
+    case 'RECITATION':
+    case 'BLOCKLIST':
+    case 'PROHIBITED_CONTENT':
+    case 'SPII':
+      return 'content_filter';
+    default:
+      // FINISH_REASON_UNSPECIFIED, OTHER, LANGUAGE, and the protocol ones
+      // above: the turn ended and nothing in ①'s ladder describes why. The
+      // raw value rides along as `finish_reason_raw`.
+      return 'stop';
+  }
+}
+
 /// Parses one `generateContent`/stream chunk into [LLMResponseChunk]s, handling
 /// prompt blocking, finish reasons and safety ratings via [logger].
+///
+/// `metadata` carries `usageMetadata` verbatim plus, on the chunk that ends
+/// the candidate, `finish_reason` (①'s vocabulary) and `finish_reason_raw`
+/// (③'s). Text parts flagged `thought: true` go out as reasoning, never as
+/// text.
 Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Function(String, {String level})? logger}) sync* {
   Map<String, dynamic>? metadata = chunkData['usageMetadata'];
 
@@ -180,14 +230,33 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
     final finishReason = candidate['finishReason'] as String?;
     final parts = candidate['content']?['parts'] as List?;
 
+    // The finish reason travels with the usage so a consumer that keeps the
+    // last metadata it sees ends up with both — on a stream that is the
+    // final chunk, which is also where the usage totals settle.
+    if (finishReason != null) {
+      metadata = {
+        ...?metadata,
+        'finish_reason_raw': finishReason,
+        'finish_reason': ?geminiFinishReason(finishReason),
+      };
+    }
+
     // Handle Safety and other non-STOP reasons (Section 3.3)
     if (finishReason != null && finishReason != 'STOP') {
       final blocked = blockingFinishReasons.contains(finishReason);
+      final protocol = protocolFinishReasons.contains(finishReason);
       String level = 'INFO';
-      if (blocked) level = 'WARN';
+      if (blocked || protocol) level = 'WARN';
       if (finishReason == 'OTHER') level = 'ERROR';
 
       logger?.call('Generation finished with reason: $finishReason', level: level);
+      if (finishReason == 'MISSING_THOUGHT_SIGNATURE') {
+        logger?.call(
+          'A replayed turn lacked its thoughtSignature — multi-turn tool '
+          'calling has stopped working for this conversation.',
+          level: 'WARN',
+        );
+      }
 
       if (blocked) {
         logger?.call('Content was flagged by safety filters.', level: 'WARN');
@@ -206,16 +275,34 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
       // at all, so the caller collected zero images and the task reported
       // "done" with no output and only a log line to explain it. When the
       // candidate *does* carry content (a truncated MAX_TOKENS answer, or a
-      // block that arrived after text streamed), the content is kept.
-      if (blocked && (parts == null || parts.isEmpty)) {
-        throw Exception('Google GenAI blocked the generation: $finishReason');
+      // block that arrived after text streamed), the content is kept. The
+      // protocol reasons get the same treatment: a turn that stopped for a
+      // missing signature and said nothing is a failed request, not an
+      // empty reply.
+      if ((blocked || protocol) && (parts == null || parts.isEmpty)) {
+        throw Exception('Google GenAI ended the generation: $finishReason');
       }
     }
 
-    if (parts != null) {
+    if (parts == null || parts.isEmpty) {
+      // Nothing to say, but the finish reason (and usage) still has to reach
+      // the consumer — a MAX_TOKENS with an empty candidate is how a request
+      // whose budget went entirely to thinking looks.
+      if (metadata != null) yield LLMResponseChunk(metadata: metadata);
+      continue;
+    }
+
+    {
       int callIndex = 0;
       for (var part in parts) {
-        final textPart = part['text'] as String?;
+        final rawText = part['text'] as String?;
+        // A `thought: true` part is the model's reasoning summary
+        // (`includeThoughts`), not its answer. Its own channel, like ①'s
+        // reasoning_content and ④'s thinking block — glued into the text it
+        // would reach the deliverable.
+        final isThought = part['thought'] == true;
+        final textPart = isThought ? null : rawText;
+        final reasoningPart = isThought ? rawText : null;
 
         // Spec prioritizes inlineData (Section 2)
         final inlineData = part['inlineData'] ?? part['inline_data'];
@@ -238,6 +325,7 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 
         yield LLMResponseChunk(
           textPart: textPart,
+          reasoningPart: reasoningPart,
           imagePart: imgData != null ? base64Decode(imgData as String) : null,
           toolCallPart: toolCall,
           metadata: metadata,
@@ -250,6 +338,13 @@ Iterable<LLMResponseChunk> parseGoogleChunks(Map<String, dynamic> chunkData, {Fu
 /// Standard `:generateContent` request body: system instruction, multimodal
 /// contents, image-generation config and per-request safety settings (from
 /// `options['safetySettings']`, defaulting to BLOCK_NONE for all categories).
+///
+/// Every structural key is spelled **camelCase**. Google accepts snake_case
+/// too, but the relays that host this wire do not — and an unknown key is
+/// ignored, not rejected, so the snake_case spelling fails by making the
+/// image or the system prompt vanish from the request while everything else
+/// works. `test/image_relay_compat_test.dart` walks the payload for any key
+/// carrying an underscore.
 ///
 /// [emitsImages] declares `responseModalities: ["TEXT","IMAGE"]`. It comes
 /// from the model descriptor's capabilities, never from the model id — this
@@ -320,9 +415,14 @@ Map<String, dynamic> prepareGooglePayload(
     for (var attachment in msg.attachments) {
       if (attachment.path == null && attachment.bytes == null) continue;
       final resolved = ImageCompressor.readForApi(attachment);
+      // camelCase, never snake_case. Google's own host accepts both (proto3
+      // JSON), but the relays that front this wire (New API's Gemini face)
+      // document only the camelCase spelling and *ignore* unrecognized keys
+      // rather than rejecting them — so `inline_data` used to mean the model
+      // never saw the picture, with a 200 and a perfectly normal answer.
       parts.add({
-        "inline_data": {
-          "mime_type": resolved.mimeType,
+        "inlineData": {
+          "mimeType": resolved.mimeType,
           "data": base64Encode(resolved.bytes)
         }
       });
@@ -348,13 +448,20 @@ Map<String, dynamic> prepareGooglePayload(
     if (options.containsKey('aspectRatio') && options['aspectRatio'] != 'not_set') {
       imageConfig['aspectRatio'] = options['aspectRatio'];
     }
-    if (options.containsKey('imageSize')) imageConfig['imageSize'] = options['imageSize'];
+    // `not_set` means not sent, like the ratio above: the upstream default is
+    // the 1K tier, and the models without an `imageSize` at all
+    // (gemini-2.5-flash-image) accept only its absence.
+    final size = options['imageSize'];
+    if (size is String && size.isNotEmpty && size != 'not_set') {
+      imageConfig['imageSize'] = size;
+    }
     if (imageConfig.isNotEmpty) generationConfig['imageConfig'] = imageConfig;
   }
 
   return {
-    // ignore: use_null_aware_elements
-    if (systemInstruction != null) "system_instruction": systemInstruction,
+    // camelCase for the same reason as `inlineData` above: a relay that reads
+    // only `systemInstruction` silently drops a snake_case system prompt.
+    "systemInstruction": ?systemInstruction,
     "contents": contents,
     if (tools != null && tools.isNotEmpty)
       "tools": [

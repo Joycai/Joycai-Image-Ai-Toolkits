@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../core/image_magic.dart';
 import '../models/llm_model.dart';
 import '../models/task_item.dart';
 import 'ai_rename_agent.dart';

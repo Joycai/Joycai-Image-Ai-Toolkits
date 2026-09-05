@@ -109,6 +109,27 @@ void main() {
         ChannelProbeStatus.notAnApi);
   });
 
+  test('402 is an empty wallet, not a connected channel', () async {
+    // Seen live: a relay answers every real request 402 with a complete JSON
+    // error before resolving the model — a protocol-shaped rejection, which
+    // the completion probe used to read as "connected".
+    final outOfCredit = LLMApiException(
+        "You're out of credits — this request needs \$0.000074", statusCode: 402);
+
+    final viaProbe = ChannelProbeService(
+        dispatcher: _FakeDispatcher(
+            onDiscover: () async => throw LLMApiException('no', statusCode: 404),
+            onGenerate: () async => throw outOfCredit));
+    final r = await viaProbe.probe(config());
+    expect(r.status, ChannelProbeStatus.unreachable);
+    expect(r.detail, contains('out of credits'));
+
+    // And on /models itself, where some hosts gate it too.
+    final viaModels = ChannelProbeService(
+        dispatcher: _FakeDispatcher(onDiscover: () async => throw outOfCredit));
+    expect((await viaModels.probe(config())).status, ChannelProbeStatus.unreachable);
+  });
+
   test('network-level failure reads as unreachable with the detail', () async {
     final probe = ChannelProbeService(
         dispatcher:

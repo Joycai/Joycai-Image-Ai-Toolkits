@@ -1681,7 +1681,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reasoningEffortDesc =>
-      '回答前にモデルがどれだけ考えるか。デフォルト＝何も送信しない（エンドポイント任せ）。他のレベルは出力トークンを消費します。OpenAI・Anthropic 形式のチャネルに適用。';
+      '回答前にモデルがどれだけ考えるか。デフォルト＝何も送信しない（エンドポイント任せ）。他のレベルは出力トークンを消費します。OpenAI・Anthropic 形式のチャネルに適用。Anthropic 形式では Claude 4.6 以降にレベルを output_config.effort として送信します。「最高」は最新世代のモデルのみ受け付け、400 でレベルが指摘された場合は一段下げてください。';
 
   @override
   String get reasoningEffortDefault => 'デフォルト（送信しない）';

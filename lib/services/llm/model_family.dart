@@ -243,6 +243,37 @@ class ModelFamilyClassifier {
   static bool isTextOnlyChat(String modelId) =>
       modelId.toLowerCase().contains('deepseek');
 
+  /// Claude ids whose generation knows only the **manual** thinking form
+  /// (`{type: "enabled", budget_tokens}`): 4.5 and everything before it.
+  ///
+  /// Adaptive thinking and `output_config` arrived with 4.6; 4.7 rejects the
+  /// manual form outright. The two generations are served on the same host
+  /// under the same key, so the vendor profile can only carry a default and
+  /// this rule is what points the older models back. Anything that is not
+  /// recognizably a Claude id answers false — the vendor default then
+  /// applies, and the ④ protocol's on-400 retry covers relays that rename
+  /// their models.
+  ///
+  /// Reads the first version number after `claude` (and an optional tier
+  /// word): `claude-sonnet-4-5-20250929` → 4.5, `claude-3-7-sonnet-…` → 3.7,
+  /// `claude-sonnet-4-20250514` → 4.0 (a date is not a minor version),
+  /// `claude-opus-4.6` → 4.6, `claude-opus-5` → 5.0.
+  static bool isLegacyClaudeThinking(String modelId) {
+    final id = modelId.toLowerCase();
+    if (!id.contains('claude')) return false;
+    final m = RegExp(r'claude(?:[-_](?:opus|sonnet|haiku))?[-_](\d+)(?:[-_.](\d+))?')
+        .firstMatch(id);
+    if (m == null) return false;
+    final major = int.parse(m.group(1)!);
+    final minorRaw = m.group(2);
+    // A trailing 8-digit date (`-20250514`) is not a minor version.
+    final minor = (minorRaw == null || minorRaw.length >= 4)
+        ? 0
+        : int.parse(minorRaw);
+    if (major < 4) return true;
+    return major == 4 && minor <= 5;
+  }
+
   /// Mock ids used by the simulated long-running-operation path
   /// (`mock-*`). A Layer 3 fact so the dispatcher never sniffs a model id.
   static bool isMockModel(String modelId) => modelId.startsWith('mock-');

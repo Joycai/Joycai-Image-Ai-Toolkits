@@ -179,6 +179,10 @@ class Vendors {
       id: deepseek,
       family: ProtocolFamily.openai,
       auth: AuthScheme.bearer,
+      // DeepSeek's off switch is the top-level `thinking` object, not
+      // `reasoning_effort: none` — see [ThinkingDialect.openaiThinkingObject].
+      // Only this vendor: the generic ① profile must never send the object.
+      thinking: ThinkingDialect.openaiThinkingObject,
     ),
     VendorProfile(
       id: minimax,
@@ -206,7 +210,13 @@ class Vendors {
       id: anthropicRest,
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
-      thinking: ThinkingDialect.anthropicBudget,
+      // The current generation's spelling. Claude 4.7+ answers the manual
+      // `enabled` + `budget_tokens` form with a 400, so the vendor default
+      // is adaptive; 4.5 and earlier — which know only the manual form —
+      // are recognized by layer 3 and switched back per model, and anything
+      // the id rules miss is caught by the protocol's one-shot retry on a
+      // thinking-shaped 400.
+      thinking: ThinkingDialect.anthropicAdaptive,
       // Anthropic's own endpoint, and the gateways that forward to it.
       promptCaching: true,
     ),
@@ -214,10 +224,12 @@ class Vendors {
       id: newApiAnthropic,
       family: ProtocolFamily.anthropic,
       auth: AuthScheme.anthropicApiKeyWithBearerFallback,
-      // A relay of Claude, so Claude's spelling. A New API host fronting some
-      // *other* ④ backend is the case this gets wrong — which is exactly why
-      // [minimaxAnthropic] is its own profile rather than a note in a README.
-      thinking: ThinkingDialect.anthropicBudget,
+      // A relay of Claude, so Claude's spelling — the same default and the
+      // same per-model / on-400 fallback as [anthropicRest]. A New API host
+      // fronting some *other* ④ backend is the case this gets wrong — which
+      // is exactly why [minimaxAnthropic] is its own profile rather than a
+      // note in a README.
+      thinking: ThinkingDialect.anthropicAdaptive,
       promptCaching: true,
     ),
     VendorProfile(

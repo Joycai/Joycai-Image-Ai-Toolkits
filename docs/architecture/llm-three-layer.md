@@ -229,6 +229,20 @@ review 时用下面的模式全仓库 grep 一遍即可：
 - **`redactUrl(url)`**（经 `protocol.dart` 转出口）—— 任何写进 debug 日志的
   请求 URL 必须先过它：Google 系 vendor 的 URL 带 `?key=`，靠日志落盘层的
   正则兜底等于把一个机制的 bug 变成凭证泄漏。
+- **`imageMimeFromBytes` / `imageExtensionFromBytes` / `resolveImageMime`**
+  （`core/image_magic.dart`）—— 图片的类型**读字节，不信声明**。中转的
+  `inlineData.mimeType` 写 `image/png` 给过 JPEG 字节，`b64_json` 根本没有
+  mime，重命名过的 `.png` 里装着 JPEG 也是常态。落盘取扩展名走
+  `imageExtensionFromBytes`（`task_executors.dart`），请求侧的 `media_type` /
+  `mimeType` 由 `ImageCompressor.readForApi` 经 `resolveImageMime` 定 —— ④
+  会校验字节与 `media_type` 是否一致，不一致整个请求 400。声明只在字节认不出
+  时兜底。
+- **③ 的请求键一律 camelCase**（`inlineData` / `mimeType` /
+  `systemInstruction`）。Google 自家 proto3 JSON 两种拼法都收，但挂这条 wire
+  的中转（New API 的 Gemini 面）只认 camelCase，且**未识别的键被忽略而不是
+  拒绝**：snake_case 的后果不是 400，是图片压根没到模型、system 提示被丢，
+  响应 200 一切正常。`test/image_relay_compat_test.dart` 遍历整个 payload
+  断言没有带下划线的结构键，新字段写成 snake 会在那里先挂。
 - **`VendorProfile.downloadHeaders(apiKey)`** —— 下载生成产物（视频/图片 URI）
   时用什么认证头是 Layer 2 知识，executor 只消费；按协议族分支写在调用方
   曾是红线违规（错头会被静默忽略，下一个非 bearer vendor 只会得到一个 403）。
@@ -267,11 +281,26 @@ thinking / server tool 一起加。
    必须装在**同一条** user 消息里。三条都由 `buildAnthropicHistory` 负责，
    `test/anthropic_chat_test.dart` 逐条钉住。
 
-5. **thinking 有两套词表，且开了就欠一笔债。** 官方是
+5. **thinking 有三套词表，且开了就欠一笔债。** Anthropic 新代（4.6+）是
+   `{type:"adaptive", display:"summarized"}` + 顶层 `output_config:{effort}`
+   （`display` 必须显式——最新一代默认 `omitted`，思考照全额计费但一个字不给）；
+   Anthropic 旧代（4.5 及更早）与百炼 ④ 面是
    `{type:"enabled", budget_tokens:N}`（N 从 `max_tokens` 里切，下限 1024，
-   且必须给答案留出余量），MiniMax M3 是 `{type:"adaptive"}`。协议不许问"你是
-   谁"，所以问的是 `VendorProfile.thinking`（`ThinkingDialect`）—— **Layer 2 说
-   哪种方言，Layer 1 说 JSON 长什么样**。
+   且必须给答案留出余量）；MiniMax M3 是裸 `{type:"adaptive"}`。**两代 Claude
+   互斥**：4.7+ 收到 `enabled` 直接 400，4.5 不认 `output_config`，而两代
+   住在同一个 host、同一把 key 下。所以 `VendorProfile.thinking` 只是**默认**，
+   协议按请求解析（`resolveAnthropicThinkingDialect`）：一条 400 学来的记忆
+   （按 endpoint + model，进程内）→ Layer 3 的代次判断
+   （`ModelDescriptor.usesLegacyAnthropicThinking`，只在 vendor 说的是 Anthropic
+   拼法时才生效，不会替 `none` 打开思考、也不改写 MiniMax 的方言）→ vendor 默认。
+   400 且报文点名 `thinking` / `output_config`（但**不是** `effort` 的取值——
+   那是档位太高，换拼法只会再吃一个 400）时换另一种拼法重试一次并记住
+   （`isAnthropicThinkingRejection` / `learnAnthropicThinkingDialect`）；中转上
+   模型名是自由文本，代次从名字猜不可靠，这条重试就是为它准备的。协议仍不许问
+   "你是谁"—— **Layer 2 说默认方言，Layer 3 说这个模型是哪一代，Layer 1 说
+   JSON 长什么样**。档位（`ReasoningEffort`）在 adaptive 拼法上落到
+   `output_config.effort`（low/medium/high/max，本仓无 `xhigh`），在 budget 拼法
+   上折叠为"开"，off 与默认一律不发字段（不发 `disabled`：最新一代无条件拒收）。
    开了之后：带工具调用的 assistant 轮**必须原样回传 thinking block，连同
    `signature`**，否则下一次请求被拒。它存在 `LLMMessage.reasoningSignature`
    （随会话持久化），回传时排在 text / tool_use **之前**；没有签名的 thinking
@@ -288,6 +317,31 @@ thinking / server tool 一起加。
    连带的一条：开了 server tool 之后一轮里会出现**多个 text block**（搜索前一
    段、搜索后一段），所以 block 之间按空行拼接，不是裸接 —— 裸接会把两段话连成
    一句。
+7. **「一次请求 = 一个完整回答」在 server tool 面前不成立，且只有一种停法会
+   明说。** 官方 ④ 用 `stop_reason: pause_turn`（协议发布为
+   `finish_reason: pause`，**不再**翻成 `stop`）；MiniMax 的 ④ 面跑完搜索把结果
+   送回就 `end_turn`，不再叫模型，响应是个格式完好的成功——协议按**形状**判：
+   最后一个非 thinking 块是 `web_search_tool_result` 即 `turn_incomplete`
+   （`anthropicTurnIncompleteKey`）。两种都由 `LLMService.request` 续跑，最多
+   `maxTurnContinuations`（3）次，每段各自记用量，最后
+   `mergeTurnParts` 合成一个响应交给调用方（文本按段落拼、tool_calls 取最后一段、
+   token 求和、content 数组串接）。**续跑的形状不同**（`turn_continuation.dart`）：
+   `pause` 按协议原样送回 assistant 消息；`turn_incomplete` 走纯文本回填——把
+   `server_tool_runs` 渲染成 user 消息，因为 MiniMax **拒收自己发出的**
+   `server_tool_use` 块。
+   为此 server-tool 轮的**整个 `content` 数组原样留存**（`LLMMessage.rawContentBlocks`，
+   与 `rawThinkingBlocks` 同性质、同 `rawThinkingModelId` 作用域，随会话持久化）：
+   结果块里的 `encrypted_content` 是服务端解密用的，改了或缺了 400；
+   `buildAnthropicHistory` 对带它的 assistant 轮整块回放而不重建。流式路径的
+   `AnthropicStreamAssembler` 用 `content_block_start` 的副本 + delta 重组出同一
+   份数组（含 `citations_delta`），`test/anthropic_chat_test.dart` 钉住流式与同步
+   给出同一份。助手对 `write_knowledge_file` 大参数做上下文省略时丢掉这份副本
+   （省略正是为了不重发那段内容），改回重建路径。
+   `web_search_tool_result` 的 `content` 是对象而非数组时是**错误块**
+   （`error_code`：`max_uses_exceeded` / `too_many_requests` / …），记进
+   `ServerToolRun.error` 并 WARN，不是失败——`max_uses_exceeded` 是刹车在起作用。
+   声明 `web_search_20250305` 时同时发 `max_uses`（`anthropicWebSearchMaxUses`
+   = 5）：按次计费且结果在后续每轮反复计入 input，这是唯一的刹车。
 
 **四条 chat wire 现在全都声明工具**（`streamingDeclaresTools`：④ ③ ① C2）。理由
 不是增量消费 —— agent 循环拿不到完整一批就配不出结果 —— 而是**保活**：

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../../../core/image_magic.dart';
 import '../../../state/app_state.dart';
+import '../image_compression.dart';
 import '../llm_debug_logger.dart';
 import '../llm_types.dart';
 import 'dashscope_payload.dart';
@@ -54,10 +56,15 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
     }
 
     final imageRefs = <String>[];
+    ({int width, int height})? inputSize;
     for (final att in inputImages) {
       final bytes = await readAttachmentBytes(att);
       if (bytes == null) continue;
-      imageRefs.add('data:${att.mimeType};base64,${base64Encode(bytes)}');
+      // The first input's proportions drive the default size of an edit —
+      // see [dashscopeQwenDefaultSize] for why "no size" is not an option.
+      inputSize ??= ImageCompressor.dimensionsOf(bytes);
+      imageRefs.add(
+          'data:${resolveImageMime(bytes, att.mimeType)};base64,${base64Encode(bytes)}');
     }
 
     final url = Uri.parse('${dashscopeNativeBase(config.endpoint)}'
@@ -73,6 +80,8 @@ class DashScopeImagesProtocol implements ImageGenProtocol {
       prompt: userMsg.content,
       imageRefs: imageRefs,
       options: options,
+      inputSize: inputSize,
+      sendsSize: dashscopeModelTakesSize(target),
     );
 
     final client = config.createClient();

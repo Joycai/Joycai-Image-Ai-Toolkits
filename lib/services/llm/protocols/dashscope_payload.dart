@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../llm_types.dart';
 import '../model_capabilities.dart';
 import 'protocol.dart';
@@ -108,11 +110,91 @@ bool? dashscopePromptExtend(Map<String, dynamic>? options) {
   }
 }
 
+/// The pixel area every default qwen-image size is fitted into: the 1K
+/// billing tier. DashScope bills `qwen-image*` by output *area* in two tiers
+/// (`qima_output_1k` / `qima_output_2k`), and an omitted `size` renders at
+/// 2048² — the 2K tier, at twice the price — so "no size" is never sent on
+/// this dialect; a size is always derived, and it lands in the cheaper tier.
+const int dashscopeQwenDefaultArea = 1024 * 1024;
+
+/// DashScope rounds qwen-image edges to multiples of 16; sizes are emitted
+/// on that grid so the request asks for exactly what will be rendered.
+const int _dashscopeEdgeStep = 16;
+
+/// The widest proportion qwen-image accepts, either way round (1:8 – 8:1).
+const double _dashscopeMaxRatio = 8.0;
+
+/// Whether this target's model takes a `size` parameter at all — read off the
+/// model's declared controls (layer 3), never off its id. The basic
+/// `qwen-image-edit` declares no size control because the endpoint has none
+/// for it; every other DashScope image model declares one.
+bool dashscopeModelTakesSize(LLMTarget target) =>
+    target.model.capabilities.imageParams.any((p) => p.key == 'imageSize');
+
+/// The `size` a qwen-image request gets when the author picked none.
+///
+/// Text-to-image: a 1K square. Edit: the input's own proportions, fitted
+/// into the 1K area — because "follow the input" has no cheaper spelling on
+/// this endpoint. Omitting `size` on an edit does follow the input's ratio,
+/// but scales it up to the 2K area (a 768×1376 source came back 1520×2736)
+/// and bills accordingly. So the ratio is honoured here, at the area the
+/// author would have got for free elsewhere.
+///
+/// Both edges are floored to the 16-grid; the area therefore lands just
+/// under 1024², never over it. Proportions past 8:1 are clamped rather than
+/// refused — the endpoint would 400 on them, and a clamped picture beats a
+/// failed request for a source that is a strip or a banner.
+String dashscopeQwenDefaultSize(({int width, int height})? input) {
+  if (input == null || input.width <= 0 || input.height <= 0) {
+    return '1024*1024';
+  }
+  var ratio = input.width / input.height;
+  if (ratio > _dashscopeMaxRatio) ratio = _dashscopeMaxRatio;
+  if (ratio < 1 / _dashscopeMaxRatio) ratio = 1 / _dashscopeMaxRatio;
+
+  // Solve w·h = area, w/h = ratio — short edge first, long edge derived from
+  // the *snapped* short edge. Flooring both independently can push the
+  // proportion past the 8:1 ceiling (2896×352 is 8.2:1), and deriving the
+  // long edge from the snapped short one keeps it at or under the target.
+  final landscape = ratio >= 1;
+  final longOverShort = landscape ? ratio : 1 / ratio;
+  var short = _floorToGrid(math.sqrt(dashscopeQwenDefaultArea / longOverShort));
+  var long = _floorToGrid(short * longOverShort);
+  // Snapping the short edge down lets the derived long edge overshoot the
+  // area by a step (21:9 lands at 1568×672, 0.5 % over); the 1K tier is a
+  // hard ceiling, so the long edge steps back until the area is under it.
+  while (long * short > dashscopeQwenDefaultArea && long > _dashscopeEdgeStep) {
+    long -= _dashscopeEdgeStep;
+  }
+  return landscape ? '$long*$short' : '$short*$long';
+}
+
+int _floorToGrid(double edge) {
+  final snapped = (edge / _dashscopeEdgeStep).floor() * _dashscopeEdgeStep;
+  return snapped < _dashscopeEdgeStep ? _dashscopeEdgeStep : snapped;
+}
+
 /// The request body for one image generation or edit.
 ///
 /// [imageRefs] are reference images already resolved to something the
 /// endpoint accepts — a public URL or a `data:<mime>;base64,…` string. Empty
-/// means text-to-image.
+/// means text-to-image. [inputSize] is the first reference's pixel size when
+/// the caller could read one; it only matters to the qwen default (see
+/// [dashscopeQwenDefaultSize]).
+///
+/// [sendsSize] is whether this model takes a `size` at all — derived by the
+/// protocol from the model's declared parameters (layer 3), because the
+/// answer differs *within* the family: `qwen-image-edit` (the basic one, not
+/// `-max` / `-plus`) has no `size` and 400s on receiving one, while every
+/// sibling both accepts it and, left without it, renders at the 2K tier.
+/// So where a size control exists one is always sent — the author's, or the
+/// dialect's default — and where none exists, none is.
+///
+/// `n` is always sent, and always 1. The upstream default is **not** 1
+/// everywhere: `wan2.7-*` defaults to four images and bills every one of
+/// them, so a request that leaves `n` off buys four pictures for one task.
+/// Every model in scope accepts `n: 1` (the ceilings differ — 6, 4, and the
+/// basic `qwen-image-edit`'s hard 1 — but the floor is shared).
 ///
 /// The two shapes differ in more than nesting, which is why this is a switch
 /// and not a flag: `qwen-image*` carries the conversation under `input` and
@@ -126,18 +208,32 @@ Map<String, dynamic> buildDashScopeImagePayload({
   required String prompt,
   required List<String> imageRefs,
   Map<String, dynamic>? options,
+  ({int width, int height})? inputSize,
+  bool sendsSize = true,
 }) {
-  final size = dashscopeSize(options);
+  final chosen = dashscopeSize(options);
+  final String? size;
+  if (!sendsSize) {
+    size = null;
+  } else if (chosen != null) {
+    size = chosen;
+  } else {
+    size = switch (shape) {
+      // wan takes the tier presets directly, and its own omitted default is
+      // the 2K tier — the same double-price trap as qwen's.
+      ImageRequestShape.dashscopeWan => '1K',
+      ImageRequestShape.dashscopeQwen ||
+      ImageRequestShape.none =>
+        dashscopeQwenDefaultSize(inputSize),
+    };
+  }
   final promptExtend = dashscopePromptExtend(options);
   final parameters = <String, dynamic>{
+    'n': 1,
     'size': ?size,
     'prompt_extend': ?promptExtend,
   };
 
-  // `n` is never sent: 1 is the upstream default everywhere, and the ceiling
-  // differs within a single family (`qwen-image-edit` accepts only 1 where
-  // its siblings accept 6), so the field can only cost a 400 until there is
-  // a reason to ask for more than one image.
   switch (shape) {
     case ImageRequestShape.dashscopeWan:
       return {
@@ -151,7 +247,7 @@ Map<String, dynamic> buildDashScopeImagePayload({
             ],
           }
         ],
-        if (parameters.isNotEmpty) 'parameters': parameters,
+        'parameters': parameters,
       };
     case ImageRequestShape.dashscopeQwen:
     case ImageRequestShape.none:
@@ -168,7 +264,7 @@ Map<String, dynamic> buildDashScopeImagePayload({
             }
           ],
         },
-        if (parameters.isNotEmpty) 'parameters': parameters,
+        'parameters': parameters,
       };
   }
 }

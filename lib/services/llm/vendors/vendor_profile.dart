@@ -128,22 +128,57 @@ enum AuthScheme {
 
 /// How a ④ vendor spells "think before answering".
 ///
-/// The two ④ hosts this app talks to do not share a vocabulary, so the
-/// protocol cannot hardcode one and — by the layering rule — must not ask
-/// which vendor it is talking to either. It reads this instead: layer 2 says
-/// *which dialect*, layer 1 owns *what the JSON looks like*.
+/// The ④ hosts this app talks to do not share a vocabulary, so the protocol
+/// cannot hardcode one and — by the layering rule — must not ask which
+/// vendor it is talking to either. It reads this instead: layer 2 says *which
+/// dialect*, layer 1 owns *what the JSON looks like*.
+///
+/// The vendor's value is a **default**, not the final word. Anthropic's own
+/// vocabulary changed between model generations — 4.5 and earlier take only
+/// [anthropicBudget], 4.7 and later reject it with a 400 and take only
+/// [anthropicAdaptive] — and both generations are served on the same host
+/// under the same key. So the ④ protocol resolves the dialect per request:
+/// a layer-3 fact about the model (`ModelDescriptor.usesLegacyAnthropicThinking`)
+/// overrides the vendor default, and a 400 that names the thinking field
+/// flips to the alternate spelling once and remembers it for that endpoint
+/// and model (`resolveAnthropicThinkingDialect`). On a relay the model name
+/// is free text and the generation cannot be read off it reliably, which is
+/// what the retry is for.
 enum ThinkingDialect {
   /// No thinking control: the vendor either has none or decides for itself.
   /// Asking for thinking is then a no-op rather than a 400.
   none,
 
-  /// Anthropic's own: `{"type": "enabled", "budget_tokens": N}`, where the
-  /// budget is carved out of `max_tokens` and has a floor of 1024.
+  /// Anthropic's **manual** mode, the only one Claude 4.5 and earlier know:
+  /// `{"type": "enabled", "budget_tokens": N}`, where the budget is carved
+  /// out of `max_tokens` and has a floor of 1024. Rejected outright (400) by
+  /// 4.7 and later. Also what Bailian documents for its ④ face.
   anthropicBudget,
 
-  /// MiniMax M3's: `{"type": "adaptive"}` — no budget to size, and **off**
-  /// unless asked, which is the opposite of the current Claude generation.
+  /// Anthropic's **current** mode, Claude 4.6 and later:
+  /// `{"type": "adaptive", "display": "summarized"}` plus a top-level
+  /// `output_config: {"effort": …}` carrying the intensity. `display` is sent
+  /// explicitly because the newest models default it to `omitted` — the
+  /// thinking is still billed, the text just never arrives. Unknown to 4.5
+  /// and earlier, which reject `output_config`.
+  anthropicAdaptive,
+
+  /// MiniMax M3's: `{"type": "adaptive"}` alone — no `display`, no
+  /// `output_config` (its documentation lists neither), no budget to size,
+  /// and **off** unless asked, which is the opposite of the current Claude
+  /// generation.
   adaptive,
+
+  /// DeepSeek's spelling on the **①** wire: a top-level
+  /// `thinking: {"type": "enabled" | "disabled"}` object beside
+  /// `reasoning_effort`. The one ① dialect this enum names, because it is the
+  /// one where the generic spelling silently fails: DeepSeek's
+  /// `reasoning_effort` ladder has no `none`, so `reasoning_effort: "none"` —
+  /// what every other ① host takes as "off" — is ignored there and the model
+  /// thinks on, and bills on, with nothing in the response saying so. Only
+  /// `{"type": "disabled"}` switches it off. A non-DeepSeek ① host would
+  /// reject the object as an unknown field, which is why it is per vendor.
+  openaiThinkingObject,
 }
 
 class VendorProfile {

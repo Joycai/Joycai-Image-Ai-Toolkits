@@ -354,6 +354,8 @@ class ModelCapabilities {
     if (family == ModelFamily.geminiImage) {
       if (id.contains('gemini-3.1-flash-image')) return _geminiImageV2;
       if (id.contains('gemini-3.1-pro-image')) return _geminiImagePro;
+      // The 2.5 generation has no resolution parameter at all.
+      if (id.contains('gemini-2.5-flash-image')) return _geminiImageLegacy;
     }
 
     // grok-imagine-video-1.5 exposes a different parameter set (1:1 / 4:3 /
@@ -390,9 +392,19 @@ class ModelCapabilities {
     }
 
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
-    // reference-image ceiling and size vocabulary, so they are two tables.
+    // reference-image ceiling and size vocabulary, so they are two tables —
+    // three, counting the basic `qwen-image-edit`, which alone in its family
+    // takes no `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持
+    // size", 400 on receiving one). `-max` / `-plus` and the dated builds of
+    // those are ordinary qwen-image models and keep the shared table.
     if (family == ModelFamily.dashscopeImage) {
-      return id.startsWith('wan') ? _dashscopeWanImage : _dashscopeQwenImage;
+      if (id.startsWith('wan')) return _dashscopeWanImage;
+      if (id.startsWith('qwen-image-edit') &&
+          !id.contains('-max') &&
+          !id.contains('-plus')) {
+        return _dashscopeQwenImageEdit;
+      }
+      return _dashscopeQwenImage;
     }
 
     return forFamily(family);
@@ -432,13 +444,44 @@ class ModelCapabilities {
 
   // --- Family parameter tables ---------------------------------------------
 
-  /// 1K / 2K / 4K resolution control shared by every nanoBanana image family.
+  /// 1K / 2K / 4K resolution control shared by the nanoBanana image families
+  /// that have one.
+  ///
+  /// `not_set` is the default and means the field is not sent — the upstream
+  /// default is the 1K tier, so nothing is lost, and "not sent" is the one
+  /// spelling every host accepts. The value must be uppercase `K` on the
+  /// wire; the options carry it that way so nothing has to translate.
   static const _geminiSizeParam = ParamSpec(
     key: 'imageSize',
     labelKey: 'resolution',
     control: ParamControl.segmented,
-    defaultValue: '1K',
-    options: [ParamOption('1K'), ParamOption('2K'), ParamOption('4K')],
+    defaultValue: 'not_set',
+    options: [
+      ParamOption('not_set'),
+      ParamOption('1K'),
+      ParamOption('2K'),
+      ParamOption('4K'),
+    ],
+  );
+
+  /// The ten-ratio aspect control every nanoBanana generation shares.
+  static const _geminiAspectParam = ParamSpec(
+    key: 'aspectRatio',
+    labelKey: 'aspectRatio',
+    control: ParamControl.dropdown,
+    defaultValue: 'not_set',
+    options: [
+      ParamOption('not_set'),
+      ParamOption('1:1'),
+      ParamOption('2:3'),
+      ParamOption('3:2'),
+      ParamOption('3:4'),
+      ParamOption('4:3'),
+      ParamOption('4:5'),
+      ParamOption('5:4'),
+      ParamOption('9:16'),
+      ParamOption('16:9'),
+    ],
   );
 
   /// nanoBanana — `gemini-*-image`. Full Gemini aspect-ratio set + 1K/2K/4K.
@@ -446,27 +489,18 @@ class ModelCapabilities {
   static const _geminiImage = ModelCapabilities(
     isImageGenerator: true,
     maxReferenceImages: null,
-    imageParams: [
-      ParamSpec(
-        key: 'aspectRatio',
-        labelKey: 'aspectRatio',
-        control: ParamControl.dropdown,
-        defaultValue: 'not_set',
-        options: [
-          ParamOption('not_set'),
-          ParamOption('1:1'),
-          ParamOption('2:3'),
-          ParamOption('3:2'),
-          ParamOption('3:4'),
-          ParamOption('4:3'),
-          ParamOption('4:5'),
-          ParamOption('5:4'),
-          ParamOption('9:16'),
-          ParamOption('16:9'),
-        ],
-      ),
-      _geminiSizeParam,
-    ],
+    imageParams: [_geminiAspectParam, _geminiSizeParam],
+  );
+
+  /// The first nanoBanana, `gemini-2.5-flash-image`: the same ratios, but
+  /// **no resolution control** — the model has a single 1024px tier and no
+  /// `imageSize` field. Its own table so the control is never rendered and
+  /// the field never sent; the shared table used to send `imageSize: 1K` to
+  /// it on every request by default.
+  static const _geminiImageLegacy = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: null,
+    imageParams: [_geminiAspectParam],
   );
 
   /// Nano Banana Pro — `gemini-3.1-pro-image`. The standard nanoBanana set plus
@@ -806,8 +840,16 @@ class ModelCapabilities {
   );
 
   /// `qwen-image*` on DashScope's native surface — the `input.messages`
-  /// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with each
-  /// edge in 512–2048, normalized to DashScope's `W*H` spelling on the wire.
+  /// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with the
+  /// total area in 512²–2048², normalized to DashScope's `W*H` spelling on
+  /// the wire.
+  ///
+  /// `not_set` here does **not** mean "send nothing": this endpoint renders an
+  /// unsized request at 2048² and bills it at the 2K tier — twice the 1K
+  /// price — so the dialect always sends a size, and `not_set` means "the
+  /// dialect's default": a 1K square for text-to-image, the input's own
+  /// proportions fitted into the 1K area for an edit (`dashscopeQwenDefaultSize`).
+  /// The three presets are the 1K-area sizes an author picks explicitly.
   ///
   /// `n` is deliberately not exposed — every request sends 1. The ceiling
   /// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
@@ -835,9 +877,28 @@ class ModelCapabilities {
     ],
   );
 
+  /// The basic `qwen-image-edit` (not `-max` / `-plus`): same shape and
+  /// reference ceiling as [_dashscopeQwenImage], but **no size control** —
+  /// the endpoint has no `size` for this one model and 400s on receiving it,
+  /// and `n` is a hard 1 (docs/api/qianwen-bailian.md §4.1). The absence of
+  /// the `imageSize` spec is what the protocol reads to leave `size` off
+  /// (`dashscopeModelTakesSize`), so this table is the *only* place that fact
+  /// lives.
+  static const _dashscopeQwenImageEdit = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 3,
+    longRunning: true,
+    imageRequestShape: ImageRequestShape.dashscopeQwen,
+    imageParams: [_dashscopePromptExtend],
+  );
+
   /// `wan2.7-image*` on DashScope's native surface — the top-level
   /// `messages` shape. Up to 9 reference images (20 MB each) and a `1K`/`2K`
   /// size vocabulary on top of `W*H`.
+  ///
+  /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
+  /// tier at twice the price, the same trap as qwen's. `n` is always sent as
+  /// 1 — wan2.7's upstream default is **four** images, each billed.
   static const _dashscopeWanImage = ModelCapabilities(
     isImageGenerator: true,
     maxReferenceImages: 9,

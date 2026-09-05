@@ -203,6 +203,27 @@ void main() {
         expect(result.mimeType, 'image/png');
       });
     }
+
+    test('a declared type that disagrees with the bytes is corrected', () {
+      // A `.png` holding JPEG bytes is an ordinary file (renamed downloads,
+      // relay output saved under the wrong name). ④ checks the bytes against
+      // `media_type` and rejects the whole request on a mismatch, so the
+      // declaration cannot be trusted here.
+      final jpeg = Uint8List.fromList(img.encodeJpg(gradient(8, 8)));
+      final attachment = LLMAttachment.fromBytes(jpeg, 'image/png');
+
+      final result = ImageCompressor.readForApi(attachment);
+
+      expect(result.mimeType, 'image/jpeg');
+      expect(identical(result.bytes, jpeg), isTrue);
+    });
+
+    test('bytes of a format the sniffer does not know keep the declaration', () {
+      final unknown = Uint8List.fromList([1, 2, 3, 4]);
+      final attachment = LLMAttachment.fromBytes(unknown, 'image/avif');
+
+      expect(ImageCompressor.readForApi(attachment).mimeType, 'image/avif');
+    });
   });
 
   group('compress (generation input, opt-in)', () {

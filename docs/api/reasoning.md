@@ -131,6 +131,12 @@
 `output_config`。在第三方兼容端点上模型名是自由文本，猜代次不可靠——只能默认
 不发，或发了失败再降级。
 
+> 本仓处置（2026-09-05）：vendor 默认 adaptive，Layer 3 按 id 把 4.5 及更早点回
+> budget，400 点名 `thinking` / `output_config` 时换拼法重试一次并按
+> endpoint + model 记住。见 `docs/architecture/llm-three-layer.md` ④ 第 5 条。
+> 官方 ④ 通道上 adaptive 是否真的开出思考（响应里有无非空 `thinking` block）
+> **尚未实测**——配置不合法时是静默关闭，不报错。
+
 ### 1.9 强度与采样参数互斥
 
 **①：思考模式不支持 `temperature`、`top_p`、`presence_penalty`、

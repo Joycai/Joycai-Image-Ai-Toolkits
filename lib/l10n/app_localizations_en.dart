@@ -1712,7 +1712,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reasoningEffortDesc =>
-      'How hard the model should think before answering. Default sends nothing (the endpoint decides); other levels cost output tokens. OpenAI- and Anthropic-format channels.';
+      'How hard the model should think before answering. Default sends nothing (the endpoint decides); other levels cost output tokens. OpenAI- and Anthropic-format channels. On Anthropic-format channels the level goes out as output_config.effort for Claude 4.6 and later; Max is accepted only by the newest models, and a 400 naming the level means pick a lower one.';
 
   @override
   String get reasoningEffortDefault => 'Default (send nothing)';

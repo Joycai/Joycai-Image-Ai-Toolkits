@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
+import '../../core/image_magic.dart';
 import 'llm_types.dart';
 
 /// Re-encodes oversized images before they go out over the wire.
@@ -132,6 +133,21 @@ class ImageCompressor {
     return (bytes: jpg, mimeType: 'image/jpeg');
   }
 
+  /// The pixel dimensions of [bytes], read from the header without decoding
+  /// the image, or null when the format is unrecognized.
+  ///
+  /// Header-only for the same reason [compressForViewing] is: this runs in a
+  /// payload builder, once per reference image per request, and a full decode
+  /// to learn two integers is pure cost. DashScope's qwen-image dialect is the
+  /// caller — an edit that names no size is billed at 2K there, so the size
+  /// has to be derived from the input's own proportions instead.
+  static ({int width, int height})? dimensionsOf(Uint8List bytes) {
+    final decoder = img.findDecoderForData(bytes);
+    final info = decoder?.startDecode(bytes);
+    if (info == null || info.width <= 0 || info.height <= 0) return null;
+    return (width: info.width, height: info.height);
+  }
+
   /// Composites [image] onto white when it carries alpha.
   ///
   /// JPEG has no alpha channel, and letting the encoder decide what to do
@@ -174,14 +190,23 @@ class ImageCompressor {
   /// Reads [attachment]'s bytes, shrinking them when its referenceType is
   /// [LLMReferenceType.viewOnly] — see the class doc for why other
   /// reference types are excluded here.
+  ///
+  /// The MIME type is taken from the bytes when they are a format this app
+  /// recognizes, and from the attachment's declaration only otherwise. The
+  /// declaration comes from a file extension, and a `.png` holding JPEG bytes
+  /// is an ordinary occurrence (renamed downloads, relay output saved under
+  /// the wrong name): ④ checks the bytes against `media_type` and rejects the
+  /// whole request on a mismatch, so the truth has to be established here,
+  /// once, for every protocol.
   static ({Uint8List bytes, String mimeType}) readForApi(LLMAttachment attachment) {
     final raw = attachment.path != null
         ? File(attachment.path!).readAsBytesSync()
         : (attachment.bytes ?? Uint8List(0));
+    final mimeType = resolveImageMime(raw, attachment.mimeType);
 
     if (attachment.referenceType != LLMReferenceType.viewOnly) {
-      return (bytes: raw, mimeType: attachment.mimeType);
+      return (bytes: raw, mimeType: mimeType);
     }
-    return compressForViewing(raw, attachment.mimeType);
+    return compressForViewing(raw, mimeType);
   }
 }
