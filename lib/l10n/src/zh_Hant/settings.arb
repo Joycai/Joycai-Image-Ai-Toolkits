@@ -20,7 +20,7 @@
   "fontDownloading": "正在下載字型…",
   "fontDownloadFailed": "字型下載失敗，請檢查網路後重試。",
   "preferHighPerformanceGpu": "優先使用高效能 GPU",
-  "preferHighPerformanceGpuDesc": "讓 Windows 使用獨立顯示卡執行本應用程式，下次啟動時生效。",
+  "preferHighPerformanceGpuDesc": "使用獨立顯示卡算圖，關閉時使用內顯。下次啟動時生效。",
   "reduceVisualEffects": "減少視覺效果",
   "reduceVisualEffectsDesc": "關閉模糊效果，在內顯或低效能 GPU 上獲得更流暢的體驗。",
   "googleGenAiSettings": "Google GenAI REST 設定",
