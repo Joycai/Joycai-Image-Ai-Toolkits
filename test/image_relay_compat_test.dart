@@ -414,6 +414,67 @@ void main() {
       expect(chunks.single.textPart, 'partial');
     });
 
+    test('the finish reason reaches metadata in ①\'s vocabulary, raw value alongside', () {
+      // Until this existed ③ published nothing under finish_reason, so the
+      // assistant loop's `== 'length'` truncation check never fired for it.
+      final stopped = parseGoogleChunks({
+        ...candidate('STOP', parts: [{'text': 'done'}]),
+        'usageMetadata': {'promptTokenCount': 3, 'candidatesTokenCount': 1},
+      }).toList();
+      expect(stopped.single.metadata, {
+        'promptTokenCount': 3,
+        'candidatesTokenCount': 1,
+        'finish_reason_raw': 'STOP',
+        'finish_reason': 'stop',
+      });
+
+      final truncated = parseGoogleChunks(candidate('MAX_TOKENS', parts: [{'text': 'as far'}])).toList();
+      expect(truncated.single.metadata!['finish_reason'], 'length');
+    });
+
+    test('a candidate with no parts still delivers its finish reason', () {
+      // A MAX_TOKENS whose whole budget went to thinking looks like this.
+      final chunks = parseGoogleChunks({
+        ...candidate('MAX_TOKENS', parts: []),
+        'usageMetadata': {'thoughtsTokenCount': 40, 'candidatesTokenCount': 0},
+      }).toList();
+      expect(chunks, hasLength(1));
+      expect(chunks.single.textPart, isNull);
+      expect(chunks.single.metadata!['finish_reason'], 'length');
+      expect(chunks.single.metadata!['thoughtsTokenCount'], 40);
+    });
+
+    test('a protocol stop with nothing said is a failure, not a short reply', () {
+      // MISSING_THOUGHT_SIGNATURE is ③'s replay failure: not a 400, not a
+      // silent downgrade — a successful response that stopped for this reason.
+      for (final reason in ['MISSING_THOUGHT_SIGNATURE', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS']) {
+        expect(
+          () => parseGoogleChunks(candidate(reason)).toList(),
+          throwsA(predicate((e) => e.toString().contains(reason))),
+          reason: reason,
+        );
+      }
+      // With content the content is kept and the raw reason still rides along.
+      final partial = parseGoogleChunks(
+        candidate('MISSING_THOUGHT_SIGNATURE', parts: [{'text': 'hm'}]),
+      ).toList();
+      expect(partial.single.textPart, 'hm');
+      expect(partial.single.metadata!['finish_reason_raw'], 'MISSING_THOUGHT_SIGNATURE');
+    });
+
+    test('a thought part is reasoning, never text', () {
+      // `includeThoughts` returns the summary as a text part flagged
+      // thought: true; glued into the text it reaches the deliverable.
+      final chunks = parseGoogleChunks(candidate('STOP', parts: [
+        {'text': 'let me think', 'thought': true},
+        {'text': 'the answer'},
+      ])).toList();
+      expect(chunks[0].reasoningPart, 'let me think');
+      expect(chunks[0].textPart, isNull);
+      expect(chunks[1].textPart, 'the answer');
+      expect(chunks[1].reasoningPart, isNull);
+    });
+
     test('a usage-only chunk stays legal — streams end with one', () {
       final chunks = parseGoogleChunks({
         'usageMetadata': {'promptTokenCount': 7}

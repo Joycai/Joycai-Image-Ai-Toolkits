@@ -525,9 +525,7 @@ class LLMService {
     final promptTokens = _asTokenCount(metadata['promptTokenCount'] ??
         metadata['prompt_tokens'] ??
         metadata['input_tokens']);
-    final outputTokens = _asTokenCount(metadata['candidatesTokenCount'] ??
-        metadata['completion_tokens'] ??
-        metadata['output_tokens']);
+    final outputTokens = outputTokensOf(metadata);
     final cacheTokens = _extractCacheTokens(metadata, promptTokens);
 
     await db.recordTokenUsage({
@@ -573,6 +571,34 @@ class LLMService {
   /// Token counts arrive as int, double or String depending on provider and
   /// transport; anything unparseable counts as zero.
   int _asTokenCount(dynamic value) {
+    final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
+    return (count == null || count < 0) ? 0 : count;
+  }
+
+  /// Output tokens a response reported, in the comparable "everything the
+  /// model emitted" sense.
+  ///
+  /// ①, ② and ④ already count thinking inside `completion_tokens` /
+  /// `output_tokens` (`*_details.reasoning_tokens` is a breakdown, not an
+  /// addition). ③ does not: `candidatesTokenCount` is the answer alone and
+  /// the thinking sits beside it in `thoughtsTokenCount` — so reading the
+  /// former alone recorded a "think 5k, answer 500" request as 500, dropping
+  /// exactly the expensive part. The two are summed here, and only here, so
+  /// the metrics page and the billing agree with the invoice.
+  @visibleForTesting
+  static int outputTokensOf(Map<String, dynamic> metadata) {
+    final counted = metadata['candidatesTokenCount'] ??
+        metadata['completion_tokens'] ??
+        metadata['output_tokens'];
+    var total = _asTokenCountStatic(counted);
+    if (metadata.containsKey('candidatesTokenCount') ||
+        metadata.containsKey('thoughtsTokenCount')) {
+      total += _asTokenCountStatic(metadata['thoughtsTokenCount']);
+    }
+    return total;
+  }
+
+  static int _asTokenCountStatic(dynamic value) {
     final count = value is num ? value.toInt() : (value is String ? int.tryParse(value) : null);
     return (count == null || count < 0) ? 0 : count;
   }

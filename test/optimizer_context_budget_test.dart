@@ -99,6 +99,19 @@ void main() {
     });
   });
 
+  group('outputTokensOf', () {
+    test('③ adds the thinking tokens ① and ④ already include', () {
+      // candidatesTokenCount is the answer alone; the thinking sits beside
+      // it. Reading the former alone recorded "think 5k, answer 500" as 500.
+      expect(LLMService.outputTokensOf({'candidatesTokenCount': 500, 'thoughtsTokenCount': 5000}), 5500);
+      expect(LLMService.outputTokensOf({'candidatesTokenCount': 500}), 500);
+      // ① and ④ count thinking inside the total already; the details block
+      // is a breakdown, not an addition.
+      expect(LLMService.outputTokensOf({'completion_tokens': 700, 'completion_tokens_details': {'reasoning_tokens': 200}}), 700);
+      expect(LLMService.outputTokensOf({'output_tokens': 300}), 300);
+    });
+  });
+
   group('promptTokensOf', () {
     test('reads both provider spellings', () {
       expect(LLMService.promptTokensOf({'promptTokenCount': 1234}), 1234);

@@ -158,7 +158,9 @@
 
 **验收**：L1 deepseek 通道 off 的 body 含 `thinking.type == disabled` 且不含 `reasoning_effort:"none"`；非 deepseek 通道 byte-identical。L2 DeepSeek 官方 V4 关思考后响应 `reasoning_content` 为空——**这条不报错，只能看字段**。
 
-#### 片 10 · Gemini 结束原因与思考 token（#14 #15）
+#### 片 10 · Gemini 结束原因与思考 token（#14 #15）— ✅ 2026-09-05 L1 已落
+
+> 落地：`geminiFinishReason`（③→① 词表，`MAX_TOKENS`→`length`、安全类→`content_filter`，其余 `stop`）与 `finish_reason_raw` 一起进 metadata；`protocolFinishReasons`（`MISSING_THOUGHT_SIGNATURE` / `UNEXPECTED_TOOL_CALL` / `TOO_MANY_TOOL_CALLS` / `MALFORMED_FUNCTION_CALL`）升 WARN、parts 为空时抛；parts 为空的候选也发一个 metadata chunk（思考吃光预算的 `MAX_TOKENS` 长这样）。`LLMService.outputTokensOf` 只在 Google 键存在时把 `thoughtsTokenCount` 加进输出。没有做成与 ④ 共用一张翻译表——两族的枚举没有交集，合表只会多一层间接。**顺带把片 12 的 `thought:true` 也做了**：③ 的 thought part 走 `reasoningPart`，同步路径的 `GeminiChatProtocol.generate` 也收集 `reasoningContent`。
 
 **改什么**
 1. `parseGoogleChunks` 把 `finishReason` 写进 metadata：原值存 `finish_reason_raw`，并翻译成 ① 词表存 `finish_reason`（`MAX_TOKENS`→`length`、`STOP`→`stop`、安全类→`content_filter`、`MISSING_THOUGHT_SIGNATURE` / `UNEXPECTED_TOOL_CALL` / `TOO_MANY_TOOL_CALLS`→`stop` 但日志升 WARN，且 parts 为空时抛）。与 ④ 的 `anthropicFinishReason` 同一套翻译表，抽到 `protocol.dart`。

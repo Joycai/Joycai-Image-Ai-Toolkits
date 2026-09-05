@@ -70,12 +70,14 @@ class GeminiChatProtocol implements ChatProtocol {
       }
 
       String text = "";
+      String reasoning = "";
       List<Uint8List> images = [];
       List<LLMToolCall> toolCalls = [];
       Map<String, dynamic> metadata = {};
 
       for (final chunk in parseGoogleChunks(data, logger: logger)) {
         if (chunk.textPart != null) text += chunk.textPart!;
+        if (chunk.reasoningPart != null) reasoning += chunk.reasoningPart!;
         if (chunk.imagePart != null) images.add(chunk.imagePart!);
         if (chunk.toolCallPart != null) toolCalls.add(chunk.toolCallPart!);
         if (chunk.metadata != null) metadata = chunk.metadata!;
@@ -87,6 +89,9 @@ class GeminiChatProtocol implements ChatProtocol {
         text: text,
         generatedImages: images,
         metadata: metadata,
+        // ③'s thought summaries, kept off the deliverable. No field name: ③'s
+        // replay obligation is the thoughtSignature on the call, not this.
+        reasoningContent: reasoning.isEmpty ? null : reasoning,
         toolCalls: toolCalls,
       );
     } finally {
