@@ -203,6 +203,15 @@
    input/output_tokens、图片视频按张/按秒）—— 统一计量的客户端要自己翻译。
 8. 与计费相关的默认值偏贵：wan2.7 图片 `n` 默认 **4**、V1 `audio` 默认
    true、`prompt_extend` 默认 true —— 不想吃服务端默认就得显式下发。
+   **`size` 同理**（2026-09-04 外部实测 qwen-image-3.0-pro / wan2.7-image-pro）：
+   省略 `size` 两家都出 2048² 并按 **2K 档**计费（qwen 是 1K 档的两倍价）；
+   qwen 改图省略 `size` 画幅跟随输入，但同样放大到 2K 面积（768×1376 出
+   1520×2736）。本仓 I1/I2 因此**永远显式发** `n: 1` 与 `size`：qwen 默认
+   `1024*1024`、改图按第一张输入图的比例在 1K 面积内重算（16 的倍数、面积
+   ≤ 1024²、比例夹在 1:8–8:1）；wan 默认 `"1K"`。唯一例外是基础版
+   `qwen-image-edit`——它没有 `size`（第 5 条），Layer 3 的参数表不声明该
+   控件，协议据此不发。qwen 3.0 的 `size` **只收** `宽*高`，发 `"1K"` 是
+   400 `InvalidParameter: Expected format: '<width>*<height>'`。
 9. C2 的 `result_format` 默认是 `"text"`：不显式发 `"message"` 就只回一个
    裸字符串、没有 `choices`、没有 tool_calls、没有 finish_reason ——
    读 choices 的解析器会把它当"模型什么都没说"，不会报错。

@@ -133,6 +133,21 @@ class ImageCompressor {
     return (bytes: jpg, mimeType: 'image/jpeg');
   }
 
+  /// The pixel dimensions of [bytes], read from the header without decoding
+  /// the image, or null when the format is unrecognized.
+  ///
+  /// Header-only for the same reason [compressForViewing] is: this runs in a
+  /// payload builder, once per reference image per request, and a full decode
+  /// to learn two integers is pure cost. DashScope's qwen-image dialect is the
+  /// caller — an edit that names no size is billed at 2K there, so the size
+  /// has to be derived from the input's own proportions instead.
+  static ({int width, int height})? dimensionsOf(Uint8List bytes) {
+    final decoder = img.findDecoderForData(bytes);
+    final info = decoder?.startDecode(bytes);
+    if (info == null || info.width <= 0 || info.height <= 0) return null;
+    return (width: info.width, height: info.height);
+  }
+
   /// Composites [image] onto white when it carries alpha.
   ///
   /// JPEG has no alpha channel, and letting the encoder decide what to do

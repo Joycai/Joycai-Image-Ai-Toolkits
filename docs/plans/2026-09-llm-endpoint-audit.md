@@ -41,23 +41,23 @@
 
 ### 第一批 · P0（静默计费 / 静默失效）
 
-#### 片 1 · DashScope 图片方言收口（#1 #2 #3 #9）
+#### 片 1 · DashScope 图片方言收口（#1 #2 #3 #9）— ◐ 2026-09-05 第 1/3/4a 条 L1 已落；第 2 条与 `prompt_extend` 待 L2
 
 **改什么**
 
-1. `buildDashScopeImagePayload` 的 `parameters` 永远带 `n: 1`。qwen-image-edit 基础版只收 1、其余 1–6、wan 1–4，`n: 1` 人人都收；删掉 137 行「1 是所有端点默认」的注释，它与本仓 `docs/api/qianwen-bailian.md` §4.1/§8 自相矛盾。
+1. ✅ `buildDashScopeImagePayload` 的 `parameters` 永远带 `n: 1`（两种 shape）。qwen-image-edit 基础版只收 1、其余 1–6、wan 1–4，`n: 1` 人人都收；原「1 是所有端点默认」的注释已删，它与本仓 `docs/api/qianwen-bailian.md` §4.1/§8 自相矛盾。`parameters` 块因此永远存在。
 2. **先 L2 再改 #2**：用一条 wan2.7-image 请求分别发顶层 `messages` 与 `input.messages`，看哪种 200。若 `input.messages` 通而顶层不通（两份文档都这么说），`ImageRequestShape.dashscopeWan` 改成同 qwen 的三段式，只保留「text 在前 / image 在前」与 `type:"image"` 的差别；测试 `wan puts messages at the top level` 反转。若两种都通，只补文档不改代码。
-3. qwen 方言永远发 `size`，默认 1K 面积：`_dashscopeQwenImage` 的 `imageSize` 把 `not_set` 换成显式默认 `1024*1024`（或增加 1K/2K 档位由方言换算成 `宽*高`）。改图时若作者没点画幅，从第一张输入图读宽高，按其比例在 1K 面积内重算，宽高向下取 16 的倍数、总像素 ≤ 2048²。读尺寸的入口是 `LLMAttachment` 的字节（PNG IHDR / JPEG SOF），放进 `image_compression.dart` 旁边的一个纯函数。
-4. wan 方言：`imageSize` 的 `not_set` 改为显式默认 `1K`（上游默认 2K 是双倍价）。`prompt_extend` 是否对 wan2.7 发，等 L2 结论：发一次带 `prompt_extend:false` 的 wan2.7 请求，400 就把 `_dashscopePromptExtend` 从 `_dashscopeWanImage` 摘掉，被忽略就保留并在文档记一笔。
+3. ✅ qwen 方言永远发 `size`，默认 1K 面积。`not_set` 保留为选项值（UI 标签仍是「自动」），但语义从「不发」改为「方言默认」：文生图 `1024*1024`；改图从第一张输入图读宽高（`ImageCompressor.dimensionsOf`，只读文件头不解码），按其比例在 1K 面积内重算——短边先取 16 的倍数、长边由短边推导再取 16 的倍数、面积超 1024² 则长边回退一步、比例夹在 1:8–8:1（`dashscopeQwenDefaultSize`）。**发现一条计划没写的例外**：基础版 `qwen-image-edit` 没有 `size`（本仓文档 §4.1 第 5 条，发了 400），所以新增 Layer 3 表 `_dashscopeQwenImageEdit`（不声明 `imageSize`），协议经 `dashscopeModelTakesSize` 读「模型是否声明尺寸控件」决定发不发；`-max` / `-plus` 及其日期版仍走共享表。
+4. ◐ wan 方言：`imageSize` 的 `not_set` 现在发 `"1K"`（上游默认 2K 是双倍价）✅。`prompt_extend` 是否对 wan2.7 发，等 L2 结论：发一次带 `prompt_extend:false` 的 wan2.7 请求，400 就把 `_dashscopePromptExtend` 从 `_dashscopeWanImage` 摘掉，被忽略就保留并在文档记一笔。
 
-**文件**：`protocols/dashscope_payload.dart`、`model_capabilities.dart`、`image_compression.dart`（新增尺寸读取）、`test/dashscope_payload_test.dart`。
+**文件**：`protocols/dashscope_payload.dart`、`protocols/dashscope_images_protocol.dart`、`protocols/dashscope_images_async_protocol.dart`（两者读输入图尺寸、传 `sendsSize`，且 data URL 的 mime 走片 3 的 `resolveImageMime`）、`model_capabilities.dart`、`image_compression.dart`（`dimensionsOf`）、`test/dashscope_payload_test.dart`、`docs/api/qianwen-bailian.md` §8。
 
 **验收**
 - L1：`n` 在两种 shape 上恒为 1；qwen 无 `imageSize` 选项时 `size` 仍为 `1024*1024`；改图给一张 768×1376 的输入图，`size` 落在 1K 面积、比例误差 < 1 个 16 步、两边被 16 整除；wan 默认 `size: "1K"`；`prompt_extend` 未设不发。
 - L2：qwen-image-3.0-pro 与 wan2.7-image-pro 各一张，断言回包张数 == 1、`usage.output_image_type == qima_output_1k`（qwen）、字节尺寸 == 请求尺寸。拒绝用例免费：发 `size:"1K"` 给 qwen 应 400 `InvalidParameter`。
 - L3：回填 `docs/api/qianwen-bailian.md` §4.1（wan shape 定论、prompt_extend 定论），并把「省略 size 按 2K 计费」写进 §8 计费默认值那条。
 
-**风险**：改图按输入比例重算会让 qwen 不再「跟随输入」而是「跟随输入的比例、1K 面积」——那份文档的结论是这个端点上不存在不花双倍钱的跟随写法，UI 文案要说明。
+**风险**：改图按输入比例重算会让 qwen 不再「跟随输入」而是「跟随输入的比例、1K 面积」——那份文档的结论是这个端点上不存在不花双倍钱的跟随写法。UI 侧 `not_set` 仍显示为「自动」，没有加说明文案；要说明的话改 `model_selection_section.dart` 的 `_optionLabel`，按 `paramKey == 'imageSize'` 且模型是 DashScope 图片族时给「自动（1K）」一类标签，属 UI 层，本片未动。
 
 #### 片 2 · Gemini 请求改 camelCase（#5）— ✅ 2026-09-05 L1 已落，L2 待 key
 

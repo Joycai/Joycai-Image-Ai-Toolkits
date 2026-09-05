@@ -390,9 +390,19 @@ class ModelCapabilities {
     }
 
     // DashScope's two shapes (see [ImageRequestShape]) also differ in their
-    // reference-image ceiling and size vocabulary, so they are two tables.
+    // reference-image ceiling and size vocabulary, so they are two tables —
+    // three, counting the basic `qwen-image-edit`, which alone in its family
+    // takes no `size` at all (docs/api/qianwen-bailian.md §4.1: "不支持
+    // size", 400 on receiving one). `-max` / `-plus` and the dated builds of
+    // those are ordinary qwen-image models and keep the shared table.
     if (family == ModelFamily.dashscopeImage) {
-      return id.startsWith('wan') ? _dashscopeWanImage : _dashscopeQwenImage;
+      if (id.startsWith('wan')) return _dashscopeWanImage;
+      if (id.startsWith('qwen-image-edit') &&
+          !id.contains('-max') &&
+          !id.contains('-plus')) {
+        return _dashscopeQwenImageEdit;
+      }
+      return _dashscopeQwenImage;
     }
 
     return forFamily(family);
@@ -806,8 +816,16 @@ class ModelCapabilities {
   );
 
   /// `qwen-image*` on DashScope's native surface — the `input.messages`
-  /// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with each
-  /// edge in 512–2048, normalized to DashScope's `W*H` spelling on the wire.
+  /// shape. Up to 3 reference images (10 MB each); sizes are `WxH` with the
+  /// total area in 512²–2048², normalized to DashScope's `W*H` spelling on
+  /// the wire.
+  ///
+  /// `not_set` here does **not** mean "send nothing": this endpoint renders an
+  /// unsized request at 2048² and bills it at the 2K tier — twice the 1K
+  /// price — so the dialect always sends a size, and `not_set` means "the
+  /// dialect's default": a 1K square for text-to-image, the input's own
+  /// proportions fitted into the 1K area for an edit (`dashscopeQwenDefaultSize`).
+  /// The three presets are the 1K-area sizes an author picks explicitly.
   ///
   /// `n` is deliberately not exposed — every request sends 1. The ceiling
   /// differs *within* the family (6, but `qwen-image-edit` takes only 1) and
@@ -835,9 +853,28 @@ class ModelCapabilities {
     ],
   );
 
+  /// The basic `qwen-image-edit` (not `-max` / `-plus`): same shape and
+  /// reference ceiling as [_dashscopeQwenImage], but **no size control** —
+  /// the endpoint has no `size` for this one model and 400s on receiving it,
+  /// and `n` is a hard 1 (docs/api/qianwen-bailian.md §4.1). The absence of
+  /// the `imageSize` spec is what the protocol reads to leave `size` off
+  /// (`dashscopeModelTakesSize`), so this table is the *only* place that fact
+  /// lives.
+  static const _dashscopeQwenImageEdit = ModelCapabilities(
+    isImageGenerator: true,
+    maxReferenceImages: 3,
+    longRunning: true,
+    imageRequestShape: ImageRequestShape.dashscopeQwen,
+    imageParams: [_dashscopePromptExtend],
+  );
+
   /// `wan2.7-image*` on DashScope's native surface — the top-level
   /// `messages` shape. Up to 9 reference images (20 MB each) and a `1K`/`2K`
   /// size vocabulary on top of `W*H`.
+  ///
+  /// `not_set` sends `1K`, not nothing: wan's own omitted default is the 2K
+  /// tier at twice the price, the same trap as qwen's. `n` is always sent as
+  /// 1 — wan2.7's upstream default is **four** images, each billed.
   static const _dashscopeWanImage = ModelCapabilities(
     isImageGenerator: true,
     maxReferenceImages: 9,
