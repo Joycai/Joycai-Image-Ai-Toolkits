@@ -1423,12 +1423,28 @@
   "restartMessage": "必须重启应用程序以应用对数据存储位置的更改。",
   "enableNotifications": "启用系统通知",
   "runSetupWizard": "运行设置向导",
-  "clearDownloaderCache": "清除下载器缓存",
+  "clearTempFiles": "清理临时文件",
+  "clearTempFilesConfirmTitle": "清理临时文件？",
+  "clearTempFilesConfirmMessage": "将删除 {size} 的蒙版、裁剪副本、下载器缓存与视频缩略图。临时工作区中指向这些文件的条目会一并移除；你自己文件夹中的文件不受影响。",
+  "@clearTempFilesConfirmMessage": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "tempFilesCleared": "已释放 {size}。",
+  "@tempFilesCleared": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "enableApiDebug": "开启 API 调试日志",
   "apiDebugDesc": "将原始 API 请求和响应记录到文件中以便排查问题。警告：API 密钥等敏感数据可能会被记录。",
   "openLogFolder": "打开日志目录",
   "iosOutputRecommend": "建议：在 iOS 上保持默认。生成的图片可在“文件”App 中查看。",
-  "downloaderCacheCleared": "下载器缓存已清除。",
   "knowledgeBaseFolder": "知识库文件夹",
   "kbOpenFolder": "打开文件夹",
   "kbInvalidDir": "文件夹不存在",

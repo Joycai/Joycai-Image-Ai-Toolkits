@@ -2435,7 +2435,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runSetupWizard => 'Run Setup Wizard';
 
   @override
-  String get clearDownloaderCache => 'Clear Downloader Cache';
+  String get clearTempFiles => 'Clear Temporary Files';
+
+  @override
+  String get clearTempFilesConfirmTitle => 'Clear Temporary Files?';
+
+  @override
+  String clearTempFilesConfirmMessage(String size) {
+    return 'Deletes $size of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.';
+  }
+
+  @override
+  String tempFilesCleared(String size) {
+    return 'Freed $size.';
+  }
 
   @override
   String get enableApiDebug => 'Enable API Debug Logging';
@@ -2450,9 +2463,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get iosOutputRecommend =>
       'Recommended: Leave as default on iOS. The app\'s folder is visible in the \'Files\' app.';
-
-  @override
-  String get downloaderCacheCleared => 'Downloader cache cleared.';
 
   @override
   String get knowledgeBaseFolder => 'Knowledge Base Folder';

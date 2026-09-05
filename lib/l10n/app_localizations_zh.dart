@@ -2356,7 +2356,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get runSetupWizard => '运行设置向导';
 
   @override
-  String get clearDownloaderCache => '清除下载器缓存';
+  String get clearTempFiles => '清理临时文件';
+
+  @override
+  String get clearTempFilesConfirmTitle => '清理临时文件？';
+
+  @override
+  String clearTempFilesConfirmMessage(String size) {
+    return '将删除 $size 的蒙版、裁剪副本、下载器缓存与视频缩略图。临时工作区中指向这些文件的条目会一并移除；你自己文件夹中的文件不受影响。';
+  }
+
+  @override
+  String tempFilesCleared(String size) {
+    return '已释放 $size。';
+  }
 
   @override
   String get enableApiDebug => '开启 API 调试日志';
@@ -2369,9 +2382,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get iosOutputRecommend => '建议：在 iOS 上保持默认。生成的图片可在“文件”App 中查看。';
-
-  @override
-  String get downloaderCacheCleared => '下载器缓存已清除。';
 
   @override
   String get knowledgeBaseFolder => '知识库文件夹';
@@ -6272,7 +6282,20 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get runSetupWizard => '執行設定精靈';
 
   @override
-  String get clearDownloaderCache => '清除下載器快取';
+  String get clearTempFiles => '清理暫存檔案';
+
+  @override
+  String get clearTempFilesConfirmTitle => '清理暫存檔案？';
+
+  @override
+  String clearTempFilesConfirmMessage(String size) {
+    return '將刪除 $size 的遮罩、裁切副本、下載器快取與影片縮圖。暫存工作區中指向這些檔案的項目會一併移除；你自己資料夾中的檔案不受影響。';
+  }
+
+  @override
+  String tempFilesCleared(String size) {
+    return '已釋放 $size。';
+  }
 
   @override
   String get enableApiDebug => '啟用 API 偵錯記錄';
@@ -6286,9 +6309,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get iosOutputRecommend => '建議：在 iOS 上保留預設值。應用程式的資料夾可在「檔案」應用程式中看到。';
-
-  @override
-  String get downloaderCacheCleared => '下載器快取已清除。';
 
   @override
   String get knowledgeBaseFolder => '知識庫資料夾';

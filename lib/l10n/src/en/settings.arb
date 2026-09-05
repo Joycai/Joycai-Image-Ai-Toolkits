@@ -72,12 +72,28 @@
   "restartMessage": "The application must be restarted to apply changes to the data storage location.",
   "enableNotifications": "Enable System Notifications",
   "runSetupWizard": "Run Setup Wizard",
-  "clearDownloaderCache": "Clear Downloader Cache",
+  "clearTempFiles": "Clear Temporary Files",
+  "clearTempFilesConfirmTitle": "Clear Temporary Files?",
+  "clearTempFilesConfirmMessage": "Deletes {size} of masks, crop copies, downloader cache and video thumbnails. Entries in the temporary workspace that point at these files are removed with them; files in your own folders are untouched.",
+  "@clearTempFilesConfirmMessage": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "tempFilesCleared": "Freed {size}.",
+  "@tempFilesCleared": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "enableApiDebug": "Enable API Debug Logging",
   "apiDebugDesc": "Logs raw API requests and responses to files for troubleshooting. Warning: Sensitive data like API Keys might be logged if not masked.",
   "openLogFolder": "Open Log Folder",
   "iosOutputRecommend": "Recommended: Leave as default on iOS. The app's folder is visible in the 'Files' app.",
-  "downloaderCacheCleared": "Downloader cache cleared.",
   "knowledgeBaseFolder": "Knowledge Base Folder",
   "kbOpenFolder": "Open Folder",
   "kbInvalidDir": "Folder not found",
